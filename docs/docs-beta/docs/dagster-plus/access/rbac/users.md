@@ -27,7 +27,7 @@ In this guide, you'll learn how to manage users and their permissions using the 
 
 By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/todo).
 
-## Adding users
+## Adding users to Dagster+
 
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
@@ -36,9 +36,9 @@ By default, users will be granted Viewer permissions on each deployment. The def
 5. In the **User email** field, enter the user's email address.
 6. Click **Add user**.
 
-After the user is created, you can [add the user to teams](#teams) and [assign user roles for each deployment](#user-roles).
+After the user is created, they will be notified via email, and you can [add the user to teams](#teams) and [assign user roles for each deployment](#user-roles).
 
-TODO: ADD SCREENSHOT 
+![Screenshot of assigning roles to a user](/img/placeholder.svg)
 
 ## Adding users to teams {#teams}
 
@@ -48,13 +48,15 @@ Teams are a Dagster+ Pro feature.
 
 Teams are useful for centralizing permission sets for different types of users. Refer to [Managing teams](/todo) for more information about creating and managing teams.
 
-TODO: ADD SCREENSHOT
+![Screenshot of Managing teams page](/img/placeholder.svg)
 
-**Note**: When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to [Managing user roles and permissions](/todo) for more information.
+:::note
+When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to [Managing user roles and permissions](/todo) for more information.
+:::
 
 ## Assigning user roles {#user-roles}
 
-In the **Roles** section, you can assign a [user role](/todo) for each deployment.
+In the **Roles** section, you can assign a [user role](/todo) for each deployment, granting them a set of permissions that controls their access to various features and functionalities within the platform.
 
 1. Next to a deployment, click **Edit user role**.
 2. Select the user role for the deployment. This [user role](/todo) will be used as the default for all code locations in the deployment.
