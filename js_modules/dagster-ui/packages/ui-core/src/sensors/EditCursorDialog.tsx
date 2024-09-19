@@ -35,13 +35,12 @@ export const EditCursorDialog = ({
   onClose: () => void;
 }) => {
   const [cursorValue, setCursorValue] = useState(cursor);
-  const [isSaving, setIsSaving] = useState(false);
-  const [requestSet] = useMutation<SetSensorCursorMutation, SetSensorCursorMutationVariables>(
-    SET_CURSOR_MUTATION,
-  );
+  const [requestSet, {loading: isSaving}] = useMutation<
+    SetSensorCursorMutation,
+    SetSensorCursorMutationVariables
+  >(SET_CURSOR_MUTATION);
 
   const onSave = async () => {
-    setIsSaving(true);
     const {data} = await requestSet({
       variables: {sensorSelector, cursor: cursorValue},
     });
