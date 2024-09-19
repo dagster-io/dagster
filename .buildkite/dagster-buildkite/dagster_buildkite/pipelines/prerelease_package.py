@@ -1,14 +1,9 @@
 from typing import List
 
-from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.steps.packages import (
-    _get_uncustomized_pkg_roots,
-    build_steps_from_package_specs,
-    gcp_creds_extra_cmds,
-)
-from dagster_buildkite.utils import BuildkiteStep, BlockStep
 from dagster_buildkite.step_builder import CommandStepBuilder
+from dagster_buildkite.steps.packages import _get_uncustomized_pkg_roots
+from dagster_buildkite.utils import BlockStep, BuildkiteStep
 
 
 def build_prerelease_package_steps() -> List[BuildkiteStep]:
@@ -25,7 +20,10 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
             {
                 "select": "Select a package to publish",
                 "key": "package-to-release-path",
-                "options": [{"label": package[len("python_modules/"):], "value": package} for package in packages],
+                "options": [
+                    {"label": package[len("python_modules/") :], "value": package}
+                    for package in packages
+                ],
                 "hint": None,
                 "default": None,
                 "required": True,
@@ -37,20 +35,19 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
                 "key": "version-to-release",
                 "default": None,
                 "hint": "Leave blank to auto-increment the minor version",
-            }
+            },
         ],
     }
     steps.append(input_step)
 
-    steps.append(  CommandStepBuilder(":package: Build and publish package")
+    steps.append(
+        CommandStepBuilder(":package: Build and publish package")
         .run(
             "pip install build",
             "sh ./scripts/build_and_publish.sh",
         )
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
+        .on_test_image(AvailablePythonVersion.get_default(), env=["PYPI_TOKEN"])
+        .build()
     )
-
-
 
     return steps
