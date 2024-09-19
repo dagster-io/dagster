@@ -62,9 +62,11 @@ def definitions_validate_command(log_level: str, log_format: str, **kwargs: Clic
             instance=instance, version=dagster_version, kwargs=kwargs
         ) as workspace:
             invalid = any(
-                entry for entry in workspace.get_workspace_snapshot().values() if entry.load_error
+                entry
+                for entry in workspace.get_code_location_entries().values()
+                if entry.load_error
             )
-            for code_location, entry in workspace.get_workspace_snapshot().items():
+            for code_location, entry in workspace.get_code_location_entries().items():
                 if entry.load_error:
                     logger.error(
                         f"Validation failed for code location {code_location} with exception: "
