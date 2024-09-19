@@ -7,7 +7,12 @@ from dagster_looker.api.dagster_looker_api_translator import DagsterLookerApiTra
 from dagster_looker.api.resource import LookerResource
 from looker_sdk.sdk.api40.models import LookmlModelExplore
 
-from dagster_looker_tests.api.mock_looker_data import mock_lookml_explore, mock_lookml_models
+from dagster_looker_tests.api.mock_looker_data import (
+    mock_looker_dashboard,
+    mock_looker_dashboard_bases,
+    mock_lookml_explore,
+    mock_lookml_models,
+)
 
 TEST_BASE_URL = "https://your.cloud.looker.com"
 
@@ -23,6 +28,8 @@ def looker_resource_fixture() -> LookerResource:
 def looker_instance_data_mocks_fixture(
     looker_resource: LookerResource,
 ) -> Iterator[responses.RequestsMock]:
+    sdk = looker_resource.get_sdk()
+
     with responses.RequestsMock() as response:
         # Mock the login request
         responses.add(method=responses.POST, url=f"{TEST_BASE_URL}/api/4.0/login", json={})
@@ -31,14 +38,28 @@ def looker_instance_data_mocks_fixture(
         responses.add(
             method=responses.GET,
             url=f"{TEST_BASE_URL}/api/4.0/lookml_models",
-            body=looker_resource.get_sdk().serialize(api_model=mock_lookml_models),  # type: ignore
+            body=sdk.serialize(api_model=mock_lookml_models),  # type: ignore
         )
 
         # Mock the request for a single lookml explore
         responses.add(
             method=responses.GET,
             url=f"{TEST_BASE_URL}/api/4.0/lookml_models/my_model/explores/my_explore",
-            body=looker_resource.get_sdk().serialize(api_model=mock_lookml_explore),  # type: ignore
+            body=sdk.serialize(api_model=mock_lookml_explore),  # type: ignore
+        )
+
+        # Mock the request for all looker dashboards
+        responses.add(
+            method=responses.GET,
+            url=f"{TEST_BASE_URL}/api/4.0/dashboards",
+            body=sdk.serialize(api_model=mock_looker_dashboard_bases),  # type: ignore
+        )
+
+        # Mock the request for a single looker dashboard
+        responses.add(
+            method=responses.GET,
+            url=f"{TEST_BASE_URL}/api/4.0/dashboards/1",
+            body=sdk.serialize(api_model=mock_looker_dashboard),  # type: ignore
         )
 
         yield response
@@ -48,17 +69,28 @@ def looker_instance_data_mocks_fixture(
 def test_build_defs(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
-    all_assets = looker_resource.build_defs().get_asset_graph().assets_defs
+    assets_by_key = {
+        asset.key: asset for asset in looker_resource.build_defs().get_asset_graph().assets_defs
+    }
 
-    assert len(all_assets) == 1
+    assert len(assets_by_key) == 2
 
-    explore_asset = all_assets[0]
+    expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
+    expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
-    expected_asset_key = AssetKey(["my_model::my_explore"])
-    assert list(explore_asset.keys) == [expected_asset_key]
-    assert explore_asset.tags_by_key[expected_asset_key] == {
+    lookml_explore_asset = assets_by_key[expected_lookml_explore_asset_key]
+    assert lookml_explore_asset.tags_by_key[expected_lookml_explore_asset_key] == {
         "dagster/kind/looker": "",
         "dagster/kind/explore": "",
+    }
+
+    looker_dashboard_asset = assets_by_key[expected_looker_dashboard_asset_key]
+    assert looker_dashboard_asset.asset_deps[expected_looker_dashboard_asset_key] == {
+        expected_lookml_explore_asset_key
+    }
+    assert looker_dashboard_asset.tags_by_key[expected_looker_dashboard_asset_key] == {
+        "dagster/kind/looker": "",
+        "dagster/kind/dashboard": "",
     }
 
 

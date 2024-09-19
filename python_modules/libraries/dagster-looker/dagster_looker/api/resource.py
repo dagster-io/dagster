@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, Sequence
 
 from dagster import (
     ConfigurableResource,
@@ -51,7 +51,20 @@ class LookerResource(ConfigurableResource):
         return init40(config_settings=DagsterLookerApiSettings())
 
     def fetch_looker_data(self) -> LookerInstanceData:
+        """Fetches all explores and dashboards from the Looker instance.
+
+        TODO: Fetch explores in parallel using asyncio
+        TODO: Get all the LookML views upstream of the explores
+        """
         sdk = self.get_sdk()
+
+        # Get dashboards
+        dashboards = sdk.all_dashboards()
+        dashboards_by_id = {
+            dashboard.id: sdk.dashboard(dashboard_id=dashboard.id)
+            for dashboard in dashboards
+            if dashboard.id and not dashboard.hidden
+        }
 
         # Get explore names from models
         explores_for_model = {
@@ -60,20 +73,24 @@ class LookerResource(ConfigurableResource):
             if model.name
         }
 
-        # TODO: Fetch explores in parallel using asyncio
-        explore_data: List["LookmlModelExplore"] = []
+        explores_by_id: Dict["str", "LookmlModelExplore"] = {}
         for model_name, explore_names in explores_for_model.items():
             for explore_name in explore_names:
                 try:
-                    explore_data.append(sdk.lookml_model_explore(model_name, explore_name))
+                    lookml_explore = sdk.lookml_model_explore(
+                        lookml_model_name=model_name,
+                        explore_name=explore_name,
+                    )
+
+                    explores_by_id[check.not_none(lookml_explore.id)] = lookml_explore
                 except:
                     logger.warning(
                         f"Failed to fetch LookML explore '{explore_name}' for model '{model_name}'."
                     )
 
-        # TODO: Get all the LookML views upstream of the explores
         return LookerInstanceData(
-            explores_by_id={explore.id: explore for explore in explore_data if explore.id}
+            explores_by_id=explores_by_id,
+            dashboards_by_id=dashboards_by_id,
         )
 
     def build_assets(
