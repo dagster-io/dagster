@@ -1,6 +1,8 @@
 PACKAGE_TO_RELEASE_PATH=$(buildkite-agent meta-data get package-to-release-path)
 VERSION_TO_RELEASE=$(buildkite-agent meta-data get version-to-release --default '')
 
+git checkout $BUILDKITE_BRANCH
+
 if [ -z "$PACKAGE_TO_RELEASE_PATH" ]; then
     echo "Please provide the path to the package to release."
     exit 1
@@ -41,5 +43,7 @@ git add -A
 git config --global user.email "devtools@dagsterlabs.com"
 git config --global user.name "Dagster Labs"
 git commit -m "$PACKAGE_NAME $VERSION_TO_RELEASE"
+
 git tag "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
-git push origin "$BUILDKITE_BRANCH"
+git push origin "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
+git push origin $BUILDKITE_BRANCH
