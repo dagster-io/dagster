@@ -83,6 +83,7 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
@@ -234,26 +235,29 @@ class ExternalRepository:
 
             has_any_auto_observe_source_assets = False
 
-            existing_auto_materialize_sensors = {
+            existing_automation_condition_sensors = {
                 sensor_name: sensor
                 for sensor_name, sensor in sensor_datas.items()
                 if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
             }
 
-            covered_asset_keys = set()
-            for sensor in existing_auto_materialize_sensors.values():
-                covered_asset_keys = covered_asset_keys.union(
-                    check.not_none(sensor.asset_selection).resolve(asset_graph)
+            covered_entity_keys: Set[EntityKey] = set()
+            for sensor in existing_automation_condition_sensors.values():
+                selection = check.not_none(sensor.asset_selection)
+                covered_entity_keys = covered_entity_keys.union(
+                    # for now, all asset checks are handled by the same asset as their asset
+                    selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
                 )
 
             default_sensor_asset_keys = set()
-
-            for asset_key in asset_graph.materializable_asset_keys:
-                if not asset_graph.get(asset_key).auto_materialize_policy:
+            for entity_key in asset_graph.materializable_asset_keys | asset_graph.asset_check_keys:
+                if not asset_graph.get(entity_key).automation_condition:
                     continue
 
-                if asset_key not in covered_asset_keys:
-                    default_sensor_asset_keys.add(asset_key)
+                if entity_key not in covered_entity_keys:
+                    default_sensor_asset_keys.add(
+                        entity_key if isinstance(entity_key, AssetKey) else entity_key.asset_key
+                    )
 
             for asset_key in asset_graph.observable_asset_keys:
                 if (
@@ -264,7 +268,7 @@ class ExternalRepository:
 
                 has_any_auto_observe_source_assets = True
 
-                if asset_key not in covered_asset_keys:
+                if asset_key not in covered_entity_keys:
                     default_sensor_asset_keys.add(asset_key)
 
             if default_sensor_asset_keys:
@@ -275,7 +279,7 @@ class ExternalRepository:
                     include_sources=has_any_auto_observe_source_assets
                 )
 
-                for sensor in existing_auto_materialize_sensors.values():
+                for sensor in existing_automation_condition_sensors.values():
                     default_sensor_asset_selection = (
                         default_sensor_asset_selection - check.not_none(sensor.asset_selection)
                     )

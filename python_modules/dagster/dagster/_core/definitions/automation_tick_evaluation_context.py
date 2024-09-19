@@ -23,6 +23,7 @@ from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
@@ -55,13 +56,20 @@ class AutomationTickEvaluationContext:
         materialize_run_tags: Mapping[str, str],
         observe_run_tags: Mapping[str, str],
         auto_observe_asset_keys: AbstractSet[AssetKey],
-        auto_materialize_asset_keys: AbstractSet[AssetKey],
+        asset_selection: AssetSelection,
         logger: logging.Logger,
         evaluation_time: Optional[datetime.datetime] = None,
     ):
+        resolved_entity_keys = {
+            entity_key
+            # for now, all checks of a given asset will be evaluated at the same time as it
+            for entity_key in asset_selection.resolve(asset_graph)
+            | asset_selection.resolve_checks(asset_graph)
+            if asset_graph.get(entity_key).automation_condition is not None
+        }
         self._evaluation_id = evaluation_id
         self._evaluator = AutomationConditionEvaluator(
-            entity_keys=auto_materialize_asset_keys,
+            entity_keys=resolved_entity_keys,
             instance=instance,
             asset_graph=asset_graph,
             cursor=cursor,

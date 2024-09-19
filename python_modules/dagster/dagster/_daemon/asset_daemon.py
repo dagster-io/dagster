@@ -17,6 +17,8 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
+from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
@@ -734,35 +736,37 @@ class AssetDaemon(DagsterDaemon):
             print_group_name = self._get_print_sensor_name(sensor)
 
             if sensor:
-                eligible_keys = check.not_none(sensor.asset_selection).resolve(
-                    check.not_none(repository).asset_graph
+                selection = check.not_none(sensor.asset_selection)
+                # resolve the selection against just the assets in the sensor's repository
+                repo_asset_graph = check.not_none(repository).asset_graph
+                eligible_keys = selection.resolve(repo_asset_graph) | selection.resolve_checks(
+                    repo_asset_graph
                 )
             else:
                 eligible_keys = asset_graph.all_asset_keys
 
-            auto_materialize_asset_keys = {
+            auto_materialize_entity_keys = {
                 target_key
                 for target_key in eligible_keys
                 if asset_graph.get(target_key).automation_condition is not None
             }
-            num_target_assets = len(auto_materialize_asset_keys)
+            num_target_entities = len(auto_materialize_entity_keys)
 
             auto_observe_asset_keys = {
                 key
                 for key in eligible_keys
-                if asset_graph.get(key).auto_observe_interval_minutes is not None
+                if isinstance(key, AssetKey)
+                and asset_graph.get(key).auto_observe_interval_minutes is not None
             }
             num_auto_observe_assets = len(auto_observe_asset_keys)
 
-            if not auto_materialize_asset_keys and not auto_observe_asset_keys:
-                self._logger.debug(
-                    f"No assets that require auto-materialize checks{print_group_name}"
-                )
+            if not auto_materialize_entity_keys and not auto_observe_asset_keys:
+                self._logger.debug(f"No assets/checks that require evaluation{print_group_name}")
                 yield
                 return
 
             self._logger.info(
-                f"Checking {num_target_assets} asset{'' if num_target_assets == 1 else 's'} and"
+                f"Checking {num_target_entities} assets/checks and"
                 f" {num_auto_observe_assets} observable source"
                 f" asset{'' if num_auto_observe_assets == 1 else 's'}{print_group_name}"
             )
@@ -875,7 +879,7 @@ class AssetDaemon(DagsterDaemon):
                     sensor,
                     workspace_process_context,
                     asset_graph,
-                    auto_materialize_asset_keys,
+                    auto_materialize_entity_keys,
                     stored_cursor,
                     auto_observe_asset_keys,
                     debug_crash_flags,
@@ -898,7 +902,7 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[ExternalSensor],
         workspace_process_context: IWorkspaceProcessContext,
         asset_graph: RemoteAssetGraph,
-        auto_materialize_asset_keys: Set[AssetKey],
+        auto_materialize_entity_keys: Set[EntityKey],
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: Set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
@@ -934,10 +938,19 @@ class AssetDaemon(DagsterDaemon):
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
+            # for now, all asset checks are handled by a sensor that's targeted at their parent,
+            # so mold this into a shape AutomationTickEvaluationContext expects
+            asset_selection = AssetSelection.keys(
+                *{
+                    key if isinstance(key, AssetKey) else key.asset_key
+                    for key in auto_materialize_entity_keys
+                    if isinstance(key, AssetKey)
+                }
+            )
             run_requests, new_cursor, evaluations = AutomationTickEvaluationContext(
                 evaluation_id=evaluation_id,
                 asset_graph=asset_graph,
-                auto_materialize_asset_keys=auto_materialize_asset_keys,
+                asset_selection=asset_selection,
                 instance=instance,
                 cursor=stored_cursor,
                 materialize_run_tags={
