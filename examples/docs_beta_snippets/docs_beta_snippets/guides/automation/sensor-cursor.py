@@ -1,5 +1,8 @@
-import dagster as dg
 import os
+
+import dagster as dg
+
+MY_DIRECTORY = "data"
 
 
 @dg.asset
