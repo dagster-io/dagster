@@ -1,22 +1,20 @@
 from typing import Optional, Sequence
 
 from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.entity_subset import EntitySubset
-from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-@record
-class NewlyTrueCondition(AutomationCondition):
-    operand: AutomationCondition
-    label: Optional[str] = None
+class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
+    operand: AutomationCondition[T_EntityKey]
 
     @property
     def description(self) -> str:
@@ -27,12 +25,12 @@ class NewlyTrueCondition(AutomationCondition):
         return "NEWLY_TRUE"
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
+    def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.operand]
 
     def _get_previous_child_true_slice(
-        self, context: AutomationContext
-    ) -> Optional[EntitySlice[AssetKey]]:
+        self, context: AutomationContext[T_EntityKey]
+    ) -> Optional[EntitySlice[T_EntityKey]]:
         """Returns the true slice of the child from the previous tick, which is stored in the
         extra state field of the cursor.
         """

@@ -1,22 +1,21 @@
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes(storage_name="AndAssetCondition")
-@record
-class AndAutomationCondition(AutomationCondition):
+class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that all of its children evaluate to true."""
 
-    operands: Sequence[AutomationCondition]
-    label: Optional[str] = None
+    operands: Sequence[AutomationCondition[T_EntityKey]]
 
     @property
     def description(self) -> str:
@@ -27,14 +26,14 @@ class AndAutomationCondition(AutomationCondition):
         return "AND"
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
+    def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return self.operands
 
     @property
     def requires_cursor(self) -> bool:
         return False
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         child_results: List[AutomationResult] = []
         true_slice = context.candidate_slice
         for i, child in enumerate(self.children):
@@ -60,12 +59,10 @@ class AndAutomationCondition(AutomationCondition):
 
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")
-@record
-class OrAutomationCondition(AutomationCondition):
+class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that any of its children evaluate to true."""
 
-    operands: Sequence[AutomationCondition]
-    label: Optional[str] = None
+    operands: Sequence[AutomationCondition[T_EntityKey]]
 
     @property
     def description(self) -> str:
@@ -76,14 +73,14 @@ class OrAutomationCondition(AutomationCondition):
         return "OR"
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
+    def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return self.operands
 
     @property
     def requires_cursor(self) -> bool:
         return False
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         child_results: List[AutomationResult] = []
         true_slice = context.get_empty_slice()
         for i, child in enumerate(self.children):
@@ -98,12 +95,10 @@ class OrAutomationCondition(AutomationCondition):
 
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
-@record
-class NotAutomationCondition(AutomationCondition):
+class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that none of its children evaluate to true."""
 
-    operand: AutomationCondition
-    label: Optional[str] = None
+    operand: AutomationCondition[T_EntityKey]
 
     @property
     def description(self) -> str:
@@ -114,10 +109,10 @@ class NotAutomationCondition(AutomationCondition):
         return "NOT"
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
+    def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.operand]
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         child_context = context.for_child_condition(
             child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
         )
