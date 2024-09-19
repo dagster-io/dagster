@@ -8,7 +8,6 @@ import {
   NonIdealState,
   Spinner,
 } from '@dagster-io/ui-components';
-import partition from 'lodash/partition';
 import React, {useDeferredValue, useMemo} from 'react';
 
 import {ExecutionTimeline} from './ExecutionTimeline';
@@ -24,7 +23,6 @@ import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
 import {RunTable} from '../../runs/RunTable';
 import {DagsterTag} from '../../runs/RunTag';
 import {
-  RunFilterToken,
   RunFilterTokenType,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
@@ -64,21 +62,9 @@ export const BackfillRunsTab = ({
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const queryStringFilters = runsFilterForSearchTokens(filterTokens);
 
-  const [statusTokens, nonStatusTokens] = partition(
-    filterTokens,
-    (token) => token.token === 'status',
-  );
-
-  const setFilterTokensWithStatus = React.useCallback(
-    (tokens: RunFilterToken[]) => {
-      setFilterTokens(tokens);
-    },
-    [setFilterTokens, statusTokens],
-  );
-
   const {button, activeFiltersJsx} = useRunsFilterInput({
     tokens: filterTokens,
-    onChange: setFilterTokensWithStatus,
+    onChange: setFilterTokens,
     enabledFilters: filters,
   });
 
@@ -183,8 +169,6 @@ const ExecutionRunTable = ({
   const pipelineRunsOrError =
     queryResult.data?.pipelineRunsOrError || queryResult.previousData?.pipelineRunsOrError;
 
-  const loading = !queryResult.data?.pipelineRunsOrError;
-
   const refreshState = useQueryRefreshAtInterval(queryResult, 15000);
 
   if (!pipelineRunsOrError) {
@@ -222,7 +206,7 @@ const ExecutionRunTable = ({
             )}
             actionBarComponents={actionBarComponents}
             belowActionBarComponents={belowActionBarComponents}
-            loading={loading}
+            loading={queryResult.loading}
             actionBarSticky
           />
           {pipelineRunsOrError.results.length > 0 ? (

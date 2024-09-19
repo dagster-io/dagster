@@ -28,6 +28,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
+  useMergedRefresh,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -47,7 +48,7 @@ export function useRunsFeedEntries() {
     query: RUNS_FEED_ROOT_QUERY,
     pageSize: PAGE_SIZE,
     variables: {
-      // filters here?
+      // TODO: Add Filters
     },
     nextCursorForResult: (runs) => {
       if (runs.runsFeedOrError.__typename !== 'RunsFeedConnection') {
@@ -68,7 +69,7 @@ export function useRunsFeedEntries() {
   const entries =
     data?.runsFeedOrError.__typename === 'RunsFeedConnection' ? data?.runsFeedOrError.results : [];
 
-  return {queryResult, paginationProps, entries, loading: !queryResult.data};
+  return {queryResult, paginationProps, entries};
 }
 
 export const RunsFeedRoot = () => {
@@ -139,8 +140,11 @@ export const RunsFeedRoot = () => {
 
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
 
-  const {entries, paginationProps, queryResult, loading} = useRunsFeedEntries();
+  // TODO Pass filters to useRunsFeedEntries
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries();
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
+  const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
   const {error} = queryResult;
 
   const parentRef = useRef<HTMLDivElement | null>(null);
@@ -226,7 +230,7 @@ export const RunsFeedRoot = () => {
 
     return (
       <div style={{overflow: 'hidden'}}>
-        {loading ? <IndeterminateLoadingBar /> : null}
+        {queryResult.loading ? <IndeterminateLoadingBar /> : null}
         <Container ref={parentRef}>
           <RunsFeedTableHeader
             checkbox={
@@ -251,7 +255,7 @@ export const RunsFeedRoot = () => {
                       entry={entry}
                       checked={checkedIds.has(entry.id)}
                       onToggleChecked={onToggleFactory(entry.id)}
-                      refetch={refreshState.refetch}
+                      refetch={combinedRefreshState.refetch}
                       onAddTag={onAddTag}
                     />
                   </div>
@@ -274,7 +278,7 @@ export const RunsFeedRoot = () => {
       >
         {tabs}
         <Box flex={{gap: 16, alignItems: 'center'}}>
-          <QueryRefreshCountdown refreshState={refreshState} />
+          <QueryRefreshCountdown refreshState={combinedRefreshState} />
         </Box>
       </Box>
 
@@ -282,7 +286,7 @@ export const RunsFeedRoot = () => {
         {actionBar()}
       </Box>
 
-      <RunsQueryRefetchContext.Provider value={{refetch: refreshState.refetch}}>
+      <RunsQueryRefetchContext.Provider value={{refetch: combinedRefreshState.refetch}}>
         {content()}
       </RunsQueryRefetchContext.Provider>
     </Box>
