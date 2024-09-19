@@ -4,8 +4,8 @@ from typing import Any, Mapping, Optional, Sequence, Tuple
 import pytest
 from dagster import AssetKey, Definitions
 from dagster_looker.lkml.asset_specs import build_looker_asset_specs
-from dagster_looker.lkml.dagster_looker_translator import (
-    DagsterLookerTranslator,
+from dagster_looker.lkml.dagster_looker_lkml_translator import (
+    DagsterLookerLkmlTranslator,
     LookMLStructureType,
 )
 
@@ -296,7 +296,7 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
 
 
 def test_with_asset_key_replacements() -> None:
-    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_asset_key(
             self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
         ) -> AssetKey:
@@ -314,7 +314,7 @@ def test_with_asset_key_replacements() -> None:
 
 
 def test_with_deps_replacements() -> None:
-    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_deps(self, _) -> Sequence[AssetKey]:
             return []
 
@@ -330,7 +330,7 @@ def test_with_deps_replacements() -> None:
 def test_with_description_replacements() -> None:
     expected_description = "customized description"
 
-    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_description(self, _) -> Optional[str]:
             return expected_description
 
@@ -346,7 +346,7 @@ def test_with_description_replacements() -> None:
 def test_with_metadata_replacements() -> None:
     expected_metadata = {"customized": "metadata"}
 
-    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_metadata(self, _) -> Optional[Mapping[str, Any]]:
             return expected_metadata
 
@@ -362,7 +362,7 @@ def test_with_metadata_replacements() -> None:
 def test_with_group_replacements() -> None:
     expected_group = "customized_group"
 
-    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_group_name(self, _) -> Optional[str]:
             return expected_group
 
@@ -378,7 +378,7 @@ def test_with_group_replacements() -> None:
 def test_with_owner_replacements() -> None:
     expected_owners = ["custom@custom.com"]
 
-    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_owners(self, _) -> Optional[Sequence[str]]:
             return expected_owners
 
@@ -394,7 +394,7 @@ def test_with_owner_replacements() -> None:
 def test_with_tag_replacements() -> None:
     expected_tags = {"customized": "tag"}
 
-    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_tags(self, _) -> Optional[Mapping[str, str]]:
             return expected_tags
 

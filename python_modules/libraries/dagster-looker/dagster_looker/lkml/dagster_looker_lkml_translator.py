@@ -15,7 +15,7 @@ logger = logging.getLogger("dagster_looker")
 
 
 def build_deps_for_looker_dashboard(
-    dagster_looker_translator: "DagsterLookerTranslator",
+    dagster_looker_translator: "DagsterLookerLkmlTranslator",
     lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_view_path, _, lookml_dashboard_props = lookml_structure
@@ -41,7 +41,7 @@ def build_deps_for_looker_dashboard(
 
 
 def build_deps_for_looker_explore(
-    dagster_looker_translator: "DagsterLookerTranslator",
+    dagster_looker_translator: "DagsterLookerLkmlTranslator",
     lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_explore_path, _, lookml_explore_props = lookml_structure
@@ -69,7 +69,7 @@ def build_deps_for_looker_explore(
 
 
 def build_deps_for_looker_view(
-    dagster_looker_translator: "DagsterLookerTranslator",
+    dagster_looker_translator: "DagsterLookerLkmlTranslator",
     lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_view_path, _, lookml_view_props = lookml_structure
@@ -147,7 +147,7 @@ def build_deps_for_looker_view(
 
 
 @experimental
-class DagsterLookerTranslator:
+class DagsterLookerLkmlTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a LookML structure (dashboards, explores, views).
 

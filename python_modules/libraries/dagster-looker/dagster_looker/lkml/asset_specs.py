@@ -9,14 +9,14 @@ from dagster_looker.lkml.asset_utils import (
     build_looker_explore_specs,
     build_looker_view_specs,
 )
-from dagster_looker.lkml.dagster_looker_translator import DagsterLookerTranslator
+from dagster_looker.lkml.dagster_looker_lkml_translator import DagsterLookerLkmlTranslator
 
 
 @experimental
 def build_looker_asset_specs(
     *,
     project_dir: Path,
-    dagster_looker_translator: Optional[DagsterLookerTranslator] = None,
+    dagster_looker_translator: Optional[DagsterLookerLkmlTranslator] = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a set of Looker structures defined in a Looker project.
 
@@ -37,7 +37,7 @@ def build_looker_asset_specs(
             looker_specs = build_looker_asset_specs(project_dir=Path("my_looker_project"))
             looker_assets = external_assets_from_specs(looker_specs)
     """
-    dagster_looker_translator = dagster_looker_translator or DagsterLookerTranslator()
+    dagster_looker_translator = dagster_looker_translator or DagsterLookerLkmlTranslator()
 
     specs = [
         *build_looker_dashboard_specs(project_dir, dagster_looker_translator),

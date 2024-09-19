@@ -14,4 +14,4 @@ Assets
 
 .. autofunction:: build_looker_asset_specs
 
-.. autoclass:: DagsterLookerTranslator
+.. autoclass:: DagsterLookerLkmlTranslator

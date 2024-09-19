@@ -5,12 +5,12 @@ import lkml
 import yaml
 from dagster import AssetSpec
 
-from dagster_looker.lkml.dagster_looker_translator import DagsterLookerTranslator
+from dagster_looker.lkml.dagster_looker_lkml_translator import DagsterLookerLkmlTranslator
 
 
 def build_looker_dashboard_specs(
     project_dir: Path,
-    dagster_looker_translator: DagsterLookerTranslator,
+    dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
     looker_dashboard_specs: List[AssetSpec] = []
 
@@ -36,7 +36,7 @@ def build_looker_dashboard_specs(
 
 def build_looker_explore_specs(
     project_dir: Path,
-    dagster_looker_translator: DagsterLookerTranslator,
+    dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
     looker_explore_specs: List[AssetSpec] = []
 
@@ -62,7 +62,7 @@ def build_looker_explore_specs(
 
 def build_looker_view_specs(
     project_dir: Path,
-    dagster_looker_translator: DagsterLookerTranslator,
+    dagster_looker_translator: DagsterLookerLkmlTranslator,
 ) -> Sequence[AssetSpec]:
     looker_view_specs: List[AssetSpec] = []
 
