@@ -10,15 +10,24 @@ export function appendCurrentQueryParams(url: string): string {
   }
 
   // Parse current page's query parameters
-  const currentParams: URLSearchParams = new URLSearchParams(window.location.search);
+  const currentParams = new URLSearchParams(window.location.search);
 
   // Parse input URL's query parameters
-  const inputParams: URLSearchParams = new URLSearchParams(inputUrl.search);
+  const inputParams = new URLSearchParams(inputUrl.search);
+
+  // Collect unique keys from currentParams
+  const currentKeys = new Set<string>();
+  currentParams.forEach((_, key) => {
+    currentKeys.add(key);
+  });
 
   // Iterate over current query parameters and add them if not present in input URL
-  currentParams.forEach((value: string, key: string) => {
+  currentKeys.forEach((key) => {
     if (!inputParams.has(key)) {
-      inputParams.append(key, value);
+      const values = currentParams.getAll(key);
+      values.forEach((value) => {
+        inputParams.append(key, value);
+      });
     }
   });
 
@@ -31,6 +40,5 @@ export function appendCurrentQueryParams(url: string): string {
       : inputUrl.toString();
 
   // Return the relative or absolute URL with updated query parameters
-  // If the input URL was relative, return relative; otherwise, return absolute
   return ret;
 }

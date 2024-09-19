@@ -50,7 +50,7 @@ describe('appendCurrentQueryParams', () => {
   it('returns relative URL if input URL is relative', () => {
     const url = 'path';
     const result = appendCurrentQueryParams(url);
-    expect(result).toBe('/path?foo=1&bar=2'); // Adjusted expected value
+    expect(result).toBe('/path?foo=1&bar=2');
   });
 
   it('returns absolute URL if input URL is absolute', () => {
@@ -82,5 +82,16 @@ describe('appendCurrentQueryParams', () => {
     const url = '?baz=3';
     const result = appendCurrentQueryParams(url);
     expect(result).toBe('/?baz=3&foo=1&bar=2');
+  });
+
+  it('appends array query parameters from current URL to input URL', () => {
+    window.location.search = '?q[]=status:QUEUED&q[]=tag:user=marco@dagsterlabs.com';
+    const url = '/runs-feed/b/fkeiyzer?tab=runs';
+    const result = appendCurrentQueryParams(url);
+
+    const expectedUrl =
+      '/runs-feed/b/fkeiyzer?tab=runs&q%5B%5D=status%3AQUEUED&q%5B%5D=tag%3Auser%3Dmarco%40dagsterlabs.com';
+
+    expect(decodeURIComponent(result)).toBe(decodeURIComponent(expectedUrl));
   });
 });
