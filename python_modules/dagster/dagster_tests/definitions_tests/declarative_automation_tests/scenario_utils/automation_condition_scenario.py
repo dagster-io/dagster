@@ -6,10 +6,9 @@ from typing import Mapping, Optional, Sequence, Tuple
 import dagster._check as check
 import mock
 from dagster import AssetKey
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -25,9 +24,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
-from dagster._core.loader import LoadingContextForTest
 from dagster._core.test_utils import freeze_time
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_state import (
     ScenarioState,
@@ -92,33 +89,18 @@ class AutomationConditionScenarioState(ScenarioState):
         ).asset_graph
 
         with freeze_time(self.current_time):
-            instance_queryer = CachingInstanceQueryer(
-                instance=self.instance,
-                asset_graph=asset_graph,
-                loading_context=LoadingContextForTest(self.instance),
-            )
-            asset_graph_view = AssetGraphView(
-                temporal_context=TemporalContext(
-                    effective_dt=instance_queryer.evaluation_time,
-                    last_event_id=self.instance.event_log_storage.get_maximum_record_id(),
-                ),
-                instance=self.instance,
-                asset_graph=asset_graph,
-            )
             evaluator = AutomationConditionEvaluator(
                 asset_graph=asset_graph,
+                instance=self.instance,
                 entity_keys=asset_graph.all_asset_keys,
-                asset_graph_view=asset_graph_view,
-                logger=self.logger,
-                data_time_resolver=CachingDataTimeResolver(instance_queryer),
                 cursor=AssetDaemonCursor.empty().with_updates(
                     0, 0, [], [self.condition_cursor] if self.condition_cursor else []
                 ),
-                respect_materialization_data_versions=True,
-                auto_materialize_run_tags={},
-                request_backfills=self.instance.da_request_backfills(),
+                logger=self.logger,
             )
-            evaluator.current_results_by_key = self._get_current_results_by_key(asset_graph_view)  # type: ignore
+            evaluator.current_results_by_key = self._get_current_results_by_key(
+                evaluator.asset_graph_view
+            )  # type: ignore
             context = AutomationContext.create(key=asset_key, evaluator=evaluator)
 
             full_result = asset_condition.evaluate(context)
