@@ -802,6 +802,75 @@ def test_error_load_code_location(instance: DagsterInstance, executor: ThreadPoo
             assert len(ticks) == 0
 
 
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPoolExecutor):
+    freeze_datetime = feb_27_2019_one_second_to_midnight()
+    with create_test_daemon_workspace_context(
+        workspace_load_target(attribute="the_repo"),
+        instance,
+    ) as workspace_context:
+        code_location = next(
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
+        ).code_location
+        assert code_location
+        external_repo = code_location.get_repository("the_repo")
+        simple_schedule = external_repo.get_external_schedule("simple_schedule")
+        simple_origin = simple_schedule.get_external_origin()
+
+        assert len(instance.all_instigator_state()) == 0
+
+        with freeze_time(freeze_datetime):
+            instance.start_schedule(simple_schedule)
+            assert len(instance.all_instigator_state()) == 1
+            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 0
+
+        freeze_datetime = freeze_datetime + relativedelta(days=1)
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            assert len(instance.all_instigator_state()) == 1
+            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+
+        # Now try with an error workspace - the job state should not be deleted
+        # since its associated with an errored out location
+        freeze_datetime = freeze_datetime + relativedelta(days=1)
+        with freeze_time(freeze_datetime):
+            new_location_entry = copy(
+                workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
+                code_location=None,
+                load_error=SerializableErrorInfo("error", [], "error"),
+            )
+
+            workspace_context._workspace_snapshot = (  # noqa
+                workspace_context._workspace_snapshot.with_code_location(  # noqa
+                    "test_location",
+                    new_location_entry,
+                )
+            )
+
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            # state preserved
+            assert instance.get_instigator_state(
+                simple_origin.get_id(), simple_schedule.selector_id
+            )
+            # ticks preserved
+            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+
+    # Now try with an empty workspace - ticks are still there, but the job state is deleted
+    # once it's no longer present in the workspace
+    freeze_datetime = freeze_datetime + relativedelta(days=1)
+    with create_test_daemon_workspace_context(
+        EmptyWorkspaceTarget(), instance
+    ) as empty_workspace_ctx:
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
+            # state removed
+            assert not instance.get_instigator_state(
+                simple_origin.get_id(), simple_schedule.selector_id
+            )
+            # ticks preserved
+            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+
+
 # Schedules with status defined in code have that status applied
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPoolExecutor):
