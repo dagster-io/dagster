@@ -6,6 +6,7 @@ from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._core.definitions.tags import build_kind_tag
 from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil.parser import isoparse
 
@@ -20,6 +21,7 @@ def _inode_from_url(url: str) -> str:
     return f'inode-{url.split("/")[-1]}'
 
 
+@whitelist_for_serdes
 @record
 class SigmaWorkbook:
     """Represents a Sigma workbook, a collection of visualizations and queries
@@ -32,6 +34,7 @@ class SigmaWorkbook:
     datasets: AbstractSet[str]
 
 
+@whitelist_for_serdes
 @record
 class SigmaDataset:
     """Represents a Sigma dataset, a centralized data definition which can
