@@ -513,7 +513,7 @@ def run_failure_sensor(
             Defaults to None, which means the alert will be sent when any job in the current
             repository fails.
         monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs in the current repository that will be
@@ -596,7 +596,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             The jobs in the current repository that will be monitored by this sensor. Defaults to
             None, which means the alert will be sent when any job in the repository fails.
         monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
@@ -1042,7 +1042,7 @@ def run_status_sensor(
             Jobs in the current code locations that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the code location matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
-        monitor_all_code_locations (Optional[bool]): If set to True, the sensor will monitor all runs in the Dagster instance.
+        monitor_all_code_locations (Optional[bool]): If set to True, the sensor will monitor all runs in the Dagster deployment.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
