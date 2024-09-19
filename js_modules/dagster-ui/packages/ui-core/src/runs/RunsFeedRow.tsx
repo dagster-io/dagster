@@ -159,10 +159,10 @@ export const RunsFeedRow = ({
             backfill={{...entry, status: entry.backfillStatus}}
             canCancelRuns={backfillCanCancelRuns(entry, entry.numCancelable > 0)}
             refetch={refetch}
-            anchorLabel="View run"
+            anchorLabel="View"
           />
         ) : (
-          <RunActionsMenu run={entry} onAddTag={onAddTag} />
+          <RunActionsMenu run={entry} onAddTag={onAddTag} anchorLabel="View" />
         )}
       </RowCell>
       <QueuedRunCriteriaDialog
