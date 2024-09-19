@@ -25,6 +25,7 @@ async function train_model() {
   model.summary();
 
   // highlight-start
+  // Report materialization to Dagster
   await setPipesMessages({
     method: "report_asset_materialization",
     params: {
