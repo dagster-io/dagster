@@ -27,7 +27,7 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
                 # with a new line
                 log += f"\n{tail}"
             elif not (
-                len(maybe_timestamp) == len(timestamp) and _is_kube_timestamp(maybe_timestamp)
+                len(maybe_timestamp) == len(timestamp) and _is_timestamp(maybe_timestamp)
             ):
                 # The line is continuation of a long line that got truncated and thus doesn't
                 # have a timestamp in the beginning of the line.
@@ -47,41 +47,15 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
         yield LogItem(timestamp=timestamp, log=log)
 
 
-def _is_kube_timestamp(maybe_timestamp: str) -> bool:
+def _is_timestamp(maybe_timestamp: str) -> bool:
     # fromisoformat only works properly in Python 3.11+
     # Once pre 3.11 backwards compatibility is dropped
-    # anything after this if statement can be deleted
-    if sys.version_info >= (3, 11):
-        try:
-            datetime.fromisoformat(maybe_timestamp)
-            return True
-        except ValueError:
-            return False
-    # This extra stripping logic is necessary, as Python's strptime fn doesn't
-    # handle valid ISO 8601 timestamps with nanoseconds which we receive in k8s
-    # e.g. 2024-03-22T02:17:29.185548486Z
-
-    # This is likely fine. We're just trying to confirm whether or not it's a
-    # valid timestamp, not trying to parse it with full correctness.
-    if maybe_timestamp.endswith("Z"):
-        maybe_timestamp = maybe_timestamp[:-1]  # Strip the "Z"
-        if "." in maybe_timestamp:
-            # Split at the decimal point to isolate the fractional seconds
-            date_part, frac_part = maybe_timestamp.split(".")
-            maybe_timestamp = f"{date_part}.{frac_part[:6]}Z"
-        else:
-            maybe_timestamp = f"{maybe_timestamp}Z"  # Add the "Z" back if no fractional part
-        try:
-            datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
-            return True
-        except ValueError:
-            return False
-    else:
-        try:
-            datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S%z")
-            return True
-        except ValueError:
-            return False
+    # we can use that instead
+    try:
+        datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+        return True
+    except ValueError:
+        return False
 
 
 def _iter_all(q):
@@ -144,9 +118,9 @@ def test_empty_stream():
 
 def test_single_stream():
     got = _test_merge_logs(
-        (0, b'2024-03-22T02:17:29.185548486Z {"order": "1"}'),
-        (0, b'2024-03-22T02:17:29.285548487Z {"order": "2"}'),
-        (0, b'2024-03-22T02:17:29.385548488Z {"order": "3"}'),
+        (0, b'2024-03-22T02:17:29.1855Z {"order": "1"}'),
+        (0, b'2024-03-22T02:17:29.2855Z {"order": "2"}'),
+        (0, b'2024-03-22T02:17:29.3855Z {"order": "3"}'),
     )
 
     assert [
@@ -158,9 +132,9 @@ def test_single_stream():
 
 def test_single_stream_out_of_order():
     got = _test_merge_logs(
-        (0, b'2024-03-22T02:17:29.185548486Z {"order": "1"}'),
-        (0, b'2024-03-22T02:17:29.385548488Z {"order": "3"}'),
-        (0, b'2024-03-22T02:17:29.285548487Z {"order": "2"}'),
+        (0, b'2024-03-22T02:17:29.1855Z {"order": "1"}'),
+        (0, b'2024-03-22T02:17:29.3855Z {"order": "3"}'),
+        (0, b'2024-03-22T02:17:29.2855Z {"order": "2"}'),
     )
 
     assert [
@@ -172,15 +146,15 @@ def test_single_stream_out_of_order():
 
 def test_three_containers_simple():
     got = _test_merge_logs(
-        (0, b'2024-03-22T02:17:29.185548486Z {"order": "1"}'),
-        (1, b'2024-03-22T02:17:29.285548488Z {"order": "2"}'),
-        (2, b'2024-03-22T02:17:29.385548487Z {"order": "3"}'),
-        (0, b'2024-03-22T02:17:29.485548486Z {"order": "4"}'),
-        (1, b'2024-03-22T02:17:29.585548488Z {"order": "5"}'),
-        (2, b'2024-03-22T02:17:29.685548487Z {"order": "6"}'),
-        (0, b'2024-03-22T02:17:29.785548486Z {"order": "7"}'),
-        (1, b'2024-03-22T02:17:29.885548488Z {"order": "8"}'),
-        (2, b'2024-03-22T02:17:29.985548487Z {"order": "9"}'),
+        (0, b'2024-03-22T02:17:29.1855Z {"order": "1"}'),
+        (1, b'2024-03-22T02:17:29.2855Z {"order": "2"}'),
+        (2, b'2024-03-22T02:17:29.3855Z {"order": "3"}'),
+        (0, b'2024-03-22T02:17:29.4855Z {"order": "4"}'),
+        (1, b'2024-03-22T02:17:29.5855Z {"order": "5"}'),
+        (2, b'2024-03-22T02:17:29.6855Z {"order": "6"}'),
+        (0, b'2024-03-22T02:17:29.7855Z {"order": "7"}'),
+        (1, b'2024-03-22T02:17:29.8855Z {"order": "8"}'),
+        (2, b'2024-03-22T02:17:29.9855Z {"order": "9"}'),
     )
 
     assert [f'{{"order": "{i}"}}' for i in range(1, 10)] == got
@@ -188,15 +162,15 @@ def test_three_containers_simple():
 
 def test_multi_stream_different_volumes():
     got = _test_merge_logs(
-        (0, b"2024-03-22T02:17:29.185548486Z Downloading files"),
-        (0, b"2024-03-22T02:17:29.285548488Z Still downloading"),
-        (0, b"2024-03-22T02:17:29.385548487Z Finished downloading"),
-        (1, b"2024-03-22T02:17:29.485548486Z Main booting"),
-        (2, b"2024-03-22T02:17:29.585548488Z Sidecar booting"),
-        (1, b"2024-03-22T02:17:29.685548487Z Main started"),
-        (1, b"2024-03-22T02:17:29.785548486Z Main finished"),
-        (2, b"2024-03-22T02:17:29.885548488Z Sidecar waiting"),
-        (2, b"2024-03-22T02:17:29.985548487Z Sidecar finished"),
+        (0, b"2024-03-22T02:17:29.1855Z Downloading files"),
+        (0, b"2024-03-22T02:17:29.2855Z Still downloading"),
+        (0, b"2024-03-22T02:17:29.3855Z Finished downloading"),
+        (1, b"2024-03-22T02:17:29.4855Z Main booting"),
+        (2, b"2024-03-22T02:17:29.5855Z Sidecar booting"),
+        (1, b"2024-03-22T02:17:29.6855Z Main started"),
+        (1, b"2024-03-22T02:17:29.7855Z Main finished"),
+        (2, b"2024-03-22T02:17:29.8855Z Sidecar waiting"),
+        (2, b"2024-03-22T02:17:29.9855Z Sidecar finished"),
     )
 
     assert [
@@ -218,23 +192,23 @@ def test_multi_line_interleaved():
             0,
             textwrap.dedent(
                 """\
-                2024-03-22T02:17:29.185548486Z Downloading files
-                2024-03-22T02:17:29.285548488Z Still downloading
-                2024-03-22T02:17:29.385548487Z Finished downloading"""
+                2024-03-22T02:17:29.1855Z Downloading files
+                2024-03-22T02:17:29.2855Z Still downloading
+                2024-03-22T02:17:29.3855Z Finished downloading"""
             ).encode("utf-8"),
         ),
         (
             1,
             textwrap.dedent(
                 """\
-                2024-03-22T02:17:29.485548486Z Main booting
-                2024-03-22T02:17:29.685548487Z Main started"""
+                2024-03-22T02:17:29.4855Z Main booting
+                2024-03-22T02:17:29.6855Z Main started"""
             ).encode("utf-8"),
         ),
-        (2, b"2024-03-22T02:17:29.585548488Z Sidecar booting"),
-        (1, b"2024-03-22T02:17:29.785548486Z Main finished"),
-        (2, b"2024-03-22T02:17:29.885548488Z Sidecar waiting"),
-        (2, b"2024-03-22T02:17:29.985548487Z Sidecar finished"),
+        (2, b"2024-03-22T02:17:29.5855Z Sidecar booting"),
+        (1, b"2024-03-22T02:17:29.7855Z Main finished"),
+        (2, b"2024-03-22T02:17:29.8855Z Sidecar waiting"),
+        (2, b"2024-03-22T02:17:29.9855Z Sidecar finished"),
     )
 
     assert [
@@ -256,38 +230,38 @@ def test_deduplicating_logs():
             0,
             textwrap.dedent(
                 """\
-                2024-03-22T02:17:29.185548486Z Downloading files
-                2024-03-22T02:17:29.285548488Z Still downloading
-                2024-03-22T02:17:29.385548487Z Finished downloading"""
+                2024-03-22T02:17:29.1855Z Downloading files
+                2024-03-22T02:17:29.2855Z Still downloading
+                2024-03-22T02:17:29.3855Z Finished downloading"""
             ).encode("utf-8"),
         ),
         (
             1,
             textwrap.dedent(
                 """\
-                2024-03-22T02:17:29.485548486Z Main booting
-                2024-03-22T02:17:29.685548487Z Main started"""
+                2024-03-22T02:17:29.4855Z Main booting
+                2024-03-22T02:17:29.6855Z Main started"""
             ).encode("utf-8"),
         ),
-        (2, b"2024-03-22T02:17:29.585548488Z Sidecar booting"),
+        (2, b"2024-03-22T02:17:29.5855Z Sidecar booting"),
         (1, None),
         (
             1,
             textwrap.dedent(
                 """\
-                2024-03-22T02:17:29.485548486Z Main booting
-                2024-03-22T02:17:29.685548487Z Main started
-                2024-03-22T02:17:29.785548486Z Main finished with a restart"""
+                2024-03-22T02:17:29.4855Z Main booting
+                2024-03-22T02:17:29.6855Z Main started
+                2024-03-22T02:17:29.7855Z Main finished with a restart"""
             ).encode("utf-8"),
         ),
-        (2, b"2024-03-22T02:17:29.885548488Z Sidecar waiting"),
+        (2, b"2024-03-22T02:17:29.8855Z Sidecar waiting"),
         # Simulate a crash with a duplicate log line
         (2, None),
-        (2, b"2024-03-22T02:17:29.885548488Z Sidecar waiting"),
+        (2, b"2024-03-22T02:17:29.8855Z Sidecar waiting"),
         # Simulate a few restarts in a row with a final message from the sidecar
         (2, None),
         (2, None),
-        (2, b"2024-03-22T02:17:29.985548487Z Sidecar finished"),
+        (2, b"2024-03-22T02:17:29.9855Z Sidecar finished"),
     )
 
     assert [
@@ -305,13 +279,13 @@ def test_deduplicating_logs():
 
 def test_deduplicating_logs_with_buffer():
     got = _test_merge_logs(
-        (0, b"2024-03-22T02:17:29.985548487Z First message"),
-        (0, b"2024-03-22T02:17:29.985548488Z Second message"),
-        (0, b"2024-03-22T02:17:29.985548489Z Third message"),
+        (0, b"2024-03-22T02:17:29.9855Z First message"),
+        (0, b"2024-03-22T02:17:29.9855Z Second message"),
+        (0, b"2024-03-22T02:17:29.9855Z Third message"),
         (0, None),
-        (0, b"2024-03-22T02:17:29.985548487Z First message"),
-        (0, b"2024-03-22T02:17:29.985548488Z Second message"),
-        (0, b"2024-03-22T02:17:29.985548489Z Third message"),
+        (0, b"2024-03-22T02:17:29.9855Z First message"),
+        (0, b"2024-03-22T02:17:29.9855Z Second message"),
+        (0, b"2024-03-22T02:17:29.9855Z Third message"),
         recent_messages_buffer_size=1,
     )
 
@@ -395,9 +369,9 @@ def test_multiple_lines_in_a_chunk_with_the_same_timestamp():
             0,
             textwrap.dedent(
                 """\
-                2024-03-22T02:17:29.485548486Z {"order": "1"}
-                2024-03-22T02:17:29.485548486Z {"order": "2"}
-                2024-03-22T02:17:29.485548486Z {"order": "3"}
+                2024-03-22T02:17:29.4855Z {"order": "1"}
+                2024-03-22T02:17:29.4855Z {"order": "2"}
+                2024-03-22T02:17:29.4855Z {"order": "3"}
                 """
             ).encode("utf-8"),
         ),
@@ -416,11 +390,11 @@ def test_multiple_lines_in_a_chunk_with_lines_without_timestamp():
             0,
             textwrap.dedent(
                 """\
-                2024-03-22T02:17:29.485548486Z {"order":
+                2024-03-22T02:17:29.4855Z {"order":
                  "1"}
-                2024-03-22T02:17:29.485548487Z {"order":
+                2024-03-22T02:17:29.4855Z {"order":
                  "2"}
-                2024-03-22T02:17:29.485548488Z {"order":
+                2024-03-22T02:17:29.4855Z {"order":
                 """
             ).encode("utf-8"),
         ),
@@ -429,7 +403,7 @@ def test_multiple_lines_in_a_chunk_with_lines_without_timestamp():
             textwrap.dedent(
                 """\
                  "3"}
-                2024-03-22T02:17:29.485548488Z {"order": "4",
+                2024-03-22T02:17:29.4855Z {"order": "4",
                  "more_content_fill_to_eq_ts": "extra"}
                 """
             ).encode("utf-8"),
