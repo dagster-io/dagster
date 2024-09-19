@@ -7,7 +7,8 @@ from dagster_buildkite.steps.packages import (
     build_steps_from_package_specs,
     gcp_creds_extra_cmds,
 )
-from dagster_buildkite.utils import BuildkiteStep, InputStep
+from dagster_buildkite.utils import BuildkiteStep, BlockStep
+from dagster_buildkite.step_builder import CommandStepBuilder
 
 
 def build_prerelease_package_steps() -> List[BuildkiteStep]:
@@ -17,21 +18,38 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
         "python_modules/libraries", []
     )
 
-    input_step: InputStep = {
+    input_step: BlockStep = {
         "input": "foo",
         "prompt": None,
         "fields": [
             {
                 "select": "Select a package to publish",
-                "key": "package",
-                "options": [{"label": package, "value": package} for package in packages],
+                "key": "releasepackage",
+                "options": [{"label": package[len("python_modules/"):], "value": package} for package in packages],
                 "hint": None,
                 "default": None,
-                "required": None,
+                "required": True,
                 "multiple": None,
+            },
+            {
+                "text": "Enter the version to publish",
+                "required": False,
+                "key": "releaseversion",
+                "default": None,
+                "hint": "Leave blank to auto-increment the minor version",
             }
         ],
     }
     steps.append(input_step)
+
+    steps.append(  CommandStepBuilder(":package: Build and publish package")
+        .run(
+            "sh ./scripts/build_and_publish.sh $RELEASEPACKAGE $RELEASEVERSION",
+        )
+        .on_test_image(AvailablePythonVersion.get_default())
+        .build(),
+    )
+
+
 
     return steps

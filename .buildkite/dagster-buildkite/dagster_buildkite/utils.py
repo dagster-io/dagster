@@ -87,8 +87,8 @@ InputTextField = TypedDict(
     },
 )
 
-InputStep = TypedDict(
-    "InputStep",
+BlockStep = TypedDict(
+    "BlockStep",
     {
         "input": str,
         "prompt": Optional[str],
@@ -96,7 +96,7 @@ InputStep = TypedDict(
     },
 )
 
-BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep, InputStep]
+BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
