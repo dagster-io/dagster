@@ -104,7 +104,10 @@ class DagsterSigmaTranslator:
             ),
             **TableMetadataSet(
                 column_schema=TableSchema(
-                    columns=[TableColumn(name=column_name) for column_name in sorted(data.columns)]
+                    columns=[
+                        TableColumn(name=column_name, type="")
+                        for column_name in sorted(data.columns)
+                    ]
                 )
             ),
         }

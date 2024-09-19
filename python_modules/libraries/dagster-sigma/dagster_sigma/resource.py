@@ -1,7 +1,7 @@
 import urllib.parse
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Type
+from typing import Any, Dict, List, Mapping, Optional, Type, cast
 
 import requests
 from dagster import ConfigurableResource
@@ -165,11 +165,15 @@ class SigmaOrganization(ConfigurableResource):
                     lineage = self.fetch_lineage_for_element(
                         workbook["workbookId"], element["elementId"]
                     )
+                    dataset_inodes = set()
                     for inode, item in lineage["dependencies"].items():
                         if item.get("type") == "dataset":
                             workbook_deps.add(item["nodeId"])
                             dataset_inode_to_name[inode] = item["name"]
-                            dataset_element_to_inode[element["elementId"]] = item["nodeId"]
+                            dataset_inodes.add(inode)
+
+                    if len(dataset_inodes) == 1:
+                        dataset_element_to_inode[element["elementId"]] = dataset_inodes.pop()
 
                     # We can't query the list of columns in a dataset directly, so we have to build a partial
                     # list from the columns which appear in any workbook.
@@ -198,9 +202,12 @@ class SigmaOrganization(ConfigurableResource):
                     ]
                 )
 
-                deps_by_dataset_inode[dataset_element_to_inode[element_id]] = deps_by_dataset_inode[
-                    dataset_element_to_inode[element_id]
-                ].union(table_deps)
+                if element_id in dataset_element_to_inode:
+                    deps_by_dataset_inode[dataset_element_to_inode[element_id]] = (
+                        deps_by_dataset_inode[
+                            dataset_element_to_inode[element_id]
+                        ].union(table_deps)
+                    )
 
             workbooks.append(
                 SigmaWorkbook(
@@ -242,12 +249,16 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
+        initialized_self = cast(SigmaOrganization, self.process_config_and_initialize())
+
         # Attempt to load cached data from the context.
         if (
             context.load_type == DefinitionsLoadType.RECONSTRUCTION
-            and self.reconstruction_metadata_key in context.reconstruction_metadata
+            and initialized_self.reconstruction_metadata_key in context.reconstruction_metadata
         ):
-            cached_data = context.reconstruction_metadata[self.reconstruction_metadata_key]
+            cached_data = context.reconstruction_metadata[
+                initialized_self.reconstruction_metadata_key
+            ]
             workbooks = [
                 deserialize_value(workbook, as_type=SigmaWorkbook)
                 for workbook in cached_data["workbooks"]
@@ -257,7 +268,7 @@ class SigmaOrganization(ConfigurableResource):
                 for dataset in cached_data["datasets"]
             ]
         else:
-            organization_data = self.build_organization_data()
+            organization_data = initialized_self.build_organization_data()
             workbooks = organization_data.workbooks
             datasets = organization_data.datasets
             cached_data = {
@@ -275,5 +286,5 @@ class SigmaOrganization(ConfigurableResource):
         ]
 
         return Definitions(assets=asset_specs).with_reconstruction_metadata(
-            {self.reconstruction_metadata_key: cached_data}
+            {initialized_self.reconstruction_metadata_key: cached_data}
         )
