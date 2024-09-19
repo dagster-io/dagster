@@ -61,7 +61,7 @@ Create a new file with the following helper functions that read the environment 
 
 Both environment variables are base64 encoded, zip compressed JSON objects. Each JSON object contains a path that indicates where to read or write data.
 
-## Step 4: Integrate the utility functions into the script
+## Step 4: Emit events and report materializations from your external process
 
 Using the utility functions to decode the Dagster Pipes environment variables, you can send additional parameters into the JavaScript process. You can also output more information into the asset materializations.
 
