@@ -128,6 +128,7 @@ def _namedtuple_record_transform(
         (cls, base),
         {  # these will override an implementation on the class if it exists
             **{n: getattr(base, n) for n in field_set.keys()},
+            "_fields": base._fields,
             "__iter__": _banned_iter,
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
