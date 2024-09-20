@@ -34,7 +34,6 @@ To follow the steps in this guide, you will need:
 
 By following these steps, you will have a Dagster asset that successfully uploads a file to an SFTP server. This allows you to automate file transfers securely.
 
-
 ### Step 1: Install the SSH integration
 
 ```shell
