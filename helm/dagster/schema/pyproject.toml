@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-helm"
+version = "0.0.1"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = {text = "Apache-2.0"}
+description = "Tools for Dagster Helm schema"
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = ["click", "pydantic>=1.10.0,<2.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/helm/dagster/schema"
+
+[project.optional-dependencies]
+test = [
+    "kubernetes<22.6.0",
+    "dagster",
+    "dagster-aws",
+    "dagster-azure",
+    "dagster-gcp",
+    "dagster-k8s",
+]
+
+[project.scripts]
+dagster-helm = "schema.cli:main"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+exclude = ["schema_tests"]
+namespaces = false

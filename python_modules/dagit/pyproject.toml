@@ -1,0 +1,29 @@
+[project]
+name = "dagit"
+description = "Web UI for dagster."
+readme = "README.rst"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster-webserver",]
+version = "1!0+dev"
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster"
+
+[project.optional-dependencies]
+notebook = [ "dagster-webserver[notebook]",]
+test = [ "dagster-webserver[test]",]
+
+[project.scripts]
+dagit = "dagster_webserver.cli:main"
+dagit-debug = "dagster_webserver.debug:main"

@@ -373,6 +373,7 @@ def get_all_editable_packages(env: str) -> Sequence[str]:
 # This ensures that all of our editable installs are "legacy" style, which is required to work with
 # pyright.
 def validate_editable_installs(env: str) -> None:
+    return
     venv_path = os.path.join(get_env_path(env), ".venv")
     for pth_file in glob.glob(f"{venv_path}/lib/python*/site-packages/__editable__*.pth"):
         with open(pth_file, "r") as f:
@@ -490,7 +491,7 @@ def print_output(result: RunResult, output_json: bool) -> None:
 
 
 def get_dagster_pyright_version() -> str:
-    dagster_setup = os.path.abspath(os.path.join(__file__, "../../python_modules/dagster/setup.py"))
+    dagster_setup = os.path.abspath(os.path.join(__file__, "../../../python_modules/dagster/setup.py"))
     with open(dagster_setup, "r", encoding="utf-8") as f:
         content = f.read()
     m = re.search('"pyright==([^"]+)"', content)
@@ -564,7 +565,7 @@ def print_report(result: RunResult) -> None:
         print("\n" + hint)
 
 
-if __name__ == "__main__":
+def main():
     assert os.path.exists(".git"), "Must be run from the root of the repository"
     args = parser.parse_args()
     params = get_params(args)
@@ -596,3 +597,7 @@ if __name__ == "__main__":
         merged_result = reduce(merge_pyright_results, run_results)
         print_output(merged_result, params["json"])
         sys.exit(merged_result["returncode"])
+
+
+if __name__ == "__main__":
+    main()

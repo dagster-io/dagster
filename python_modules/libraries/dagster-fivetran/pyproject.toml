@@ -1,0 +1,27 @@
+[project]
+name = "dagster-fivetran"
+version = "1!0+dev"
+description = "Package for integrating Fivetran with Dagster."
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster",]
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran"
+
+[project.optional-dependencies]
+managed = [ "dagster-managed-elements",]
+
+[project.scripts]
+dagster-fivetran = "dagster_fivetran.cli:main"

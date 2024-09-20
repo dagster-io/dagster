@@ -1,0 +1,21 @@
+[project]
+name = "dagster-github"
+version = "1!0+dev"
+description = "A Github client resource for interacting with the github API with a github App"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster", "pyjwt[crypto]", "requests",]
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github"

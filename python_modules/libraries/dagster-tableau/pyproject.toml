@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster_tableau"
+version = "1!0+dev"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = {text = "Apache-2.0"}
+description = "Build assets representing Tableau workbooks and sheets."
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8,<3.13"
+dependencies = ["dagster", "pyjwt[crypto]", "requests"]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["dagster_tableau_tests*"]
+namespaces = false

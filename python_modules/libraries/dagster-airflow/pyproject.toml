@@ -1,0 +1,32 @@
+[project]
+name = "dagster-airflow"
+version = "1!0+dev"
+description = "Airflow plugin for Dagster"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster", "lazy_object_proxy", "pendulum", "setuptools<71.0.0", "urllib3<2",]
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster"
+"project-url/documentation" = "https://docs.dagster.io"
+
+[project.optional-dependencies]
+kubernetes = [ "cryptography>=2.0.0", "kubernetes>=3.0.0",]
+test = [ "connexion<3.0.0",]
+
+[project.entry-points."airflow.plugins"]
+dagster_airflow = "dagster_airflow.__init__:DagsterAirflowPlugin"
+
+[project.entry-points.apache_airflow_provider]
+provider_info = "dagster_airflow.__init__:get_provider_info"

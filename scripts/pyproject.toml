@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster-scripts"
+version = "0.1.0"
+authors = [{name = "Elementl", email = "hello@elementl.com"}]
+license = {text = "Apache-2.0"}
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "tomli",
+    "typing-extensions",
+    "pyright",
+]
+
+[project.scripts]
+run-pyright = "dagster_scripts.run_pyright:main"
+
+[tool.setuptools.packages.find]
+exclude = ["templates_create_dagster_package"]

@@ -1,0 +1,24 @@
+[project]
+name = "dagstermill"
+version = "1!0+dev"
+description = "run notebooks using the Dagster tools"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster", "ipykernel>=4.9.0,!=5.4.0,!=5.4.1", "ipython_genutils>=0.2.0", "jupyter-client<8", "nbconvert", "packaging>=20.9", "papermill>=1.0.0", "scrapbook>=0.5.0",]
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.optional-dependencies]
+test = [ ]
+
+[project.scripts]
+dagstermill = "dagstermill.cli:main"

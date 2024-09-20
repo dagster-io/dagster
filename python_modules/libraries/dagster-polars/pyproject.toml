@@ -1,0 +1,26 @@
+[project]
+name = "dagster-polars"
+version = "1!0+dev"
+description = "Dagster integration library for Polars"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster", "polars>=0.20.0", "pyarrow>=8.0.0", "typing-extensions>=4.7.0", "universal_pathlib>=0.1.4",]
+[[project.authors]]
+name = "Daniel Gafni"
+email = "danielgafni16@gmail.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-polars"
+
+[project.optional-dependencies]
+deltalake = [ "deltalake>=0.15.0",]
+gcp = [ "dagster-gcp>=0.19.5",]
+test = [ "deepdiff>=6.3.0", "hypothesis[zoneinfo]>=6.89.0", "pytest-cases>=3.6.14", "pytest>=8",]
