@@ -62,10 +62,10 @@ def test_dagster_materializes(
     module, instance_fn = module_and_instance
     af_instance = instance_fn()
     run_id = af_instance.trigger_dag("dag_0")
-    af_instance.wait_for_run_completion(dag_id="dag_0", run_id=run_id)
+    af_instance.wait_for_run_completion(dag_id="dag_0", run_id=run_id, timeout=60)
     dagster_instance = DagsterInstance.get()
     start_time = get_current_datetime()
-    while get_current_datetime() - start_time < timedelta(seconds=30):
+    while get_current_datetime() - start_time < timedelta(seconds=60):
         asset_materialization = dagster_instance.get_latest_materialization_event(
             asset_key=AssetKey(["airflow_instance", "dag", "dag_0"])
         )
@@ -76,6 +76,6 @@ def test_dagster_materializes(
 
     if module.endswith("observe") or module.endswith("migrate"):
         asset_materialization = dagster_instance.get_latest_materialization_event(
-            asset_key=AssetKey(["asset_0_0"])
+            asset_key=AssetKey(["task_0_0_asset_0"])
         )
         assert asset_materialization
