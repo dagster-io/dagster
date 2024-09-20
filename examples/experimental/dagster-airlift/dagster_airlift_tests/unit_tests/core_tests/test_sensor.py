@@ -22,7 +22,7 @@ from dagster_airlift_tests.unit_tests.conftest import (
 )
 
 
-def test_dag_and_task_metadata() -> None:
+def test_dag_and_task_metadata(init_load_context: None) -> None:
     """Test the metadata produced by a sensor for a single dag and task."""
     freeze_datetime = datetime(2021, 1, 1)
 
@@ -96,7 +96,7 @@ def test_dag_and_task_metadata() -> None:
         assert dag_mat.metadata["Run Type"].value == "manual"
 
 
-def test_interleaved_exeutions() -> None:
+def test_interleaved_executions(init_load_context: None) -> None:
     """Test that the when task / dag completion is interleaved the correct ordering is preserved."""
     # Asset graph structure:
     #   a -> b where a and b are each in their own airflow tasks.
@@ -128,7 +128,7 @@ def test_interleaved_exeutions() -> None:
         assert cursor.dag_query_offset == 0
 
 
-def test_dependencies_within_tasks() -> None:
+def test_dependencies_within_tasks(init_load_context: None) -> None:
     """Test that a complex asset graph structure can be ingested in correct order from the sensor.
     Where a, b, and c are part of task 1, and d, e, and f are part of task 2.
     """
@@ -161,7 +161,7 @@ def test_dependencies_within_tasks() -> None:
         assert cursor.dag_query_offset == 0
 
 
-def test_outside_of_dag_dependency() -> None:
+def test_outside_of_dag_dependency(init_load_context: None) -> None:
     """Test that if an asset has a transitive dependency on another asset within the same task, ordering is respected."""
     # a -> b -> c where a and c are in the same task, and b is not in any dag.
     freeze_datetime = datetime(2021, 1, 1)
@@ -182,7 +182,7 @@ def test_outside_of_dag_dependency() -> None:
         assert cursor.dag_query_offset == 0
 
 
-def test_request_asset_checks() -> None:
+def test_request_asset_checks(init_load_context: None) -> None:
     """Test that when a new dag or task run is detected, a new check run is requested for all checks which may target that dag/task."""
     freeze_datetime = datetime(2021, 1, 1)
 
@@ -239,7 +239,7 @@ def _mock_get_current_datetime() -> datetime:
     return next_time
 
 
-def test_cursor() -> None:
+def test_cursor(init_load_context: None) -> None:
     """Test expected cursor behavior for sensor."""
     asset_and_dag_structure = {
         "dag1": {"task1": [("a", [])]},
@@ -291,15 +291,11 @@ def test_cursor() -> None:
         assert new_cursor.dag_query_offset == 0
 
 
-def test_legacy_cursor() -> None:
+def test_legacy_cursor(init_load_context: None) -> None:
     """Test the case where a legacy/uninterpretable cursor is provided to the sensor execution."""
     freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
     with freeze_time(freeze_datetime):
-        repo_def = fully_loaded_repo_from_airflow_asset_graph(
-            {
-                "dag": {"task": [("a", [])]},
-            }
-        )
+        repo_def = fully_loaded_repo_from_airflow_asset_graph({"dag": {"task": [("a", [])]}})
         sensor = next(iter(repo_def.sensor_defs))
         context = build_sensor_context(
             repository_def=repo_def, cursor=str(freeze_datetime.timestamp())
@@ -313,14 +309,12 @@ def test_legacy_cursor() -> None:
         assert new_cursor.dag_query_offset == 0
 
 
-def test_no_runs() -> None:
+def test_no_runs(init_load_context: None) -> None:
     """Test the case with no runs."""
     freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
     with freeze_time(freeze_datetime):
         repo_def = fully_loaded_repo_from_airflow_asset_graph(
-            {
-                "dag": {"task": [("a", [])]},
-            },
+            {"dag": {"task": [("a", [])]}},
             create_runs=False,
         )
         sensor = next(iter(repo_def.sensor_defs))
