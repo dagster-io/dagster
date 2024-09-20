@@ -11,6 +11,7 @@ from dagster import (
     AssetCheckResult,
     AssetKey,
     AssetsDefinition,
+    DagsterInstance,
     DynamicOut,
     DynamicOutput,
     Failure,
@@ -22,7 +23,6 @@ from dagster import (
     String,
     asset,
     define_asset_job,
-    file_relative_path,
     fs_io_manager,
     job,
     op,
@@ -58,11 +58,11 @@ from dagster._core.execution.plan.external_step import (
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils.test.definitions import lazy_definitions
 
 RUN_CONFIG_BASE = {"ops": {"return_two": {"config": {"a": "b"}}}}
 
@@ -678,8 +678,7 @@ def test_multiproc_launcher_with_repository_load_data():
         with instance_for_test() as instance:
             instance.run_storage.set_cursor_values({"val": "INITIAL_VALUE"})
             recon_repo = ReconstructableRepository.for_file(
-                file_relative_path(__file__, "test_external_step.py"),
-                fn_name="pending_repo",
+                __file__, fn_name="cacheable_asset_defs"
             )
             recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
@@ -726,11 +725,14 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
 
 
-@asset
-def bar(foo):
-    return foo + 1
+@lazy_definitions
+def cacheable_asset_defs():
+    @asset
+    def bar(foo):
+        return foo + 1
 
+    @repository
+    def repo():
+        return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
 
-@repository
-def pending_repo():
-    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+    return repo

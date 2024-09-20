@@ -6,7 +6,6 @@ from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryD
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.load_assets_from_modules import assets_from_modules
-from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 
@@ -71,9 +70,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
 
         return loadable_defs
 
-    loadable_repos = _loadable_targets_of_type(
-        module, (RepositoryDefinition, PendingRepositoryDefinition)
-    )
+    loadable_repos = _loadable_targets_of_type(module, RepositoryDefinition)
     if loadable_repos:
         return loadable_repos
 
