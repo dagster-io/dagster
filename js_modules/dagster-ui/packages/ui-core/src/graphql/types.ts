@@ -737,7 +737,9 @@ export enum BulkActionStatus {
 export type BulkActionsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  jobName?: InputMaybe<Scalars['String']['input']>;
   statuses?: InputMaybe<Array<BulkActionStatus>>;
+  tags?: InputMaybe<Array<ExecutionTag>>;
 };
 
 export type CancelBackfillResult = CancelBackfillSuccess | PythonError | UnauthorizedError;
@@ -6996,7 +6998,9 @@ export const buildBulkActionsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 6.09,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 1.5,
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'consequatur',
     statuses: overrides && overrides.hasOwnProperty('statuses') ? overrides.statuses! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 

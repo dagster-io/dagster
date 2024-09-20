@@ -2404,6 +2404,8 @@ input BulkActionsFilter {
   statuses: [BulkActionStatus!]
   createdBefore: Float
   createdAfter: Float
+  jobName: String
+  tags: [ExecutionTag!]
 }
 
 enum BulkActionStatus {

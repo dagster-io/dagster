@@ -385,6 +385,8 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
     )
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
+    jobName = graphene.InputField(graphene.String)
+    tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
 
     class Meta:
         description = """This type represents a filter on Dagster Bulk Actions (backfills)."""
@@ -396,11 +398,18 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
         )
         created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
         created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
+        if self.tags:
+            # We are wrapping self.tags in a list because graphene.List is not marked as iterable
+            tags = {tag["key"]: tag["value"] for tag in list(self.tags)}
+        else:
+            tags = None
 
         return BulkActionsFilter(
             statuses=statuses,
             created_before=created_before,
             created_after=created_after,
+            tags=tags,
+            job_name=self.jobName,
         )
 
 
