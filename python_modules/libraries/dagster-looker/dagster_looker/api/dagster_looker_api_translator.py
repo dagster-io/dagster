@@ -1,4 +1,5 @@
-from typing import Any, Dict, Mapping, Sequence, Union
+from enum import Enum
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from dagster import (
     AssetSpec,
@@ -69,13 +70,54 @@ class LookerInstanceData:
         )
 
 
+class LookerStructureType(Enum):
+    EXPLORE = "explore"
+    DASHBOARD = "dashboard"
+
+
+@record
+class LookmlView:
+    view_name: str
+    sql_table_name: Optional[str]
+
+
+@record
+class LookerStructureData:
+    structure_type: LookerStructureType
+    data: Union[LookmlView, LookmlModelExplore, DashboardFilter, Dashboard]
+
+
 class DagsterLookerApiTranslator:
+    def get_view_asset_spec(self, lookml_view: LookmlView) -> AssetSpec:
+        return AssetSpec(
+            key=["view", lookml_view.view_name],
+        )
+
     def get_explore_asset_spec(
         self, lookml_explore: Union[LookmlModelExplore, DashboardFilter]
     ) -> AssetSpec:
         if isinstance(lookml_explore, LookmlModelExplore):
+            explore_base_view = LookmlView(
+                view_name=check.not_none(lookml_explore.view_name),
+                sql_table_name=check.not_none(lookml_explore.sql_table_name),
+            )
+
+            explore_join_views = [
+                LookmlView(
+                    view_name=check.not_none(lookml_explore_join.from_ or lookml_explore_join.name),
+                    sql_table_name=lookml_explore_join.sql_table_name,
+                )
+                for lookml_explore_join in (lookml_explore.joins or [])
+            ]
+
             return AssetSpec(
                 key=check.not_none(lookml_explore.id),
+                deps=list(
+                    {
+                        self.get_view_asset_spec(lookml_view).key
+                        for lookml_view in [explore_base_view, *explore_join_views]
+                    }
+                ),
                 tags={
                     "dagster/kind/looker": "",
                     "dagster/kind/explore": "",
@@ -102,8 +144,14 @@ class DagsterLookerApiTranslator:
             },
         )
 
-    def get_asset_spec(self, api_model: Union[LookmlModelExplore, Dashboard]) -> AssetSpec:
-        if isinstance(api_model, Dashboard):
-            return self.get_dashboard_asset_spec(api_model)
-        elif isinstance(api_model, LookmlModelExplore):
-            return self.get_explore_asset_spec(api_model)
+    def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        if looker_structure.structure_type == LookerStructureType.EXPLORE:
+            data = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
+
+            return self.get_explore_asset_spec(data)
+        elif looker_structure.structure_type == LookerStructureType.DASHBOARD:
+            data = check.inst(looker_structure.data, Dashboard)
+
+            return self.get_dashboard_asset_spec(data)
+        else:
+            check.assert_never(looker_structure.structure_type)

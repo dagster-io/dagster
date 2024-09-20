@@ -13,6 +13,8 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerInstanceData,
+    LookerStructureData,
+    LookerStructureType,
 )
 
 if TYPE_CHECKING:
@@ -51,11 +53,19 @@ class LookerCacheableAssetsDefinition(CacheableAssetsDefinition):
             *external_assets_from_specs(
                 [
                     *(
-                        self._dagster_looker_translator.get_asset_spec(lookml_explore)
+                        self._dagster_looker_translator.get_asset_spec(
+                            LookerStructureData(
+                                structure_type=LookerStructureType.EXPLORE, data=lookml_explore
+                            )
+                        )
                         for lookml_explore in looker_instance_data.explores_by_id.values()
                     ),
                     *(
-                        self._dagster_looker_translator.get_asset_spec(looker_dashboard)
+                        self._dagster_looker_translator.get_asset_spec(
+                            LookerStructureData(
+                                structure_type=LookerStructureType.DASHBOARD, data=looker_dashboard
+                            )
+                        )
                         for looker_dashboard in looker_instance_data.dashboards_by_id.values()
                     ),
                 ]
