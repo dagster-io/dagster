@@ -555,7 +555,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         return AnyDownstreamConditionsCondition()
 
 
-class BuiltinAutomationCondition(AutomationCondition[T_EntityKey], DagsterModel):
+class BuiltinAutomationCondition(DagsterModel, AutomationCondition[T_EntityKey]):
     """Base class for AutomationConditions provided by the core dagster framework."""
 
     label: Optional[str] = None
