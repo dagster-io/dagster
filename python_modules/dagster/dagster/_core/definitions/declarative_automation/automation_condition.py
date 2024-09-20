@@ -555,7 +555,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         return AnyDownstreamConditionsCondition()
 
 
-class BuiltinAutomationCondition(AutomationCondition[T_EntityKey], DagsterModel):
+class BuiltinAutomationCondition(DagsterModel, AutomationCondition[T_EntityKey]):
     """Base class for AutomationConditions provided by the core dagster framework."""
 
     label: Optional[str] = None
@@ -566,7 +566,7 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey], DagsterModel)
         return self.model_copy(update={"label": label})
 
     def __hash__(self) -> int:
-        return super().__hash__()
+        return self.get_hash()
 
 
 class AutomationResult(Generic[T_EntityKey]):
