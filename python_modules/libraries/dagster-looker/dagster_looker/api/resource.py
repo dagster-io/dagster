@@ -22,7 +22,8 @@ from dagster_looker.api.dagster_looker_api_translator import (
 if TYPE_CHECKING:
     from looker_sdk.sdk.api40.models import LookmlModelExplore
 
-logger = get_dagster_logger("dagster-looker")
+
+logger = get_dagster_logger("dagster_looker")
 
 
 class LookerResource(ConfigurableResource):
@@ -50,7 +51,7 @@ class LookerResource(ConfigurableResource):
 
         return init40(config_settings=DagsterLookerApiSettings())
 
-    def fetch_looker_data(self) -> LookerInstanceData:
+    def fetch_looker_instance_data(self) -> LookerInstanceData:
         """Fetches all explores and dashboards from the Looker instance.
 
         TODO: Fetch explores in parallel using asyncio
@@ -73,7 +74,7 @@ class LookerResource(ConfigurableResource):
             if model.name
         }
 
-        explores_by_id: Dict["str", "LookmlModelExplore"] = {}
+        explores_by_id: Dict[str, "LookmlModelExplore"] = {}
         for model_name, explore_names in explores_for_model.items():
             for explore_name in explore_names:
                 try:
