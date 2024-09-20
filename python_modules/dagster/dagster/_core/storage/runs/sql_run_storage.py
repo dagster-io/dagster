@@ -301,7 +301,7 @@ class SqlRunStorage(RunStorage):
             runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
                 RunTagsTable.c.key == BACKFILL_ID_TAG
             )
-            query = query.where(RunsTable.c.run_id.not_in(db_subquery(runs_in_backfills)))
+            query = query.where(~RunsTable.c.run_id.in_(db_subquery(runs_in_backfills)))
 
         return query
 
