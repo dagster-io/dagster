@@ -8,10 +8,9 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
-from .utils import (
+from dagster_airlift.test import (
     poll_for_asset_check,
     poll_for_materialization,
-    start_run_and_wait_for_completion,
     wait_for_all_runs_to_complete,
 )
 
@@ -29,14 +28,15 @@ def setup_dagster_defs_path(
             makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "migrate_with_check.py"
         )
 
-
-@pytest.mark.skip(reason="Flakiness, @benpankow to investigate")
+@pytest.mark.parametrize(
+    "i", range(1)
+)
 def test_migrate_runs_properly_in_dagster_with_check(
-    airflow_instance: None, dagster_dev: None
+    airflow_instance: None, dagster_dev: None, i: int
 ) -> None:
     instance = DagsterInstance.get()
 
-    from tutorial_example.dagster_defs.stages.migrate_with_check import defs
+    from tutorial_example.dagster_defs.stages.migrate_with_check import defs, airflow_instance as af_instance
 
     all_keys = [spec.key for spec in defs.get_all_asset_specs()]
     assert len(all_keys) == 10
@@ -45,7 +45,8 @@ def test_migrate_runs_properly_in_dagster_with_check(
     for key, event in mat_events.items():
         assert event is None, f"Materialization event for {key} is not None"
 
-    start_run_and_wait_for_completion("rebuild_customers_list")
+    run_id = af_instance.trigger_dag("rebuild_customers_list")
+    af_instance.wait_for_run_completion("rebuild_customers_list", run_id)
 
     poll_for_materialization(instance, target=all_keys)
 

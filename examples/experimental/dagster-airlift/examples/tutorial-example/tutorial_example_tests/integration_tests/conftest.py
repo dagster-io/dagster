@@ -9,6 +9,7 @@ from typing import AbstractSet, Callable, Generator, Iterator
 import pytest
 import yaml
 from dagster._core.test_utils import environ
+from dagster_airlift.test.shared_fixtures import stand_up_airflow
 
 
 @pytest.fixture(name="makefile_dir")
@@ -90,3 +91,8 @@ def mark_tasks_migrated_fixture(
                 f.write(contents)
 
     return mark_tasks_migrated
+
+@pytest.fixture(name="airflow_instance")
+def airflow_instance_fixture(setup: None) -> Generator[subprocess.Popen, None, None]:
+    with stand_up_airflow(env=os.environ) as process:
+        yield process

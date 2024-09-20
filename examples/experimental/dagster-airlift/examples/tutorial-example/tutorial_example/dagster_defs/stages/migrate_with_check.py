@@ -8,7 +8,6 @@ from dagster import (
     AssetSpec,
     Definitions,
     asset_check,
-    materialize,
     multi_asset,
 )
 from dagster_airlift.core import (
@@ -114,24 +113,18 @@ def rebuild_customer_list_defs() -> Definitions:
     )
 
 
+airflow_instance = AirflowInstance(
+    auth_backend=BasicAuthBackend(
+        webserver_url="http://localhost:8080",
+        username="admin",
+        password="admin",
+    ),
+    name="airflow_instance_one",
+)
 defs = Definitions.merge(
     build_defs_from_airflow_instance(
-        airflow_instance=AirflowInstance(
-            auth_backend=BasicAuthBackend(
-                webserver_url="http://localhost:8080",
-                username="admin",
-                password="admin",
-            ),
-            name="airflow_instance_one",
-        ),
+        airflow_instance=airflow_instance,
         defs=rebuild_customer_list_defs(),
     ),
     Definitions(asset_checks=[validate_exported_csv]),
 )
-
-
-if __name__ == "__main__":
-    assert dbt_project_path().exists()
-    # print(dbt_project_path().absolute())
-    Definitions.validate_loadable(defs)
-    materialize(defs.get_asset_graph().assets_defs)
