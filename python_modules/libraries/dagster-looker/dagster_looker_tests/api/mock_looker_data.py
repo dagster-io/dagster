@@ -1,3 +1,5 @@
+import json
+
 from looker_sdk.sdk.api40.models import (
     Dashboard,
     DashboardBase,
@@ -5,6 +7,7 @@ from looker_sdk.sdk.api40.models import (
     LookmlModel,
     LookmlModelExplore,
     LookmlModelNavExplore,
+    MaterializePDT,
 )
 
 mock_lookml_models = [
@@ -31,4 +34,12 @@ mock_looker_dashboard = Dashboard(
     dashboard_filters=[
         DashboardFilter(model="my_model", explore="my_explore"),
     ],
+)
+
+mock_start_pdt_build = MaterializePDT(
+    materialization_id="100",
+)
+mock_check_pdt_build = MaterializePDT(
+    materialization_id="100",
+    resp_text=json.dumps({"status": "running"}),
 )

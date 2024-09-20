@@ -2,6 +2,7 @@ from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator as DagsterLookerApiTranslator,
+    RequestStartPdtBuild as RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerResource as LookerResource
 from dagster_looker.lkml.asset_specs import build_looker_asset_specs as build_looker_asset_specs

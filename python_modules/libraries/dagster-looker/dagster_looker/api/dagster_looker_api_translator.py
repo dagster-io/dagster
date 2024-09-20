@@ -70,7 +70,18 @@ class LookerInstanceData:
         )
 
 
+@record
+class RequestStartPdtBuild:
+    model_name: str
+    view_name: str
+    force_rebuild: Optional[str] = None
+    force_full_incremental: Optional[str] = None
+    workspace: Optional[str] = None
+    source: Optional[str] = None
+
+
 class LookerStructureType(Enum):
+    VIEW = "view"
     EXPLORE = "explore"
     DASHBOARD = "dashboard"
 
@@ -145,6 +156,10 @@ class DagsterLookerApiTranslator:
         )
 
     def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        if looker_structure.structure_type == LookerStructureType.VIEW:
+            data = check.inst(looker_structure.data, LookmlView)
+
+            return self.get_view_asset_spec(data)
         if looker_structure.structure_type == LookerStructureType.EXPLORE:
             data = check.inst(looker_structure.data, (LookmlModelExplore, DashboardFilter))
 

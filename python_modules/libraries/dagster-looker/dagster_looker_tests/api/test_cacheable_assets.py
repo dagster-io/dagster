@@ -2,18 +2,21 @@ from typing import Iterator
 
 import pytest
 import responses
-from dagster import AssetKey, AssetSpec
+from dagster import AssetKey, AssetSpec, materialize
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerStructureData,
+    RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerResource
 
 from dagster_looker_tests.api.mock_looker_data import (
+    mock_check_pdt_build,
     mock_looker_dashboard,
     mock_looker_dashboard_bases,
     mock_lookml_explore,
     mock_lookml_models,
+    mock_start_pdt_build,
 )
 
 TEST_BASE_URL = "https://your.cloud.looker.com"
@@ -100,6 +103,42 @@ def test_build_defs(
         "dagster/kind/looker": "",
         "dagster/kind/dashboard": "",
     }
+
+
+@responses.activate
+def test_build_defs_with_pdts(
+    looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
+) -> None:
+    assets_by_key = {
+        asset.key: asset
+        for asset in looker_resource.build_defs(
+            request_start_pdt_builds=[
+                RequestStartPdtBuild(model_name="my_model", view_name="my_view")
+            ]
+        )
+        .get_asset_graph()
+        .assets_defs
+    }
+
+    assert len(assets_by_key) == 3
+
+    sdk = looker_resource.get_sdk()
+
+    responses.add(
+        method=responses.GET,
+        url=f"{TEST_BASE_URL}/api/4.0/derived_table/my_model/my_view/start",
+        body=sdk.serialize(api_model=mock_start_pdt_build),  # type: ignore
+    )
+
+    responses.add(
+        method=responses.GET,
+        url=f"{TEST_BASE_URL}/api/4.0/derived_table/{mock_start_pdt_build.materialization_id}/status",
+        body=sdk.serialize(api_model=mock_check_pdt_build),  # type: ignore
+    )
+
+    result = materialize([assets_by_key[AssetKey(["view", "my_view"])]])
+
+    assert result.success
 
 
 @responses.activate
