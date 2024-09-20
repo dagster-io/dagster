@@ -92,7 +92,9 @@ def fetch_row_count_metadata(
             return dict(TableMetadataSet(row_count=row_count))
         except Exception:
             context.log.warning(
-                "Failed to fetch row count for stream %s", stream_name, exc_info=True
+                "Failed to fetch row count for stream %s\nException: {e}",
+                stream_name,
+                exc_info=True,
             )
 
     return {}
@@ -158,7 +160,9 @@ def fetch_column_metadata(
             )
         except Exception:
             context.log.warning(
-                "Failed to fetch column metadata for stream %s", stream_name, exc_info=True
+                "Failed to fetch column metadata for stream %s\nException: {e}",
+                stream_name,
+                exc_info=True,
             )
 
     return {}
