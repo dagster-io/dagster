@@ -61,9 +61,25 @@ class LookerResource(ConfigurableResource):
         sdk = self.get_sdk()
 
         # Get dashboards
-        dashboards = sdk.all_dashboards()
+        dashboards = sdk.all_dashboards(
+            fields=",".join(
+                [
+                    "id",
+                    "hidden",
+                ]
+            )
+        )
         dashboards_by_id = {
-            dashboard.id: sdk.dashboard(dashboard_id=dashboard.id)
+            dashboard.id: sdk.dashboard(
+                dashboard_id=dashboard.id,
+                fields=",".join(
+                    [
+                        "id",
+                        "title",
+                        "dashboard_filters",
+                    ]
+                ),
+            )
             for dashboard in dashboards
             if dashboard.id and not dashboard.hidden
         }
@@ -71,7 +87,14 @@ class LookerResource(ConfigurableResource):
         # Get explore names from models
         explores_for_model = {
             model.name: [explore.name for explore in (model.explores or []) if explore.name]
-            for model in sdk.all_lookml_models()
+            for model in sdk.all_lookml_models(
+                fields=",".join(
+                    [
+                        "name",
+                        "explores",
+                    ]
+                )
+            )
             if model.name
         }
 
@@ -82,6 +105,14 @@ class LookerResource(ConfigurableResource):
                     lookml_explore = sdk.lookml_model_explore(
                         lookml_model_name=model_name,
                         explore_name=explore_name,
+                        fields=",".join(
+                            [
+                                "id",
+                                "view_name",
+                                "sql_table_name",
+                                "joins",
+                            ]
+                        ),
                     )
 
                     explores_by_id[check.not_none(lookml_explore.id)] = lookml_explore
