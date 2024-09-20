@@ -57,12 +57,10 @@ class DefinitionsLoadContext:
 
     @classmethod
     def get(cls) -> "DefinitionsLoadContext":
-        """Get the current DefinitionsLoadContext."""
-        if not DefinitionsLoadContext._instance:
-            raise DagsterInvariantViolationError(
-                "Attempted to access the global DefinitionsLoadContext before it has been set."
-            )
-        return DefinitionsLoadContext._instance
+        """Get the current DefinitionsLoadContext. If it has not been set, the
+        context is assumed to be initialization.
+        """
+        return DefinitionsLoadContext._instance or cls(load_type=DefinitionsLoadType.INITIALIZATION)
 
     @classmethod
     def set(cls, instance: "DefinitionsLoadContext") -> None:
