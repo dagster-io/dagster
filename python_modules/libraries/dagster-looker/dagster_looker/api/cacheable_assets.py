@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Sequence
 
 from dagster import (
     AssetsDefinition,
-    AssetSpec,
     _check as check,
     external_assets_from_specs,
 )
@@ -12,15 +11,23 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from looker_sdk.sdk.api40.models import LookmlModelExplore
 
-from dagster_looker.api.translator import LookerInstanceData
+from dagster_looker.api.dagster_looker_api_translator import (
+    DagsterLookerApiTranslator,
+    LookerInstanceData,
+)
 
 if TYPE_CHECKING:
     from dagster_looker.api.resource import LookerResource
 
 
 class LookerCacheableAssetsDefinition(CacheableAssetsDefinition):
-    def __init__(self, looker: "LookerResource"):
+    def __init__(
+        self,
+        looker: "LookerResource",
+        dagster_looker_translator: DagsterLookerApiTranslator,
+    ):
         self._looker = looker
+        self._dagster_looker_translator = dagster_looker_translator
         super().__init__(unique_id=self._looker.client_id)
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
@@ -42,7 +49,7 @@ class LookerCacheableAssetsDefinition(CacheableAssetsDefinition):
         self,
         data: Sequence[AssetsDefinitionCacheableData],
     ) -> Sequence[AssetsDefinition]:
-        a = LookerInstanceData(
+        looker_instance_data = LookerInstanceData(
             explores_by_id={
                 explore_id: (
                     self._looker.get_sdk().deserialize(
@@ -57,6 +64,9 @@ class LookerCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         return [
             *external_assets_from_specs(
-                [AssetSpec(key=explore_id) for explore_id, explore_data in a.explores_by_id.items()]
+                [
+                    self._dagster_looker_translator.get_asset_spec(looker_explore)
+                    for looker_explore in looker_instance_data.explores_by_id.values()
+                ]
             )
         ]
