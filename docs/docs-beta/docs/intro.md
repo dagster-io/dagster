@@ -3,6 +3,7 @@ title: Overview
 description: Dagster's Documentation
 slug: /
 displayed_sidebar: 'docs'
+hide_table_of_contents: true
 ---
 
 import { Card, CardGroup } from '@site/src/components/Cards';
