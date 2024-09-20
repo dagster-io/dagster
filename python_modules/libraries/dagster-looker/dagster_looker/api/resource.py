@@ -17,6 +17,7 @@ from dagster_looker.api.cacheable_assets import LookerCacheableAssetsDefinition
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerInstanceData,
+    RequestStartPdtBuild,
 )
 
 if TYPE_CHECKING:
@@ -97,23 +98,45 @@ class LookerResource(ConfigurableResource):
     def build_assets(
         self,
         *,
+        request_start_pdt_builds: Sequence[RequestStartPdtBuild],
         dagster_looker_translator: DagsterLookerApiTranslator,
     ) -> Sequence[CacheableAssetsDefinition]:
         dagster_looker_translator = check.inst(
             dagster_looker_translator, DagsterLookerApiTranslator
         )
 
-        return [LookerCacheableAssetsDefinition(self, dagster_looker_translator)]
+        return [
+            LookerCacheableAssetsDefinition(
+                self, request_start_pdt_builds, dagster_looker_translator
+            )
+        ]
 
     def build_defs(
         self,
         *,
+        request_start_pdt_builds: Optional[Sequence[RequestStartPdtBuild]] = None,
         dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
     ) -> Definitions:
+        """Returns a Definitions object which will load structures from the Looker instance
+        and translate it into assets, using the provided translator.
+
+        Args:
+            request_start_pdt_builds (Optional[Sequence[RequestStartPdtBuild]]): A list of
+                requests to start PDT builds. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
+                for documentation on all available fields.
+            dagster_looker_translator (Optional[DagsterLookerApiTranslator]): The translator to
+                use to convert Looker structures into assets. Defaults to DagsterLookerApiTranslator.
+
+        Returns:
+            Definitions: A Definitions object which will build and return the Looker structures as assets.
+        """
         dagster_looker_translator = check.inst(
             dagster_looker_translator or DagsterLookerApiTranslator(), DagsterLookerApiTranslator
         )
 
         return Definitions(
-            assets=self.build_assets(dagster_looker_translator=dagster_looker_translator)
+            assets=self.build_assets(
+                request_start_pdt_builds=request_start_pdt_builds or [],
+                dagster_looker_translator=dagster_looker_translator,
+            )
         )
