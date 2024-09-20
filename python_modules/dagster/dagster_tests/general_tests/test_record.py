@@ -541,3 +541,62 @@ def test_generic() -> None:
 
     assert StringThings(things=["a", "b"]).first_thing == "a"
     assert IntThings(things=[1, 2]).first_thing == 1
+
+
+def test_subclass_propagate_basic() -> None:
+    @record
+    class Super:
+        some_var: int
+        some_var_default: int = 1
+
+    @record
+    class Sub(Super):
+        other_var: int
+        other_var_default: int = 2
+
+    default = Sub(some_var=1, other_var=2)
+    assert default.some_var_default == 1
+    assert default.other_var_default == 2
+
+    non_default = Sub(some_var=1, other_var=2, some_var_default=3, other_var_default=4)
+    assert non_default.some_var_default == 3
+    assert non_default.other_var_default == 4
+
+    with pytest.raises(TypeError, match="some_var"):
+        assert Sub(other_var=2)  # type: ignore
+
+    with pytest.raises(TypeError, match="other_var"):
+        assert Sub(some_var=2)  # type: ignore
+
+
+def test_subclass_propagate_change_defaults() -> None:
+    @record
+    class Super:
+        a: int
+        b: int = 1
+
+    @record
+    class Sub(Super):
+        # add a default where none existed
+        a: int = 0
+        # change the default
+        b: int = 0
+
+        c: int
+        d: int = 2
+
+    sub = Sub(c=10)
+    assert sub.a == 0
+    assert sub.b == 0
+    assert sub.c == 10
+    assert sub.d == 2
+
+    @record
+    class SubSub(Sub):
+        c: int = -1
+
+    subsub = SubSub()
+    assert subsub.c == -1
+    assert subsub.b == 0
+
+    assert repr(subsub) == "SubSub(a=0, b=0, c=-1, d=2)"
