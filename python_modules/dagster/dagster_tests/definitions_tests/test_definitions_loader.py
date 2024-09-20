@@ -133,6 +133,13 @@ def test_reconstruction_metadata_with_global_context():
         mock_fetch.assert_not_called()
 
 
+def test_default_global_context():
+    instance = DefinitionsLoadContext.get()
+    DefinitionsLoadContext._instance = None  # noqa: SLF001
+    assert DefinitionsLoadContext.get().load_type == DefinitionsLoadType.INITIALIZATION
+    DefinitionsLoadContext.set(instance)
+
+
 def test_invoke_definitions_loader_with_context():
     @definitions
     def defs(context: DefinitionsLoadContext) -> Definitions:
