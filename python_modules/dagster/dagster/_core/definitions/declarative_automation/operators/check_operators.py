@@ -9,9 +9,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
+@record
 class CheckConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     check_key: AssetCheckKey
     operand: AutomationCondition[AssetCheckKey]
@@ -38,6 +40,8 @@ class CheckConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
         )
 
 
+@whitelist_for_serdes
+@record
 class ChecksCondition(BuiltinAutomationCondition[AssetKey]):
     operand: AutomationCondition[AssetCheckKey]
 
@@ -71,6 +75,7 @@ class ChecksCondition(BuiltinAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
+@record
 class AnyChecksCondition(ChecksCondition):
     @property
     def base_description(self) -> str:
@@ -105,6 +110,7 @@ class AnyChecksCondition(ChecksCondition):
 
 
 @whitelist_for_serdes
+@record
 class AllChecksCondition(ChecksCondition):
     @property
     def base_description(self) -> str:
