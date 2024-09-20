@@ -702,3 +702,22 @@ def test_generic_with_propagate_type_checking() -> None:
 
     with pytest.raises(CheckError, match='"val4" is not a Base'):
         copy(valid_record, val4=4)
+
+
+@pytest.mark.xfail()
+def test_custom_subclass() -> None:
+    @record_custom
+    class Thing(IHaveNew):
+        val: str
+
+        def __new__(cls, val_short: str):
+            return super().__new__(cls, val=val_short * 2)
+
+    assert Thing(val_short="abc").val == "abcabc"
+
+    @record
+    class SubThing(Thing):
+        other_val: int
+
+    # this does not work, as we've overridden the wrong __new__
+    SubThing(other_val=1)
