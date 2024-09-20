@@ -1666,7 +1666,7 @@ class TestRunStorage:
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=run_id,
-                job_name="some_pipeline",
+                job_name="fake",
                 status=DagsterRunStatus.SUCCESS,
                 tags={BACKFILL_ID_TAG: backfill.backfill_id},
             )
@@ -1681,9 +1681,7 @@ class TestRunStorage:
             )
         )
 
-        backfills_for_job = storage.get_backfills(
-            filters=BulkActionsFilter(job_name="some_pipeline")
-        )
+        backfills_for_job = storage.get_backfills(filters=BulkActionsFilter(job_name="fake"))
         assert len(backfills_for_job) == 1
         assert backfills_for_job[0].backfill_id == backfill.backfill_id
 
