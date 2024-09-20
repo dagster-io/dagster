@@ -1,11 +1,11 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
 import {memo, useEffect, useRef} from 'react';
 import {Switch, useLocation} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
 import {featureEnabled} from './Flags';
 import {Route} from './Route';
-import {FeatureFlag} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/src/settings/FeatureFlags.cloud';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
 import RunsFeedRoot from '../runs/RunsFeedRoot';

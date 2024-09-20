@@ -5,4 +5,5 @@ export enum FeatureFlag {
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
   flagSettingsPage = 'flagSettingsPage',
   flagCodeLocationPage = 'flagCodeLocationPage',
+  flagRunsFeed = 'flagRunsFeed',
 }
