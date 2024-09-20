@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import List, Mapping, Optional, Tuple, Union
 
 import mock
 from dagster import (
@@ -10,12 +10,23 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
+)
+from dagster._core.test_utils import (
+    create_run_for_test,
+    ensure_dagster_tests_import,
+    instance_for_test,
+)
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
@@ -137,6 +148,11 @@ BACKFILLS_WITH_FILTERS_QUERY = """
           id
           timestamp
           status
+          tags {
+            key
+            value
+          }
+          jobName
         }
       }
     }
@@ -175,6 +191,30 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
 
 def get_repo_with_root_assets_different_partitions() -> RepositoryDefinition:
     return Definitions(assets=root_assets_different_partitions_same_downstream).get_repository_def()
+
+
+def _seed_runs(
+    graphql_context,
+    partition_runs: List[Tuple[DagsterRunStatus, Union[str, PartitionKeyRange]]],
+    backfill_id: str,
+    tags: Mapping[str, str],
+    job_name: str = "default_job_name",
+) -> None:
+    for status, partition_or_range in partition_runs:
+        partition_tags = (
+            {PARTITION_NAME_TAG: partition_or_range}
+            if isinstance(partition_or_range, str)
+            else {
+                ASSET_PARTITION_RANGE_START_TAG: partition_or_range.start,
+                ASSET_PARTITION_RANGE_END_TAG: partition_or_range.end,
+            }
+        )
+        create_run_for_test(
+            instance=graphql_context.instance,
+            status=status,
+            tags={**DagsterRun.tags_for_backfill_id(backfill_id), **partition_tags, **tags},
+            job_name=job_name,
+        )
 
 
 def test_launch_asset_backfill_read_only_context():
@@ -1241,7 +1281,7 @@ def test_get_backfills_with_filters():
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             # launchPartitionBackfill
             all_backfills = []
-            for _ in range(5):
+            for i in range(5):
                 launch_backfill_result = execute_dagster_graphql(
                     context,
                     LAUNCH_PARTITION_BACKFILL_MUTATION,
@@ -1249,6 +1289,7 @@ def test_get_backfills_with_filters():
                         "backfillParams": {
                             "partitionNames": ["a", "b"],
                             "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                            "tags": [{"key": "iter", "value": str(i)}],
                         }
                     },
                 )
@@ -1259,6 +1300,16 @@ def test_get_backfills_with_filters():
                 backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
                 backfill = instance.get_backfill(backfill_id)
                 all_backfills.append(backfill)
+                _seed_runs(
+                    graphql_context=context,
+                    partition_runs=[
+                        (DagsterRunStatus.SUCCESS, "a"),
+                        (DagsterRunStatus.SUCCESS, "b"),
+                    ],
+                    backfill_id=backfill_id,
+                    tags={"iter": str(i)},
+                    job_name="test_job",
+                )
 
             get_backfills_result = execute_dagster_graphql(
                 context,
@@ -1289,3 +1340,43 @@ def test_get_backfills_with_filters():
                 BACKFILLS_WITH_FILTERS_QUERY,
                 variables={"filters": {"statuses": ["REQUESTED"]}},
             )
+
+            assert not get_backfills_result.errors
+            assert get_backfills_result.data
+            backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+            assert len(backfill_results) == 5
+
+            get_backfills_result = execute_dagster_graphql(
+                context,
+                BACKFILLS_WITH_FILTERS_QUERY,
+                variables={"filters": {"tags": [{"key": "foo", "value": "bar"}]}},
+            )
+
+            assert not get_backfills_result.errors
+            assert get_backfills_result.data
+            backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+            assert len(backfill_results) == 0
+
+            get_backfills_result = execute_dagster_graphql(
+                context,
+                BACKFILLS_WITH_FILTERS_QUERY,
+                variables={"filters": {"tags": [{"key": "iter", "value": "1"}]}},
+            )
+
+            assert not get_backfills_result.errors
+            assert get_backfills_result.data
+            backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+            assert len(backfill_results) == 1
+            assert backfill_results[0]["tags"][0]["key"] == "iter"
+            assert backfill_results[0]["tags"][0]["value"] == "1"
+
+            get_backfills_result = execute_dagster_graphql(
+                context,
+                BACKFILLS_WITH_FILTERS_QUERY,
+                variables={"filters": {"jobName": "test_job"}},
+            )
+
+            assert not get_backfills_result.errors
+            assert get_backfills_result.data
+            backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+            assert len(backfill_results) == 5
