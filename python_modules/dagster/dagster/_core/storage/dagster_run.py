@@ -529,7 +529,7 @@ class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
         snapshot_id (Optional[str]): The ID of the job snapshot to query for. Intended for internal use.
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
-        exclude_subruns (Optional[bool]): If true, runs that were launched to backfill historical data will be excluded from results.
+        exclude_backfill_runs (Optional[bool]): If true, runs that were launched to backfill historical data will be excluded from results.
     """
 
     run_ids: Optional[Sequence[str]]
@@ -541,9 +541,9 @@ class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
     updated_before: Optional[datetime]
     created_after: Optional[datetime]
     created_before: Optional[datetime]
-    exclude_subruns: Optional[bool]
+    exclude_backfill_runs: Optional[bool]
 
-    @experimental_param(param="exclude_subruns")
+    @experimental_param(param="exclude_backfill_runs")
     def __new__(
         cls,
         run_ids: Optional[Sequence[str]] = None,
@@ -555,7 +555,7 @@ class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
         updated_before: Optional[datetime] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
-        exclude_subruns: Optional[bool] = None,
+        exclude_backfill_runs: Optional[bool] = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
@@ -570,7 +570,7 @@ class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
             updated_before=updated_before,
             created_after=created_after,
             created_before=created_before,
-            exclude_subruns=exclude_subruns,
+            exclude_backfill_runs=exclude_backfill_runs,
         )
 
     @staticmethod
