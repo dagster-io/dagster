@@ -86,7 +86,7 @@ export const RunsFeedRow = ({
           <Link
             to={
               entry.__typename === 'PartitionBackfill'
-                ? appendCurrentQueryParams(`/runs-feed/b/${entry.id}?tab=runs`)
+                ? appendCurrentQueryParams(getBackfillPath(entry.id))
                 : `/runs/${entry.id}`
             }
           >

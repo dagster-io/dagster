@@ -3,7 +3,9 @@ import {memo, useEffect, useRef} from 'react';
 import {Switch, useLocation} from 'react-router-dom';
 import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
+import {featureEnabled} from './Flags';
 import {Route} from './Route';
+import {FeatureFlag} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/src/settings/FeatureFlags.cloud';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
 import RunsFeedRoot from '../runs/RunsFeedRoot';
@@ -51,21 +53,31 @@ export const ContentRoot = memo(() => {
               />
             </AssetFeatureProvider>
           </Route>
-          <Route path="/runs-feed/b/:requestId/:runId" exact>
-            <RunRoot />
-          </Route>
-          <Route path="/runs-feed/b/:backfillId">
-            <RunsFeedBackfillPage />
-          </Route>
-          <Route path={['/runs-feed', '/runs-feed/scheduled']} exact>
-            <RunsFeedRoot />
-          </Route>
-          <Route path="/runs" exact>
-            <RunsRoot />
-          </Route>
-          <Route path="/runs/scheduled" exact>
-            <ScheduledRunListRoot />
-          </Route>
+          {featureEnabled(FeatureFlag.flagRunsFeed)
+            ? // This is somewhat hacky but the Routes can't be wrapped by a fragment otherwise the Switch statement
+              // stops working
+              [
+                <Route path="/runs/b/:backfillId" key="1">
+                  <RunsFeedBackfillPage />
+                </Route>,
+                <Route path={['/runs', '/runs/scheduled']} exact key="2">
+                  <RunsFeedRoot />
+                </Route>,
+              ]
+            : [
+                <Route path="/runs-feed/b/:backfillId" key="3">
+                  <RunsFeedBackfillPage />
+                </Route>,
+                <Route path={['/runs-feed', '/runs-feed/scheduled']} exact key="4">
+                  <RunsFeedRoot />
+                </Route>,
+                <Route path="/runs" exact key="5">
+                  <RunsRoot />
+                </Route>,
+                <Route path="/runs/scheduled" exact key="6">
+                  <ScheduledRunListRoot />
+                </Route>,
+              ]}
           <Route path="/runs/:runId" exact>
             <RunRoot />
           </Route>

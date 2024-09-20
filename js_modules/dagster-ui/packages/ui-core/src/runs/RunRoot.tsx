@@ -19,6 +19,7 @@ import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
 import {assetKeysForRun} from './RunUtils';
+import {getBackfillPath} from './RunsFeedUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 import {gql, useQuery} from '../apollo-client';
@@ -117,14 +118,11 @@ export const RunRoot = () => {
           title={
             backfillTag ? (
               <Heading>
-                <Link to="/runs-feed" style={{color: Colors.textLight()}}>
+                <Link to="/runs" style={{color: Colors.textLight()}}>
                   All runs
                 </Link>
                 {' / '}
-                <Link
-                  to={`/runs-feed/b/${backfillTag.value}?tab=runs&view=list`}
-                  style={{color: Colors.textLight()}}
-                >
+                <Link to={getBackfillPath(backfillTag.value)} style={{color: Colors.textLight()}}>
                   {backfillTag.value}
                 </Link>
                 {' / '}

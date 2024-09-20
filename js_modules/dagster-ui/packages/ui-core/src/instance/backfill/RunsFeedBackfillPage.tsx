@@ -9,7 +9,7 @@ import {
   Tab,
   Tabs,
 } from '@dagster-io/ui-components';
-import {createContext, useContext} from 'react';
+import {useContext} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
 import {BackfillActionsMenu} from './BackfillActionsMenu';
@@ -29,13 +29,8 @@ import {
   DaemonNotRunningAlert,
   useIsBackfillDaemonHealthy,
 } from '../../partitions/BackfillMessaging';
+import {getRunFeedPath} from '../../runs/RunsFeedUtils';
 import {testId} from '../../testing/testId';
-
-export const RunRequestContext = createContext<{
-  buildLinkToRun: (run: {id: string}) => string;
-}>({
-  buildLinkToRun: ({id}) => `/runs/${id}`,
-});
 
 export const RunsFeedBackfillPage = () => {
   const {featureContext} = useContext(CloudOSSContext);
@@ -99,27 +94,23 @@ export const RunsFeedBackfillPage = () => {
         {error?.graphQLErrors && (
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
-        <RunRequestContext.Provider
-          value={{buildLinkToRun: ({id}) => `/runs-feed/b/${backfillId}/${id}`}}
-        >
-          <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
-            {selectedTab === 'overview' && (
-              <Box style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
-                {isDaemonHealthy ? null : (
-                  <Box padding={{horizontal: 24, top: 16}}>
-                    <DaemonNotRunningAlert />
-                  </Box>
-                )}
+        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
+          {selectedTab === 'overview' && (
+            <Box style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
+              {isDaemonHealthy ? null : (
+                <Box padding={{horizontal: 24, top: 16}}>
+                  <DaemonNotRunningAlert />
+                </Box>
+              )}
 
-                <BackfillOverviewDetails backfill={backfill} />
-                <BackfillAssetPartitionsTable backfill={backfill} />
-              </Box>
-            )}
-            {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="list" />}
-            {selectedTab === 'timeline' && <BackfillRunsTab backfill={backfill} view="timeline" />}
-            {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
-          </Box>
-        </RunRequestContext.Provider>
+              <BackfillOverviewDetails backfill={backfill} />
+              <BackfillAssetPartitionsTable backfill={backfill} />
+            </Box>
+          )}
+          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="list" />}
+          {selectedTab === 'timeline' && <BackfillRunsTab backfill={backfill} view="timeline" />}
+          {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+        </Box>
       </Box>
     );
   }
@@ -129,7 +120,7 @@ export const RunsFeedBackfillPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to="/runs-feed" style={{color: Colors.textLight()}}>
+            <Link to={getRunFeedPath()} style={{color: Colors.textLight()}}>
               All runs
             </Link>
             {' / '}
