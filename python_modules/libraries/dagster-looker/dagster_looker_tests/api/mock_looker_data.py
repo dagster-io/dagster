@@ -16,7 +16,9 @@ mock_lookml_models = [
     )
 ]
 
-mock_lookml_explore = LookmlModelExplore(id="my_model::my_explore")
+mock_lookml_explore = LookmlModelExplore(
+    id="my_model::my_explore", view_name="my_view", sql_table_name="my_table"
+)
 
 mock_looker_dashboard_bases = [
     DashboardBase(id="1", hidden=False),

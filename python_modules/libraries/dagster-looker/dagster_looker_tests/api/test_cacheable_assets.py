@@ -3,9 +3,11 @@ from typing import Iterator
 import pytest
 import responses
 from dagster import AssetKey, AssetSpec
-from dagster_looker.api.dagster_looker_api_translator import DagsterLookerApiTranslator
+from dagster_looker.api.dagster_looker_api_translator import (
+    DagsterLookerApiTranslator,
+    LookerStructureData,
+)
 from dagster_looker.api.resource import LookerResource
-from looker_sdk.sdk.api40.models import LookmlModelExplore
 
 from dagster_looker_tests.api.mock_looker_data import (
     mock_looker_dashboard,
@@ -73,12 +75,18 @@ def test_build_defs(
         asset.key: asset for asset in looker_resource.build_defs().get_asset_graph().assets_defs
     }
 
-    assert len(assets_by_key) == 2
+    assert len(assets_by_key) == 3
 
+    expected_lookml_view_asset_key = AssetKey(["view", "my_view"])
     expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
     expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
+    assert assets_by_key[expected_lookml_view_asset_key]
+
     lookml_explore_asset = assets_by_key[expected_lookml_explore_asset_key]
+    assert lookml_explore_asset.asset_deps[expected_lookml_explore_asset_key] == {
+        expected_lookml_view_asset_key
+    }
     assert lookml_explore_asset.tags_by_key[expected_lookml_explore_asset_key] == {
         "dagster/kind/looker": "",
         "dagster/kind/explore": "",
@@ -101,13 +109,17 @@ def test_custom_asset_specs(
     expected_metadata = {"custom": "metadata"}
 
     class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-        def get_asset_spec(self, api_model: LookmlModelExplore) -> AssetSpec:
-            return super().get_asset_spec(api_model)._replace(metadata=expected_metadata)
+        def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+            return super().get_asset_spec(looker_structure)._replace(metadata=expected_metadata)
 
     all_assets = (
-        looker_resource.build_defs(dagster_looker_translator=CustomDagsterLookerApiTranslator())
+        asset
+        for asset in looker_resource.build_defs(
+            dagster_looker_translator=CustomDagsterLookerApiTranslator()
+        )
         .get_asset_graph()
         .assets_defs
+        if not asset.is_auto_created_stub
     )
 
     for asset in all_assets:
