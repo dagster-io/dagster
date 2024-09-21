@@ -27,6 +27,13 @@ def get_num_tasks() -> int:
     return constants["NUM_TASKS"]
 
 
+def get_num_assets() -> int:
+    constants = read_constants()
+    if "NUM_ASSETS_PER_TASK" not in constants:
+        raise ValueError("NUM_ASSETS_PER_TASK not found in constants file")
+    return constants["NUM_ASSETS_PER_TASK"]
+
+
 def get_perf_output_file() -> Path:
     pth = Path(__file__).parent / f"{get_num_dags()}_dags_{get_num_tasks()}_tasks_perf_output.txt"
     pth.parent.mkdir(parents=True, exist_ok=True)

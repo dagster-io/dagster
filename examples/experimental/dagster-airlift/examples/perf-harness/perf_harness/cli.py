@@ -21,13 +21,15 @@ DAGSTER_HOME = MAKEFILE_DIR / ".dagster_home"
 
 
 @contextmanager
-def modify_constants(num_dags, num_tasks) -> Generator[None, None, None]:
+def modify_constants(num_dags, num_tasks, num_assets) -> Generator[None, None, None]:
     # Read the original content
     with open(CONSTANTS_FILE, "r") as f:
         original_content = f.read()
 
     # Write new constants
-    modified_content = f"NUM_DAGS {num_dags}\nNUM_TASKS {num_tasks}\n"
+    modified_content = (
+        f"NUM_DAGS {num_dags}\nNUM_TASKS {num_tasks}\nNUM_ASSETS_PER_TASK {num_assets}\n"
+    )
 
     # Write the modified content
     with open(CONSTANTS_FILE, "w") as f:
@@ -47,13 +49,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Performance scenario testing for airlift")
     parser.add_argument("num_dags", type=int, help="Number of DAGs to generate")
     parser.add_argument("num_tasks", type=int, help="Number of tasks per DAG")
+    parser.add_argument("num_assets", type=int, help="Number of assets per task")
 
     args = parser.parse_args()
 
     num_dags = check.int_param(args.num_dags, "num_dags")
     num_tasks = check.int_param(args.num_tasks, "num_tasks")
+    num_assets = check.int_param(args.num_assets, "num_assets")
 
-    with modify_constants(num_dags, num_tasks), environ({"DAGSTER_HOME": str(DAGSTER_HOME)}):
+    with modify_constants(num_dags, num_tasks, num_assets), environ(
+        {"DAGSTER_HOME": str(DAGSTER_HOME)}
+    ):
         print("Scaffolding migration state...")
         scaffold_migration_state(num_dags=num_dags, num_tasks=num_tasks, migration_state=True)
 

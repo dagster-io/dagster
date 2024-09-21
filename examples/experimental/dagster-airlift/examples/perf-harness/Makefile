@@ -55,13 +55,20 @@ setup_local_env: scaffold_observe
 	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/perf_harness/airflow_dags
 
 run_perf_scenarios_test:
-	perf-harness 1 1
+	perf-harness 1 1 1
 
-run_perf_10_10:
-	perf-harness 10 10
+# 10 dags, 10 tasks, 1 asset per task
+run_perf_10_10_1:
+	perf-harness 10 10 1
 
-run_perf_150_1:
-	perf-harness 150 1
+# 150 dags, 1 task, 1 asset per task
+run_perf_150_1_1:
+	perf-harness 150 1 1
 
-run_perf_150_5:
-	perf-harness 150 5
+# 150 dags, 5 tasks, 1 asset per task
+run_perf_1_100_1:
+	perf-harness 1 100 1
+
+# 2 dags, 20 tasks, 100 assets per task
+run_perf_2_20_100:
+	perf-harness 2 20 100
