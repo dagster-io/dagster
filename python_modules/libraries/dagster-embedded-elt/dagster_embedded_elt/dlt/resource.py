@@ -126,6 +126,11 @@ class DagsterDltResource(ConfigurableResource):
         base_metadata = {
             **base_metadata,
             **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
+            **(
+                TableMetadataSet(partition_row_count=base_metadata.get("rows_loaded"))
+                if context.has_partition_key
+                else {}
+            ),
         }
 
         return base_metadata
