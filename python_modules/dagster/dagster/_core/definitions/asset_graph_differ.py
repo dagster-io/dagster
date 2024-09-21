@@ -1,5 +1,18 @@
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence, Set, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Generic,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -7,7 +20,6 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
-from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -27,77 +39,63 @@ class AssetDefinitionChangeType(Enum):
     REMOVED = "REMOVED"
 
 
-@whitelist_for_serdes
-@record
-class AssetDefinitionChangeDetailNew:
-    change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.NEW
-
-
-@whitelist_for_serdes
-@record
-class AssetDefinitionChangeDetailCodeVersion:
-    change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.CODE_VERSION
-    base_value: Optional[str] = None
-    branch_value: Optional[str] = None
-
-
-@whitelist_for_serdes
-@record
-class AssetDefinitionChangeDetailDependencies:
-    change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.DEPENDENCIES
-    added: Sequence[AssetKey] = []
-    changed: Sequence[AssetKey] = []
-    removed: Sequence[AssetKey] = []
-
-
-@whitelist_for_serdes
-@record
-class AssetDefinitionChangeDetailPartitionsDefinition:
-    change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.PARTITIONS_DEFINITION
-    base_value: Optional[str] = None
-    branch_value: Optional[str] = None
-
-
-@whitelist_for_serdes
-@record
-class AssetDefinitionChangeDetailTags:
-    change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.TAGS
-    added: Sequence[str] = []
-    changed: Sequence[str] = []
-    removed: Sequence[str] = []
-
-
-@whitelist_for_serdes
-@record
-class AssetDefinitionChangeDetailMetadata:
-    change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.METADATA
-    added: Sequence[str] = []
-    changed: Sequence[str] = []
-    removed: Sequence[str] = []
-
-
-@whitelist_for_serdes
-@record
-class AssetDefinitionChangeDetailRemoved:
-    change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.REMOVED
-
-
-"""Represents the diff information for changes between base and branch assets."""
-AssetDefinitionChangeDetail = Union[
-    AssetDefinitionChangeDetailNew,
-    AssetDefinitionChangeDetailCodeVersion,
-    AssetDefinitionChangeDetailDependencies,
-    AssetDefinitionChangeDetailPartitionsDefinition,
-    AssetDefinitionChangeDetailTags,
-    AssetDefinitionChangeDetailMetadata,
-    AssetDefinitionChangeDetailRemoved,
-]
-
-
 class MappedKeyDiff(NamedTuple):
     added: Set[str]
     changed: Set[str]
     removed: Set[str]
+
+
+T = TypeVar("T")
+
+
+@whitelist_for_serdes
+@dataclass(frozen=True)
+class ValueDiff(Generic[T]):
+    old: T
+    new: T
+
+
+@whitelist_for_serdes
+@dataclass(frozen=True)
+class DictDiff(Generic[T]):
+    added_keys: AbstractSet[T]
+    changed_keys: AbstractSet[T]
+    removed_keys: AbstractSet[T]
+
+
+@whitelist_for_serdes
+@dataclass(frozen=False)
+class AssetDefinitionDiff:
+    """Represents the diff information for changes between assets.
+
+    Change types in change_types should have diff info for their corresponding fields
+    if details are requested.
+
+    "NEW" and "REMOVED" change types do not have diff info.
+    """
+
+    change_types: Set[AssetDefinitionChangeType]
+    code_version: Optional[ValueDiff[Optional[str]]]
+    dependencies: Optional[DictDiff[AssetKey]]
+    partitions_definition: Optional[ValueDiff[Optional[str]]]
+    tags: Optional[DictDiff[str]]
+    metadata: Optional[DictDiff[str]]
+
+    def __init__(
+        self,
+        change_types: Set[AssetDefinitionChangeType],
+        code_version: Optional[ValueDiff[Optional[str]]] = None,
+        dependencies: Optional[DictDiff[AssetKey]] = None,
+        partitions_definition: Optional[ValueDiff[Optional[str]]] = None,
+        tags: Optional[DictDiff[str]] = None,
+        metadata: Optional[DictDiff[str]] = None,
+    ):
+        self.change_types = change_types
+        self.code_version = code_version
+        self.dependencies = dependencies
+        self.partitions_definition = partitions_definition
+        self.tags = tags
+        self.metadata = metadata
 
 
 def _get_external_repo_from_context(
@@ -189,45 +187,45 @@ class AssetGraphDiffer:
 
     def _compare_base_and_branch_assets(
         self, asset_key: "AssetKey", include_details: bool = False
-    ) -> Sequence[AssetDefinitionChangeDetail]:
+    ) -> AssetDefinitionDiff:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
         """
+        asset_diff = AssetDefinitionDiff(change_types=set())
+
         if self.base_asset_graph is None:
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
-            return [AssetDefinitionChangeDetailNew()]
+            asset_diff.change_types.add(AssetDefinitionChangeType.NEW)
+            return asset_diff
 
         if asset_key not in self.base_asset_graph.all_asset_keys:
-            return [AssetDefinitionChangeDetailNew()]
+            asset_diff.change_types.add(AssetDefinitionChangeType.NEW)
+            return asset_diff
 
         if asset_key not in self.branch_asset_graph.all_asset_keys:
-            return [AssetDefinitionChangeDetailRemoved()]
+            asset_diff.change_types.add(AssetDefinitionChangeType.REMOVED)
+            return asset_diff
 
         branch_asset = self.branch_asset_graph.get(asset_key)
         base_asset = self.base_asset_graph.get(asset_key)
 
-        changes: Sequence[AssetDefinitionChangeDetail] = []
         if branch_asset.code_version != base_asset.code_version:
+            asset_diff.change_types.add(AssetDefinitionChangeType.CODE_VERSION)
             if include_details:
-                changes.append(
-                    AssetDefinitionChangeDetailCodeVersion(
-                        base_value=base_asset.code_version, branch_value=branch_asset.code_version
-                    )
+                asset_diff.code_version = ValueDiff(
+                    old=base_asset.code_version, new=branch_asset.code_version
                 )
-            else:
-                changes.append(AssetDefinitionChangeDetailCodeVersion())
 
         if branch_asset.parent_keys != base_asset.parent_keys:
+            asset_diff.change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
             if include_details:
-                changes.append(
-                    AssetDefinitionChangeDetailDependencies(
-                        added=list(branch_asset.parent_keys - base_asset.parent_keys),
-                        removed=list(base_asset.parent_keys - branch_asset.parent_keys),
-                    )
+                asset_diff.dependencies = DictDiff(
+                    added_keys=branch_asset.parent_keys - base_asset.parent_keys,
+                    changed_keys=set(),
+                    removed_keys=base_asset.parent_keys - branch_asset.parent_keys,
                 )
-            else:
-                changes.append(AssetDefinitionChangeDetailDependencies())
+
         else:
             # if the set of upstream dependencies is different, then we don't need to check if the partition mappings
             # for dependencies have changed since ChangeReason.DEPENDENCIES is already in the list of changes
@@ -235,56 +233,48 @@ class AssetGraphDiffer:
                 if self.branch_asset_graph.get_partition_mapping(
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
+                    asset_diff.change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
                     if include_details:
-                        changes.append(
-                            AssetDefinitionChangeDetailDependencies(changed=[upstream_asset])
+                        asset_diff.dependencies = DictDiff(
+                            added_keys=set(),
+                            changed_keys={upstream_asset},
+                            removed_keys=set(),
                         )
-                    else:
-                        changes.append(AssetDefinitionChangeDetailDependencies())
                     break
 
         if branch_asset.partitions_def != base_asset.partitions_def:
+            asset_diff.change_types.add(AssetDefinitionChangeType.PARTITIONS_DEFINITION)
             if include_details:
-                changes.append(
-                    AssetDefinitionChangeDetailPartitionsDefinition(
-                        base_value=type(base_asset.partitions_def).__name__
-                        if base_asset.partitions_def
-                        else None,
-                        branch_value=type(branch_asset.partitions_def).__name__
-                        if branch_asset.partitions_def
-                        else None,
-                    )
+                asset_diff.partitions_definition = ValueDiff(
+                    old=type(base_asset.partitions_def).__name__
+                    if base_asset.partitions_def
+                    else None,
+                    new=type(branch_asset.partitions_def).__name__
+                    if branch_asset.partitions_def
+                    else None,
                 )
-            else:
-                changes.append(AssetDefinitionChangeDetailPartitionsDefinition())
 
         if branch_asset.tags != base_asset.tags:
+            asset_diff.change_types.add(AssetDefinitionChangeType.TAGS)
             if include_details:
                 added, changed, removed = self._get_map_keys_diff(
                     base_asset.tags, branch_asset.tags
                 )
-                changes.append(
-                    AssetDefinitionChangeDetailTags(
-                        added=list(added), changed=list(changed), removed=list(removed)
-                    )
+                asset_diff.tags = DictDiff(
+                    added_keys=added, changed_keys=changed, removed_keys=removed
                 )
-            else:
-                changes.append(AssetDefinitionChangeDetailTags())
 
         if branch_asset.metadata != base_asset.metadata:
+            asset_diff.change_types.add(AssetDefinitionChangeType.METADATA)
             if include_details:
                 added, changed, removed = self._get_map_keys_diff(
                     base_asset.metadata, branch_asset.metadata
                 )
-                changes.append(
-                    AssetDefinitionChangeDetailMetadata(
-                        added=list(added), changed=list(changed), removed=list(removed)
-                    )
+                asset_diff.metadata = DictDiff(
+                    added_keys=added, changed_keys=changed, removed_keys=removed
                 )
-            else:
-                changes.append(AssetDefinitionChangeDetailMetadata())
 
-        return changes
+        return asset_diff
 
     def _get_map_keys_diff(
         self, base: Mapping[str, Any], branch: Mapping[str, Any]
@@ -297,11 +287,9 @@ class AssetGraphDiffer:
 
     def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[AssetDefinitionChangeType]:
         """Returns list of AssetDefinitionChangeType for asset_key as compared to the base deployment."""
-        return [change.change_type for change in self._compare_base_and_branch_assets(asset_key)]
+        return list(self._compare_base_and_branch_assets(asset_key).change_types)
 
-    def get_changes_for_asset_with_details(
-        self, asset_key: "AssetKey"
-    ) -> Sequence[AssetDefinitionChangeDetail]:
+    def get_changes_for_asset_with_details(self, asset_key: "AssetKey") -> AssetDefinitionDiff:
         """Returns list of AssetDefinitionChangeDetail for asset_key as compared to the base deployment."""
         return self._compare_base_and_branch_assets(asset_key, include_details=True)
 

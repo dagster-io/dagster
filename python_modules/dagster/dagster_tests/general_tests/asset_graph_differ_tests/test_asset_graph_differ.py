@@ -7,15 +7,11 @@ from unittest import mock
 import pytest
 from dagster import DagsterInstance, instance_for_test
 from dagster._core.definitions.asset_graph_differ import (
-    AssetDefinitionChangeDetailCodeVersion,
-    AssetDefinitionChangeDetailDependencies,
-    AssetDefinitionChangeDetailMetadata,
-    AssetDefinitionChangeDetailNew,
-    AssetDefinitionChangeDetailPartitionsDefinition,
-    AssetDefinitionChangeDetailRemoved,
-    AssetDefinitionChangeDetailTags,
     AssetDefinitionChangeType,
+    AssetDefinitionDiff,
     AssetGraphDiffer,
+    DictDiff,
+    ValueDiff,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -131,10 +127,12 @@ def test_new_asset(instance):
 
     assert differ.get_changes_for_asset(AssetKey("new_asset")) == [AssetDefinitionChangeType.NEW]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == [
-        AssetDefinitionChangeDetailNew()
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.NEW}
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_removed_asset(instance) -> None:
@@ -151,10 +149,12 @@ def test_removed_asset(instance) -> None:
         AssetDefinitionChangeType.REMOVED
     ]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailRemoved()
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.REMOVED}
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_new_asset_connected(instance):
@@ -172,13 +172,18 @@ def test_new_asset_connected(instance):
         AssetDefinitionChangeType.DEPENDENCIES
     ]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == [
-        AssetDefinitionChangeDetailNew()
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailDependencies(added=[AssetKey("new_asset")])
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.NEW},
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.DEPENDENCIES},
+        dependencies=DictDiff(
+            added_keys={AssetKey("new_asset")}, changed_keys=set(), removed_keys=set()
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_update_code_version(instance):
@@ -195,13 +200,13 @@ def test_update_code_version(instance):
         AssetDefinitionChangeType.CODE_VERSION
     ]
     assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == [
-        AssetDefinitionChangeDetailCodeVersion(
-            base_value="1",
-            branch_value="2",
-        )
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("downstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.CODE_VERSION},
+        code_version=ValueDiff(old="1", new="2"),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_change_inputs(instance):
@@ -218,10 +223,15 @@ def test_change_inputs(instance):
         AssetDefinitionChangeType.DEPENDENCIES
     ]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailDependencies(removed=[AssetKey("upstream")])
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.DEPENDENCIES},
+        dependencies=DictDiff(
+            added_keys=set(), changed_keys=set(), removed_keys={AssetKey("upstream")}
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_multiple_changes_for_one_asset(instance):
@@ -234,19 +244,24 @@ def test_multiple_changes_for_one_asset(instance):
         },
     )
 
-    assert differ.get_changes_for_asset(AssetKey("downstream")) == [
+    assert set(differ.get_changes_for_asset(AssetKey("downstream"))) == {
         AssetDefinitionChangeType.CODE_VERSION,
         AssetDefinitionChangeType.DEPENDENCIES,
-    ]
+    }
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailCodeVersion(
-            base_value="1",
-            branch_value="2",
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={
+            AssetDefinitionChangeType.DEPENDENCIES,
+            AssetDefinitionChangeType.CODE_VERSION,
+        },
+        code_version=ValueDiff(old="1", new="2"),
+        dependencies=DictDiff(
+            added_keys=set(), changed_keys=set(), removed_keys={AssetKey("upstream")}
         ),
-        AssetDefinitionChangeDetailDependencies(removed=[AssetKey("upstream")]),
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_change_then_revert(instance):
@@ -263,13 +278,13 @@ def test_change_then_revert(instance):
         AssetDefinitionChangeType.CODE_VERSION
     ]
     assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == [
-        AssetDefinitionChangeDetailCodeVersion(
-            base_value="1",
-            branch_value="2",
-        )
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("downstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.CODE_VERSION},
+        code_version=ValueDiff(old="1", new="2"),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
     differ = get_asset_graph_differ(
         instance=instance,
@@ -280,8 +295,12 @@ def test_change_then_revert(instance):
 
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
     assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("downstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_large_asset_graph(instance):
@@ -327,13 +346,18 @@ def test_multiple_code_locations(instance):
         AssetDefinitionChangeType.DEPENDENCIES
     ]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == [
-        AssetDefinitionChangeDetailNew()
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailDependencies(added=[AssetKey("new_asset")])
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.NEW},
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.DEPENDENCIES},
+        dependencies=DictDiff(
+            added_keys={AssetKey("new_asset")}, changed_keys=set(), removed_keys=set()
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_new_code_location(instance):
@@ -346,15 +370,15 @@ def test_new_code_location(instance):
     assert differ.get_changes_for_asset(AssetKey("new_asset")) == [AssetDefinitionChangeType.NEW]
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [AssetDefinitionChangeType.NEW]
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [AssetDefinitionChangeType.NEW]
-    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == [
-        AssetDefinitionChangeDetailNew()
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == [
-        AssetDefinitionChangeDetailNew()
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailNew()
-    ]
+    assert differ.get_changes_for_asset_with_details(AssetKey("new_asset")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.NEW},
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.NEW},
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.NEW},
+    )
 
 
 def test_change_partitions_definitions(instance):
@@ -384,42 +408,54 @@ def test_change_partitions_definitions(instance):
     assert differ.get_changes_for_asset(AssetKey("multi_partitioned_downstream")) == [
         AssetDefinitionChangeType.PARTITIONS_DEFINITION
     ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("daily_upstream")) == [
-        AssetDefinitionChangeDetailPartitionsDefinition(
-            base_value="TimeWindowPartitionsDefinition",
-            branch_value="TimeWindowPartitionsDefinition",
-        )
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("daily_downstream")) == [
-        AssetDefinitionChangeDetailPartitionsDefinition(
-            base_value="TimeWindowPartitionsDefinition",
-            branch_value="TimeWindowPartitionsDefinition",
-        )
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("static_upstream")) == [
-        AssetDefinitionChangeDetailPartitionsDefinition(
-            base_value="StaticPartitionsDefinition",
-            branch_value="StaticPartitionsDefinition",
-        )
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("static_downstream")) == [
-        AssetDefinitionChangeDetailPartitionsDefinition(
-            base_value="StaticPartitionsDefinition",
-            branch_value="StaticPartitionsDefinition",
-        )
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("multi_partitioned_upstream")) == [
-        AssetDefinitionChangeDetailPartitionsDefinition(
-            base_value="MultiPartitionsDefinition",
-            branch_value="MultiPartitionsDefinition",
-        )
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("multi_partitioned_downstream")) == [
-        AssetDefinitionChangeDetailPartitionsDefinition(
-            base_value="MultiPartitionsDefinition",
-            branch_value="MultiPartitionsDefinition",
-        )
-    ]
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("daily_upstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.PARTITIONS_DEFINITION},
+        partitions_definition=ValueDiff(
+            old="TimeWindowPartitionsDefinition", new="TimeWindowPartitionsDefinition"
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("daily_downstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.PARTITIONS_DEFINITION},
+        partitions_definition=ValueDiff(
+            old="TimeWindowPartitionsDefinition", new="TimeWindowPartitionsDefinition"
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("static_upstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.PARTITIONS_DEFINITION},
+        partitions_definition=ValueDiff(
+            old="StaticPartitionsDefinition", new="StaticPartitionsDefinition"
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("static_downstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.PARTITIONS_DEFINITION},
+        partitions_definition=ValueDiff(
+            old="StaticPartitionsDefinition", new="StaticPartitionsDefinition"
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("multi_partitioned_upstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.PARTITIONS_DEFINITION},
+        partitions_definition=ValueDiff(
+            old="MultiPartitionsDefinition", new="MultiPartitionsDefinition"
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("multi_partitioned_downstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.PARTITIONS_DEFINITION},
+        partitions_definition=ValueDiff(
+            old="MultiPartitionsDefinition", new="MultiPartitionsDefinition"
+        ),
+    )
 
 
 def test_change_partition_mapping(instance):
@@ -443,20 +479,41 @@ def test_change_partition_mapping(instance):
     assert differ.get_changes_for_asset(AssetKey("multi_partitioned_downstream")) == [
         AssetDefinitionChangeType.DEPENDENCIES
     ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("daily_upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("daily_downstream")) == [
-        AssetDefinitionChangeDetailDependencies(changed=[AssetKey("daily_upstream")])
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("static_upstream"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("static_downstream")) == [
-        AssetDefinitionChangeDetailDependencies(changed=[AssetKey("static_upstream")])
-    ]
-    assert (
-        len(differ.get_changes_for_asset_with_details(AssetKey("multi_partitioned_upstream"))) == 0
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("daily_upstream")
+    ) == AssetDefinitionDiff(change_types=set())
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("daily_downstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.DEPENDENCIES},
+        dependencies=DictDiff(
+            added_keys=set(), changed_keys={AssetKey("daily_upstream")}, removed_keys=set()
+        ),
     )
-    assert differ.get_changes_for_asset_with_details(AssetKey("multi_partitioned_downstream")) == [
-        AssetDefinitionChangeDetailDependencies(changed=[AssetKey("multi_partitioned_upstream")])
-    ]
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("static_upstream")
+    ) == AssetDefinitionDiff(change_types=set())
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("static_downstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.DEPENDENCIES},
+        dependencies=DictDiff(
+            added_keys=set(), changed_keys={AssetKey("static_upstream")}, removed_keys=set()
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("multi_partitioned_upstream")
+    ) == AssetDefinitionDiff(change_types=set())
+    assert differ.get_changes_for_asset_with_details(
+        AssetKey("multi_partitioned_downstream")
+    ) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.DEPENDENCIES},
+        dependencies=DictDiff(
+            added_keys=set(),
+            changed_keys={AssetKey("multi_partitioned_upstream")},
+            removed_keys=set(),
+        ),
+    )
 
 
 def test_change_tags(instance):
@@ -471,19 +528,25 @@ def test_change_tags(instance):
     assert differ.get_changes_for_asset(AssetKey("fruits")) == [AssetDefinitionChangeType.TAGS]
     assert differ.get_changes_for_asset(AssetKey("letters")) == [AssetDefinitionChangeType.TAGS]
     assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == [
-        AssetDefinitionChangeDetailTags(removed=["one"])
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailTags(changed=["baz"])
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("fruits")) == [
-        AssetDefinitionChangeDetailTags(added=["green"], removed=["red"])
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("letters")) == [
-        AssetDefinitionChangeDetailTags(added=["c"])
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("numbers"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.TAGS},
+        tags=DictDiff(added_keys=set(), changed_keys=set(), removed_keys={"one"}),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.TAGS},
+        tags=DictDiff(added_keys=set(), changed_keys={"baz"}, removed_keys=set()),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("fruits")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.TAGS},
+        tags=DictDiff(added_keys={"green"}, changed_keys=set(), removed_keys={"red"}),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("letters")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.TAGS},
+        tags=DictDiff(added_keys={"c"}, changed_keys=set(), removed_keys=set()),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("numbers")) == AssetDefinitionDiff(
+        change_types=set()
+    )
 
 
 def test_change_metadata(instance):
@@ -504,16 +567,38 @@ def test_change_metadata(instance):
     assert differ.get_changes_for_asset(AssetKey("fruits")) == [AssetDefinitionChangeType.METADATA]
     assert differ.get_changes_for_asset(AssetKey("letters")) == [AssetDefinitionChangeType.METADATA]
     assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0
-    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == [
-        AssetDefinitionChangeDetailMetadata(removed=["one"])
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailMetadata(changed=["baz"])
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("fruits")) == [
-        AssetDefinitionChangeDetailMetadata(added=["green"], removed=["red"])
-    ]
-    assert differ.get_changes_for_asset_with_details(AssetKey("letters")) == [
-        AssetDefinitionChangeDetailMetadata(added=["c"])
-    ]
-    assert len(differ.get_changes_for_asset_with_details(AssetKey("numbers"))) == 0
+    assert differ.get_changes_for_asset_with_details(AssetKey("upstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.METADATA},
+        metadata=DictDiff(
+            added_keys=set(),
+            changed_keys=set(),
+            removed_keys={"one"},
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.METADATA},
+        metadata=DictDiff(
+            added_keys=set(),
+            changed_keys={"baz"},
+            removed_keys=set(),
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("fruits")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.METADATA},
+        metadata=DictDiff(
+            added_keys={"green"},
+            changed_keys=set(),
+            removed_keys={"red"},
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("letters")) == AssetDefinitionDiff(
+        change_types={AssetDefinitionChangeType.METADATA},
+        metadata=DictDiff(
+            added_keys={"c"},
+            changed_keys=set(),
+            removed_keys=set(),
+        ),
+    )
+    assert differ.get_changes_for_asset_with_details(AssetKey("numbers")) == AssetDefinitionDiff(
+        change_types=set()
+    )
