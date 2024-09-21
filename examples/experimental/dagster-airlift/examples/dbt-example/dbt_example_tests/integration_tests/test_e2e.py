@@ -44,6 +44,14 @@ def observe_instance() -> AirflowInstance:
     return af_instance_observe
 
 
+def observe_with_check_instance() -> AirflowInstance:
+    from dbt_example.dagster_defs.observe_with_check import (
+        airflow_instance as af_instance_observe_with_check,
+    )
+
+    return af_instance_observe_with_check
+
+
 def migrate_instance() -> AirflowInstance:
     from dbt_example.dagster_defs.migrate import airflow_instance as af_instance_migrate
 
@@ -55,9 +63,10 @@ def migrate_instance() -> AirflowInstance:
     [
         ("peer", peer_instance),
         ("observe", observe_instance),
+        ("observe_with_check", observe_with_check_instance),
         ("migrate", migrate_instance),
     ],
-    ids=["peer", "observe", "migrate"],
+    ids=["peer", "observe", "observe_with_check", "migrate"],
     indirect=True,
 )
 def test_dagster_materializes(
@@ -69,8 +78,8 @@ def test_dagster_materializes(
     """Test that assets can load properly, and that materializations register."""
     dagster_dev_module, af_instance_fn = stage_and_fn
     af_instance = af_instance_fn()
-    for dag_id, expected_asset_key in [("load_lakehouse", AssetKey(["lakehouse", "iris"]))]:
-        run_id = af_instance.trigger_dag("load_lakehouse")
+    for dag_id, expected_asset_key in [("rebuild_iris_models", AssetKey(["lakehouse", "iris"]))]:
+        run_id = af_instance.trigger_dag(dag_id=dag_id)
         af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
         dagster_instance = DagsterInstance.get()
         start_time = get_current_datetime()

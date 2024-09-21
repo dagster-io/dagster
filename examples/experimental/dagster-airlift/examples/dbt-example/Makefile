@@ -34,9 +34,6 @@ setup_local_env:
 run_airflow:
 	airflow standalone
 
-run_complete:
-	dagster dev -m dbt_example.dagster_defs.complete -p 3333
-
 run_peer:
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
 
@@ -49,6 +46,9 @@ run_migrate:
 	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh && \
 	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/migration_state False True && \
 	dagster dev -m dbt_example.dagster_defs.migrate -p 3333
+
+run_complete:
+	dagster dev -m dbt_example.dagster_defs.complete -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)
