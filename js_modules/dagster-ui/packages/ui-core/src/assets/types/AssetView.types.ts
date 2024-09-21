@@ -22,6 +22,7 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           groupName: string;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
@@ -16302,6 +16303,7 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;
@@ -32436,4 +32438,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = 'dab33604a3e92e8b13b7276a7fe5dd43430a3e17012ac0961634c30a1c963d60';
+export const AssetViewDefinitionQueryVersion = '77ecb76ceb98cec5fc78c06edb596a328a2ea9e4ac4b2577eae74aa931eb8f90';

@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 from asyncio import Task, get_event_loop, run
 from contextlib import contextmanager
@@ -75,6 +76,15 @@ class GraphQLServer(ABC):
 
     @abstractmethod
     def make_request_context(self, conn: HTTPConnection): ...
+
+    def monitor_threadqueue_latency(self, latency: float) -> None:
+        """This method is called with the latency incurred by handing
+        graphql requests off to a thread pool, ie the time between invocation
+        of `execute_graphql_request` and the time `graphql_schema.execute_async`
+        gets invoked in a thread. By default this method does nothing, but it
+        can be overriden to provide instrumentation.
+        """
+        pass
 
     def handle_graphql_errors(self, errors: Sequence[GraphQLError]):
         results = []
@@ -240,8 +250,10 @@ class GraphQLServer(ABC):
         # use execute_async to allow async resolvers to facilitate dataloader pattern
 
         request_context = self.make_request_context(request)
+        start_time = time.monotonic()
 
         def _graphql_request():
+            self.monitor_threadqueue_latency(time.monotonic() - start_time)
             with self.graphql_request_context(request):
                 return run(
                     self._graphql_schema.execute_async(

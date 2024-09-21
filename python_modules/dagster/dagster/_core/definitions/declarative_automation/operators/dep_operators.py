@@ -1,32 +1,29 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional
 
-from typing_extensions import Annotated
-
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import ImportFrom, copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
 
 
-@record
-class DepConditionWrapperCondition(AutomationCondition):
+class DepConditionWrapperCondition(BuiltinAutomationCondition[T_EntityKey]):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
     True.
     """
 
     dep_key: AssetKey
-    operand: AutomationCondition
-    label: Optional[str] = None
+    operand: AutomationCondition[AssetKey]
 
     @property
     def name(self) -> str:
@@ -36,31 +33,30 @@ class DepConditionWrapperCondition(AutomationCondition):
     def description(self) -> str:
         return self.dep_key.to_user_string()
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         # only evaluate parents of the current candidates
-        dep_candidate_slice = context.candidate_slice.compute_parent_slice(self.dep_key)
+
+        dep_candidate_subset = context.candidate_subset.compute_parent_subset(self.dep_key)
         dep_context = context.for_child_condition(
-            child_condition=self.operand, child_index=0, candidate_slice=dep_candidate_slice
+            child_condition=self.operand, child_index=0, candidate_subset=dep_candidate_subset
         )
 
         # evaluate condition against the dependency
         dep_result = self.operand.evaluate(dep_context)
 
-        # find all children of the true dep slice
-        true_slice = dep_result.true_slice.compute_child_slice(context.asset_key)
-        return AutomationResult(context=context, true_slice=true_slice, child_results=[dep_result])
+        # find all children of the true dep subset
+        true_subset = dep_result.true_subset.compute_child_subset(context.key)
+        return AutomationResult(
+            context=context, true_subset=true_subset, child_results=[dep_result]
+        )
 
 
-@record
-class DepCondition(AutomationCondition):
+class DepCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition
-    allow_selection: Optional[
-        Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
-    ] = None
-    ignore_selection: Optional[
-        Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
-    ] = None
-    label: Optional[str] = None
+
+    # Should be AssetSelection, but this causes circular reference issues
+    allow_selection: Optional[Any] = None
+    ignore_selection: Optional[Any] = None
 
     @property
     @abstractmethod
@@ -83,24 +79,30 @@ class DepCondition(AutomationCondition):
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.
         """
+        from dagster._core.definitions.asset_selection import AssetSelection
+
+        check.inst_param(selection, "selection", AssetSelection)
         allow_selection = (
             selection if self.allow_selection is None else selection | self.allow_selection
         )
-        return copy(self, allow_selection=allow_selection)
+        return self.model_copy(update={"allow_selection": allow_selection})
 
     def ignore(self, selection: "AssetSelection") -> "DepCondition":
         """Returns a copy of this condition that will ignore dependencies within the provided
         AssetSelection.
         """
+        from dagster._core.definitions.asset_selection import AssetSelection
+
+        check.inst_param(selection, "selection", AssetSelection)
         ignore_selection = (
             selection if self.ignore_selection is None else selection | self.ignore_selection
         )
-        return copy(self, ignore_selection=ignore_selection)
+        return self.model_copy(update={"ignore_selection": ignore_selection})
 
     def _get_dep_keys(
-        self, asset_key: AssetKey, asset_graph: BaseAssetGraph
+        self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
     ) -> AbstractSet[AssetKey]:
-        dep_keys = asset_graph.get(asset_key).parent_keys
+        dep_keys = asset_graph.get(key).parent_entity_keys
         if self.allow_selection is not None:
             dep_keys &= self.allow_selection.resolve(asset_graph)
         if self.ignore_selection is not None:
@@ -109,7 +111,7 @@ class DepCondition(AutomationCondition):
 
 
 @whitelist_for_serdes
-class AnyDepsCondition(DepCondition):
+class AnyDepsCondition(DepCondition[T_EntityKey]):
     @property
     def base_description(self) -> str:
         return "Any"
@@ -118,30 +120,28 @@ class AnyDepsCondition(DepCondition):
     def name(self) -> str:
         return "ANY_DEPS_MATCH"
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         dep_results = []
-        true_slice = context.get_empty_slice()
+        true_subset = context.get_empty_subset()
 
-        for i, dep_key in enumerate(
-            sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
-        ):
+        for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
                     child_condition=dep_condition,
                     child_index=i,
-                    candidate_slice=context.candidate_slice,
+                    candidate_subset=context.candidate_subset,
                 )
             )
             dep_results.append(dep_result)
-            true_slice = true_slice.compute_union(dep_result.true_slice)
+            true_subset = true_subset.compute_union(dep_result.true_subset)
 
-        true_slice = context.candidate_slice.compute_intersection(true_slice)
-        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)
+        true_subset = context.candidate_subset.compute_intersection(true_subset)
+        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)
 
 
 @whitelist_for_serdes
-class AllDepsCondition(DepCondition):
+class AllDepsCondition(DepCondition[T_EntityKey]):
     @property
     def base_description(self) -> str:
         return "All"
@@ -150,22 +150,20 @@ class AllDepsCondition(DepCondition):
     def name(self) -> str:
         return "ALL_DEPS_MATCH"
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         dep_results = []
-        true_slice = context.candidate_slice
+        true_subset = context.candidate_subset
 
-        for i, dep_key in enumerate(
-            sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
-        ):
+        for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
                     child_condition=dep_condition,
                     child_index=i,
-                    candidate_slice=context.candidate_slice,
+                    candidate_subset=context.candidate_subset,
                 )
             )
             dep_results.append(dep_result)
-            true_slice = true_slice.compute_intersection(dep_result.true_slice)
+            true_subset = true_subset.compute_intersection(dep_result.true_subset)
 
-        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)
+        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)

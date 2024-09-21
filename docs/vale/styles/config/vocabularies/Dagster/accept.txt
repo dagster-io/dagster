@@ -9,18 +9,17 @@ AWS Athena
 AWS CloudWatch
 AWS Glue
 AWS Lambda
+AWS Redshift
 AWS Secrets Manager
 AWS Systems Parameter Store
-AWS Redshift
-Airflow
 Airbyte
+Airflow
 Apache
 Azure Data Lake Storage Gen 2
 BigQuery
-chatbot
-Census
 CI/CD
 CLI[s]
+Census
 Crontab
 Cube
 DAG
@@ -36,48 +35,47 @@ Dockerfile
 DuckDB
 ECR
 ECS
-ECS
 EKS
-EMR
 ELT
+EMR
 Fivetran
 Flink
 GCR
+GCS
 GDPR
 GKE
 GitHub
 Google Cloud Platform
-GCS
-HashiCorp
-HashiCorp Vault
-Hightouch
 HIPAA
 HPC
+HashiCorp
+HashiCorp Vault
 Helm
+Hightouch
 Hudi
-IAM
 IAM
 JavaScript
 Jupyter
-Meltano
 Lakehouse
 Looker
-MLflow
 MLOps
+MLflow
+Meltano
 Microsoft Teams
 MongoDB
 MySQL
-Okta
 OLAP
 OLTP
+Okta
 OneLogin
-OpenAI
 Open Metadata
-Pandas
+OpenAI
 PEX
 PagerDuty
+Pandas
 Pandera
 PingOne
+Polars
 Postgres
 Prometheus
 Pydantic
@@ -86,15 +84,15 @@ RDS
 REST API
 SCIM
 SDF
-Secoda
 SFTP
 SHA
 SLA
 SLAs
 SOC
-Spark
 SSH
+Secoda
 Snowflake
+Spark
 Tensorflow
 Trino
 Twilio
@@ -109,10 +107,12 @@ Weights & Biases
 [Ss]ubprocess
 \bDagster\b
 auditable
+chatbot
 composable
 dagster-.*
 dbt
 dbt Cloud
+deserialize
 dlt
 enqueue[ds]
 frontmatter
@@ -130,5 +130,6 @@ stdout
 substep
 toolchain
 uncomment
+unpartitioned
 vCPU
 vCPUs

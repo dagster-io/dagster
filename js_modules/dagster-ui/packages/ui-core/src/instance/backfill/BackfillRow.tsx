@@ -156,11 +156,11 @@ export const BackfillRowContent = ({
   );
 };
 
-const BackfillTarget = ({
+export const BackfillTarget = ({
   backfill,
   repoAddress,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: Pick<BackfillTableFragment, 'assetSelection' | 'partitionSet' | 'partitionSetName'>;
   repoAddress: RepoAddress | null;
 }) => {
   const repo = useRepository(repoAddress);
@@ -225,13 +225,17 @@ const BackfillTarget = ({
     return null;
   };
 
+  const repoLink = buildRepoLink();
+  const pipelineOrAssets = buildPipelineOrAssets();
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       {buildHeader()}
-      <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-        {buildRepoLink()}
-        {buildPipelineOrAssets()}
-      </Box>
+      {(pipelineOrAssets || repoLink) && (
+        <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
+          {repoLink}
+          {pipelineOrAssets}
+        </Box>
+      )}
     </Box>
   );
 };

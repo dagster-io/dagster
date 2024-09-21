@@ -8,7 +8,7 @@ excerpt: Integrate with Prometheus via the prometheus_client library.
 date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-prometheus
 docslink: https://prometheus.io/
-partnerlink: 
+partnerlink:
 logo: /integrations/Prometheus.svg
 categories:
   - Monitoring
@@ -28,24 +28,7 @@ pip install dagster-prometheus
 
 ### Example
 
-```python
-#import dagster as dg
-from dagster_prometheus import PrometheusResource
-
-
-@dg.asset
-def prometheus_metric(prometheus: PrometheusResource):
-    prometheus.push_to_gateway(job="my_job_label")
-
-
-defs = dg.Definitions(
-    assets=[prometheus_metric],
-    resources={
-        "prometheus": PrometheusResource(gateway="http://pushgateway.example.org:9091")
-    },
-)
-
-```
+<CodeExample filePath="integrations/prometheus.py" language="python" />
 
 ### About Prometheus
 

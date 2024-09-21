@@ -46,7 +46,6 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.permissions import (
     PermissionResult,
@@ -331,11 +330,6 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
     def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
         return None
 
-    @property
-    @abstractmethod
-    def asset_record_loader(self) -> BatchAssetRecordLoader:
-        pass
-
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
@@ -358,12 +352,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
             read_only_locations, "read_only_locations"
         )
         self._checked_permissions: Set[str] = set()
-        self._asset_record_loader = BatchAssetRecordLoader(self._instance, {})
         self._loaders = {}
-
-    @property
-    def asset_record_loader(self) -> BatchAssetRecordLoader:
-        return self._asset_record_loader
 
     @property
     def instance(self) -> DagsterInstance:

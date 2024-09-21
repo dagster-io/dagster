@@ -441,6 +441,7 @@ export type AssetNode = {
   groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
+  hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
@@ -727,6 +728,8 @@ export enum BulkActionStatus {
   CANCELED = 'CANCELED',
   CANCELING = 'CANCELING',
   COMPLETED = 'COMPLETED',
+  COMPLETED_FAILED = 'COMPLETED_FAILED',
+  COMPLETED_SUCCESS = 'COMPLETED_SUCCESS',
   FAILED = 'FAILED',
   REQUESTED = 'REQUESTED',
 }
@@ -6505,6 +6508,10 @@ export const buildAssetNode = (
     hasMaterializePermission:
       overrides && overrides.hasOwnProperty('hasMaterializePermission')
         ? overrides.hasMaterializePermission!
+        : false,
+    hasReportRunlessAssetEventPermission:
+      overrides && overrides.hasOwnProperty('hasReportRunlessAssetEventPermission')
+        ? overrides.hasReportRunlessAssetEventPermission!
         : false,
     id:
       overrides && overrides.hasOwnProperty('id')

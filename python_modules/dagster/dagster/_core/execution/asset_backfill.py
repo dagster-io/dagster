@@ -22,12 +22,12 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_context import (
-    build_run_requests,
-    build_run_requests_with_backfill_policies,
-)
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import KeysAssetSelection
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    build_run_requests_from_asset_partitions,
+    build_run_requests_with_backfill_policies,
+)
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -936,7 +936,10 @@ def execute_asset_backfill_iteration(
 
     backfill_start_datetime = datetime_from_timestamp(backfill.backfill_timestamp)
     instance_queryer = CachingInstanceQueryer(
-        instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_datetime
+        instance=instance,
+        asset_graph=asset_graph,
+        loading_context=workspace_context,
+        evaluation_time=backfill_start_datetime,
     )
 
     previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
@@ -1032,9 +1035,15 @@ def execute_asset_backfill_iteration(
             # failure, or cancellation). Since the AssetBackfillData object stores materialization states
             # per asset partition, the daemon continues to update the backfill data until all runs have
             # finished in order to display the final partition statuses in the UI.
-            updated_backfill: PartitionBackfill = updated_backfill.with_status(
-                BulkActionStatus.COMPLETED
-            )
+            if (
+                updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
+                > 0
+            ):
+                updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED_FAILED)
+            else:
+                updated_backfill: PartitionBackfill = updated_backfill.with_status(
+                    BulkActionStatus.COMPLETED_SUCCESS
+                )
             instance.update_backfill(updated_backfill)
 
         new_materialized_partitions = (
@@ -1319,11 +1328,11 @@ def _asset_graph_subset_to_str(
     asset_subsets = asset_graph_subset.iterate_asset_subsets(asset_graph)
     for subset in asset_subsets:
         if subset.is_partitioned:
-            partitions_def = asset_graph.get(subset.asset_key).partitions_def
+            partitions_def = asset_graph.get(subset.key).partitions_def
             partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
-            return_str += f"- {subset.asset_key.to_user_string()}: {{{partition_ranges_str}}}\n"
+            return_str += f"- {subset.key.to_user_string()}: {{{partition_ranges_str}}}\n"
         else:
-            return_str += f"- {subset.asset_key.to_user_string()}\n"
+            return_str += f"- {subset.key.to_user_string()}\n"
 
     return return_str
 
@@ -1486,7 +1495,7 @@ def execute_asset_backfill_iteration_inner(
             )
         # When any of the assets do not have backfill policies, we fall back to the default behavior of
         # backfilling them partition by partition.
-        run_requests = build_run_requests(
+        run_requests = build_run_requests_from_asset_partitions(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
             run_tags={},

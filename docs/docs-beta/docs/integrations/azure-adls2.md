@@ -1,13 +1,13 @@
 ---
 layout: Integration
 status: published
-name:  Azure Data Lake Storage Gen 2 (ADLS2)
+name: Azure Data Lake Storage Gen 2 (ADLS2)
 title: Dagster &  Azure Data Lake Storage Gen 2 (ADLS2)
-sidebar_label:  Azure Data Lake Storage Gen 2 (ADLS2)
+sidebar_label: Azure Data Lake Storage Gen 2 (ADLS2)
 excerpt: Get utilities for ADLS2 and Blob Storage.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-azure
-docslink: 
+docslink:
 partnerlink: https://azure.microsoft.com/
 logo: /integrations/Azure.svg
 categories:
@@ -28,34 +28,7 @@ pip install dagster-azure
 
 ### Examples
 
-```python
-import pandas as pd
-from dagster import Definitions, asset, job
-from dagster_azure.adls2 import ADLS2Resource, ADLS2SASToken
-
-
-@asset
-def example_adls2_asset(adls2: ADLS2Resource):
-    df = pd.DataFrame({"column1": [1, 2, 3], "column2": ["A", "B", "C"]})
-
-    csv_data = df.to_csv(index=False)
-
-    file_client = adls2.adls2_client.get_file_client(
-        "my-file-system", "path/to/my_dataframe.csv"
-    )
-    file_client.upload_data(csv_data, overwrite=True)
-
-
-defs = Definitions(
-    assets=[example_adls2_asset],
-    resources={
-        "adls2": ADLS2Resource(
-            storage_account="my_storage_account",
-            credential=ADLS2SASToken(token="my_sas_token"),
-        )
-    },
-)
-```
+<CodeExample filePath="integrations/azure-adls2.py" language="python" />
 
 In this updated code, we use `ADLS2Resource` directly instead of `adls2_resource`. The configuration is passed to `ADLS2Resource` during its instantiation.
 

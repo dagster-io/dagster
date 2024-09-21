@@ -442,7 +442,7 @@ class AssetSelection(ABC, DagsterModel):
         raise NotImplementedError()
 
     def resolve_checks(
-        self, asset_graph: AssetGraph, allow_missing: bool = False
+        self, asset_graph: BaseAssetGraph, allow_missing: bool = False
     ) -> AbstractSet[AssetCheckKey]:
         """We don't need this method currently, but it makes things consistent with resolve_inner. Currently
         we don't store checks in the RemoteAssetGraph, so we only support AssetGraph.
@@ -450,7 +450,7 @@ class AssetSelection(ABC, DagsterModel):
         return self.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
 
     def resolve_checks_inner(
-        self, asset_graph: AssetGraph, allow_missing: bool
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         """By default, resolve to checks that target the selected assets. This is overriden for particular selections."""
         asset_keys = self.resolve(asset_graph)

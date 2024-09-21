@@ -80,6 +80,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -844,6 +845,49 @@ class SqlRunStorage(RunStorage):
             raise DagsterInvariantViolationError(
                 "Cannot provide status and filters to get_backfills. Please use filters rather than status."
             )
+
+        if filters and filters.tags:
+            # Backfills do not have a corresponding tags table. However, all tags that are on a backfill are
+            # applied to the runs the backfill launches. So we can query for runs that match the tags and
+            # are also part of a backfill to find the backfills that match the tags.
+
+            backfills_with_tags_query = db_select([RunTagsTable.c.value]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
+
+            for i, (key, value) in enumerate(filters.tags.items()):
+                run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+                backfills_with_tags_query = backfills_with_tags_query.where(
+                    db.and_(
+                        RunTagsTable.c.run_id == run_tags_alias.c.run_id,
+                        run_tags_alias.c.key == key,
+                        (run_tags_alias.c.value == value)
+                        if isinstance(value, str)
+                        else run_tags_alias.c.value.in_(value),
+                    ),
+                )
+
+            query = query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_tags_query)))
+
+        if filters and filters.job_name:
+            run_tags_table = RunTagsTable
+
+            runs_in_backfill_with_job_name = run_tags_table.join(
+                RunsTable,
+                db.and_(
+                    RunTagsTable.c.run_id == RunsTable.c.run_id,
+                    RunTagsTable.c.key == BACKFILL_ID_TAG,
+                    RunsTable.c.pipeline_name == filters.job_name,
+                ),
+            )
+
+            backfills_with_job_name_query = db_select([RunTagsTable.c.value]).select_from(
+                runs_in_backfill_with_job_name
+            )
+            query = query.where(
+                BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query))
+            )
+
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
             assert statuses
@@ -863,7 +907,27 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return deserialize_values((row["body"] for row in rows), PartitionBackfill)
+        backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
+
+        if filters and filters.tags:
+            results = []
+            # runs can have more tags than the backfill that launched them. Since we filtered tags by
+            # querying for runs with those tags, we need to do an additional check that the backfills
+            # also have the requested tags
+            for b in backfill_candidates:
+                keep = True
+                for tag_key, tag_value in filters.tags.items():
+                    if isinstance(tag_value, str):
+                        if b.tags.get(tag_key) != tag_value:
+                            keep = False
+                    else:
+                        if b.tags.get(tag_key) not in tag_value:
+                            keep = False
+                if keep:
+                    results.append(b)
+            return results
+        else:
+            return backfill_candidates
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")

@@ -6,7 +6,7 @@ title: Dagster & Secoda
 sidebar_label: Secoda
 excerpt: Help your team understand metadata from Dagster by adding context in Secoda.
 date: 2024-02-24
-apireflink: 
+apireflink:
 docslink: https://www.secoda.co/automations/automated-documentation-for-new-integrations-in-dagster
 partnerlink: https://www.secoda.co/integrations/dagster
 communityIntegration: true

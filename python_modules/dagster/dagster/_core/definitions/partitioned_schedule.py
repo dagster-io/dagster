@@ -90,6 +90,7 @@ def build_schedule_from_partitioned_job(
                 asset,
                 build_schedule_from_partitioned_job,
                 define_asset_job,
+                Definitions,
             )
 
             @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))

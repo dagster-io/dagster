@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AutomationCondition,
     DailyPartitionsDefinition,
     GraphOut,
     HourlyPartitionsDefinition,
@@ -26,8 +27,7 @@ from dagster import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.base_asset_graph import AssetCheckNode, BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -53,9 +53,12 @@ def to_external_asset_graph(assets, asset_checks=None) -> BaseAssetGraph:
     external_asset_nodes = external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph)
     return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
         [(MagicMock(), asset_node) for asset_node in external_asset_nodes],
-        external_asset_checks=external_asset_checks_from_defs(
-            repo.get_all_jobs(), repo.asset_graph
-        ),
+        [
+            (MagicMock(), asset_check)
+            for asset_check in external_asset_checks_from_defs(
+                repo.get_all_jobs(), repo.asset_graph
+            )
+        ],
     )
 
 
@@ -121,15 +124,6 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
             asset_graph.get_children_partitions(instance, current_time, parent.key)
             == expected_asset_partitions
         )
-        assert (
-            asset_graph.get_child_asset_subset(
-                AssetSubset.all(parent.key, parent.partitions_def),
-                child.key,
-                instance,
-                current_time,
-            ).asset_partitions
-            == expected_asset_partitions
-        )
 
 
 def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
@@ -154,16 +148,6 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
             == expected_asset_partitions
         )
 
-        assert (
-            asset_graph.get_parent_asset_subset(
-                AssetSubset.all(child.key, child.partitions_def),
-                parent.key,
-                instance,
-                current_time,
-            ).asset_partitions
-            == expected_asset_partitions
-        )
-
 
 def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
@@ -180,21 +164,9 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
             AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
             for hour in range(24)
         }
-        parent_asset_partition = AssetKeyPartitionKey(parent.key, "2022-01-03")
 
         assert (
             asset_graph.get_children_partitions(instance, current_time, parent.key, "2022-01-03")
-            == expected_asset_partitions
-        )
-        assert (
-            asset_graph.get_child_asset_subset(
-                AssetSubset.from_asset_partitions_set(
-                    parent.key, parent.partitions_def, {parent_asset_partition}
-                ),
-                child.key,
-                instance,
-                current_time,
-            ).asset_partitions
             == expected_asset_partitions
         )
 
@@ -225,17 +197,6 @@ def test_get_parent_partitions_fan_in(
             ).parent_partitions
             == expected_asset_partitions
         )
-        assert (
-            asset_graph.get_parent_asset_subset(
-                AssetSubset.from_asset_partitions_set(
-                    child.key, child.partitions_def, {child_asset_partition}
-                ),
-                parent.key,
-                instance,
-                current_time,
-            ).asset_partitions
-            == expected_asset_partitions
-        )
 
 
 def test_get_parent_partitions_non_default_partition_mapping(
@@ -259,16 +220,6 @@ def test_get_parent_partitions_non_default_partition_mapping(
             )
             assert mapped_partitions_result.parent_partitions == expected_asset_partitions
             assert mapped_partitions_result.required_but_nonexistent_parents_partitions == set()
-
-            assert (
-                asset_graph.get_parent_asset_subset(
-                    AssetSubset.all(child.key, child.partitions_def),
-                    parent.key,
-                    instance,
-                    current_time,
-                ).asset_partitions
-                == expected_asset_partitions
-            )
 
 
 def test_custom_unsupported_partition_mapping():
@@ -752,15 +703,19 @@ def test_asset_graph_partial_deserialization(
 
 
 def test_required_assets_and_checks_by_key_check_decorator(
-    asset_graph_from_assets: Callable[..., BaseAssetGraph],
-):
+    asset_graph_from_assets: Callable[..., BaseAssetGraph[BaseAssetNode]],
+) -> None:
     @asset
     def asset0(): ...
 
     @asset_check(asset=asset0)
     def check0(): ...
 
-    @asset_check(asset=asset0)
+    @asset_check(
+        asset=asset0,
+        blocking=True,
+        automation_condition=AutomationCondition.cron_tick_passed("*/15 * * * *"),
+    )
     def check1(): ...
 
     asset_graph = asset_graph_from_assets([asset0, check0, check1])
@@ -771,6 +726,17 @@ def test_required_assets_and_checks_by_key_check_decorator(
     assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check1.check_keys))) == {
         AssetCheckKey(asset0.key, "check1")
     }
+
+    check_node = asset_graph.get(check0.check_key)
+    assert isinstance(check_node, AssetCheckNode)
+    assert check_node.key == check0.check_key
+    assert not check_node.blocking
+    assert check_node.partitions_def is None
+
+    check_node = asset_graph.get(check1.check_key)
+    assert check_node.blocking
+    assert check_node.partitions_def is None
+    assert check_node.automation_condition == AutomationCondition.cron_tick_passed("*/15 * * * *")
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
@@ -905,6 +871,6 @@ def test_cross_code_location_partition_mapping() -> None:
     )
 
     assert isinstance(
-        asset_graph.get_partition_mapping(asset_key=b.key, parent_asset_key=a.key),
+        asset_graph.get_partition_mapping(key=b.key, parent_asset_key=a.key),
         TimeWindowPartitionMapping,
     )

@@ -118,6 +118,8 @@ class GrapheneBulkActionStatus(graphene.Enum):
     FAILED = "FAILED"
     CANCELED = "CANCELED"
     CANCELING = "CANCELING"
+    COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
+    COMPLETED_FAILED = "COMPLETED_FAILED"
 
     class Meta:
         name = "BulkActionStatus"
@@ -130,6 +132,10 @@ class GrapheneBulkActionStatus(graphene.Enum):
             return GrapheneRunStatus.STARTED  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_SUCCESS.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:  # pyright: ignore[reportAttributeAccessIssue]
@@ -371,7 +377,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     jobName = graphene.Field(
         graphene.String(),
-        description="Included to comply with RunsFeedEntry interface. Duplicate of partitionSetName.",
+        description="Included to comply with RunsFeedEntry interface.",
     )
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
@@ -386,7 +392,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         super().__init__(
             id=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
-            jobName=backfill_job.partition_set_name,
+            jobName=backfill_job.job_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,

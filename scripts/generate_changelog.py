@@ -1,6 +1,4 @@
 import os
-import re
-import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterator, List, Mapping, NamedTuple, Optional, Sequence
@@ -9,20 +7,21 @@ import click
 import git
 
 GITHUB_URL = "https://github.com/dagster-io/dagster"
-OSS_REPO = git.Repo(Path(__file__).parent.parent)
+OSS_ROOT = Path(__file__).parent.parent
+OSS_REPO = git.Repo(OSS_ROOT)
+CHANGELOG_PATH = OSS_ROOT / "CHANGES.md"
 INTERNAL_REPO = git.Repo(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"])
 INTERNAL_DEFAULT_STR = "If a changelog entry is required"
 
 CHANGELOG_HEADER = "## Changelog"
-CHANGELOG_HEADER_PATTERN = re.compile(rf"{CHANGELOG_HEADER}.*\[\s*(.*?)\s*\]")
 IGNORE_TOKEN = "NOCHANGELOG"
 
 CATEGORIES = {
-    "New": "New",
-    "Bug": "Bugfixes",
-    "Docs": "Documentation",
-    "Breaking": "Breaking Changes",
-    "Deprecate": "Deprecations",
+    "NEW": "New",
+    "BUGFIX": "Bugfixes",
+    "DOCS": "Documentation",
+    "BREAKING": "Breaking Changes",
+    "DEPRECATE": "Deprecations",
     "Plus": "Dagster Plus",
     None: "Invalid",
 }
@@ -64,27 +63,31 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
 
     # find the first line that has `CHANGELOG` in the first few characters, then take the next
     # non-empty line
-    found = False
-    changelog_category = "Invalid"
+    found_start = False
+    found_end = False
+    changelog_category = None
     raw_changelog_entry = ""
     for line in str(commit.message).split("\n"):
-        if found and line.strip():
+        if found_start and line.strip():
             if INTERNAL_DEFAULT_STR in line:
                 # ignore changelog entry if it has not been updated
                 raw_changelog_entry = ""
                 break
-            raw_changelog_entry += " " + line.strip()
-            continue
-        is_header = line.startswith(CHANGELOG_HEADER)
-        if is_header:
-            raw_category_match = CHANGELOG_HEADER_PATTERN.match(line)
-            raw_category = raw_category_match.group(1) if raw_category_match else None
-            changelog_category = CATEGORIES.get(raw_category, changelog_category)
-            found = True
+            if line.lower().startswith("- ["):
+                found_end = True
+            if not found_end:
+                raw_changelog_entry += " " + line.strip()
+        if found_end:
+            if line.lower().startswith("- [x]"):
+                bt1 = line.find("`")
+                changelog_category = line[bt1 + 1 : line.find("`", bt1 + 1)]
+                break
+        if line.startswith(CHANGELOG_HEADER):
+            found_start = True
 
     return ParsedCommit(
         issue_link=issue_link,
-        changelog_category=changelog_category,
+        changelog_category=CATEGORIES.get(changelog_category, "Invalid"),
         raw_changelog_entry=raw_changelog_entry,
         raw_title=title,
         author=str(commit.author.name),
@@ -101,7 +104,7 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
     for category in CATEGORIES.values():
         documented_text += f"\n\n### {category}\n"
         for commit in grouped_commits.get(category, []):
-            documented_text += f"\n* {commit.issue_link} {commit.raw_changelog_entry}"
+            documented_text += f"\n* {commit.raw_changelog_entry} {commit.issue_link}"
     return documented_text
 
 
@@ -132,7 +135,7 @@ def _get_commits(
             yield _get_parsed_commit(commit)
 
 
-def _generate_changelog(new_version: str, prev_version: str) -> None:
+def _generate_changelog_text(new_version: str, prev_version: str) -> str:
     documented: List[ParsedCommit] = []
     undocumented: List[ParsedCommit] = []
 
@@ -143,10 +146,8 @@ def _generate_changelog(new_version: str, prev_version: str) -> None:
             # default to ignoring undocumented internal commits
             undocumented.append(commit)
 
-    header = f"# Changelog {new_version}\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
-    sys.stdout.write(
-        f"{header}\n{_get_documented_section(documented)}\n\n{_get_undocumented_section(undocumented)}"
-    )
+    header = f"# Changelog \n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
+    return f"{header}{_get_documented_section(documented)}\n\n{_get_undocumented_section(undocumented)}"
 
 
 @click.command()
@@ -155,7 +156,24 @@ def _generate_changelog(new_version: str, prev_version: str) -> None:
 def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
     if prev_version is None:
         prev_version = _get_previous_version(new_version)
-    _generate_changelog(new_version, prev_version)
+
+    # ensure that the release branches are available locally
+    for repo in [OSS_REPO, INTERNAL_REPO]:
+        repo.git.checkout("master")
+        repo.git.pull()
+        repo.git.checkout(f"release-{prev_version}")
+        repo.git.checkout(f"release-{new_version}")
+        repo.git.checkout("master")
+
+    repo.git.checkout(f"-b changelog-{new_version}")
+    new_text = _generate_changelog_text(new_version, prev_version)
+    with open(CHANGELOG_PATH, "r") as f:
+        current_changelog = f.read()
+
+    new_changelog = new_text + current_changelog[1:]
+
+    with open(CHANGELOG_PATH, "w") as f:
+        f.write(new_changelog)
 
 
 if __name__ == "__main__":

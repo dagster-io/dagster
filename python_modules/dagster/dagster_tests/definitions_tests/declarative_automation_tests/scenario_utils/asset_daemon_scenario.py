@@ -6,17 +6,22 @@ from typing import Any, Callable, NamedTuple, Optional, Sequence, Tuple, Type, c
 
 import dagster._check as check
 from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    AutomationTickEvaluationContext,
+)
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionEvaluation,
@@ -89,7 +94,7 @@ class AssetRuleEvaluationSpec(NamedTuple):
         """Returns a tuple of the resolved AutoMaterializeRuleEvaluation for this spec and the
         partitions that it applies to.
         """
-        subset = AssetSubset.from_asset_partitions_set(
+        subset = ValidAssetSubset.from_asset_partitions_set(
             asset_key,
             asset_graph.get(asset_key).partitions_def,
             {
@@ -140,14 +145,10 @@ class AssetDaemonScenarioState(ScenarioState):
                 self.serialized_cursor, self.asset_graph, 0
             )
 
-        new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
+        new_run_requests, new_cursor, new_evaluations = AutomationTickEvaluationContext(
             evaluation_id=cursor.evaluation_id + 1,
             asset_graph=self.asset_graph,
-            auto_materialize_asset_keys={
-                key
-                for key in self.asset_graph.materializable_asset_keys
-                if self.asset_graph.get(key).auto_materialize_policy is not None
-            },
+            asset_selection=AssetSelection.all(),
             instance=self.instance,
             materialize_run_tags={},
             observe_run_tags={},
@@ -157,9 +158,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 for key in self.asset_graph.external_asset_keys
                 if self.asset_graph.get(key).auto_observe_interval_minutes is not None
             },
-            respect_materialization_data_versions=False,
             logger=self.logger,
-            request_backfills=self.request_backfills,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)
@@ -293,8 +292,8 @@ class AssetDaemonScenarioState(ScenarioState):
         )
 
     def _log_assertion_error(self, expected: Sequence[Any], actual: Sequence[Any]) -> None:
-        expected_str = "\n\n".join("\t" + str(rr) for rr in expected)
-        actual_str = "\n\n".join("\t" + str(rr) for rr in actual)
+        expected_str = "\n\n".join("\t" + str(serialize_value(rr)) for rr in expected)
+        actual_str = "\n\n".join("\t" + str(serialize_value(rr)) for rr in actual)
         message = f"\nExpected: \n\n{expected_str}\n\nActual: \n\n{actual_str}\n"
         self.logger.error(message)
 
@@ -399,7 +398,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     for e in check.not_none(
                         self.instance.schedule_storage
                     ).get_auto_materialize_evaluations_for_evaluation_id(current_evaluation_id)
-                    if e.asset_key == key
+                    if e.key == key
                 ]
             )
         )
@@ -418,7 +417,7 @@ class AssetDaemonScenarioState(ScenarioState):
         checked against the actual evaluation.
         """
         asset_key = AssetKey.from_coercible(key)
-        actual_evaluation = next((e for e in self.evaluations if e.asset_key == asset_key), None)
+        actual_evaluation = next((e for e in self.evaluations if e.key == asset_key), None)
 
         if actual_evaluation is None:
             try:
@@ -465,22 +464,22 @@ class AssetDaemonScenarioState(ScenarioState):
             for actual_sm, expected_sm in zip(
                 sorted(
                     actual_subsets_with_metadata,
-                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                    key=lambda x: (str(serialize_value(x.subset)), str(x.metadata)),
                 ),
                 sorted(
                     expected_subsets_with_metadata,
-                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                    key=lambda x: (str(serialize_value(x.subset)), str(x.metadata)),
                 ),
             ):
-                assert actual_sm.subset.asset_partitions == expected_sm.subset.asset_partitions
+                assert serialize_value(actual_sm.subset) == serialize_value(expected_sm.subset)
                 # only check evaluation data if it was set on the expected evaluation spec
                 if expected_sm.metadata:
                     assert actual_sm.metadata == expected_sm.metadata
 
         except:
             self._log_assertion_error(
-                sorted(expected_subsets_with_metadata, key=lambda x: str(x)),
-                sorted(actual_subsets_with_metadata, key=lambda x: str(x)),
+                sorted(expected_subsets_with_metadata, key=lambda x: str(serialize_value(x))),
+                sorted(actual_subsets_with_metadata, key=lambda x: str(serialize_value(x))),
             )
             raise
 

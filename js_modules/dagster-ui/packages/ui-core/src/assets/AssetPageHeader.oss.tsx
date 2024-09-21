@@ -72,7 +72,7 @@ export const AssetPageHeader = ({
   return (
     <PageHeader
       title={
-        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px', marginBottom: 4}}>
+        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px'}}>
           <Title>
             <BreadcrumbsWithSlashes
               items={breadcrumbs}
@@ -149,7 +149,7 @@ export const AssetGlobalLineageLink = () => (
 
 export const AssetGlobalLineageButton = () => (
   <AnchorButton intent="primary" icon={<Icon name="lineage" />} to="/asset-groups">
-    View lineage
+    View asset lineage
   </AnchorButton>
 );
 

@@ -22,7 +22,6 @@ interface RunTableProps {
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
   belowActionBarComponents?: React.ReactNode;
   hideCreatedBy?: boolean;
-  additionalActionsForRun?: (run: RunTableRunFragment) => JSX.Element[];
   emptyState?: () => React.ReactNode;
 }
 
@@ -94,7 +93,6 @@ export const RunTable = (props: RunTableProps) => {
                 onAddTag={onAddTag}
                 checked={checkedIds.has(run.id)}
                 additionalColumns={props.additionalColumnsForRow?.(run)}
-                additionalActionsForRun={props.additionalActionsForRun}
                 onToggleChecked={onToggleFactory(run.id)}
                 isHighlighted={highlightedIds && highlightedIds.includes(run.id)}
                 hideCreatedBy={hideCreatedBy}

@@ -206,6 +206,14 @@ class IStepContext(IPlanContext):
     def node_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
+    @property
+    def op_retry_policy(self) -> Optional[RetryPolicy]:
+        # Currently this pulls the retry policy directly from the definition object -
+        # the retry policy would need to be moved to JobSnapshot or ExecutionPlanSnapshot
+        # in order for the run worker to be able to handle retries without direct
+        # access to user code
+        return self.job.get_definition().get_retry_policy_for_handle(self.node_handle)
+
 
 class PlanOrchestrationContext(IPlanContext):
     """Context for the orchestration of a run.

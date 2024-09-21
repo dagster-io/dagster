@@ -114,7 +114,20 @@ def execute_job_backfill_iteration(
                 f"Backfill completed for {backfill.backfill_id} for"
                 f" {len(partition_names)} partitions"
             )
-            instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+            if (
+                len(
+                    instance.get_run_ids(
+                        filters=RunsFilter(
+                            tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
+                            statuses=[DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED],
+                        )
+                    )
+                )
+                > 0
+            ):
+                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_FAILED))
+            else:
+                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS))
             yield None
 
 

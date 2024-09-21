@@ -1,11 +1,13 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Dict, Generator, List, Sequence, Tuple, Union
 
+import pytest
 from dagster import (
     AssetKey,
     AssetObservation,
     AssetSpec,
+    DagsterInstance,
     Definitions,
     SensorEvaluationContext,
     SensorResult,
@@ -13,12 +15,16 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
+from dagster._core.test_utils import instance_for_test
 from dagster._time import get_current_datetime
-from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster_airlift.core import (
+    build_defs_from_airflow_instance as build_defs_from_airflow_instance,
+)
 from dagster_airlift.test import make_dag_run, make_instance
 
 
@@ -31,7 +37,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
 ) -> RepositoryDefinition:
-    defs = build_definitions_airflow_asset_graph(
+    defs = load_definitions_airflow_asset_graph(
         assets_per_task, additional_defs=additional_defs, create_runs=create_runs
     )
     repo_def = defs.get_repository_def()
@@ -39,7 +45,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
     return repo_def
 
 
-def build_definitions_airflow_asset_graph(
+def load_definitions_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
@@ -58,7 +64,7 @@ def build_definitions_airflow_asset_graph(
                 )
                 if create_assets_defs:
 
-                    @multi_asset(specs=[spec])
+                    @multi_asset(specs=[spec], name=f"{spec.key.to_python_identifier()}_asset")
                     def _asset():
                         return None
 
@@ -86,7 +92,7 @@ def build_definitions_airflow_asset_graph(
         additional_defs,
         Definitions(assets=assets),
     )
-    return build_defs_from_airflow_instance(instance, defs=defs)
+    return build_defs_from_airflow_instance(airflow_instance=instance, defs=defs)
 
 
 def build_and_invoke_sensor(
@@ -97,10 +103,10 @@ def build_and_invoke_sensor(
         assets_per_task, additional_defs=additional_defs
     )
     sensor = next(iter(repo_def.sensor_defs))
-    context = build_sensor_context(repository_def=repo_def)
-    result = sensor(context)
+    sensor_context = build_sensor_context(repository_def=repo_def)
+    result = sensor(sensor_context)
     assert isinstance(result, SensorResult)
-    return result, context
+    return result, sensor_context
 
 
 def assert_expected_key_order(
@@ -122,3 +128,22 @@ def assert_dependency_structure_in_assets(
         assert {dep.asset_key for dep in spec.deps} == {
             AssetKey.from_user_string(dep) for dep in deps_list
         }
+
+
+@pytest.fixture(name="instance")
+def instance_fixture() -> Generator[DagsterInstance, None, None]:
+    with instance_for_test() as instance:
+        yield instance
+
+
+def _set_init_load_context() -> None:
+    """Sets the load context to initialization."""
+    DefinitionsLoadContext.set(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
+
+
+@pytest.fixture(name="init_load_context")
+def load_context_fixture() -> Generator[None, None, None]:
+    """Set initialization load context before and after the test."""
+    _set_init_load_context()
+    yield
+    _set_init_load_context()

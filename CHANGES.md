@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.8.8 (core) / 0.24.8 (libraries)
+
+### New
+
+- Added `--partition-range` option to `dagster asset materialize` CLI. This option only works for assets with single-run Backfill Policies.
+- Added a new `.without()` method to `AutomationCondition.eager()`, `AutomationCondition.on_cron()`, and `AutomationCondition.on_missing()` which allows sub-conditions to be removed, e.g. `AutomationCondition.eager().without(AutomationCondition.in_latest_time_window())`.
+- Added `AutomationCondition.on_missing()`, which materializes an asset partition as soon as all of its parent partitions are filled in.
+- `pyproject.toml` can now load multiple Python modules as individual Code Locations. Thanks, [@bdart](https://github.com/bdart)!
+- [ui] If a code location has errors, a button will be shown to view the error on any page in the UI.
+- [dagster-adls2] The `ADLS2PickleIOManager` now accepts `lease_duration` configuration. Thanks, [@0xfabioo](https://github.com/0xfabioo)!
+- [dagster-embedded-elt] Added an option to fetch row count metadata after running a Sling sync by calling `sling.replicate(...).fetch_row_count()`.
+- [dagster-fivetran] The dagster-fivetran integration will now automatically pull and attach column schema metadata after each sync.
+
+### Bugfixes
+
+- Fixed an issue which could cause errors when using `AutomationCondition.any_downstream_condition()` with downstream `AutoMaterializePolicy` objects.
+- Fixed an issue where `process_config_and_initialize` did not properly handle processing nested resource config.
+- [ui] Fixed an issue that would cause some AutomationCondition evaluations to be labeled `DepConditionWrapperCondition` instead of the key that they were evaluated against.
+- [dagster-webserver] Fixed an issue with code locations appearing in fluctuating incorrect state in deployments with multiple webserver processes.
+- [dagster-embedded-elt] Fixed an issue where Sling column lineage did not correctly resolve int the Dagster UI.
+- [dagster-k8s] The `wait_for_pod` check now waits until all pods are available, rather than erroneously returning after the first pod becomes available. Thanks [@easontm](https://github.com/easontm)!
+
+### Dagster Plus
+
+- Backfill daemon logs are now available in the "Coordinator Logs" tab in a backfill details page.
+- Users without proper code location permissions can no longer edit sensor cursors.
+
 ## 1.8.7 (core) / 0.24.7 (libraries)
 
 ### New

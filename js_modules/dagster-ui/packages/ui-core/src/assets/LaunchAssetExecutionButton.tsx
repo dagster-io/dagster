@@ -40,6 +40,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
@@ -187,6 +188,7 @@ export const LaunchAssetExecutionButton = ({
         label: string;
         icon?: JSX.Element;
         onClick: () => void;
+        disabled?: boolean;
       }
   )[];
 }) => {
@@ -293,18 +295,29 @@ export const LaunchAssetExecutionButton = ({
                   onClick(firstOption.assetKeys, e, true);
                 }}
               />
-              {additionalDropdownOptions?.map((option) =>
-                'label' in option ? (
+              {additionalDropdownOptions?.map((option) => {
+                if (!('label' in option)) {
+                  return option;
+                }
+
+                const item = (
                   <MenuItem
                     key={option.label}
                     text={option.label}
                     icon={option.icon}
                     onClick={option.onClick}
+                    disabled={option.disabled}
                   />
+                );
+
+                return option.disabled ? (
+                  <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
+                    {item}
+                  </Tooltip>
                 ) : (
-                  option
-                ),
-              )}
+                  item
+                );
+              })}
             </Menu>
           }
         >

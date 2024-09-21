@@ -7,7 +7,7 @@ sidebar_label: GitHub
 excerpt: Integrate with GitHub Apps and automate operations within your github repositories.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-github
-docslink: 
+docslink:
 partnerlink: https://github.com/
 logo: /integrations/Github.svg
 categories:
@@ -28,32 +28,7 @@ pip install dagster-github
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_github import GithubResource
-
-
-@dg.asset
-def github_asset(github: GithubResource):
-    github.get_client().create_issue(
-        repo_name="dagster",
-        repo_owner="dagster-io",
-        title="Dagster's first github issue",
-        body="this open source thing seems like a pretty good idea",
-    )
-
-
-defs = dg.Definitions(
-    assets=[github_asset],
-    resources={
-        "github": GithubResource(
-            github_app_id=dg.EnvVar("GITHUB_APP_ID"),
-            github_app_private_rsa_key=dg.EnvVar("GITHUB_PRIVATE_KEY"),
-            github_installation_id=dg.EnvVar("GITHUB_INSTALLATION_ID"),
-        )
-    },
-)
-```
+<CodeExample filePath="integrations/github.py" language="python" />
 
 ### About GitHub
 

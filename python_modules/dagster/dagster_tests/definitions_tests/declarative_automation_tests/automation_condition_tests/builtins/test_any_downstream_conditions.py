@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Iterable
 
 from dagster import (
     AssetKey,
@@ -15,10 +15,10 @@ from dagster._core.definitions.declarative_automation.operators.boolean_operator
 )
 
 
-def _get_result(key: CoercibleToAssetKey, results: Sequence[AutomationResult]) -> AutomationResult:
+def _get_result(key: CoercibleToAssetKey, results: Iterable[AutomationResult]) -> AutomationResult:
     key = AssetKey.from_coercible(key)
     for result in results:
-        if result.asset_key == key:
+        if result.key == key:
             return result
     assert False
 

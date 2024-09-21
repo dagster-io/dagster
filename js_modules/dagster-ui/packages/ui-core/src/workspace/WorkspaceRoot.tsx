@@ -70,9 +70,16 @@ const RepoRouteContainer = () => {
       );
     }
 
+    const entryForLocation = workspaceState.locationEntries.find(
+      (entry) => entry.id === addressForPath.location,
+    );
+
     return (
       <Box padding={{vertical: 64}}>
-        <CodeLocationNotFound repoAddress={addressForPath} />
+        <CodeLocationNotFound
+          repoAddress={addressForPath}
+          locationEntry={entryForLocation || null}
+        />
       </Box>
     );
   }

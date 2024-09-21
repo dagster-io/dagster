@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Mapping, Optional, Union
 
 from typing_extensions import TypeAlias
 
@@ -45,6 +45,8 @@ class DefinitionsLoadContext:
     User construction of this object is not supported.
     """
 
+    _instance: ClassVar[Optional["DefinitionsLoadContext"]] = None
+
     def __init__(
         self,
         load_type: DefinitionsLoadType,
@@ -52,6 +54,18 @@ class DefinitionsLoadContext:
     ):
         self._load_type = load_type
         self._repository_load_data = repository_load_data
+
+    @classmethod
+    def get(cls) -> "DefinitionsLoadContext":
+        """Get the current DefinitionsLoadContext. If it has not been set, the
+        context is assumed to be initialization.
+        """
+        return DefinitionsLoadContext._instance or cls(load_type=DefinitionsLoadType.INITIALIZATION)
+
+    @classmethod
+    def set(cls, instance: "DefinitionsLoadContext") -> None:
+        """Get the current DefinitionsLoadContext."""
+        cls._instance = instance
 
     @property
     def load_type(self) -> DefinitionsLoadType:

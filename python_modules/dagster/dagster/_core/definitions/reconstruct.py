@@ -729,6 +729,10 @@ def repository_def_from_target_def(
     )
     from dagster._core.definitions.source_asset import SourceAsset
 
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+    )
+
     # DefinitionsLoader will always return Definitions
     if isinstance(target, DefinitionsLoader):
         context = (
@@ -773,6 +777,11 @@ def repository_def_from_pointer(
     load_type: "DefinitionsLoadType",
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
+    from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+    )
     target = def_from_pointer(pointer)
     repo_def = repository_def_from_target_def(target, load_type, repository_load_data)
     if not repo_def:

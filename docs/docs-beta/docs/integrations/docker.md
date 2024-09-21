@@ -7,7 +7,7 @@ sidebar_label: Docker
 excerpt: Run runs external processes in docker containers directly from Dagster.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-docker
-docslink: 
+docslink:
 partnerlink: https://www.docker.com/
 logo: /integrations/Docker.svg
 categories:
@@ -28,34 +28,7 @@ pip install dagster-docker
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_docker import PipesDockerClient
-
-
-@dg.asset
-def docker_pipes_asset(
-    context: dg.AssetExecutionContext, docker_pipes_client: PipesDockerClient
-):
-    docker_image = "python:3.9-slim"
-    return docker_pipes_client.run(
-        image=docker_image,
-        command=[
-            "python",
-            "-m",
-            "my_module",
-        ],
-        context=context,
-    ).get_results()
-
-
-defs = dg.Definitions(
-    assets=[docker_pipes_asset],
-    resources={
-        "docker_pipes_client": PipesDockerClient(),
-    },
-)
-```
+<CodeExample filePath="integrations/docker.py" language="python" />
 
 ### Deploying to Docker?
 

@@ -4,7 +4,7 @@ status: published
 name: Cube
 title: Dagster & Cube
 sidebar_label: Cube
-excerpt: "Push changes from upstream data sources to Cubes semantic layer."
+excerpt: 'Push changes from upstream data sources to Cubes semantic layer.'
 date: 2023-08-30
 apireflink: https://cube.dev/docs/orchestration-api/dagster
 partnerlink: https://cube.dev/
@@ -28,33 +28,7 @@ pip install dagster_cube
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_cube import CubeResource
-
-
-@dg.asset
-def cube_query_workflow(cube: CubeResource):
-    response = cube.make_request(
-        method="POST",
-        endpoint="load",
-        data={"query": {"measures": ["Orders.count"], "dimensions": ["Orders.status"]}},
-    )
-
-    return response
-
-
-defs = dg.Definitions(
-    assets=[cube_query_workflow],
-    resources={
-        "cube": CubeResource(
-            instance_url="https://<<INSTANCE>>.cubecloudapp.dev/cubejs-api/v1/",
-            api_key=dg.EnvVar("CUBE_API_KEY"),
-        )
-    },
-)
-
-```
+<CodeExample filePath="integrations/cube.py" language="python" />
 
 ### About Cube
 

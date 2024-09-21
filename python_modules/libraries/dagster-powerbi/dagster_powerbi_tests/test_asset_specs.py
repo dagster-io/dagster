@@ -1,16 +1,21 @@
 import uuid
+from typing import cast
 
 import pytest
 import responses
 from dagster import materialize
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.definitions.repository_definition.repository_definition import (
+    PendingRepositoryDefinition,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_powerbi import PowerBIWorkspace
-from dagster_powerbi.resource import BASE_API_URL
+from dagster_powerbi.resource import BASE_API_URL, PowerBIToken
 
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
@@ -18,7 +23,7 @@ from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_id: str) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token,
+        credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
 
@@ -32,7 +37,7 @@ def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_
 def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id: str) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token,
+        credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
     all_assets = resource.build_defs().get_asset_graph().assets_defs
@@ -72,7 +77,9 @@ def test_refreshable_semantic_model(
 ) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token, workspace_id=workspace_id, refresh_poll_interval=0
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+        refresh_poll_interval=0,
     )
     all_assets = (
         resource.build_defs(enable_refresh_semantic_models=True).get_asset_graph().assets_defs
@@ -115,7 +122,7 @@ def test_refreshable_semantic_model(
     assert result.success is success
 
 
-def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMock) -> None:
+def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.RequestsMock) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
@@ -125,8 +132,20 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
         assert len(workspace_data_api_mocks.calls) == 5
 
-        # 5 PowerBI external assets, one materializable asset
-        assert len(repository_def.assets_defs_by_key) == 5 + 1
+        # 3 PowerBI external assets, one materializable asset
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
+
+        # Assert that all Power BI assets have upstreams, which are resolved
+        for asset_def in repository_def.assets_defs_by_key.values():
+            for key, deps in asset_def.asset_deps.items():
+                if key.path[-1] == "my_materializable_asset":
+                    continue
+                if key.path[0] == "semantic_model":
+                    continue
+                assert len(deps) > 0, f"Expected upstreams for {key}"
+                assert all(
+                    dep in repository_def.assets_defs_by_key for dep in deps
+                ), f"Asset {key} depends on {deps} which are not in the repository"
 
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data
@@ -134,6 +153,73 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         recon_repo = ReconstructableRepository.for_file(
             file_relative_path(__file__, "pending_repo.py"),
             fn_name="pending_repo_from_cached_asset_metadata",
+        )
+        recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
+
+        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+
+        run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
+
+        events = execute_plan(
+            execution_plan=execution_plan,
+            job=recon_job,
+            dagster_run=run,
+            instance=instance,
+        )
+
+        assert (
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 1
+        ), "Expected two successful steps"
+
+        assert len(workspace_data_api_mocks.calls) == 5
+
+
+def test_two_workspaces(
+    workspace_data_api_mocks: responses.RequestsMock,
+    second_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with instance_for_test():
+        assert len(workspace_data_api_mocks.calls) == 0
+
+        from dagster_powerbi_tests.pending_repo_two_workspaces import (
+            pending_repo_from_cached_asset_metadata,
+        )
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        assert len(workspace_data_api_mocks.calls) == 9
+
+        # 3 PowerBI external assets from first workspace, 1 from second
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
+
+
+def test_using_reconstruction_metadata(workspace_data_api_mocks: responses.RequestsMock) -> None:
+    with instance_for_test() as instance:
+        assert len(workspace_data_api_mocks.calls) == 0
+
+        from dagster_powerbi_tests.pending_repo import reconstruction_metadata_defs
+
+        pending_repo = cast(
+            PendingRepositoryDefinition,
+            reconstruction_metadata_defs(
+                DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION)
+            ).get_inner_repository(),
+        )
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo.compute_repository_definition()
+        assert len(workspace_data_api_mocks.calls) == 5
+
+        # 5 PowerBI external assets, one materializable asset
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
+
+        job_def = repository_def.get_job("all_asset_job")
+        repository_load_data = repository_def.repository_load_data
+
+        recon_repo = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "pending_repo.py"),
+            fn_name="reconstruction_metadata_defs",
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 

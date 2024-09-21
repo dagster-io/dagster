@@ -20,6 +20,7 @@ from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
@@ -242,6 +243,10 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         else:
             return None
 
+    @property
+    def entity_keys(self) -> Sequence[EntityKey]:
+        return [*(self.asset_selection or []), *(self.asset_check_keys or [])]
+
     def requires_backfill_daemon(self) -> bool:
         """For now we always send RunRequests with an asset_graph_subset to the backfill daemon, but
         eventaully we will want to introspect on the asset_graph_subset to determine if we can
@@ -369,7 +374,10 @@ class SensorResult(
                 "asset_events",
                 List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
             ),
-            ("automation_condition_evaluations", Optional[Sequence[AutomationConditionEvaluation]]),
+            (
+                "automation_condition_evaluations",
+                Optional[Sequence[AutomationConditionEvaluation[EntityKey]]],
+            ),
         ],
     )
 ):

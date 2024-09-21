@@ -77,7 +77,7 @@ export const InstigationEventLogTable = ({events}: {events: InstigationEventLogF
                   highlighted={false}
                   data-index={index}
                   ref={rowVirtualizer.measureElement}
-                  style={{height: 'auto'}}
+                  style={{height: 'auto', maxHeight: 'unset'}}
                 >
                   <EventTypeColumn>
                     <span style={{marginLeft: 8}}>{event.level}</span>

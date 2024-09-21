@@ -85,7 +85,7 @@ For example, if you wanted to provide different Snowflake passwords for your pro
    - Set the value as the branch deployment password, and
    - Check only the **Branch deployments** box
 
-SCREENSHOT
+![Screenshot of environment variables](/img/placeholder.svg)
 
 ## Next steps
 
