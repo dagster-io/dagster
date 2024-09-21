@@ -154,7 +154,7 @@ class AirflowInstance:
                 f"Failed to fetch task instance for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def get_task_info(self, dag_id: str, task_id: str) -> "TaskInfo":
+    def get_task_info(self, *, dag_id: str, task_id: str) -> "TaskInfo":
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/tasks/{task_id}"
         )

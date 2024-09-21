@@ -1,24 +1,22 @@
 from typing import Any, Mapping, Optional
 
-from dagster import AssetSpec, JsonMetadataValue
+from dagster import JsonMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 
 from dagster_airlift.constants import MIGRATED_TAG
 from dagster_airlift.core.airflow_instance import TaskInfo
-from dagster_airlift.core.serialization_utils import ExistingAssetKeyAirflowData
+from dagster_airlift.core.serialization.serialized_data import SerializedAssetKeyScopedAirflowData
 from dagster_airlift.core.utils import airflow_kind_dict
 
 
 def get_airflow_data_for_task_mapped_spec(
     task_info: TaskInfo,
     migration_state: Optional[bool],
-    spec: AssetSpec,
-) -> ExistingAssetKeyAirflowData:
+) -> SerializedAssetKeyScopedAirflowData:
     tags = airflow_kind_dict() if not migration_state else {}
     if migration_state is not None:
         tags[MIGRATED_TAG] = str(bool(migration_state))
-    return ExistingAssetKeyAirflowData(
-        asset_key=spec.key,
+    return SerializedAssetKeyScopedAirflowData(
         additional_metadata=task_asset_metadata(task_info, migration_state),
         additional_tags=tags,
     )
