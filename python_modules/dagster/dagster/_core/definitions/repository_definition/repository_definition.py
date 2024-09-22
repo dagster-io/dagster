@@ -65,7 +65,9 @@ class RepositoryLoadData(
 ):
     def __new__(
         cls,
-        cacheable_asset_data: Mapping[str, Sequence[AssetsDefinitionCacheableData]],
+        cacheable_asset_data: Optional[
+            Mapping[str, Sequence[AssetsDefinitionCacheableData]]
+        ] = None,
         reconstruction_metadata: Optional[
             Mapping[str, CodeLocationReconstructionMetadataValue]
         ] = None,
@@ -73,7 +75,7 @@ class RepositoryLoadData(
         return super(RepositoryLoadData, cls).__new__(
             cls,
             cacheable_asset_data=(
-                check.mapping_param(
+                check.opt_mapping_param(
                     cacheable_asset_data,
                     "cacheable_asset_data",
                     key_type=str,
