@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Iterator, List, Optional
 
 from dagster import (
@@ -7,8 +8,6 @@ from dagster import (
     _check as check,
     external_asset_from_spec,
 )
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
-from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
@@ -19,26 +18,33 @@ from dagster_airlift.core.sensor import (
     build_airflow_polling_sensor,
 )
 from dagster_airlift.core.serialization.compute import _metadata_key, compute_serialized_data
+from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
 
 
-def get_or_compute_airflow_data(
-    *, airflow_instance: AirflowInstance, defs: Definitions
-) -> AirflowDefinitionsData:
-    context = DefinitionsLoadContext.get()
-    metadata_key = _metadata_key(airflow_instance.name)
-    if (
-        context.load_type == DefinitionsLoadType.RECONSTRUCTION
-        and metadata_key in context.reconstruction_metadata
-    ):
-        airflow_definition_data = deserialize_value(
-            context.reconstruction_metadata[metadata_key], as_type=AirflowDefinitionsData
-        )
-        assert isinstance(airflow_definition_data, AirflowDefinitionsData)
-        return airflow_definition_data
-    else:
-        serialized_data = compute_serialized_data(airflow_instance=airflow_instance, defs=defs)
+@dataclass
+class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsData]):
+    airflow_instance: AirflowInstance
+    explicit_defs: Definitions
+    sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
+
+    @property
+    def defs_key(self) -> str:
+        return _metadata_key(self.airflow_instance.name)
+
+    def fetch_state(self) -> AirflowDefinitionsData:
         return AirflowDefinitionsData(
-            instance_name=airflow_instance.name, serialized_data=serialized_data
+            instance_name=self.airflow_instance.name,
+            serialized_data=compute_serialized_data(
+                airflow_instance=self.airflow_instance, defs=self.explicit_defs
+            ),
+        )
+
+    def defs_from_state(self, state: AirflowDefinitionsData) -> Definitions:
+        return definitions_from_airflow_data(
+            state,
+            self.explicit_defs,
+            self.airflow_instance,
+            self.sensor_minimum_interval_seconds,
         )
 
 
@@ -50,12 +56,11 @@ def build_defs_from_airflow_instance(
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     defs = defs or Definitions()
-    airflow_data = get_or_compute_airflow_data(airflow_instance=airflow_instance, defs=defs)
-    return definitions_from_airflow_data(
-        airflow_data, defs, airflow_instance, sensor_minimum_interval_seconds
-    ).with_reconstruction_metadata(
-        {_metadata_key(airflow_data.instance_name): serialize_value(airflow_data)}
-    )
+    return AirflowInstanceDefsLoader(
+        airflow_instance=airflow_instance,
+        explicit_defs=defs,
+        sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
+    ).build_defs()
 
 
 def definitions_from_airflow_data(
