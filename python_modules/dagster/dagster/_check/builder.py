@@ -260,6 +260,8 @@ def build_check_call_str(
     name: str,
     eval_ctx: EvalContext,
 ) -> str:
+    from dagster._record import is_record
+
     # assumes this module is in global/local scope as check
     origin = get_origin(ttype)
     args = get_args(ttype)
@@ -359,7 +361,9 @@ def build_check_call_str(
                         return (
                             f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                         )
-
+                    elif is_record(inner_origin):
+                        it = _name(inner_origin)
+                        return f'{name} if isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)
