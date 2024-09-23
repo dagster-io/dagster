@@ -260,7 +260,7 @@ def build_check_call_str(
     name: str,
     eval_ctx: EvalContext,
 ) -> str:
-    from dagster._record import _RECORD_MARKER_FIELD
+    from dagster._record import is_record
 
     # assumes this module is in global/local scope as check
     origin = get_origin(ttype)
@@ -315,12 +315,6 @@ def build_check_call_str(
             return f'check.mapping_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
         elif origin is collections.abc.Set:
             return f'check.set_param({name}, "{name}", {_name(single)})'
-        # If the type is a Generic record, we just use an inst check
-        elif hasattr(origin, _RECORD_MARKER_FIELD):
-            it = _name(ttype)
-            return (
-                f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
-            )
         elif origin in (UnionType, Union):
             # optional
             if pair_right is type(None):
@@ -367,11 +361,9 @@ def build_check_call_str(
                         return (
                             f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                         )
-                    # If the type is a Generic record, we just use an inst check
-                    elif hasattr(inner_origin, _RECORD_MARKER_FIELD):
+                    elif is_record(inner_origin):
                         it = _name(inner_origin)
                         return f'{name} if isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
-
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)
