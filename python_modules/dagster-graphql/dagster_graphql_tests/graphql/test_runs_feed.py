@@ -276,6 +276,9 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
     the other test suite.
     """
 
+    def supports_filtering(self):
+        return True
+
     def test_get_runs_feed_ignores_backfill_runs(self, graphql_context):
         for _ in range(10):
             _create_run_for_backfill(graphql_context, backfill_id="foo")
@@ -505,7 +508,6 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_get_runs_feed_filter_status(self, graphql_context):
-        # TestRunsFeedUniqueSetups::test_get_runs_feed_filter_status[sqlite_with_default_run_launcher_managed_grpc_env]
         _create_run(graphql_context, status=DagsterRunStatus.SUCCESS)
         _create_run(graphql_context, status=DagsterRunStatus.CANCELING)
         _create_run(graphql_context, status=DagsterRunStatus.FAILURE)
@@ -599,7 +601,6 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["runsFeedOrError"]["results"]) == 1
 
     def test_get_runs_feed_filter_create_time(self, graphql_context):
-        # TestRunsFeedUniqueSetups::test_get_runs_feed_filter_create_time[sqlite_with_default_run_launcher_managed_grpc_env]
         nothing_created_ts = get_current_timestamp()
         time.sleep(CREATE_DELAY)
         for _ in range(5):
@@ -707,7 +708,8 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.data["runsFeedOrError"]["hasMore"]
 
     def test_get_runs_feed_filter_job_name(self, graphql_context):
-        # TestRunsFeedUniqueSetups::test_get_runs_feed_filter_job_name[sqlite_with_default_run_launcher_managed_grpc_env]
+        if not self.supports_filtering():
+            return pytest.skip("storage does not support filtering backfills by job_name")
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
 
@@ -778,7 +780,8 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["runsFeedOrError"]["results"]) == 6
 
     def test_get_runs_feed_filter_tags(self, graphql_context):
-        # TestRunsFeedUniqueSetups::test_get_runs_feed_filter_tags[sqlite_with_default_run_launcher_managed_grpc_env]
+        if not self.supports_filtering():
+            return pytest.skip("storage does not support filtering backfills by tag")
         for _ in range(3):
             _create_run(graphql_context, tags={"foo": "bar"})
             time.sleep(CREATE_DELAY)
@@ -850,7 +853,6 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["runsFeedOrError"]["results"]) == 3
 
     def test_get_runs_feed_filters_that_dont_apply_to_backfills(self, graphql_context):
-        # TestRunsFeedUniqueSetups::test_get_runs_feed_filters_that_dont_apply_to_backfills[sqlite_with_default_run_launcher_managed_grpc_env]
         run = _create_run(graphql_context)
         time.sleep(CREATE_DELAY)
         _create_backfill(graphql_context)
@@ -885,8 +887,8 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["runsFeedOrError"]["results"]) == 1
 
     def test_get_runs_feed_filter_tags_and_status(self, graphql_context):
-        # tests filters that need to be done with the slow method still respect other filters
-        # TestRunsFeedUniqueSetups::test_get_runs_feed_filter_tags_and_status[sqlite_with_default_run_launcher_managed_grpc_env]
+        if not self.supports_filtering():
+            return pytest.skip("storage does not support filtering backfills by tag")
         run_statuses = [
             DagsterRunStatus.SUCCESS,
             DagsterRunStatus.FAILURE,
