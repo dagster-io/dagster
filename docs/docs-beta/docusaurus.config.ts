@@ -149,7 +149,7 @@ const config: Config = {
         },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
-          lastmod: 'date',
+          //lastmod: 'date',
           changefreq: 'weekly',
           priority: 0.5,
           ignorePatterns: ['/tags/**'],
