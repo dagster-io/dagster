@@ -659,5 +659,6 @@ span {
 /* Announcement bar */
 div[class^='announcementBar_'] {
   height: 40px;
+  color: var(--theme-color-text);
   background-color: var(--theme-color-background-red);
 }
