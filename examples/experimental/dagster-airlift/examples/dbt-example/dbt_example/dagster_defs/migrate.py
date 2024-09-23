@@ -1,3 +1,4 @@
+from dagster import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core import (
     AirflowInstance,
@@ -7,6 +8,7 @@ from dagster_airlift.core import (
     task_defs,
 )
 from dagster_airlift.dbt import dbt_defs
+from dagster_airlift.k8s.asset import k8s_pod_defs
 from dagster_dbt import DbtProject
 
 from dbt_example.dagster_defs.lakehouse import (
@@ -58,6 +60,29 @@ defs = build_defs_from_airflow_instance(
         lakehouse_existence_check_defs(
             csv_path=CSV_PATH,
             duckdb_path=DB_PATH,
+        ),
+        dag_defs(
+            "kubernetes_sample",
+            task_defs(
+                "k8s_test_task",
+                k8s_pod_defs(
+                    specs=[AssetSpec("my_asset")],
+                    pod_spec_config={
+                        "containers": [
+                            {
+                                "name": "airflow-test-pod",
+                                "image": "ubuntu:18.04",
+                                "command": ["bash", "-cx"],
+                                # Run kubectl get pods -n default and expect a pod to be running
+                                "args": ["sleep 100"],
+                            }
+                        ]
+                    },
+                    pod_metadata={"name": "my-pod"},
+                    in_cluster=False,
+                    cluster_context="minikube",
+                ),
+            ),
         ),
     ),
 )

@@ -1,0 +1,3 @@
+tasks:
+  - id: k8s_test_task
+    migrated: True
