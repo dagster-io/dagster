@@ -366,5 +366,11 @@ def build_check_call_str(
                 if tuple_types is not None:
                     tt_name = _name(tuple_types)
                     return f'{name} if isinstance({name}, {tt_name}) else check.inst_param({name}, "{name}", {tt_name})'
+        # generic
+        else:
+            inst_type = _coerce_type(ttype, eval_ctx)
+            if inst_type:
+                it = _name(inst_type)
+                return f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
 
         failed(f"Unhandled {ttype}")
