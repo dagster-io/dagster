@@ -12,6 +12,7 @@ import {Link, useParams} from 'react-router-dom';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
+import {RunAssetCheckTags} from './RunAssetCheckTags';
 import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
@@ -161,7 +162,11 @@ export const RunRoot = () => {
                 ) : (
                   <RunAssetTags run={run} />
                 )}
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
+                {isHiddenAssetGroupJob(run.pipelineName) ? (
+                  <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
+                ) : (
+                  <RunAssetCheckTags run={run} />
+                )}
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation

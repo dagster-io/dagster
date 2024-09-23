@@ -1424,6 +1424,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   parentPipelineSnapshotId: String
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
+  assetChecks: [AssetCheckhandle!]
   updateTime: Float
   hasReExecutePermission: Boolean!
   hasTerminatePermission: Boolean!
