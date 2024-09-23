@@ -15,6 +15,7 @@ import {Link, useParams} from 'react-router-dom';
 import {BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillAssetPartitionsTable} from './BackfillAssetPartitionsTable';
 import {BackfillLogsTab} from './BackfillLogsTab';
+import {BackfillOpJobPartitionsTable} from './BackfillOpJobPartitionsTable';
 import {BackfillOverviewDetails} from './BackfillOverviewDetails';
 import {BackfillRunsTab} from './BackfillRunsTab';
 import {useBackfillDetailsQuery} from './useBackfillDetailsQuery';
@@ -104,7 +105,11 @@ export const RunsFeedBackfillPage = () => {
               )}
 
               <BackfillOverviewDetails backfill={backfill} />
-              <BackfillAssetPartitionsTable backfill={backfill} />
+              {backfill.isAssetBackfill ? (
+                <BackfillAssetPartitionsTable backfill={backfill} />
+              ) : (
+                <BackfillOpJobPartitionsTable backfill={backfill} />
+              )}
             </Box>
           )}
           {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="list" />}

@@ -14,9 +14,12 @@ export const BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT = gql`
     id
     partitionNames
     partitionSet {
+      id
+      mode
       name
       pipelineName
       repositoryOrigin {
+        id
         repositoryName
         repositoryLocationName
       }
