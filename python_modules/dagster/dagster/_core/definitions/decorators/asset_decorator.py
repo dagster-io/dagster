@@ -296,25 +296,22 @@ def resolve_asset_key_and_name_for_decorator(
     decorator_name: str,
     fn: Callable[..., Any],
 ) -> Tuple[AssetKey, str]:
-    if (name or key_prefix) and key:
-        raise DagsterInvalidDefinitionError(
-            f"Cannot specify a name or key prefix for {decorator_name} when the key"
-            " argument is provided."
-        )
-    key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
-    key = AssetKey.from_coercible(key) if key else None
-    assigned_name = name or fn.__name__
-    return (
-        (
-            # the filter here appears unnecessary per typing, but this exists
-            # historically so keeping it here to be conservative in case users
-            # can get Nones into the key_prefix_list somehow
-            AssetKey(list(filter(None, [*(key_prefix_list or []), assigned_name])))
-            if not key
-            else key
-        ),
-        assigned_name,
-    )
+    if key:
+        if key_prefix:
+            raise DagsterInvalidDefinitionError(
+                f"Cannot specify a key prefix for {decorator_name} when the key"
+                " argument is provided."
+            )
+        resolved_key = AssetKey.from_coercible(key)
+        return resolved_key, name or resolved_key.to_python_identifier()
+    else:
+        key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
+        assigned_name = name or fn.__name__
+        # the filter here appears unnecessary per typing, but this exists
+        # historically so keeping it here to be conservative in case users
+        # can get Nones into the key_prefix_list somehow
+        resolved_key = AssetKey(list(filter(None, [*(key_prefix_list or []), assigned_name])))
+        return resolved_key, resolved_key.to_python_identifier()
 
 
 class AssetDecoratorArgs(NamedTuple):
@@ -396,7 +393,7 @@ def create_assets_def_from_fn_and_decorator_args(
 
     validate_resource_annotated_function(fn)
 
-    out_asset_key, asset_name = resolve_asset_key_and_name_for_decorator(
+    out_asset_key, node_name = resolve_asset_key_and_name_for_decorator(
         key=args.key,
         key_prefix=args.key_prefix,
         name=args.name,
@@ -472,7 +469,7 @@ def create_assets_def_from_fn_and_decorator_args(
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
             fn=fn,
-            op_name=out_asset_key.to_python_identifier(),
+            op_name=node_name,
             asset_in_map=builder_args.asset_in_map,
             asset_out_map=builder_args.asset_out_map,
             asset_deps=builder_args.asset_deps,
@@ -836,7 +833,7 @@ def graph_asset_no_defaults(
 ) -> AssetsDefinition:
     ins = ins or {}
     named_ins = build_named_ins(compose_fn, ins or {}, set())
-    out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
+    out_asset_key, node_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
         name=name,
@@ -864,7 +861,7 @@ def graph_asset_no_defaults(
     }
 
     op_graph = graph(
-        name=out_asset_key.to_python_identifier(),
+        name=node_name or out_asset_key.to_python_identifier(),
         description=description,
         config=config,
         ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},

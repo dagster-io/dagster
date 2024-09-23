@@ -2108,35 +2108,22 @@ def test_graph_asset_cannot_use_key_prefix_name_and_key() -> None:
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=(
-            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
-        ),
+        match=("Cannot specify a key prefix for @graph_asset when the key argument is provided"),
     ):
 
         @graph_asset(key_prefix="a_prefix", key=AssetKey("my_graph_asset"))
         def _specified_elsewhere() -> int:
             return my_op()
 
-        assert _specified_elsewhere  # appease linter
+    @graph_asset(name="a_name", key=AssetKey("my_graph_asset"))
+    def _specified_elsewhere() -> int:
+        return my_op()
+
+    assert _specified_elsewhere.node_def.name == "a_name"
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=(
-            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
-        ),
-    ):
-
-        @graph_asset(name="a_name", key=AssetKey("my_graph_asset"))
-        def _specified_elsewhere() -> int:
-            return my_op()
-
-        assert _specified_elsewhere  # appease linter
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(
-            "Cannot specify a name or key prefix for @graph_asset when the key argument is provided"
-        ),
+        match=("Cannot specify a key prefix for @graph_asset when the key argument is provided"),
     ):
 
         @graph_asset(name="a_name", key_prefix="a_prefix", key=AssetKey("my_graph_asset"))
@@ -2392,3 +2379,15 @@ def test_multiple_keys_per_output_name():
         AssetsDefinition(
             node_def=op1, keys_by_output_name={"out1": AssetKey("a"), "out2": AssetKey("a")}
         )
+
+
+def test_asset_key_with_invalid_python_name() -> None:
+    with pytest.raises(DagsterInvalidDefinitionError, match="x.y"):
+
+        @asset(key=AssetKey(["x.y"]))
+        def _fn_name() -> None: ...
+
+    @asset(key=AssetKey(["x.y"]), name="x_y_thing")
+    def _fn_name() -> None: ...
+
+    assert _fn_name.op.name == "x_y_thing"
