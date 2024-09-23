@@ -59,7 +59,7 @@ def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str
 @definitions
 def metadata_defs(context: DefinitionsLoadContext):
     @asset
-    def regular_asset(): ...
+    def regular_asset() -> None: ...
 
     all_asset_job = define_asset_job("all_assets", selection=AssetSelection.all())
 
@@ -74,7 +74,7 @@ def metadata_defs(context: DefinitionsLoadContext):
 # ########################
 
 
-def test_reconstruction_metadata():
+def test_reconstruction_metadata() -> None:
     repo = repository_def_from_target_def(metadata_defs, DefinitionsLoadType.INITIALIZATION)
     assert repo
     assert repo.assets_defs_by_key.keys() == {
@@ -105,7 +105,7 @@ def test_reconstruction_metadata():
         mock_fetch.assert_not_called()
 
 
-def test_reconstruction_metadata_with_global_context():
+def test_reconstruction_metadata_with_global_context() -> None:
     defs_path = file_relative_path(__file__, "metadata_defs_global_context.py")
 
     recon_repo = ReconstructableRepository.for_file(defs_path, "defs")
@@ -130,14 +130,14 @@ def test_reconstruction_metadata_with_global_context():
         mock_fetch.assert_not_called()
 
 
-def test_default_global_context():
+def test_default_global_context() -> None:
     instance = DefinitionsLoadContext.get()
     DefinitionsLoadContext._instance = None  # noqa: SLF001
     assert DefinitionsLoadContext.get().load_type == DefinitionsLoadType.INITIALIZATION
     DefinitionsLoadContext.set(instance)
 
 
-def test_invoke_definitions_loader_with_context():
+def test_invoke_definitions_loader_with_context() -> None:
     @definitions
     def defs(context: DefinitionsLoadContext) -> Definitions:
         return Definitions()
@@ -145,10 +145,10 @@ def test_invoke_definitions_loader_with_context():
     assert defs(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
 
     with pytest.raises(DagsterInvalidInvocationError, match="requires a DefinitionsLoadContext"):
-        defs()
+        defs()  # type: ignore
 
 
-def test_invoke_definitions_loader_no_context():
+def test_invoke_definitions_loader_no_context() -> None:
     @definitions
     def defs() -> Definitions:
         return Definitions()
@@ -156,7 +156,7 @@ def test_invoke_definitions_loader_no_context():
     assert defs()
 
     with pytest.raises(DagsterInvalidInvocationError, match="Passed a DefinitionsLoadContext"):
-        defs(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
+        defs(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))  # type: ignore
 
 
 @definitions
@@ -165,14 +165,14 @@ def load_type_test_defs(context: DefinitionsLoadContext) -> Definitions:
         raise Exception("Unexpected load type")
 
     @asset
-    def foo(): ...
+    def foo() -> None: ...
 
     foo_job = define_asset_job("foo_job", [foo])
 
     return Definitions(assets=[foo], jobs=[foo_job])
 
 
-def test_definitions_load_type():
+def test_definitions_load_type() -> None:
     pointer = CodePointer.from_python_file(__file__, "load_type_test_defs", None)
 
     # Load type is INITIALIZATION so should not raise
