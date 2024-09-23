@@ -5,6 +5,7 @@ import {useLocation} from 'react-router-dom';
 import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {getRunFeedPath} from './RunsFeedUtils';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {gql, useQuery} from '../apollo-client';
@@ -59,7 +60,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
   const urlForStatus = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
-    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], '/runs-feed');
+    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], getRunFeedPath());
   };
 
   const tabs = (
@@ -76,7 +77,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink id="scheduled" title="Scheduled" to="/runs-feed/scheduled" />
+      <TabLink id="scheduled" title="Scheduled" to={`${getRunFeedPath()}/scheduled`} />
     </Tabs>
   );
 
@@ -108,7 +109,7 @@ export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
 
 export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => {
   const {pathname} = useLocation();
-  if (pathname === '/runs-feed/scheduled') {
+  if (pathname === `${getRunFeedPath()}/scheduled`) {
     return 'scheduled';
   }
   const statusTokens = new Set(

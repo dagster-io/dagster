@@ -20,6 +20,7 @@ import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
+import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedRow.types';
@@ -86,7 +87,7 @@ export const RunsFeedRow = ({
           <Link
             to={
               entry.__typename === 'PartitionBackfill'
-                ? appendCurrentQueryParams(`/runs-feed/b/${entry.id}?tab=runs`)
+                ? appendCurrentQueryParams(getBackfillPath(entry.id))
                 : `/runs/${entry.id}`
             }
           >
