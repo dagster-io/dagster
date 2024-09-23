@@ -78,6 +78,7 @@ PingOne
 Polars
 Postgres
 Prometheus
+Power BI
 Pydantic
 RBAC
 RDS
@@ -133,3 +134,15 @@ uncomment
 unpartitioned
 vCPU
 vCPUs
+we have
+
+
+SLA
+SLAs
+performant
+SOC
+GDPR
+HIPAA
+IAM
+ECS
+AWS
