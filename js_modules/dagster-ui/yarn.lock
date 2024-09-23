@@ -3706,7 +3706,7 @@ __metadata:
     react-docgen-typescript-plugin: "npm:^1.0.8"
     react-dom: "npm:^18.2.0"
     regenerator-runtime: "npm:^0.13.9"
-    rollup: "npm:^2.70.1"
+    rollup: "npm:^3.29.5"
     rollup-plugin-node-globals: "npm:^1.4.0"
     rollup-plugin-polyfill-node: "npm:^0.8.0"
     rollup-plugin-styles: "npm:^4.0.0"
@@ -20944,9 +20944,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup@npm:^2.70.1":
-  version: 2.79.1
-  resolution: "rollup@npm:2.79.1"
+"rollup@npm:^3.29.5":
+  version: 3.29.5
+  resolution: "rollup@npm:3.29.5"
   dependencies:
     fsevents: "npm:~2.3.2"
   dependenciesMeta:
@@ -20954,7 +20954,7 @@ __metadata:
       optional: true
   bin:
     rollup: dist/bin/rollup
-  checksum: 10/df087b701304432f30922bbee5f534ab189aa6938bd383b5686c03147e0d00cd1789ea10a462361326ce6b6ebe448ce272ad3f3cc40b82eeb3157df12f33663c
+  checksum: 10/5ce0e5f1d9288d4954db93993477f894eb3042ec98a7c9c19980e53b1f58296481e3dc6c2b1a2a3680b20eb6c3fe64ed97942d5ff29df658a059647c33b3593c
   languageName: node
   linkType: hard
 
