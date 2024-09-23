@@ -1,13 +1,9 @@
 import uuid
-from typing import cast
 
 from dagster import asset, define_asset_job
 from dagster._core.definitions.decorators.definitions_decorator import definitions
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
-from dagster._core.definitions.repository_definition.repository_definition import (
-    PendingRepositoryDefinition,
-)
 from dagster_powerbi import PowerBIToken, PowerBIWorkspace
 from dagster_powerbi.resource import load_powerbi_defs
 
@@ -24,12 +20,9 @@ def my_materializable_asset():
     pass
 
 
-pending_repo_from_cached_asset_metadata = cast(
-    PendingRepositoryDefinition,
-    Definitions.merge(
-        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
-        pbi_defs,
-    ).get_inner_repository(),
+defs = Definitions.merge(
+    Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
+    pbi_defs,
 )
 
 

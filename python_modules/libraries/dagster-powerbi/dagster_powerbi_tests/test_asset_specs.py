@@ -67,6 +67,23 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
     }
 
 
+def test_two_workspaces(
+    workspace_data_api_mocks: responses.RequestsMock,
+    second_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with instance_for_test():
+        assert len(workspace_data_api_mocks.calls) == 0
+
+        from dagster_powerbi_tests.repos.pending_repo_two_workspaces import defs
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = defs.get_repository_def()
+        assert len(workspace_data_api_mocks.calls) == 9
+
+        # 3 PowerBI external assets from first workspace, 1 from second
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
+
+
 @pytest.mark.parametrize("success", [True, False])
 def test_refreshable_semantic_model(
     workspace_data_api_mocks: responses.RequestsMock, workspace_id: str, success: bool
@@ -122,10 +139,10 @@ def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.Request
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
-        from dagster_powerbi_tests.pending_repo import pending_repo_from_cached_asset_metadata
+        from dagster_powerbi_tests.repos.pending_repo import defs
 
         # first, we resolve the repository to generate our cached metadata
-        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        repository_def = defs.get_repository_def()
         assert len(workspace_data_api_mocks.calls) == 5
 
         # 3 PowerBI external assets, one materializable asset
@@ -147,8 +164,8 @@ def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.Request
         repository_load_data = repository_def.repository_load_data
 
         recon_repo = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "pending_repo.py"),
-            fn_name="pending_repo_from_cached_asset_metadata",
+            file_relative_path(__file__, "repos/pending_repo.py"),
+            fn_name="defs",
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
@@ -171,30 +188,11 @@ def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.Request
         assert len(workspace_data_api_mocks.calls) == 5
 
 
-def test_two_workspaces(
-    workspace_data_api_mocks: responses.RequestsMock,
-    second_workspace_data_api_mocks: responses.RequestsMock,
-) -> None:
-    with instance_for_test():
-        assert len(workspace_data_api_mocks.calls) == 0
-
-        from dagster_powerbi_tests.pending_repo_two_workspaces import (
-            pending_repo_from_cached_asset_metadata,
-        )
-
-        # first, we resolve the repository to generate our cached metadata
-        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
-        assert len(workspace_data_api_mocks.calls) == 9
-
-        # 3 PowerBI external assets from first workspace, 1 from second
-        assert len(repository_def.assets_defs_by_key) == 3 + 1
-
-
 def test_using_reconstruction_metadata(workspace_data_api_mocks: responses.RequestsMock) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
-        from dagster_powerbi_tests.pending_repo import reconstruction_metadata_defs
+        from dagster_powerbi_tests.repos.pending_repo import reconstruction_metadata_defs
 
         repository_def = reconstruction_metadata_defs(
             DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION)
@@ -210,7 +208,7 @@ def test_using_reconstruction_metadata(workspace_data_api_mocks: responses.Reque
         repository_load_data = repository_def.repository_load_data
 
         recon_repo = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "pending_repo.py"),
+            file_relative_path(__file__, "repos/pending_repo.py"),
             fn_name="reconstruction_metadata_defs",
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")

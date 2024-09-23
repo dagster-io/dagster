@@ -1,10 +1,6 @@
 import uuid
-from typing import cast
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.repository_definition.repository_definition import (
-    PendingRepositoryDefinition,
-)
 from dagster_powerbi import PowerBIToken, PowerBIWorkspace
 
 fake_token = uuid.uuid4().hex
@@ -18,10 +14,7 @@ resource_second_workspace = PowerBIWorkspace(
 )
 
 
-pending_repo_from_cached_asset_metadata = cast(
-    PendingRepositoryDefinition,
-    Definitions.merge(
-        resource.build_defs(),
-        resource_second_workspace.build_defs(),
-    ).get_inner_repository(),
+defs = Definitions.merge(
+    resource.build_defs(),
+    resource_second_workspace.build_defs(),
 )
