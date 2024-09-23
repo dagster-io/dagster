@@ -1037,7 +1037,8 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
         # Now try with an error workspace - the job state should not be deleted
         # since its associated with an errored out location
-        with freeze_time(freeze_datetime):
+        day_after_last_evaluation = freeze_datetime + relativedelta(days=1)
+        with freeze_time(day_after_last_evaluation):
             new_location_entry = copy(
                 workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
                 code_location=None,
@@ -1062,6 +1063,12 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         EmptyWorkspaceTarget(), instance
     ) as empty_workspace_ctx:
         with freeze_time(freeze_datetime):
+            # The schedule remains, within the 12h grace period
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
+            assert len(instance.all_instigator_state()) == 1
+
+        # The ticks remain, but the schedule state is removed
+        with freeze_time(day_after_last_evaluation):
             evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 2
