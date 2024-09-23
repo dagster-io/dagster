@@ -19,6 +19,7 @@ from dagster import (
 from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.test_utils import environ
+from dagster._serdes.serdes import deserialize_value
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
@@ -324,8 +325,10 @@ def test_cached_loading() -> None:
     } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
     assert len(defs.metadata) == 1
     assert "dagster-airlift/source/test_instance" in defs.metadata
+    assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
     assert isinstance(
-        defs.metadata["dagster-airlift/source/test_instance"].value, AirflowDefinitionsData
+        deserialize_value(defs.metadata["dagster-airlift/source/test_instance"].value),
+        AirflowDefinitionsData,
     )
 
     # Create a load definitions_load_context with cache data
