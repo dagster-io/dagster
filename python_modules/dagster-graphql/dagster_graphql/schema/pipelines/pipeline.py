@@ -24,11 +24,8 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
-from dagster_graphql.implementation.fetch_assets import (
-    get_asset_checks_for_run_id,
-    get_assets_for_run_id,
-    get_unique_asset_id,
-)
+from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id
+from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id, get_unique_asset_id
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline

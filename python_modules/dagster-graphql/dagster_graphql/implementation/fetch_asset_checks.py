@@ -1,7 +1,11 @@
-from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence, Tuple
 
-from dagster import AssetKey
+from dagster import (
+    AssetKey,
+    _check as check,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.events import ASSET_CHECK_EVENTS, DagsterEventType
 from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
@@ -14,6 +18,7 @@ from dagster_graphql.implementation.fetch_assets import repository_iter
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 
 if TYPE_CHECKING:
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetCheckHandle
     from dagster_graphql.schema.util import ResolveInfo
 
 
@@ -53,3 +58,35 @@ def fetch_asset_check_executions(
     )
 
     return [GrapheneAssetCheckExecution(check_record) for check_record in check_records]
+
+
+def get_asset_checks_for_run_id(
+    graphene_info: "ResolveInfo", run_id: str
+) -> Sequence["GrapheneAssetCheckHandle"]:
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetCheckHandle
+
+    check.str_param(run_id, "run_id")
+
+    records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_CHECK_EVENTS)
+
+    asset_check_keys = set(
+        [
+            record.get_dagster_event().asset_check_evaluation_data.asset_check_key
+            for record in records
+            if record.is_dagster_event
+            and record.get_dagster_event().event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+        + [
+            record.get_dagster_event().asset_check_planned_data.asset_check_key
+            for record in records
+            if record.is_dagster_event
+            and record.get_dagster_event().event_type
+            == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+        ]
+    )
+    return [
+        GrapheneAssetCheckHandle(handle=asset_check_key)
+        for asset_check_key in sorted(
+            asset_check_keys, key=lambda key: key.name + "".join(key.asset_key.path)
+        )
+    ]

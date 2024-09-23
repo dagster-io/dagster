@@ -37,7 +37,7 @@ from dagster._core.definitions.time_window_partitions import (
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.event_api import AssetRecordsFilter
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS
+from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
@@ -67,7 +67,6 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.freshness_policy import GrapheneAssetFreshnessInfo
     from dagster_graphql.schema.pipelines.pipeline import (
         GrapheneAsset,
-        GrapheneAssetCheckHandle,
         GrapheneDefaultPartitionStatuses,
         GrapheneMultiPartitionStatuses,
         GrapheneTimePartitionStatuses,
@@ -406,32 +405,6 @@ def get_assets_for_run_id(graphene_info: "ResolveInfo", run_id: str) -> Sequence
         ]
     )
     return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
-
-
-def get_asset_checks_for_run_id(
-    graphene_info: "ResolveInfo", run_id: str
-) -> Sequence["GrapheneAssetCheckHandle"]:
-    from dagster_graphql.schema.pipelines.pipeline import GrapheneAssetCheckHandle
-
-    check.str_param(run_id, "run_id")
-
-    records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_CHECK_EVENTS)
-
-    asset_check_keys = set(
-        [
-            record.get_dagster_event().asset_check_evaluation_data.asset_check_key
-            for record in records
-            if record.is_dagster_event and record.get_dagster_event().asset_check_evaluation_data
-        ]
-        + [
-            record.get_dagster_event().asset_check_planned_data.asset_check_key
-            for record in records
-            if record.is_dagster_event and record.get_dagster_event().asset_check_planned_data
-        ]
-    )
-    return [
-        GrapheneAssetCheckHandle(handle=asset_check_key) for asset_check_key in asset_check_keys
-    ]
 
 
 def get_unique_asset_id(
