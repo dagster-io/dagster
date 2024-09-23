@@ -33,6 +33,7 @@ export type RunsRootQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
@@ -60,4 +61,4 @@ export type RunsRootQuery = {
       };
 };
 
-export const RunsRootQueryVersion = '1e4b08de38e10b8cfd771e756150925d8925d5cdb87650397782f6f030399901';
+export const RunsRootQueryVersion = '091646e47ecea81ba4765a3f2cead18880b09ee400d1d7e9dcb6e194ee364e51';

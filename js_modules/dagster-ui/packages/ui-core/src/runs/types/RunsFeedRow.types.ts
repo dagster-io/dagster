@@ -55,6 +55,7 @@ export type RunsFeedTableEntryFragment_Run = {
   status: Types.RunStatus;
   pipelineName: string;
   pipelineSnapshotId: string | null;
+  hasRunMetricsEnabled: boolean;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;
