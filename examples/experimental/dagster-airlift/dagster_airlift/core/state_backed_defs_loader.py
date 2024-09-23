@@ -93,28 +93,25 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
 
 
 @contextmanager
-def scoped_definitions_state(**state_objects: Any) -> Generator:
+def scoped_reconstruction_serdes_objects(
+    state_objects: Optional[Mapping[str, Any]] = None,
+) -> Generator:
     """For test cases that involved state-backed definition objects. This context manager
-    allows one to see backing state for a definitions object and test reconstruction
-    logic.
+    allows one to set backing state for a definitions object and test reconstruction
+    logic. Creates a DefinitionsLoadContext with DefinitionsLoadType.RECONSTRUCTION,
+    serializes the passed in objects and wraps them in
+    a CodeLocationReconstructionMetadataValue on your behalf.
 
     Examples:
 
     .. code-block:: python
 
-        with scoped_definitions_state(test_key=ExampleDefState(a_string="bar")):
+        with scoped_reconstruction_serdes_objects(test_key=ExampleDefState(a_string="bar")):
             loader_cached = ExampleStateBackedDefinitionsLoader("test_key")
             defs = loader_cached.build_defs()
             assert len(defs.get_all_asset_specs()) == 1
             assert defs.get_assets_def("bar")
     """
-    ...
-
-
-@contextmanager
-def scoped_reconstruction_serdes_objects(
-    state_objects: Optional[Mapping[str, Any]] = None,
-) -> Generator:
     with scoped_reconstruction_metadata(
         {k: serialize_value(v) for k, v in state_objects.items()} if state_objects else None
     ):
@@ -125,6 +122,22 @@ def scoped_reconstruction_serdes_objects(
 def scoped_reconstruction_metadata(
     reconstruction_metadata: Optional[Mapping[str, Any]] = None,
 ) -> Generator:
+    """For test cases that involved state-backed definition objects. This context manager
+    allows one to set backing reconstruciton metaddata for a definitions object
+    and test reconstruction logic. Creates a DefinitionsLoadContext with
+    DefinitionsLoadType.RECONSTRUCTION. Wraps each passed value in a
+    CodeLocationReconstructionMetadataValue.
+
+    Examples:
+
+    .. code-block:: python
+
+        with scoped_reconstruction_metadata({"test_key": "test_value"}):
+            loader_cached = ExampleStateBackedDefinitionsLoader("test_key")
+            defs = loader_cached.build_defs()
+            assert len(defs.get_all_asset_specs()) == 1
+            assert defs.get_assets_def("bar")
+    """
     prev_context = DefinitionsLoadContext.get()
     reconstruction_metadata = reconstruction_metadata or {}
     try:
@@ -151,7 +164,10 @@ def scoped_reconstruction_metadata(
         DefinitionsLoadContext.set(prev_context)
 
 
-def unwrapped_defs_metadata(defs: Definitions) -> Mapping[str, Any]:
+def unwrap_reconstruction_metadata(defs: Definitions) -> Mapping[str, Any]:
+    """Takes the metadata from a Definitions object and unwraps the CodeLocationReconstructionMetadataValue
+    metadata values into a dictionary.
+    """
     return {
         k: metadata_value.value
         for k, metadata_value in defs.metadata.items()
