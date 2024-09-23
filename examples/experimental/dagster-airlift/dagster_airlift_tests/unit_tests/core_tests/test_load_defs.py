@@ -317,21 +317,20 @@ def test_cached_loading() -> None:
     )
     instance = make_instance({"dag": ["task"]})
     passed_in_defs = Definitions(assets=[spec])
-    # Initial load definitions_load_context has no cache
-    with scoped_reconstruction_metadata():
-        defs = build_defs_from_airflow_instance(airflow_instance=instance, defs=passed_in_defs)
-        assert defs.assets
-        assert len(list(defs.assets)) == 2
-        assert {
-            key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
-        } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
-        assert len(defs.metadata) == 1
-        assert "dagster-airlift/source/test_instance" in defs.metadata
-        assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
-        assert isinstance(
-            deserialize_value(defs.metadata["dagster-airlift/source/test_instance"].value),
-            AirflowDefinitionsData,
-        )
+
+    defs = build_defs_from_airflow_instance(airflow_instance=instance, defs=passed_in_defs)
+    assert defs.assets
+    assert len(list(defs.assets)) == 2
+    assert {
+        key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
+    } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
+    assert len(defs.metadata) == 1
+    assert "dagster-airlift/source/test_instance" in defs.metadata
+    assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
+    assert isinstance(
+        deserialize_value(defs.metadata["dagster-airlift/source/test_instance"].value),
+        AirflowDefinitionsData,
+    )
 
     with scoped_reconstruction_metadata(unwrapped_defs_metadata(defs)):
         with mock.patch(
