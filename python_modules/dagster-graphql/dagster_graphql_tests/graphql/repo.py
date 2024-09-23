@@ -1127,8 +1127,8 @@ def define_schedules():
 
 
 def define_sensors():
-    @sensor(job_name="no_config_job")
-    def always_no_config_sensor(_):
+    @sensor(job_name="no_config_job", tags={"foo": "bar"})
+    def always_no_config_sensor_with_tags(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
@@ -1247,7 +1247,7 @@ def define_sensors():
     )
 
     return [
-        always_no_config_sensor,
+        always_no_config_sensor_with_tags,
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,

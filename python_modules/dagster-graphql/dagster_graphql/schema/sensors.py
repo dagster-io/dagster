@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 import dagster._check as check
 import graphene
@@ -38,6 +38,7 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
@@ -84,6 +85,7 @@ class GrapheneSensor(graphene.ObjectType):
     metadata = graphene.NonNull(GrapheneSensorMetadata)
     sensorType = graphene.NonNull(GrapheneSensorType)
     assetSelection = graphene.Field(GrapheneAssetSelection)
+    tags = non_null_list(GrapheneDefinitionTag)
 
     class Meta:
         name = "Sensor"
@@ -147,6 +149,12 @@ class GrapheneSensor(graphene.ObjectType):
 
     def resolve_nextTick(self, graphene_info: ResolveInfo):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
+
+    def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        return [
+            GrapheneDefinitionTag(key, value)
+            for key, value in (self._external_sensor.tags or {}).items()
+        ]
 
 
 class GrapheneSensorOrError(graphene.Union):

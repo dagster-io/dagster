@@ -3020,6 +3020,7 @@ type Sensor {
   metadata: SensorMetadata!
   sensorType: SensorType!
   assetSelection: AssetSelection
+  tags: [DefinitionTag!]!
 }
 
 type Target {
