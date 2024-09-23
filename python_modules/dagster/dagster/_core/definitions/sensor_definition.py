@@ -60,7 +60,7 @@ from dagster._core.definitions.target import (
     AutomationTarget,
     ExecutableDefinition,
 )
-from dagster._core.definitions.utils import check_valid_name
+from dagster._core.definitions.utils import check_valid_name, normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -584,6 +584,8 @@ class SensorDefinition(IHasInternalInit):
         asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
             (Experimental) an asset selection to launch a run for if the sensor condition is met.
             This can be provided instead of specifying a job.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the sensor will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
@@ -609,6 +611,7 @@ class SensorDefinition(IHasInternalInit):
             default_status=self.default_status,
             asset_selection=self.asset_selection,
             required_resource_keys=self._raw_required_resource_keys,
+            tags=self._tags,
             target=None,
         )
 
@@ -634,6 +637,7 @@ class SensorDefinition(IHasInternalInit):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -725,6 +729,7 @@ class SensorDefinition(IHasInternalInit):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
+        self._tags = normalize_tags(tags).tags
 
     @staticmethod
     def dagster_internal_init(
@@ -739,6 +744,7 @@ class SensorDefinition(IHasInternalInit):
         default_status: DefaultSensorStatus,
         asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[Set[str]],
+        tags: Optional[Mapping[str, str]],
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -759,6 +765,7 @@ class SensorDefinition(IHasInternalInit):
             default_status=default_status,
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
+            tags=tags,
             target=target,
         )
 
@@ -837,6 +844,11 @@ class SensorDefinition(IHasInternalInit):
     @property
     def has_jobs(self) -> bool:
         return bool(self._targets)
+
+    @property
+    def tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for this sensor."""
+        return self._tags
 
     @property
     def sensor_type(self) -> SensorType:

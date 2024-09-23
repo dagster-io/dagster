@@ -15,6 +15,7 @@ from dagster._record import (
     record,
     record_custom,
 )
+from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
 from typing_extensions import Annotated
@@ -542,6 +543,42 @@ def test_generic() -> None:
 
     assert StringThings(things=["a", "b"]).first_thing == "a"
     assert IntThings(things=[1, 2]).first_thing == 1
+
+
+def test_generic_nested() -> None:
+    T = TypeVar("T")
+
+    @whitelist_for_serdes
+    @record
+    class Things(Generic[T]):
+        things: Sequence[T]
+
+        @property
+        def first_thing(self) -> T:
+            return self.things[0]
+
+    @whitelist_for_serdes
+    @record
+    class HolderOfThings(Generic[T]):
+        things: Things[T]
+
+    @record
+    class HolderOfMaybeStrings:
+        strings: Things[Optional[str]]
+
+    @record
+    class MaybeHolderOfThings(Generic[T]):
+        things: Optional[Things[T]]
+
+    HolderOfInts = HolderOfThings[int]
+
+    assert HolderOfThings(things=Things(things=[1, 2])).things.first_thing == 1
+    assert HolderOfMaybeStrings(strings=Things(things=["a", "b", None])).strings.first_thing == "a"
+    assert HolderOfInts(things=Things(things=[1, 2])).things.first_thing == 1
+    assert MaybeHolderOfThings(things=None).things is None
+
+    holder_of_things = HolderOfThings(things=Things(things=[1, 2]))
+    assert deserialize_value(serialize_value(holder_of_things)) == holder_of_things
 
 
 def test_subclass_propagate_basic() -> None:

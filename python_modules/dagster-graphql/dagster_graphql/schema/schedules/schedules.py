@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import dagster._check as check
 import graphene
@@ -22,6 +22,7 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
@@ -54,6 +55,7 @@ class GrapheneSchedule(graphene.ObjectType):
         lower_limit=graphene.Int(),
     )
     assetSelection = graphene.Field(GrapheneAssetSelection)
+    tags = non_null_list(GrapheneDefinitionTag)
 
     class Meta:
         name = "Schedule"
@@ -221,6 +223,12 @@ class GrapheneSchedule(graphene.ObjectType):
         ]
 
         return tick_times
+
+    def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        return [
+            GrapheneDefinitionTag(key, value)
+            for key, value in (self._external_schedule.tags or {}).items()
+        ]
 
 
 class GrapheneScheduleOrError(graphene.Union):

@@ -122,6 +122,10 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
           }
         }
       }
+      tags {
+        key
+        value
+      }
       assetSelection {
         assetSelectionString
         assetKeys {
@@ -360,7 +364,7 @@ def _get_unloadable_schedule_origin(name):
 
 @pytest.mark.parametrize("starting_case", ["on_tick_time", "offset_tick_time"])
 def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_case):
-    schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule")
+    schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule_with_tags")
 
     if starting_case == "on_tick_time":
         # Starting timestamp falls exactly on the timestamp of a tick
@@ -384,7 +388,7 @@ def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_cas
         },
     )
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
-    assert result.data["scheduleOrError"]["name"] == "timezone_schedule"
+    assert result.data["scheduleOrError"]["name"] == "timezone_schedule_with_tags"
     assert len(result.data["scheduleOrError"]["potentialTickTimestamps"]) == 5
     assert result.data["scheduleOrError"]["potentialTickTimestamps"] == [
         datetime.datetime(2019, 2, 25, tzinfo=get_timezone("US/Central")).timestamp(),
@@ -531,7 +535,7 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     assert len(results) == len(external_repository.get_external_schedules())
 
     for schedule in results:
-        if schedule["name"] == "timezone_schedule":
+        if schedule["name"] == "timezone_schedule_with_tags":
             assert schedule["executionTimezone"] == "US/Central"
 
 
@@ -592,7 +596,7 @@ def test_get_single_schedule_definition(graphql_context):
     assert future_ticks
     assert len(future_ticks["results"]) == 3
 
-    schedule_selector = infer_schedule_selector(context, "timezone_schedule")
+    schedule_selector = infer_schedule_selector(context, "timezone_schedule_with_tags")
 
     future_ticks_start_time = datetime.datetime(
         2019, 2, 27, tzinfo=get_timezone("US/Central")
@@ -607,6 +611,9 @@ def test_get_single_schedule_definition(graphql_context):
     assert result.data
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
     assert result.data["scheduleOrError"]["executionTimezone"] == "US/Central"
+    assert result.data["scheduleOrError"]["tags"] == [
+        {"key": "foo", "value": "bar"},
+    ]
 
     future_ticks = result.data["scheduleOrError"]["futureTicks"]
     assert future_ticks
@@ -787,7 +794,7 @@ def test_unloadable_schedule(graphql_context):
 
 
 def test_future_ticks_until(graphql_context):
-    schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule")
+    schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule_with_tags")
 
     future_ticks_start_time = datetime.datetime(
         2019, 2, 27, tzinfo=get_timezone("US/Central")

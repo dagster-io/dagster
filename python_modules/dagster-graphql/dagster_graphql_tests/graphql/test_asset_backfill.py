@@ -63,6 +63,8 @@ SINGLE_BACKFILL_QUERY = """
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
+        hasCancelPermission
+        hasResumePermission
         partitionStatuses {
           results {
             id
@@ -256,6 +258,16 @@ def test_launch_asset_backfill_read_only_context():
                 launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
                 == "LaunchBackfillSuccess"
             )
+
+            backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
+
+            single_backfill_result = execute_dagster_graphql(
+                read_only_context, SINGLE_BACKFILL_QUERY, variables={"backfillId": backfill_id}
+            )
+
+            assert single_backfill_result.data
+            assert single_backfill_result.data["partitionBackfillOrError"]["hasCancelPermission"]
+            assert single_backfill_result.data["partitionBackfillOrError"]["hasResumePermission"]
 
             launch_backfill_result = execute_dagster_graphql(
                 read_only_context,

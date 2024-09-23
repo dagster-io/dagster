@@ -1631,6 +1631,7 @@ type Schedule {
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
   assetSelection: AssetSelection
+  tags: [DefinitionTag!]!
 }
 
 enum InstigationStatus {
@@ -3020,6 +3021,7 @@ type Sensor {
   metadata: SensorMetadata!
   sensorType: SensorType!
   assetSelection: AssetSelection
+  tags: [DefinitionTag!]!
 }
 
 type Target {
