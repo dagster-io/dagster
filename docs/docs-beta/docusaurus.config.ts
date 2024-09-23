@@ -23,6 +23,16 @@ const config: Config = {
     require.resolve('docusaurus-plugin-image-zoom'),
   ],
   themeConfig: {
+    // Algolia environment variables are not required during development
+    algolia:
+      process.env.NODE_ENV === 'development'
+        ? null
+        : {
+            appId: process.env.ALGOLIA_APP_ID,
+            apiKey: process.env.ALGOLIA_API_KEY,
+            indexName: process.env.ALGOLIA_INDEX_NAME,
+            contextualSearch: false,
+          },
     announcementBar: {
       id: 'announcementBar',
       // TODO - once discussion has been created update link
