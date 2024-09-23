@@ -3957,7 +3957,6 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
-  filter?: InputMaybe<RunsFilter>;
   limit: Scalars['Int']['input'];
 };
 
