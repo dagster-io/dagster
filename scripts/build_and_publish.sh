@@ -1,86 +1,51 @@
-# How to release:
-# 2. ensure you have an API key from the elementl PyPI account (account is in the password manager)
-# 3. run make adhoc_pypi from the root of the dagster-airlift directory
-# 4. once propted, use '__token__' for the username and the API key for the password
+PACKAGE_TO_RELEASE_PATH=$(buildkite-agent meta-data get package-to-release-path)
+VERSION_TO_RELEASE=$(buildkite-agent meta-data get version-to-release --default '')
 
-# Define the path to the .pypirc file
-PYPIRC_FILE="$HOME/.pypirc"
-
-PACKAGE_TO_RELEASE_PATH=$1
-VERSION_TO_RELEASE=$2
+git checkout $BUILDKITE_BRANCH
 
 if [ -z "$PACKAGE_TO_RELEASE_PATH" ]; then
     echo "Please provide the path to the package to release."
     exit 1
 fi
 if [ -z "$VERSION_TO_RELEASE" ]; then
-    echo "Please provide the version to release."
-    exit 1
+    echo "Inferring version to release from package."
+    EXISTING_VERSION=$(grep 'version=' $PACKAGE_TO_RELEASE_PATH/setup.py)
+    echo "Existing version: $EXISTING_VERSION"
+    MAJOR_VAR=$(echo $EXISTING_VERSION | sed -E 's/.*version=[^0-9]([0-9].+)([0-9]+).*/\1/')
+    MINOR_VAR=$(echo $EXISTING_VERSION | sed -E 's/.*version=[^0-9]([0-9].+)([0-9]+).*/\2/')
+    INCREMENTED_MINOR_VAR=$((MINOR_VAR + 1))
+
+    VERSION_TO_RELEASE="$MAJOR_VAR$INCREMENTED_MINOR_VAR"
+
+    echo "Going to release version $VERSION_TO_RELEASE"
 fi
-
-# Define cleanup function
-cleanup() {
-    echo "Cleaning up..."
-    rm -rf dist/*
-}
-
-# Set trap to call cleanup function on script exit
-trap cleanup EXIT
-
-# Check if the .pypirc file exists
-if [ ! -f "$PYPIRC_FILE" ]; then
-    echo ".pypirc file not found in $HOME."
-
-    # Prompt the user for the API token
-    read -p "Enter your API token (must start with 'pypi-'): " API_TOKEN
-
-    # Check if the API token starts with 'pypi-'
-    if [[ $API_TOKEN != pypi-* ]]; then
-        echo "Invalid API token. It must start with 'pypi-'."
-        exit 1
-    fi
-
-    # Create the .pypirc file and write the configuration
-    cat <<EOF > "$PYPIRC_FILE"
-[pypi]
-username = __token__
-password = $API_TOKEN
-EOF
-
-    echo ".pypirc file created successfully."
-else
-    echo ".pypirc file already exists in $HOME. Using that as pypi credentials."
-fi
-
-rm -rf dist/*
-rm -rf package_prerelease
-mkdir -p package_prerelease
-cp -R $PACKAGE_TO_RELEASE_PATH/* package_prerelease
-pushd package_prerelease
 
 # Update both a hardcoded version, if set, in setup.py, and
 # find where __version__ is set and update it
-sed -i "" "s|return \"1!0+dev\"|return \"$VERSION_TO_RELEASE\"|" setup.py
-grep -rl "__version__ = \"1!0+dev\"" ./ | xargs sed -i "" "s|\"1!0+dev\"|\"$VERSION_TO_RELEASE\"|"
+echo "Updating version in source..."
+sed -i "s|version=\".*\"|version=\"$VERSION_TO_RELEASE\"|" "$PACKAGE_TO_RELEASE_PATH/setup.py"
+grep -rl "__version__ = \".*\"" "$PACKAGE_TO_RELEASE_PATH" | xargs sed -i "s|__version__ = \".*\"|__version__ = \"$VERSION_TO_RELEASE\"|"
+
+mkdir -p package_prerelease
+cp -R $PACKAGE_TO_RELEASE_PATH/* package_prerelease
+cd package_prerelease
 
 echo "Building package..."
 python3 -m build
+
 echo "Uploading to pypi..."
-# Capture the output of the twine upload command
-TWINE_OUTPUT=$(python3 -m twine upload --repository pypi dist/* --verbose 2>&1)
-TWINE_EXIT_CODE=$?
+python3 -m twine upload --username "__token__" --password "$PYPI_TOKEN" --repository pypi dist/* --verbose
 
-# Check if the output contains a 400 error
-if echo "$TWINE_OUTPUT" | grep -q "400 Bad Request"; then
-    echo "Error: Twine upload failed with a 400 Bad Request error."
-    echo "Twine output:"
-    echo "$TWINE_OUTPUT"
-    exit 1
-elif [ $TWINE_EXIT_CODE -ne 0 ]; then
-    echo "Error: Twine upload failed with exit code $TWINE_EXIT_CODE."
-    echo "Twine output:"
-    echo "$TWINE_OUTPUT"
-    exit $TWINE_EXIT_CODE
-fi
+cd ..
+rm -rf package_prerelease
 
-echo "Upload successful."
+echo "Committing and tagging release..."
+PACKAGE_NAME=$(echo $PACKAGE_TO_RELEASE_PATH | awk -F/ '{print $NF}')
+git add -A
+git config --global user.email "devtools@dagsterlabs.com"
+git config --global user.name "Dagster Labs"
+git commit -m "$PACKAGE_NAME $VERSION_TO_RELEASE"
+
+git tag "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
+git push origin "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
+git push origin $BUILDKITE_BRANCH
