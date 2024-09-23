@@ -309,10 +309,11 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
 interface RunBulkActionsMenuProps {
   selected: RunActionsMenuRunFragment[];
   clearSelection: () => void;
+  notice?: React.ReactNode;
 }
 
 export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) => {
-  const {selected, clearSelection} = props;
+  const {selected, clearSelection, notice} = props;
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -391,6 +392,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
         disabled={disabled || selected.length === 0}
         content={
           <Menu>
+            {notice}
             {canTerminateAny ? (
               <MenuItem
                 icon="cancel"

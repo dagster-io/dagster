@@ -183,7 +183,7 @@ export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => 
       <HeaderCell>
         <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
       </HeaderCell>
-      <HeaderCell>Run ID</HeaderCell>
+      <HeaderCell>ID</HeaderCell>
       <HeaderCell>Target</HeaderCell>
       <HeaderCell>Launched by</HeaderCell>
       <HeaderCell>Status</HeaderCell>

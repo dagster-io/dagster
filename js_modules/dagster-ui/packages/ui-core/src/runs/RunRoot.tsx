@@ -35,7 +35,7 @@ import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryF
 export const RunRoot = () => {
   useTrackPageView();
 
-  const {runId, runFeedEntryId} = useParams<{runId: string; runFeedEntryId?: string}>();
+  const {runId} = useParams<{runId: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
@@ -58,6 +58,11 @@ export const RunRoot = () => {
 
   const automaterializeTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
+    [run],
+  );
+
+  const backfillTag = useMemo(
+    () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
     [run],
   );
 
@@ -110,17 +115,17 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            runFeedEntryId ? (
+            backfillTag ? (
               <Heading>
                 <Link to="/runs-feed" style={{color: Colors.textLight()}}>
                   All runs
                 </Link>
                 {' / '}
                 <Link
-                  to={`/runs-feed/b/${runFeedEntryId}?tab=runs&view=list`}
+                  to={`/runs-feed/b/${backfillTag.value}?tab=runs&view=list`}
                   style={{color: Colors.textLight()}}
                 >
-                  {runFeedEntryId}
+                  {backfillTag.value}
                 </Link>
                 {' / '}
                 {runId.slice(0, 8)}

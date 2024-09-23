@@ -1,13 +1,17 @@
 import {
+  Alert,
+  Body2,
   Box,
+  Checkbox,
   Colors,
   CursorHistoryControls,
   NonIdealState,
+  ifPlural,
   tokenToString,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import partition from 'lodash/partition';
-import {useCallback, useMemo, useRef} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunsQueryRefetchContext} from './RunUtils';
@@ -38,6 +42,7 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
+import {numberFormatter} from '../ui/formatters';
 
 const PAGE_SIZE = 25;
 
@@ -153,7 +158,13 @@ export const RunsFeedRoot = () => {
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
+  const [hideSubRuns, setHideSubRuns] = useState(false);
+
   function actionBar() {
+    const selectedRuns = entries.filter(
+      (e): e is RunsFeedTableEntryFragment_Run => checkedIds.has(e.id) && e.__typename === 'Run',
+    );
+    const backfillsExcluded = entries.length - selectedRuns.length;
     return (
       <Box flex={{direction: 'column', gap: 8}}>
         <Box
@@ -161,15 +172,38 @@ export const RunsFeedRoot = () => {
           style={{width: '100%'}}
           padding={{left: 24, right: 12}}
         >
-          {button}
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            {button}
+            <Checkbox
+              label={<span>Hide sub-runs</span>}
+              checked={hideSubRuns}
+              onChange={() => {
+                setHideSubRuns(!hideSubRuns);
+              }}
+            />
+          </Box>
           <Box flex={{gap: 12}} style={{marginRight: 8}}>
             <CursorHistoryControls {...paginationProps} style={{marginTop: 0}} />
             <RunBulkActionsMenu
               clearSelection={() => onToggleAll(false)}
-              selected={entries.filter(
-                (e): e is RunsFeedTableEntryFragment_Run =>
-                  checkedIds.has(e.id) && e.__typename === 'Run',
-              )}
+              selected={selectedRuns}
+              notice={
+                backfillsExcluded ? (
+                  <Alert
+                    intent="warning"
+                    title={
+                      <Box flex={{direction: 'column'}}>
+                        <Body2>Currently bulk actions are only supported for runs.</Body2>
+                        <Body2>
+                          {numberFormatter.format(backfillsExcluded)}&nbsp;
+                          {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being
+                          excluded
+                        </Body2>
+                      </Box>
+                    }
+                  />
+                ) : null
+              }
             />
           </Box>
         </Box>
