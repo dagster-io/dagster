@@ -16,8 +16,6 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
-from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.test_utils import environ
 from dagster._serdes.serdes import deserialize_value
 from dagster_airlift.core import (
@@ -25,6 +23,10 @@ from dagster_airlift.core import (
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.serialization.compute import compute_serialized_data
+from dagster_airlift.core.state_backed_defs_loader import (
+    scoped_reconstruction_metadata,
+    unwrapped_defs_metadata,
+)
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
@@ -316,55 +318,47 @@ def test_cached_loading() -> None:
     instance = make_instance({"dag": ["task"]})
     passed_in_defs = Definitions(assets=[spec])
     # Initial load definitions_load_context has no cache
-    DefinitionsLoadContext.set(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
-    defs = build_defs_from_airflow_instance(airflow_instance=instance, defs=passed_in_defs)
-    assert defs.assets
-    assert len(list(defs.assets)) == 2
-    assert {
-        key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
-    } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
-    assert len(defs.metadata) == 1
-    assert "dagster-airlift/source/test_instance" in defs.metadata
-    assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
-    assert isinstance(
-        deserialize_value(defs.metadata["dagster-airlift/source/test_instance"].value),
-        AirflowDefinitionsData,
-    )
-
-    # Create a load definitions_load_context with cache data
-    context_with_cache = DefinitionsLoadContext(
-        load_type=DefinitionsLoadType.RECONSTRUCTION,
-        repository_load_data=RepositoryLoadData(
-            cacheable_asset_data={},
-            reconstruction_metadata=defs.metadata,  # type: ignore # Expects a type-narrowed metadata dictionary.
-        ),
-    )
-    DefinitionsLoadContext.set(context_with_cache)
-    with mock.patch(
-        "dagster_airlift.core.serialization.compute.compute_serialized_data",
-        wraps=compute_serialized_data,
-    ) as mock_compute_serialized_data:
-        reloaded_defs = build_defs_from_airflow_instance(
-            airflow_instance=instance, defs=passed_in_defs
-        )
-        assert mock_compute_serialized_data.call_count == 0
-        reloaded_defs = build_defs_from_airflow_instance(
-            airflow_instance=instance, defs=passed_in_defs
-        )
-        assert reloaded_defs.assets
-        assert len(list(reloaded_defs.assets)) == 2
+    with scoped_reconstruction_metadata():
+        defs = build_defs_from_airflow_instance(airflow_instance=instance, defs=passed_in_defs)
+        assert defs.assets
+        assert len(list(defs.assets)) == 2
         assert {
-            key
-            for assets_def in reloaded_defs.assets
-            for key in cast(AssetsDefinition, assets_def).keys
+            key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
         } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
-        assert len(reloaded_defs.metadata) == 1
-        assert "dagster-airlift/source/test_instance" in reloaded_defs.metadata
-        # Reconstruction data should remain the same.
-        assert (
-            reloaded_defs.metadata["dagster-airlift/source/test_instance"].value
-            == defs.metadata["dagster-airlift/source/test_instance"].value
+        assert len(defs.metadata) == 1
+        assert "dagster-airlift/source/test_instance" in defs.metadata
+        assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
+        assert isinstance(
+            deserialize_value(defs.metadata["dagster-airlift/source/test_instance"].value),
+            AirflowDefinitionsData,
         )
+
+    with scoped_reconstruction_metadata(unwrapped_defs_metadata(defs)):
+        with mock.patch(
+            "dagster_airlift.core.serialization.compute.compute_serialized_data",
+            wraps=compute_serialized_data,
+        ) as mock_compute_serialized_data:
+            reloaded_defs = build_defs_from_airflow_instance(
+                airflow_instance=instance, defs=passed_in_defs
+            )
+            assert mock_compute_serialized_data.call_count == 0
+            reloaded_defs = build_defs_from_airflow_instance(
+                airflow_instance=instance, defs=passed_in_defs
+            )
+            assert reloaded_defs.assets
+            assert len(list(reloaded_defs.assets)) == 2
+            assert {
+                key
+                for assets_def in reloaded_defs.assets
+                for key in cast(AssetsDefinition, assets_def).keys
+            } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
+            assert len(reloaded_defs.metadata) == 1
+            assert "dagster-airlift/source/test_instance" in reloaded_defs.metadata
+            # Reconstruction data should remain the same.
+            assert (
+                reloaded_defs.metadata["dagster-airlift/source/test_instance"].value
+                == defs.metadata["dagster-airlift/source/test_instance"].value
+            )
 
 
 def test_multiple_tasks_per_asset(init_load_context: None) -> None:
