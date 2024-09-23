@@ -371,7 +371,8 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneRunsFeedConnectionOrError),
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
-        description="Retrieve entries for the Runs Feed after applying cursor and limit.",
+        filter=graphene.Argument(GrapheneRunsFilter),
+        description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
     )
     runTagKeysOrError = graphene.Field(
         GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
@@ -843,8 +844,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         limit: int,
         cursor: Optional[str] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
-        return get_runs_feed_entries(graphene_info=graphene_info, cursor=cursor, limit=limit)
+        selector = filter.to_selector() if filter is not None else None
+        return get_runs_feed_entries(
+            graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
+        )
 
     @capture_error
     def resolve_partitionSetsOrError(
