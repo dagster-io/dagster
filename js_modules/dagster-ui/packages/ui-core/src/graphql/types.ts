@@ -4839,6 +4839,7 @@ export type Schedule = {
   potentialTickTimestamps: Array<Scalars['Float']['output']>;
   scheduleState: InstigationState;
   solidSelection: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  tags: Array<DefinitionTag>;
 };
 
 export type ScheduleFutureTickArgs = {
@@ -13717,6 +13718,7 @@ export const buildSchedule = (
         : buildInstigationState({}, relationshipsToOmit),
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 

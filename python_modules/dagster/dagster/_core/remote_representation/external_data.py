@@ -338,6 +338,7 @@ class ScheduleSnap(IHaveNew):
     description: Optional[str]
     default_status: Optional[DefaultScheduleStatus]
     asset_selection: Optional[AssetSelection]
+    tags: Mapping[str, str]
 
     def __new__(
         cls,
@@ -352,6 +353,7 @@ class ScheduleSnap(IHaveNew):
         description: Optional[str] = None,
         default_status: Optional[DefaultScheduleStatus] = None,
         asset_selection: Optional[AssetSelection] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         if asset_selection is not None:
             check.invariant(
@@ -377,6 +379,7 @@ class ScheduleSnap(IHaveNew):
                 else None
             ),
             asset_selection=asset_selection,
+            tags=tags or {},
         )
 
     @classmethod
@@ -407,6 +410,7 @@ class ScheduleSnap(IHaveNew):
             description=schedule_def.description,
             default_status=schedule_def.default_status,
             asset_selection=serializable_asset_selection,
+            tags=schedule_def.tags,
         )
 
 
