@@ -74,7 +74,7 @@ class AssetDefinitionDiff:
     "NEW" and "REMOVED" change types do not have diff info.
     """
 
-    change_types: Set[AssetDefinitionChangeType]
+    change_types: AbstractSet[AssetDefinitionChangeType]
     code_version: Optional[ValueDiff[Optional[str]]] = None
     dependencies: Optional[DictDiff[AssetKey]] = None
     partitions_definition: Optional[ValueDiff[Optional[str]]] = None
@@ -175,36 +175,38 @@ class AssetGraphDiffer:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
         """
-        asset_diff = AssetDefinitionDiff(change_types=set())
-
         if self.base_asset_graph is None:
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
-            asset_diff.change_types.add(AssetDefinitionChangeType.NEW)
-            return asset_diff
+            return AssetDefinitionDiff(change_types={AssetDefinitionChangeType.NEW})
 
         if asset_key not in self.base_asset_graph.all_asset_keys:
-            asset_diff.change_types.add(AssetDefinitionChangeType.NEW)
-            return asset_diff
+            return AssetDefinitionDiff(change_types={AssetDefinitionChangeType.NEW})
 
         if asset_key not in self.branch_asset_graph.all_asset_keys:
-            asset_diff.change_types.add(AssetDefinitionChangeType.REMOVED)
-            return asset_diff
+            return AssetDefinitionDiff(change_types={AssetDefinitionChangeType.REMOVED})
 
         branch_asset = self.branch_asset_graph.get(asset_key)
         base_asset = self.base_asset_graph.get(asset_key)
 
+        change_types: Set[AssetDefinitionChangeType] = set()
+        code_version_diff: Optional[ValueDiff] = None
+        dependencies_diff: Optional[DictDiff] = None
+        partitions_definition_diff: Optional[ValueDiff] = None
+        tags_diff: Optional[DictDiff] = None
+        metadata_diff: Optional[DictDiff] = None
+
         if branch_asset.code_version != base_asset.code_version:
-            asset_diff.change_types.add(AssetDefinitionChangeType.CODE_VERSION)
+            change_types.add(AssetDefinitionChangeType.CODE_VERSION)
             if include_details:
-                asset_diff.code_version = ValueDiff(
+                code_version_diff = ValueDiff(
                     old=base_asset.code_version, new=branch_asset.code_version
                 )
 
         if branch_asset.parent_keys != base_asset.parent_keys:
-            asset_diff.change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
+            change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
             if include_details:
-                asset_diff = asset_diff.dependencies = DictDiff(
+                dependencies_diff = DictDiff(
                     added_keys=branch_asset.parent_keys - base_asset.parent_keys,
                     changed_keys=set(),
                     removed_keys=base_asset.parent_keys - branch_asset.parent_keys,
@@ -217,9 +219,9 @@ class AssetGraphDiffer:
                 if self.branch_asset_graph.get_partition_mapping(
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
-                    asset_diff.change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
+                    change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
                     if include_details:
-                        asset_diff.dependencies = DictDiff(
+                        dependencies_diff = DictDiff(
                             added_keys=set(),
                             changed_keys={upstream_asset},
                             removed_keys=set(),
@@ -227,9 +229,9 @@ class AssetGraphDiffer:
                     break
 
         if branch_asset.partitions_def != base_asset.partitions_def:
-            asset_diff.change_types.add(AssetDefinitionChangeType.PARTITIONS_DEFINITION)
+            change_types.add(AssetDefinitionChangeType.PARTITIONS_DEFINITION)
             if include_details:
-                asset_diff.partitions_definition = ValueDiff(
+                partitions_definition_diff = ValueDiff(
                     old=type(base_asset.partitions_def).__name__
                     if base_asset.partitions_def
                     else None,
@@ -239,26 +241,31 @@ class AssetGraphDiffer:
                 )
 
         if branch_asset.tags != base_asset.tags:
-            asset_diff.change_types.add(AssetDefinitionChangeType.TAGS)
+            change_types.add(AssetDefinitionChangeType.TAGS)
             if include_details:
                 added, changed, removed = self._get_map_keys_diff(
                     base_asset.tags, branch_asset.tags
                 )
-                asset_diff.tags = DictDiff(
-                    added_keys=added, changed_keys=changed, removed_keys=removed
-                )
+                tags_diff = DictDiff(added_keys=added, changed_keys=changed, removed_keys=removed)
 
         if branch_asset.metadata != base_asset.metadata:
-            asset_diff.change_types.add(AssetDefinitionChangeType.METADATA)
+            change_types.add(AssetDefinitionChangeType.METADATA)
             if include_details:
                 added, changed, removed = self._get_map_keys_diff(
                     base_asset.metadata, branch_asset.metadata
                 )
-                asset_diff.metadata = DictDiff(
+                metadata_diff = DictDiff(
                     added_keys=added, changed_keys=changed, removed_keys=removed
                 )
 
-        return asset_diff
+        return AssetDefinitionDiff(
+            change_types=change_types,
+            code_version=code_version_diff,
+            dependencies=dependencies_diff,
+            partitions_definition=partitions_definition_diff,
+            tags=tags_diff,
+            metadata=metadata_diff,
+        )
 
     def _get_map_keys_diff(
         self, base: Mapping[str, Any], branch: Mapping[str, Any]

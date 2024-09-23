@@ -316,15 +316,16 @@ def test_large_asset_graph(instance):
     for i in range(6, 1000):
         key = AssetKey(f"asset_{i}")
         assert differ.get_changes_for_asset(key) == [AssetDefinitionChangeType.DEPENDENCIES]
-        assert (
-            differ.get_changes_for_asset_with_details(key)[0].change_type
-            == AssetDefinitionChangeType.DEPENDENCIES
-        )
+        assert differ.get_changes_for_asset_with_details(key).change_types == {
+            AssetDefinitionChangeType.DEPENDENCIES
+        }
 
     for i in range(6):
         key = AssetKey(f"asset_{i}")
         assert len(differ.get_changes_for_asset(key)) == 0
-        assert len(differ.get_changes_for_asset_with_details(key)) == 0
+        assert differ.get_changes_for_asset_with_details(key) == AssetDefinitionDiff(
+            change_types=set()
+        )
 
 
 def test_multiple_code_locations(instance):
