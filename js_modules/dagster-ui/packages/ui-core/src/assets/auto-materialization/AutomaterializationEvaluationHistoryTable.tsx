@@ -7,7 +7,6 @@ import {
   CursorHistoryControls,
   CursorPaginationProps,
   Icon,
-  Menu,
   MenuItem,
   Select,
   Spinner,
@@ -141,6 +140,11 @@ export const AutomaterializationTickStatusDisplayMappings = {
   [AutomaterializationTickStatusDisplay.SUCCESS]: [InstigationTickStatus.SUCCESS],
 };
 
+const StatusFilterItems = [
+  {key: AutomaterializationTickStatusDisplay.ALL, label: 'All ticks'},
+  {key: AutomaterializationTickStatusDisplay.SUCCESS, label: 'Requested'},
+  {key: AutomaterializationTickStatusDisplay.FAILED, label: 'Failed'},
+];
 const StatusFilter = ({
   status,
   onChange,
@@ -148,18 +152,13 @@ const StatusFilter = ({
   status: AutomaterializationTickStatusDisplay;
   onChange: (value: AutomaterializationTickStatusDisplay) => void;
 }) => {
-  const items = [
-    {key: AutomaterializationTickStatusDisplay.ALL, label: 'All ticks'},
-    {key: AutomaterializationTickStatusDisplay.SUCCESS, label: 'Requested'},
-    {key: AutomaterializationTickStatusDisplay.FAILED, label: 'Failed'},
-  ];
-  const activeItem = items.find(({key}) => key === status);
+  const activeItem = StatusFilterItems.find(({key}) => key === status);
   return (
-    <Select<(typeof items)[0]>
+    <Select<(typeof StatusFilterItems)[0]>
       popoverProps={{position: 'bottom-right'}}
       filterable={false}
       activeItem={activeItem}
-      items={items}
+      items={StatusFilterItems}
       itemRenderer={(item, props) => {
         return (
           <MenuItem
@@ -170,10 +169,6 @@ const StatusFilter = ({
             style={{width: '300px'}}
           />
         );
-      }}
-      itemListRenderer={({renderItem, filteredItems}) => {
-        const renderedItems = filteredItems.map(renderItem).filter(Boolean);
-        return <Menu>{renderedItems}</Menu>;
       }}
       onItemSelect={(item) => onChange(item.key)}
     >
