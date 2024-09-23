@@ -69,7 +69,7 @@ class AssetDefinitionDiff:
     """Represents the diff information for changes between assets.
 
     Change types in change_types should have diff info for their corresponding fields
-    if details are requested.
+    if diff info is requested.
 
     "NEW" and "REMOVED" change types do not have diff info.
     """
@@ -170,7 +170,7 @@ class AssetGraphDiffer:
         )
 
     def _compare_base_and_branch_assets(
-        self, asset_key: "AssetKey", include_details: bool = False
+        self, asset_key: "AssetKey", include_diff: bool = False
     ) -> AssetDefinitionDiff:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
@@ -198,14 +198,14 @@ class AssetGraphDiffer:
 
         if branch_asset.code_version != base_asset.code_version:
             change_types.add(AssetDefinitionChangeType.CODE_VERSION)
-            if include_details:
+            if include_diff:
                 code_version_diff = ValueDiff(
                     old=base_asset.code_version, new=branch_asset.code_version
                 )
 
         if branch_asset.parent_keys != base_asset.parent_keys:
             change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
-            if include_details:
+            if include_diff:
                 dependencies_diff = DictDiff(
                     added_keys=branch_asset.parent_keys - base_asset.parent_keys,
                     changed_keys=set(),
@@ -220,7 +220,7 @@ class AssetGraphDiffer:
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
                     change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
-                    if include_details:
+                    if include_diff:
                         dependencies_diff = DictDiff(
                             added_keys=set(),
                             changed_keys={upstream_asset},
@@ -230,7 +230,7 @@ class AssetGraphDiffer:
 
         if branch_asset.partitions_def != base_asset.partitions_def:
             change_types.add(AssetDefinitionChangeType.PARTITIONS_DEFINITION)
-            if include_details:
+            if include_diff:
                 partitions_definition_diff = ValueDiff(
                     old=type(base_asset.partitions_def).__name__
                     if base_asset.partitions_def
@@ -242,7 +242,7 @@ class AssetGraphDiffer:
 
         if branch_asset.tags != base_asset.tags:
             change_types.add(AssetDefinitionChangeType.TAGS)
-            if include_details:
+            if include_diff:
                 added, changed, removed = self._get_map_keys_diff(
                     base_asset.tags, branch_asset.tags
                 )
@@ -250,7 +250,7 @@ class AssetGraphDiffer:
 
         if branch_asset.metadata != base_asset.metadata:
             change_types.add(AssetDefinitionChangeType.METADATA)
-            if include_details:
+            if include_diff:
                 added, changed, removed = self._get_map_keys_diff(
                     base_asset.metadata, branch_asset.metadata
                 )
@@ -280,9 +280,9 @@ class AssetGraphDiffer:
         """Returns list of AssetDefinitionChangeType for asset_key as compared to the base deployment."""
         return list(self._compare_base_and_branch_assets(asset_key).change_types)
 
-    def get_changes_for_asset_with_details(self, asset_key: "AssetKey") -> AssetDefinitionDiff:
-        """Returns list of AssetDefinitionChangeDetail for asset_key as compared to the base deployment."""
-        return self._compare_base_and_branch_assets(asset_key, include_details=True)
+    def get_changes_for_asset_with_diff(self, asset_key: "AssetKey") -> AssetDefinitionDiff:
+        """Returns list of AssetDefinitionDiff for asset_key as compared to the base deployment."""
+        return self._compare_base_and_branch_assets(asset_key, include_diff=True)
 
     @property
     def branch_asset_graph(self) -> "RemoteAssetGraph":
