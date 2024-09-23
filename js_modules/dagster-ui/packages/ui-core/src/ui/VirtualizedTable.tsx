@@ -73,14 +73,15 @@ export const RowCell = ({
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
-    style={{overflow: 'hidden', ...(style || {})}}
+    style={{...(style || {})}}
     border="right"
   >
     {children}
   </CellBox>
 );
 
-const CellBox = styled(Box)`
+export const CellBox = styled(Box)`
+  overflow: hidden;
   :first-child {
     padding-left: 24px;
   }

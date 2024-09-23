@@ -116,8 +116,11 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   );
 }
 
-export function runsPathWithFilters(filterTokens: RunFilterToken[]) {
-  return `/runs?${qs.stringify({q: tokensAsStringArray(filterTokens)}, {arrayFormat: 'brackets'})}`;
+export function runsPathWithFilters(filterTokens: RunFilterToken[], basePath: string = '/runs') {
+  return `${basePath}?${qs.stringify(
+    {q: tokensAsStringArray(filterTokens)},
+    {arrayFormat: 'brackets'},
+  )}`;
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {

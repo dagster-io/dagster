@@ -5,6 +5,7 @@ import * as Types from '../../graphql/types';
 export type RunsFeedRootQueryVariables = Types.Exact<{
   limit: Types.Scalars['Int']['input'];
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  filter?: Types.InputMaybe<Types.RunsFilter>;
 }>;
 
 export type RunsFeedRootQuery = {
@@ -95,4 +96,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = '3dc4ec68d0d42dff05c4d66bbe5490b2251268c8b68abe84de6e48d64365fb75';
+export const RunsFeedRootQueryVersion = '59f6a21d2040210a9510b04db2e6f72d401c5f46d3e5aafdaa5fa50c9142b18b';

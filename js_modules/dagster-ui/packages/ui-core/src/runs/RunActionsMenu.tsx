@@ -51,9 +51,10 @@ import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
 interface Props {
   run: RunActionsMenuRunFragment;
   onAddTag?: (token: RunFilterToken) => void;
+  anchorLabel?: React.ReactNode;
 }
 
-export const RunActionsMenu = React.memo(({run, onAddTag}: Props) => {
+export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics'
@@ -127,7 +128,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag}: Props) => {
   return (
     <>
       <JoinedButtons>
-        <AnchorButton to={`/runs/${run.id}`}>View run</AnchorButton>
+        <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
         <Popover
           content={
             <Menu>
