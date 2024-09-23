@@ -25,7 +25,7 @@ from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.core.state_backed_defs_loader import (
     scoped_reconstruction_metadata,
-    unwrapped_defs_metadata,
+    unwrap_reconstruction_metadata,
 )
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
@@ -332,7 +332,7 @@ def test_cached_loading() -> None:
         AirflowDefinitionsData,
     )
 
-    with scoped_reconstruction_metadata(unwrapped_defs_metadata(defs)):
+    with scoped_reconstruction_metadata(unwrap_reconstruction_metadata(defs)):
         with mock.patch(
             "dagster_airlift.core.serialization.compute.compute_serialized_data",
             wraps=compute_serialized_data,
