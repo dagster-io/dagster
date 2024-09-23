@@ -40,9 +40,9 @@ class AssetDefinitionChangeType(Enum):
 
 
 class MappedKeyDiff(NamedTuple):
-    added: Set[str]
-    changed: Set[str]
-    removed: Set[str]
+    added: AbstractSet[str]
+    changed: AbstractSet[str]
+    removed: AbstractSet[str]
 
 
 T = TypeVar("T")

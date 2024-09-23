@@ -260,6 +260,8 @@ def build_check_call_str(
     name: str,
     eval_ctx: EvalContext,
 ) -> str:
+    from dagster._record import _RECORD_MARKER_FIELD
+
     # assumes this module is in global/local scope as check
     origin = get_origin(ttype)
     args = get_args(ttype)
@@ -313,6 +315,11 @@ def build_check_call_str(
             return f'check.mapping_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
         elif origin is collections.abc.Set:
             return f'check.set_param({name}, "{name}", {_name(single)})'
+        elif hasattr(origin, _RECORD_MARKER_FIELD):
+            it = _name(ttype)
+            return (
+                f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
+            )
         elif origin in (UnionType, Union):
             # optional
             if pair_right is type(None):
