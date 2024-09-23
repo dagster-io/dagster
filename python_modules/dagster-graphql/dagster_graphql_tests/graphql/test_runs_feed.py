@@ -1,8 +1,10 @@
 import time
+from typing import Mapping, Optional
 
 import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
 from dagster._time import get_current_timestamp
@@ -14,8 +16,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 )
 
 GET_RUNS_FEED_QUERY = """
-query RunsFeedEntryQuery($cursor: String, $limit: Int!) {
-    runsFeedOrError(cursor: $cursor, limit: $limit) {
+query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter) {
+    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter) {
       ... on RunsFeedConnection {
           results {
             __typename
@@ -54,30 +56,42 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!) {
 CREATE_DELAY = 1
 
 
-def _create_run(graphql_context) -> DagsterRun:
+def _create_run(graphql_context, **kwargs) -> DagsterRun:
+    return create_run_for_test(instance=graphql_context.instance, **kwargs)
+
+
+def _create_run_for_backfill(
+    graphql_context, backfill_id: str, tags: Optional[Mapping[str, str]] = None, **kwargs
+) -> DagsterRun:
+    if tags:
+        tags = {**tags, **DagsterRun.tags_for_backfill_id(backfill_id)}
+    else:
+        tags = DagsterRun.tags_for_backfill_id(backfill_id)
     return create_run_for_test(
         instance=graphql_context.instance,
+        tags=tags,
+        **kwargs,
     )
 
 
-def _create_run_for_backfill(graphql_context, backfill_id: str) -> DagsterRun:
-    return create_run_for_test(
-        instance=graphql_context.instance,
-        tags={
-            **DagsterRun.tags_for_backfill_id(backfill_id),
-        },
-    )
-
-
-def _create_backfill(graphql_context) -> str:
+def _create_backfill(
+    graphql_context,
+    status: BulkActionStatus = BulkActionStatus.COMPLETED_SUCCESS,
+    tags: Optional[Mapping[str, str]] = None,
+    partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
+) -> str:
+    serialized_backfill_data = (
+        "foo" if partition_set_origin is None else None
+    )  # the content of the backfill doesn't matter for testing fetching mega runs
     backfill = PartitionBackfill(
         backfill_id=make_new_backfill_id(),
-        serialized_asset_backfill_data="foo",  # the content of the backfill doesn't matter for testing fetching mega runs
-        status=BulkActionStatus.COMPLETED_SUCCESS,
+        serialized_asset_backfill_data=serialized_backfill_data,
+        status=status,
         reexecution_steps=None,
-        tags=None,
+        tags=tags,
         backfill_timestamp=get_current_timestamp(),
         from_failure=False,
+        partition_set_origin=partition_set_origin,
     )
     graphql_context.instance.add_backfill(backfill)
     return backfill.backfill_id
@@ -105,6 +119,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 25,
                 "cursor": None,
+                "filter": None,
             },
         )
         prev_run_time = None
@@ -119,6 +134,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -142,6 +158,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": old_cursor,
+                "filter": None,
             },
         )
 
@@ -160,6 +177,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 15,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -182,6 +200,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
+                "filter": None,
             },
         )
 
@@ -200,6 +219,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -230,6 +250,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": old_cursor.to_string(),
+                "filter": None,
             },
         )
 
@@ -255,6 +276,9 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
     the other test suite.
     """
 
+    def supports_filtering(self):
+        return True
+
     def test_get_runs_feed_ignores_backfill_runs(self, graphql_context):
         for _ in range(10):
             _create_run_for_backfill(graphql_context, backfill_id="foo")
@@ -267,6 +291,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -290,6 +315,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -311,6 +337,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -341,6 +368,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
+                "filter": None,
             },
         )
 
@@ -370,6 +398,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -396,6 +425,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
+                "filter": None,
             },
         )
 
@@ -426,6 +456,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 5,
                 "cursor": None,
+                "filter": None,
             },
         )
 
@@ -457,6 +488,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
+                "filter": None,
             },
         )
 
@@ -474,3 +506,476 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             RunsFeedCursor.from_string(result.data["runsFeedOrError"]["cursor"]).backfill_cursor
             is None
         )
+
+    def test_get_runs_feed_filter_status(self, graphql_context):
+        _create_run(graphql_context, status=DagsterRunStatus.SUCCESS)
+        _create_run(graphql_context, status=DagsterRunStatus.CANCELING)
+        _create_run(graphql_context, status=DagsterRunStatus.FAILURE)
+        _create_run(graphql_context, status=DagsterRunStatus.NOT_STARTED)
+        time.sleep(CREATE_DELAY)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_SUCCESS)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_FAILED)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED)
+        _create_backfill(graphql_context, status=BulkActionStatus.CANCELING)
+        _create_backfill(graphql_context, status=BulkActionStatus.CANCELED)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 9
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["SUCCESS"]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["FAILURE"]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["CANCELING"]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["CANCELED"]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["NOT_STARTED"]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+    def test_get_runs_feed_filter_create_time(self, graphql_context):
+        nothing_created_ts = get_current_timestamp()
+        time.sleep(CREATE_DELAY)
+        for _ in range(5):
+            _create_run(graphql_context)
+            time.sleep(CREATE_DELAY)
+            _create_backfill(graphql_context)
+
+        time.sleep(CREATE_DELAY)
+        half_created_ts = get_current_timestamp()
+        time.sleep(CREATE_DELAY)
+        for _ in range(5):
+            _create_run(graphql_context)
+            time.sleep(CREATE_DELAY)
+            _create_backfill(graphql_context)
+
+        time.sleep(CREATE_DELAY)
+        all_created_ts = get_current_timestamp()
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+                "filter": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 20
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+                "filter": {"createdBefore": nothing_created_ts},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+                "filter": {"createdBefore": half_created_ts},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+                "filter": {"createdBefore": all_created_ts},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 20
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        # ensure the cursor overrides the createdBefore filter when the query is called multiple times for
+        # pagination
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 6,
+                "cursor": None,
+                "filter": {"createdBefore": half_created_ts},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        assert result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 4,
+                "cursor": result.data["runsFeedOrError"]["cursor"],
+                "filter": {"createdBefore": half_created_ts},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+    def test_get_runs_feed_filter_job_name(self, graphql_context):
+        if not self.supports_filtering():
+            return pytest.skip("storage does not support filtering backfills by job_name")
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
+
+        partition_set_origin = RemotePartitionSetOrigin(
+            repository_origin=repository.get_external_origin(),
+            partition_set_name="foo_partition",
+        )
+        for _ in range(3):
+            _create_run(graphql_context, job_name="foo")
+            time.sleep(CREATE_DELAY)
+            backfill_id = _create_backfill(
+                graphql_context, partition_set_origin=partition_set_origin
+            )
+            _create_run_for_backfill(graphql_context, backfill_id, job_name="foo")
+
+        partition_set_origin = RemotePartitionSetOrigin(
+            repository_origin=repository.get_external_origin(),
+            partition_set_name="bar_partition",
+        )
+        for _ in range(3):
+            _create_run(graphql_context, job_name="bar")
+            time.sleep(CREATE_DELAY)
+            backfill_id = _create_backfill(
+                graphql_context, partition_set_origin=partition_set_origin
+            )
+            _create_run_for_backfill(graphql_context, backfill_id, job_name="bar")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"pipelineName": "foo"},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 6
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"pipelineName": "bar"},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 6
+
+    def test_get_runs_feed_filter_tags(self, graphql_context):
+        if not self.supports_filtering():
+            return pytest.skip("storage does not support filtering backfills by tag")
+        for _ in range(3):
+            _create_run(graphql_context, tags={"foo": "bar"})
+            time.sleep(CREATE_DELAY)
+            backfill_id = _create_backfill(graphql_context, tags={"foo": "bar"})
+            _create_run_for_backfill(
+                graphql_context, backfill_id, tags={"foo": "bar", "baz": "quux"}
+            )
+
+        for _ in range(3):
+            _create_run(graphql_context, tags={"foo": "baz"})
+            time.sleep(CREATE_DELAY)
+            backfill_id = _create_backfill(graphql_context, tags={"one": "two"})
+            _create_run_for_backfill(graphql_context, backfill_id, tags={"one": "two"})
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"tags": [{"key": "foo", "value": "bar"}]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 6
+
+        # filtering for tags that are only on sub-runs of backfills should not return the backfill
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"tags": [{"key": "baz", "value": "quux"}]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 0
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"tags": [{"key": "foo", "value": "baz"}]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 3
+
+    def test_get_runs_feed_filters_that_dont_apply_to_backfills(self, graphql_context):
+        run = _create_run(graphql_context)
+        time.sleep(CREATE_DELAY)
+        _create_backfill(graphql_context)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"runIds": [run.run_id]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+    def test_get_runs_feed_filter_tags_and_status(self, graphql_context):
+        if not self.supports_filtering():
+            return pytest.skip("storage does not support filtering backfills by tag")
+        run_statuses = [
+            DagsterRunStatus.SUCCESS,
+            DagsterRunStatus.FAILURE,
+            DagsterRunStatus.CANCELED,
+        ]
+        backfill_statuses = [
+            BulkActionStatus.COMPLETED_SUCCESS,
+            BulkActionStatus.COMPLETED_FAILED,
+            BulkActionStatus.CANCELED,
+        ]
+        for i in range(3):
+            _create_run(graphql_context, tags={"foo": "bar"}, status=run_statuses[i])
+            time.sleep(CREATE_DELAY)
+            backfill_id = _create_backfill(
+                graphql_context, tags={"foo": "bar"}, status=backfill_statuses[i]
+            )
+            _create_run_for_backfill(
+                graphql_context,
+                backfill_id,
+                tags={"foo": "bar", "baz": "quux"},
+                status=run_statuses[i],
+            )
+
+        for i in range(3):
+            _create_run(graphql_context, tags={"foo": "baz"}, status=run_statuses[i])
+            time.sleep(CREATE_DELAY)
+            backfill_id = _create_backfill(
+                graphql_context, tags={"one": "two"}, status=backfill_statuses[i]
+            )
+            _create_run_for_backfill(
+                graphql_context, backfill_id, tags={"one": "two"}, status=run_statuses[i]
+            )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"tags": [{"key": "foo", "value": "bar"}], "statuses": ["SUCCESS"]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 2
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {
+                    "tags": [{"key": "foo", "value": "bar"}],
+                    "statuses": ["FAILURE", "CANCELED"],
+                },
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 4
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"tags": [{"key": "foo", "value": "baz"}], "statuses": ["FAILURE"]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
