@@ -32,6 +32,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -51,16 +52,14 @@ const filters: RunFilterTokenType[] = [
   'status',
 ];
 
-export function useRunsFeedEntries() {
+export function useRunsFeedEntries(filter: RunsFilter) {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsFeedRootQuery,
     RunsFeedRootQueryVariables
   >({
     query: RUNS_FEED_ROOT_QUERY,
     pageSize: PAGE_SIZE,
-    variables: {
-      // TODO: Add Filters
-    },
+    variables: {filter},
     nextCursorForResult: (runs) => {
       if (runs.runsFeedOrError.__typename !== 'RunsFeedConnection') {
         return undefined;
@@ -133,8 +132,7 @@ export const RunsFeedRoot = () => {
 
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
 
-  // TODO Pass filters to useRunsFeedEntries
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries();
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter);
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
@@ -289,8 +287,8 @@ export const RunsFeedRoot = () => {
 export default RunsFeedRoot;
 
 export const RUNS_FEED_ROOT_QUERY = gql`
-  query RunsFeedRootQuery($limit: Int!, $cursor: String) {
-    runsFeedOrError(limit: $limit, cursor: $cursor) {
+  query RunsFeedRootQuery($limit: Int!, $cursor: String, $filter: RunsFilter) {
+    runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on RunsFeedConnection {
         cursor
         hasMore
