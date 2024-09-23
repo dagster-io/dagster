@@ -1383,9 +1383,7 @@ class TestRunStorage:
         )
 
         assert len(storage.get_runs()) == 2
-        runs_not_in_backfill = storage.get_run_records(
-            filters=RunsFilter(exclude_backfill_runs=True)
-        )
+        runs_not_in_backfill = storage.get_run_records(filters=RunsFilter(exclude_subruns=True))
         assert len(runs_not_in_backfill) == 1
         assert runs_not_in_backfill[0].dagster_run.run_id == run_not_in_backfill_id
 
