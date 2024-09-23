@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from enum import Enum
 from typing import (
     AbstractSet,
@@ -20,6 +19,7 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -49,14 +49,14 @@ T = TypeVar("T")
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
+@record
 class ValueDiff(Generic[T]):
     old: T
     new: T
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
+@record
 class DictDiff(Generic[T]):
     added_keys: AbstractSet[T]
     changed_keys: AbstractSet[T]
@@ -64,7 +64,7 @@ class DictDiff(Generic[T]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=False)
+@record
 class AssetDefinitionDiff:
     """Represents the diff information for changes between assets.
 
@@ -75,27 +75,11 @@ class AssetDefinitionDiff:
     """
 
     change_types: Set[AssetDefinitionChangeType]
-    code_version: Optional[ValueDiff[Optional[str]]]
-    dependencies: Optional[DictDiff[AssetKey]]
-    partitions_definition: Optional[ValueDiff[Optional[str]]]
-    tags: Optional[DictDiff[str]]
-    metadata: Optional[DictDiff[str]]
-
-    def __init__(
-        self,
-        change_types: Set[AssetDefinitionChangeType],
-        code_version: Optional[ValueDiff[Optional[str]]] = None,
-        dependencies: Optional[DictDiff[AssetKey]] = None,
-        partitions_definition: Optional[ValueDiff[Optional[str]]] = None,
-        tags: Optional[DictDiff[str]] = None,
-        metadata: Optional[DictDiff[str]] = None,
-    ):
-        self.change_types = change_types
-        self.code_version = code_version
-        self.dependencies = dependencies
-        self.partitions_definition = partitions_definition
-        self.tags = tags
-        self.metadata = metadata
+    code_version: Optional[ValueDiff[Optional[str]]] = None
+    dependencies: Optional[DictDiff[AssetKey]] = None
+    partitions_definition: Optional[ValueDiff[Optional[str]]] = None
+    tags: Optional[DictDiff[str]] = None
+    metadata: Optional[DictDiff[str]] = None
 
 
 def _get_external_repo_from_context(
@@ -220,7 +204,7 @@ class AssetGraphDiffer:
         if branch_asset.parent_keys != base_asset.parent_keys:
             asset_diff.change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
             if include_details:
-                asset_diff.dependencies = DictDiff(
+                asset_diff = asset_diff.dependencies = DictDiff(
                     added_keys=branch_asset.parent_keys - base_asset.parent_keys,
                     changed_keys=set(),
                     removed_keys=base_asset.parent_keys - branch_asset.parent_keys,
