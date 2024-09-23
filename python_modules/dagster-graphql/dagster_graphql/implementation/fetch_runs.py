@@ -574,7 +574,9 @@ def get_runs_feed_entries(
 
     runs = [
         GrapheneRun(run)
-        for run in instance.get_run_records(limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters)
+        for run in instance.get_run_records(
+            limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters
+        )
     ]
 
     # if we fetched limit+1 of either runs or backfills, we know there must be more results
