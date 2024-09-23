@@ -3,10 +3,12 @@ from typing import AbstractSet, List, Optional
 from dagster import AssetKey, AssetsDefinition, AssetSpec, external_asset_from_spec
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
 
 
+@whitelist_for_serdes
 @record
 class AirflowDefinitionsData:
     instance_name: str

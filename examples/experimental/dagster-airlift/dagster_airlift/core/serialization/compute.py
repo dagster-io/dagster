@@ -2,16 +2,13 @@ from collections import defaultdict
 from typing import Dict, Optional, Set
 
 from dagster import AssetKey, AssetSpec, Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.utils import toposort_flatten
-from dagster._serdes import deserialize_value, serialize_value
 
 from dagster_airlift.constants import (
     AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
     DAG_ID_METADATA_KEY,
     TASK_ID_METADATA_KEY,
 )
-from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance, TaskInfo
 from dagster_airlift.core.dag_asset import dag_asset_spec_data, get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
@@ -24,25 +21,6 @@ from dagster_airlift.core.serialization.serialized_data import (
 )
 from dagster_airlift.core.task_asset import get_airflow_data_for_task_mapped_spec
 from dagster_airlift.core.utils import spec_iterator
-
-
-def get_or_compute_airflow_data(
-    *, airflow_instance: AirflowInstance, defs: Definitions
-) -> AirflowDefinitionsData:
-    context = DefinitionsLoadContext.get()
-    metadata_key = _metadata_key(airflow_instance.name)
-    if (
-        context.load_type == DefinitionsLoadType.RECONSTRUCTION
-        and metadata_key in context.reconstruction_metadata
-    ):
-        serialized_data = deserialize_value(
-            context.reconstruction_metadata[metadata_key], SerializedAirflowDefinitionsData
-        )
-    else:
-        serialized_data = compute_serialized_data(airflow_instance=airflow_instance, defs=defs)
-    return AirflowDefinitionsData(
-        instance_name=airflow_instance.name, serialized_data=serialized_data
-    )
 
 
 def compute_serialized_data(
@@ -141,14 +119,6 @@ def _get_task_info_for_spec(
         return None
     return airflow_instance.get_task_info(
         dag_id=spec.metadata[DAG_ID_METADATA_KEY], task_id=spec.metadata[TASK_ID_METADATA_KEY]
-    )
-
-
-def defs_with_airflow_metadata_applied(
-    definitions: Definitions, airflow_data: AirflowDefinitionsData
-) -> Definitions:
-    return definitions.with_reconstruction_metadata(
-        {_metadata_key(airflow_data.instance_name): serialize_value(airflow_data.serialized_data)}
     )
 
 
