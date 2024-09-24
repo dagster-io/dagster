@@ -1,8 +1,8 @@
 ---
-title: "Using Tableau"
+title: "Using Dagster with Tableau"
 ---
 
-# Using Tableau
+# Using Dagster with Tableau
 
 <ExperimentalCallout />
 
@@ -29,12 +29,15 @@ This guide provides instructions for using Dagster with Tableau. Your Tableau as
 
 ## Represent Tableau assets in the asset graph
 
-To load Tableau assets into the Dagster asset graph, you must first construct a Tableau resource, which allows Dagster to communicate with your Tableau workspace. The Tableau resource to create depends on your Tableau deployment type - `TableauCloudWorkspace` for Tableau Cloud and `TableauServerWorkspace` for Tableau Server. To connect to the Tableau workspace, you'll need to [configure a connected app with direct trust](https://help.tableau.com/current/online/en-gb/connected_apps_direct.htm) in Tableau, then supply your Tableau site information and connected app credentials to the resource. The Tableau resource uses the JSON Web Token (JWT) authentication to connect to the Tableau workspace.
+To load Tableau assets into the Dagster asset graph, you must first construct a Tableau resource, which allows Dagster to communicate with your Tableau workspace. The Tableau resource to create depends on your Tableau deployment type - use `TableauCloudWorkspace` if you are using Tableau Cloud or `TableauServerWorkspace` if you are using Tableau Server. To connect to the Tableau workspace, you'll need to [configure a connected app with direct trust](https://help.tableau.com/current/online/en-gb/connected_apps_direct.htm) in Tableau, then supply your Tableau site information and connected app credentials to the resource. The Tableau resource uses the JSON Web Token (JWT) authentication to connect to the Tableau workspace.
 
 Dagster can automatically load all data sources, sheets, and dashboards from your Tableau workspace. Call the `build_defs()` function, which returns a `Definitions` object containing all the asset definitions for these Tableau assets.
 
-```python file=/integrations/tableau/representing-tableau-assets.py
-from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
+<TabGroup>
+<TabItem name="Using Dagster with Tableau Cloud">
+
+```python file=/integrations/tableau/representing-tableau-cloud-assets.py
+from dagster_tableau import TableauCloudWorkspace
 
 from dagster import EnvVar
 
@@ -48,7 +51,20 @@ workspace = TableauCloudWorkspace(
     pod_name=EnvVar("TABLEAU_POD_NAME"),
 )
 
-# Connect to Tableau Server using the same approach
+defs = workspace.build_defs()
+```
+
+---
+
+</TabItem>
+<TabItem name="Using Dagster with Tableau Server">
+
+```python file=/integrations/tableau/representing-tableau-server-assets.py
+from dagster_tableau import TableauServerWorkspace
+
+from dagster import EnvVar
+
+# Connect to Tableau Server using the connected app credentials
 workspace = TableauServerWorkspace(
     connected_app_client_id=EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
     connected_app_secret_id=EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
@@ -60,6 +76,11 @@ workspace = TableauServerWorkspace(
 
 defs = workspace.build_defs()
 ```
+
+---
+
+</TabItem>
+</TabGroup>
 
 ### Customize asset definition metadata for Tableau assets
 
