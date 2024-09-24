@@ -1,7 +1,6 @@
 from typing import AbstractSet, List, Optional
 
 from dagster import AssetKey, AssetsDefinition, AssetSpec, external_asset_from_spec
-from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -25,9 +24,6 @@ class AirflowDefinitionsData:
             for dag_data in self.serialized_data.dag_datas.values()
         ]
 
-    def get_check_keys_for_asset_key(self, asset_key: AssetKey) -> AbstractSet[AssetCheckKey]:
-        return self.serialized_data.existing_asset_data[asset_key].asset_graph_data.check_keys
-
     @property
     def all_dag_ids(self) -> AbstractSet[str]:
         return set(self.serialized_data.dag_datas.keys())
@@ -43,9 +39,6 @@ class AirflowDefinitionsData:
 
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
         return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].asset_keys_in_task
-
-    def check_keys_for_asset_key(self, asset_key: AssetKey) -> AbstractSet[AssetCheckKey]:
-        return self.serialized_data.existing_asset_data[asset_key].asset_graph_data.check_keys
 
     def topo_order_index(self, asset_key: AssetKey) -> int:
         return self.serialized_data.asset_key_topological_ordering.index(asset_key)
