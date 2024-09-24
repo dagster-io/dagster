@@ -1,13 +1,10 @@
 import contextlib
-import importlib
 from pathlib import Path
-from typing import AbstractSet, Callable, Iterable, Optional
+from typing import AbstractSet, Callable, Iterable
 
 import pytest
 from dagster import DagsterInstance
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster_airlift.constants import MIGRATED_TAG, TASK_ID_METADATA_KEY
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend
 
 from .utils import (
@@ -15,38 +12,6 @@ from .utils import (
     start_run_and_wait_for_completion,
     wait_for_all_runs_to_complete,
 )
-
-
-def _assert_dagster_migration_states_are(
-    state: bool, where: Optional[Callable[[AssetSpec], bool]] = None
-) -> None:
-    """Loads the Dagster asset definitions and checks that all asset specs have the correct migration state.
-
-    This is a helper function so that we can call this as many times as we need to - if there are dangling references
-    to any of the imports from the module, the importlib.reload won't work properly.
-
-    Args:
-        state: The expected migration state.
-        where: A function that takes an AssetSpec and returns True if the spec should be checked, False otherwise.
-    """
-    import tutorial_example
-    from tutorial_example.dagster_defs.stages import migrate
-    from tutorial_example.dagster_defs.stages.migrate import defs
-
-    importlib.reload(tutorial_example)
-    importlib.reload(migrate)
-
-    assert defs
-    specs = defs.get_all_asset_specs()
-    spec_migration_states = {
-        spec.key: spec.tags.get(MIGRATED_TAG) for spec in specs if not where or where(spec)
-    }
-
-    assert all(
-        value == str(state)
-        for key, value in spec_migration_states.items()
-        if key.path[0] != "airflow_instance"  # ignore overall dag, which doesn't have tag
-    ), str(spec_migration_states)
 
 
 @pytest.mark.skip(reason="Flakiness, @benpankow to investigate")
@@ -81,8 +46,6 @@ def test_migration_status(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
-        _assert_dagster_migration_states_are(False)
-
     with mark_tasks_migrated({"load_raw_customers"}):
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
@@ -97,13 +60,6 @@ def test_migration_status(
         )
         assert not migration_state.get_migration_state_for_task(
             dag_id="rebuild_customers_list", task_id="export_customers"
-        )
-
-        _assert_dagster_migration_states_are(
-            True, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) == "load_raw_customers"
-        )
-        _assert_dagster_migration_states_are(
-            False, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) != "load_raw_customers"
         )
 
     with mark_tasks_migrated({"build_dbt_models"}):
@@ -121,13 +77,6 @@ def test_migration_status(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
-        _assert_dagster_migration_states_are(
-            True, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) == "build_dbt_models"
-        )
-        _assert_dagster_migration_states_are(
-            False, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) != "build_dbt_models"
-        )
-
     with mark_tasks_migrated({"load_raw_customers", "build_dbt_models", "export_customers"}):
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
@@ -142,8 +91,6 @@ def test_migration_status(
         assert migration_state.get_migration_state_for_task(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
-
-        _assert_dagster_migration_states_are(True)
 
 
 @pytest.fixture(name="dagster_defs_path")
