@@ -32,14 +32,14 @@ export type BackfillTableFragment = {
   partitionSet: {
     __typename: 'PartitionSet';
     id: string;
+    mode: string;
     name: string;
     pipelineName: string;
-    mode: string;
     repositoryOrigin: {
       __typename: 'RepositoryOrigin';
+      id: string;
       repositoryName: string;
       repositoryLocationName: string;
-      id: string;
     };
   } | null;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;

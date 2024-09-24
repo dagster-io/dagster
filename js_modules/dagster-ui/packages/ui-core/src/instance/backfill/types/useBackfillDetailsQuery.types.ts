@@ -2,11 +2,49 @@
 
 import * as Types from '../../../graphql/types';
 
-export type BackfillStatusesByAssetQueryVariables = Types.Exact<{
+export type JobBackfillDetailsFragment = {
+  __typename: 'PartitionStatuses';
+  results: Array<{
+    __typename: 'PartitionStatus';
+    id: string;
+    partitionName: string;
+    runId: string | null;
+    runStatus: Types.RunStatus | null;
+    runDuration: number | null;
+  }>;
+};
+
+export type AssetBackfillDetailsFragment = {
+  __typename: 'AssetBackfillData';
+  rootTargetedPartitions: {
+    __typename: 'AssetBackfillTargetPartitions';
+    partitionKeys: Array<string> | null;
+    ranges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
+  } | null;
+  assetBackfillStatuses: Array<
+    | {
+        __typename: 'AssetPartitionsStatusCounts';
+        numPartitionsTargeted: number;
+        numPartitionsInProgress: number;
+        numPartitionsMaterialized: number;
+        numPartitionsFailed: number;
+        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+      }
+    | {
+        __typename: 'UnpartitionedAssetStatus';
+        inProgress: boolean;
+        materialized: boolean;
+        failed: boolean;
+        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+      }
+  >;
+};
+
+export type BackfillDetailsQueryVariables = Types.Exact<{
   backfillId: Types.Scalars['String']['input'];
 }>;
 
-export type BackfillStatusesByAssetQuery = {
+export type BackfillDetailsQuery = {
   __typename: 'Query';
   partitionBackfillOrError:
     | {__typename: 'BackfillNotFoundError'; message: string}
@@ -17,11 +55,13 @@ export type BackfillStatusesByAssetQuery = {
         timestamp: number;
         endTimestamp: number | null;
         numPartitions: number | null;
+        isAssetBackfill: boolean;
+        partitionSetName: string | null;
         hasCancelPermission: boolean;
         hasResumePermission: boolean;
-        isAssetBackfill: boolean;
         numCancelable: number;
         partitionNames: Array<string> | null;
+        assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         error: {
           __typename: 'PythonError';
           message: string;
@@ -57,12 +97,26 @@ export type BackfillStatusesByAssetQuery = {
               }
           >;
         } | null;
+        partitionStatuses: {
+          __typename: 'PartitionStatuses';
+          results: Array<{
+            __typename: 'PartitionStatus';
+            id: string;
+            partitionName: string;
+            runId: string | null;
+            runStatus: Types.RunStatus | null;
+            runDuration: number | null;
+          }>;
+        } | null;
         partitionSet: {
           __typename: 'PartitionSet';
+          id: string;
+          mode: string;
           name: string;
           pipelineName: string;
           repositoryOrigin: {
             __typename: 'RepositoryOrigin';
+            id: string;
             repositoryName: string;
             repositoryLocationName: string;
           };
@@ -87,11 +141,13 @@ export type BackfillDetailsBackfillFragment = {
   timestamp: number;
   endTimestamp: number | null;
   numPartitions: number | null;
+  isAssetBackfill: boolean;
+  partitionSetName: string | null;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
-  isAssetBackfill: boolean;
   numCancelable: number;
   partitionNames: Array<string> | null;
+  assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   error: {
     __typename: 'PythonError';
     message: string;
@@ -127,16 +183,30 @@ export type BackfillDetailsBackfillFragment = {
         }
     >;
   } | null;
+  partitionStatuses: {
+    __typename: 'PartitionStatuses';
+    results: Array<{
+      __typename: 'PartitionStatus';
+      id: string;
+      partitionName: string;
+      runId: string | null;
+      runStatus: Types.RunStatus | null;
+      runDuration: number | null;
+    }>;
+  } | null;
   partitionSet: {
     __typename: 'PartitionSet';
+    id: string;
+    mode: string;
     name: string;
     pipelineName: string;
     repositoryOrigin: {
       __typename: 'RepositoryOrigin';
+      id: string;
       repositoryName: string;
       repositoryLocationName: string;
     };
   } | null;
 };
 
-export const BackfillStatusesByAssetVersion = 'f785cda54d7032605fd180e1d1641151836651e3da314fcf8393cf3c43ab9bb4';
+export const BackfillDetailsQueryVersion = 'b2e50b372c779a994a7fdcdbef873890bf39716520774315b9e880ae59375217';
