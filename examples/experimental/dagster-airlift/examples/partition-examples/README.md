@@ -1,0 +1,1 @@
+Contains examples of converting airflow dags to assets with partitions.
