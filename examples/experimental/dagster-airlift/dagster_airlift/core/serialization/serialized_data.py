@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import AbstractSet, Any, List, Mapping, Optional, Sequence, Tuple
+from typing import AbstractSet, Any, List, Mapping, Optional, Sequence
 
 from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._record import record
@@ -47,26 +47,6 @@ class SerializedAssetDepData:
 
 
 ###################################################################################################
-# Serializable data that will be cached to avoid repeated calls to the Airflow API, and to avoid
-# repeated scans of passed-in Definitions objects.
-###################################################################################################
-# History:
-# - created
-# - removed existing_asset_data
-# - added key_scope_data_items
-@whitelist_for_serdes
-@record
-class SerializedAirflowDefinitionsData:
-    key_scoped_data_items: List[Tuple[AssetKey, "SerializedAssetKeyScopedAirflowData"]]
-    dag_datas: Mapping[str, "SerializedDagData"]
-    asset_key_topological_ordering: Sequence[AssetKey]
-
-    @cached_property
-    def key_scope_data_map(self) -> Mapping[AssetKey, "SerializedAssetKeyScopedAirflowData"]:
-        return dict(self.key_scoped_data_items)
-
-
-###################################################################################################
 # Serialized data that scopes to airflow DAGs and tasks.
 ###################################################################################################
 # History:
@@ -80,6 +60,33 @@ class SerializedDagData:
     spec_data: SerializedAssetSpecData
     task_handle_data: Mapping[str, "SerializedTaskHandleData"]
     all_asset_keys_in_tasks: AbstractSet[AssetKey]
+
+
+@whitelist_for_serdes
+@record
+class KeyScopedDataItem:
+    asset_key: AssetKey
+    data: "SerializedAssetKeyScopedAirflowData"
+
+
+###################################################################################################
+# Serializable data that will be cached to avoid repeated calls to the Airflow API, and to avoid
+# repeated scans of passed-in Definitions objects.
+###################################################################################################
+# History:
+# - created
+# - removed existing_asset_data
+# - added key_scope_data_items
+@whitelist_for_serdes
+@record
+class SerializedAirflowDefinitionsData:
+    key_scoped_data_items: List[KeyScopedDataItem]
+    dag_datas: Mapping[str, SerializedDagData]
+    asset_key_topological_ordering: Sequence[AssetKey]
+
+    @cached_property
+    def key_scope_data_map(self) -> Mapping[AssetKey, "SerializedAssetKeyScopedAirflowData"]:
+        return {item.asset_key: item.data for item in self.key_scoped_data_items}
 
 
 # History:

@@ -15,7 +15,7 @@ class AirflowDefinitionsData:
 
     def map_airflow_data_to_spec(self, spec: AssetSpec) -> AssetSpec:
         """If there is airflow data applicable to the asset key, transform the spec and apply the data."""
-        existing_key_data = self.serialized_data.existing_asset_data[spec.key].existing_key_data
+        existing_key_data = self.serialized_data.key_scope_data_map.get(spec.key)
         return spec if not existing_key_data else existing_key_data.apply_to_spec(spec)
 
     def construct_dag_assets_defs(self) -> List[AssetsDefinition]:
