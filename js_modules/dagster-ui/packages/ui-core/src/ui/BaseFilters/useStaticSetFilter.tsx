@@ -1,17 +1,9 @@
 import {Box, Checkbox, Colors, IconName, Popover} from '@dagster-io/ui-components';
-import {
-  ComponentProps,
-  Fragment,
-  useContext,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import {ComponentProps, Fragment, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useStaticSetFilterSorter} from 'shared/ui/BaseFilters/useStaticSetFilterSorter.oss';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
-import {LaunchpadHooksContext} from '../../launchpad/LaunchpadHooksContext';
 
 export type SetFilterValue<T> = {
   value: T;
@@ -79,15 +71,15 @@ export function useStaticSetFilter<TValue>({
   selectAllText,
   canSelectAll = true,
 }: FilterArgs<TValue>): StaticSetFilter<TValue> {
-  const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
+  const sortConfig = useStaticSetFilterSorter();
 
   const allValues = useMemo(() => {
-    const sorter = StaticFilterSorter?.[name];
+    const sorter = sortConfig?.[name];
     if (sorter) {
       return _unsortedValues.sort(sorter);
     }
     return _unsortedValues;
-  }, [StaticFilterSorter, name, _unsortedValues]);
+  }, [sortConfig, name, _unsortedValues]);
 
   // This filter can be used as both a controlled and an uncontrolled component necessitating an innerState for the uncontrolled case.
   const [innerStateRef, setInnerState] = useState(() => ({
