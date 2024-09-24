@@ -7,8 +7,6 @@ const config: Config = {
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
-  noIndex: true, // TODO - remove when production-ready
-
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
@@ -25,6 +23,16 @@ const config: Config = {
     require.resolve('docusaurus-plugin-image-zoom'),
   ],
   themeConfig: {
+    // Algolia environment variables are not required during development
+    algolia:
+      process.env.NODE_ENV === 'development'
+        ? null
+        : {
+            appId: process.env.ALGOLIA_APP_ID,
+            apiKey: process.env.ALGOLIA_API_KEY,
+            indexName: process.env.ALGOLIA_INDEX_NAME,
+            contextualSearch: false,
+          },
     announcementBar: {
       id: 'announcementBar',
       // TODO - once discussion has been created update link
@@ -148,6 +156,20 @@ const config: Config = {
             require.resolve('./node_modules/modern-normalize/modern-normalize.css'),
             require.resolve('./src/styles/custom.scss'),
           ],
+        },
+        // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
+        sitemap: {
+          //lastmod: 'date',
+          changefreq: 'weekly',
+          priority: 0.5,
+          ignorePatterns: ['/tags/**'],
+          filename: 'sitemap.xml',
+          createSitemapItems: async (params) => {
+            const {defaultCreateSitemapItems, ...rest} = params;
+            const items = await defaultCreateSitemapItems(rest);
+            //return items.filter((item) => !item.url.includes('/page/'));
+            return items;
+          },
         },
       } satisfies Preset.Options,
     ],

@@ -37,6 +37,7 @@ from dagster._core.definitions.repository_definition import (
     RepositoryDefinition,
     RepositoryListDefinition,
 )
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -121,20 +122,11 @@ class _Repository:
         if isinstance(repository_definitions, list):
             bad_defns = []
             repository_defns = []
-            # If any CodeLocationReconstructionMetadataValue is present, then it was set during code location
-            # construction and needs to be injected on reconstruction via RepositoryLoadData, so
-            # defer.
-            #
-            # This will be removed when we cut PendingRepositoryDefinition out of the loop for
-            # reconstruction metadata, tracking here:
-            #   https://linear.app/dagster-labs/issue/FOU-401/cut-pendingrepositorydefinition-out-of-the-loop-for-reconstruction
-            defer_repository_data = any(
-                isinstance(value, CodeLocationReconstructionMetadataValue)
-                for value in self.metadata.values()
-            )
+
+            has_cacheable_assets_definitions = False
             for i, definition in enumerate(_flatten(repository_definitions)):
                 if isinstance(definition, CacheableAssetsDefinition):
-                    defer_repository_data = True
+                    has_cacheable_assets_definitions = True
                 elif not isinstance(
                     definition,
                     (
@@ -164,16 +156,26 @@ class _Repository:
                     f"Got {bad_definitions_str}."
                 )
 
-            repository_data = (
-                None
-                if defer_repository_data
-                else CachingRepositoryData.from_list(
+            if has_cacheable_assets_definitions:
+                repository_data = None
+                repository_load_data = None
+            else:
+                repository_data = CachingRepositoryData.from_list(
                     repository_defns,
                     default_executor_def=self.default_executor_def,
                     default_logger_defs=self.default_logger_defs,
                     top_level_resources=self.top_level_resources,
                 )
-            )
+                reconstruction_metadata = {
+                    k: v
+                    for k, v in self.metadata.items()
+                    if isinstance(v, CodeLocationReconstructionMetadataValue)
+                }
+                repository_load_data = (
+                    RepositoryLoadData(reconstruction_metadata=reconstruction_metadata)
+                    if reconstruction_metadata
+                    else None
+                )
 
         elif isinstance(repository_definitions, dict):
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
@@ -191,8 +193,10 @@ class _Repository:
                     )
                 )
             repository_data = CachingRepositoryData.from_dict(repository_definitions)
+            repository_load_data = None
         elif isinstance(repository_definitions, RepositoryData):
             repository_data = repository_definitions
+            repository_load_data = None
         else:
             raise DagsterInvalidDefinitionError(
                 f"Bad return value of type {type(repository_definitions)} from repository construction function: must "
@@ -216,6 +220,7 @@ class _Repository:
                 description=self.description,
                 metadata=self.metadata,
                 repository_data=check.not_none(repository_data),
+                repository_load_data=repository_load_data,
             )
 
             update_wrapper(repository_def, fn)

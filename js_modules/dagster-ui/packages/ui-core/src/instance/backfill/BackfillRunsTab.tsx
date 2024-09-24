@@ -22,6 +22,12 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
 import {RunTable} from '../../runs/RunTable';
 import {DagsterTag} from '../../runs/RunTag';
+import {
+  RunFilterTokenType,
+  runsFilterForSearchTokens,
+  useQueryPersistedRunFilters,
+  useRunsFilterInput,
+} from '../../runs/RunsFilterInput';
 import {HourWindow} from '../../runs/useHourWindow';
 import {usePaginatedRunsTableRuns} from '../../runs/usePaginatedRunsTableRuns';
 import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
@@ -29,6 +35,16 @@ import {StickyTableContainer} from '../../ui/StickyTableContainer';
 
 const BACKFILL_RUNS_HOUR_WINDOW_KEY = 'dagster.backfill-run-timeline-hour-window';
 const PAGE_SIZE = 25;
+
+const filters: RunFilterTokenType[] = [
+  'tag',
+  'snapshotId',
+  'id',
+  'job',
+  'pipeline',
+  'partition',
+  'status',
+];
 
 export const BackfillRunsTab = ({
   backfill,
@@ -43,6 +59,15 @@ export const BackfillRunsTab = ({
   });
   const view = propView === 'both' ? _view : propView;
 
+  const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
+  const queryStringFilters = runsFilterForSearchTokens(filterTokens);
+
+  const {button, activeFiltersJsx} = useRunsFilterInput({
+    tokens: filterTokens,
+    onChange: setFilterTokens,
+    enabledFilters: filters,
+  });
+
   const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
     useTimelineRange({
       maxNowMs: backfill.endTimestamp ? backfill.endTimestamp * 1000 : undefined,
@@ -52,8 +77,11 @@ export const BackfillRunsTab = ({
     });
 
   const filter: RunsFilter = useMemo(
-    () => ({tags: [{key: DagsterTag.Backfill, value: backfill.id}]}),
-    [backfill],
+    () => ({
+      ...queryStringFilters,
+      tags: [...(queryStringFilters.tags || []), {key: DagsterTag.Backfill, value: backfill.id}],
+    }),
+    [backfill, queryStringFilters],
   );
 
   const annotations = useMemo(
@@ -68,41 +96,49 @@ export const BackfillRunsTab = ({
   );
 
   const actionBarComponents = (
-    <Box flex={{direction: 'row', gap: 16}} style={{position: 'sticky', top: 0}}>
-      {propView === 'both' ? (
-        <ButtonGroup
-          activeItems={new Set([view])}
-          onClick={(id: 'timeline' | 'list') => {
-            setView(id);
-          }}
-          buttons={[
-            {id: 'timeline', icon: 'gantt_waterfall', label: 'Timeline'},
-            {id: 'list', icon: 'list', label: 'List'},
-          ]}
-        />
-      ) : undefined}
-      <div style={{flex: 1}} />
-      {view === 'timeline' && (
-        <ButtonGroup<HourWindow>
-          activeItems={new Set([hourWindow])}
-          buttons={[
-            {id: '1', label: '1hr'},
-            {id: '6', label: '6hr'},
-            {id: '12', label: '12hr'},
-            {id: '24', label: '24hr'},
-          ]}
-          onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
-        />
-      )}
-      {view === 'timeline' && (
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Button onClick={onPageEarlier}>&larr;</Button>
-          <Button onClick={onPageNow}>{backfill.endTimestamp ? 'Jump to end' : 'Now'}</Button>
-          <Button onClick={onPageLater}>&rarr;</Button>
-        </Box>
-      )}
+    <Box flex={{direction: 'column'}}>
+      <Box
+        flex={{direction: 'row', gap: 16}}
+        style={{position: 'sticky', top: 0, left: 0, right: 0}}
+      >
+        {view === 'list' && button}
+        {propView === 'both' ? (
+          <ButtonGroup
+            activeItems={new Set([view])}
+            onClick={(id: 'timeline' | 'list') => {
+              setView(id);
+            }}
+            buttons={[
+              {id: 'timeline', icon: 'gantt_waterfall', label: 'Timeline'},
+              {id: 'list', icon: 'list', label: 'List'},
+            ]}
+          />
+        ) : undefined}
+        <div style={{flex: 1}} />
+        {view === 'timeline' && (
+          <ButtonGroup<HourWindow>
+            activeItems={new Set([hourWindow])}
+            buttons={[
+              {id: '1', label: '1hr'},
+              {id: '6', label: '6hr'},
+              {id: '12', label: '12hr'},
+              {id: '24', label: '24hr'},
+            ]}
+            onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
+          />
+        )}
+        {view === 'timeline' && (
+          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            <Button onClick={onPageEarlier}>&larr;</Button>
+            <Button onClick={onPageNow}>{backfill.endTimestamp ? 'Jump to end' : 'Now'}</Button>
+            <Button onClick={onPageLater}>&rarr;</Button>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
+
+  const belowActionBarComponents = activeFiltersJsx.length ? activeFiltersJsx : null;
 
   return view === 'timeline' ? (
     <ExecutionRunTimeline
@@ -112,19 +148,26 @@ export const BackfillRunsTab = ({
       actionBarComponents={actionBarComponents}
     />
   ) : (
-    <ExecutionRunTable filter={filter} actionBarComponents={actionBarComponents} />
+    <ExecutionRunTable
+      filter={filter}
+      actionBarComponents={actionBarComponents}
+      belowActionBarComponents={belowActionBarComponents}
+    />
   );
 };
 
 const ExecutionRunTable = ({
   filter,
   actionBarComponents,
+  belowActionBarComponents,
 }: {
   filter: RunsFilter;
   actionBarComponents: React.ReactNode;
+  belowActionBarComponents: React.ReactNode;
 }) => {
   const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, PAGE_SIZE);
-  const pipelineRunsOrError = queryResult.data?.pipelineRunsOrError;
+  const pipelineRunsOrError =
+    queryResult.data?.pipelineRunsOrError || queryResult.previousData?.pipelineRunsOrError;
 
   const refreshState = useQueryRefreshAtInterval(queryResult, 15000);
 
@@ -162,6 +205,8 @@ const ExecutionRunTable = ({
               </Box>
             )}
             actionBarComponents={actionBarComponents}
+            belowActionBarComponents={belowActionBarComponents}
+            loading={queryResult.loading}
             actionBarSticky
           />
           {pipelineRunsOrError.results.length > 0 ? (

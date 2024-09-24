@@ -41,4 +41,9 @@ export const useVisibleFeatureFlagRows = () => [
     key: 'New code location page',
     flagType: FeatureFlag.flagCodeLocationPage,
   },
+  // Uncomment once we're ready for this to go live
+  // {
+  //   key: 'New Runs feed',
+  //   flagType: FeatureFlag.flagRunsFeed,
+  // }
 ];

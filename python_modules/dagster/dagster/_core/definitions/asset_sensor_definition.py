@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, NamedTuple, Optional, Sequence, Set
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._annotations import public
@@ -65,6 +65,8 @@ class AssetSensorDefinition(SensorDefinition):
             object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
     """
@@ -84,6 +86,7 @@ class AssetSensorDefinition(SensorDefinition):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -163,6 +166,7 @@ class AssetSensorDefinition(SensorDefinition):
             jobs=jobs,
             default_status=default_status,
             required_resource_keys=combined_required_resource_keys,
+            tags=tags,
         )
 
     @public

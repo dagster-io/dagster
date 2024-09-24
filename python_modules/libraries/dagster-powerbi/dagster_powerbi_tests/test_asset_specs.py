@@ -1,5 +1,4 @@
 import uuid
-from typing import cast
 
 import pytest
 import responses
@@ -7,9 +6,6 @@ from dagster import materialize
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.definitions.repository_definition.repository_definition import (
-    PendingRepositoryDefinition,
-)
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
@@ -200,15 +196,11 @@ def test_using_reconstruction_metadata(workspace_data_api_mocks: responses.Reque
 
         from dagster_powerbi_tests.pending_repo import reconstruction_metadata_defs
 
-        pending_repo = cast(
-            PendingRepositoryDefinition,
-            reconstruction_metadata_defs(
-                DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION)
-            ).get_inner_repository(),
-        )
+        repository_def = reconstruction_metadata_defs(
+            DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION)
+        ).get_repository_def()
 
         # first, we resolve the repository to generate our cached metadata
-        repository_def = pending_repo.compute_repository_definition()
         assert len(workspace_data_api_mocks.calls) == 5
 
         # 5 PowerBI external assets, one materializable asset

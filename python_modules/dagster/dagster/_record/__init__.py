@@ -128,6 +128,7 @@ def _namedtuple_record_transform(
         (cls, base),
         {  # these will override an implementation on the class if it exists
             **{n: getattr(base, n) for n in field_set.keys()},
+            "_fields": base._fields,
             "__iter__": _banned_iter,
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
@@ -364,23 +365,27 @@ class JitCheckedNew:
         self._nt_base = nt_base
         self._eval_ctx = eval_ctx
         self._new_frames = new_frames  # how many frames of __new__ there are
+        self._compiled_fn = None
 
     def __call__(self, cls, *args, **kwargs):
-        # update the context with callsite locals/globals to resolve
-        # ForwardRefs that were unavailable at definition time.
-        self._eval_ctx.update_from_frame(1 + self._new_frames)
+        if self._compiled_fn is None:
+            # update the context with callsite locals/globals to resolve
+            # ForwardRefs that were unavailable at definition time.
+            self._eval_ctx.update_from_frame(1 + self._new_frames)
 
-        # ensure check is in scope
-        if "check" not in self._eval_ctx.global_ns:
-            self._eval_ctx.global_ns["check"] = check
+            # ensure check is in scope
+            if "check" not in self._eval_ctx.global_ns:
+                self._eval_ctx.global_ns["check"] = check
 
-        # jit that shit
-        self._nt_base.__new__ = self._eval_ctx.compile_fn(
-            self._build_checked_new_str(),
-            _CHECKED_NEW,
-        )
-
-        return self._nt_base.__new__(cls, *args, **kwargs)
+            # we are double-memoizing this to handle some confusing mro issues
+            # in which the _nt_base's __new__ method is not on the critical
+            # path, causing this to get invoked multiple times
+            self._compiled_fn = self._eval_ctx.compile_fn(
+                self._build_checked_new_str(),
+                _CHECKED_NEW,
+            )
+            self._nt_base.__new__ = self._compiled_fn
+        return self._compiled_fn(cls, *args, **kwargs)
 
     def _build_checked_new_str(self) -> str:
         kw_args_str, set_calls_str = build_args_and_assignment_strs(self._field_set, self._defaults)

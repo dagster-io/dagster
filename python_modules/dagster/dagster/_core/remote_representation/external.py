@@ -863,6 +863,10 @@ class ExternalSchedule:
     def handle(self) -> InstigatorHandle:
         return self._handle
 
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self._external_schedule_data.tags
+
     def get_external_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_external_origin()
 
@@ -1096,6 +1100,10 @@ class ExternalSensor:
     @property
     def metadata(self) -> Optional[ExternalSensorMetadata]:
         return self._external_sensor_data.metadata
+
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self._external_sensor_data.tags
 
     @property
     def default_status(self) -> DefaultSensorStatus:

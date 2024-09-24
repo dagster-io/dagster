@@ -74,7 +74,7 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 
 
 # Find packages under a root subdirectory that are not configured above.
-def _get_uncustomized_pkg_roots(root, custom_pkg_roots) -> List[str]:
+def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[str]:
     all_files_in_root = [
         os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]

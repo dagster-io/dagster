@@ -18,7 +18,6 @@ from dagster._core.definitions.reconstruct import (
     repository_def_from_target_def,
 )
 from dagster._core.definitions.repository_definition.repository_definition import (
-    PendingRepositoryDefinition,
     RepositoryDefinition,
     RepositoryLoadData,
 )
@@ -84,27 +83,25 @@ def test_reconstruction_metadata():
         AssetKey("beta"),
     }
 
-    defs = metadata_defs(context=DefinitionsLoadContext(DefinitionsLoadType.INITIALIZATION))
-    inner_repo = defs.get_inner_repository()
-    assert isinstance(inner_repo, PendingRepositoryDefinition)
-
     recon_repo = ReconstructableRepository.for_file(__file__, "metadata_defs")
     assert isinstance(recon_repo.get_definition(), RepositoryDefinition)
 
-    repo_load_data = RepositoryLoadData(
-        cacheable_asset_data={},
-        reconstruction_metadata={
-            f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": MetadataValue.code_location_reconstruction(
-                fetch_foo_integration_asset_info(WORKSPACE_ID)
-            )
-        },
+    recon_repo_with_cache = recon_repo.with_repository_load_data(
+        RepositoryLoadData(
+            cacheable_asset_data={},
+            reconstruction_metadata={
+                f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": MetadataValue.code_location_reconstruction(
+                    fetch_foo_integration_asset_info(WORKSPACE_ID)
+                )
+            },
+        )
     )
 
     # Ensure we don't call the expensive fetch function when we have the data cached
     with patch(
         "dagster_tests.definitions_tests.test_definitions_loader.fetch_foo_integration_asset_info"
     ) as mock_fetch:
-        inner_repo.reconstruct_repository_definition(repository_load_data=repo_load_data)
+        recon_repo_with_cache.get_definition()
         mock_fetch.assert_not_called()
 
 
