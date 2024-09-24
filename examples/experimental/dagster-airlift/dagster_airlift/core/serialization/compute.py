@@ -144,11 +144,10 @@ def fetch_all_airflow_data(
     dag_infos = {dag.dag_id: dag for dag in airflow_instance.list_dags()}
     task_info_map = defaultdict(dict)
     for dag_id in mapping_info.dag_ids:
-        # TODO replace with single get_task_infos call
-        for task_id in mapping_info.task_id_map[dag_id]:
-            task_info_map[dag_id][task_id] = airflow_instance.get_task_info(
-                dag_id=dag_id, task_id=task_id
-            )
+        task_info_map[dag_id] = {
+            task_info.task_id: task_info
+            for task_info in airflow_instance.get_task_infos(dag_id=dag_id)
+        }
 
     migration_state = airflow_instance.get_migration_state()
 
