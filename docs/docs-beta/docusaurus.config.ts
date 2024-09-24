@@ -102,6 +102,12 @@ const config: Config = {
         //  docId: 'changelog',
         //  position: 'right',
         //},
+        {
+          label: 'Feedback',
+          href: 'https://github.com/dagster-io/dagster/discussions/23031',
+          position: 'right',
+          className: 'feedback-nav-link',
+        },
       ],
     },
     image: 'img/docusaurus-social-card.jpg',
