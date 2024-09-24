@@ -26,7 +26,10 @@ from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -58,6 +61,7 @@ class AutomationTickEvaluationContext:
         auto_observe_asset_keys: AbstractSet[AssetKey],
         asset_selection: AssetSelection,
         logger: logging.Logger,
+        default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
     ):
         resolved_entity_keys = {
@@ -65,11 +69,12 @@ class AutomationTickEvaluationContext:
             for entity_key in (
                 asset_selection.resolve(asset_graph) | asset_selection.resolve_checks(asset_graph)
             )
-            if asset_graph.get(entity_key).automation_condition is not None
+            if default_condition or asset_graph.get(entity_key).automation_condition is not None
         }
         self._evaluation_id = evaluation_id
         self._evaluator = AutomationConditionEvaluator(
             entity_keys=resolved_entity_keys,
+            default_condition=default_condition,
             instance=instance,
             asset_graph=asset_graph,
             cursor=cursor,
