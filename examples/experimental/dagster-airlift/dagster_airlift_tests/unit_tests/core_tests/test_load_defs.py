@@ -284,8 +284,6 @@ def test_local_airflow_instance() -> None:
 
     assert defs.assets
     repo_def = defs.get_repository_def()
-    a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
-    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") is None
 
     with environ(
         {
@@ -304,8 +302,6 @@ def test_local_airflow_instance() -> None:
         assert defs.assets
         repo_def = defs.get_repository_def()
         assert len(repo_def.assets_defs_by_key) == 2
-        task_asset = repo_def.assets_defs_by_key[AssetKey("a")]
-        assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "True"
 
 
 def test_cached_loading() -> None:

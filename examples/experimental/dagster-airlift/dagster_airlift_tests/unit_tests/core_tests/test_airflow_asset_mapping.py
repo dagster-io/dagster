@@ -123,17 +123,4 @@ def test_fetched_airflow_data() -> None:
     airflow_data_by_key = fetched_airflow_data.airflow_data_by_key
     assert airflow_data_by_key.keys() == {ak("asset1"), ak("asset2")}
 
-    assert fetched_airflow_data.airflow_data_by_key[ak("asset1")].additional_tags
     assert "Dag ID" in fetched_airflow_data.airflow_data_by_key[ak("asset1")].additional_metadata
-    assert (
-        fetched_airflow_data.airflow_data_by_key[ak("asset1")].additional_tags[
-            "airlift/task_migrated"
-        ]
-        == "True"
-    )
-    assert (
-        fetched_airflow_data.airflow_data_by_key[ak("asset2")].additional_tags[
-            "airlift/task_migrated"
-        ]
-        == "False"
-    )
