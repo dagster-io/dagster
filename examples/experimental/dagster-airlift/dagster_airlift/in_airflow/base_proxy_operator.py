@@ -18,15 +18,13 @@ logger = logging.getLogger(__name__)
 
 def matched_dag_id_task_id(asset_node: dict, dag_id: str, task_id: str) -> bool:
     json_metadata_entries = {
-        entry["label"]: entry["json"]
+        entry["label"]: entry["jsonString"]
         for entry in asset_node["metadataEntries"]
         if entry["__typename"] == "JsonMetadataEntry"
     }
 
-    mapping_entry = json_metadata_entries.get(TASK_MAPPING_METADATA_KEY)
-
-    if mapping_entry:
-        task_handle_dict_list = json.loads(mapping_entry["jsonString"])
+    if mapping_entry := json_metadata_entries.get(TASK_MAPPING_METADATA_KEY):
+        task_handle_dict_list = json.loads(mapping_entry)
         for task_handle_dict in task_handle_dict_list:
             if task_handle_dict["dag_id"] == dag_id and task_handle_dict["task_id"] == task_id:
                 return True
@@ -76,7 +74,8 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             json={"query": ASSET_NODES_QUERY},
             timeout=3,
         )
-        for asset_node in response.json()["data"]["assetNodes"]:
+        response_data = response.json()["data"]
+        for asset_node in response_data["assetNodes"]:
             if matched_dag_id_task_id(asset_node, dag_id, task_id):
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
