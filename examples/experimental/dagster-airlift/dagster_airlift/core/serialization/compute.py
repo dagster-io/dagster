@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import Dict, List, NamedTuple, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from dagster import (
     AssetKey,
@@ -22,14 +22,13 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedDagData,
     SerializedTaskHandleData,
 )
-from dagster_airlift.core.task_asset import get_airflow_data_for_task_mapped_spec
+from dagster_airlift.core.task_asset import (
+    AirflowTaskDagsterAssetEdge,
+    TaskHandle,
+    get_airflow_data_for_task_mapped_spec,
+)
 from dagster_airlift.core.utils import spec_iterator
 from dagster_airlift.migration_state import AirflowMigrationState
-
-
-class TaskHandle(NamedTuple):
-    dag_id: str
-    task_id: str
 
 
 @record
@@ -73,17 +72,17 @@ class TaskSpecMappingInfo:
         asset_key_map: Dict[str, Dict[str, Set[AssetKey]]] = defaultdict(lambda: defaultdict(set))
         for spec in self.asset_specs:
             if is_mapped_asset_spec(spec):
-                dag_id, task_id = task_handle_for_spec(spec)
-                asset_key_map[dag_id][task_id].add(spec.key)
+                for task_handle in task_handles_for_spec(spec):
+                    asset_key_map[task_handle.dag_id][task_handle.task_id].add(spec.key)
         return asset_key_map
 
     @cached_property
-    def task_handle_map(self) -> Dict[AssetKey, TaskHandle]:
+    def task_handle_map(self) -> Dict[AssetKey, Set[TaskHandle]]:
         task_handle_map = {}
         for dag_id, asset_key_by_task_id in self.asset_key_map.items():
             for task_id, asset_keys in asset_key_by_task_id.items():
                 for asset_key in asset_keys:
-                    task_handle_map[asset_key] = TaskHandle(dag_id=dag_id, task_id=task_id)
+                    task_handle_map[asset_key] = set([TaskHandle(dag_id=dag_id, task_id=task_id)])
         return task_handle_map
 
 
@@ -91,10 +90,15 @@ def is_mapped_asset_spec(spec: AssetSpec) -> bool:
     return DAG_ID_METADATA_KEY in spec.metadata and TASK_ID_METADATA_KEY in spec.metadata
 
 
-def task_handle_for_spec(spec: AssetSpec) -> TaskHandle:
+def task_handles_for_spec(spec: AssetSpec) -> Set[TaskHandle]:
     check.param_invariant(is_mapped_asset_spec(spec), "spec", "Must be mappped spec")
-    return TaskHandle(
-        dag_id=spec.metadata[DAG_ID_METADATA_KEY], task_id=spec.metadata[TASK_ID_METADATA_KEY]
+    return set(
+        [
+            TaskHandle(
+                dag_id=spec.metadata[DAG_ID_METADATA_KEY],
+                task_id=spec.metadata[TASK_ID_METADATA_KEY],
+            )
+        ]
     )
 
 
@@ -114,22 +118,30 @@ class FetchedAirflowData:
     def migration_state_map(self) -> Dict[str, Dict[str, Optional[bool]]]:
         migration_state_map: Dict[str, Dict[str, Optional[bool]]] = defaultdict(dict)
         for spec in self.task_spec_mapping_info.mapped_asset_specs:
-            dag_id, task_id = task_handle_for_spec(spec)
-            migration_state_for_task = self.migration_state.get_migration_state_for_task(
-                dag_id=dag_id, task_id=task_id
-            )
-            migration_state_map[dag_id][task_id] = migration_state_for_task
+            for task_handle in task_handles_for_spec(spec):
+                dag_id, task_id = task_handle
+                migration_state_map[task_handle.dag_id][task_handle.task_id] = None
+                migration_state_for_task = self.migration_state.get_migration_state_for_task(
+                    dag_id=dag_id, task_id=task_id
+                )
+                migration_state_map[dag_id][task_id] = migration_state_for_task
         return migration_state_map
 
     @cached_property
     def airflow_data_by_key(self) -> Dict[AssetKey, SerializedAssetKeyScopedAirflowData]:
         airflow_data_by_key = {}
         for spec in self.task_spec_mapping_info.mapped_asset_specs:
-            dag_id, task_id = task_handle_for_spec(spec)
-            airflow_data_by_key[spec.key] = get_airflow_data_for_task_mapped_spec(
-                task_info=self.task_info_map[dag_id][task_id],
-                migration_state=self.migration_state_map[dag_id][task_id],
-            )
+            edges = [
+                AirflowTaskDagsterAssetEdge(
+                    asset_key=spec.key,
+                    task_handle=task_handle,
+                    task_info=self.task_info_map[task_handle.dag_id][task_handle.task_id],
+                    migrated=self.migration_state_map[task_handle.dag_id][task_handle.task_id],
+                )
+                for task_handle in task_handles_for_spec(spec)
+            ]
+
+            airflow_data_by_key[spec.key] = get_airflow_data_for_task_mapped_spec(edges)
 
         return airflow_data_by_key
 
