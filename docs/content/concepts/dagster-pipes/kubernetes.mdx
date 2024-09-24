@@ -51,17 +51,13 @@ from dagster_pipes import open_dagster_pipes
 
 with open_dagster_pipes() as pipes:
     # Stream log message back to Dagster
-    pipes.log.info("Started computation")
+    pipes.log.info(f"Using some_parameter value: {pipes.get_extra('some_parameter')}")
 
     # ... your code that computes and persists the asset
 
-    # Stream asset materialization metadata and data version back to Dagster.
-    # This should be called after you've computed and stored the asset value. We
-    # omit the asset key here because there is only one asset in scope, but for
-    # multi-assets you can pass an `asset_key` parameter.
     pipes.report_asset_materialization(
         metadata={
-            "some_metric": {"raw_value": 1, "type": "int"}
+            "some_metric": {"raw_value": 2, "type": "int"}
         },
         data_version="alpha",
     )
@@ -123,6 +119,9 @@ def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sCl
   return k8s_pipes_client.run(
       context=context,
       image="pipes-example:v1",
+      extras={
+            "some_parameter": 1
+      }
   ).get_materialize_result()
 ```
 
@@ -194,6 +193,9 @@ def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sCl
   return k8s_pipes_client.run(
       context=context,
       image="pipes-example:v1",
+      extras={
+            "some_parameter": 1
+      }
   ).get_materialize_result()
 
 

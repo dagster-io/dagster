@@ -581,8 +581,8 @@ def open_pipes_session(
             with open_pipes_session(
                 context=context,
                 extras={"foo": "bar"},
-                context_injector=ExtTempFileContextInjector(),
-                message_reader=ExtTempFileMessageReader(),
+                context_injector=PipesTempFileContextInjector(),
+                message_reader=PipesTempFileMessageReader(),
             ) as pipes_session:
                 subprocess.Popen(
                     ["/bin/python", "/path/to/script.py"],

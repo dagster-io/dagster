@@ -63,7 +63,40 @@ TriggerStep = TypedDict(
 
 WaitStep: TypeAlias = Literal["wait"]
 
-BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep]
+InputSelectOption = TypedDict("InputSelectOption", {"label": str, "value": str})
+InputSelectField = TypedDict(
+    "InputSelectField",
+    {
+        "select": str,
+        "key": str,
+        "options": List[InputSelectOption],
+        "hint": Optional[str],
+        "default": Optional[str],
+        "required": Optional[bool],
+        "multiple": Optional[bool],
+    },
+)
+InputTextField = TypedDict(
+    "InputTextField",
+    {
+        "text": str,
+        "key": str,
+        "hint": Optional[str],
+        "default": Optional[str],
+        "required": Optional[bool],
+    },
+)
+
+BlockStep = TypedDict(
+    "BlockStep",
+    {
+        "block": str,
+        "prompt": Optional[str],
+        "fields": List[Union[InputSelectField, InputTextField]],
+    },
+)
+
+BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
@@ -84,7 +117,9 @@ def safe_getenv(env_var: str) -> str:
     return os.environ[env_var]
 
 
-def buildkite_yaml_for_steps(steps, custom_slack_channel: Optional[str] = None) -> str:
+def buildkite_yaml_for_steps(
+    steps: Sequence[BuildkiteStep], custom_slack_channel: Optional[str] = None
+) -> str:
     return yaml.dump(
         {
             "env": {
