@@ -59,7 +59,7 @@ export const BackfillOpJobPartitionsTable = ({
       <tbody>
         <tr>
           <td>
-            <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+            <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
               <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
               <StatusBar
                 targeted={results.length}
