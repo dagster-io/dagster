@@ -1,12 +1,12 @@
 import {Box, Tag} from '@dagster-io/ui-components';
 import {memo} from 'react';
 import {Link} from 'react-router-dom';
+import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
 import {DagsterTag} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTagsFragment} from './types/RunTagsFragment.types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TagActionsPopover} from '../ui/TagActions';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -71,8 +71,6 @@ const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
 };
 
 export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
-  const {UserDisplay} = useLaunchPadHooks();
-
   const plucked = pluckTagFromList(tags);
 
   if (plucked.type === 'manual') {

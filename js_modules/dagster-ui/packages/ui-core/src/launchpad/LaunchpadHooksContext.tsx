@@ -5,13 +5,11 @@ import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
 import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';
 import {GenericError} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {UserDisplay} from '../runs/UserDisplay';
 import {SetFilterValue} from '../ui/BaseFilters/useStaticSetFilter';
 
 type LaunchpadHooksContextValue = {
   LaunchRootExecutionButton?: typeof LaunchRootExecutionButton;
   useLaunchWithTelemetry?: typeof useLaunchWithTelemetry;
-  UserDisplay?: typeof UserDisplay;
   MaterializeButton?: typeof Button;
   PythonErrorInfoHeader?: React.ComponentType<{
     error: GenericError | PythonErrorFragment;
@@ -31,7 +29,6 @@ export function useLaunchPadHooks() {
     LaunchRootExecutionButton: overrideLaunchRootExecutionButton,
     useLaunchWithTelemetry: overrideUseLaunchWithTelemetry,
     MaterializeButton: OverrideMaterializeButton,
-    UserDisplay: OverrideUserDisplay,
     PythonErrorInfoHeader,
     StaticFilterSorter,
   } = React.useContext(LaunchpadHooksContext);
@@ -41,7 +38,6 @@ export function useLaunchPadHooks() {
     useLaunchWithTelemetry: overrideUseLaunchWithTelemetry ?? useLaunchWithTelemetry,
     MaterializeButton: OverrideMaterializeButton ?? Button,
     PythonErrorInfoHeader,
-    UserDisplay: OverrideUserDisplay ?? UserDisplay,
     StaticFilterSorter,
   };
 }
