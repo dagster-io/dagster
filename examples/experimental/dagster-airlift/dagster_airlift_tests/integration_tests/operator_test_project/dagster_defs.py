@@ -1,8 +1,8 @@
 from dagster import Definitions, asset
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.core.utils import metadata_for_task_mapping
 
 
-@asset(metadata={DAG_ID_METADATA_KEY: "the_dag", TASK_ID_METADATA_KEY: "some_task"})
+@asset(metadata=metadata_for_task_mapping(dag_id="the_dag", task_id="some_task"))
 def the_dag__some_task():
     return "asset_value"
 
@@ -12,7 +12,7 @@ def unrelated():
     return "unrelated_value"
 
 
-@asset(metadata={DAG_ID_METADATA_KEY: "the_dag", TASK_ID_METADATA_KEY: "other_task"})
+@asset(metadata=metadata_for_task_mapping(dag_id="the_dag", task_id="other_task"))
 def the_dag__other_task():
     return "other_task_value"
 

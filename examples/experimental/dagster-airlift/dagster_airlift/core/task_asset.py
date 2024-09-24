@@ -38,6 +38,7 @@ def get_airflow_data_for_task_mapped_spec(
 
 def tags_from_edges(edges: List[AirflowTaskDagsterAssetEdge]) -> Mapping[str, str]:
     all_not_migrated = all(not edge.fetched_airflow_task.migrated for edge in edges)
+    # Only show the airflow kind if the asset is orchestrated exlusively by airflow
     return airflow_kind_dict() if all_not_migrated else {}
 
 

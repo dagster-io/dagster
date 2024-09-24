@@ -125,6 +125,9 @@ def _apply_airflow_data_to_specs(
     airflow_data: AirflowDefinitionsData,
 ) -> Iterator[AssetsDefinition]:
     """Apply asset spec transformations to the asset definitions."""
+    # import code
+
+    # code.interact(local=locals())
     for asset in definitions.assets or []:
         asset = check.inst(  # noqa: PLW2901
             asset,
