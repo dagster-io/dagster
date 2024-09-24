@@ -82,8 +82,7 @@ class DbtCliResource(ConfigurableResource):
             `dbt_project.yml`. See https://docs.getdbt.com/reference/dbt_project.yml for more
             information.
         global_config_flags (List[str]): A list of global flags configuration to pass to the dbt CLI
-            invocation. See https://docs.getdbt.com/reference/global-configs for a full list of
-            configuration.
+            invocation. Invoke `dbt --help` to see a full list of global flags.
         profiles_dir (Optional[str]): The path to the directory containing your dbt `profiles.yml`.
             By default, the current working directory is used, which is the dbt project directory.
             See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles for more
