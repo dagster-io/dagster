@@ -129,19 +129,11 @@ class FetchedAirflowData:
     @cached_property
     def airflow_data_by_key(self) -> Dict[AssetKey, SerializedAssetKeyScopedAirflowData]:
         airflow_data_by_key = {}
-        # <<<<<<< HEAD
         for spec in self.mapping_info.mapped_asset_specs:
             mapping = TasksToAssetMapping(
                 asset=spec,
                 mapped_tasks=[
                     FetchedAirflowTask(
-                        # =======
-                        #         for spec in self.mapping_info.mapped_asset_specs:
-                        #             edges = [
-                        #                 AirflowTaskDagsterAssetEdge(
-                        #                     asset_key=spec.key,
-                        #                     fetched_airflow_task=FetchedAirflowTask(
-                        # >>>>>>> ec2f6fd351 (s/TaskSpecMappingInfo/AirliftMetadataMappingInfo)
                         task_handle=task_handle,
                         task_info=self.task_info_map[task_handle.dag_id][task_handle.task_id],
                         migrated=self.migration_state_map[task_handle.dag_id][task_handle.task_id],
