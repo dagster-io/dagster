@@ -19,7 +19,6 @@ import {
 import dayjs from 'dayjs';
 import React, {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
@@ -62,6 +61,7 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../graph/KindTags';
 import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
 import {
   TableSchema,
@@ -164,6 +164,7 @@ export const AssetNodeOverview = ({
     assetNodeLoadTimestamp,
     liveData,
   );
+  const {UserDisplay} = useLaunchPadHooks();
 
   const {
     materializations,

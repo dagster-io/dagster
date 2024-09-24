@@ -12,8 +12,6 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
-import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
-import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {
@@ -50,6 +48,7 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {PipelineSelector} from '../graphql/types';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
@@ -196,6 +195,8 @@ export const LaunchAssetExecutionButton = ({
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
+  const {MaterializeButton} = useLaunchPadHooks();
+
   const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
     React.useState<boolean>(false);
 
@@ -335,6 +336,7 @@ export const LaunchAssetExecutionButton = ({
 };
 
 export const useMaterializationAction = (preferredJobName?: string) => {
+  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const client = useApolloClient();

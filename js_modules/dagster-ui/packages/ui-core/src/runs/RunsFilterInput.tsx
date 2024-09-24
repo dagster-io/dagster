@@ -8,7 +8,6 @@ import {
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import {useCallback, useMemo} from 'react';
-import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
 import {
@@ -22,6 +21,7 @@ import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
@@ -181,6 +181,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     RunTagKeysQueryVariables
   >(RUN_TAG_KEYS_QUERY);
   const client = useApolloClient();
+  const {UserDisplay} = useLaunchPadHooks();
 
   const fetchTagValues = useCallback(
     async (tagKey: string) => {
