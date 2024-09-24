@@ -79,11 +79,11 @@ class TaskSpecMappingInfo:
 
     @cached_property
     def task_handle_map(self) -> Dict[AssetKey, Set[TaskHandle]]:
-        task_handle_map = {}
+        task_handle_map = defaultdict(set)
         for dag_id, asset_key_by_task_id in self.asset_key_map.items():
             for task_id, asset_keys in asset_key_by_task_id.items():
                 for asset_key in asset_keys:
-                    task_handle_map[asset_key] = set([TaskHandle(dag_id=dag_id, task_id=task_id)])
+                    task_handle_map[asset_key].add(TaskHandle(dag_id=dag_id, task_id=task_id))
         return task_handle_map
 
 

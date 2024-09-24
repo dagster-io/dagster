@@ -90,12 +90,16 @@ def test_task_with_multiple_assets() -> None:
     }
 
 
-def test_multiple_tasks_to_single_asset() -> None:
+def test_map_multiple_tasks_to_single_asset() -> None:
     spec_mapping_info = build_task_spec_mapping_info(
         defs=Definitions(
             assets=[
                 airlift_multiple_task_asset_spec(
-                    "asset1", [TaskHandle(dag_id="dag1", task_id="task1")]
+                    "asset1",
+                    [
+                        TaskHandle(dag_id="dag1", task_id="task1"),
+                        TaskHandle(dag_id="dag2", task_id="task1"),
+                    ],
                 ),
             ]
         )
