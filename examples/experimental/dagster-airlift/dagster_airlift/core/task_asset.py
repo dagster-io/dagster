@@ -1,6 +1,10 @@
 from typing import Any, List, Mapping, NamedTuple, Optional
 
-from dagster import AssetKey, JsonMetadataValue
+from dagster import (
+    AssetKey,
+    JsonMetadataValue,
+    _check as check,
+)
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster._record import record
 
@@ -31,13 +35,18 @@ class AirflowTaskDagsterAssetEdge:
 def get_airflow_data_for_task_mapped_spec(
     edges: List[AirflowTaskDagsterAssetEdge],
 ) -> SerializedAssetKeyScopedAirflowData:
-    assert len(edges) == 1
+    check.param_invariant(
+        len(edges) == 1,
+        "edges",
+        "For now we constrain to 1:1 relationship between asset and task until we support multiple tasks in asset metadata",
+    )
     migration_state = edges[0].fetched_airflow_task.migrated
     task_info = edges[0].fetched_airflow_task.task_info
 
     tags = airflow_kind_dict() if not migration_state else {}
     if migration_state is not None:
         tags[MIGRATED_TAG] = str(bool(migration_state))
+
     return SerializedAssetKeyScopedAirflowData(
         additional_metadata=task_asset_metadata(task_info, migration_state),
         additional_tags=tags,
