@@ -7,7 +7,11 @@ from dagster import (
     _check as check,
 )
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.constants import (
+    DAG_ID_METADATA_KEY,
+    TASK_ID_METADATA_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 
 
 class TaskDefs:
@@ -79,7 +83,11 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
         defs_to_merge.append(
             apply_metadata_to_all_specs(
                 defs=task_def.defs,
-                metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_def.task_id},
+                metadata={
+                    DAG_ID_METADATA_KEY: dag_id,
+                    TASK_ID_METADATA_KEY: task_def.task_id,
+                    TASK_MAPPING_METADATA_KEY: [(dag_id, task_def.task_id)],
+                },
             )
         )
     return Definitions.merge(*defs_to_merge)

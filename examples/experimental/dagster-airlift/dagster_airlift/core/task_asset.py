@@ -1,10 +1,6 @@
 from typing import Any, List, Mapping, NamedTuple, Optional
 
-from dagster import (
-    AssetKey,
-    JsonMetadataValue,
-    _check as check,
-)
+from dagster import AssetKey, JsonMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster._record import record
 
@@ -34,16 +30,8 @@ class AirflowTaskDagsterAssetEdge:
 def get_airflow_data_for_task_mapped_spec(
     edges: List[AirflowTaskDagsterAssetEdge],
 ) -> SerializedAssetKeyScopedAirflowData:
-    check.param_invariant(
-        len(edges) == 1,
-        "edges",
-        "For now we constrain to 1:1 relationship between asset and task until we support multiple tasks in asset metadata",
-    )
-    migration_state = edges[0].fetched_airflow_task.migrated
-    task_info = edges[0].fetched_airflow_task.task_info
-
     return SerializedAssetKeyScopedAirflowData(
-        additional_metadata=task_asset_metadata(task_info, migration_state),
+        additional_metadata=task_asset_metadata(edges),
         additional_tags=tags_from_edges(edges),
     )
 
@@ -53,7 +41,13 @@ def tags_from_edges(edges: List[AirflowTaskDagsterAssetEdge]) -> Mapping[str, st
     return airflow_kind_dict() if all_not_migrated else {}
 
 
-def task_asset_metadata(task_info: TaskInfo, migration_state: Optional[bool]) -> Mapping[str, Any]:
+def task_asset_metadata(edges: List[AirflowTaskDagsterAssetEdge]) -> Mapping[str, Any]:
+    # Just grab first one for now
+    edge = next(iter(edges))
+    task_info, migration_state = (
+        edge.fetched_airflow_task.task_info,
+        edge.fetched_airflow_task.migrated,
+    )
     task_level_metadata = {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
         # In this case,
