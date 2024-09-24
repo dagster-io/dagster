@@ -121,6 +121,15 @@ class AirflowInstanceFake(AirflowInstance):
             raise ValueError(f"Task info not found for dag_id {dag_id} and task_id {task_id}")
         return self._task_infos_by_dag_and_task_id[(dag_id, task_id)]
 
+    def get_task_infos(self, *, dag_id: str) -> List[TaskInfo]:
+        if dag_id not in self._dag_infos_by_dag_id:
+            raise ValueError(f"Dag info not found for dag_id {dag_id}")
+        task_infos = []
+        for dag_id, task_id in self._task_infos_by_dag_and_task_id:
+            if dag_id == dag_id:
+                task_infos.append(self._task_infos_by_dag_and_task_id[(dag_id, task_id)])
+        return task_infos
+
     def get_dag_info(self, dag_id) -> DagInfo:
         if dag_id not in self._dag_infos_by_dag_id:
             raise ValueError(f"Dag info not found for dag_id {dag_id}")
