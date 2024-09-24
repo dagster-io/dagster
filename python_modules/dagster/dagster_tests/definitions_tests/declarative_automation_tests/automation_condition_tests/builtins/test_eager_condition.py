@@ -1,4 +1,12 @@
-from dagster import AutomationCondition
+from dagster import (
+    AssetKey,
+    AutomationCondition,
+    Definitions,
+    StaticPartitionsDefinition,
+    asset,
+    evaluate_automation_conditions,
+)
+from dagster._core.instance_for_test import instance_for_test
 
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -108,3 +116,36 @@ def test_eager_hourly_partitioned() -> None:
     # B does not get immediately requested again
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
+
+
+def test_eager_static_partitioned() -> None:
+    two_partitions = StaticPartitionsDefinition(["a", "b"])
+    four_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    def _get_defs(pd: StaticPartitionsDefinition) -> Definitions:
+        @asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
+        def A() -> None: ...
+
+        @asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
+        def B() -> None: ...
+
+        return Definitions(assets=[A, B])
+
+    with instance_for_test() as instance:
+        # no "surprise backfill"
+        result = evaluate_automation_conditions(defs=_get_defs(two_partitions), instance=instance)
+        assert result.total_requested == 0
+
+        # now add two more partitions to the definition, kick off a run for those
+        result = evaluate_automation_conditions(
+            defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
+        )
+        assert result.total_requested == 4
+        assert result.get_requested_partitions(AssetKey("A")) == {"c", "d"}
+        assert result.get_requested_partitions(AssetKey("B")) == {"c", "d"}
+
+        # already requested, no more
+        result = evaluate_automation_conditions(
+            defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
+        )
+        assert result.total_requested == 0

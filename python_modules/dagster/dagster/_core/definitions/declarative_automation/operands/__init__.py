@@ -4,6 +4,7 @@ from dagster._core.definitions.declarative_automation.operands.code_version_chan
 from dagster._core.definitions.declarative_automation.operands.slice_conditions import (
     CronTickPassedCondition as CronTickPassedCondition,
     FailedAutomationCondition as FailedAutomationCondition,
+    InitialEvaluationCondition as InitialEvaluationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressAutomationCondition as InProgressAutomationCondition,
     MissingAutomationCondition as MissingAutomationCondition,

@@ -99,7 +99,7 @@ class LegacyRuleEvaluationContext:
             condition=condition,
             cursor=cursor,
             node_cursor=cursor.node_cursors_by_unique_id.get(
-                condition.get_unique_id(parent_unique_id=None, index=0)
+                condition.get_node_unique_id(parent_unique_id=None, index=0)
             )
             if cursor
             else None,
@@ -242,17 +242,17 @@ class LegacyRuleEvaluationContext:
         # Or(MaterializeCond, Not(SkipCond), Not(DiscardCond))
         if len(self.condition.children) != 3:
             return None
-        unique_id = self.condition.get_unique_id(parent_unique_id=None, index=None)
+        unique_id = self.condition.get_node_unique_id(parent_unique_id=None, index=None)
 
         # get Not(DiscardCond)
         not_discard_condition = self.condition.children[2]
-        unique_id = not_discard_condition.get_unique_id(parent_unique_id=unique_id, index=2)
+        unique_id = not_discard_condition.get_node_unique_id(parent_unique_id=unique_id, index=2)
         if not isinstance(not_discard_condition, NotAutomationCondition):
             return None
 
         # get DiscardCond
         discard_condition = not_discard_condition.children[0]
-        unique_id = discard_condition.get_unique_id(parent_unique_id=unique_id, index=0)
+        unique_id = discard_condition.get_node_unique_id(parent_unique_id=unique_id, index=0)
         if not isinstance(discard_condition, RuleCondition) or not isinstance(
             discard_condition.rule, DiscardOnMaxMaterializationsExceededRule
         ):

@@ -1,7 +1,7 @@
 import dagster as dg
 
 
-@dg.asset(automation_condition=dg.AutomationCondition.eager())
+@dg.asset(automation_condition=dg.AutomationCondition.missing().newly_true())
 def eager_asset() -> None: ...
 
 
