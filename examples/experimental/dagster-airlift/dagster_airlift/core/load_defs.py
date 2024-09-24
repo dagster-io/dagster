@@ -10,15 +10,19 @@ from dagster import (
 )
 from dagster._utils.warnings import suppress_dagster_warnings
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
-from dagster_airlift.core.airflow_instance import AirflowInstance, TaskInfo
+from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor,
 )
-from dagster_airlift.core.serialization.compute import _metadata_key, compute_serialized_data
+from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
+
+
+def _metadata_key(instance_name: str) -> str:
+    return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
 
 
 @dataclass
@@ -131,13 +135,3 @@ def _apply_airflow_data_to_specs(
             asset if isinstance(asset, AssetsDefinition) else external_asset_from_spec(asset)
         )
         yield assets_def.map_asset_specs(airflow_data.map_airflow_data_to_spec)
-
-
-def get_task_info_for_spec(
-    airflow_instance: AirflowInstance, spec: AssetSpec
-) -> Optional[TaskInfo]:
-    if TASK_ID_METADATA_KEY not in spec.metadata or DAG_ID_METADATA_KEY not in spec.metadata:
-        return None
-    return airflow_instance.get_task_info(
-        dag_id=spec.metadata[DAG_ID_METADATA_KEY], task_id=spec.metadata[TASK_ID_METADATA_KEY]
-    )

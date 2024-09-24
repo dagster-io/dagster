@@ -11,11 +11,7 @@ from dagster import (
 from dagster._core.utils import toposort_flatten
 from dagster._record import record
 
-from dagster_airlift.constants import (
-    AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
-    DAG_ID_METADATA_KEY,
-    TASK_ID_METADATA_KEY,
-)
+from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo, TaskInfo
 from dagster_airlift.core.dag_asset import dag_asset_spec_data, get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
@@ -224,17 +220,3 @@ def compute_serialized_data(
         dag_datas=dag_datas,
         asset_key_topological_ordering=topology_order,
     )
-
-
-def _get_task_info_for_spec(
-    airflow_instance: AirflowInstance, spec: AssetSpec
-) -> Optional[TaskInfo]:
-    if TASK_ID_METADATA_KEY not in spec.metadata or DAG_ID_METADATA_KEY not in spec.metadata:
-        return None
-    return airflow_instance.get_task_info(
-        dag_id=spec.metadata[DAG_ID_METADATA_KEY], task_id=spec.metadata[TASK_ID_METADATA_KEY]
-    )
-
-
-def _metadata_key(instance_name: str) -> str:
-    return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
