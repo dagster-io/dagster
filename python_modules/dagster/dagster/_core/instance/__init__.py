@@ -887,6 +887,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.run_monitoring_settings.get("cancel_timeout_seconds", 180)
 
     @property
+    def run_monitoring_max_runtime_seconds(self) -> int:
+        return self.run_monitoring_settings.get("max_runtime_seconds", 0)
+
+    @property
     def code_server_settings(self) -> Any:
         return self.get_settings("code_servers")
 
