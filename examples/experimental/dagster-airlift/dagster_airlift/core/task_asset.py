@@ -1,9 +1,6 @@
 from typing import Any, List, Mapping, NamedTuple, Optional
 
-from dagster import (
-    JsonMetadataValue,
-    _check as check,
-)
+from dagster import JsonMetadataValue
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster._record import record
@@ -39,24 +36,22 @@ class TasksToAssetMapping:
 def get_airflow_data_for_task_mapped_spec(
     mapping: TasksToAssetMapping,
 ) -> SerializedAssetKeyScopedAirflowData:
-    check.param_invariant(
-        len(mapping.mapped_tasks) == 1,
-        "edges",
-        "For now we constrain to 1:1 relationship between asset and task until we support multiple tasks in asset metadata",
-    )
-    mapped_task = mapping.mapped_tasks[0]
-    migration_state = mapped_task.migrated
-    task_info = mapped_task.task_info
-
-    tags = airflow_kind_dict() if not migration_state else {}
-
     return SerializedAssetKeyScopedAirflowData(
-        additional_metadata=task_asset_metadata(task_info, migration_state),
-        additional_tags=tags,
+        additional_metadata=task_asset_metadata(mapping),
+        additional_tags=tags_from_mapping(mapping),
     )
 
 
-def task_asset_metadata(task_info: TaskInfo, migration_state: Optional[bool]) -> Mapping[str, Any]:
+def tags_from_mapping(mapping: TasksToAssetMapping) -> Mapping[str, str]:
+    all_not_migrated = all(not task.migrated for task in mapping.mapped_tasks)
+    # Only show the airflow kind if the asset is orchestrated exlusively by airflow
+    return airflow_kind_dict() if all_not_migrated else {}
+
+
+def task_asset_metadata(mapping: TasksToAssetMapping) -> Mapping[str, Any]:
+    # Just grab first one for now
+    fetched_task = mapping.mapped_tasks[0]
+    task_info, migration_state = fetched_task.task_info, fetched_task.migrated
     task_level_metadata = {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
         # In this case,

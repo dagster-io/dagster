@@ -11,7 +11,7 @@ from dagster import (
 from dagster._core.utils import toposort_flatten
 from dagster._record import record
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo, TaskInfo
 from dagster_airlift.core.dag_asset import dag_asset_spec_data, get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
@@ -88,19 +88,17 @@ class TaskSpecMappingInfo:
 
 
 def is_mapped_asset_spec(spec: AssetSpec) -> bool:
-    return DAG_ID_METADATA_KEY in spec.metadata and TASK_ID_METADATA_KEY in spec.metadata
+    return TASK_MAPPING_METADATA_KEY in spec.metadata
 
 
 def task_handles_for_spec(spec: AssetSpec) -> Set[TaskHandle]:
     check.param_invariant(is_mapped_asset_spec(spec), "spec", "Must be mappped spec")
-    return set(
-        [
-            TaskHandle(
-                dag_id=spec.metadata[DAG_ID_METADATA_KEY],
-                task_id=spec.metadata[TASK_ID_METADATA_KEY],
-            )
-        ]
-    )
+    task_handles = []
+    for task_handle_dict in spec.metadata[TASK_MAPPING_METADATA_KEY]:
+        task_handles.append(
+            TaskHandle(dag_id=task_handle_dict["dag_id"], task_id=task_handle_dict["task_id"])
+        )
+    return set(task_handles)
 
 
 def build_task_spec_mapping_info(defs: Definitions) -> TaskSpecMappingInfo:
@@ -176,7 +174,6 @@ def compute_serialized_data(
     task_spec_mapping_info = build_task_spec_mapping_info(defs)
 
     fetched_airflow_data = fetch_all_airflow_data(airflow_instance, task_spec_mapping_info)
-
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
     upstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
     for spec in task_spec_mapping_info.mapped_asset_specs:
