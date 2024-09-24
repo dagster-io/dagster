@@ -16,7 +16,7 @@ class TaskHandle(NamedTuple):
 
 
 @record
-class FetchedAirflowTask:
+class MappedAirflowTaskData:
     task_info: TaskInfo
     task_handle: TaskHandle
     migrated: Optional[bool]
@@ -30,7 +30,7 @@ class TasksToAssetMapping:
     """
 
     asset: AssetSpec
-    mapped_tasks: List[FetchedAirflowTask]
+    mapped_tasks: List[MappedAirflowTaskData]
 
 
 def get_airflow_data_for_task_mapped_spec(
@@ -50,8 +50,8 @@ def tags_from_mapping(mapping: TasksToAssetMapping) -> Mapping[str, str]:
 
 def task_asset_metadata(mapping: TasksToAssetMapping) -> Mapping[str, Any]:
     # Just grab first one for now
-    fetched_task = mapping.mapped_tasks[0]
-    task_info, migration_state = fetched_task.task_info, fetched_task.migrated
+    mapped_task = mapping.mapped_tasks[0]
+    task_info, migration_state = mapped_task.task_info, mapped_task.migrated
     task_level_metadata = {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
         # In this case,
