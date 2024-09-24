@@ -1,7 +1,12 @@
-from typing import Any, Mapping, Optional
+from typing import Any, List, Mapping, NamedTuple, Optional
 
-from dagster import JsonMetadataValue
+from dagster import (
+    JsonMetadataValue,
+    _check as check,
+)
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
+from dagster._record import record
 
 from dagster_airlift.constants import MIGRATED_TAG
 from dagster_airlift.core.airflow_instance import TaskInfo
@@ -9,13 +14,45 @@ from dagster_airlift.core.serialization.serialized_data import SerializedAssetKe
 from dagster_airlift.core.utils import airflow_kind_dict
 
 
+class TaskHandle(NamedTuple):
+    dag_id: str
+    task_id: str
+
+
+@record
+class FetchedAirflowTask:
+    task_info: TaskInfo
+    task_handle: TaskHandle
+    migrated: Optional[bool]
+
+
+@record
+class TasksToAssetMapping:
+    """Represents a mapping between a Dagster asset and the tasks in Airflow
+    that orchestrate. We support multiple tasks mapping to a single asset. (e.g. a daily and weekly DAG)
+    So there can multiple tasks for single asset key.
+    """
+
+    asset: AssetSpec
+    mapped_tasks: List[FetchedAirflowTask]
+
+
 def get_airflow_data_for_task_mapped_spec(
-    task_info: TaskInfo,
-    migration_state: Optional[bool],
+    mapping: TasksToAssetMapping,
 ) -> SerializedAssetKeyScopedAirflowData:
+    check.param_invariant(
+        len(mapping.mapped_tasks) == 1,
+        "edges",
+        "For now we constrain to 1:1 relationship between asset and task until we support multiple tasks in asset metadata",
+    )
+    mapped_task = mapping.mapped_tasks[0]
+    migration_state = mapped_task.migrated
+    task_info = mapped_task.task_info
+
     tags = airflow_kind_dict() if not migration_state else {}
     if migration_state is not None:
         tags[MIGRATED_TAG] = str(bool(migration_state))
+
     return SerializedAssetKeyScopedAirflowData(
         additional_metadata=task_asset_metadata(task_info, migration_state),
         additional_tags=tags,
