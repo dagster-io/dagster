@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -551,13 +552,13 @@ def get_runs_feed_entries(
 
     should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
     if filters:
-        run_filters = copy(filters, exclude_runs_in_backfill=True)
+        run_filters = copy(filters, exclude_subruns=True)
         run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
             _bulk_action_filters_from_run_filters(run_filters) if should_fetch_backfills else None
         )
     else:
-        run_filters = RunsFilter(created_before=created_before_cursor, exclude_runs_in_backfill=True)
+        run_filters = RunsFilter(created_before=created_before_cursor, exclude_subruns=True)
         backfill_filters = BulkActionsFilter(created_before=created_before_cursor)
 
     if should_fetch_backfills:
