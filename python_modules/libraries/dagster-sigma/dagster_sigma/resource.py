@@ -245,21 +245,18 @@ class SigmaOrganization(ConfigurableResource):
 
     def build_defs(
         self,
-        context: Optional[DefinitionsLoadContext] = None,
         dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
     ) -> Definitions:
         """Returns a Definitions object representing the Sigma content in the organization.
 
         Args:
-            context (Optional[DefinitionsLoadContext]): The context in which the definitions are being loaded. If not
-                provided, inferred from the current context.
             dagster_sigma_translator (Type[DagsterSigmaTranslator]): The translator to use
                 to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
 
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        context = context or DefinitionsLoadContext.get()
+        context = DefinitionsLoadContext.get()
 
         # Attempt to load cached data from the context.
         if (
