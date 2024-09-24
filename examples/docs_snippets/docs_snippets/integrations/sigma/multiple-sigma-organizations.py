@@ -15,13 +15,7 @@ marketing_team_organization = SigmaOrganization(
     client_id=EnvVar("MARKETING_SIGMA_CLIENT_ID"),
     client_secret=EnvVar("MARKETING_SIGMA_CLIENT_SECRET"),
 )
-
-
-@definitions
-def defs(context: DefinitionsLoadContext) -> Definitions:
-    # We use Definitions.merge to combine the definitions from both organizations
-    # into a single set of definitions to load
-    return Definitions.merge(
-        sales_team_organization.build_defs(context),
-        marketing_team_organization.build_defs(context),
-    )
+defs = Definitions.merge(
+    sales_team_organization.build_defs(),
+    marketing_team_organization.build_defs(),
+)
