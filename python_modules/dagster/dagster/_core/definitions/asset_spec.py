@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
+from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -238,3 +238,9 @@ class AssetSpec(
     @cached_property
     def kinds(self) -> Set[str]:
         return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
+
+    @public
+    def with_io_manager_key(self, io_manager_key: str) -> "AssetSpec":
+        return self._replace(
+            metadata={**self.metadata, SYSTEM_METADATA_KEY_IO_MANAGER_KEY: io_manager_key}
+        )

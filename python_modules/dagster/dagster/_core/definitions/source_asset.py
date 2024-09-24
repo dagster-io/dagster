@@ -167,7 +167,11 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 @experimental_param(param="io_manager_def")
 @experimental_param(param="freshness_policy")
 @experimental_param(param="tags")
-@deprecated(breaking_version="2.0.0", additional_warn_text="Use AssetSpec instead.")
+@deprecated(
+    breaking_version="2.0.0",
+    additional_warn_text="Use AssetSpec instead. If using the SourceAsset io_manager_key property, "
+    "use AssetSpec(...).with_io_manager_key(...).",
+)
 class SourceAsset(ResourceAddable):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
