@@ -102,7 +102,7 @@ def test_table_metadata_value():
 
 def test_table_schema_metadata_value():
     schema = TableSchema(
-        columns=[TableColumn(name="foo", type="int"), TableColumn(name="bar", type="int")]
+        columns=[TableColumn(name="foo", type="int", tags={"introduced": "v3"}), TableColumn(name="bar", type="int")]
     )
     assert TableSchemaMetadataValue(schema).schema == schema
 
