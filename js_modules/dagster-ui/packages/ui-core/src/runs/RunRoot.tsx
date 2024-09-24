@@ -10,7 +10,6 @@ import {
 import {useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
-import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
 import {RunAssetCheckTags} from './RunAssetCheckTags';
 import {RunAssetTags} from './RunAssetTags';
@@ -19,7 +18,6 @@ import {RunHeaderActions} from './RunHeaderActions';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
-import {assetKeysForRun} from './RunUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 import {gql, useQuery} from '../apollo-client';
@@ -157,16 +155,8 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <AssetKeyTagCollection useTags assetKeys={assetKeysForRun(run)} />
-                ) : (
-                  <RunAssetTags run={run} />
-                )}
-                {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
-                ) : (
-                  <RunAssetCheckTags run={run} />
-                )}
+                <RunAssetTags run={run} />
+                <RunAssetCheckTags run={run} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation

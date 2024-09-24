@@ -21,7 +21,9 @@ export const RunAssetCheckTags = (props: {run: RunFragment}) => {
     return null;
   }
 
-  return <AssetCheckTagCollection useTags assetChecks={data.pipelineRunOrError.assetChecks} />;
+  const assetChecks = skip ? run.assetCheckSelection : data.pipelineRunOrError.assetChecks;
+
+  return <AssetCheckTagCollection useTags assetChecks={assetChecks} />;
 };
 
 const RUN_ASSETS_CHECKS_QUERY = gql`
