@@ -58,7 +58,7 @@ from dbt.version import __version__ as __dbt_version__
 from typing_extensions import Final
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
-DagsterLibraryRegistry.register("dbt-core", __dbt_version__)
+DagsterLibraryRegistry.register("dbt-core", __dbt_version__, is_dagster_package=False)
 
 
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
