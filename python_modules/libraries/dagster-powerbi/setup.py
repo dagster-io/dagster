@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 pin = ""
 setup(
     name="dagster_powerbi",
-    version="0.0.3",
+    version="0.0.8",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
