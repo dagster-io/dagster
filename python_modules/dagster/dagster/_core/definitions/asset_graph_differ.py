@@ -65,7 +65,7 @@ class DictDiff(Generic[T]):
 
 @whitelist_for_serdes
 @record
-class AssetDefinitionDiff:
+class AssetDefinitionDiffDetails:
     """Represents the diff information for changes between assets.
 
     Change types in change_types should have diff info for their corresponding fields
@@ -171,20 +171,20 @@ class AssetGraphDiffer:
 
     def _compare_base_and_branch_assets(
         self, asset_key: "AssetKey", include_diff: bool = False
-    ) -> AssetDefinitionDiff:
+    ) -> AssetDefinitionDiffDetails:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
         """
         if self.base_asset_graph is None:
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
-            return AssetDefinitionDiff(change_types={AssetDefinitionChangeType.NEW})
+            return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
 
         if asset_key not in self.base_asset_graph.all_asset_keys:
-            return AssetDefinitionDiff(change_types={AssetDefinitionChangeType.NEW})
+            return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
 
         if asset_key not in self.branch_asset_graph.all_asset_keys:
-            return AssetDefinitionDiff(change_types={AssetDefinitionChangeType.REMOVED})
+            return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.REMOVED})
 
         branch_asset = self.branch_asset_graph.get(asset_key)
         base_asset = self.base_asset_graph.get(asset_key)
@@ -258,7 +258,7 @@ class AssetGraphDiffer:
                     added_keys=added, changed_keys=changed, removed_keys=removed
                 )
 
-        return AssetDefinitionDiff(
+        return AssetDefinitionDiffDetails(
             change_types=change_types,
             code_version=code_version_diff,
             dependencies=dependencies_diff,
@@ -280,7 +280,7 @@ class AssetGraphDiffer:
         """Returns list of AssetDefinitionChangeType for asset_key as compared to the base deployment."""
         return list(self._compare_base_and_branch_assets(asset_key).change_types)
 
-    def get_changes_for_asset_with_diff(self, asset_key: "AssetKey") -> AssetDefinitionDiff:
+    def get_changes_for_asset_with_diff(self, asset_key: "AssetKey") -> AssetDefinitionDiffDetails:
         """Returns list of AssetDefinitionDiff for asset_key as compared to the base deployment."""
         return self._compare_base_and_branch_assets(asset_key, include_diff=True)
 
