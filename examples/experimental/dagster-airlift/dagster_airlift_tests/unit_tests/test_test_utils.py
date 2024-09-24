@@ -44,6 +44,10 @@ def test_test_instance() -> None:
     with pytest.raises(ValueError):
         test_instance.get_task_info(dag_id="test_dag", task_id="nonexistent_task")
 
+    # Dag not in instance
+    with pytest.raises(ValueError):
+        test_instance.get_task_infos(dag_id="nonexistent_dag")
+
     # Task instance doesn't exist in instance (task id is wrong)
     with pytest.raises(ValueError):
         test_instance.get_task_instance(
@@ -90,6 +94,10 @@ def test_test_instance() -> None:
 
     # Can retrieve task info
     assert test_instance.get_task_info(dag_id="test_dag", task_id="test_task") == task_info
+
+    # Can retrieve task infos
+    assert test_instance.get_task_infos(dag_id="test_dag") == [task_info]
+
     # Can retrieve task instance
     assert (
         test_instance.get_task_instance(
