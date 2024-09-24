@@ -194,7 +194,7 @@ To build and upload the image, use the command line:
    $ dagster-cloud serverless upload-base-image local-image:tag
 
    ...
-   To use the uploaded image run: dagster-cloud deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+   To use the uploaded image run: dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
    ```
 
 3. To use a Docker image you have published to Dagster+, use the `--base-image-tag` tag printed out by the above command.
