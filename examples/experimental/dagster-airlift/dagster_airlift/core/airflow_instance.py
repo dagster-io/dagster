@@ -154,6 +154,26 @@ class AirflowInstance:
                 f"Failed to fetch task instance for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
+    def get_task_infos(self, *, dag_id: str) -> List["TaskInfo"]:
+        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags/{dag_id}/tasks")
+
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch task infos for {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
+        dag_json = response.json()
+        webserver_url = self.auth_backend.get_webserver_url()
+        return [
+            TaskInfo(
+                webserver_url=webserver_url,
+                dag_id=dag_id,
+                metadata=task_data,
+                task_id=task_data["task_id"],
+            )
+            for task_data in dag_json["tasks"]
+        ]
+
     def get_task_info(self, *, dag_id: str, task_id: str) -> "TaskInfo":
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/tasks/{task_id}"
