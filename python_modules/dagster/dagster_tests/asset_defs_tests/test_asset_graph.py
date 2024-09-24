@@ -739,6 +739,27 @@ def test_required_assets_and_checks_by_key_check_decorator(
     assert check_node.automation_condition == AutomationCondition.cron_tick_passed("*/15 * * * *")
 
 
+def test_toposort(
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
+) -> None:
+    @asset
+    def A(): ...
+
+    @asset(deps=[A])
+    def B(): ...
+
+    @asset_check(asset=A)
+    def Ac(): ...
+
+    @asset_check(asset=B)
+    def Bc(): ...
+
+    asset_graph = asset_graph_from_assets([A, B, Ac, Bc])
+
+    assert asset_graph.toposorted_asset_keys == [A.key, B.key]
+    assert asset_graph.toposorted_entity_keys == [A.key, Ac.check_key, B.key, Bc.check_key]
+
+
 def test_required_assets_and_checks_by_key_asset_decorator(
     asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):

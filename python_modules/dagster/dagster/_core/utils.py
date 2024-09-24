@@ -70,10 +70,12 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
     return PYTHON_LOGGING_LEVELS_MAPPING[str_log_level]
 
 
-def toposort(data: Mapping[T, AbstractSet[T]]) -> Sequence[Sequence[T]]:
+def toposort(
+    data: Mapping[T, AbstractSet[T]], sort_key: Optional[Callable[[T], Any]] = None
+) -> Sequence[Sequence[T]]:
     # Workaround a bug in older versions of toposort that choke on frozenset
     data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
-    return [sorted(list(level)) for level in toposort_.toposort(data)]
+    return [sorted(list(level), key=sort_key) for level in toposort_.toposort(data)]
 
 
 def toposort_flatten(data: Mapping[T, AbstractSet[T]]) -> Sequence[T]:
