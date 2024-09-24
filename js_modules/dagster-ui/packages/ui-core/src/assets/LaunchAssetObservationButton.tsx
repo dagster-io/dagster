@@ -1,5 +1,6 @@
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
+import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {
   AssetsInScope,
@@ -18,7 +19,6 @@ import {
 import {ApolloClient, useApolloClient} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -33,7 +33,6 @@ type ObserveAssetsState =
     };
 
 export const useObserveAction = (preferredJobName?: string) => {
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const client = useApolloClient();
   const [state, setState] = useState<ObserveAssetsState>({type: 'none'});

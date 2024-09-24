@@ -1,7 +1,7 @@
 import * as React from 'react';
+import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {LaunchButton} from './LaunchButton';
-import {useLaunchPadHooks} from './LaunchpadHooksContext';
 import {IconName} from '../../../ui-components/src';
 import {LaunchBehavior} from '../runs/RunUtils';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
@@ -21,7 +21,6 @@ export const NO_LAUNCH_PERMISSION_MESSAGE = 'You do not have permission to launc
 
 export const LaunchRootExecutionButton = (props: LaunchRootExecutionButtonProps) => {
   const {hasLaunchPermission} = props;
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const onLaunch = async () => {
