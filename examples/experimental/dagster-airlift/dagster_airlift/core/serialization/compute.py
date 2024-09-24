@@ -40,27 +40,21 @@ class TaskSpecMappingInfo:
     @cached_property
     # dag_id -> set of task_ids
     def task_id_map(self) -> Dict[str, Set[str]]:
-        return defaultdict(
-            set,
-            {
-                dag_id: set(task_to_asset_map.keys())
-                for dag_id, task_to_asset_map in self.asset_key_map.items()
-            },
-        )
+        task_id_map_data = {
+            dag_id: set(ta_map.keys()) for dag_id, ta_map in self.asset_key_map.items()
+        }
+        return defaultdict(set, task_id_map_data)
 
     @cached_property
+    # dag_id -> set of asset_keys
     def asset_keys_per_dag_id(self) -> Dict[str, Set[AssetKey]]:
-        return defaultdict(
-            set,
-            {
-                dag_id: {
-                    asset_key
-                    for asset_keys in task_to_asset_map.values()
-                    for asset_key in asset_keys
-                }
-                for dag_id, task_to_asset_map in self.asset_key_map.items()
-            },
-        )
+        asset_keys_per_dag_data = {
+            dag_id: {
+                asset_key for asset_keys in task_to_asset_map.values() for asset_key in asset_keys
+            }
+            for dag_id, task_to_asset_map in self.asset_key_map.items()
+        }
+        return defaultdict(set, asset_keys_per_dag_data)
 
     @cached_property
     # dag_id -> task_id -> set of asset_keys
