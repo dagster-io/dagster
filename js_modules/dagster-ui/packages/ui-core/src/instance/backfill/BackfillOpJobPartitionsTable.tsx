@@ -40,7 +40,7 @@ export const BackfillOpJobPartitionsTable = ({
       <Box margin={48}>
         <NonIdealState
           title="Partition statuses unavailable"
-          description="Dagster was unable to load per-partition statuses. This may occur if the backfilled assets or jobs no longer exist in your loaded code locations."
+          description="Unable to load per-partition statuses. This may occur if the backfilled assets or jobs no longer exist in your loaded code locations or their definition has changed."
         />
       </Box>
     );
