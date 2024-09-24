@@ -1,6 +1,7 @@
 import {Box, NonIdealState, Table} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
+import {StatusBar} from './BackfillAssetPartitionsTable';
 import {BackfillTarget} from './BackfillRow';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {failedStatuses, inProgressStatuses, successStatuses} from '../../runs/RunStatuses';
@@ -51,14 +52,22 @@ export const BackfillOpJobPartitionsTable = ({
           <th style={{width: '50%'}}>Job name</th>
           <th>Partitions targeted</th>
           <th>In progress</th>
-          <th>Completed</th>
+          <th>Succeeded</th>
           <th>Failed</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
+            <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+              <BackfillTarget backfill={backfill} repoAddress={repoAddress} />
+              <StatusBar
+                targeted={results.length}
+                inProgress={inProgress.length}
+                completed={succeeded.length}
+                failed={failed.length}
+              />
+            </Box>
           </td>
           <td>{numberFormatter.format(results.length)}</td>
           <td>{numberFormatter.format(inProgress.length)}</td>
