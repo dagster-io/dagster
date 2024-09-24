@@ -36,6 +36,8 @@ Dagster can automatically load all data sources, sheets, and dashboards from you
 <TabGroup>
 <TabItem name="Using Dagster with Tableau Cloud">
 
+Use `TableauCloudWorkspace` to interact with your Tableau Cloud workspace:
+
 ```python file=/integrations/tableau/representing-tableau-cloud-assets.py
 from dagster_tableau import TableauCloudWorkspace
 
@@ -58,6 +60,8 @@ defs = workspace.build_defs()
 
 </TabItem>
 <TabItem name="Using Dagster with Tableau Server">
+
+Use `TableauServerWorkspace` to interact with your Tableau Server workspace:
 
 ```python file=/integrations/tableau/representing-tableau-server-assets.py
 from dagster_tableau import TableauServerWorkspace
