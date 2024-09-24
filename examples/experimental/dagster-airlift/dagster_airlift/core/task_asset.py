@@ -42,12 +42,15 @@ def get_airflow_data_for_task_mapped_spec(
     migration_state = edges[0].fetched_airflow_task.migrated
     task_info = edges[0].fetched_airflow_task.task_info
 
-    tags = airflow_kind_dict() if not migration_state else {}
-
     return SerializedAssetKeyScopedAirflowData(
         additional_metadata=task_asset_metadata(task_info, migration_state),
-        additional_tags=tags,
+        additional_tags=tags_from_edges(edges),
     )
+
+
+def tags_from_edges(edges: List[AirflowTaskDagsterAssetEdge]) -> Mapping[str, str]:
+    all_not_migrated = all(not edge.fetched_airflow_task.migrated for edge in edges)
+    return airflow_kind_dict() if all_not_migrated else {}
 
 
 def task_asset_metadata(task_info: TaskInfo, migration_state: Optional[bool]) -> Mapping[str, Any]:
