@@ -4,7 +4,6 @@ from dagster_powerbi.resource import (
     PowerBIServicePrincipal as PowerBIServicePrincipal,
     PowerBIToken as PowerBIToken,
     PowerBIWorkspace as PowerBIWorkspace,
-    load_powerbi_defs as load_powerbi_defs,
 )
 from dagster_powerbi.translator import DagsterPowerBITranslator as DagsterPowerBITranslator
 

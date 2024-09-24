@@ -27,6 +27,7 @@ from dagster_powerbi.translator import (
 )
 
 BASE_API_URL = "https://api.powerbi.com/v1.0/myorg"
+POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX = "__power_bi"
 
 
 def _clean_op_name(name: str) -> str:
@@ -252,7 +253,6 @@ class PowerBIWorkspace(ConfigurableResource):
 
     def build_defs(
         self,
-        context: Optional[DefinitionsLoadContext] = None,
         dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
         enable_refresh_semantic_models: bool = False,
     ) -> Definitions:
@@ -270,7 +270,7 @@ class PowerBIWorkspace(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will build and return the Power BI content.
         """
-        context = context or DefinitionsLoadContext.get()
+        context = DefinitionsLoadContext.get()
 
         metadata_key = f"{POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace_id}"
         if (
@@ -279,7 +279,8 @@ class PowerBIWorkspace(ConfigurableResource):
         ):
             workspace_data = context.reconstruction_metadata[metadata_key]
         else:
-            workspace_data = self.fetch_powerbi_workspace_data()
+            with self.process_config_and_initialize_cm() as initialized_workspace:
+                workspace_data = initialized_workspace.fetch_powerbi_workspace_data()
 
         assets_defs = _build_assets_defs_from_workspace_data(
             workspace_data,
@@ -338,20 +339,3 @@ def _build_assets_defs_from_workspace_data(
         executable_assets.append(asset_fn)
 
     return [*external_assets_from_specs(all_external_asset_specs), *executable_assets]
-
-
-POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX = "__power_bi"
-
-
-def load_powerbi_defs(
-    context: DefinitionsLoadContext,
-    api_token: str,
-    workspace_id: str,
-    enable_refresh_semantic_models: bool,
-) -> Definitions:
-    credentials = PowerBIToken(api_token=api_token)
-    workspace = PowerBIWorkspace(credentials=credentials, workspace_id=workspace_id)
-
-    return workspace.build_defs(
-        context=context, enable_refresh_semantic_models=enable_refresh_semantic_models
-    )
