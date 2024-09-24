@@ -42,7 +42,7 @@ def test_build_single_task_spec() -> None:
     assert spec_mapping_info.asset_keys_per_dag_id == {"dag1": {ak("asset1")}}
     assert spec_mapping_info.asset_key_map == {"dag1": {"task1": {ak("asset1")}}}
     assert spec_mapping_info.task_handle_map == {
-        ak("asset1"): TaskHandle(dag_id="dag1", task_id="task1")
+        ak("asset1"): set([TaskHandle(dag_id="dag1", task_id="task1")])
     }
 
 
@@ -70,10 +70,10 @@ def test_task_with_multiple_assets() -> None:
     }
 
     assert spec_mapping_info.task_handle_map == {
-        ak("asset1"): TaskHandle(dag_id="dag1", task_id="task1"),
-        ak("asset2"): TaskHandle(dag_id="dag1", task_id="task1"),
-        ak("asset3"): TaskHandle(dag_id="dag1", task_id="task1"),
-        ak("asset4"): TaskHandle(dag_id="dag2", task_id="task1"),
+        ak("asset1"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
+        ak("asset2"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
+        ak("asset3"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
+        ak("asset4"): set([TaskHandle(dag_id="dag2", task_id="task1")]),
     }
 
 
