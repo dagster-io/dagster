@@ -397,3 +397,31 @@ def test_multiple_tasks_per_asset(init_load_context: None) -> None:
     assert has_single_task_handle(a_spec, "dag1", "task1")
     b_spec = next(iter(spec for spec in a_and_b_asset.specs if spec.key == AssetKey("b")))
     assert has_single_task_handle(b_spec, "dag2", "task2")
+
+
+def test_multiple_tasks_to_single_asset() -> None:
+    instance = make_instance({"dag1": ["task1"], "dag2": ["task2"]})
+
+    @asset(
+        metadata={
+            TASK_MAPPING_METADATA_KEY: [
+                {"dag_id": "dag1", "task_id": "task1"},
+                {"dag_id": "dag2", "task_id": "task2"},
+            ]
+        }
+    )
+    def an_asset() -> None: ...
+
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance, defs=Definitions(assets=[an_asset])
+    )
+
+    assert defs.assets
+    assert len(list(defs.assets)) == 3  # two dags and one asset
+
+    assert defs.get_asset_graph().assets_def_for_key(AssetKey("an_asset")).specs_by_key[
+        AssetKey("an_asset")
+    ].metadata[TASK_MAPPING_METADATA_KEY] == [
+        {"dag_id": "dag1", "task_id": "task1"},
+        {"dag_id": "dag2", "task_id": "task2"},
+    ]

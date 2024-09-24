@@ -1,6 +1,9 @@
+from typing import List
+
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
+from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo, TaskInfo
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
@@ -23,6 +26,14 @@ def ak(key: str) -> AssetKey:
 
 def airlift_asset_spec(key: CoercibleToAssetKey, dag_id: str, task_id: str) -> AssetSpec:
     return AssetSpec(key=key, metadata=metadata_for_task_mapping(task_id=task_id, dag_id=dag_id))
+
+
+def airlift_multiple_task_asset_spec(
+    key: CoercibleToAssetKey, handles: List[TaskHandle]
+) -> AssetSpec:
+    return AssetSpec(
+        key=key, metadata={TASK_MAPPING_METADATA_KEY: [handle._asdict() for handle in handles]}
+    )
 
 
 def test_build_task_spec_mapping_info_no_mapping() -> None:
@@ -76,6 +87,36 @@ def test_task_with_multiple_assets() -> None:
         ak("asset2"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
         ak("asset3"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
         ak("asset4"): set([TaskHandle(dag_id="dag2", task_id="task1")]),
+    }
+
+
+def test_multiple_tasks_to_single_asset() -> None:
+    spec_mapping_info = build_task_spec_mapping_info(
+        defs=Definitions(
+            assets=[
+                airlift_multiple_task_asset_spec(
+                    "asset1", [TaskHandle(dag_id="dag1", task_id="task1")]
+                ),
+            ]
+        )
+    )
+
+    assert spec_mapping_info.dag_ids == {"dag1", "dag2"}
+    assert spec_mapping_info.task_id_map == {"dag1": {"task1"}, "dag2": {"task1"}}
+    assert spec_mapping_info.asset_keys_per_dag_id == {
+        "dag1": {ak("asset1")},
+        "dag2": {ak("asset1")},
+    }
+
+    assert spec_mapping_info.asset_key_map == {
+        "dag1": {"task1": {ak("asset1")}},
+        "dag2": {"task1": {ak("asset1")}},
+    }
+
+    assert spec_mapping_info.task_handle_map == {
+        ak("asset1"): set(
+            [TaskHandle(dag_id="dag1", task_id="task1"), TaskHandle(dag_id="dag2", task_id="task1")]
+        )
     }
 
 
