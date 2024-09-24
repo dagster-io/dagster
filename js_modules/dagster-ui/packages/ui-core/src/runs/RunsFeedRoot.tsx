@@ -321,8 +321,8 @@ export const RunsFeedRoot = () => {
 export default RunsFeedRoot;
 
 export const RUNS_FEED_ROOT_QUERY = gql`
-  query RunsFeedRootQuery($limit: Int!, $cursor: String, $filter: RunsFilter) {
-    runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter) {
+  query RunsFeedRootQuery($limit: Int!, $excludeSubruns: Boolean!, $cursor: String, $filter: RunsFilter) {
+    runsFeedOrError(limit: $limit, excludeSubruns: $excludeSubruns, cursor: $cursor, filter: $filter) {
       ... on RunsFeedConnection {
         cursor
         hasMore

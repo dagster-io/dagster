@@ -370,6 +370,7 @@ class GrapheneQuery(graphene.ObjectType):
     runsFeedOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsFeedConnectionOrError),
         limit=graphene.NonNull(graphene.Int),
+        excludeSubruns=graphene.NonNull(graphene.Boolean),
         cursor=graphene.String(),
         filter=graphene.Argument(GrapheneRunsFilter),
         description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
@@ -843,12 +844,17 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         limit: int,
+        excludeSubruns: bool,
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
         return get_runs_feed_entries(
-            graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
+            graphene_info=graphene_info,
+            cursor=cursor,
+            limit=limit,
+            filters=selector,
+            exclude_subruns=excludeSubruns,
         )
 
     @capture_error
