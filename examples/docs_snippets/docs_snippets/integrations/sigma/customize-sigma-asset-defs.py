@@ -5,9 +5,7 @@ from dagster_sigma import (
     SigmaWorkbook,
 )
 
-from dagster import AssetSpec, Definitions, EnvVar
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster import AssetSpec, EnvVar
 
 resource = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,

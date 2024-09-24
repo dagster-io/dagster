@@ -1,8 +1,8 @@
 from dagster import Definitions, asset
-from dagster._core.definitions.decorators.definitions_decorator import definitions
+from dagster._utils.test.definitions import lazy_definitions
 
 
-@definitions
+@lazy_definitions
 def defs() -> Definitions:
     @asset
     def asset1(): ...

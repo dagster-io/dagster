@@ -1,8 +1,6 @@
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
 
 from dagster import Definitions, EnvVar
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
 
 sales_team_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,

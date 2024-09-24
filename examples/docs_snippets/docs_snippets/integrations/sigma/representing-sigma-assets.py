@@ -1,8 +1,6 @@
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
 
-from dagster import Definitions, EnvVar
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster import EnvVar
 
 resource = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
