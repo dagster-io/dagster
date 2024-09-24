@@ -52,6 +52,8 @@ class SerializedAssetDepData:
 ###################################################################################################
 # History:
 # - created
+# - removed existing_asset_data
+# - added key_scope_data_items
 @whitelist_for_serdes
 @record
 class SerializedAirflowDefinitionsData:
