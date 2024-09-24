@@ -209,3 +209,43 @@ def sigma_sample_data_fixture() -> None:
         ),
         status=200,
     )
+
+    responses.add(
+        method=responses.GET,
+        url="https://aws-api.sigmacomputing.com/v2/members",
+        json=_build_paginated_response(
+            [
+                {
+                    "organizationId": "4d55c33f-dbb8-4426-9d70-97742e01f002",
+                    "memberId": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+                    "memberType": "admin",
+                    "firstName": "Ben",
+                    "lastName": "Pankow",
+                    "email": "ben@dagsterlabs.com",
+                    "profileImgUrl": None,
+                    "createdBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+                    "updatedBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+                    "createdAt": "2024-09-12T20:44:19.736Z",
+                    "updatedAt": "2024-09-12T20:44:19.736Z",
+                    "homeFolderId": "bd7e1b16-dad3-45d4-91e7-5687be2819cc",
+                    "userKind": "internal",
+                },
+                {
+                    "organizationId": "4d55c33f-dbb8-4426-9d70-97742e01f002",
+                    "memberId": "SigmaSchedulerRobot",
+                    "memberType": "admin",
+                    "firstName": "Scheduler",
+                    "lastName": "User",
+                    "email": "scheduler-robot@sigmacomputing.com",
+                    "profileImgUrl": None,
+                    "createdBy": "SigmaSchedulerRobot",
+                    "updatedBy": "SigmaSchedulerRobot",
+                    "createdAt": "2024-09-12T20:44:20.182Z",
+                    "updatedAt": "2024-09-12T20:44:20.182Z",
+                    "homeFolderId": "4537ec2e-ced7-4aa6-b511-ed0437e0165f",
+                    "userKind": "internal",
+                },
+            ]
+        ),
+        status=200,
+    )
