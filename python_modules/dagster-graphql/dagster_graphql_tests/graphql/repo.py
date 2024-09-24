@@ -700,6 +700,7 @@ def materialization_job():
                             name="foo",
                             type="integer",
                             constraints=TableColumnConstraints(unique=True),
+                            tags={"foo": "bar"},
                         ),
                         TableColumn(name="bar", type="string"),
                     ],

@@ -136,6 +136,7 @@ export type AssetOverviewMetadataEventsQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -158,6 +159,7 @@ export type AssetOverviewMetadataEventsQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -306,6 +308,7 @@ export type AssetOverviewMetadataEventsQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -328,6 +331,7 @@ export type AssetOverviewMetadataEventsQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -356,4 +360,4 @@ export type AssetOverviewMetadataEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetOverviewMetadataEventsQueryVersion = 'e7101ed64187bdd880ae916392eb01ec95928f6b127b6e54c51a34af5a5fa053';
+export const AssetOverviewMetadataEventsQueryVersion = '95837aa7d438974ed0f6f8ec9c72f59bcdb8af12091ede4e334aa24e4f6844de';

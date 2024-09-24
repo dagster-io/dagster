@@ -9,6 +9,10 @@ export const TABLE_SCHEMA_FRAGMENT = gql`
       constraints {
         ...ConstraintsForTableColumn
       }
+      tags {
+        key
+        value
+      }
     }
     constraints {
       other
