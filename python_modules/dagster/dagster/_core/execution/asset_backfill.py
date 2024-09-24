@@ -66,7 +66,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -626,7 +625,9 @@ def create_asset_backfill_data_from_asset_partitions(
     )
 
 
-def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) -> Sequence[str]:
+def _get_unloadable_location_names(
+    context: BaseWorkspaceRequestContext, logger: logging.Logger
+) -> Sequence[str]:
     location_entries_by_name = {
         location_entry.origin.location_name: location_entry
         for location_entry in context.get_code_location_entries().values()

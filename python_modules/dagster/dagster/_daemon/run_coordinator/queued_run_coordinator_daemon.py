@@ -29,8 +29,7 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.utils import InheritContextThreadPoolExecutor
-from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
@@ -340,7 +339,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _dequeue_run(
         self,
         instance: DagsterInstance,
-        workspace: IWorkspace,
+        workspace: BaseWorkspaceRequestContext,
         run: DagsterRun,
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
