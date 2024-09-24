@@ -16,19 +16,24 @@ class TaskHandle(NamedTuple):
 
 
 @record
+class FetchedAirflowTask:
+    task_info: TaskInfo
+    task_handle: TaskHandle
+    migrated: Optional[bool]
+
+
+@record
 class AirflowTaskDagsterAssetEdge:
     asset_key: AssetKey
-    task_handle: TaskHandle
-    task_info: TaskInfo
-    migrated: Optional[bool]
+    fetched_airflow_task: FetchedAirflowTask
 
 
 def get_airflow_data_for_task_mapped_spec(
     edges: List[AirflowTaskDagsterAssetEdge],
 ) -> SerializedAssetKeyScopedAirflowData:
     assert len(edges) == 1
-    migration_state = edges[0].migrated
-    task_info = edges[0].task_info
+    migration_state = edges[0].fetched_airflow_task.migrated
+    task_info = edges[0].fetched_airflow_task.task_info
 
     tags = airflow_kind_dict() if not migration_state else {}
     if migration_state is not None:
