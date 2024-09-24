@@ -7,7 +7,7 @@ from dagster import (
     _check as check,
 )
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.core.utils import metadata_for_task_mapping
 
 
 class TaskDefs:
@@ -61,8 +61,9 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
 
     Concretely this adds metadata to all asset specs in the provided definitions
-    with the provided dag_id and task_id. Dag id is tagged with the
-    "airlift/dag_id" key and task id is tagged with the "airlift/task_id" key.
+    with the provided dag_id and task_id. There is a single metadata key
+    "airlift/task_mapping" that is used to store this information. It is a list of
+    dictionaries with keys "dag_id" and "task_id".
 
     Used in concert with :py:func:`task_defs`.
 
@@ -79,7 +80,7 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
         defs_to_merge.append(
             apply_metadata_to_all_specs(
                 defs=task_def.defs,
-                metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_def.task_id},
+                metadata=metadata_for_task_mapping(task_id=task_def.task_id, dag_id=dag_id),
             )
         )
     return Definitions.merge(*defs_to_merge)

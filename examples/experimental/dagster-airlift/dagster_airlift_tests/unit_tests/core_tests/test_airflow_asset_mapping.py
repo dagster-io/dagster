@@ -1,18 +1,20 @@
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo, TaskInfo
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
     TaskHandle,
     build_task_spec_mapping_info,
+    fetch_all_airflow_data,
 )
+from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
     TaskMigrationState,
 )
+from dagster_airlift.test import AirflowInstanceFake
 
 
 def ak(key: str) -> AssetKey:
@@ -20,7 +22,7 @@ def ak(key: str) -> AssetKey:
 
 
 def airlift_asset_spec(key: CoercibleToAssetKey, dag_id: str, task_id: str) -> AssetSpec:
-    return AssetSpec(key=key, metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_id})
+    return AssetSpec(key=key, metadata=metadata_for_task_mapping(task_id=task_id, dag_id=dag_id))
 
 
 def test_build_task_spec_mapping_info_no_mapping() -> None:
@@ -124,3 +126,36 @@ def test_fetched_airflow_data() -> None:
     assert airflow_data_by_key.keys() == {ak("asset1"), ak("asset2")}
 
     assert "Dag ID" in fetched_airflow_data.airflow_data_by_key[ak("asset1")].additional_metadata
+
+
+def test_produce_fetched_airflow_data() -> None:
+    spec_mapping_info = build_task_spec_mapping_info(
+        defs=Definitions(assets=[airlift_asset_spec("asset1", "dag1", "task1")])
+    )
+
+    instance = AirflowInstanceFake(
+        dag_infos=[
+            DagInfo(
+                dag_id="dag1",
+                metadata={"file_token": "dummy_file_token"},
+                webserver_url="http://localhost:8080",
+            )
+        ],
+        task_infos=[
+            TaskInfo(
+                dag_id="dag1",
+                task_id="task1",
+                metadata={},
+                webserver_url="http://localhost:8080",
+            )
+        ],
+        task_instances=[],
+        dag_runs=[],
+    )
+
+    fetched_airflow_data = fetch_all_airflow_data(
+        airflow_instance=instance,
+        mapping_info=spec_mapping_info,
+    )
+
+    assert len(fetched_airflow_data.spec_mapping_info.mapped_asset_specs) == 1

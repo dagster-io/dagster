@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -8,11 +9,29 @@ import requests
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 
 logger = logging.getLogger(__name__)
+
+
+def matched_dag_id_task_id(asset_node: dict, dag_id: str, task_id: str) -> bool:
+    json_metadata_entries = {
+        entry["label"]: entry["json"]
+        for entry in asset_node["metadataEntries"]
+        if entry["__typename"] == "JsonMetadataEntry"
+    }
+
+    mapping_entry = json_metadata_entries.get(TASK_MAPPING_METADATA_KEY)
+
+    if mapping_entry:
+        task_handle_dict_list = json.loads(mapping_entry["jsonString"])
+        for task_handle_dict in task_handle_dict_list:
+            if task_handle_dict["dag_id"] == dag_id and task_handle_dict["task_id"] == task_id:
+                return True
+
+    return False
 
 
 class BaseProxyToDagsterOperator(BaseOperator, ABC):
@@ -58,15 +77,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             timeout=3,
         )
         for asset_node in response.json()["data"]["assetNodes"]:
-            text_metadata_entries = {
-                entry["label"]: entry["text"]
-                for entry in asset_node["metadataEntries"]
-                if entry["__typename"] == "TextMetadataEntry"
-            }
-            if (
-                text_metadata_entries.get(DAG_ID_METADATA_KEY) == dag_id
-                and text_metadata_entries.get(TASK_ID_METADATA_KEY) == task_id
-            ):
+            if matched_dag_id_task_id(asset_node, dag_id, task_id):
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
                 job_name = asset_node["jobs"][0]["name"]
