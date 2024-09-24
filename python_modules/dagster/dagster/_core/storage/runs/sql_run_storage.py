@@ -297,6 +297,12 @@ class SqlRunStorage(RunStorage):
                 RunsTable.c.create_timestamp < filters.created_before.replace(tzinfo=None)
             )
 
+        if filters.exclude_subruns:
+            runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
+            query = query.where(RunsTable.c.run_id.notin_(db_subquery(runs_in_backfills)))
+
         return query
 
     def _runs_query(
