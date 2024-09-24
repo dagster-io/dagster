@@ -1,43 +1,10 @@
-from typing import AbstractSet, Any, Mapping, Optional, Sequence
+from functools import cached_property
+from typing import AbstractSet, Any, List, Mapping, Optional, Sequence, Tuple
 
-from dagster import AssetCheckKey, AssetDep, AssetKey, AssetSpec
+from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    SerializableNonScalarKeyMapping,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-    unpack_value,
-)
 from dagster._utils.merger import merge_dicts
-
-
-###################################################################################################
-# A generic serializer that can be used for any mapping with non-scalar (but still serializable) keys.
-# We should add this to the core framework.
-###################################################################################################
-class GenericNonScalarKeyMappingSerializer(FieldSerializer):
-    """A serializer that can be used for any mapping with non-scalar (but still serializable) keys."""
-
-    def pack(
-        self,
-        mapping: Mapping[str, "SerializedAssetSpecData"],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> JsonSerializableValue:
-        return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
-
-    def unpack(
-        self,
-        unpacked_value: JsonSerializableValue,
-        whitelist_map: WhitelistMap,
-        context: UnpackContext,
-    ) -> PackableValue:
-        return unpack_value(unpacked_value, dict, whitelist_map, context)
 
 
 ###################################################################################################
@@ -85,16 +52,16 @@ class SerializedAssetDepData:
 ###################################################################################################
 # History:
 # - created
-@whitelist_for_serdes(
-    field_serializers={
-        "existing_asset_data": GenericNonScalarKeyMappingSerializer,
-    }
-)
+@whitelist_for_serdes
 @record
 class SerializedAirflowDefinitionsData:
-    existing_asset_data: Mapping[AssetKey, "SerializedAssetKeyScopedData"]
+    key_scoped_data_items: List[Tuple[AssetKey, "SerializedAssetKeyScopedAirflowData"]]
     dag_datas: Mapping[str, "SerializedDagData"]
     asset_key_topological_ordering: Sequence[AssetKey]
+
+    @cached_property
+    def key_scope_data_map(self) -> Mapping[AssetKey, "SerializedAssetKeyScopedAirflowData"]:
+        return dict(self.key_scoped_data_items)
 
 
 ###################################################################################################
@@ -124,20 +91,6 @@ class SerializedTaskHandleData:
     asset_keys_in_task: AbstractSet[AssetKey]
 
 
-###################################################################################################
-# Serialized data that scopes to a given asset key.
-###################################################################################################
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetKeyScopedData:
-    """All pre-computed data scoped to a given asset key."""
-
-    existing_key_data: Optional["SerializedAssetKeyScopedAirflowData"]
-    asset_graph_data: "SerializedAssetKeyScopedAssetGraphData"
-
-
 # History:
 # - created
 @whitelist_for_serdes
@@ -156,15 +109,3 @@ class SerializedAssetKeyScopedAirflowData:
             tags=merge_dicts(spec.tags, self.additional_tags),
             deps=spec.deps,
         )
-
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetKeyScopedAssetGraphData:
-    """A record of asset graph data scoped to a particular asset key."""
-
-    upstreams: AbstractSet[AssetKey]
-    downstreams: AbstractSet[AssetKey]
-    check_keys: AbstractSet[AssetCheckKey]

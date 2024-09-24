@@ -17,8 +17,6 @@ from dagster_airlift.core.dag_asset import dag_asset_spec_data, get_leaf_assets_
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     SerializedAssetKeyScopedAirflowData,
-    SerializedAssetKeyScopedAssetGraphData,
-    SerializedAssetKeyScopedData,
     SerializedDagData,
     SerializedTaskHandleData,
 )
@@ -181,11 +179,6 @@ def compute_serialized_data(
             upstreams_asset_dependency_graph[spec.key].add(dep.asset_key)
             downstreams_asset_dependency_graph[dep.asset_key].add(spec.key)
 
-    check_keys_per_asset_key = defaultdict(set)
-    for checks_def in defs.asset_checks or []:
-        for check_key in checks_def.check_keys:
-            check_keys_per_asset_key[check_key.asset_key].add(check_key)
-
     all_asset_keys = mapping_info.asset_keys
 
     dag_datas = {}
@@ -216,19 +209,9 @@ def compute_serialized_data(
             task_handle_data=task_handle_data,
             all_asset_keys_in_tasks=mapping_info.asset_keys_per_dag_id[dag_id],
         )
-    existing_asset_data = {}
-    for asset_key in all_asset_keys:
-        existing_asset_data[asset_key] = SerializedAssetKeyScopedData(
-            existing_key_data=fetched_airflow_data.airflow_data_by_key.get(asset_key),
-            asset_graph_data=SerializedAssetKeyScopedAssetGraphData(
-                upstreams=upstreams_asset_dependency_graph[asset_key],
-                downstreams=downstreams_asset_dependency_graph[asset_key],
-                check_keys=check_keys_per_asset_key[asset_key],
-            ),
-        )
     topology_order = toposort_flatten(upstreams_asset_dependency_graph)
     return SerializedAirflowDefinitionsData(
-        existing_asset_data=existing_asset_data,
+        key_scoped_data_items=list(fetched_airflow_data.airflow_data_by_key.items()),
         dag_datas=dag_datas,
         asset_key_topological_ordering=topology_order,
     )
