@@ -96,12 +96,12 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
-        {
-          label: 'Changelog',
-          type: 'doc',
-          docId: 'changelog',
-          position: 'right',
-        },
+        //{
+        //  label: 'Changelog',
+        //  type: 'doc',
+        //  docId: 'changelog',
+        //  position: 'right',
+        //},
       ],
     },
     image: 'img/docusaurus-social-card.jpg',
