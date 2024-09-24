@@ -3740,7 +3740,7 @@ export type Query = {
   runOrError: RunOrError;
   runTagKeysOrError: Maybe<RunTagKeysOrError>;
   runTagsOrError: Maybe<RunTagsOrError>;
-  runsFeedOrError: RunsFeedConnectionOrError;
+  runsFeedOrError: RunsFeedOrError;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -4742,14 +4742,18 @@ export type Runs = PipelineRuns & {
   results: Array<Run>;
 };
 
+export type RunsFeed = {
+  __typename: 'RunsFeed';
+  connection: RunsFeedConnection;
+  count: Scalars['Int']['output'];
+};
+
 export type RunsFeedConnection = {
   __typename: 'RunsFeedConnection';
   cursor: Scalars['String']['output'];
   hasMore: Scalars['Boolean']['output'];
   results: Array<PartitionBackfill | Run>;
 };
-
-export type RunsFeedConnectionOrError = PythonError | RunsFeedConnection;
 
 export type RunsFeedEntry = {
   assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
@@ -4762,6 +4766,8 @@ export type RunsFeedEntry = {
   startTime: Maybe<Scalars['Float']['output']>;
   tags: Array<PipelineTag>;
 };
+
+export type RunsFeedOrError = PythonError | RunsFeed;
 
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
@@ -13481,6 +13487,24 @@ export const buildRuns = (
     __typename: 'Runs',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 319,
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildRunsFeed = (
+  overrides?: Partial<RunsFeed>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunsFeed'} & RunsFeed => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunsFeed');
+  return {
+    __typename: 'RunsFeed',
+    connection:
+      overrides && overrides.hasOwnProperty('connection')
+        ? overrides.connection!
+        : relationshipsToOmit.has('RunsFeedConnection')
+        ? ({} as RunsFeedConnection)
+        : buildRunsFeedConnection({}, relationshipsToOmit),
+    count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 8795,
   };
 };
 

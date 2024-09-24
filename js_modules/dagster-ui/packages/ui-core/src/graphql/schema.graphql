@@ -3274,7 +3274,7 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  runsFeedOrError(limit: Int!, cursor: String, filter: RunsFilter): RunsFeedConnectionOrError!
+  runsFeedOrError(limit: Int!, cursor: String, filter: RunsFilter): RunsFeedOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3431,7 +3431,12 @@ enum EnvVarConsumerType {
   RESOURCE
 }
 
-union RunsFeedConnectionOrError = RunsFeedConnection | PythonError
+union RunsFeedOrError = RunsFeed | PythonError
+
+type RunsFeed {
+  connection: RunsFeedConnection!
+  count: Int!
+}
 
 type RunsFeedConnection {
   results: [RunsFeedEntry!]!

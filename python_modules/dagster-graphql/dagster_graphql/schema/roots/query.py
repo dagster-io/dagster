@@ -79,7 +79,6 @@ from dagster_graphql.implementation.fetch_runs import (
     get_run_group,
     get_run_tag_keys,
     get_run_tags,
-    get_runs_feed_entries,
     validate_pipeline_config,
 )
 from dagster_graphql.implementation.fetch_schedules import (
@@ -184,7 +183,7 @@ from dagster_graphql.schema.runs import (
     GrapheneRunTagsOrError,
     parse_run_config_input,
 )
-from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnectionOrError
+from dagster_graphql.schema.runs_feed import GrapheneRunsFeed, GrapheneRunsFeedOrError
 from dagster_graphql.schema.schedules import (
     GrapheneScheduleOrError,
     GrapheneSchedulerOrError,
@@ -368,7 +367,7 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve a run by its run id.",
     )
     runsFeedOrError = graphene.Field(
-        graphene.NonNull(GrapheneRunsFeedConnectionOrError),
+        graphene.NonNull(GrapheneRunsFeedOrError),
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         filter=graphene.Argument(GrapheneRunsFilter),
@@ -847,8 +846,11 @@ class GrapheneQuery(graphene.ObjectType):
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
-        return get_runs_feed_entries(
-            graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
+
+        return GrapheneRunsFeed(
+            filters=selector,
+            cursor=cursor,
+            limit=limit,
         )
 
     @capture_error

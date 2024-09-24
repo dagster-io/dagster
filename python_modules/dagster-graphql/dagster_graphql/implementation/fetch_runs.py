@@ -626,3 +626,11 @@ def get_runs_feed_entries(
     return GrapheneRunsFeedConnection(
         results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
     )
+
+
+def get_runs_feed_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
+    def get_backfills_count(filters):
+        # stub for pseudocode, would actually be a storage method
+        return 1
+
+    return graphene_info.context.instance.get_runs_count(filters) + get_backfills_count(filters)

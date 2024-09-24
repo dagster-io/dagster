@@ -1,8 +1,9 @@
 import graphene
 
+from dagster_graphql.implementation.fetch_runs import get_runs_feed_count, get_runs_feed_entries
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GraphenePythonError
-from dagster_graphql.schema.util import non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneRunsFeedEntry(graphene.Interface):
@@ -31,12 +32,33 @@ class GrapheneRunsFeedConnection(graphene.ObjectType):
     hasMore = graphene.NonNull(graphene.Boolean)
 
 
-class GrapheneRunsFeedConnectionOrError(graphene.Union):
+class GrapheneRunsFeed(graphene.ObjectType):
     class Meta:
-        types = (GrapheneRunsFeedConnection, GraphenePythonError)
-        name = "RunsFeedConnectionOrError"
+        name = "RunsFeed"
+
+    connection = graphene.NonNull(GrapheneRunsFeedConnection)
+    count = graphene.NonNull(graphene.Int)
+
+    def __init__(self, filters, cursor, limit):
+        super().__init__()
+
+        self._filters = filters
+        self._cursor = cursor
+        self._limit = limit
+
+    def resolve_connection(self, graphene_info: ResolveInfo):
+        return get_runs_feed_entries(graphene_info, self._filters, self._cursor, self._limit)
+
+    def resolve_count(self, graphene_info: ResolveInfo):
+        return get_runs_feed_count(graphene_info, self._filters)
+
+
+class GrapheneRunsFeedOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneRunsFeed, GraphenePythonError)
+        name = "RunsFeedOrError"
 
 
 types = [
-    GrapheneRunsFeedConnectionOrError,
+    GrapheneRunsFeedOrError,
 ]

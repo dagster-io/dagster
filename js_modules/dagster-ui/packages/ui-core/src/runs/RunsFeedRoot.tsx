@@ -66,23 +66,23 @@ export function useRunsFeedEntries(filter: RunsFilter) {
     pageSize: PAGE_SIZE,
     variables: {filter},
     nextCursorForResult: (runs) => {
-      if (runs.runsFeedOrError.__typename !== 'RunsFeedConnection') {
+      if (runs.runsFeedOrError.__typename !== 'RunsFeed') {
         return undefined;
       }
-      return runs.runsFeedOrError.hasMore ? runs.runsFeedOrError.cursor : undefined;
+      return runs.runsFeedOrError.connection.hasMore ? runs.runsFeedOrError.connection.cursor : undefined;
     },
     getResultArray: (data) => {
-      if (!data || data.runsFeedOrError.__typename !== 'RunsFeedConnection') {
+      if (!data || data.runsFeedOrError.__typename !== 'RunsFeed') {
         return [];
       }
-      return data.runsFeedOrError.results;
+      return data.runsFeedOrError.connection.results;
     },
   });
 
   const data = queryResult.data || queryResult.previousData;
 
   const entries =
-    data?.runsFeedOrError.__typename === 'RunsFeedConnection' ? data?.runsFeedOrError.results : [];
+    data?.runsFeedOrError.__typename === 'RunsFeed' ? data?.runsFeedOrError.connection.results : [];
 
   return {queryResult, paginationProps, entries};
 }
@@ -323,12 +323,14 @@ export default RunsFeedRoot;
 export const RUNS_FEED_ROOT_QUERY = gql`
   query RunsFeedRootQuery($limit: Int!, $cursor: String, $filter: RunsFilter) {
     runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter) {
-      ... on RunsFeedConnection {
-        cursor
-        hasMore
-        results {
-          id
-          ...RunsFeedTableEntryFragment
+      ... on RunsFeed {
+        connection {
+          cursor
+          hasMore
+          results {
+            id
+            ...RunsFeedTableEntryFragment
+          }
         }
       }
       ...PythonErrorFragment
