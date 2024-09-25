@@ -904,15 +904,24 @@ class SqlRunStorage(RunStorage):
 
         return query
 
-    def _backfill_matches_tags(self, backfill: PartitionBackfill, tags: Dict[str, str]) -> bool:
-        for tag_key, tag_value in tags.items():
-            if isinstance(tag_value, str):
-                if backfill.tags.get(tag_key) != tag_value:
+    def _apply_backfill_tags_filter_to_results(
+        self, backfills: Sequence[PartitionBackfill], tags: Mapping[str, Union[str, Sequence[str]]]
+    ) -> Sequence[PartitionBackfill]:
+        if not tags:
+            return backfills
+
+        def _matches_backfill(
+            backfill: PartitionBackfill, tags: Mapping[str, Union[str, Sequence[str]]]
+        ) -> bool:
+            for key, value in tags.items():
+                if isinstance(value, str):
+                    if backfill.tags.get(key) != value:
+                        return False
+                elif backfill.tags.get(key) not in value:
                     return False
-            else:
-                if backfill.tags.get(tag_key) not in tag_value:
-                    return False
-        return True
+            return True
+
+        return [backfill for backfill in backfills if _matches_backfill(backfill, tags)]
 
     def get_backfills(
         self,
@@ -941,11 +950,9 @@ class SqlRunStorage(RunStorage):
             # runs can have more tags than the backfill that launched them. Since we filtered tags by
             # querying for runs with those tags, we need to do an additional check that the backfills
             # also have the requested tags
-            backfill_candidates = [
-                backfill
-                for backfill in backfill_candidates
-                if self._backfill_matches_tags(backfill, filters.tags)
-            ]
+            backfill_candidates = self._apply_backfill_tags_filter_to_results(
+                backfill_candidates, filters.tags
+            )
         return backfill_candidates
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
