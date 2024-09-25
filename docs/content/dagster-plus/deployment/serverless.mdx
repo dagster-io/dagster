@@ -97,7 +97,8 @@ Finally, deploy your project with Dagster+ Serverless:
 ```shell
 dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
-  --package-name assets_modern_data_stack
+  --package-name assets_modern_data_stack \
+  --python-version 3.12
 ```
 
 **Note:** Windows users should use the `deploy` command instead of `deploy-python-executable`.
