@@ -1,5 +1,6 @@
 import {Button, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import {Fragment, useRef} from 'react';
+import {PythonErrorInfoHeader} from 'shared/app/PythonErrorInfoHeader.oss';
 import styled from 'styled-components';
 
 import {showSharedToaster} from './DomUtils';
@@ -7,7 +8,6 @@ import {useCopyToClipboard} from './browser';
 import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
 import {gql} from '../apollo-client';
 import {ErrorSource} from '../graphql/types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 
@@ -31,8 +31,6 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
-
-  const PythonErrorInfoHeader = useLaunchPadHooks().PythonErrorInfoHeader;
   const copy = useCopyToClipboard();
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
