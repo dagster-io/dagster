@@ -931,7 +931,7 @@ class SqlRunStorage(RunStorage):
         if status is not None:
             filters = BulkActionsFilter(statuses=[status])
 
-        query = self._backfills_query(filters=filters, cursor=cursor, limit=limit)
+        query = self._backfills_query(filters=filters)
         query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
