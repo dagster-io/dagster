@@ -2,7 +2,10 @@ from contextlib import contextmanager
 from typing import Callable, Generic, Iterator, Optional, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
     RepositoryLoadData,

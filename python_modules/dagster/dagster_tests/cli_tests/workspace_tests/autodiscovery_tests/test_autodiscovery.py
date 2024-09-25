@@ -4,7 +4,7 @@ import sys
 import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError

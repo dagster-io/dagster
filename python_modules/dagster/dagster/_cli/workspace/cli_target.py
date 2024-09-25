@@ -24,7 +24,7 @@ from typing_extensions import Never, TypeAlias
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.instance import DagsterInstance
