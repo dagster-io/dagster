@@ -55,7 +55,7 @@ class ValueDiff(Generic[T]):
     new: T
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(kwargs_fields={"added_keys", "changed_keys", "removed_keys"})
 @record
 class DictDiff(Generic[T]):
     added_keys: AbstractSet[T]
