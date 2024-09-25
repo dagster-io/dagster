@@ -165,7 +165,7 @@ It is possible to leverage [dbt defer](https://docs.getdbt.com/reference/node-se
 
 In practice, this is most useful when combined with branch deployments in Dagster, to test changes made in your branches. This can be easily done by updating your Dagster code and CI/CD file for branch deployments.
 
-First, update your Dagster code to pass a `state_path` to your `DbtProject` object. Also, update the dbt command in your `@dbt_assets` definition to pass the defer args using `get_defer_args`.
+First, update your Dagster code to pass a `state_path` to your `DbtProject` object. Also, update the dbt command in your @dbt_assets`definition to pass the defer args using`get_defer_args\`.
 
 ```python startafter=start_use_dbt_defer_with_dbt_project endbefore=end_use_dbt_defer_with_dbt_project file=/integrations/dbt/dbt.py dedent=4
 import os
@@ -176,11 +176,9 @@ from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 my_dbt_project = DbtProject(
     project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
-    packaged_project_dir=(
-        Path(__file__)
-        .joinpath("..", "..", "dbt-project")
-        .resolve()
-    ),
+    packaged_project_dir=Path(__file__)
+    .joinpath("..", "..", "dbt-project")
+    .resolve(),
     state_path=os.getenv("DBT_STATE_PATH"),
 )
 my_dbt_project.prepare_if_dev()
