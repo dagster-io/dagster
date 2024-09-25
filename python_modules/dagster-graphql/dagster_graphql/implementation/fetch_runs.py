@@ -629,8 +629,11 @@ def get_runs_feed_entries(
 
 
 def get_runs_feed_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
-    def get_backfills_count(filters):
-        # stub for pseudocode, would actually be a storage method
-        return 1
+    should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
+    if should_fetch_backfills:
+        backfill_filters = _bulk_action_filters_from_run_filters(filters) if filters else None
+        backfills_count = graphene_info.context.instance.get_backfills_count(backfill_filters)
+    else:
+        backfills_count = 0
 
-    return graphene_info.context.instance.get_runs_count(filters) + get_backfills_count(filters)
+    return graphene_info.context.instance.get_runs_count(filters) + backfills_count
