@@ -19,7 +19,6 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
-from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -49,23 +48,20 @@ T = TypeVar("T")
 
 
 @whitelist_for_serdes
-@record
-class ValueDiff(Generic[T]):
+class ValueDiff(NamedTuple, Generic[T]):
     old: T
     new: T
 
 
-@whitelist_for_serdes(kwargs_fields={"added_keys", "changed_keys", "removed_keys"})
-@record
-class DictDiff(Generic[T]):
+@whitelist_for_serdes()
+class DictDiff(NamedTuple, Generic[T]):
     added_keys: AbstractSet[T]
     changed_keys: AbstractSet[T]
     removed_keys: AbstractSet[T]
 
 
 @whitelist_for_serdes
-@record
-class AssetDefinitionDiffDetails:
+class AssetDefinitionDiffDetails(NamedTuple):
     """Represents the diff information for changes between assets.
 
     Change types in change_types should have diff info for their corresponding fields
