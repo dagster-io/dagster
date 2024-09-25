@@ -368,7 +368,7 @@ class GrapheneQuery(graphene.ObjectType):
     )
     runsFeedOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsFeedOrError),
-        limit=graphene.NonNull(graphene.Int),
+        limit=graphene.Int(),
         cursor=graphene.String(),
         filter=graphene.Argument(GrapheneRunsFilter),
         description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
@@ -841,7 +841,7 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runsFeedOrError(
         self,
         graphene_info: ResolveInfo,
-        limit: int,
+        limit: Optional[int] = None,
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):

@@ -9,14 +9,8 @@ export type RunFeedTabsCountQueryVariables = Types.Exact<{
 
 export type RunFeedTabsCountQuery = {
   __typename: 'Query';
-  queuedCount:
-    | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
-    | {__typename: 'Runs'; count: number | null};
-  inProgressCount:
-    | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
-    | {__typename: 'Runs'; count: number | null};
+  queuedCount: {__typename: 'PythonError'} | {__typename: 'RunsFeed'; count: number};
+  inProgressCount: {__typename: 'PythonError'} | {__typename: 'RunsFeed'; count: number};
 };
 
-export const RunFeedTabsCountQueryVersion = 'e845ed2b46945b3ae28446fd8b44ce96a48d59f06ca2f58cfad30f8d4f4d8fa2';
+export const RunFeedTabsCountQueryVersion = 'a4a47a3d175ea85430f09c47431e6591f6b79c951cb8a007fa8f2fdbb03693e8';

@@ -1,4 +1,8 @@
+from typing import Optional
+
+import dagster._check as check
 import graphene
+from dagster._core.storage.dagster_run import RunsFilter
 
 from dagster_graphql.implementation.fetch_runs import get_runs_feed_count, get_runs_feed_entries
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
@@ -39,7 +43,7 @@ class GrapheneRunsFeed(graphene.ObjectType):
     connection = graphene.NonNull(GrapheneRunsFeedConnection)
     count = graphene.NonNull(graphene.Int)
 
-    def __init__(self, filters, cursor, limit):
+    def __init__(self, filters: Optional[RunsFilter], cursor: Optional[str], limit: Optional[int]):
         super().__init__()
 
         self._filters = filters
@@ -47,12 +51,18 @@ class GrapheneRunsFeed(graphene.ObjectType):
         self._limit = limit
 
     def resolve_connection(self, graphene_info: ResolveInfo):
+        check.invariant(
+            self._limit is not None, "limit must be passed when resolving RunsFeedConnection"
+        )
         return get_runs_feed_entries(
-            graphene_info, filters=self._filters, cursor=self._cursor, limit=self._limit
+            graphene_info=graphene_info,
+            filters=self._filters,
+            cursor=self._cursor,
+            limit=self._limit,
         )
 
     def resolve_count(self, graphene_info: ResolveInfo):
-        return get_runs_feed_count(graphene_info, filters=self._filters)
+        return get_runs_feed_count(graphene_info=graphene_info, filters=self._filters)
 
 
 class GrapheneRunsFeedOrError(graphene.Union):
