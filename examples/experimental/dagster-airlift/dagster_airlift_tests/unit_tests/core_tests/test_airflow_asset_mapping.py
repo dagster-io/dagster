@@ -8,7 +8,7 @@ from dagster_airlift.core.airflow_instance import DagInfo, TaskInfo
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
     TaskHandle,
-    build_task_spec_mapping_info,
+    build_airlift_metadata_mapping_info,
     fetch_all_airflow_data,
 )
 from dagster_airlift.core.utils import metadata_for_task_mapping
@@ -36,8 +36,8 @@ def airlift_multiple_task_asset_spec(
     )
 
 
-def test_build_task_spec_mapping_info_no_mapping() -> None:
-    spec_mapping_info = build_task_spec_mapping_info(
+def test_build_task_mapping_info_no_mapping() -> None:
+    spec_mapping_info = build_airlift_metadata_mapping_info(
         defs=Definitions(assets=[AssetSpec("asset1"), AssetSpec("asset2")])
     )
     assert len(spec_mapping_info.asset_keys) == 2
@@ -47,7 +47,7 @@ def test_build_task_spec_mapping_info_no_mapping() -> None:
 
 
 def test_build_single_task_spec() -> None:
-    spec_mapping_info = build_task_spec_mapping_info(
+    spec_mapping_info = build_airlift_metadata_mapping_info(
         defs=Definitions(assets=[airlift_asset_spec("asset1", "dag1", "task1")])
     )
     assert spec_mapping_info.dag_ids == {"dag1"}
@@ -60,7 +60,7 @@ def test_build_single_task_spec() -> None:
 
 
 def test_task_with_multiple_assets() -> None:
-    spec_mapping_info = build_task_spec_mapping_info(
+    spec_mapping_info = build_airlift_metadata_mapping_info(
         defs=Definitions(
             assets=[
                 airlift_asset_spec("asset1", "dag1", "task1"),
@@ -91,7 +91,7 @@ def test_task_with_multiple_assets() -> None:
 
 
 def test_map_multiple_tasks_to_single_asset() -> None:
-    spec_mapping_info = build_task_spec_mapping_info(
+    spec_mapping_info = build_airlift_metadata_mapping_info(
         defs=Definitions(
             assets=[
                 airlift_multiple_task_asset_spec(
@@ -155,7 +155,7 @@ def test_fetched_airflow_data() -> None:
                 )
             },
         ),
-        spec_mapping_info=build_task_spec_mapping_info(
+        mapping_info=build_airlift_metadata_mapping_info(
             defs=Definitions(
                 assets=[
                     airlift_asset_spec("asset1", "dag1", "task1"),
@@ -174,7 +174,7 @@ def test_fetched_airflow_data() -> None:
 
 
 def test_produce_fetched_airflow_data() -> None:
-    spec_mapping_info = build_task_spec_mapping_info(
+    mapping_info = build_airlift_metadata_mapping_info(
         defs=Definitions(assets=[airlift_asset_spec("asset1", "dag1", "task1")])
     )
 
@@ -200,7 +200,7 @@ def test_produce_fetched_airflow_data() -> None:
 
     fetched_airflow_data = fetch_all_airflow_data(
         airflow_instance=instance,
-        mapping_info=spec_mapping_info,
+        mapping_info=mapping_info,
     )
 
-    assert len(fetched_airflow_data.spec_mapping_info.mapped_asset_specs) == 1
+    assert len(fetched_airflow_data.mapping_info.mapped_asset_specs) == 1
