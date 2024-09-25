@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence
 
 from dagster_pipes import (
     DagsterPipesError,
@@ -51,11 +51,27 @@ class PipesClient(ABC):
 
 
 class PipesClientCompletedInvocation:
+    """A wrapper for the results of a pipes client invocation, typically returned from `PipesClient.run`.
+
+    Args:
+        session (PipesSession): The Pipes session that was used to run the external process.
+        metadata (Optional[Dict[str, Any]]): Arbitrary metadata attached to the invocation,
+            such as an external job_id or other information available on the client side.
+            Do not confuse with Dagster metadata logged in the external process.
+    """
+
     def __init__(
         self,
         session: PipesSession,
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         self._session = session
+        self._metadata = metadata or {}
+
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        """Arbitrary metadata attached to the invocation."""
+        return self._metadata
 
     def get_results(
         self,
