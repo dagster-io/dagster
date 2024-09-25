@@ -1,3 +1,7 @@
+## 1.1.1 (September 24, 2024)
+
+- Add `DateRangePickerWrapper` export
+
 ## 1.1.0 (September 10, 2024)
 
 - Add `VirtualizedTable` export
