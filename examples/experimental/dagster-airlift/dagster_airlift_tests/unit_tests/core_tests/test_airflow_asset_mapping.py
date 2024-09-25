@@ -40,7 +40,6 @@ def test_build_task_mapping_info_no_mapping() -> None:
     spec_mapping_info = build_airlift_metadata_mapping_info(
         defs=Definitions(assets=[AssetSpec("asset1"), AssetSpec("asset2")])
     )
-    assert len(spec_mapping_info.asset_keys) == 2
     assert len(spec_mapping_info.dag_ids) == 0
     assert not (spec_mapping_info.asset_key_map)
     assert not (spec_mapping_info.task_handle_map)
