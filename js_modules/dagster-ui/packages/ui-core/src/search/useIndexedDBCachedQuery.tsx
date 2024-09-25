@@ -139,7 +139,9 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     fetch(true);
   }, [fetch, skip]);
 
-  const dep = useBlockTraceUntilTrue(`useIndexedDBCachedQuery-${key}`, !!data);
+  const dep = useBlockTraceUntilTrue(`useIndexedDBCachedQuery-${key}`, !!data, {
+    skip,
+  });
   useEffect(() => {
     if (error) {
       dep.completeDependency(CompletionType.ERROR);

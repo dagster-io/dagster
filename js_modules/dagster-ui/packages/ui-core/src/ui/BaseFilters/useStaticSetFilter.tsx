@@ -1,5 +1,5 @@
 import {Box, Checkbox, Colors, IconName, Popover} from '@dagster-io/ui-components';
-import {ComponentProps, Fragment, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {ComponentProps, Fragment, useMemo, useRef} from 'react';
 import {useStaticSetFilterSorter} from 'shared/ui/BaseFilters/useStaticSetFilterSorter.oss';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -28,12 +28,8 @@ export type StaticBaseConfig<TValue> = {
 type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
   allValues: SetFilterValue<TValue>[];
 
-  // This hook is NOT a "controlled component". Changing state only updates the component's current state.
-  // To make this fully controlled you need to implement `onStateChanged` and maintain your own copy of the state.
-  // The one tricky footgun is if you want to ignore (ie. cancel) a state change then you need to make a new reference
-  // to the old state and pass that in.
-  state?: Set<TValue> | TValue[];
-  onStateChanged?: (state: Set<TValue>) => void;
+  state: Set<TValue> | TValue[];
+  onStateChanged: (state: Set<TValue>) => void;
 
   allowMultipleSelections?: boolean;
   selectAllText?: React.ReactNode;
@@ -60,7 +56,7 @@ export function useStaticSetFilter<TValue>({
   renderActiveStateLabel,
   filterBarTagLabel,
   isLoadingFilters,
-  state: controlledState,
+  state,
   getStringValue,
   getTooltipText,
   onStateChanged,
@@ -81,35 +77,21 @@ export function useStaticSetFilter<TValue>({
     return _unsortedValues;
   }, [sortConfig, name, _unsortedValues]);
 
-  // This filter can be used as both a controlled and an uncontrolled component necessitating an innerState for the uncontrolled case.
-  const [innerStateRef, setInnerState] = useState(() => ({
-    current: new Set(controlledState || []),
-  }));
-
-  const isFirstLayoutEffectRender = useRef(true);
-
-  useLayoutEffect(() => {
-    if (!isFirstLayoutEffectRender.current) {
-      onStateChanged?.(innerStateRef.current);
-    }
-    isFirstLayoutEffectRender.current = false;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [innerStateRef.current]);
-
-  useMemo(() => {
-    innerStateRef.current = new Set(controlledState);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [controlledState]);
-
   const currentQueryRef = useRef<string>('');
+
+  const stateAsSet = useMemo(() => {
+    if (state instanceof Set) {
+      return state;
+    }
+    return new Set(state);
+  }, [state]);
 
   const filterObj: StaticSetFilter<TValue> = useMemo(
     () => ({
       name,
       icon,
-      state: innerStateRef.current,
-      isActive: innerStateRef.current.size > 0,
+      state: stateAsSet,
+      isActive: stateAsSet.size > 0,
       isLoadingFilters,
       getResults: (query) => {
         currentQueryRef.current = query;
@@ -152,11 +134,7 @@ export function useStaticSetFilter<TValue>({
                 <SetFilterLabel
                   value={selectAllSymbol}
                   renderLabel={() => <>{selectAllText ?? 'Select all'}</>}
-                  isForcedActive={
-                    (controlledState instanceof Set
-                      ? controlledState.size
-                      : controlledState?.length) === allValues.length
-                  }
+                  isForcedActive={stateAsSet.size === allValues.length}
                   filter={filterObjRef.current}
                   allowMultipleSelections={allowMultipleSelections}
                 />
@@ -191,15 +169,15 @@ export function useStaticSetFilter<TValue>({
             return true;
           });
           if (hasAnyUnselected) {
-            setInnerState({
-              current: new Set([...Array.from(state), ...selectResults.map(({value}) => value)]),
-            });
+            onStateChanged(
+              new Set([...Array.from(state), ...selectResults.map(({value}) => value)]),
+            );
           } else {
             const stateCopy = new Set(state);
             selectResults.forEach(({value}) => {
               stateCopy.delete(value);
             });
-            setInnerState({current: stateCopy});
+            onStateChanged(stateCopy);
           }
           return;
         }
@@ -213,7 +191,7 @@ export function useStaticSetFilter<TValue>({
             newState.add(value);
           }
         }
-        setInnerState({current: newState});
+        onStateChanged(newState);
         if (closeOnSelect) {
           close();
         }
@@ -230,26 +208,26 @@ export function useStaticSetFilter<TValue>({
       activeJSX: (
         <SetFilterActiveState
           name={name}
-          state={innerStateRef.current}
+          state={stateAsSet}
           getStringValue={getStringValue}
           getTooltipText={getTooltipText}
           renderLabel={renderActiveStateLabel || renderLabel}
           onRemove={() => {
-            setInnerState({current: new Set()});
+            onStateChanged(new Set());
           }}
           icon={icon}
           matchType={matchType}
           filterBarTagLabel={filterBarTagLabel}
         />
       ),
-      setState: (val) => setInnerState({current: val}),
+      setState: (val) => onStateChanged(val),
       menuWidth,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       name,
       icon,
-      innerStateRef.current,
+      stateAsSet,
       getStringValue,
       renderActiveStateLabel,
       renderLabel,
