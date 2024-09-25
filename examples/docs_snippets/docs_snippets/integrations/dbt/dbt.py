@@ -486,3 +486,30 @@ def scope_build_incremental_model():
         yield from dbt.cli(dbt_build_args, context=context).stream()
 
     # end_build_incremental_model
+
+
+def scope_use_dbt_defer_with_dbt_project(manifest):
+    # start_use_dbt_defer_with_dbt_project
+    import os
+    from pathlib import Path
+
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+    my_dbt_project = DbtProject(
+        project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+        packaged_project_dir=Path(__file__)
+        .joinpath("..", "..", "dbt-project")
+        .resolve(),
+        state_path=os.getenv("DBT_STATE_PATH"),
+    )
+    my_dbt_project.prepare_if_dev()
+
+    @dbt_assets(manifest=my_dbt_project.manifest_path)
+    def my_dbt_assets(
+        context: AssetExecutionContext,
+        dbt: DbtCliResource,
+    ):
+        yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+
+    # end_use_dbt_defer_with_dbt_project

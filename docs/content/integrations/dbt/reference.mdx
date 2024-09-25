@@ -159,6 +159,60 @@ In your CI/CD workflows for your Dagster and dbt project:
 
 ---
 
+## Leveraging dbt defer with branch deployments
+
+It is possible to leverage [dbt defer](https://docs.getdbt.com/reference/node-selection/defer) by passing a `state_path` to <PyObject object="DbtProject" module="dagster_dbt" />. This allows you to run a subset of models or tests based on the changes made since the state passed to `state_path`.
+
+In practice, this is most useful when combined with branch deployments in Dagster, to test changes made in your branches. This can be easily done by updating your Dagster code and CI/CD file for branch deployments.
+
+First, update your Dagster code to pass a `state_path` to your `DbtProject` object. Also, update the dbt command in your ``@dbt_assets` definition to pass the defer args using `get_defer_args`.
+
+```python startafter=start_use_dbt_defer_with_dbt_project endbefore=end_use_dbt_defer_with_dbt_project file=/integrations/dbt/dbt.py dedent=4
+import os
+from pathlib import Path
+
+from dagster import AssetExecutionContext
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+my_dbt_project = DbtProject(
+    project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+    packaged_project_dir=(
+        Path(__file__)
+        .joinpath("..", "..", "dbt-project")
+        .resolve()
+    ),
+    state_path=os.getenv("DBT_STATE_PATH"),
+)
+my_dbt_project.prepare_if_dev()
+
+@dbt_assets(manifest=my_dbt_project.manifest_path)
+def my_dbt_assets(
+    context: AssetExecutionContext,
+    dbt: DbtCliResource,
+):
+    yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+```
+
+In the code above, notice that the `state_path` is set using the `DBT_STATE_PATH` environment variable. This allows to pass a value to `state_path` only when needed - in our case, the `DBT_STATE_PATH` environment variable should be set only in a branch deployment context.
+
+To do so, we need to update the `.github/workflows/branch_deployments.yml` file to set a value to the `DBT_STATE_PATH` environment variable. This will ensure that dbt uses a state path only as part of our Dagster+ branch deployments.
+
+Open the file, scroll to the environment variable section, and set an environment variable named `DBT_STATE_PATH` to the path where your state artifacts are located. This should be on or around line 12:
+
+```bash
+env:
+  DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_ORGANIZATION }}
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  ENABLE_FAST_DEPLOYS: 'true'
+  PYTHON_VERSION: '3.8'
+  DAGSTER_CLOUD_FILE: 'dagster_cloud.yaml'
+  DBT_STATE_PATH: 'path/to/artifacts'
+```
+
+Save and commit the file to git. Don’t forget to push to remote!
+
+---
+
 ## Using config with `@dbt_assets`
 
 Like for a standard \[software-defined asset], `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema). This allows to provide parameters to jobs at the time they're executed.
