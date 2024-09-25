@@ -123,7 +123,7 @@ class TableColumn(
             ("type", PublicAttr[str]),
             ("description", PublicAttr[Optional[str]]),
             ("constraints", PublicAttr[TableColumnConstraints]),
-            ("tags", PublicAttr[Mapping[str, str]])
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
