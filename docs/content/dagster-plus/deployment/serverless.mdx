@@ -50,6 +50,16 @@ If you are a GitHub user, our GitHub integration is the fastest way to get start
 
 When you create a new Dagster+ organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-plus/managing-deployments/branch-deployments) using the Serverless agent.
 
+<Note>
+<strong>If you are importing a Dagster project that's in an existing GitHub repo:</strong>
+
+- The repo will need to allow the [Workflow permission](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) for `Read and write permissions`. Workflow permissions settings can be found in GitHub's `Settings` > `Actions` > `General` > `Workflow permissions`. In GitHub Enterprise, these permissions [are controlled at the Organization level](https://github.com/orgs/community/discussions/57244).
+
+- An initial commit will need to be able to be merged directly to the repo's `main` branch to automatically add the GitHub Actions workflow files. If [branch protection rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#about-branch-protection-rules) require changes be done through a pull request, it will prevent the automatic setup completing.
+  - You can temporarily disable the branch protection rules and then re-enable them after the automatic setup completes. Alternatively, you can manually set up the GitHub Actions workflows. You can use our ­­[dagster-cloud-serverless-quickstart​​​­ r​​​epo](https://github.com/dagster-io/dagster-cloud-serverless-quickstart) as a template and its [README](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/README.md) as a guide​​.
+
+</Note>
+
 ### With Gitlab
 
 If you are a Gitlab user, our Gitlab integration is the fastest way to get started. It uses a Gitlab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster+'s best practices with a single click.
