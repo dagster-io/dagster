@@ -3097,6 +3097,9 @@ class DagsterInstance(DynamicPartitionsStore):
             status=status, cursor=cursor, limit=limit, filters=filters
         )
 
+    def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
+        return self._run_storage.get_backfills_count(filters=filters)
+
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._run_storage.get_backfill(backfill_id)
 
