@@ -161,7 +161,7 @@ class TableColumn(
                 TableColumnConstraints,
                 default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
             ),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
