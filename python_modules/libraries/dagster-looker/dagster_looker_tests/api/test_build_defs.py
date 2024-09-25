@@ -74,53 +74,38 @@ def looker_instance_data_mocks_fixture(
 def test_build_defs(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
-    assets_by_key = {
-        asset.key: asset for asset in looker_resource.build_defs().get_asset_graph().assets_defs
+    asset_specs_by_key = {
+        spec.key: spec for spec in looker_resource.build_defs().get_all_asset_specs()
     }
 
-    assert len(assets_by_key) == 3
+    assert len(asset_specs_by_key) == 3
 
     expected_lookml_view_asset_key = AssetKey(["view", "my_view"])
     expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
     expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
-    assert assets_by_key[expected_lookml_view_asset_key]
+    assert asset_specs_by_key[expected_lookml_view_asset_key]
 
-    lookml_explore_asset = assets_by_key[expected_lookml_explore_asset_key]
-    assert lookml_explore_asset.asset_deps[expected_lookml_explore_asset_key] == {
-        expected_lookml_view_asset_key
-    }
-    assert lookml_explore_asset.tags_by_key[expected_lookml_explore_asset_key] == {
-        "dagster/kind/looker": "",
-        "dagster/kind/explore": "",
-    }
+    lookml_explore_asset = asset_specs_by_key[expected_lookml_explore_asset_key]
+    assert [dep.asset_key for dep in lookml_explore_asset.deps] == [expected_lookml_view_asset_key]
+    assert lookml_explore_asset.tags == {"dagster/kind/looker": "", "dagster/kind/explore": ""}
 
-    looker_dashboard_asset = assets_by_key[expected_looker_dashboard_asset_key]
-    assert looker_dashboard_asset.asset_deps[expected_looker_dashboard_asset_key] == {
+    looker_dashboard_asset = asset_specs_by_key[expected_looker_dashboard_asset_key]
+    assert [dep.asset_key for dep in looker_dashboard_asset.deps] == [
         expected_lookml_explore_asset_key
-    }
-    assert looker_dashboard_asset.tags_by_key[expected_looker_dashboard_asset_key] == {
-        "dagster/kind/looker": "",
-        "dagster/kind/dashboard": "",
-    }
+    ]
+    assert looker_dashboard_asset.tags == {"dagster/kind/looker": "", "dagster/kind/dashboard": ""}
 
 
 @responses.activate
 def test_build_defs_with_pdts(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
-    assets_by_key = {
-        asset.key: asset
-        for asset in looker_resource.build_defs(
-            request_start_pdt_builds=[
-                RequestStartPdtBuild(model_name="my_model", view_name="my_view")
-            ]
-        )
-        .get_asset_graph()
-        .assets_defs
-    }
+    defs = looker_resource.build_defs(
+        request_start_pdt_builds=[RequestStartPdtBuild(model_name="my_model", view_name="my_view")]
+    )
 
-    assert len(assets_by_key) == 3
+    assert len(defs.get_all_asset_specs()) == 3
 
     sdk = looker_resource.get_sdk()
 
@@ -136,7 +121,8 @@ def test_build_defs_with_pdts(
         body=sdk.serialize(api_model=mock_check_pdt_build),  # type: ignore
     )
 
-    result = materialize([assets_by_key[AssetKey(["view", "my_view"])]])
+    pdt = defs.get_repository_def().assets_defs_by_key[AssetKey(["view", "my_view"])]
+    result = materialize([pdt])
 
     assert result.success
 
