@@ -23,7 +23,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedTaskHandleData,
 )
 from dagster_airlift.core.task_asset import (
-    FetchedAirflowTask,
+    MappedAirflowTaskData,
     TaskHandle,
     TasksToAssetMapping,
     get_airflow_data_for_task_mapped_spec,
@@ -133,7 +133,7 @@ class FetchedAirflowData:
             mapping = TasksToAssetMapping(
                 asset=spec,
                 mapped_tasks=[
-                    FetchedAirflowTask(
+                    MappedAirflowTaskData(
                         task_handle=task_handle,
                         task_info=self.task_info_map[task_handle.dag_id][task_handle.task_id],
                         migrated=self.migration_state_map[task_handle.dag_id][task_handle.task_id],
