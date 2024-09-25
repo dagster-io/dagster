@@ -956,6 +956,7 @@ class SqlRunStorage(RunStorage):
         return backfill_candidates
 
     def get_backfills_count(self, filters: Optional[BulkActionsFilter] = None) -> int:
+        check.opt_inst_param(filters, "filters", BulkActionsFilter)
         if filters.tags:
             # runs can have more tags than the backfill that launched them. Since we filtered tags by
             # querying for runs with those tags, we need to do an additional check that the backfills
