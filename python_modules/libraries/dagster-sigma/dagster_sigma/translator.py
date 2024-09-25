@@ -49,6 +49,7 @@ class SigmaDataset:
     inputs: AbstractSet[str]
 
 
+@whitelist_for_serdes
 @record
 class SigmaOrganizationData:
     workbooks: List[SigmaWorkbook]

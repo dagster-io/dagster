@@ -1,16 +1,13 @@
 import urllib.parse
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Type
 
 import requests
 from dagster import ConfigurableResource
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_load_context import (
-    DefinitionsLoadContext,
-    DefinitionsLoadType,
-)
-from dagster._serdes.serdes import deserialize_value, serialize_value
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
@@ -265,10 +262,6 @@ class SigmaOrganization(ConfigurableResource):
 
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
 
-    @property
-    def reconstruction_metadata_key(self) -> str:
-        return f"sigma_{self.client_id}"
-
     def build_defs(
         self,
         dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
@@ -282,40 +275,27 @@ class SigmaOrganization(ConfigurableResource):
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
-        context = DefinitionsLoadContext.get()
+        return SigmaOrganizationDefsLoader(
+            organization=self, translator_cls=dagster_sigma_translator
+        ).build_defs()
 
-        # Attempt to load cached data from the context.
-        if (
-            context.load_type == DefinitionsLoadType.RECONSTRUCTION
-            and self.reconstruction_metadata_key in context.reconstruction_metadata
-        ):
-            cached_data = context.reconstruction_metadata[self.reconstruction_metadata_key]
-            workbooks = [
-                deserialize_value(workbook, as_type=SigmaWorkbook)
-                for workbook in cached_data["workbooks"]
-            ]
-            datasets = [
-                deserialize_value(dataset, as_type=SigmaDataset)
-                for dataset in cached_data["datasets"]
-            ]
-        else:
-            organization_data = self.build_organization_data()
-            workbooks = organization_data.workbooks
-            datasets = organization_data.datasets
-            cached_data = {
-                "workbooks": [serialize_value(workbook) for workbook in workbooks],
-                "datasets": [serialize_value(dataset) for dataset in datasets],
-            }
 
-        org_data = SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+@dataclass
+class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
+    organization: SigmaOrganization
+    translator_cls: Type[DagsterSigmaTranslator]
 
-        translator = dagster_sigma_translator(context=org_data)
+    @property
+    def defs_key(self) -> str:
+        return f"sigma_{self.organization.client_id}"
 
+    def fetch_state(self) -> SigmaOrganizationData:
+        return self.organization.build_organization_data()
+
+    def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
+        translator = self.translator_cls(context=state)
         asset_specs = [
-            *[translator.get_workbook_spec(workbook) for workbook in org_data.workbooks],
-            *[translator.get_dataset_spec(dataset) for dataset in org_data.datasets],
+            *[translator.get_workbook_spec(workbook) for workbook in state.workbooks],
+            *[translator.get_dataset_spec(dataset) for dataset in state.datasets],
         ]
-
-        return Definitions(assets=asset_specs).with_reconstruction_metadata(
-            {self.reconstruction_metadata_key: cached_data}
-        )
+        return Definitions(assets=asset_specs)
