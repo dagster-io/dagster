@@ -1,6 +1,7 @@
 # 1.1.2 (September 25, 2024)
 
 - Upgrade to Rollup 4
+- Expose all icons from icon-svgs directory
 
 ## 1.1.1 (September 24, 2024)
 
