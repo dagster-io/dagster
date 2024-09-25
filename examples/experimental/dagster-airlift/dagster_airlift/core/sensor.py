@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Iterator, List, Optional, Set, Tuple
+from typing import Iterable, Iterator, List, Optional, Set, Tuple
 
 from dagster import (
     AssetCheckKey,
@@ -13,9 +13,13 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     TimestampMetadataValue,
+    _check as check,
     sensor,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
@@ -38,6 +42,15 @@ class AirflowPollingSensorCursor:
     end_date_gte: Optional[float] = None
     end_date_lte: Optional[float] = None
     dag_query_offset: Optional[int] = None
+
+
+def check_keys_for_asset_keys(
+    repository_def: RepositoryDefinition, asset_keys: Set[AssetKey]
+) -> Iterable[AssetCheckKey]:
+    for assets_def in repository_def.asset_graph.assets_defs:
+        for check_spec in assets_def.check_specs:
+            if check_spec.asset_key in asset_keys:
+                yield check_spec.key
 
 
 def build_airflow_polling_sensor(
@@ -86,8 +99,11 @@ def build_airflow_polling_sensor(
                 break
             all_materializations.extend(batch_result.materializations_and_timestamps)
 
-            for asset_key in batch_result.all_asset_keys_materialized:
-                all_check_keys.update(airflow_data.check_keys_for_asset_key(asset_key))
+            all_check_keys.update(
+                check_keys_for_asset_keys(
+                    check.not_none(context.repository_def), batch_result.all_asset_keys_materialized
+                )
+            )
             latest_offset = batch_result.idx
 
         # Sort materializations by end date and toposort order
