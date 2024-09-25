@@ -1454,6 +1454,7 @@ class TestRunStorage:
         self.get_backfills_and_assert_expected_count(storage, multi_filters, 1)
 
         storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
+        one = storage.get_backfill(one.backfill_id)
 
         self.get_backfills_and_assert_expected_count(storage, requested_filters, 0)
 
@@ -1474,7 +1475,7 @@ class TestRunStorage:
             backfill_timestamp=time.time(),
         )
         storage.add_backfill(two)
-        self.get_backfills_and_assert_expected_count(storage, multi_filters, 1)
+        self.get_backfills_and_assert_expected_count(storage, multi_filters, 2)
 
     def test_backfill_created_time_filtering(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
