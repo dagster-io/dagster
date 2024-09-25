@@ -353,7 +353,14 @@ class MdxTranslator(SphinxTranslator):
     def visit_desc_signature(self, node: Element) -> None:
         self.in_literal += 1
         self.new_state()
-        self.add_text("<dt>")
+        ids = node.get("ids")
+        if ids:
+            if len(ids) == 1:
+                self.add_text(f"<dt id='{ids[0]}'>")
+            else:
+                raise ValueError(f"Expected 1 id, got {len(ids)} for {node}")
+        else:
+            self.add_text("<dt>")
 
     def depart_desc_signature(self, node: Element) -> None:
         self.in_literal -= 1
