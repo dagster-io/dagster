@@ -1,8 +1,7 @@
 from dagster import AssetKey, AssetSpec, Definitions, asset
 
-my_source_asset = AssetSpec(
-    key=AssetKey("my_source_asset"),
-    metadata={"dagster/io_manager_key": "s3_io_manager"},
+my_source_asset = AssetSpec(key=AssetKey("my_source_asset")).with_io_manager_key(
+    "s3_io_manager"
 )
 
 
