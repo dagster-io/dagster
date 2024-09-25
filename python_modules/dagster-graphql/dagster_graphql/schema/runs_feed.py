@@ -47,10 +47,12 @@ class GrapheneRunsFeed(graphene.ObjectType):
         self._limit = limit
 
     def resolve_connection(self, graphene_info: ResolveInfo):
-        return get_runs_feed_entries(graphene_info, self._filters, self._cursor, self._limit)
+        return get_runs_feed_entries(
+            graphene_info, filters=self._filters, cursor=self._cursor, limit=self._limit
+        )
 
     def resolve_count(self, graphene_info: ResolveInfo):
-        return get_runs_feed_count(graphene_info, self._filters)
+        return get_runs_feed_count(graphene_info, filters=self._filters)
 
 
 class GrapheneRunsFeedOrError(graphene.Union):

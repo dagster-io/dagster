@@ -129,13 +129,13 @@ export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => 
 
 export const RUN_FEED_TABS_COUNT_QUERY = gql`
   query RunFeedTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
-    queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
-      ... on Runs {
+    queuedCount: runsFeedOrError(filter: $queuedFilter) {
+      ... on RunsFeed {
         count
       }
     }
-    inProgressCount: pipelineRunsOrError(filter: $inProgressFilter) {
-      ... on Runs {
+    inProgressCount: runsFeedOrError(filter: $inProgressFilter) {
+      ... on RunsFeed {
         count
       }
     }
