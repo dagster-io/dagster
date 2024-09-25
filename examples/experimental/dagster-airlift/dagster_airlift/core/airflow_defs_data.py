@@ -1,6 +1,7 @@
-from typing import AbstractSet, List, Optional
+from typing import AbstractSet, Optional
 
-from dagster import AssetKey, AssetsDefinition, AssetSpec, external_asset_from_spec
+from dagster import AssetKey, AssetSpec, external_asset_from_spec
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -18,11 +19,13 @@ class AirflowDefinitionsData:
         existing_key_data = self.serialized_data.key_scope_data_map.get(spec.key)
         return spec if not existing_key_data else existing_key_data.apply_to_spec(spec)
 
-    def construct_dag_assets_defs(self) -> List[AssetsDefinition]:
-        return [
-            external_asset_from_spec(dag_data.spec_data.to_asset_spec())
-            for dag_data in self.serialized_data.dag_datas.values()
-        ]
+    def construct_dag_assets_defs(self) -> Definitions:
+        return Definitions(
+            [
+                external_asset_from_spec(dag_data.spec_data.to_asset_spec())
+                for dag_data in self.serialized_data.dag_datas.values()
+            ]
+        )
 
     @property
     def all_dag_ids(self) -> AbstractSet[str]:
