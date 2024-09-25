@@ -93,8 +93,6 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     """
 
-    label: Optional[str] = None
-
     @property
     def requires_cursor(self) -> bool:
         return True
@@ -113,13 +111,16 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return self.__class__.__name__
 
+    def get_label(self) -> Optional[str]:
+        return None
+
     def get_node_snapshot(self, unique_id: str) -> AutomationConditionNodeSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
         return AutomationConditionNodeSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
-            label=self.label,
+            label=self.get_label(),
             name=self.name,
         )
 
@@ -559,6 +560,9 @@ class BuiltinAutomationCondition(DagsterModel, AutomationCondition[T_EntityKey])
     """Base class for AutomationConditions provided by the core dagster framework."""
 
     label: Optional[str] = None
+
+    def get_label(self) -> Optional[str]:
+        return self.label
 
     @public
     def with_label(self, label: Optional[str]) -> Self:
