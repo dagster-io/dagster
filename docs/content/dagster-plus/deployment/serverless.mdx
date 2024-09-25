@@ -62,11 +62,13 @@ If you don't want to use our GitHub/Gitlab integrations, we offer a powerful CLI
 
 First, [create a new project](https://docs.dagster.io/getting-started/create-new-project#create-a-new-project) with the Dagster open-source CLI.
 
+The below example uses our [quickstart_etl example project](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl). For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples).
+
 ```shell
 pip install dagster
 dagster project from-example \
   --name my-dagster-project \
-  --example assets_modern_data_stack
+  --example quickstart_etl
 ```
 
 <Note>
@@ -97,7 +99,7 @@ Finally, deploy your project with Dagster+ Serverless:
 ```shell
 dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
-  --package-name assets_modern_data_stack \
+  --package-name quickstart_etl \
   --python-version 3.12
 ```
 
