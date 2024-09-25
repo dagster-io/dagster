@@ -8,11 +8,13 @@ from dagster import (
     DefaultSensorStatus,
     JsonMetadataValue,
     MarkdownMetadataValue,
+    RepositoryDefinition,
     RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
     TimestampMetadataValue,
+    _check as check,
     sensor,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -24,6 +26,7 @@ from dagster._time import datetime_from_timestamp, get_current_datetime, get_cur
 
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.partition_utils import get_partition_key_from_task_instance
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
@@ -71,6 +74,7 @@ def build_airflow_polling_sensor(
         )
         end_date_lte = cursor.end_date_lte or current_date.timestamp()
         sensor_iter = materializations_and_requests_from_batch_iter(
+            repo_def=check.not_none(context.repository_def),
             end_date_gte=end_date_gte,
             end_date_lte=end_date_lte,
             offset=current_dag_offset,
@@ -127,6 +131,7 @@ class BatchResult:
 
 
 def materializations_and_requests_from_batch_iter(
+    repo_def: RepositoryDefinition,
     end_date_gte: float,
     end_date_lte: float,
     offset: int,
@@ -154,12 +159,12 @@ def materializations_and_requests_from_batch_iter(
         dag_metadata = {
             **metadata,
             "Run Details": MarkdownMetadataValue(f"[View Run]({dag_run.url})"),
-            "Start Date": TimestampMetadataValue(dag_run.start_date),
-            "End Date": TimestampMetadataValue(dag_run.end_date),
+            "Start Date": TimestampMetadataValue(dag_run.start_datetime.timestamp()),
+            "End Date": TimestampMetadataValue(dag_run.end_datetime.timestamp()),
         }
         materializations_for_run.append(
             (
-                dag_run.end_date,
+                dag_run.end_datetime.timestamp(),
                 AssetMaterialization(
                     asset_key=dag_asset_key,
                     description=dag_run.note,
@@ -184,17 +189,29 @@ def materializations_and_requests_from_batch_iter(
                 **metadata,
                 "Run Details": MarkdownMetadataValue(f"[View Run]({task_run.details_url})"),
                 "Task Logs": MarkdownMetadataValue(f"[View Logs]({task_run.log_url})"),
-                "Start Date": TimestampMetadataValue(task_run.start_date),
-                "End Date": TimestampMetadataValue(task_run.end_date),
+                "Start Date": TimestampMetadataValue(task_run.start_datetime.timestamp()),
+                "End Date": TimestampMetadataValue(task_run.end_datetime.timestamp()),
+                "Logical Date": TimestampMetadataValue(task_run.logical_datetime.timestamp()),
             }
             for asset_key in asset_keys:
+                spec = repo_def.assets_defs_by_key[asset_key].get_asset_spec(asset_key)
+                partition_key = (
+                    get_partition_key_from_task_instance(
+                        partitions_def=spec.partitions_def,
+                        task_instance=task_run,
+                        asset_key=asset_key,
+                    )
+                    if spec.partitions_def
+                    else None
+                )
                 materializations_for_run.append(
                     (
-                        task_run.end_date,
+                        task_run.end_datetime.timestamp(),
                         AssetMaterialization(
                             asset_key=asset_key,
                             description=task_run.note,
                             metadata=task_metadata,
+                            partition=partition_key,
                         ),
                     )
                 )

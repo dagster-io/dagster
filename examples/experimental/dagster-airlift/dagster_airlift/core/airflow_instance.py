@@ -3,9 +3,10 @@ import json
 import time
 from abc import ABC
 from functools import cached_property
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Mapping, Sequence
 
 import requests
+from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterError
 from dagster._record import record
@@ -309,17 +310,8 @@ class AirflowInstance:
         return self.get_dag_run(dag_id, run_id).state
 
     @staticmethod
-    def timestamp_from_airflow_date(airflow_date: str) -> float:
-        try:
-            return datetime.datetime.strptime(airflow_date, "%Y-%m-%dT%H:%M:%S+00:00").timestamp()
-        except ValueError:
-            return datetime.datetime.strptime(
-                airflow_date, "%Y-%m-%dT%H:%M:%S.%f+00:00"
-            ).timestamp()
-
-    @staticmethod
-    def airflow_date_from_datetime(datetime: datetime.datetime) -> str:
-        return datetime.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    def airflow_date_from_datetime(the_date: datetime.datetime) -> str:
+        return the_date.isoformat()
 
     def delete_run(self, dag_id: str, run_id: str) -> None:
         response = self.auth_backend.get_session().delete(
@@ -336,7 +328,7 @@ class AirflowInstance:
 class DagInfo:
     webserver_url: str
     dag_id: str
-    metadata: Dict[str, Any]
+    metadata: Mapping[str, Any]
 
     @property
     def url(self) -> str:
@@ -386,6 +378,15 @@ class TaskInstance:
         return self.metadata.get("note") or ""
 
     @property
+    def logical_datetime(self) -> datetime.datetime:
+        # In airflow < 2.2, execution_date is set instead of logical_date.
+        logical_date_str = check.not_none(
+            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
+            "Expected one of execution_date or logical_date to be set.",
+        )
+        return datetime.datetime.fromisoformat(logical_date_str)
+
+    @property
     def details_url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}/grid?dag_run_id={self.run_id}&task_id={self.task_id}"
 
@@ -394,12 +395,12 @@ class TaskInstance:
         return f"{self.details_url}&tab=logs"
 
     @property
-    def start_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
+    def start_datetime(self) -> datetime.datetime:
+        return datetime.datetime.fromisoformat(self.metadata["start_date"])
 
     @property
-    def end_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
+    def end_datetime(self) -> datetime.datetime:
+        return datetime.datetime.fromisoformat(self.metadata["end_date"])
 
 
 @record
@@ -438,17 +439,18 @@ class DagRun:
         return self.metadata["conf"]
 
     @property
-    def start_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
-
-    @property
     def start_datetime(self) -> datetime.datetime:
-        return datetime.datetime.strptime(self.metadata["start_date"], "%Y-%m-%dT%H:%M:%S+00:00")
-
-    @property
-    def end_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
+        # Airflow gives us ISO-8601 formatted dates.
+        return datetime.datetime.fromisoformat(self.metadata["start_date"])
 
     @property
     def end_datetime(self) -> datetime.datetime:
-        return datetime.datetime.strptime(self.metadata["end_date"], "%Y-%m-%dT%H:%M:%S+00:00")
+        return datetime.datetime.fromisoformat(self.metadata["end_date"])
+
+    @property
+    def logical_datetime(self) -> datetime.datetime:
+        logical_date_str = check.not_none(
+            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
+            "Expected one of execution_date or logical_date to be set.",
+        )
+        return datetime.datetime.fromisoformat(logical_date_str)

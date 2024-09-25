@@ -79,6 +79,7 @@ def load_definitions_airflow_asset_graph(
                 run_id=f"run-{dag_id}",
                 start_date=get_current_datetime() - timedelta(minutes=10),
                 end_date=get_current_datetime(),
+                logical_date=get_current_datetime() - timedelta(minutes=10),
             )
             for dag_id in dag_and_task_structure.keys()
         ]

@@ -61,8 +61,8 @@ class AirflowInstanceFake(AirflowInstance):
         return [
             run
             for run in self._dag_runs_by_dag_id[dag_id]
-            if start_date.timestamp() <= run.start_date <= end_date.timestamp()
-            and start_date.timestamp() <= run.end_date <= end_date.timestamp()
+            if start_date.timestamp() <= run.start_datetime.timestamp() <= end_date.timestamp()
+            and start_date.timestamp() <= run.end_datetime.timestamp() <= end_date.timestamp()
         ]
 
     def get_dag_runs_batch(
@@ -73,10 +73,10 @@ class AirflowInstanceFake(AirflowInstance):
         offset: int = 0,
     ) -> List[DagRun]:
         runs = [
-            (run.end_date, run)
+            (run.end_datetime.timestamp(), run)
             for runs in self._dag_runs_by_dag_id.values()
             for run in runs
-            if end_date_gte.timestamp() <= run.end_date <= end_date_lte.timestamp()
+            if end_date_gte.timestamp() <= run.end_datetime.timestamp() <= end_date_lte.timestamp()
             and run.dag_id in dag_ids
         ]
         sorted_by_end_date = [run for _, run in sorted(runs, key=lambda x: x[0])]
@@ -159,7 +159,12 @@ def make_task_info(dag_id: str, task_id: str) -> TaskInfo:
 
 
 def make_task_instance(
-    dag_id: str, task_id: str, run_id: str, start_date: datetime, end_date: datetime
+    dag_id: str,
+    task_id: str,
+    run_id: str,
+    start_date: datetime,
+    end_date: datetime,
+    logical_date: datetime,
 ) -> TaskInstance:
     return TaskInstance(
         webserver_url="http://dummy.domain",
@@ -170,11 +175,15 @@ def make_task_instance(
             "state": "success",
             "start_date": AirflowInstance.airflow_date_from_datetime(start_date),
             "end_date": AirflowInstance.airflow_date_from_datetime(end_date),
+            "logical_date": AirflowInstance.airflow_date_from_datetime(logical_date),
+            "execution_date": AirflowInstance.airflow_date_from_datetime(logical_date),
         },
     )
 
 
-def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datetime) -> DagRun:
+def make_dag_run(
+    dag_id: str, run_id: str, start_date: datetime, end_date: datetime, logical_date: datetime
+) -> DagRun:
     return DagRun(
         webserver_url="http://dummy.domain",
         dag_id=dag_id,
@@ -183,6 +192,8 @@ def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datet
             "state": "success",
             "start_date": AirflowInstance.airflow_date_from_datetime(start_date),
             "end_date": AirflowInstance.airflow_date_from_datetime(end_date),
+            "execution_date": AirflowInstance.airflow_date_from_datetime(logical_date),
+            "logical_date": AirflowInstance.airflow_date_from_datetime(logical_date),
             "run_type": "manual",
             "note": "dummy note",
             "conf": {},
@@ -220,6 +231,7 @@ def make_instance(
                     - timedelta(
                         seconds=1
                     ),  # Ensure that the task ends before the full "dag" completes.
+                    logical_date=dag_run.logical_datetime,
                 )
                 for task_id in dag_and_task_structure[dag_run.dag_id]
             ]
