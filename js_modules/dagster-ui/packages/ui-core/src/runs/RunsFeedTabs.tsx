@@ -46,9 +46,9 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
   const {queuedCount, inProgressCount} = useMemo(() => {
     return {
       queuedCount:
-        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
+        countData?.queuedCount?.__typename === 'RunsFeed' ? countData.queuedCount.count : null,
       inProgressCount:
-        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
+        countData?.inProgressCount?.__typename === 'RunsFeed' ? countData.inProgressCount.count : null,
     };
   }, [countData]);
 
