@@ -82,7 +82,6 @@ class KeyScopedDataItem:
 class SerializedAirflowDefinitionsData:
     key_scoped_data_items: List[KeyScopedDataItem]
     dag_datas: Mapping[str, SerializedDagData]
-    asset_key_topological_ordering: Sequence[AssetKey]
 
     @cached_property
     def key_scope_data_map(self) -> Mapping[AssetKey, "SerializedAssetKeyScopedAirflowData"]:

@@ -8,7 +8,6 @@ from dagster import (
     Definitions,
     _check as check,
 )
-from dagster._core.utils import toposort_flatten
 from dagster._record import record
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
@@ -210,12 +209,11 @@ def compute_serialized_data(
             task_handle_data=task_handle_data,
             all_asset_keys_in_tasks=mapping_info.asset_keys_per_dag_id[dag_id],
         )
-    topology_order = toposort_flatten(upstreams_asset_dependency_graph)
+
     return SerializedAirflowDefinitionsData(
         key_scoped_data_items=[
             KeyScopedDataItem(asset_key=k, data=v)
             for k, v in fetched_airflow_data.airflow_data_by_key.items()
         ],
         dag_datas=dag_datas,
-        asset_key_topological_ordering=topology_order,
     )
