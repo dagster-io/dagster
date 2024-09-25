@@ -64,13 +64,6 @@ class SerializedDagData:
     all_asset_keys_in_tasks: AbstractSet[AssetKey]
 
 
-@whitelist_for_serdes
-@record
-class KeyScopedDataItem:
-    asset_key: AssetKey
-    data: "SerializedAssetKeyScopedAirflowData"
-
-
 ###################################################################################################
 # Serializable data that will be cached to avoid repeated calls to the Airflow API, and to avoid
 # repeated scans of passed-in Definitions objects.
