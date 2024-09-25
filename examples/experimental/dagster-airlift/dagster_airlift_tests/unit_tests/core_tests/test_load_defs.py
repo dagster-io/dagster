@@ -25,7 +25,6 @@ from dagster_airlift.core import (
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.serialization.compute import compute_serialized_data, is_mapped_asset_spec
 from dagster_airlift.core.serialization.serialized_data import (
-    KeyScopedDataItem,
     SerializedAirflowDefinitionsData,
     SerializedAssetKeyScopedAirflowData,
 )
@@ -35,7 +34,7 @@ from dagster_airlift.core.state_backed_defs_loader import (
 )
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.test import make_instance
-from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
+from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR, DictItem
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
@@ -320,9 +319,9 @@ def test_serialization_roundtrip() -> None:
         instance_name="test_instance",
         serialized_data=SerializedAirflowDefinitionsData(
             key_scoped_data_items=[
-                KeyScopedDataItem(
-                    asset_key=AssetKey("a"),
-                    data=SerializedAssetKeyScopedAirflowData(
+                DictItem(
+                    key=AssetKey("a"),
+                    value=SerializedAssetKeyScopedAirflowData(
                         additional_metadata={"foo": "bar"}, additional_tags={"baz": "qux"}
                     ),
                 )
