@@ -48,7 +48,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
-    excludeBackfillRuns = graphene.InputField(graphene.Boolean)
+    excludeSubruns = graphene.InputField(graphene.Boolean)
 
     class Meta:
         description = """This type represents a filter on Dagster runs."""
@@ -81,7 +81,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             updated_after=updated_after,
             created_before=created_before,
             created_after=created_after,
-            exclude_backfill_runs=self.excludeBackfillRuns,
+            exclude_subruns=self.excludeSubruns,
         )
 
 
