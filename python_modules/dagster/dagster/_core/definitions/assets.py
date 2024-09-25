@@ -1390,7 +1390,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             key = self.node_keys_by_output_name[output_name]
             spec = self.specs_by_key[key]
 
-            return SourceAsset(
+            return SourceAsset.dagster_internal_init(
                 key=key,
                 metadata=spec.metadata,
                 io_manager_key=output_def.io_manager_key,
@@ -1399,6 +1399,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 partitions_def=self.partitions_def,
                 group_name=spec.group_name,
                 tags=spec.tags,
+                io_manager_def=None,
+                observe_fn=None,
+                op_tags=None,
+                auto_observe_interval_minutes=None,
+                freshness_policy=None,
+                _required_resource_keys=None,
             )
 
     @public

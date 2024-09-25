@@ -190,7 +190,7 @@ class _ObservableSourceAsset:
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
         with disable_dagster_warnings():
-            return SourceAsset(
+            return SourceAsset.dagster_internal_init(
                 key=source_asset_key,
                 metadata=self.metadata,
                 io_manager_key=self.io_manager_key,
