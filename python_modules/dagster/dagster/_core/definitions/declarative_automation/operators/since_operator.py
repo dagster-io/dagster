@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Sequence
 
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -14,7 +14,6 @@ from dagster._serdes.serdes import whitelist_for_serdes
 class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     trigger_condition: AutomationCondition[T_EntityKey]
     reset_condition: AutomationCondition[T_EntityKey]
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:
