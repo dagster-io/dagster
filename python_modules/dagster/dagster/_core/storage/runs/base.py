@@ -377,6 +377,17 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """Get a list of partition backfills."""
 
     @abstractmethod
+    def get_backfills_count(self, filters: Optional[BulkActionsFilter] = None) -> int:
+        """Return the number of backfills present in the storage that match the given filters.
+
+        Args:
+            filters (Optional[BulkActionsFilter]) -- The filter by which to filter backfills
+
+        Returns:
+            int: The number of backfills that match the given filters.
+        """
+
+    @abstractmethod
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         """Get the partition backfill of the given backfill id."""
 
