@@ -1,4 +1,4 @@
-import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
@@ -8,7 +8,7 @@ import {Structured, Unstructured} from './LogsRow';
 import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {filterLogs} from './filterLogs';
-import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 
 const BOTTOM_SCROLL_THRESHOLD_PX = 60;
 
@@ -101,32 +101,31 @@ export const LogsScrollingTable = (props: Props) => {
 
     return (
       <Inner $totalHeight={totalHeight}>
-        <DynamicRowContainer $start={items[0]?.start ?? 0}>
-          {items.map(({index, key}) => {
-            const node = filteredNodes[index]!;
-            const textMatch = textMatchNodes.includes(node);
-            const focusedTimeMatch = Number(node.timestamp) === filter.focusedTime;
-            const highlighted = textMatch || focusedTimeMatch;
+        {items.map(({index, key, size, start}) => {
+          const node = filteredNodes[index]!;
+          const textMatch = textMatchNodes.includes(node);
+          const focusedTimeMatch = Number(node.timestamp) === filter.focusedTime;
+          const highlighted = textMatch || focusedTimeMatch;
 
-            const row =
-              node.__typename === 'LogMessageEvent' ? (
-                <Unstructured node={node} metadata={metadata} highlighted={highlighted} />
-              ) : (
-                <Structured node={node} metadata={metadata} highlighted={highlighted} />
-              );
+          const row =
+            node.__typename === 'LogMessageEvent' ? (
+              <Unstructured node={node} metadata={metadata} highlighted={highlighted} />
+            ) : (
+              <Structured node={node} metadata={metadata} highlighted={highlighted} />
+            );
 
-            return (
+          return (
+            <Row $height={size} $start={start} key={key}>
               <div
                 ref={virtualizer.measureElement}
-                key={key}
                 data-index={index}
                 style={{position: 'relative'}}
               >
                 {row}
               </div>
-            );
-          })}
-        </DynamicRowContainer>
+            </Row>
+          );
+        })}
       </Inner>
     );
   };

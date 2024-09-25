@@ -56,7 +56,6 @@ from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
     CodeLocationStatusEntry,
-    IWorkspace,
     WorkspaceSnapshot,
     location_status_from_location_entry,
 )
@@ -79,7 +78,7 @@ T = TypeVar("T")
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
 
 
-class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
+class BaseWorkspaceRequestContext(LoadingContext):
     """This class is a request-scoped object that stores (1) a reference to all repository locations
     that exist on the `IWorkspaceProcessContext` at the start of the request and (2) a snapshot of the
     workspace at the start of the request.
@@ -92,27 +91,35 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
 
     @property
     @abstractmethod
-    def instance(self) -> DagsterInstance:
-        pass
+    def instance(self) -> DagsterInstance: ...
 
     @abstractmethod
-    def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
-        pass
+    def get_workspace_snapshot(self) -> WorkspaceSnapshot: ...
+
+    # abstracted since they may be calculated without the full WorkspaceSnapshot
+    def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]: ...
+
+    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]: ...
+
+    # implemented here since they require the full WorkspaceSnapshot
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
+        return self.get_workspace_snapshot().code_location_entries
+
+    @property
+    def asset_graph(self) -> "RemoteAssetGraph":
+        return self.get_workspace_snapshot().asset_graph
 
     @property
     @abstractmethod
-    def process_context(self) -> "IWorkspaceProcessContext":
-        pass
+    def process_context(self) -> "IWorkspaceProcessContext": ...
 
     @property
     @abstractmethod
-    def version(self) -> Optional[str]:
-        pass
+    def version(self) -> Optional[str]: ...
 
     @property
     @abstractmethod
-    def permissions(self) -> Mapping[str, PermissionResult]:
-        pass
+    def permissions(self) -> Mapping[str, PermissionResult]: ...
 
     @abstractmethod
     def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
@@ -127,12 +134,10 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
         return self.has_permission(permission)
 
     @abstractmethod
-    def has_permission(self, permission: str) -> bool:
-        pass
+    def has_permission(self, permission: str) -> bool: ...
 
     @abstractmethod
-    def was_permission_checked(self, permission: str) -> bool:
-        pass
+    def was_permission_checked(self, permission: str) -> bool: ...
 
     @property
     def show_instance_config(self) -> bool:
@@ -358,8 +363,8 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
-        return self._workspace_snapshot.code_location_entries
+    def get_workspace_snapshot(self) -> WorkspaceSnapshot:
+        return self._workspace_snapshot
 
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
         return self._workspace_snapshot.code_location_entries.get(name)
@@ -394,7 +399,8 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def has_permission(self, permission: str) -> bool:
         permissions = self.permissions
         check.invariant(
-            permission in permissions, f"Permission {permission} not listed in permissions map"
+            permission in permissions,
+            f"Permission {permission} not listed in permissions map",
         )
         self._checked_permissions.add(permission)
         return permissions[permission].enabled
@@ -416,10 +422,6 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def loaders(self) -> Dict[Type, DataLoader]:
         return self._loaders
-
-    @property
-    def asset_graph(self) -> "RemoteAssetGraph":
-        return self._workspace_snapshot.asset_graph
 
 
 class IWorkspaceProcessContext(ABC):

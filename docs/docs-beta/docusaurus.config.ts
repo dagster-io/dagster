@@ -102,6 +102,12 @@ const config: Config = {
         //  docId: 'changelog',
         //  position: 'right',
         //},
+        {
+          label: 'Feedback',
+          href: 'https://github.com/dagster-io/dagster/discussions/23031',
+          position: 'right',
+          className: 'feedback-nav-link',
+        },
       ],
     },
     image: 'img/docusaurus-social-card.jpg',
@@ -148,7 +154,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
-          editUrl: 'https://github.com/dagster-io/dagster/tree/docs/revamp/docs/docs-beta',
+          editUrl: 'https://github.com/dagster-io/dagster/tree/master/docs/docs-beta',
         },
         blog: false,
         theme: {

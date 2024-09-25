@@ -1,5 +1,5 @@
 import re
-from typing import AbstractSet, Any, Dict, List
+from typing import AbstractSet, Any, Dict, List, Optional
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
@@ -32,6 +32,7 @@ class SigmaWorkbook:
 
     properties: Dict[str, Any]
     datasets: AbstractSet[str]
+    owner_email: Optional[str]
 
 
 @whitelist_for_serdes
@@ -89,6 +90,7 @@ class DagsterSigmaTranslator:
                 **build_kind_tag("sigma"),
             },
             deps={self.get_dataset_key(dataset) for dataset in datasets},
+            owners=[data.owner_email] if data.owner_email else None,
         )
 
     def get_dataset_key(self, data: SigmaDataset) -> AssetKey:

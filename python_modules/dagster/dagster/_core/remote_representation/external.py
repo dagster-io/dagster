@@ -238,7 +238,7 @@ class ExternalRepository:
             existing_automation_condition_sensors = {
                 sensor_name: sensor
                 for sensor_name, sensor in sensor_datas.items()
-                if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
+                if sensor.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
             }
 
             covered_entity_keys: Set[EntityKey] = set()

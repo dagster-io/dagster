@@ -663,3 +663,10 @@ div[class^='announcementBar_'] {
   padding-bottom: 0.25rem;
   background-color: var(--theme-color-background-yellow);
 }
+
+/* Feedback navigation item */
+.feedback-nav-link {
+  color: var(--theme-color-text-yellow);
+  text-decoration: underline;
+}
+

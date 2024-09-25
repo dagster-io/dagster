@@ -1,3 +1,4 @@
+import urllib.parse
 from collections import defaultdict
 from enum import Enum
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Type
@@ -77,7 +78,13 @@ class SigmaOrganization(ConfigurableResource):
 
         return self._api_token
 
-    def fetch_json(self, endpoint: str, method: str = "GET") -> Dict[str, Any]:
+    def fetch_json(
+        self, endpoint: str, method: str = "GET", query_params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        url = f"{self.base_url}/v2/{endpoint}"
+        if query_params:
+            url = f"{url}?{urllib.parse.urlencode(query_params)}"
+
         response = requests.request(
             method=method,
             url=f"{self.base_url}/v2/{endpoint}",
@@ -200,10 +207,20 @@ class SigmaOrganization(ConfigurableResource):
         return columns_by_dataset_inode
 
     @cached_method
+    def build_member_id_to_email_mapping(self) -> Mapping[str, str]:
+        """Retrieves all members in the Sigma organization and builds a mapping
+        from member ID to email address.
+        """
+        members = self.fetch_json("members", query_params={"limit": 500})["entries"]
+        return {member["memberId"]: member["email"] for member in members}
+
+    @cached_method
     def build_organization_data(self) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
         """
+        member_id_to_email = self.build_member_id_to_email_mapping()
+
         raw_workbooks = self.fetch_workbooks()
 
         workbooks: List[SigmaWorkbook] = []
@@ -221,7 +238,13 @@ class SigmaOrganization(ConfigurableResource):
                         if item.get("type") == "dataset":
                             workbook_deps.add(item["nodeId"])
 
-            workbooks.append(SigmaWorkbook(properties=workbook, datasets=workbook_deps))
+            workbooks.append(
+                SigmaWorkbook(
+                    properties=workbook,
+                    datasets=workbook_deps,
+                    owner_email=member_id_to_email.get(workbook["ownerId"]),
+                )
+            )
 
         datasets: List[SigmaDataset] = []
         deps_by_dataset_inode = self.fetch_dataset_upstreams_by_inode()
@@ -245,19 +268,19 @@ class SigmaOrganization(ConfigurableResource):
 
     def build_defs(
         self,
-        context: DefinitionsLoadContext,
         dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
     ) -> Definitions:
         """Returns a Definitions object representing the Sigma content in the organization.
 
         Args:
-            context (DefinitionsLoadContext): The context in which the definitions are being loaded.
             dagster_sigma_translator (Type[DagsterSigmaTranslator]): The translator to use
                 to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
 
         Returns:
             Definitions: The set of assets representing the Sigma content in the organization.
         """
+        context = DefinitionsLoadContext.get()
+
         # Attempt to load cached data from the context.
         if (
             context.load_type == DefinitionsLoadType.RECONSTRUCTION

@@ -241,6 +241,16 @@ class AssetSpec(
 
     @public
     def with_io_manager_key(self, io_manager_key: str) -> "AssetSpec":
+        """Returns a copy of this AssetSpec with an extra metadata value that dictates which I/O
+        manager to use to load the contents of this asset in downstream computations.
+
+        Args:
+            io_manager_key (str): The I/O manager key. This will be used as the value for the
+                "dagster/io_manager_key" metadata key.
+
+        Returns:
+            AssetSpec
+        """
         return self._replace(
             metadata={**self.metadata, SYSTEM_METADATA_KEY_IO_MANAGER_KEY: io_manager_key}
         )

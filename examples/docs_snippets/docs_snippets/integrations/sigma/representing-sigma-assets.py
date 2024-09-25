@@ -11,6 +11,4 @@ resource = SigmaOrganization(
 )
 
 
-@definitions
-def defs(context: DefinitionsLoadContext) -> Definitions:
-    return resource.build_defs(context)
+defs = resource.build_defs()

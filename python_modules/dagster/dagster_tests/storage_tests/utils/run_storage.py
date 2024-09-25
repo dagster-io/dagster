@@ -1349,6 +1349,44 @@ class TestRunStorage:
         storage.add_daemon_heartbeat(added_heartbeat)
         storage.wipe_daemon_heartbeats()
 
+    def test_get_runs_not_in_backfills(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "one",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+        run_in_backfill_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_in_backfill_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+        run_not_in_backfill_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_not_in_backfill_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+            )
+        )
+
+        assert len(storage.get_runs()) == 2
+        runs_not_in_backfill = storage.get_run_records(filters=RunsFilter(exclude_subruns=True))
+        assert len(runs_not_in_backfill) == 1
+        assert runs_not_in_backfill[0].dagster_run.run_id == run_not_in_backfill_id
+
     def test_backfill(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()

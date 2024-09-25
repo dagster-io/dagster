@@ -24,8 +24,4 @@ class MyCustomSigmaTranslator(DagsterSigmaTranslator):
         return super().get_workbook_spec(data)._replace(owners=["my_team"])
 
 
-@definitions
-def defs(context: DefinitionsLoadContext) -> Definitions:
-    return resource.build_defs(
-        context, dagster_sigma_translator=MyCustomSigmaTranslator
-    )
+defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)

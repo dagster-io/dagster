@@ -25,6 +25,7 @@ from dagster._time import get_current_datetime
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
+from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.test import make_dag_run, make_instance
 
 
@@ -60,7 +61,7 @@ def load_definitions_airflow_asset_graph(
                 spec = AssetSpec(
                     asset_key,
                     deps=deps,
-                    metadata={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
+                    metadata=metadata_for_task_mapping(dag_id=dag_id, task_id=task_id),
                 )
                 if create_assets_defs:
 

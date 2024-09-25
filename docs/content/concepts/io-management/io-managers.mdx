@@ -240,16 +240,15 @@ defs = Definitions(
 
 ### Using I/O managers to load source data
 
-Asset definitions often depend on data assets that are generated outside of Dagster, or in a different code location within Dagster, and it's often useful to use I/O managers to load the data from these assets. You can use an <PyObject object="AssetSpec" /> to define an asset with no materialization function, and you can assign an I/O manager to it by including an entry in its metadata dictionary with the `"dagster/io_manager_key"` key. Your other assets can then depend on it and load data from it, just as they would with a materializable asset.
+Asset definitions often depend on data assets that are generated outside of Dagster, or in a different code location within Dagster, and it's often useful to use I/O managers to load the data from these assets. You can use an <PyObject object="AssetSpec" /> to define an asset with no materialization function, and you can assign an I/O manager to it using the <PyObject object="AssetSpec" method="with_io_manager_key" /> method. Your other assets can then depend on it and load data from it, just as they would with a materializable asset.
 
 For example:
 
 ```python file=/concepts/io_management/source_asset.py
 from dagster import AssetKey, AssetSpec, Definitions, asset
 
-my_source_asset = AssetSpec(
-    key=AssetKey("my_source_asset"),
-    metadata={"dagster/io_manager_key": "s3_io_manager"},
+my_source_asset = AssetSpec(key=AssetKey("my_source_asset")).with_io_manager_key(
+    "s3_io_manager"
 )
 
 
