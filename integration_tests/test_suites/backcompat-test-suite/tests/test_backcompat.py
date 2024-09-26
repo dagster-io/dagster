@@ -30,13 +30,12 @@ MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"
 pytest_plugins = ["dagster_test.fixtures"]
 
 
-# Maps pytest marks to (webserver-version, user-code-version) 2-tuples. These versions are CORE
-# versions-- library versions are derived from these later with `get_library_version`.
+# Maps pytest marks to user code version numbers. The webserver version is always the current
+# branch. Note that these versions are CORE versions-- library versions are derived from these later
+# with `get_library_version`.
 MARK_TO_VERSIONS_MAP = {
-    "webserver-earliest-release": (EARLIEST_TESTED_RELEASE, DAGSTER_CURRENT_BRANCH),
-    "user-code-earliest-release": (DAGSTER_CURRENT_BRANCH, EARLIEST_TESTED_RELEASE),
-    "webserver-latest-release": (MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_CURRENT_BRANCH),
-    "user-code-latest-release": (DAGSTER_CURRENT_BRANCH, MOST_RECENT_RELEASE_PLACEHOLDER),
+    "user-code-earliest-release": EARLIEST_TESTED_RELEASE,
+    "user-code-latest-release": MOST_RECENT_RELEASE_PLACEHOLDER,
 }
 
 
@@ -62,19 +61,6 @@ def infer_user_code_definitions_files(release: str) -> str:
     else:
         version = packaging.version.parse(release)
         return "legacy_repo.py" if version < packaging.version.Version("1.0") else "repo.py"
-
-
-def infer_webserver_package(release: str) -> str:
-    """Returns `dagster-webserver` if on source or version >=1.3.14 (first dagster-webserver
-    release), `dagit` otherwise.
-    """
-    if release == "current_branch":
-        return "dagster-webserver"
-    else:
-        if not EARLIEST_TESTED_RELEASE:
-            check.failed("Environment variable `$EARLIEST_TESTED_RELEASE` must be set.")
-        version = packaging.version.parse(release)
-        return "dagit" if version < packaging.version.Version("1.3.14") else "dagster-webserver"
 
 
 def assert_run_success(client: DagsterGraphQLClient, run_id: str) -> None:
@@ -117,25 +103,17 @@ def dagster_most_recent_release() -> str:
     scope="session",
 )
 def release_test_map(request, dagster_most_recent_release: str) -> Mapping[str, str]:
-    webserver_version = request.param[0]
-    if webserver_version == MOST_RECENT_RELEASE_PLACEHOLDER:
-        webserver_version = dagster_most_recent_release
-    user_code_version = request.param[1]
-    if user_code_version == MOST_RECENT_RELEASE_PLACEHOLDER:
-        user_code_version = dagster_most_recent_release
-
-    return {"webserver": webserver_version, "user_code": user_code_version}
+    user_code_version = (
+        dagster_most_recent_release
+        if request.param == MOST_RECENT_RELEASE_PLACEHOLDER
+        else request.param
+    )
+    return {"webserver": DAGSTER_CURRENT_BRANCH, "user_code": user_code_version}
 
 
-def check_webserver_connection(host: str, webserver_package: str, retrying_requests) -> None:
-    if webserver_package == "dagit":
-        url_path = "dagit_info"
-        json_key = "dagit_version"
-    else:  # dagster-webserver
-        url_path = "server_info"
-        json_key = "dagster_webserver_version"
-    result = retrying_requests.get(f"http://{host}:3000/{url_path}")
-    assert result.json().get(json_key)
+def check_webserver_connection(host: str, retrying_requests) -> None:
+    result = retrying_requests.get(f"http://{host}:3000/server_info")
+    assert result.json().get("dagster_webserver_version")
 
 
 def upload_docker_logs_to_buildkite():
@@ -204,7 +182,6 @@ def docker_service(
 
     # Infer additional parameters used in our docker setup from webserver/usercode versions.
     webserver_library_version = get_library_version(webserver_version)
-    webserver_package = infer_webserver_package(webserver_version)
     user_code_library_version = get_library_version(user_code_version)
     user_code_definitions_files = infer_user_code_definitions_files(user_code_version)
 
@@ -214,7 +191,6 @@ def docker_service(
             file_relative_path(docker_compose_file, "./build.sh"),
             webserver_version,
             webserver_library_version,
-            webserver_package,
             user_code_version,
             user_code_library_version,
             user_code_definitions_files,
@@ -223,11 +199,10 @@ def docker_service(
     build_process.wait()
     assert build_process.returncode == 0
 
-    # Create the docker service. $WEBSERVER_PACKAGE and $USER_CODE_DEFINITIONS_FILE are referenced
-    # in the entrypoint of a container so we need to make them available as environment variables
-    # while creating the service.
+    # Create the docker service. $USER_CODE_DEFINITIONS_FILE is referenced in the entrypoint of a
+    # container so we need to make it available as an environment variable while creating the
+    # service.
     env = {
-        "WEBSERVER_PACKAGE": webserver_package,
         "USER_CODE_DEFINITIONS_FILE": user_code_definitions_files,
         **os.environ,
     }
@@ -259,7 +234,6 @@ def graphql_client(
     release_test_map: Mapping[str, str], retrying_requests
 ) -> Iterator[DagsterGraphQLClient]:
     webserver_version = release_test_map["webserver"]
-    webserver_package = infer_webserver_package(webserver_version)
 
     # On Buildkite, the docker service is set up and torn down outside of pytest. The webserver is
     # exposed through the BACKCOMPAT_TESTS_WEBSERVER_HOST environment variable. We can just connect
@@ -267,7 +241,7 @@ def graphql_client(
     if IS_BUILDKITE:
         webserver_host = os.environ["BACKCOMPAT_TESTS_WEBSERVER_HOST"]
         try:
-            check_webserver_connection(webserver_host, webserver_package, retrying_requests)
+            check_webserver_connection(webserver_host, retrying_requests)
             yield DagsterGraphQLClient(webserver_host, port_number=3000)
         finally:
             upload_docker_logs_to_buildkite()
@@ -281,8 +255,7 @@ def graphql_client(
             webserver_version=webserver_version,
             user_code_version=release_test_map["user_code"],
         ):
-            print("INSIDE DOCKER SERVICE")
-            check_webserver_connection(webserver_host, webserver_package, retrying_requests)
+            check_webserver_connection(webserver_host, retrying_requests)
             yield DagsterGraphQLClient(webserver_host, port_number=3000)
 
 
