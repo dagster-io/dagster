@@ -157,9 +157,7 @@ def materializations_and_requests_from_batch_iter(
         offset=offset,
     )
     for i, dag_run in enumerate(runs):
-        mats: List[AssetMaterialization] = []
-        mats.extend(materializations_for_dag_run(dag_run, airflow_data))
-        for task_run in airflow_instance.get_task_instance_batch(
+        task_instances = airflow_instance.get_task_instance_batch(
             run_id=dag_run.run_id,
             dag_id=dag_run.dag_id,
             # We need to make sure to ignore tasks that have already been migrated.
@@ -169,12 +167,9 @@ def materializations_and_requests_from_batch_iter(
                 if not airflow_data.migration_state_for_task(dag_run.dag_id, task_id)
             ],
             states=["success"],
-        ):
-            mats.extend(
-                materializations_for_task_instance(
-                    airflow_data=airflow_data, dag_run=dag_run, task_instance=task_run
-                )
-            )
+        )
+
+        mats = get_asset_events(dag_run, task_instances, airflow_data)
         all_asset_keys_materialized = {mat.asset_key for mat in mats}
         yield (
             BatchResult(
@@ -187,6 +182,20 @@ def materializations_and_requests_from_batch_iter(
             if mats
             else None
         )
+
+
+def get_asset_events(
+    dag_run: DagRun, task_instances: Sequence[TaskInstance], airflow_data: AirflowDefinitionsData
+) -> List[AssetMaterialization]:
+    mats: List[AssetMaterialization] = []
+    mats.extend(materializations_for_dag_run(dag_run, airflow_data))
+    for task_run in task_instances:
+        mats.extend(
+            materializations_for_task_instance(
+                airflow_data=airflow_data, dag_run=dag_run, task_instance=task_run
+            )
+        )
+    return mats
 
 
 def get_timestamp_from_materialization(mat: AssetMaterialization) -> float:
