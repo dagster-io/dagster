@@ -59,7 +59,6 @@ class SerializedDagData:
     dag_id: str
     spec_data: SerializedAssetSpecData
     task_handle_data: Mapping[str, "SerializedTaskHandleData"]
-    all_asset_keys_in_tasks: AbstractSet[AssetKey]
 
 
 @whitelist_for_serdes
