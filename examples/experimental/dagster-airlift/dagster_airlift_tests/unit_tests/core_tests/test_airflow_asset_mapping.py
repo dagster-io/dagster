@@ -4,13 +4,14 @@ from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.core.airflow_instance import DagInfo, TaskInfo
+from dagster_airlift.core.airflow_instance import DagInfo
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
     TaskHandle,
     build_airlift_metadata_mapping_info,
     fetch_all_airflow_data,
 )
+from dagster_airlift.core.serialization.serialized_data import TaskInfo
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.migration_state import (
     AirflowMigrationState,

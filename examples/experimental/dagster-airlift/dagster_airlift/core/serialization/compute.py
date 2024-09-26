@@ -11,7 +11,7 @@ from dagster import (
 from dagster._record import record
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo, TaskInfo
+from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
 from dagster_airlift.core.dag_asset import dag_asset_spec_data, get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
     KeyScopedDataItem,
@@ -20,6 +20,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedDagData,
     SerializedTaskHandleData,
     TaskHandle,
+    TaskInfo,
 )
 from dagster_airlift.core.utils import spec_iterator
 from dagster_airlift.migration_state import AirflowMigrationState

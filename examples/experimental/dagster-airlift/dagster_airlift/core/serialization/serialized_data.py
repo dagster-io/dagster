@@ -5,7 +5,18 @@ from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
-from dagster_airlift.core.airflow_instance import TaskInfo
+
+@whitelist_for_serdes
+@record
+class TaskInfo:
+    webserver_url: str
+    dag_id: str
+    task_id: str
+    metadata: Dict[str, Any]
+
+    @property
+    def dag_url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}"
 
 
 @whitelist_for_serdes
