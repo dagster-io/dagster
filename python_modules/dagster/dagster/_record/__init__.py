@@ -1,5 +1,6 @@
 import inspect
 from abc import ABC
+from collections import namedtuple
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -38,9 +39,17 @@ _REMAPPING_FIELD = "__field_remap__"
 _ORIGINAL_CLASS_FIELD = "__original_class__"
 
 
-def _get_field_set_and_defaults(cls: Type) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+_sample_nt = namedtuple("_canary", "x")
+# use a sample to avoid direct private imports (_collections._tuplegetter)
+_tuple_getter_type = type(getattr(_sample_nt, "x"))
+
+
+def _get_field_set_and_defaults(
+    cls: Type,
+) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
     field_set = getattr(cls, "__annotations__", {})
     defaults = {}
+
     for name in field_set.keys():
         if hasattr(cls, name):
             attr_val = getattr(cls, name)
@@ -50,6 +59,10 @@ def _get_field_set_and_defaults(cls: Type) -> Tuple[Mapping[str, Any], Mapping[s
                     f"Conflicting non-abstract @property for field {name} on record {cls.__name__}."
                     "Add the the @abstractmethod decorator to make it abstract.",
                 )
+            elif isinstance(attr_val, _tuple_getter_type):
+                # When doing record inheritance, filter out tuplegetters from parents.
+                # This workaround only seems needed for py3.8
+                continue
             else:
                 check.invariant(
                     not inspect.isfunction(attr_val),
@@ -86,21 +99,20 @@ def _namedtuple_record_transform(
 
     base = NamedTuple(f"_{cls.__name__}", field_set.items())
     nt_new = base.__new__
+
+    generated_new = None
     if checked:
         eval_ctx = EvalContext.capture_from_frame(
             1 + decorator_frames,
             # inject default values in to the local namespace for reference in generated __new__
             add_to_local_ns={_INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
         )
-        jit_checked_new = JitCheckedNew(
+        generated_new = JitCheckedNew(
             field_set,
             defaults,
-            base,
             eval_ctx,
             1 if with_new else 0,
         )
-        base.__new__ = jit_checked_new
-
     elif defaults:
         # allow arbitrary ordering of default values by generating a kwarg only __new__ impl
         eval_ctx = EvalContext(
@@ -109,48 +121,78 @@ def _namedtuple_record_transform(
             local_ns={_INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
             lazy_imports={},
         )
-        defaults_new = eval_ctx.compile_fn(
+        generated_new = eval_ctx.compile_fn(
             _build_defaults_new(field_set, defaults),
             _DEFAULTS_NEW,
         )
-        base.__new__ = defaults_new
-
-    if with_new and cls.__new__ is object.__new__:
-        # verify the alignment since it impacts frame capture
-        check.failed(f"Expected __new__ on {cls}, add it or switch from the _with_new decorator.")
 
     # the default namedtuple record cannot handle subclasses that have different fields from their
     # parents if both are records
     base.__repr__ = _repr
 
+    # these will override an implementation on the class if it exists
+    new_class_dict = {
+        **{n: getattr(base, n) for n in field_set.keys()},
+        "_fields": base._fields,
+        "__iter__": _banned_iter,
+        "__getitem__": _banned_idx,
+        "__hidden_iter__": base.__iter__,
+        _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
+        _RECORD_ANNOTATIONS_FIELD: field_set,
+        _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
+        _REMAPPING_FIELD: field_to_new_mapping or {},
+        _ORIGINAL_CLASS_FIELD: cls,
+        "__bool__": _true,
+        "__reduce__": _reduce,
+        # functools doesn't work, so manually update_wrapper
+        "__module__": cls.__module__,
+        "__qualname__": cls.__qualname__,
+        "__annotations__": field_set,
+        "__doc__": cls.__doc__,
+    }
+
+    # Due to MRO issues, we can not support both @record_custom __new__ and record inheritance
+    # so enforce these rules and place the generated new in the appropriate place in the class hierarchy.
+    if with_new:
+        if not _defines_own_new(cls):
+            # verify the alignment since it impacts frame capture
+            check.failed(
+                f"Expected __new__ on {cls.__name__}, add it or switch from the @record_custom decorator to @record."
+            )
+        if is_record(cls):
+            parent = next(c for c in cls.__mro__ if is_record(c))
+            check.failed(
+                f"@record_custom can not be used with @record inheritance. {cls.__name__} is a child of @record {parent.__name__}."
+            )
+
+        # For records with custom new, put the generated new on the NT base class
+        if generated_new:
+            base.__new__ = generated_new
+
+    elif generated_new:
+        if _defines_own_new(cls):
+            check.failed(
+                f"Found a custom __new__ on @record {cls}, use @record_custom with IHaveNew instead."
+            )
+        for c in cls.__mro__:
+            if c is cls:
+                continue
+
+            if is_record(c) and _defines_own_new(c):
+                check.failed(
+                    "@record can not inherit from @record_custom. "
+                    f"@record {cls.__name__} inherits from @record_custom {c.__name__}"
+                )
+
+        # For regular @records, which may inherit from other records, put new on the generated class to avoid
+        # MRO resolving to the wrong NT base
+        new_class_dict["__new__"] = generated_new
+
     new_type = type(
         cls.__name__,
         (cls, base),
-        {  # these will override an implementation on the class if it exists
-            **{n: getattr(base, n) for n in field_set.keys()},
-            "_fields": base._fields,
-            "__iter__": _banned_iter,
-            "__getitem__": _banned_idx,
-            "__hidden_iter__": base.__iter__,
-            _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
-            _RECORD_ANNOTATIONS_FIELD: field_set,
-            _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
-            _REMAPPING_FIELD: field_to_new_mapping or {},
-            _ORIGINAL_CLASS_FIELD: cls,
-            "__bool__": _true,
-            "__reduce__": _reduce,
-            # functools doesn't work, so manually update_wrapper
-            "__module__": cls.__module__,
-            "__qualname__": cls.__qualname__,
-            "__annotations__": field_set,
-            "__doc__": cls.__doc__,
-        },
+        new_class_dict,
     )
-
-    # if the annotated class is a subclass of another record, ensure that we use the
-    # newly-generated __new__ method, instead of the __new__ of its superclass
-    if has_generated_new(cls):
-        setattr(new_type, "__new__", base.__new__)
 
     # setting this in the dict above does not work for some reason,
     # so set it directly after instantiation
@@ -356,36 +398,41 @@ class JitCheckedNew:
         self,
         field_set: Mapping[str, Type],
         defaults: Mapping[str, Any],
-        nt_base: Type,
         eval_ctx: EvalContext,
         new_frames: int,
     ):
         self._field_set = field_set
         self._defaults = defaults
-        self._nt_base = nt_base
         self._eval_ctx = eval_ctx
         self._new_frames = new_frames  # how many frames of __new__ there are
-        self._compiled_fn = None
+        self._compiled = False
 
     def __call__(self, cls, *args, **kwargs):
-        if self._compiled_fn is None:
-            # update the context with callsite locals/globals to resolve
-            # ForwardRefs that were unavailable at definition time.
-            self._eval_ctx.update_from_frame(1 + self._new_frames)
+        check.invariant(self._compiled is False, "failed to set compiled __new__ appropriately")
 
-            # ensure check is in scope
-            if "check" not in self._eval_ctx.global_ns:
-                self._eval_ctx.global_ns["check"] = check
+        # update the context with callsite locals/globals to resolve
+        # ForwardRefs that were unavailable at definition time.
+        self._eval_ctx.update_from_frame(1 + self._new_frames)
 
-            # we are double-memoizing this to handle some confusing mro issues
-            # in which the _nt_base's __new__ method is not on the critical
-            # path, causing this to get invoked multiple times
-            self._compiled_fn = self._eval_ctx.compile_fn(
-                self._build_checked_new_str(),
-                _CHECKED_NEW,
-            )
-            self._nt_base.__new__ = self._compiled_fn
-        return self._compiled_fn(cls, *args, **kwargs)
+        # ensure check is in scope
+        if "check" not in self._eval_ctx.global_ns:
+            self._eval_ctx.global_ns["check"] = check
+
+        # we are double-memoizing this to handle some confusing mro issues
+        # in which the _nt_base's __new__ method is not on the critical
+        # path, causing this to get invoked multiple times
+        compiled_fn = self._eval_ctx.compile_fn(
+            self._build_checked_new_str(),
+            _CHECKED_NEW,
+        )
+        self._compiled = True
+
+        # replace this holder object with the compiled fn by finding where it was in the hierarchy
+        for c in cls.__mro__:
+            if c.__new__ is self:
+                c.__new__ = compiled_fn
+
+        return compiled_fn(cls, *args, **kwargs)
 
     def _build_checked_new_str(self) -> str:
         kw_args_str, set_calls_str = build_args_and_assignment_strs(self._field_set, self._defaults)
@@ -404,7 +451,7 @@ class JitCheckedNew:
             f"from {module} import {t}" for t, module in self._eval_ctx.lazy_imports.items()
         )
 
-        return f"""
+        checked_new_str = f"""
 def __checked_new__(cls{kw_args_str}):
     {lazy_imports_str}
     {set_calls_str}
@@ -413,6 +460,7 @@ def __checked_new__(cls{kw_args_str}):
         {check_call_block}
     )
 """
+        return checked_new_str
 
 
 def _build_defaults_new(
@@ -497,3 +545,15 @@ def _repr(self) -> str:
     field_set = getattr(self, _RECORD_ANNOTATIONS_FIELD)
     values = [f"{field_name}={getattr(self, field_name)!r}" for field_name in field_set]
     return f"{self.__class__.__name__}({', '.join(values)})"
+
+
+def _defines_own_new(cls) -> bool:
+    qualname = getattr(cls.__new__, "__qualname__", None)
+    if not qualname:
+        return False
+
+    qualname_parts = cls.__new__.__qualname__.split(".")
+    if len(qualname_parts) < 2:
+        return False
+
+    return qualname_parts[-2] == cls.__name__

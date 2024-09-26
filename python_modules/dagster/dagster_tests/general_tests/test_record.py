@@ -1,5 +1,4 @@
 import pickle
-import sys
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence, TypeVar, Union
@@ -45,16 +44,16 @@ def test_runtime_typecheck() -> None:
 
 
 def test_override_constructor_in_subclass() -> None:
-    @record
-    class MyClass:
+    @record_custom
+    class MyClass(IHaveNew):
         foo: str
         bar: int
 
         def __new__(cls, foo: str, bar: int):
             return super().__new__(
                 cls,
-                foo=foo,  # type: ignore
-                bar=bar,  # type: ignore
+                foo=foo,
+                bar=bar,
             )
 
     assert MyClass(foo="fdsjk", bar=4)
@@ -546,7 +545,6 @@ def test_generic() -> None:
     assert IntThings(things=[1, 2]).first_thing == 1
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="py38/py39 weirdness")
 def test_generic_nested() -> None:
     T = TypeVar("T")
 
@@ -642,7 +640,6 @@ def test_subclass_propagate_change_defaults() -> None:
     assert repr(subsub) == "SubSub(a=0, b=0, c=-1, d=2)"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="py38/py39 weirdness")
 def test_generic_with_propagate() -> None:
     T = TypeVar("T")
 
@@ -707,7 +704,6 @@ def test_generic_with_propagate() -> None:
     assert copy(obj, label="...").label == "..."
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="py38/py39 weirdness")
 def test_generic_with_propagate_type_checking() -> None:
     T = TypeVar("T")
 
@@ -745,7 +741,6 @@ def test_generic_with_propagate_type_checking() -> None:
         copy(valid_record, val4=4)
 
 
-@pytest.mark.xfail()
 def test_custom_subclass() -> None:
     @record_custom
     class Thing(IHaveNew):
@@ -756,9 +751,11 @@ def test_custom_subclass() -> None:
 
     assert Thing(val_short="abc").val == "abcabc"
 
-    @record
-    class SubThing(Thing):
-        other_val: int
+    with pytest.raises(
+        CheckError,
+        match=r"@record can not inherit from @record_custom",
+    ):
 
-    # this does not work, as we've overridden the wrong __new__
-    SubThing(other_val=1)
+        @record
+        class SubThing(Thing):
+            other_val: int
