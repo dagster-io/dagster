@@ -1,11 +1,51 @@
-from typing import AbstractSet, Optional
+from typing import AbstractSet, Any, List, Mapping, Optional
 
-from dagster import AssetKey, AssetSpec, external_asset_from_spec
-from dagster._core.definitions.definitions_class import Definitions
+from dagster import (
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    JsonMetadataValue,
+    UrlMetadataValue,
+    external_asset_from_spec,
+)
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
+from dagster_airlift.core.serialization.serialized_data import (
+    MappedAirflowTaskData,
+    SerializedAirflowDefinitionsData,
+)
+from dagster_airlift.core.utils import airflow_kind_dict
+
+
+def tags_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, str]:
+    all_not_migrated = all(not task.migrated for task in tasks)
+    # Only show the airflow kind if the asset is orchestrated exlusively by airflow
+    return airflow_kind_dict() if all_not_migrated else {}
+
+
+def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, Any]:
+    mapped_task = tasks[0]
+    task_info, migration_state = mapped_task.task_info, mapped_task.migrated
+    task_level_metadata = {
+        "Task Info (raw)": JsonMetadataValue(task_info.metadata),
+        # In this case,
+        "Dag ID": task_info.dag_id,
+        "Link to DAG": UrlMetadataValue(task_info.dag_url),
+    }
+    task_level_metadata[
+        "Computed in Task ID" if not migration_state else "Triggered by Task ID"
+    ] = task_info.task_id
+    return task_level_metadata
+
+
+def enrich_spec_with_airflow_metadata(
+    spec: AssetSpec, tasks: List[MappedAirflowTaskData]
+) -> AssetSpec:
+    return spec._replace(
+        tags={**spec.tags, **tags_for_mapped_tasks(tasks)},
+        metadata={**spec.metadata, **metadata_for_mapped_tasks(tasks)},
+    )
 
 
 @whitelist_for_serdes
@@ -16,8 +56,8 @@ class AirflowDefinitionsData:
 
     def map_airflow_data_to_spec(self, spec: AssetSpec) -> AssetSpec:
         """If there is airflow data applicable to the asset key, transform the spec and apply the data."""
-        existing_key_data = self.serialized_data.key_scope_data_map.get(spec.key)
-        return spec if not existing_key_data else existing_key_data.apply_to_spec(spec)
+        mapped_tasks = self.serialized_data.all_mapped_tasks.get(spec.key)
+        return enrich_spec_with_airflow_metadata(spec, mapped_tasks) if mapped_tasks else spec
 
     def construct_dag_assets_defs(self) -> Definitions:
         return Definitions(

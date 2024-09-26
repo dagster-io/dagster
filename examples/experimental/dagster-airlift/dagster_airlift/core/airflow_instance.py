@@ -9,6 +9,7 @@ import requests
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterError
 from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import get_current_datetime
 
 from dagster_airlift.migration_state import (
@@ -357,6 +358,7 @@ class DagInfo:
         return self.metadata["file_token"]
 
 
+@whitelist_for_serdes
 @record
 class TaskInfo:
     webserver_url: str

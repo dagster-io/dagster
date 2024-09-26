@@ -1,10 +1,25 @@
 from functools import cached_property
-from typing import AbstractSet, Any, List, Mapping, Optional, Sequence
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
 from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.merger import merge_dicts
+
+from dagster_airlift.core.airflow_instance import TaskInfo
+
+
+@whitelist_for_serdes
+class TaskHandle(NamedTuple):
+    dag_id: str
+    task_id: str
+
+
+@whitelist_for_serdes
+@record
+class MappedAirflowTaskData:
+    task_info: TaskInfo
+    task_handle: TaskHandle
+    migrated: Optional[bool]
 
 
 ###################################################################################################
@@ -65,7 +80,7 @@ class SerializedDagData:
 @record
 class KeyScopedDataItem:
     asset_key: AssetKey
-    data: "SerializedAssetKeyScopedAirflowData"
+    mapped_tasks: List[MappedAirflowTaskData]
 
 
 ###################################################################################################
@@ -83,8 +98,8 @@ class SerializedAirflowDefinitionsData:
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
-    def key_scope_data_map(self) -> Mapping[AssetKey, "SerializedAssetKeyScopedAirflowData"]:
-        return {item.asset_key: item.data for item in self.key_scoped_data_items}
+    def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
+        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
 
 
 # History:
@@ -96,23 +111,3 @@ class SerializedTaskHandleData:
 
     migration_state: Optional[bool]
     asset_keys_in_task: AbstractSet[AssetKey]
-
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetKeyScopedAirflowData:
-    """Additional data retrieved from airflow that once over the serialization boundary, we can combine with the original asset spec."""
-
-    additional_metadata: Mapping[str, Any]
-    additional_tags: Mapping[str, str]
-
-    def apply_to_spec(self, spec: AssetSpec) -> AssetSpec:
-        return AssetSpec(
-            key=spec.key,
-            description=spec.description,
-            metadata=merge_dicts(spec.metadata, self.additional_metadata),
-            tags=merge_dicts(spec.tags, self.additional_tags),
-            deps=spec.deps,
-        )

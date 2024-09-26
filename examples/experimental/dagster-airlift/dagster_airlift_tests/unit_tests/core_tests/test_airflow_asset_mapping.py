@@ -166,10 +166,11 @@ def test_fetched_airflow_data() -> None:
 
     assert fetched_airflow_data.migration_state_map == {"dag1": {"task1": True, "task2": False}}
 
-    airflow_data_by_key = fetched_airflow_data.airflow_data_by_key
-    assert airflow_data_by_key.keys() == {ak("asset1"), ak("asset2")}
-
-    assert "Dag ID" in fetched_airflow_data.airflow_data_by_key[ak("asset1")].additional_metadata
+    all_mapped_tasks = fetched_airflow_data.all_mapped_tasks
+    assert all_mapped_tasks.keys() == {ak("asset1"), ak("asset2")}
+    assert all_mapped_tasks[ak("asset1")][0].task_handle == TaskHandle(
+        dag_id="dag1", task_id="task1"
+    )
 
 
 def test_produce_fetched_airflow_data() -> None:

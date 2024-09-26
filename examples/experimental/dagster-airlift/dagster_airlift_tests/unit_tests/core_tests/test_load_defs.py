@@ -17,18 +17,13 @@ from dagster import (
     sensor,
 )
 from dagster._core.test_utils import environ
-from dagster._serdes.serdes import deserialize_value, serialize_value
+from dagster._serdes.serdes import deserialize_value
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.serialization.compute import compute_serialized_data, is_mapped_asset_spec
-from dagster_airlift.core.serialization.serialized_data import (
-    KeyScopedDataItem,
-    SerializedAirflowDefinitionsData,
-    SerializedAssetKeyScopedAirflowData,
-)
 from dagster_airlift.core.state_backed_defs_loader import (
     scoped_reconstruction_metadata,
     unwrap_reconstruction_metadata,
@@ -313,28 +308,6 @@ def test_local_airflow_instance() -> None:
         assert defs.assets
         repo_def = defs.get_repository_def()
         assert len(repo_def.assets_defs_by_key) == 2
-
-
-def test_serialization_roundtrip() -> None:
-    data = AirflowDefinitionsData(
-        instance_name="test_instance",
-        serialized_data=SerializedAirflowDefinitionsData(
-            key_scoped_data_items=[
-                KeyScopedDataItem(
-                    asset_key=AssetKey("a"),
-                    data=SerializedAssetKeyScopedAirflowData(
-                        additional_metadata={"foo": "bar"}, additional_tags={"baz": "qux"}
-                    ),
-                )
-            ],
-            dag_datas={},
-        ),
-    )
-
-    data_str = serialize_value(data)
-    assert isinstance(data_str, str)
-    deserialized_data = deserialize_value(data_str)
-    assert isinstance(deserialized_data, AirflowDefinitionsData)
 
 
 def test_cached_loading() -> None:
