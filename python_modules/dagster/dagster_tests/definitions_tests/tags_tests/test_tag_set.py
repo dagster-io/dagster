@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 import pydantic
 import pytest
@@ -15,7 +15,7 @@ def test_invalid_tag_set() -> None:
             return "dagster"
 
     with pytest.raises(
-        CheckError, match="Type annotation for field 'junk' is not str or Optional\\[str\\]"
+        CheckError, match="Type annotation for field 'junk' is not str, Optional\\[str\\]"
     ):
         MyJunkTagSet(junk=1)
 
@@ -34,6 +34,21 @@ def test_basic_tag_set_validation() -> None:
 
     with pytest.raises(pydantic.ValidationError):
         MyValidTagSet(foo="lorem", baz="ipsum")  # type: ignore
+
+
+def test_tag_set_with_literal() -> None:
+    class MyValidTagSet(NamespacedTagSet):
+        foo: Optional[Literal["apple", "banana"]] = None
+        bar: Optional[str] = None
+
+        @classmethod
+        def namespace(cls) -> str:
+            return "dagster"
+
+    MyValidTagSet(foo="apple")
+
+    with pytest.raises(pydantic.ValidationError):
+        MyValidTagSet(foo="lorem")  # type: ignore
 
 
 def test_basic_tag_set_functionality() -> None:
