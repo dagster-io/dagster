@@ -10,15 +10,15 @@ set -e
 
 cd ..
 
+export LC_ALL=C.UTF-8
+
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.cargo/env
 
+uv python install 3.11
 uv venv
 source .venv/bin/activate
 
-# Required as is locale is not set by default in Vercel runner
-export LC_ALL=C.UTF-8
-
 uv pip install tox
-make mdx
+uvx tox -e sphinx-mdx
 make mdx_copy
