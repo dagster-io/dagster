@@ -226,15 +226,23 @@ def _get_mapping_from_entity_subsets(
 ) -> _PartitionsDefKeyMapping:
     mapping: _PartitionsDefKeyMapping = defaultdict(set)
 
-    for subset in entity_subsets:
-        partitions_def = asset_graph.get(subset.key).partitions_def
+    entity_subsets_by_key = {es.key: es for es in entity_subsets}
+    for key in entity_subsets_by_key:
+        if isinstance(key, AssetCheckKey) and key.asset_key in entity_subsets_by_key:
+            # all asset checks are currently unpartitioned, so ensure that they get grouped
+            # into a run with the asset they check if that asset is being requested this
+            # tick
+            partitions_def = asset_graph.get(key.asset_key).partitions_def
+            subset = entity_subsets_by_key[key.asset_key]
+        else:
+            partitions_def = asset_graph.get(key).partitions_def
+            subset = entity_subsets_by_key[key]
+
         if partitions_def:
             for asset_partition in subset.expensively_compute_asset_partitions():
-                mapping[partitions_def, asset_partition.partition_key].add(
-                    asset_partition.asset_key
-                )
+                mapping[partitions_def, asset_partition.partition_key].add(key)
         else:
-            mapping[partitions_def, None].add(subset.key)
+            mapping[partitions_def, None].add(key)
 
     return mapping
 
@@ -278,7 +286,6 @@ def _build_run_requests_from_partitions_def_mapping(
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
         for entity_keys_for_repo in asset_graph.split_entity_keys_by_repository(entity_keys):
-            asset_check_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)]
             run_requests.append(
                 # Do not call run_request.with_resolved_tags_and_config as the partition key is
                 # valid and there is no config.
@@ -288,11 +295,9 @@ def _build_run_requests_from_partitions_def_mapping(
                     asset_selection=[k for k in entity_keys_for_repo if isinstance(k, AssetKey)],
                     partition_key=partition_key,
                     tags=tags,
-                    # for now, we explicitly set asset_check_keys to None if none are selected,
-                    # which allows for required asset check keys to be grouped as part of the
-                    # run if any exist, avoiding errors. however, this should actually be handled
-                    # in the AutomationConditionEvaluator class in the future.
-                    asset_check_keys=asset_check_keys if len(asset_check_keys) > 0 else None,
+                    asset_check_keys=[
+                        k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)
+                    ],
                 )
             )
 

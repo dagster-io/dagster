@@ -137,7 +137,7 @@ class AssetNode(BaseAssetNode):
         )
 
     @property
-    def execution_set_asset_and_check_keys(self) -> AbstractSet[EntityKey]:
+    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
         if self.assets_def.can_subset:
             return {self.key}
         else:
@@ -279,7 +279,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
-            return self.get(entity_key).execution_set_asset_and_check_keys
+            return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
             assets_def = self._assets_defs_by_check_key[entity_key]
             return {entity_key} if assets_def.can_subset else assets_def.asset_and_check_keys

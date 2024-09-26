@@ -180,7 +180,7 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def execution_set_asset_and_check_keys(
+    def execution_set_entity_keys(
         self,
     ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]: ...
 
