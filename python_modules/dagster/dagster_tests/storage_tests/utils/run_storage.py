@@ -1730,6 +1730,37 @@ class TestRunStorage:
         )
         assert len(backfills_for_job) == 0
 
+    def test_backfill_id_filtering(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="fake",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+
+        backfills_for_id = self.get_backfills_and_assert_expected_count(
+            storage, BulkActionsFilter(backfill_ids=[backfill.backfill_id]), 1
+        )
+        assert backfills_for_id[0].backfill_id == backfill.backfill_id
+
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
 
