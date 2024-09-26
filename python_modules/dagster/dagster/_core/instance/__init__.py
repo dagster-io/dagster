@@ -81,7 +81,7 @@ from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import experimental_warning
+from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -1493,7 +1493,8 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(status, "status", DagsterRunStatus)
         check.opt_mapping_param(tags, "tags", key_type=str)
 
-        validated_tags = normalize_tags(tags, warn_on_deprecated_tags=False)
+        with disable_dagster_warnings():
+            validated_tags = normalize_tags(tags)
 
         check.opt_str_param(root_run_id, "root_run_id")
         check.opt_str_param(parent_run_id, "parent_run_id")

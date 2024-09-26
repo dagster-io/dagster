@@ -27,7 +27,6 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import ExternalSchedule
@@ -942,13 +941,10 @@ def _create_scheduler_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    tags = merge_dicts(
-        normalize_tags(
-            external_job.run_tags, allow_reserved_tags=False, warn_on_deprecated_tags=False
-        )
-        or {},
-        schedule_tags,
-    )
+    tags = {
+        **external_job.run_tags,
+        **schedule_tags,
+    }
 
     tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time.astimezone(datetime.timezone.utc).isoformat()
     if run_request.run_key:

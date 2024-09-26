@@ -161,7 +161,6 @@ def struct_to_string(name: str, **kwargs: object) -> str:
 def normalize_tags(
     tags: Optional[Mapping[str, Any]],
     allow_reserved_tags: bool = True,
-    warn_on_deprecated_tags: bool = True,
     warning_stacklevel: int = 4,
 ) -> Mapping[str, str]:
     """Normalizes JSON-object tags into string tags and warns on deprecated tags.
@@ -199,12 +198,11 @@ def normalize_tags(
 
     if invalid_tag_keys:
         invalid_tag_keys_sample = invalid_tag_keys[: min(5, len(invalid_tag_keys))]
-        if warn_on_deprecated_tags:
-            warnings.warn(
-                f"Non-compliant tag keys like {invalid_tag_keys_sample} are deprecated. {VALID_DEFINITION_TAG_KEY_EXPLANATION}",
-                category=DeprecationWarning,
-                stacklevel=warning_stacklevel,
-            )
+        warnings.warn(
+            f"Non-compliant tag keys like {invalid_tag_keys_sample} are deprecated. {VALID_DEFINITION_TAG_KEY_EXPLANATION}",
+            category=DeprecationWarning,
+            stacklevel=warning_stacklevel,
+        )
 
     if not allow_reserved_tags:
         check_reserved_tags(valid_tags)
