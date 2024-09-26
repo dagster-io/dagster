@@ -1,3 +1,5 @@
+from typing import Callable
+
 from dagster import (
     AssetKey,
     PartitionsDefinition,
@@ -9,7 +11,7 @@ from dagster._time import get_timezone
 from dagster_airlift.core.airflow_instance import TaskInstance
 
 
-def get_partition_key_from_task_instance(
+def default_partition_key_from_task_instance(
     partitions_def: PartitionsDefinition, task_instance: TaskInstance, asset_key: AssetKey
 ) -> str:
     partitions_def = check.inst(
@@ -51,3 +53,6 @@ def get_partition_key_from_task_instance(
         ),
     )
     return partitions_def.get_partition_key_for_timestamp(logical_date.timestamp())
+
+
+PartitionResolverFn = Callable[[PartitionsDefinition, TaskInstance, AssetKey], str]

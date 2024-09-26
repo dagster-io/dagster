@@ -26,7 +26,7 @@ from dagster._time import datetime_from_timestamp, get_current_datetime, get_cur
 
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.partition_utils import get_partition_key_from_task_instance
+from dagster_airlift.core.partition_utils import PartitionResolverFn
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
@@ -46,6 +46,7 @@ class AirflowPollingSensorCursor:
 def build_airflow_polling_sensor(
     airflow_instance: AirflowInstance,
     airflow_data: AirflowDefinitionsData,
+    partition_resolver: PartitionResolverFn,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> SensorDefinition:
     @sensor(
@@ -80,6 +81,7 @@ def build_airflow_polling_sensor(
             offset=current_dag_offset,
             airflow_instance=airflow_instance,
             airflow_data=airflow_data,
+            partition_resolver=partition_resolver,
         )
         all_materializations: List[Tuple[float, AssetMaterialization]] = []
         all_check_keys: Set[AssetCheckKey] = set()
@@ -137,6 +139,7 @@ def materializations_and_requests_from_batch_iter(
     offset: int,
     airflow_instance: AirflowInstance,
     airflow_data: AirflowDefinitionsData,
+    partition_resolver: PartitionResolverFn,
 ) -> Iterator[Optional[BatchResult]]:
     runs = airflow_instance.get_dag_runs_batch(
         dag_ids=list(airflow_data.all_dag_ids),
@@ -196,11 +199,7 @@ def materializations_and_requests_from_batch_iter(
             for asset_key in asset_keys:
                 spec = repo_def.assets_defs_by_key[asset_key].get_asset_spec(asset_key)
                 partition_key = (
-                    get_partition_key_from_task_instance(
-                        partitions_def=spec.partitions_def,
-                        task_instance=task_run,
-                        asset_key=asset_key,
-                    )
+                    partition_resolver(spec.partitions_def, task_run, asset_key)
                     if spec.partitions_def
                     else None
                 )

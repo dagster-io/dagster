@@ -9,7 +9,9 @@ from dagster import (
     AssetSpec,
     DailyPartitionsDefinition,
     Definitions,
+    PartitionsDefinition,
     SensorResult,
+    StaticPartitionsDefinition,
     asset_check,
     build_sensor_context,
 )
@@ -18,6 +20,7 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
 from dagster_airlift.core import dag_defs, task_defs
+from dagster_airlift.core.airflow_instance import TaskInstance
 from dagster_airlift.core.load_defs import build_defs_from_airflow_instance
 from dagster_airlift.core.sensor import AirflowPollingSensorCursor
 from dagster_airlift.test.airflow_test_instance import make_dag_run, make_instance
@@ -598,3 +601,99 @@ def test_partition_offset_mismatch(init_load_context: None) -> None:
         assert isinstance(a_asset_mat, AssetMaterialization)
         # We expect the partition to match the logical date.
         assert a_asset_mat.partition == "2021-01-01"
+
+
+def test_partition_resolver_pluggability(init_load_context: None) -> None:
+    """Test pluggability of partition resolver."""
+
+    def custom_partition_resolver(
+        partitions_def: PartitionsDefinition, task_instance: TaskInstance, asset_key: AssetKey
+    ) -> str:
+        if task_instance.dag_id == "dag1":
+            return "partition1"
+        elif task_instance.dag_id == "dag2":
+            return "partition2"
+
+        raise Exception("Unexpected dag id")
+
+    partitions_def = StaticPartitionsDefinition(["partition1", "partition2"])
+    defs = build_defs_from_airflow_instance(
+        partition_resolver=custom_partition_resolver,
+        airflow_instance=make_instance(
+            dag_and_task_structure={
+                "dag1": ["task"],
+                "dag2": ["task"],
+            },
+            dag_runs=[
+                make_dag_run(
+                    dag_id="dag1",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                    end_date=datetime(2021, 1, 1, 0, 59, tzinfo=timezone.utc),
+                    logical_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                ),
+                make_dag_run(
+                    dag_id="dag2",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                    # Ensure that dag2 run is reliably after dag1 run.
+                    end_date=datetime(2021, 1, 1, 1, tzinfo=timezone.utc),
+                    logical_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                ),
+            ],
+        ),
+        defs=Definitions.merge(
+            dag_defs(
+                "dag1",
+                task_defs(
+                    "task",
+                    Definitions(
+                        assets=[
+                            AssetSpec(
+                                key="a",
+                                partitions_def=partitions_def,
+                            ),
+                        ],
+                    ),
+                ),
+            ),
+            dag_defs(
+                "dag2",
+                task_defs(
+                    "task",
+                    Definitions(
+                        assets=[
+                            AssetSpec(
+                                key="b",
+                                partitions_def=partitions_def,
+                            ),
+                        ],
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 1, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(repository_def=defs.get_repository_def())
+        result = sensor(sensor_context)
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 4
+        assert_expected_key_order(
+            result.asset_events,
+            ["a", "airflow_instance/dag/dag1", "b", "airflow_instance/dag/dag2"],
+        )
+        a_asset_mat = result.asset_events[0]
+        assert isinstance(a_asset_mat, AssetMaterialization)
+        assert a_asset_mat.partition == "partition1"
+        dag1_mat = result.asset_events[1]
+        assert isinstance(dag1_mat, AssetMaterialization)
+        assert dag1_mat.partition is None
+        b_asset_mat = result.asset_events[2]
+        assert isinstance(b_asset_mat, AssetMaterialization)
+        assert b_asset_mat.partition == "partition2"
+        dag2_mat = result.asset_events[3]
+        assert isinstance(dag2_mat, AssetMaterialization)
+        assert dag2_mat.partition is None

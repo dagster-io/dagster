@@ -13,6 +13,10 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.partition_utils import (
+    PartitionResolverFn,
+    default_partition_key_from_task_instance,
+)
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor,
@@ -29,6 +33,7 @@ def _metadata_key(instance_name: str) -> str:
 class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsData]):
     airflow_instance: AirflowInstance
     explicit_defs: Definitions
+    partition_resolver: PartitionResolverFn
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
 
     @property
@@ -49,6 +54,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsD
             self.explicit_defs,
             self.airflow_instance,
             self.sensor_minimum_interval_seconds,
+            self.partition_resolver,
         )
 
 
@@ -58,12 +64,14 @@ def build_defs_from_airflow_instance(
     airflow_instance: AirflowInstance,
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    partition_resolver: PartitionResolverFn = default_partition_key_from_task_instance,
 ) -> Definitions:
     defs = defs or Definitions()
     return AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         explicit_defs=defs,
         sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
+        partition_resolver=partition_resolver,
     ).build_defs()
 
 
@@ -72,6 +80,7 @@ def definitions_from_airflow_data(
     defs: Definitions,
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int,
+    partition_resolver: PartitionResolverFn,
 ) -> Definitions:
     assets_defs = construct_all_assets(
         definitions=defs,
@@ -82,6 +91,7 @@ def definitions_from_airflow_data(
         assets_defs,
         airflow_instance,
         sensor_minimum_interval_seconds,
+        partition_resolver,
         airflow_data=airflow_data,
     )
 
@@ -91,12 +101,14 @@ def defs_with_assets_and_sensor(
     assets_defs: List[AssetsDefinition],
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int,
+    partition_resolver: PartitionResolverFn,
     airflow_data: AirflowDefinitionsData,
 ) -> Definitions:
     airflow_sensor = build_airflow_polling_sensor(
         airflow_instance=airflow_instance,
         minimum_interval_seconds=sensor_minimum_interval_seconds,
         airflow_data=airflow_data,
+        partition_resolver=partition_resolver,
     )
     return Definitions(
         assets=assets_defs,
