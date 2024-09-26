@@ -101,9 +101,6 @@ class TestRunStorage:
     # Override for storages that support filtering backfills by backfill id
     def supports_backfill_id_filtering_queries(self):
         return False
-    def assert_results_match_count_match_expected(results, count, expected):
-        assert len(results) == count
-        assert count == expected
 
     def get_backfills_and_assert_expected_count(self, storage, filters, expected_count):
         backfills = storage.get_backfills(filters)
