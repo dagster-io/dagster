@@ -468,7 +468,7 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
     padding-top: 2px;
   }
 
-  &&.bp4-tag-input.bp4-active {
+  &&.bp5-tag-input.bp5-active {
     background-color: ${Colors.backgroundDefault()};
     color: ${Colors.textDefault()};
     box-shadow:
@@ -476,20 +476,20 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
       ${Colors.focusRing()} 0 0 0 3px;
   }
 
-  && .bp4-tag-input-values:first-child .bp4-input-ghost:first-child {
+  && .bp5-tag-input-values:first-child .bp5-input-ghost:first-child {
     padding-left: 8px;
   }
 
-  && .bp4-tag-input-values {
+  && .bp5-tag-input-values {
     margin-right: 4px;
     margin-top: 4px;
   }
 
-  && .bp4-tag-input-values > * {
+  && .bp5-tag-input-values > * {
     margin-bottom: 4px;
   }
 
-  .bp4-tag {
+  .bp5-tag {
     border-radius: 6px;
     display: inline-flex;
     flex-direction: row;
@@ -504,22 +504,22 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
     user-select: none;
   }
 
-  .bp4-tag.bp4-minimal:not([class*='bp4-intent-']) {
+  .bp5-tag.bp5-minimal:not([class*='bp5-intent-']) {
     background-color: ${Colors.backgroundGray()};
     color: ${Colors.textDefault()};
   }
 
-  .bp4-tag.bp4-minimal.bp4-intent-success {
+  .bp5-tag.bp5-minimal.bp5-intent-success {
     background-color: ${Colors.backgroundGreen()};
     color: ${Colors.textGreen()};
   }
 
-  .bp4-tag.bp4-minimal.bp4-intent-warning {
+  .bp5-tag.bp5-minimal.bp5-intent-warning {
     background-color: ${Colors.backgroundYellow()};
     color: ${Colors.textYellow()};
   }
 
-  .bp4-tag.bp4-minimal.bp4-intent-danger {
+  .bp5-tag.bp5-minimal.bp5-intent-danger {
     background-color: ${Colors.backgroundRed()};
     color: ${Colors.textRed()};
   }

@@ -23,9 +23,9 @@
     "build-storybook": "storybook build"
   },
   "peerDependencies": {
-    "@blueprintjs/core": "^4.20.2",
-    "@blueprintjs/popover2": "1.13.12",
-    "@blueprintjs/select": "^4.9.12",
+    "@blueprintjs/core": "^5",
+    "@blueprintjs/popover2": "^2",
+    "@blueprintjs/select": "^5",
     "@tanstack/react-virtual": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
