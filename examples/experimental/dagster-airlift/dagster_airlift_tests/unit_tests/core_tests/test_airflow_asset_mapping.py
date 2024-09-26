@@ -13,7 +13,7 @@ from dagster_airlift.core.serialization.compute import (
 )
 from dagster_airlift.core.serialization.serialized_data import TaskInfo
 from dagster_airlift.core.utils import metadata_for_task_mapping
-from dagster_airlift.migration_state import AirflowProxiedState, DagProxiedState, TaskProxiedState
+from dagster_airlift.proxied_state import AirflowProxiedState, DagProxiedState, TaskProxiedState
 from dagster_airlift.test import AirflowInstanceFake
 
 

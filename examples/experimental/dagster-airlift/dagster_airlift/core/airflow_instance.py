@@ -11,12 +11,12 @@ from dagster._record import record
 from dagster._time import get_current_datetime
 
 from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
-from dagster_airlift.migration_state import (
+from dagster_airlift.proxied_state import (
     AirflowProxiedState,
     DagProxiedState,
-    load_migration_state_from_yaml,
+    load_proxied_state_from_yaml,
 )
-from dagster_airlift.utils import get_local_migration_state_dir
+from dagster_airlift.utils import get_local_proxied_state_dir
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
@@ -86,16 +86,16 @@ class AirflowInstance:
             )
 
     def get_proxied_state(self) -> AirflowProxiedState:
-        local_migration_dir = get_local_migration_state_dir()
+        local_migration_dir = get_local_proxied_state_dir()
         if local_migration_dir is not None:
-            return load_migration_state_from_yaml(local_migration_dir)
+            return load_proxied_state_from_yaml(local_migration_dir)
         variables = self.list_variables()
         dag_dict = {}
         for var_dict in variables:
-            if var_dict["key"].endswith("_dagster_migration_state"):
-                dag_id = var_dict["key"].replace("_dagster_migration_state", "")
-                migration_dict = json.loads(var_dict["value"])
-                dag_dict[dag_id] = DagProxiedState.from_dict(migration_dict)
+            if var_dict["key"].endswith("_dagster_proxied_state"):
+                dag_id = var_dict["key"].replace("_dagster_proxied_state", "")
+                proxied_dict = json.loads(var_dict["value"])
+                dag_dict[dag_id] = DagProxiedState.from_dict(proxied_dict)
         return AirflowProxiedState(dags=dag_dict)
 
     def get_task_instance_batch(

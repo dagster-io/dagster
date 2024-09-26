@@ -54,7 +54,7 @@ class MappedAirflowTaskData:
     # remove if we keep it in SerializedDataData
     task_info: TaskInfo
     task_handle: TaskHandle
-    migrated: Optional[bool]
+    proxied: Optional[bool]
 
 
 ###################################################################################################

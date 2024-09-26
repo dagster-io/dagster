@@ -1,5 +1,5 @@
 tasks: 
   - id: some_task 
-    migrated: True
+    proxied: True
   - id: other_task 
-    migrated: False
+    proxied: False

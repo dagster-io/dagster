@@ -169,11 +169,11 @@ def materializations_and_requests_from_batch_iter(
         task_instances = airflow_instance.get_task_instance_batch(
             run_id=dag_run.run_id,
             dag_id=dag_run.dag_id,
-            # We need to make sure to ignore tasks that have already been migrated.
+            # We need to make sure to ignore tasks that have already been proxied.
             task_ids=[
                 task_id
                 for task_id in airflow_data.task_ids_in_dag(dag_run.dag_id)
-                if not airflow_data.migration_state_for_task(dag_run.dag_id, task_id)
+                if not airflow_data.proxied_state_for_task(dag_run.dag_id, task_id)
             ],
             states=["success"],
         )

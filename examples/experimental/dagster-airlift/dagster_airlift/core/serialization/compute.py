@@ -23,7 +23,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     TaskInfo,
 )
 from dagster_airlift.core.utils import spec_iterator
-from dagster_airlift.migration_state import AirflowProxiedState
+from dagster_airlift.proxied_state import AirflowProxiedState
 
 
 @record
@@ -131,7 +131,7 @@ class FetchedAirflowData:
                 MappedAirflowTaskData(
                     task_handle=task_handle,
                     task_info=self.task_info_map[task_handle.dag_id][task_handle.task_id],
-                    migrated=self.proxied_state_map[task_handle.dag_id][task_handle.task_id],
+                    proxied=self.proxied_state_map[task_handle.dag_id][task_handle.task_id],
                 )
                 for task_handle in task_handles_for_spec(spec)
             ]

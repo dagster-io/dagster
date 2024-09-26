@@ -44,7 +44,7 @@ from dagster_airlift.core.state_backed_defs_loader import (
 )
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.test import make_instance
-from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
+from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
@@ -313,8 +313,8 @@ def test_local_airflow_instance() -> None:
 
     with environ(
         {
-            DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR: str(
-                Path(__file__).parent / "migration_state_for_sqlite_test"
+            DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR: str(
+                Path(__file__).parent / "proxied_state_for_sqlite_test"
             ),
         }
     ):

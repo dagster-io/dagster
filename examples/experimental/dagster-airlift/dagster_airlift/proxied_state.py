@@ -10,16 +10,16 @@ class TaskProxiedState(NamedTuple):
 
     @staticmethod
     def from_dict(task_dict: Dict[str, Any]) -> "TaskProxiedState":
-        if set(task_dict.keys()) != {"id", "migrated"}:
+        if set(task_dict.keys()) != {"id", "proxied"}:
             raise Exception(
-                f"Expected 'migrated' and 'id' keys in the task dictionary. Found keys: {task_dict.keys()}"
+                f"Expected 'proxied' and 'id' keys in the task dictionary. Found keys: {task_dict.keys()}"
             )
-        if task_dict["migrated"] not in [True, False]:
-            raise Exception("Expected 'migrated' key to be a boolean")
-        return TaskProxiedState(task_id=task_dict["id"], proxied=task_dict["migrated"])
+        if task_dict["proxied"] not in [True, False]:
+            raise Exception("Expected 'proxied' key to be a boolean")
+        return TaskProxiedState(task_id=task_dict["id"], proxied=task_dict["proxied"])
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"id": self.task_id, "migrated": self.proxied}
+        return {"id": self.task_id, "proxied": self.proxied}
 
 
 class DagProxiedState(NamedTuple):
@@ -67,7 +67,7 @@ class AirflowProxiedState(NamedTuple):
             return None
         return {
             "tasks": [
-                {"migrated": task_state.proxied, "id": task_id}
+                {"proxied": task_state.proxied, "id": task_id}
                 for task_id, task_state in self.dags[dag_id].tasks.items()
             ]
         }
@@ -84,13 +84,13 @@ class ProxiedStateParsingError(Exception):
     pass
 
 
-def load_migration_state_from_yaml(migration_yaml_path: Path) -> AirflowProxiedState:
-    # Expect migration_yaml_path to be a directory, where each file represents a dag, and each
+def load_proxied_state_from_yaml(proxied_yaml_path: Path) -> AirflowProxiedState:
+    # Expect proxied_yaml_path to be a directory, where each file represents a dag, and each
     # file in the subdir represents a task. The dictionary for each task should contain two keys;
-    # id: the task id, and migrated: a boolean indicating whether the task has been migrated.
+    # id: the task id, and proxied: a boolean indicating whether the task has been proxied.
     dag_proxied_states = {}
     try:
-        for dag_file in migration_yaml_path.iterdir():
+        for dag_file in proxied_yaml_path.iterdir():
             # Check that the file is a yaml file or yml file
             if dag_file.suffix not in [".yaml", ".yml"]:
                 continue

@@ -11,47 +11,47 @@ from dagster_airlift.in_airflow.base_proxy_operator import (
     DefaultProxyToDagsterOperator,
     build_dagster_task,
 )
-from dagster_airlift.migration_state import AirflowProxiedState, DagProxiedState
-from dagster_airlift.utils import get_local_migration_state_dir
+from dagster_airlift.proxied_state import AirflowProxiedState, DagProxiedState
+from dagster_airlift.utils import get_local_proxied_state_dir
 
 
-def mark_as_dagster_migrating(
+def proxying_to_dagster(
     *,
     global_vars: Dict[str, Any],
-    migration_state: AirflowProxiedState,
+    proxied_state: AirflowProxiedState,
     logger: Optional[logging.Logger] = None,
     dagster_operator_klass: Type[BaseProxyToDagsterOperator] = DefaultProxyToDagsterOperator,
 ) -> None:
-    """Alters all airflow dags in the current context to be marked as migrating to dagster.
-    Uses a migration dictionary to determine the status of the migration for each task within each dag.
+    """Uses passed-in dictionary to alter dags and tasks to proxy to dagster.
+    Uses a proxied dictionary to determine the proxied status for each task within each dag.
     Should only ever be the last line in a dag file.
 
     Args:
         global_vars (Dict[str, Any]): The global variables in the current context. In most cases, retrieved with `globals()` (no import required).
             This is equivalent to what airflow already does to introspect the dags which exist in a given module context:
             https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html#loading-dags
-        migration_state (AirflowMigrationState): The migration state for the dags.
+        proxied_state (AirflowMigrationState): The proxied state for the dags.
         logger (Optional[logging.Logger]): The logger to use. Defaults to logging.getLogger("dagster_airlift").
     """
     caller_module = global_vars.get("__module__")
     suffix = f" in module `{caller_module}`" if caller_module else ""
     if not logger:
         logger = logging.getLogger("dagster_airlift")
-    logger.debug(f"Searching for dags migrating to dagster{suffix}...")
-    migrating_dags: List[DAG] = []
+    logger.debug(f"Searching for dags proxied to dagster{suffix}...")
+    proxying_dags: List[DAG] = []
     all_dag_ids: Set[str] = set()
-    # Do a pass to collect dags and ensure that migration information is set correctly.
+    # Do a pass to collect dags and ensure that proxied information is set correctly.
     for obj in global_vars.values():
         if not isinstance(obj, DAG):
             continue
         dag: DAG = obj
         all_dag_ids.add(dag.dag_id)
-        if not migration_state.dag_has_proxied_state(dag.dag_id):
-            logger.debug(f"Dag with id `{dag.dag_id}` has no migration state. Skipping...")
+        if not proxied_state.dag_has_proxied_state(dag.dag_id):
+            logger.debug(f"Dag with id `{dag.dag_id}` has no proxied state. Skipping...")
             continue
-        logger.debug(f"Dag with id `{dag.dag_id}` has migration state.")
-        migration_state_for_dag = migration_state.dags[dag.dag_id]
-        for task_id in migration_state_for_dag.tasks.keys():
+        logger.debug(f"Dag with id `{dag.dag_id}` has proxied state.")
+        proxied_state_for_dag = proxied_state.dags[dag.dag_id]
+        for task_id in proxied_state_for_dag.tasks.keys():
             if task_id not in dag.task_dict:
                 raise Exception(
                     f"Task with id `{task_id}` not found in dag `{dag.dag_id}`. Found tasks: {list(dag.task_dict.keys())}"
@@ -60,34 +60,34 @@ def mark_as_dagster_migrating(
                 raise Exception(
                     f"Task with id `{task_id}` in dag `{dag.dag_id}` is not an instance of BaseOperator. This likely means a MappedOperator was attempted, which is not yet supported by airlift."
                 )
-        migrating_dags.append(dag)
+        proxying_dags.append(dag)
 
     if len(all_dag_ids) == 0:
         raise Exception(
-            "No dags found in globals dictionary. Ensure that your dags are available from global context, and that the call to mark_as_dagster_migrating is the last line in your dag file."
+            "No dags found in globals dictionary. Ensure that your dags are available from global context, and that the call to `proxying_to_dagster` is the last line in your dag file."
         )
 
-    for dag in migrating_dags:
-        logger.debug(f"Tagging dag {dag.dag_id} as migrating.")
-        set_migration_state_for_dag_if_changed(dag.dag_id, migration_state.dags[dag.dag_id], logger)
-        migration_state_for_dag = migration_state.dags[dag.dag_id]
-        num_migrated_tasks = len(
+    for dag in proxying_dags:
+        logger.debug(f"Tagging dag {dag.dag_id} as proxied.")
+        set_proxied_state_for_dag_if_changed(dag.dag_id, proxied_state.dags[dag.dag_id], logger)
+        proxied_state_for_dag = proxied_state.dags[dag.dag_id]
+        num_proxied_tasks = len(
             [
                 task_id
-                for task_id, task_state in migration_state_for_dag.tasks.items()
+                for task_id, task_state in proxied_state_for_dag.tasks.items()
                 if task_state.proxied
             ]
         )
-        task_possessive = "Task" if num_migrated_tasks == 1 else "Tasks"
+        task_possessive = "Task" if num_proxied_tasks == 1 else "Tasks"
         dag.tags = [
             *dag.tags,
-            f"{num_migrated_tasks} {task_possessive} Marked as Migrating to Dagster",
+            f"{num_proxied_tasks} {task_possessive} Marked as Proxied to Dagster",
         ]
-        migrated_tasks = set()
-        for task_id, task_state in migration_state_for_dag.tasks.items():
+        proxied_tasks = set()
+        for task_id, task_state in proxied_state_for_dag.tasks.items():
             if not task_state.proxied:
                 logger.debug(
-                    f"Task {task_id} in dag {dag.dag_id} has `migrated` set to False. Skipping..."
+                    f"Task {task_id} in dag {dag.dag_id} has `proxied` set to False. Skipping..."
                 )
                 continue
 
@@ -106,40 +106,40 @@ def mark_as_dagster_migrating(
             new_op.downstream_task_ids = original_op.downstream_task_ids
             new_op.dag = original_op.dag
             original_op.dag = None
-            migrated_tasks.add(task_id)
-        logger.debug(f"Migrated tasks {migrated_tasks} in dag {dag.dag_id}.")
-    logging.debug(f"Migrated {len(migrating_dags)}.")
-    logging.debug(f"Completed marking dags and tasks as migrating to dagster{suffix}.")
+            proxied_tasks.add(task_id)
+        logger.debug(f"Proxied tasks {proxied_tasks} in dag {dag.dag_id}.")
+    logging.debug(f"Proxied {len(proxying_dags)}.")
+    logging.debug(f"Completed switching proxied tasks to dagster{suffix}.")
 
 
-def set_migration_state_for_dag_if_changed(
-    dag_id: str, migration_state: DagProxiedState, logger: logging.Logger
+def set_proxied_state_for_dag_if_changed(
+    dag_id: str, proxied_state: DagProxiedState, logger: logging.Logger
 ) -> None:
-    if get_local_migration_state_dir():
+    if get_local_proxied_state_dir():
         logger.info(
-            "Executing in local mode. Not setting migration state in airflow metadata database, and instead expect dagster to be pointed at migration state via DAGSTER_AIRLIFT_MIGRATION_STATE_DIR env var."
+            "Executing in local mode. Not setting proxied state in airflow metadata database, and instead expect dagster to be pointed at proxied state via DAGSTER_AIRLIFT_PROXIED_STATE_DIR env var."
         )
         return
     else:
-        prev_migration_state = get_migration_var_for_dag(dag_id)
-        if prev_migration_state is None or prev_migration_state != migration_state:
+        prev_proxied_state = get_proxied_state_var_for_dag(dag_id)
+        if prev_proxied_state is None or prev_proxied_state != proxied_state:
             logger.info(
-                f"Migration state for dag {dag_id} has changed. Setting migration state in airflow metadata database via Variable."
+                f"Migration state for dag {dag_id} has changed. Setting proxied state in airflow metadata database via Variable."
             )
-            set_migration_var_for_dag(dag_id, migration_state)
+            set_proxied_state_var_for_dag(dag_id, proxied_state)
 
 
-def get_migration_var_for_dag(dag_id: str) -> Optional[DagProxiedState]:
-    migration_var = Variable.get(f"{dag_id}_dagster_migration_state", None)
-    if not migration_var:
+def get_proxied_state_var_for_dag(dag_id: str) -> Optional[DagProxiedState]:
+    proxied_var = Variable.get(f"{dag_id}_dagster_proxied_state", None)
+    if not proxied_var:
         return None
-    return DagProxiedState.from_dict(json.loads(migration_var))
+    return DagProxiedState.from_dict(json.loads(proxied_var))
 
 
-def set_migration_var_for_dag(dag_id: str, migration_state: DagProxiedState) -> None:
+def set_proxied_state_var_for_dag(dag_id: str, proxied_state: DagProxiedState) -> None:
     with create_session() as session:
         Variable.set(
-            key=f"{dag_id}_dagster_migration_state",
-            value=json.dumps(migration_state.to_dict()),
+            key=f"{dag_id}_dagster_proxied_state",
+            value=json.dumps(proxied_state.to_dict()),
             session=session,
         )

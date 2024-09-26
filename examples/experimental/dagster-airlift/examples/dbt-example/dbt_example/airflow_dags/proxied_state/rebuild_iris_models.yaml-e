@@ -1,5 +1,5 @@
 tasks:
   - id: load_iris 
-    migrated: False 
+    proxied: True 
   - id: build_dbt_models
-    migrated: False
+    proxied: True
