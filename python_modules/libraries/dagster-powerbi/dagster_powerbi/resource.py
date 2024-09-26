@@ -1,22 +1,14 @@
 import abc
 import re
 import time
+from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, Optional, Type, cast
 
 import requests
-from dagster import (
-    AssetsDefinition,
-    ConfigurableResource,
-    Definitions,
-    external_assets_from_specs,
-    multi_asset,
-)
+from dagster import ConfigurableResource, Definitions, external_assets_from_specs, multi_asset
 from dagster._config.pythonic_config.resource import ResourceDependency
-from dagster._core.definitions.definitions_load_context import (
-    DefinitionsLoadContext,
-    DefinitionsLoadType,
-)
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.events import Failure
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
@@ -273,72 +265,68 @@ class PowerBIWorkspace(ConfigurableResource):
         Returns:
             Definitions: A Definitions object which will build and return the Power BI content.
         """
-        context = DefinitionsLoadContext.get()
+        return PowerBIWorkspaceDefsLoader(
+            workspace=self,
+            translator_cls=dagster_powerbi_translator,
+            enable_refresh_semantic_models=enable_refresh_semantic_models,
+        ).build_defs()
 
-        metadata_key = f"{POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace_id}"
-        if (
-            context.load_type == DefinitionsLoadType.RECONSTRUCTION
-            and metadata_key in context.reconstruction_metadata
-        ):
-            workspace_data = context.reconstruction_metadata[metadata_key]
+
+@dataclass
+class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceData]):
+    workspace: PowerBIWorkspace
+    translator_cls: Type[DagsterPowerBITranslator]
+    enable_refresh_semantic_models: bool
+
+    @property
+    def defs_key(self) -> str:
+        return f"{POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.workspace_id}"
+
+    def fetch_state(self) -> PowerBIWorkspaceData:
+        with self.workspace.process_config_and_initialize_cm() as initialized_workspace:
+            return initialized_workspace.fetch_powerbi_workspace_data()
+
+    def defs_from_state(self, state: PowerBIWorkspaceData) -> Definitions:
+        translator = self.translator_cls(context=state)
+
+        if self.enable_refresh_semantic_models:
+            all_external_data = [
+                *state.dashboards_by_id.values(),
+                *state.reports_by_id.values(),
+            ]
+            all_executable_data = [*state.semantic_models_by_id.values()]
         else:
-            with self.process_config_and_initialize_cm() as initialized_workspace:
-                workspace_data = initialized_workspace.fetch_powerbi_workspace_data()
+            all_external_data = [
+                *state.dashboards_by_id.values(),
+                *state.reports_by_id.values(),
+                *state.semantic_models_by_id.values(),
+            ]
+            all_executable_data = []
 
-        assets_defs = _build_assets_defs_from_workspace_data(
-            workspace_data,
-            self,
-            DagsterPowerBITranslator,
-            enable_refresh_semantic_models,
-        )
-        return Definitions(assets=assets_defs).with_reconstruction_metadata(
-            {metadata_key: workspace_data}
-        )
-
-
-def _build_assets_defs_from_workspace_data(
-    workspace_data: PowerBIWorkspaceData,
-    workspace: PowerBIWorkspace,
-    translator_cls: Type[DagsterPowerBITranslator],
-    enable_refresh_semantic_models: bool,
-) -> Sequence[AssetsDefinition]:
-    translator = translator_cls(context=workspace_data)
-
-    if enable_refresh_semantic_models:
-        all_external_data = [
-            *workspace_data.dashboards_by_id.values(),
-            *workspace_data.reports_by_id.values(),
+        all_external_asset_specs = [
+            translator.get_asset_spec(content) for content in all_external_data
         ]
-        all_executable_data = [*workspace_data.semantic_models_by_id.values()]
-    else:
-        all_external_data = [
-            *workspace_data.dashboards_by_id.values(),
-            *workspace_data.reports_by_id.values(),
-            *workspace_data.semantic_models_by_id.values(),
+        all_executable_asset_specs = [
+            translator.get_asset_spec(content) for content in all_executable_data
         ]
-        all_executable_data = []
 
-    all_external_asset_specs = [translator.get_asset_spec(content) for content in all_external_data]
-    all_executable_asset_specs = [
-        translator.get_asset_spec(content) for content in all_executable_data
-    ]
+        executable_assets = []
+        for content, spec in zip(all_executable_data, all_executable_asset_specs):
+            dataset_id = content.properties["id"]
+            resource_key = f"power_bi_{self.workspace.workspace_id.replace('-','_')}"
 
-    executable_assets = []
-    for content, spec in zip(all_executable_data, all_executable_asset_specs):
-        dataset_id = content.properties["id"]
-        resource_key = f"power_bi_{workspace.workspace_id.replace('-','_')}"
+            @multi_asset(
+                specs=[spec],
+                name="_".join(spec.key.path),
+                resource_defs={resource_key: self.workspace.get_resource_definition()},
+            )
+            def asset_fn(context: AssetExecutionContext) -> None:
+                power_bi = cast(PowerBIWorkspace, getattr(context.resources, resource_key))
+                power_bi.trigger_refresh(dataset_id)
+                power_bi.poll_refresh(dataset_id)
+                context.log.info("Refresh completed.")
 
-        @multi_asset(
-            specs=[spec],
-            name="_".join(spec.key.path),
-            resource_defs={resource_key: workspace.get_resource_definition()},
-        )
-        def asset_fn(context: AssetExecutionContext) -> None:
-            power_bi = cast(PowerBIWorkspace, getattr(context.resources, resource_key))
-            power_bi.trigger_refresh(dataset_id)
-            power_bi.poll_refresh(dataset_id)
-            context.log.info("Refresh completed.")
+            executable_assets.append(asset_fn)
 
-        executable_assets.append(asset_fn)
-
-    return [*external_assets_from_specs(all_external_asset_specs), *executable_assets]
+        assets_defs = [*external_assets_from_specs(all_external_asset_specs), *executable_assets]
+        return Definitions(assets=assets_defs)
