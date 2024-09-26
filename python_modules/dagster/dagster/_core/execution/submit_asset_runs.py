@@ -129,7 +129,9 @@ def _create_asset_run(
     if not run_request.asset_selection and not run_request.asset_check_keys:
         check.failed("Expected RunRequest to have an asset selection")
 
-    for i in range(EXECUTION_PLAN_CREATION_RETRIES + 1):
+    retries_remaining = EXECUTION_PLAN_CREATION_RETRIES
+
+    while True:
         should_retry = False
         execution_data = None
 
@@ -149,9 +151,12 @@ def _create_asset_run(
 
         except (DagsterInvalidSubsetError, DagsterUserCodeProcessError) as e:
             # Only retry on DagsterInvalidSubsetErrors raised within the code server
-            if isinstance(e, DagsterUserCodeProcessError) and not any(
-                error_info.cls_name == "DagsterInvalidSubsetError"
-                for error_info in e.user_code_process_error_infos
+            if retries_remaining == 0 or (
+                isinstance(e, DagsterUserCodeProcessError)
+                and not any(
+                    error_info.cls_name == "DagsterInvalidSubsetError"
+                    for error_info in e.user_code_process_error_infos
+                )
             ):
                 raise
 
@@ -179,14 +184,18 @@ def _create_asset_run(
                     *(run_request.asset_check_keys or []),
                 ]
             ):
-                logger.warning(
-                    f"Execution plan targeted the following keys: {execution_plan_entity_keys}, "
-                    "which did not include all assets / checks on the run request, "
-                    "possibly because the code server is out of sync with the daemon. The daemon "
-                    "periodically refreshes its representation of the workspace every "
-                    f"{RELOAD_WORKSPACE_INTERVAL} seconds - pausing long enough "
-                    "to ensure that that refresh will happen to bring them back in sync.",
-                )
+                failure_message = f"Execution plan targeted the following keys: {execution_plan_entity_keys}, which did not include all assets / checks on the run request"
+
+                if retries_remaining == 0:
+                    raise Exception(f"{failure_message}.")
+                else:
+                    logger.warning(
+                        f"{failure_message}, "
+                        "possibly because the code server is out of sync with the daemon. The daemon "
+                        "periodically refreshes its representation of the workspace every "
+                        f"{RELOAD_WORKSPACE_INTERVAL} seconds - pausing long enough "
+                        "to ensure that that refresh will happen to bring them back in sync.",
+                    )
 
                 should_retry = True
 
@@ -221,22 +230,19 @@ def _create_asset_run(
 
             return run
 
-        if i < EXECUTION_PLAN_CREATION_RETRIES:
-            # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
-            # at most once every interval
-            time.sleep(RELOAD_WORKSPACE_INTERVAL)
-            # Clear the execution plan cache as this data is no longer valid
-            run_request_execution_data_cache = {}
+        assert should_retry and retries_remaining > 0
+        retries_remaining = retries_remaining - 1
+        # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
+        # at most once every interval
+        time.sleep(RELOAD_WORKSPACE_INTERVAL)
+        # Clear the execution plan cache as this data is no longer valid
+        run_request_execution_data_cache = {}
 
-            # If the execution plan does not targets the asset selection, the asset graph
-            # likely is outdated and targeting the wrong job, refetch the asset
-            # graph from the workspace
-            workspace = workspace_process_context.create_request_context()
-            asset_graph = workspace.asset_graph
-
-    check.failed(
-        f"Failed to target asset selection {run_request.asset_selection} in run after retrying."
-    )
+        # If the execution plan does not targets the asset selection, the asset graph
+        # likely is outdated and targeting the wrong job, refetch the asset
+        # graph from the workspace
+        workspace = workspace_process_context.create_request_context()
+        asset_graph = workspace.asset_graph
 
 
 def submit_asset_run(
