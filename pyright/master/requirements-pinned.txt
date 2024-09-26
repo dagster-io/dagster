@@ -186,6 +186,7 @@ dbt-core==1.8.6
 dbt-duckdb==1.8.3
 -e examples/experimental/dagster-airlift/examples/dbt-example
 -e examples/experimental/dagster-airlift/examples/perf-harness
+-e examples/experimental/dagster-airlift/examples/kitchen-sink
 dbt-extractor==0.5.1
 dbt-semantic-interfaces==0.5.1
 debugpy==1.8.5
