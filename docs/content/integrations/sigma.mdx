@@ -34,9 +34,7 @@ Dagster can automatically load all datasets and workbooks ƒrom your Sigma works
 ```python file=/integrations/sigma/representing-sigma-assets.py
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
 
-from dagster import Definitions, EnvVar
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster import EnvVar
 
 resource = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
@@ -60,9 +58,7 @@ from dagster_sigma import (
     SigmaWorkbook,
 )
 
-from dagster import AssetSpec, Definitions, EnvVar
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster import AssetSpec, EnvVar
 
 resource = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
@@ -90,8 +86,6 @@ Definitions from multiple Sigma organizations can be combined by instantiating m
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
 
 from dagster import Definitions, EnvVar
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
 
 sales_team_organization = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,

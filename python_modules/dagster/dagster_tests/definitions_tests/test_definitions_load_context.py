@@ -6,7 +6,6 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.decorators.definitions_decorator import definitions
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.external_asset import external_assets_from_specs
@@ -22,10 +21,9 @@ from dagster._core.definitions.repository_definition.repository_definition impor
     RepositoryLoadData,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance_for_test import instance_for_test
-from dagster._utils import file_relative_path
+from dagster._utils.test.definitions import lazy_definitions
 
 FOO_INTEGRATION_SOURCE_KEY = "foo_integration"
 
@@ -56,8 +54,10 @@ def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str
     ).with_reconstruction_metadata({cache_key: payload})
 
 
-@definitions
-def metadata_defs(context: DefinitionsLoadContext):
+@lazy_definitions
+def metadata_defs():
+    context = DefinitionsLoadContext.get()
+
     @asset
     def regular_asset(): ...
 
@@ -99,32 +99,7 @@ def test_reconstruction_metadata():
 
     # Ensure we don't call the expensive fetch function when we have the data cached
     with patch(
-        "dagster_tests.definitions_tests.test_definitions_loader.fetch_foo_integration_asset_info"
-    ) as mock_fetch:
-        recon_repo_with_cache.get_definition()
-        mock_fetch.assert_not_called()
-
-
-def test_reconstruction_metadata_with_global_context():
-    defs_path = file_relative_path(__file__, "metadata_defs_global_context.py")
-
-    recon_repo = ReconstructableRepository.for_file(defs_path, "defs")
-    assert isinstance(recon_repo.get_definition(), RepositoryDefinition)
-
-    recon_repo_with_cache = recon_repo.with_repository_load_data(
-        RepositoryLoadData(
-            cacheable_asset_data={},
-            reconstruction_metadata={
-                f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": MetadataValue.code_location_reconstruction(
-                    fetch_foo_integration_asset_info(WORKSPACE_ID)
-                )
-            },
-        )
-    )
-
-    # Ensure we don't call the expensive fetch function when we have the data cached
-    with patch(
-        "dagster_tests.definitions_tests.test_definitions_loader.fetch_foo_integration_asset_info"
+        "dagster_tests.definitions_tests.test_definitions_load_context.fetch_foo_integration_asset_info"
     ) as mock_fetch:
         recon_repo_with_cache.get_definition()
         mock_fetch.assert_not_called()
@@ -137,30 +112,17 @@ def test_default_global_context():
     DefinitionsLoadContext.set(instance)
 
 
-def test_invoke_definitions_loader_with_context():
-    @definitions
-    def defs(context: DefinitionsLoadContext) -> Definitions:
-        return Definitions()
-
-    assert defs(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
-
-    with pytest.raises(DagsterInvalidInvocationError, match="requires a DefinitionsLoadContext"):
-        defs()
-
-
-def test_invoke_definitions_loader_no_context():
-    @definitions
+def test_invoke_lazy_definitions():
+    @lazy_definitions
     def defs() -> Definitions:
         return Definitions()
 
     assert defs()
 
-    with pytest.raises(DagsterInvalidInvocationError, match="Passed a DefinitionsLoadContext"):
-        defs(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
 
-
-@definitions
-def load_type_test_defs(context: DefinitionsLoadContext) -> Definitions:
+@lazy_definitions
+def load_type_test_defs() -> Definitions:
+    context = DefinitionsLoadContext.get()
     if not context.load_type == DefinitionsLoadType.INITIALIZATION:
         raise Exception("Unexpected load type")
 

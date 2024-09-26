@@ -3,13 +3,17 @@ import uuid
 import pytest
 import responses
 from dagster import materialize
+from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
-from dagster._utils import file_relative_path
 from dagster._utils.env import environ
+from dagster._utils.test.definitions import lazy_definitions
 from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.resource import BASE_API_URL, PowerBIToken
 
@@ -67,6 +71,22 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
     }
 
 
+@lazy_definitions
+def state_derived_defs_two_workspaces() -> Definitions:
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=EnvVar("FAKE_API_TOKEN")),
+        workspace_id="a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
+    )
+    resource_second_workspace = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=EnvVar("FAKE_API_TOKEN")),
+        workspace_id="c5322b8a-d7e1-42e8-be2b-a5e636ca3221",
+    )
+    return Definitions.merge(
+        resource.build_defs(),
+        resource_second_workspace.build_defs(),
+    )
+
+
 def test_two_workspaces(
     workspace_data_api_mocks: responses.RequestsMock,
     second_workspace_data_api_mocks: responses.RequestsMock,
@@ -74,10 +94,8 @@ def test_two_workspaces(
     with instance_for_test(), environ({"FAKE_API_TOKEN": uuid.uuid4().hex}):
         assert len(workspace_data_api_mocks.calls) == 0
 
-        from dagster_powerbi_tests.repos.pending_repo_two_workspaces import defs
-
         # first, we resolve the repository to generate our cached metadata
-        repository_def = defs.get_repository_def()
+        repository_def = state_derived_defs_two_workspaces().get_repository_def()
         assert len(workspace_data_api_mocks.calls) == 9
 
         # 3 PowerBI external assets from first workspace, 1 from second
@@ -135,14 +153,32 @@ def test_refreshable_semantic_model(
     assert result.success is success
 
 
-def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.RequestsMock) -> None:
+@lazy_definitions
+def state_derived_defs() -> Definitions:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id="a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
+    )
+    pbi_defs = resource.build_defs()
+
+    @asset
+    def my_materializable_asset(): ...
+
+    return Definitions.merge(
+        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
+        pbi_defs,
+    )
+
+
+def test_state_derived_defs(
+    workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
-        from dagster_powerbi_tests.repos.pending_repo import defs
-
         # first, we resolve the repository to generate our cached metadata
-        repository_def = defs.get_repository_def()
+        repository_def = state_derived_defs().get_repository_def()
         assert len(workspace_data_api_mocks.calls) == 5
 
         # 3 PowerBI external assets, one materializable asset
@@ -163,10 +199,7 @@ def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.Request
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data
 
-        recon_repo = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "repos/pending_repo.py"),
-            fn_name="defs",
-        )
+        recon_repo = ReconstructableRepository.for_file(__file__, fn_name="state_derived_defs")
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
         execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)

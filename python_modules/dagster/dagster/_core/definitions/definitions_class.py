@@ -725,8 +725,8 @@ class Definitions(IHaveNew):
     @experimental
     def with_reconstruction_metadata(self, state_metadata: Mapping[str, Any]) -> Self:
         """Add metadata to the Definitions object. This is typically used to cache data
-        loaded from some external API that is computed during execution of a DefinitionsLoader in a
-        code server. The cached data is then made available on the DefinitionsLoadContext during
+        loaded from some external API that is computed during initialization of a code server.
+        The cached data is then made available on the DefinitionsLoadContext during
         reconstruction of the same code location context (such as a run worker), allowing use of the
         cached data to avoid additional external API queries. Values must be JSON-serializable.
         """
