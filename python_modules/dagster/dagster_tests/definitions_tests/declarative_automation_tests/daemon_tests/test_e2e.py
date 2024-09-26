@@ -291,3 +291,18 @@ def test_cross_location_checks() -> None:
                 AssetCheckKey(AssetKey("processed_files"), "no_nulls")
             }
             assert len(runs[1].asset_selection or []) == 0
+
+
+def test_non_subsettable_check() -> None:
+    with get_workspace_request_context(
+        ["check_not_subsettable"]
+    ) as context, get_threadpool_executor() as executor:
+        time = get_current_datetime()
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+
+            # eager asset materializes
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].asset_selection == {AssetKey("asset_w_check")}
+            assert runs[0].asset_check_selection is None
