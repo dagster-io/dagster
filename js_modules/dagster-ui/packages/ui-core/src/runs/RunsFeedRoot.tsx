@@ -69,7 +69,9 @@ export function useRunsFeedEntries(filter: RunsFilter) {
       if (runs.runsFeedOrError.__typename !== 'RunsFeed') {
         return undefined;
       }
-      return runs.runsFeedOrError.connection.hasMore ? runs.runsFeedOrError.connection.cursor : undefined;
+      return runs.runsFeedOrError.connection.hasMore
+      ? runs.runsFeedOrError.connection.cursor
+      : undefined;
     },
     getResultArray: (data) => {
       if (!data || data.runsFeedOrError.__typename !== 'RunsFeed') {
