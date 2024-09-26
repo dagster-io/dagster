@@ -53,6 +53,7 @@ from dagster_graphql.schema import external
 from dagster_graphql.schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
+from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.dagster_types import (
@@ -276,6 +277,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
+    automationCondition = graphene.Field(GrapheneAutomationCondition)
     graphName = graphene.String()
     groupName = graphene.NonNull(graphene.String)
     owners = non_null_list(GrapheneAssetOwner)
@@ -919,6 +921,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GrapheneAutoMaterializePolicy]:
         if self._external_asset_node.auto_materialize_policy:
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
+        return None
+
+    def resolve_automationCondition(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAutoMaterializePolicy]:
+        if self._external_asset_node.automation_condition:
+            return GrapheneAutomationCondition(self._external_asset_node.automation_condition)
         return None
 
     def _sensor_targets_asset(

@@ -87,6 +87,9 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
@@ -1244,7 +1247,9 @@ def define_sensors():
 
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
+        asset_selection=AssetSelection.assets(
+            "fresh_diamond_bottom", "asset_with_automation_condition"
+        ),
     )
 
     return [
@@ -1792,6 +1797,10 @@ def asset_with_compute_storage_kinds():
     return 1
 
 
+@asset(automation_condition=AutomationCondition.eager())
+def asset_with_automation_condition() -> None: ...
+
+
 fresh_diamond_assets_job = define_asset_job(
     "fresh_diamond_assets_job", AssetSelection.assets(fresh_diamond_bottom).upstream()
 )
@@ -2107,6 +2116,7 @@ def define_assets():
         ungrouped_asset_5,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
+        asset_with_automation_condition,
     ]
 
 
