@@ -48,7 +48,7 @@ from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
@@ -115,7 +115,7 @@ class ReconstructableRepository(
         return self._replace(repository_load_data=metadata)
 
     def get_definition(self) -> "RepositoryDefinition":
-        from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+        from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 
         return repository_def_from_pointer(
             self.pointer, DefinitionsLoadType.RECONSTRUCTION, self.repository_load_data
@@ -715,7 +715,7 @@ def repository_def_from_target_def(
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
@@ -770,7 +770,7 @@ def repository_def_from_pointer(
     load_type: "DefinitionsLoadType",
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
-    from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
     DefinitionsLoadContext.set(
         DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)

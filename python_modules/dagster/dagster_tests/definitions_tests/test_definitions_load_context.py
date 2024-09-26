@@ -7,7 +7,10 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.reconstruct import (

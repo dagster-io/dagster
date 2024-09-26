@@ -3,7 +3,10 @@ from contextlib import contextmanager
 from typing import Any, Generator, Generic, Mapping, Optional, TypeVar, cast
 
 from dagster import Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )

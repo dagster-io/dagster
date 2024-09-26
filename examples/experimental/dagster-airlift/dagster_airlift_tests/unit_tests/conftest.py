@@ -15,7 +15,10 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,

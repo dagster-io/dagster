@@ -3,7 +3,7 @@ from pathlib import Path
 import responses
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.instance_for_test import instance_for_test
 

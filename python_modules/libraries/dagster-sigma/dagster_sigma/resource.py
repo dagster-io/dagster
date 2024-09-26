@@ -6,7 +6,10 @@ from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Type
 import requests
 from dagster import ConfigurableResource
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
