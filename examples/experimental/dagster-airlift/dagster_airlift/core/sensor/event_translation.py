@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Sequence
+from typing import Any, Callable, List, Mapping, Sequence
 
 from dagster import (
     AssetMaterialization,
@@ -93,3 +93,8 @@ def materializations_for_task_instance(
             )
         )
     return mats
+
+
+AirflowDagsterEventTranslationFn = Callable[
+    [DagRun, Sequence[TaskInstance]], Sequence[AssetMaterialization]
+]

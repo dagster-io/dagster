@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterator, List, Optional
+from typing import Iterator, List, Optional, Sequence
 
 from dagster import (
     AssetsDefinition,
@@ -8,14 +8,16 @@ from dagster import (
     _check as check,
     external_asset_from_spec,
 )
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
-from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    build_airflow_polling_sensor,
+    airflow_event_sensor,
+    get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
@@ -93,15 +95,22 @@ def defs_with_assets_and_sensor(
     sensor_minimum_interval_seconds: int,
     airflow_data: AirflowDefinitionsData,
 ) -> Definitions:
-    airflow_sensor = build_airflow_polling_sensor(
+    @airflow_event_sensor(
         airflow_instance=airflow_instance,
-        minimum_interval_seconds=sensor_minimum_interval_seconds,
         airflow_data=airflow_data,
+        minimum_interval_seconds=sensor_minimum_interval_seconds,
     )
+    def _airflow_sensor(
+        dag_run: DagRun, task_instances: Sequence[TaskInstance]
+    ) -> Sequence[AssetMaterialization]:
+        return get_asset_events(
+            dag_run=dag_run, task_instances=task_instances, airflow_data=airflow_data
+        )
+
     return Definitions(
         assets=assets_defs,
         asset_checks=defs.asset_checks if defs else None,
-        sensors=[airflow_sensor, *defs.sensors] if defs and defs.sensors else [airflow_sensor],
+        sensors=[_airflow_sensor, *defs.sensors] if defs and defs.sensors else [_airflow_sensor],
         schedules=defs.schedules if defs else None,
         jobs=defs.jobs if defs else None,
         executor=defs.executor if defs else None,
