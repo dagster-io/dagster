@@ -72,16 +72,28 @@ If you don't want to use our GitHub/Gitlab integrations, we offer a powerful CLI
 
 First, [create a new project](https://docs.dagster.io/getting-started/create-new-project#create-a-new-project) with the Dagster open-source CLI.
 
+The below example uses our [quickstart_etl example project](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl). For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples).
+
 ```shell
 pip install dagster
 dagster project from-example \
   --name my-dagster-project \
-  --example assets_modern_data_stack
+  --example quickstart_etl
 ```
 
 <Note>
-  Once scaffolded, add <code>dagster-cloud</code> as a dependency in your{" "}
-  <code>setup.py</code> file.
+  If using a different project, ensure that <code>dagster-cloud</code> is included as a dependency in your{" "}
+  <code>setup.py</code> or <code>requirements.txt</code> file.
+
+For example, in `my-dagster-project/setup.py`:
+
+```python
+install_requires=[
+    "dagster",
+    "dagster-cloud",    # add this line
+    ...
+```
+
 </Note>
 
 Next, install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-plus-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
@@ -93,21 +105,13 @@ dagster-cloud configure
 
 You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-plus/managing-deployments/dagster-plus-cli#environment-variables-and-cli-options) for more information.
 
-Add `dagster-cloud` as a dependency to `my-dagster-project/setup.py`:
-
-```python
-install_requires=[
-    "dagster",
-    "dagster-cloud",    # add this line
-    "dagster-airbyte",
-```
-
 Finally, deploy your project with Dagster+ Serverless:
 
 ```shell
 dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
-  --package-name assets_modern_data_stack
+  --package-name quickstart_etl \
+  --python-version 3.12
 ```
 
 **Note:** Windows users should use the `deploy` command instead of `deploy-python-executable`.
