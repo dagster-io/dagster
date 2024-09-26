@@ -57,5 +57,6 @@ export default {
     'react-dom',
     'react-is',
     'styled-components',
+    'stylis',
   ],
 };

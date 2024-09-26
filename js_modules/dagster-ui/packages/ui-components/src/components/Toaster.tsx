@@ -6,7 +6,9 @@ import {Colors} from './Color';
 import {Icon, IconName, IconWrapper} from './Icon';
 import {createToaster} from './createToaster';
 
-export const GlobalToasterStyle = createGlobalStyle`
+// The component has no props. Props are typed as `any` in order to avoid `IconWrapper`
+// props being required at the callsite.
+export const GlobalToasterStyle = createGlobalStyle<any>`
   .dagster-toaster {
     .bp5-toast {
       padding: 8px 12px;
@@ -20,7 +22,7 @@ export const GlobalToasterStyle = createGlobalStyle`
     .bp5-button-group {
       padding: 2px;
     }
-  
+
     .bp5-toast-message {
       display: flex;
       align-items: center;

@@ -400,9 +400,9 @@ const TextInputWrapper = styled.div`
     padding: 12px 16px;
 
     &,
-    :focus,
-    :active,
-    :hover {
+    &:focus,
+    &:active,
+    &:hover {
       box-shadow: none;
       background-color: ${Colors.popoverBackground()};
     }

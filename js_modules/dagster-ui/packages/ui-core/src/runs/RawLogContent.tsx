@@ -74,7 +74,7 @@ export const RawLogContent = React.memo((props: Props) => {
 
   return (
     <>
-      <FileContainer isVisible={isVisible}>
+      <FileContainer $isVisible={isVisible}>
         {showScrollToTop ? (
           <ScrollToast>
             <ScrollToTop
@@ -107,7 +107,7 @@ export const RawLogContent = React.memo((props: Props) => {
           </LoadingContainer>
         ) : null}
       </FileContainer>
-      {location ? <FileFooter isVisible={isVisible}>{location}</FileFooter> : null}
+      {location ? <FileFooter $isVisible={isVisible}>{location}</FileFooter> : null}
     </>
   );
 });
@@ -350,16 +350,16 @@ const ContentContainer = styled.div`
   background-color: ${Colors.backgroundLight()};
 `;
 
-const FileContainer = styled.div`
+const FileContainer = styled.div<{$isVisible: boolean}>`
   flex: 1;
   height: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
-  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
+  ${({$isVisible}) => ($isVisible ? null : 'display: none;')}
 `;
 
-const FileFooter = styled.div`
+const FileFooter = styled.div<{$isVisible: boolean}>`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -369,7 +369,7 @@ const FileFooter = styled.div`
   color: ${Colors.textLight()};
   padding: 2px 5px;
   font-size: 0.85em;
-  ${({isVisible}: {isVisible: boolean}) => (isVisible ? null : 'display: none;')}
+  ${({$isVisible}) => ($isVisible ? null : 'display: none;')}
 `;
 
 const FileContent = styled.div`
@@ -434,7 +434,7 @@ const ScrollToTop = styled.button`
   cursor: pointer;
   transition: background-color 100ms linear;
 
-  :hover {
+  &:hover {
     background-color: ${Colors.backgroundLighterHover()};
     border-color: ${Colors.borderHover()};
   }

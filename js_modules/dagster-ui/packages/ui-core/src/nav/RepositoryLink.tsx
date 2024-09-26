@@ -95,11 +95,11 @@ const StyledButton = styled.button`
   padding: 0;
   margin: 0;
 
-  :disabled {
+  &:disabled {
     cursor: default;
   }
 
-  :focus:not(:focus-visible) {
+  &:focus:not(:focus-visible) {
     outline: none;
   }
 
@@ -108,7 +108,7 @@ const StyledButton = styled.button`
     transition: color 100ms linear;
   }
 
-  :hover ${IconWrapper} {
+  &:hover ${IconWrapper} {
     color: ${Colors.accentBlue()};
   }
 `;

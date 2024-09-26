@@ -76,14 +76,14 @@ const sharedSideNavItemStyle = css<{$active: boolean}>`
   user-select: none;
   width: 100%;
 
-  :focus {
+  &:focus {
     outline: none;
     background-color: ${({$active}) =>
       $active ? Colors.backgroundBlue() : Colors.backgroundLight()};
   }
 
-  :hover,
-  :active {
+  &:hover,
+  &:active {
     background-color: ${({$active}) =>
       $active ? Colors.backgroundBlue() : Colors.backgroundLightHover()};
     color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};

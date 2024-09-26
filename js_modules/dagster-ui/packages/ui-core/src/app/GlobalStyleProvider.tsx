@@ -68,16 +68,16 @@ const GlobalStyle = createGlobalStyle`
     font-variant-ligatures: none;
   }
 
-  :focus-visible {
+  &:focus-visible {
     outline: ${Colors.focusRing()} auto 1px;
   }
 
-  :focus:not(:focus-visible) {
+  &:focus:not(:focus-visible) {
     outline: none;
   }
 
-  :not(a):focus,
-  :not(a):focus-visible {
+  &:not(a):focus,
+  &:not(a):focus-visible {
     outline-offset: 1px;
   }
 `;

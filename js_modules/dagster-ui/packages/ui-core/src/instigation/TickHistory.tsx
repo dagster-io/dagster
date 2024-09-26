@@ -606,11 +606,11 @@ const CopyButton = styled.button`
     transition: background-color 100ms;
   }
 
-  :hover ${IconWrapper} {
+  &:hover ${IconWrapper} {
     background-color: ${Colors.accentGrayHover()};
   }
 
-  :focus ${IconWrapper} {
+  &:focus ${IconWrapper} {
     background-color: ${Colors.linkDefault()};
   }
 `;
