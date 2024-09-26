@@ -97,17 +97,15 @@ def has_permission_for_asset_graph(
 
     # If any of the asset keys don't map to a location (e.g. because they are no longer in the
     # graph) need deployment-wide permissions - no valid code location to check
-    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
+    if asset_keys.difference(asset_graph.repository_selectors_by_key.keys()):
         return context.has_permission(permission)
 
     if asset_keys:
-        repo_handles = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
+        selectors = [asset_graph.get_repository_selector(asset_key) for asset_key in asset_keys]
     else:
-        repo_handles = asset_graph.repository_handles_by_key.values()
+        selectors = asset_graph.repository_selectors_by_key.values()
 
-    location_names = set(
-        repo_handle.code_location_origin.location_name for repo_handle in repo_handles
-    )
+    location_names = set(s.location_name for s in selectors)
 
     if not location_names:
         return context.has_permission(permission)

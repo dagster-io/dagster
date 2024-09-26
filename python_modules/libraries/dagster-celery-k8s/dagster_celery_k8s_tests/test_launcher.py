@@ -344,7 +344,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             location = workspace.get_code_location(workspace.code_location_names[0])
 
             repo_def = recon_repo.get_definition()
-            repo_handle = RepositoryHandle(
+            repo_handle = RepositoryHandle.from_location(
                 repository_name=repo_def.name,
                 code_location=location,
             )
@@ -423,7 +423,7 @@ def test_raise_on_error(kubeconfig_file):
             location = workspace.get_code_location(workspace.code_location_names[0])
 
             repo_def = recon_repo.get_definition()
-            repo_handle = RepositoryHandle(
+            repo_handle = RepositoryHandle.from_location(
                 repository_name=repo_def.name,
                 code_location=location,
             )

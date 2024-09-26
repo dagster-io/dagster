@@ -85,7 +85,9 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         new_origin = code_location_origin._replace(location_name="other_location_name")
         with instance_for_test() as temp_instance:
             with new_origin.create_single_location(temp_instance) as location:
-                new_repo_handle = RepositoryHandle(job_handle.repository_name, location)
+                new_repo_handle = RepositoryHandle.from_location(
+                    job_handle.repository_name, location
+                )
 
         return copy(
             job_handle,

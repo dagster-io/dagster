@@ -146,7 +146,7 @@ class AssetGraphDiffer:
 
         We cannot make RemoteAssetGraphs directly from the workspaces because if multiple code locations
         use the same asset key, those asset keys will override each other in the dictionaries the RemoteAssetGraph
-        creates (see from_repository_handles_and_asset_node_snaps in RemoteAssetGraph). We need to ensure
+        creates (see from_repository_selectors_and_asset_node_snaps in RemoteAssetGraph). We need to ensure
         that we are comparing assets in the same code location and repository, so we need to make the
         RemoteAssetGraph from an ExternalRepository to ensure that there are no duplicate asset keys
         that could override each other.

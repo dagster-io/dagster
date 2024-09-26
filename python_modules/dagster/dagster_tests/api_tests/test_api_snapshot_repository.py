@@ -152,7 +152,7 @@ def test_defer_snapshots(instance: DagsterInstance):
 
         repo = ExternalRepository(
             external_repository_data,
-            RepositoryHandle(repository_name="bar_repo", code_location=code_location),
+            RepositoryHandle.from_location(repository_name="bar_repo", code_location=code_location),
             instance=instance,
             ref_to_data_fn=_ref_to_data,
         )
