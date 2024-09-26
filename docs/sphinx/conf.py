@@ -113,6 +113,7 @@ autodoc_mock_imports = [
     "kombu",
     "kubernetes",
     "lazy_object_proxy",
+    "looker_sdk",
     "mlflow",
     "mypy_boto3_glue",
     "mysql",
