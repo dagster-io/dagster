@@ -116,7 +116,8 @@ def test_launch_docker_image_on_job_config(aws_env):
         "env_vars": aws_env + ["DOCKER_LAUNCHER_NETWORK"],
         "network": {"env": "DOCKER_LAUNCHER_NETWORK"},
         "container_kwargs": {
-            "auto_remove": True,
+            "auto_remove": False,
+            "labels": {"foo": "baz", "bar": ""},
         },
     }
 
@@ -165,6 +166,12 @@ def test_launch_docker_image_on_job_config(aws_env):
                 assert run.status == DagsterRunStatus.SUCCESS
 
                 assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+
+                container_obj = instance.run_launcher._get_container(run)  # noqa
+                assert container_obj.labels["foo"] == "baz"
+                assert container_obj.labels["bar"] == ""
+                assert container_obj.labels["dagster/run_id"] == run.run_id
+                assert container_obj.labels["dagster/job_name"] == run.job_name
 
 
 def check_event_log_contains(event_log, expected_type_and_message):
