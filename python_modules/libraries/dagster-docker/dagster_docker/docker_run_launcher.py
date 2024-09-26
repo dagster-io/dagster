@@ -103,6 +103,14 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         client = self._get_client(container_context)
 
+        container_kwargs = {**container_context.container_kwargs}
+        labels = container_kwargs.pop("labels", {})
+        if isinstance(labels, list):
+            labels = {key: "" for key in labels}
+
+        labels["dagster/run_id"] = run.run_id
+        labels["dagster/job_name"] = run.job_name
+
         try:
             container = client.containers.create(
                 image=docker_image,
@@ -110,7 +118,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=container_context.networks[0] if len(container_context.networks) else None,
-                **container_context.container_kwargs,
+                labels=labels,
+                **container_kwargs,
             )
 
         except docker.errors.ImageNotFound:
@@ -121,7 +130,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=container_context.networks[0] if len(container_context.networks) else None,
-                **container_context.container_kwargs,
+                labels=labels,
+                **container_kwargs,
             )
 
         if len(container_context.networks) > 1:
@@ -173,7 +183,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         self._launch_container_with_command(run, docker_image, command)
 
     def _get_container(self, run):
-        if not run or run.is_finished:
+        if not run:
             return None
 
         container_id = run.tags.get(DOCKER_CONTAINER_ID_TAG)
