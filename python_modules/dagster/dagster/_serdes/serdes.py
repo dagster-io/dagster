@@ -871,6 +871,14 @@ def pack_value(
 ) -> Sequence[JsonSerializableValue]: ...
 
 
+@overload
+def pack_value(
+    val: PackableValue,
+    whitelist_map: WhitelistMap = ...,
+    descent_path: Optional[str] = ...,
+) -> JsonSerializableValue: ...
+
+
 def pack_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,

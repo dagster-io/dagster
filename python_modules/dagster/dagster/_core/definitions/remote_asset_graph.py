@@ -45,6 +45,7 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.workspace.workspace import WorkspaceSnapshot
 from dagster._record import ImportFrom, record
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -124,6 +125,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         )
 
 
+@whitelist_for_serdes
 @record
 class RemoteRepositoryAssetNode(RemoteAssetNode):
     """Asset nodes from a single RemoteRepository."""
@@ -191,6 +193,7 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         return self.asset_node_snap.auto_observe_interval_minutes
 
 
+@whitelist_for_serdes
 @record
 class RepositoryScopedAssetInfo:
     """RemoteRepositoryAssetNode paired with additional information from that repository.
@@ -207,6 +210,7 @@ class RepositoryScopedAssetInfo:
         return self.asset_node.repository_handle
 
 
+@whitelist_for_serdes
 @record
 class RemoteWorkspaceAssetNode(RemoteAssetNode):
     """Asset nodes constructed from a WorkspaceSnapshot, containing nodes from potentially several RemoteRepositories."""
@@ -315,7 +319,6 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         # materialization node was previously preferred over the observable node. This is a
         # temporary measure until we can appropriately scope the accessors that could apply to
         # either a materialization or observation node.
-
         # This property supports existing behavior but it should be phased out, because it relies on
         # materialization nodes shadowing observation nodes that would otherwise be exposed.
         return next(
