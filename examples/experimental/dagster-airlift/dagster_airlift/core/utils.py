@@ -5,6 +5,7 @@ from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
+from dagster._utils.merger import merge_dicts
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 
@@ -16,6 +17,10 @@ def convert_to_valid_dagster_name(name: str) -> str:
 
 def airflow_kind_dict() -> dict:
     return {f"{KIND_PREFIX}airflow": ""}
+
+
+def airflow_dag_kind_dict() -> dict:
+    return merge_dicts(airflow_kind_dict(), {f"{KIND_PREFIX}dag": ""})
 
 
 def spec_iterator(
