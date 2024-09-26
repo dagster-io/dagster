@@ -377,7 +377,10 @@ class ExternalRepository:
     @property
     def selector_id(self) -> str:
         return create_snapshot_id(
-            RepositorySelector(self._handle.location_name, self._handle.repository_name)
+            RepositorySelector(
+                location_name=self._handle.location_name,
+                repository_name=self._handle.repository_name,
+            ),
         )
 
     def get_compound_id(self) -> CompoundID:
@@ -884,17 +887,17 @@ class ExternalSchedule:
     @property
     def selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_schedule_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            name=self._external_schedule_data.name,
         )
 
     @property
     def schedule_selector(self) -> ScheduleSelector:
         return ScheduleSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_schedule_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            schedule_name=self._external_schedule_data.name,
         )
 
     @cached_property
@@ -1034,17 +1037,17 @@ class ExternalSensor:
     @property
     def selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_sensor_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            name=self._external_sensor_data.name,
         )
 
     @property
     def sensor_selector(self) -> SensorSelector:
         return SensorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_sensor_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            sensor_name=self._external_sensor_data.name,
         )
 
     @cached_property
