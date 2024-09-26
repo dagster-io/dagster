@@ -35,11 +35,12 @@ from dagster._core.definitions.input import (
 )
 from dagster._core.definitions.output import OutputDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.utils import DEFAULT_OUTPUT, normalize_tags, struct_to_string
+from dagster._core.definitions.utils import DEFAULT_OUTPUT, struct_to_string
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer

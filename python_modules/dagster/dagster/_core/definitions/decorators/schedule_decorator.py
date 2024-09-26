@@ -19,13 +19,13 @@ from dagster._core.definitions.schedule_definition import (
 )
 from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.definitions.target import ExecutableDefinition
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
 from dagster._utils import ensure_gen
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection

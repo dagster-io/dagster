@@ -40,7 +40,7 @@ from dagster._core.definitions.target import (
     ExecutableDefinition,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -56,6 +56,7 @@ from dagster._time import get_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition

@@ -1480,9 +1480,9 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_graph: Optional["BaseAssetGraph"],
     ) -> DagsterRun:
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
-        from dagster._core.definitions.utils import normalize_tags
         from dagster._core.remote_representation.origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+        from dagster._utils.tags import normalize_tags
 
         check.str_param(job_name, "job_name")
         check.opt_str_param(

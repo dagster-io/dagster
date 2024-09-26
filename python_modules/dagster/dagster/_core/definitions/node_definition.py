@@ -14,8 +14,9 @@ import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer

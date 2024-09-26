@@ -44,13 +44,14 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import OutputDefinition, OutputMapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
 from dagster._utils import is_named_tuple_instance
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:

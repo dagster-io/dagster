@@ -55,11 +55,11 @@ from dagster._core.definitions.utils import (
     DEFAULT_OUTPUT,
     NoValueSentinel,
     resolve_automation_condition,
-    validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
+from dagster._utils.tags import validate_tags_strict
 from dagster._utils.warnings import disable_dagster_warnings
 
 

@@ -62,7 +62,7 @@ from dagster._core.definitions.target import (
     AutomationTarget,
     ExecutableDefinition,
 )
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -76,6 +76,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._time import get_current_datetime
 from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 if TYPE_CHECKING:

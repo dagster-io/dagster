@@ -16,12 +16,12 @@ from dagster._core.definitions.utils import (
     resolve_automation_condition,
     validate_asset_owner,
     validate_group_name,
-    validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
+from dagster._utils.tags import validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
