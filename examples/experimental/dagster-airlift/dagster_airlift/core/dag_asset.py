@@ -1,32 +1,10 @@
-from typing import Any, Dict, List, Mapping, Sequence, Set
+from typing import Any, Dict, List, Mapping, Set
 
 from dagster import AssetKey, JsonMetadataValue, MarkdownMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 
 from dagster_airlift.constants import STANDALONE_DAG_ID_METADATA_KEY
-from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
-from dagster_airlift.core.serialization.serialized_data import (
-    SerializedAssetDepData,
-    SerializedAssetSpecData,
-)
-from dagster_airlift.core.utils import airflow_kind_dict
-
-
-def dag_asset_spec_data(
-    airflow_instance: AirflowInstance,
-    asset_keys_for_leaf_tasks: Sequence[AssetKey],
-    dag_info: DagInfo,
-) -> SerializedAssetSpecData:
-    return SerializedAssetSpecData(
-        asset_key=dag_info.dag_asset_key,
-        description=dag_description(dag_info),
-        metadata=dag_asset_metadata(airflow_instance, dag_info),
-        tags=airflow_kind_dict(),
-        deps=[
-            SerializedAssetDepData(asset_key=leaf_asset_key)
-            for leaf_asset_key in asset_keys_for_leaf_tasks
-        ],
-    )
+from dagster_airlift.core.airflow_instance import DagInfo
 
 
 def dag_description(dag_info: DagInfo) -> str:
@@ -35,14 +13,13 @@ def dag_description(dag_info: DagInfo) -> str:
     """
 
 
-def dag_asset_metadata(airflow_instance: AirflowInstance, dag_info: DagInfo) -> Mapping[str, Any]:
+def dag_asset_metadata(dag_info: DagInfo, source_code: str) -> Mapping[str, Any]:
     metadata = {
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
         "Dag ID": dag_info.dag_id,
         "Link to DAG": UrlMetadataValue(dag_info.url),
         STANDALONE_DAG_ID_METADATA_KEY: dag_info.dag_id,
     }
-    source_code = airflow_instance.get_dag_source_code(dag_info.metadata["file_token"])
     # Attempt to retrieve source code from the DAG.
     metadata["Source Code"] = MarkdownMetadataValue(
         f"""
