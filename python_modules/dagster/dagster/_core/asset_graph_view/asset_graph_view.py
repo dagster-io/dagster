@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type, TypeVar
 
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_key import T_EntityKey
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -31,6 +31,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.instance import DagsterInstance
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey, EntityKey)
 
 
 class TemporalContext(NamedTuple):
@@ -241,7 +243,7 @@ class AssetGraphView(LoadingContext):
         )
 
     def compute_child_subset(
-        self, child_key: T_EntityKey, subset: EntitySubset[AssetKey]
+        self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
     ) -> EntitySubset[T_EntityKey]:
         parent_key = subset.key
         parent_partitions_def = self.asset_graph.get(parent_key).partitions_def

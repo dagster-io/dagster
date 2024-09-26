@@ -163,10 +163,10 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {k for k in self.execution_set_asset_and_check_keys if isinstance(k, AssetKey)}
+        return {k for k in self.execution_set_entity_keys if isinstance(k, AssetKey)}
 
     @property
-    def execution_set_asset_and_check_keys(self) -> AbstractSet[EntityKey]:
+    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
         return self._execution_set_keys
 
     ##### REMOTE-SPECIFIC INTERFACE
@@ -318,7 +318,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
-            return self.get(entity_key).execution_set_asset_and_check_keys
+            return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
             return self._asset_check_execution_sets_by_key[entity_key]
 

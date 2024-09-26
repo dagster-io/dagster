@@ -172,7 +172,11 @@ def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[Dag
             run_ids.extend(latest_tick.tick_data.reserved_run_ids or [])
 
     if run_ids:
-        return context.instance.get_runs(filters=RunsFilter(run_ids=run_ids))
+        # return the runs in a stable order to make unit testing easier
+        return sorted(
+            context.instance.get_runs(filters=RunsFilter(run_ids=run_ids)),
+            key=lambda r: (sorted(r.asset_selection or []), sorted(r.asset_check_selection or [])),
+        )
     else:
         return []
 
@@ -259,22 +263,18 @@ def test_cross_location_checks() -> None:
             # should request both checks on processed_files, but one of the checks
             # is in a different code location, so two separate runs should be created
             assert _get_latest_evaluation_ids(context) == {3, 4}
-            runs = sorted(
-                _get_runs_for_latest_ticks(context),
-                key=lambda run: list(run.asset_check_selection or []),
-                reverse=True,
-            )
+            runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 2
             # in location 1
-            assert runs[0].asset_check_selection == {
+            assert runs[1].asset_check_selection == {
                 AssetCheckKey(AssetKey("processed_files"), "row_count")
             }
-            assert len(runs[0].asset_selection or []) == 0
+            assert len(runs[1].asset_selection or []) == 0
             # in location 2
-            assert runs[1].asset_check_selection == {
+            assert runs[0].asset_check_selection == {
                 AssetCheckKey(AssetKey("processed_files"), "no_nulls")
             }
-            assert len(runs[1].asset_selection or []) == 0
+            assert len(runs[0].asset_selection or []) == 0
 
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
@@ -305,22 +305,18 @@ def test_cross_location_checks() -> None:
             # can be executed (and row_count also gets executed again because
             # its condition has been set up poorly)
             assert _get_latest_evaluation_ids(context) == {7, 8}
-            runs = sorted(
-                _get_runs_for_latest_ticks(context),
-                key=lambda run: list(run.asset_check_selection or []),
-                reverse=True,
-            )
+            runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 2
             # in location 1
-            assert runs[0].asset_check_selection == {
+            assert runs[1].asset_check_selection == {
                 AssetCheckKey(AssetKey("processed_files"), "row_count")
             }
-            assert len(runs[0].asset_selection or []) == 0
+            assert len(runs[1].asset_selection or []) == 0
             # in location 2
-            assert runs[1].asset_check_selection == {
+            assert runs[0].asset_check_selection == {
                 AssetCheckKey(AssetKey("processed_files"), "no_nulls")
             }
-            assert len(runs[1].asset_selection or []) == 0
+            assert len(runs[0].asset_selection or []) == 0
 
 
 def test_default_condition() -> None:
@@ -350,12 +346,42 @@ def test_non_subsettable_check() -> None:
     with get_workspace_request_context(
         ["check_not_subsettable"]
     ) as context, get_threadpool_executor() as executor:
-        time = get_current_datetime()
+        time = datetime.datetime(2024, 8, 17, 1, 35)
         with freeze_time(time):
             _execute_ticks(context, executor)
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
-            assert len(runs) == 1
-            assert runs[0].asset_selection == {AssetKey("asset_w_check")}
-            assert runs[0].asset_check_selection is None
+            assert len(runs) == 3
+
+            # unpartitioned
+            unpartitioned_run = runs[2]
+            assert unpartitioned_run.tags.get("dagster/partition") is None
+            assert unpartitioned_run.asset_selection == {AssetKey("unpartitioned")}
+            assert unpartitioned_run.asset_check_selection == {
+                AssetCheckKey(AssetKey("unpartitioned"), name="row_count")
+            }
+
+            # static partitioned
+            static_partitioned_run = runs[1]
+            assert static_partitioned_run.tags.get("dagster/partition") == "a"
+            assert static_partitioned_run.asset_selection == {AssetKey("static")}
+            assert static_partitioned_run.asset_check_selection == {
+                AssetCheckKey(AssetKey("static"), name="c1"),
+                AssetCheckKey(AssetKey("static"), name="c2"),
+            }
+
+            # multi-asset time partitioned
+            time_partitioned_run = runs[0]
+            assert time_partitioned_run.tags.get("dagster/partition") == "2024-08-16"
+            assert time_partitioned_run.asset_selection == {
+                AssetKey("a"),
+                AssetKey("b"),
+                AssetKey("c"),
+                AssetKey("d"),
+            }
+            assert time_partitioned_run.asset_check_selection == {
+                AssetCheckKey(AssetKey("a"), name="1"),
+                AssetCheckKey(AssetKey("a"), name="2"),
+                AssetCheckKey(AssetKey("d"), name="3"),
+            }

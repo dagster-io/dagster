@@ -1,7 +1,6 @@
 import datetime
 import logging
 from collections import defaultdict
-from dataclasses import replace
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -16,7 +15,6 @@ from typing import (
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -75,7 +73,9 @@ class AutomationConditionEvaluator:
         self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
-        self._execution_set_extras: Dict[AssetKey, List[EntitySubset[AssetKey]]] = defaultdict(list)
+        self._execution_set_extras: Dict[EntityKey, List[EntitySubset[EntityKey]]] = defaultdict(
+            list
+        )
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -163,34 +163,29 @@ class AutomationConditionEvaluator:
         # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
         # materialize all of them
         asset_key = result.key
-        execution_set_keys = self.asset_graph.get(asset_key).execution_set_asset_keys
+        execution_set_keys = self.asset_graph.get(asset_key).execution_set_entity_keys
 
         if len(execution_set_keys) > 1 and result.true_subset.size > 0:
             for neighbor_key in execution_set_keys:
-                self.legacy_expected_data_time_by_key[neighbor_key] = (
-                    self.legacy_expected_data_time_by_key[asset_key]
-                )
+                if isinstance(neighbor_key, AssetKey):
+                    self.legacy_expected_data_time_by_key[neighbor_key] = (
+                        self.legacy_expected_data_time_by_key[asset_key]
+                    )
 
                 # make sure that the true_subset of the neighbor is accurate -- when it was
                 # evaluated it may have had a different requested subset. however, because
                 # all these neighbors must be executed as a unit, we need to union together
                 # the subset of all required neighbors
+                # TODO: replace with result.true_subset.map_to(neighbor_key)
+                neighbor_true_subset = result.true_subset.compute_child_subset(neighbor_key)
                 if neighbor_key in self.current_results_by_key:
-                    neighbor_true_subset = replace(
-                        result.serializable_evaluation.true_subset, key=neighbor_key
-                    )
                     self.current_results_by_key[
                         neighbor_key
-                    ].set_internal_serializable_subset_override(neighbor_true_subset)
-
-                extra = self.asset_graph_view.get_subset_from_serializable_subset(
-                    SerializableEntitySubset(
-                        neighbor_key,
-                        result.true_subset.get_internal_value(),
+                    ].set_internal_serializable_subset_override(
+                        neighbor_true_subset.convert_to_serializable_subset()
                     )
-                )
-                if extra:
-                    self._execution_set_extras[neighbor_key].append(extra)
+
+                self._execution_set_extras[neighbor_key].append(neighbor_true_subset)
 
     def _get_entity_subsets(self) -> Iterable[EntitySubset[EntityKey]]:
         subsets_by_key = {
