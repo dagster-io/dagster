@@ -7,9 +7,18 @@ import kubernetes
 import kubernetes.client.models
 from dagster._vendored.dateutil.parser import parse
 from kubernetes.client.api_client import ApiClient
+from kubernetes.client.configuration import Configuration
 
 # Unclear what the correct type is to use for a bound here.
 T_KubernetesModel = TypeVar("T_KubernetesModel")
+
+
+# Create a single Configuration object to pass through to each model creation -
+# the default otherwise in the OpenAPI version currently in use by the k8s
+# client will create one on each model creation otherwise, which can cause
+# lock contention since it acquires the global python logger lock
+# see: https://github.com/kubernetes-client/python/issues/1921
+shared_k8s_model_configuration = Configuration()
 
 
 def _get_k8s_class(classname: str) -> Type[Any]:
@@ -149,7 +158,10 @@ def k8s_model_from_dict(
     if len(invalid_keys):
         raise Exception(f"Unexpected keys in model class {model_class.__name__}: {invalid_keys}")
 
-    kwargs = {}
+    # Pass through the configuration object since the default implementation creates a new one
+    # in the constructor, which can create lock contention if multiple threads are calling this
+    # simultaneously
+    kwargs = {"local_vars_configuration": shared_k8s_model_configuration}
     for attr, attr_type in model_class.openapi_types.items():  # type: ignore
         # e.g. config_map => configMap
         if attr in model_dict:
