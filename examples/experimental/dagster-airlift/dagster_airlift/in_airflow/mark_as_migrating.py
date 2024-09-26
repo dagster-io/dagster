@@ -11,14 +11,14 @@ from dagster_airlift.in_airflow.base_proxy_operator import (
     DefaultProxyToDagsterOperator,
     build_dagster_task,
 )
-from dagster_airlift.migration_state import AirflowMigrationState, DagMigrationState
+from dagster_airlift.migration_state import AirflowProxiedState, DagProxiedState
 from dagster_airlift.utils import get_local_migration_state_dir
 
 
 def mark_as_dagster_migrating(
     *,
     global_vars: Dict[str, Any],
-    migration_state: AirflowMigrationState,
+    migration_state: AirflowProxiedState,
     logger: Optional[logging.Logger] = None,
     dagster_operator_klass: Type[BaseProxyToDagsterOperator] = DefaultProxyToDagsterOperator,
 ) -> None:
@@ -46,7 +46,7 @@ def mark_as_dagster_migrating(
             continue
         dag: DAG = obj
         all_dag_ids.add(dag.dag_id)
-        if not migration_state.dag_has_migration_state(dag.dag_id):
+        if not migration_state.dag_has_proxied_state(dag.dag_id):
             logger.debug(f"Dag with id `{dag.dag_id}` has no migration state. Skipping...")
             continue
         logger.debug(f"Dag with id `{dag.dag_id}` has migration state.")
@@ -75,7 +75,7 @@ def mark_as_dagster_migrating(
             [
                 task_id
                 for task_id, task_state in migration_state_for_dag.tasks.items()
-                if task_state.migrated
+                if task_state.proxied
             ]
         )
         task_possessive = "Task" if num_migrated_tasks == 1 else "Tasks"
@@ -85,7 +85,7 @@ def mark_as_dagster_migrating(
         ]
         migrated_tasks = set()
         for task_id, task_state in migration_state_for_dag.tasks.items():
-            if not task_state.migrated:
+            if not task_state.proxied:
                 logger.debug(
                     f"Task {task_id} in dag {dag.dag_id} has `migrated` set to False. Skipping..."
                 )
@@ -113,7 +113,7 @@ def mark_as_dagster_migrating(
 
 
 def set_migration_state_for_dag_if_changed(
-    dag_id: str, migration_state: DagMigrationState, logger: logging.Logger
+    dag_id: str, migration_state: DagProxiedState, logger: logging.Logger
 ) -> None:
     if get_local_migration_state_dir():
         logger.info(
@@ -129,14 +129,14 @@ def set_migration_state_for_dag_if_changed(
             set_migration_var_for_dag(dag_id, migration_state)
 
 
-def get_migration_var_for_dag(dag_id: str) -> Optional[DagMigrationState]:
+def get_migration_var_for_dag(dag_id: str) -> Optional[DagProxiedState]:
     migration_var = Variable.get(f"{dag_id}_dagster_migration_state", None)
     if not migration_var:
         return None
-    return DagMigrationState.from_dict(json.loads(migration_var))
+    return DagProxiedState.from_dict(json.loads(migration_var))
 
 
-def set_migration_var_for_dag(dag_id: str, migration_state: DagMigrationState) -> None:
+def set_migration_var_for_dag(dag_id: str, migration_state: DagProxiedState) -> None:
     with create_session() as session:
         Variable.set(
             key=f"{dag_id}_dagster_migration_state",

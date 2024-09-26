@@ -4,32 +4,32 @@ import pytest
 import yaml
 from dagster_airlift.core import load_migration_state_from_yaml
 from dagster_airlift.migration_state import (
-    AirflowMigrationState,
-    DagMigrationState,
-    MigrationStateParsingError,
-    TaskMigrationState,
+    AirflowProxiedState,
+    DagProxiedState,
+    ProxiedStateParsingError,
+    TaskProxiedState,
 )
 
 
 def test_migration_state() -> None:
-    """Test that we can load a migration state from a yaml file, and that errors are handled in a reasonable way."""
+    """Test that we can load proxied state from a yaml file, and that errors are handled in a reasonable way."""
     # First test a valid migration directory with two files.
     valid_migration_file = Path(__file__).parent / "migration_state_yamls" / "valid"
     migration_state = load_migration_state_from_yaml(valid_migration_file)
-    assert isinstance(migration_state, AirflowMigrationState)
-    assert migration_state == AirflowMigrationState(
+    assert isinstance(migration_state, AirflowProxiedState)
+    assert migration_state == AirflowProxiedState(
         dags={
-            "first": DagMigrationState(
+            "first": DagProxiedState(
                 tasks={
-                    "first_task": TaskMigrationState(task_id="first_task", migrated=True),
-                    "second_task": TaskMigrationState(task_id="second_task", migrated=False),
-                    "third_task": TaskMigrationState(task_id="third_task", migrated=True),
+                    "first_task": TaskProxiedState(task_id="first_task", proxied=True),
+                    "second_task": TaskProxiedState(task_id="second_task", proxied=False),
+                    "third_task": TaskProxiedState(task_id="third_task", proxied=True),
                 }
             ),
-            "second": DagMigrationState(
+            "second": DagProxiedState(
                 tasks={
-                    "some_task": TaskMigrationState("some_task", migrated=True),
-                    "other_task": TaskMigrationState("other_task", migrated=False),
+                    "some_task": TaskProxiedState("some_task", proxied=True),
+                    "other_task": TaskProxiedState("other_task", proxied=False),
                 }
             ),
         }
@@ -38,13 +38,15 @@ def test_migration_state() -> None:
     # Test various incorrect yaml dirs.
     incorrect_dirs = ["empty_file", "nonexistent_dir", "extra_key", "nonsense"]
     for incorrect_dir in incorrect_dirs:
-        incorrect_migration_file = Path(__file__).parent / "migration_state_yamls" / incorrect_dir
-        with pytest.raises(MigrationStateParsingError, match="Error parsing migration yaml"):
-            load_migration_state_from_yaml(incorrect_migration_file)
+        incorrect_proxied_state_file = (
+            Path(__file__).parent / "migration_state_yamls" / incorrect_dir
+        )
+        with pytest.raises(ProxiedStateParsingError, match="Error parsing proxied state yaml"):
+            load_migration_state_from_yaml(incorrect_proxied_state_file)
 
 
-def test_migration_state_from_yaml() -> None:
-    migration_dict = yaml.safe_load("""
+def test_proxied_state_from_yaml() -> None:
+    proxied_state_dict = yaml.safe_load("""
 tasks:
   - id: load_raw_customers
     migrated: False
@@ -54,7 +56,7 @@ tasks:
     migrated: True 
  """)
 
-    migration_state = DagMigrationState.from_dict(migration_dict)
-    assert migration_state.is_task_migrated("load_raw_customers") is False
-    assert migration_state.is_task_migrated("build_dbt_models") is False
-    assert migration_state.is_task_migrated("export_customers") is True
+    dag_proxied_state = DagProxiedState.from_dict(proxied_state_dict)
+    assert dag_proxied_state.is_task_proxied("load_raw_customers") is False
+    assert dag_proxied_state.is_task_proxied("build_dbt_models") is False
+    assert dag_proxied_state.is_task_proxied("export_customers") is True

@@ -35,14 +35,14 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert not migration_state.get_migration_state_for_task(
+        migration_state = instance.get_proxied_state()
+        assert not migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
@@ -51,14 +51,14 @@ def test_migration_status(
         dag = instance.list_dags()[0]
 
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert migration_state.get_migration_state_for_task(
+        migration_state = instance.get_proxied_state()
+        assert migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
@@ -66,14 +66,14 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert not migration_state.get_migration_state_for_task(
+        migration_state = instance.get_proxied_state()
+        assert not migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert migration_state.get_migration_state_for_task(
+        assert migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
@@ -81,14 +81,14 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert migration_state.get_migration_state_for_task(
+        migration_state = instance.get_proxied_state()
+        assert migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert migration_state.get_migration_state_for_task(
+        assert migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert migration_state.get_migration_state_for_task(
+        assert migration_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 

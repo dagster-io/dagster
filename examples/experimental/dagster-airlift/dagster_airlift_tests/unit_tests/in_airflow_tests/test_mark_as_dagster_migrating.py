@@ -6,7 +6,7 @@ from airflow.operators.python import PythonOperator
 from dagster._core.test_utils import environ
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.in_airflow.base_proxy_operator import BaseProxyToDagsterOperator
-from dagster_airlift.migration_state import AirflowMigrationState
+from dagster_airlift.migration_state import AirflowProxiedState
 from dagster_airlift.test.shared_fixtures import VAR_DICT
 from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
@@ -26,7 +26,7 @@ def test_mark_as_dagster_migrating_local_dir_set(mock_airflow_variable: None, ca
 
         mark_as_dagster_migrating(
             global_vars=globals_fake,
-            migration_state=AirflowMigrationState.from_dict(
+            migration_state=AirflowProxiedState.from_dict(
                 {
                     "dag": {"tasks": [{"id": "task", "migrated": True}]},
                 }
@@ -52,7 +52,7 @@ def test_mark_as_dagster_migrating(mock_airflow_variable: None) -> None:
     original_globals = copy.deepcopy(globals_fake)
     mark_as_dagster_migrating(
         global_vars=globals_fake,
-        migration_state=AirflowMigrationState.from_dict(
+        migration_state=AirflowProxiedState.from_dict(
             {
                 "task_is_migrated": {"tasks": [{"id": "task", "migrated": True}]},
                 "initially_not_migrated": {"tasks": [{"id": "task", "migrated": False}]},
@@ -86,7 +86,7 @@ def test_mark_as_dagster_migrating(mock_airflow_variable: None) -> None:
     # Change initially_not_migrated to be migrated
     mark_as_dagster_migrating(
         global_vars=original_globals,
-        migration_state=AirflowMigrationState.from_dict(
+        migration_state=AirflowProxiedState.from_dict(
             {
                 "task_is_migrated": {"tasks": [{"id": "task", "migrated": True}]},
                 "initially_not_migrated": {"tasks": [{"id": "task", "migrated": True}]},
@@ -125,9 +125,7 @@ def test_mark_as_dagster_migrating(mock_airflow_variable: None) -> None:
 def test_mark_as_dagster_migrating_no_dags() -> None:
     """Ensure that we error when no dags are found in the current context."""
     with pytest.raises(Exception, match="No dags found in globals dictionary."):
-        mark_as_dagster_migrating(
-            global_vars={}, migration_state=AirflowMigrationState.from_dict({})
-        )
+        mark_as_dagster_migrating(global_vars={}, migration_state=AirflowProxiedState.from_dict({}))
 
 
 def test_mark_as_dagster_migrating_dags_dont_exist() -> None:
@@ -135,7 +133,7 @@ def test_mark_as_dagster_migrating_dags_dont_exist() -> None:
     globals_fake = build_dags_dict_given_structure({"dag": {"task": []}})
     mark_as_dagster_migrating(
         global_vars=globals_fake,
-        migration_state=AirflowMigrationState.from_dict(
+        migration_state=AirflowProxiedState.from_dict(
             {
                 "doesnt_exist": {"tasks": [{"id": "task", "migrated": True}]},
             }
@@ -151,7 +149,7 @@ def test_mark_as_dagster_migrating_task_doesnt_exist() -> None:
     with pytest.raises(Exception, match="Task with id `doesnt_exist` not found in dag `dag`"):
         mark_as_dagster_migrating(
             global_vars=globals_fake,
-            migration_state=AirflowMigrationState.from_dict(
+            migration_state=AirflowProxiedState.from_dict(
                 {
                     "dag": {"tasks": [{"id": "doesnt_exist", "migrated": True}]},
                 }
