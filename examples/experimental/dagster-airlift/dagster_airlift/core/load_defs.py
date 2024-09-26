@@ -16,6 +16,7 @@ from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor_defs,
+    get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
@@ -47,11 +48,6 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsD
         return Definitions.merge(
             enrich_explicit_defs_with_airflow_metadata(self.explicit_defs, airflow_data),
             airflow_data.construct_dag_assets_defs(),
-            build_airflow_polling_sensor_defs(
-                airflow_instance=self.airflow_instance,
-                minimum_interval_seconds=self.sensor_minimum_interval_seconds,
-                airflow_data=airflow_data,
-            ),
         )
 
 
@@ -62,11 +58,22 @@ def build_defs_from_airflow_instance(
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
-    return AirflowInstanceDefsLoader(
+    defs_loader = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         explicit_defs=defs or Definitions(),
         sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
-    ).build_defs()
+    )
+    transformed_defs = defs_loader.build_defs()
+    airflow_data = defs_loader.fetch_state()
+    sensor_defs = build_airflow_polling_sensor_defs(
+        airflow_instance=airflow_instance,
+        airflow_data=airflow_data,
+        event_translation_fn=lambda dag_run, task_instances: get_asset_events(
+            dag_run=dag_run, task_instances=task_instances, airflow_data=airflow_data
+        ),
+        minimum_interval_seconds=sensor_minimum_interval_seconds,
+    )
+    return Definitions.merge(transformed_defs, sensor_defs)
 
 
 class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsData]):

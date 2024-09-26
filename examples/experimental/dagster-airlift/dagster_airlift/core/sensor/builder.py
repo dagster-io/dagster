@@ -26,7 +26,7 @@ from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.sensor.event_translation import (
-    get_asset_events,
+    AirflowDagsterEventTranslationFn,
     get_timestamp_from_materialization,
 )
 
@@ -57,6 +57,7 @@ def check_keys_for_asset_keys(
 def build_airflow_polling_sensor_defs(
     airflow_instance: AirflowInstance,
     airflow_data: AirflowDefinitionsData,
+    event_translation_fn: AirflowDagsterEventTranslationFn,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     @sensor(
@@ -90,6 +91,7 @@ def build_airflow_polling_sensor_defs(
             offset=current_dag_offset,
             airflow_instance=airflow_instance,
             airflow_data=airflow_data,
+            event_translation_fn=event_translation_fn,
         )
         all_materializations: List[Tuple[float, AssetMaterialization]] = []
         all_check_keys: Set[AssetCheckKey] = set()
@@ -158,6 +160,7 @@ def materializations_and_requests_from_batch_iter(
     offset: int,
     airflow_instance: AirflowInstance,
     airflow_data: AirflowDefinitionsData,
+    event_translation_fn: AirflowDagsterEventTranslationFn,
 ) -> Iterator[Optional[BatchResult]]:
     runs = airflow_instance.get_dag_runs_batch(
         dag_ids=list(airflow_data.all_dag_ids),
@@ -178,7 +181,7 @@ def materializations_and_requests_from_batch_iter(
             states=["success"],
         )
 
-        mats = get_asset_events(dag_run, task_instances, airflow_data)
+        mats = event_translation_fn(dag_run, task_instances)
         all_asset_keys_materialized = {mat.asset_key for mat in mats}
         yield (
             BatchResult(
