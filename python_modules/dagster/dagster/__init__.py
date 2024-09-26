@@ -530,6 +530,7 @@ from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
 from dagster._core.pipes.client import (
     PipesClient as PipesClient,
     PipesContextInjector as PipesContextInjector,
+    PipesExecutionResult as PipesExecutionResult,
     PipesMessageReader as PipesMessageReader,
 )
 from dagster._core.pipes.context import (
