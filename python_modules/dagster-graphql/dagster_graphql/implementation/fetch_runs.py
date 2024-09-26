@@ -523,6 +523,34 @@ def _replace_created_before_with_cursor(
     return copy(filters, created_before=created_before)
 
 
+def _filters_match_backfill(filters, backfill):
+    if filters.tags:
+        for key, value in filters.tags.items():
+            if key == BACKFILL_ID_TAG:
+                continue
+            if backfill.tags is None:
+                return False
+            if isinstance(value, str):
+                if backfill.tags.get(key) != value:
+                    return False
+            else:
+                if backfill.tags.get(key) not in value:
+                    return False
+    if filters.statuses:
+        if backfill.status not in _bulk_action_statuses_from_run_statuses(filters.statuses):
+            return False
+    if filters.created_before:
+        if backfill.create_time > filters.created_before:
+            return False
+    if filters.created_after:
+        if backfill.create_time < filters.created_after:
+            return False
+    if filters.job_name:
+        if backfill.job_origin_id != filters.job_name:
+            return False
+    return True
+
+
 def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
     limit: int,
@@ -564,6 +592,29 @@ def get_runs_feed_entries(
     should_fetch_backfills = exclude_subruns and (
         _filters_apply_to_backfills(filters) if filters else True
     )
+
+    if (
+        should_fetch_backfills
+        and filters
+        and filters.tags
+        and filters.tags.get(BACKFILL_ID_TAG) is not None
+    ):
+        # special case the situation where we are filtering by backfill_id and exclude_subruns is True. In this
+        # case we can fetch the backfill directly
+        backfill_id = filters.tags[BACKFILL_ID_TAG]
+        backfill = GraphenePartitionBackfill(instance.get_backfill(backfill_id))
+        new_cursor = RunsFeedCursor(
+            run_cursor=None,
+            backfill_cursor=None,
+            timestamp=None,
+        )
+        # check that the backfill matches any other filters
+        if _filters_match_backfill(filters, backfill):
+            return GrapheneRunsFeedConnection(
+                results=[backfill], cursor=new_cursor.to_string(), hasMore=False
+            )
+        return GrapheneRunsFeedConnection(results=[], cursor=new_cursor.to_string(), hasMore=False)
+
     if filters:
         run_filters = copy(filters, exclude_subruns=exclude_subruns)
         run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
