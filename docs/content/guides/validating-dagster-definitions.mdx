@@ -1,0 +1,133 @@
+---
+title: Validating Dagster definitions | Dagster Docs
+description: How to validate that your Dagster definitions are loadable.
+---
+
+# Validating Dagster definitions
+
+In this guide, we'll walk you through How to validate that your Dagster definitions are loadable using the `dagster definitions validate` command.
+
+**Looking for installation help?** Refer to the [Dagster installation guide](/getting-started/install).
+
+---
+
+## Understanding the dagster definitions validate command
+
+The `dagster definitions validate` command loads and validate your Dagster definitions using a [Dagster instance](https://docs.dagster.io/deployment/dagster-instance).
+
+This command indicates which code locations contain errors, and which ones can be successfully loaded. Code locations containing errors are considered invalid, otherwise valid.
+
+This command returns an exit code 1 when errors are found, otherwise an exit code 0.
+
+This command should be run in a Python environment where the `dagster` package is installed.
+
+---
+
+## Locating your code
+
+Before validating your Dagster definitions, you need to tell Dagster how to find the Python code containing your assets and jobs. There are a few ways to do this, which are outlined in the tabs below.
+
+**Note**: If using an example Dagster project, or if you used the [`dagster` CLI to create a project](/getting-started/create-new-project#step-1-bootstrap-a-new-project), you can run the `dagster definitions validate` command in the same folder as the project to validate the project code.
+
+<TabGroup>
+<TabItem name="From a file">
+
+Dagster can load a file directly as a code location to validate its definitions. In the following example, we used the `-f` argument to supply the name of the file:
+
+```shell
+dagster definitions validate -f my_file.py
+```
+
+This command validates the definitions in `my_file.py`.
+
+You can also include multiple files at a time, where the definitions included in each file will be validated:
+
+```shell
+dagster definitions validate -f my_file.py -f my_second_file.py
+```
+
+---
+
+</TabItem>
+<TabItem name="From a module">
+
+Dagster can also load Python modules as [code locations](/concepts/code-locations) to validate its definitions. When this approach is used, Dagster loads and validate the definitions defined in the module passed to the command line.
+
+We recommend defining a variable containing the <PyObject object="Definitions" /> object in a submodule named `definitions` inside the Python module. In practice, the submodule can be created by adding a file named `definitions.py` at the root level of the Python module.
+
+In the following example, we used the `-m` argument to supply the name of the module and where to find the definitions:
+
+```shell
+dagster definitions validate -m your_module_name.definitions
+```
+
+This command loads and validate the definitions in the variable containing the <PyObject object="Definitions" /> object in the `definitions` submodule in the current Python environment.
+
+You can also include multiple modules at a time, where the definitions included in each module will be validated:
+
+```shell
+dagster definitons validate -m your_module_name.definitions -m your_second_module.definitions
+```
+
+---
+
+</TabItem>
+<TabItem name="Without command line arguments">
+
+To load and validate definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `module_name` variable:
+
+```toml
+[tool.dagster]
+module_name = "your_module_name.definitions"  ## name of project's Python module and where to find the definitions
+```
+
+When defined, you can run this in the same directory as the `pyproject.toml` file:
+
+```shell
+dagster definitions validate
+```
+
+Instead of this:
+
+```shell
+dagster definitions validate -m your_module_name.definitions
+```
+
+You can also include multiple modules at a time using the `pyproject.toml` file, where the definitions included in each module will be validated:
+
+```toml
+[tool.dagster]
+modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
+```
+
+---
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Creating a new Dagster project"
+    href="/getting-started/create-new-project"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Running Dagster locally"
+    href="/guides/running-dagster-locally"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying Dagster to your infrastructure"
+    href="/deployment/guides"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying to Dagster+"
+    href="/dagster-plus"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Contributing to Dagster"
+    href="/community/contributing"
+  ></ArticleListItem>
+</ArticleList>

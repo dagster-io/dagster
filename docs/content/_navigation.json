@@ -1090,6 +1090,10 @@
             "path": "/guides/understanding-dagster-project-files"
           },
           {
+            "title": "Validating Dagster definitions",
+            "path": "/guides/validating-dagster-definitions"
+          },
+          {
             "title": "Running Dagster locally",
             "path": "/guides/running-dagster-locally"
           },
