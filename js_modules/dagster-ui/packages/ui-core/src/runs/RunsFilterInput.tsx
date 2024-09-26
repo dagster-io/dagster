@@ -134,7 +134,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     if (item.token === 'created_date_before') {
       obj.createdBefore = parseInt(item.value);
     } else if (item.token === 'created_date_after') {
-      obj.updatedAfter = parseInt(item.value);
+      obj.createdAfter = parseInt(item.value);
     } else if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
