@@ -1310,7 +1310,7 @@ def _create_sensor_run(
 
     job_tags = normalize_tags(
         external_job.run_tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
-    ).tags
+    )
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
         # this gets applied in the sensor definition too, but we apply it here for backcompat

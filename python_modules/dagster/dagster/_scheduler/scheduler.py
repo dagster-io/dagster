@@ -945,7 +945,7 @@ def _create_scheduler_run(
     tags = merge_dicts(
         normalize_tags(
             external_job.run_tags, allow_reserved_tags=False, warn_on_deprecated_tags=False
-        ).tags
+        )
         or {},
         schedule_tags,
     )

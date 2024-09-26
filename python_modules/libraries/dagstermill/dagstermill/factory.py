@@ -413,7 +413,7 @@ def define_dagstermill_op(
     default_description = f"This op is backed by the notebook at {notebook_path}"
     description = check.opt_str_param(description, "description", default=default_description)
 
-    user_tags = normalize_tags(tags).tags
+    user_tags = normalize_tags(tags)
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,

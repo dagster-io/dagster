@@ -161,9 +161,7 @@ class ExecutionStep(
                 so.name: so
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            tags=normalize_tags(
-                check.opt_mapping_param(tags, "tags", key_type=str), warn_on_deprecated_tags=False
-            ).tags,
+            tags=normalize_tags(tags, warn_on_deprecated_tags=False),
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),

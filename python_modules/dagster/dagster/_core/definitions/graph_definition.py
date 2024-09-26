@@ -54,7 +54,6 @@ from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.output import OutputDefinition, OutputMapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.definitions.utils import NormalizedTags
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.types.dagster_type import (
@@ -219,7 +218,7 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
         input_assets: Optional[
             Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
@@ -613,7 +612,7 @@ class GraphDefinition(NodeDefinition):
         config: Optional[
             Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
         ] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,

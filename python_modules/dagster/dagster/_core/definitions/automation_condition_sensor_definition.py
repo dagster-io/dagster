@@ -111,7 +111,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             "Setting a `default_condition` for a non-user-code AutomationConditionSensorDefinition is not supported.",
         )
 
-        self._run_tags = normalize_tags(run_tags).tags
+        self._run_tags = normalize_tags(run_tags)
 
         super().__init__(
             name=check_valid_name(name),

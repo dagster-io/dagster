@@ -515,7 +515,7 @@ def _check_execute_external_job_args(
 
     return (
         run_config,
-        normalize_tags(tags).tags,
+        normalize_tags(tags),
         op_selection,
     )
 
