@@ -104,6 +104,10 @@ class CodeLocationOrigin(ABC):
     def location_name(self) -> str:
         pass
 
+    @property
+    @abstractmethod
+    def loadable_target_origin(self) -> LoadableTargetOrigin: ...
+
     @abstractmethod
     def create_location(self, instance: "DagsterInstance") -> "CodeLocation":
         pass
@@ -140,6 +144,13 @@ class RegisteredCodeLocationOrigin(
         raise DagsterInvariantViolationError(
             "A RegisteredCodeLocationOrigin does not have enough information to reload its "
             "code location on its own."
+        )
+
+    @property
+    def loadable_target_origin(self) -> LoadableTargetOrigin:
+        raise DagsterInvariantViolationError(
+            "A RegisteredCodeLocationOrigin does not have enough information to provide a "
+            "loadable target."
         )
 
 
@@ -381,6 +392,12 @@ class GrpcServerCodeLocationOrigin(
         except DagsterUserCodeUnreachableError:
             # Server already shutdown
             pass
+
+    @property
+    def loadable_target_origin(self) -> LoadableTargetOrigin:
+        raise DagsterInvariantViolationError(
+            "A GrpcServerCodeLocationOrigin does not directly know its loadable target."
+        )
 
 
 # Different storage field name for backcompat

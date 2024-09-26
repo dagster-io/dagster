@@ -8,7 +8,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
-from dagster._core.remote_representation.handle import JobHandle
+from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -22,6 +22,7 @@ from dagster._core.test_utils import (
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, PythonFileTarget
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster._record import copy
 from dagster._time import create_datetime
 from dagster._utils import file_relative_path
 
@@ -81,12 +82,14 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def other_location_job_handle(self, job_handle: JobHandle) -> JobHandle:
         code_location_origin = job_handle.repository_handle.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
-        return job_handle._replace(
-            repository_handle=job_handle.repository_handle._replace(
-                code_location_origin=code_location_origin._replace(
-                    location_name="other_location_name"
-                )
-            )
+        new_origin = code_location_origin._replace(location_name="other_location_name")
+        with instance_for_test() as temp_instance:
+            with new_origin.create_single_location(temp_instance) as location:
+                new_repo_handle = RepositoryHandle(job_handle.repository_name, location)
+
+        return copy(
+            job_handle,
+            repository_handle=new_repo_handle,
         )
 
     def create_run(self, instance, job_handle, **kwargs):

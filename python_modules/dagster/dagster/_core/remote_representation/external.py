@@ -525,7 +525,10 @@ class ExternalJob(RepresentedJob):
         else:
             check.failed("Expected either job data or ref, got neither")
 
-        self._handle = JobHandle(self._name, repository_handle)
+        self._handle = JobHandle(
+            job_name=self._name,
+            repository_handle=repository_handle,
+        )
 
     @property
     def _job_index(self) -> JobIndex:
@@ -757,7 +760,8 @@ class ExternalResource:
             external_resource_data, "external_resource_data", ResourceSnap
         )
         self._handle = InstigatorHandle(
-            self._external_resource_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+            instigator_name=self._external_resource_data.name,
+            repository_handle=check.inst_param(handle, "handle", RepositoryHandle),
         )
 
     @property
@@ -1123,7 +1127,8 @@ class ExternalPartitionSet:
             external_partition_set_data, "external_partition_set_data", PartitionSetSnap
         )
         self._handle = PartitionSetHandle(
-            external_partition_set_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+            partition_set_name=external_partition_set_data.name,
+            repository_handle=check.inst_param(handle, "handle", RepositoryHandle),
         )
 
     @property
