@@ -847,6 +847,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         concurrency_limited_workspace_context,
         daemon,
         instance,
+        caplog,
     ):
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         workspace = concurrency_limited_workspace_context.create_request_context()
@@ -860,23 +861,30 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         instance.event_log_storage.set_concurrency_slots("foo", 1)
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+        caplog.text.count("is blocked by global concurrency limits") == 0
 
         self.submit_run(
             instance, external_job, workspace, run_id=run_id_2, asset_selection=set([foo_key])
         )
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
 
         self.submit_run(
             instance, external_job, workspace, run_id=run_id_3, asset_selection=set([foo_key])
         )
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
+        # the log message only shows up once per run
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
+        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1
 
         # bumping up the slot by one means that one more run should get dequeued
         instance.event_log_storage.set_concurrency_slots("foo", 2)
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1, run_id_2}
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
+        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1
 
     @pytest.mark.parametrize(
         "run_coordinator_config",
