@@ -15,7 +15,6 @@ from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.workspace.context import WorkspaceRequestContext
 from packaging import version
 
-from dagster_graphql.implementation.fetch_asset_checks import asset_checks_iter
 from dagster_graphql.schema.asset_checks import (
     AssetChecksOrErrorUnion,
     GrapheneAssetCheck,
@@ -42,7 +41,14 @@ class AssetChecksLoader:
         self, pipeline: Optional[GraphenePipelineSelector]
     ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
         if pipeline is None:
-            yield from asset_checks_iter(self._context)
+            entries = self._context.get_code_location_entries().values()
+            for entry in entries:
+                code_loc = entry.code_location
+                if code_loc:
+                    for repo in code_loc.get_repositories().values():
+                        for check in repo.get_external_asset_checks():
+                            yield (code_loc, repo, check)
+
         else:
             job_name = cast(str, pipeline.pipelineName)
             repo_sel = RepositorySelector.from_graphql_input(pipeline)

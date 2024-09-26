@@ -64,7 +64,7 @@ from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteAssetNode
     from dagster._core.remote_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
@@ -334,6 +334,12 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
         return None
+
+    def get_asset_node(self, asset_key: AssetKey) -> Optional["RemoteAssetNode"]:
+        if not self.get_workspace_snapshot().asset_graph.has(asset_key):
+            return None
+
+        return self.get_workspace_snapshot().asset_graph.get(asset_key)
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
