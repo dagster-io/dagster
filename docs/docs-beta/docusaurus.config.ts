@@ -26,7 +26,12 @@ const config: Config = {
     // Algolia environment variables are not required during development
     algolia:
       process.env.NODE_ENV === 'development'
-        ? null
+        ? {
+            appId: 'ABC123',
+            apiKey: 'ABC123',
+            indexName: 'ABC123',
+            contextualSearch: false,
+          }
         : {
             appId: process.env.ALGOLIA_APP_ID,
             apiKey: process.env.ALGOLIA_API_KEY,
