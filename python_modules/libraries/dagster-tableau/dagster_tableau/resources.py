@@ -1,11 +1,14 @@
 import datetime
+import json
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Type, Union, cast
+from typing import List, Mapping, Optional, Sequence, Type, Union
 
 import jwt
 import requests
+import tableauserverclient as TSC
+import xmltodict
 from dagster import (
     AssetsDefinition,
     ConfigurableResource,
@@ -22,6 +25,7 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
+from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
@@ -29,8 +33,6 @@ from dagster_tableau.translator import (
     TableauContentType,
     TableauWorkspaceData,
 )
-
-TABLEAU_REST_API_VERSION = "3.23"
 
 
 @experimental
@@ -48,77 +50,27 @@ class BaseTableauClient:
         self.connected_app_secret_value = connected_app_secret_value
         self.username = username
         self.site_name = site_name
-        self._api_token = None
-        self._site_id = None
+        self._server = TSC.Server(self.base_url)
+        self._server.use_server_version()
 
     @property
     @abstractmethod
-    def rest_api_base_url(self) -> str:
+    def base_url(self) -> str:
         raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def metadata_api_base_url(self) -> str:
-        raise NotImplementedError()
-
-    def _fetch_json(
-        self,
-        url: str,
-        data: Optional[Mapping[str, object]] = None,
-        method: str = "GET",
-        with_auth_header: bool = True,
-    ) -> Mapping[str, object]:
-        """Fetch JSON data from the Tableau APIs given the URL. Raises an exception if the request fails.
-
-        Args:
-            url (str): The url to fetch data from.
-            data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
-            method (str): The HTTP method to use for the request.
-            with_auth_header (bool): Whether to add X-Tableau-Auth header to the request. Enabled by default.
-
-        Returns:
-            Dict[str, Any]: The JSON data returned from the API.
-        """
-        response = self._make_request(
-            url=url, data=data, method=method, with_auth_header=with_auth_header
-        )
-        return response.json()
-
-    def _make_request(
-        self,
-        url: str,
-        data: Optional[Mapping[str, object]] = None,
-        method: str = "GET",
-        with_auth_header: bool = True,
-    ) -> requests.Response:
-        headers: Mapping[str, object] = {
-            "accept": "application/json",
-            "content-type": "application/json",
-        }
-        if with_auth_header:
-            headers = {**headers, "X-tableau-auth": self._api_token}
-        request_args: Dict[str, Any] = dict(
-            method=method,
-            url=url,
-            headers=headers,
-        )
-        if data:
-            request_args = {**request_args, "json": data}
-        response = requests.request(**request_args)
-        response.raise_for_status()
-        return response
 
     @cached_method
     def get_workbooks(self) -> Mapping[str, object]:
         """Fetches a list of all Tableau workbooks in the workspace."""
-        endpoint = self._with_site_id("workbooks")
-        return self._fetch_json(url=f"{self.rest_api_base_url}/{endpoint}")
+        return self._response_to_dict(
+            self._server.workbooks.get_request(self._server.workbooks.baseurl)
+        )
 
     @cached_method
     def get_workbook(self, workbook_id) -> Mapping[str, object]:
         """Fetches information, including sheets, dashboards and data sources, for a given workbook."""
-        data = {"query": self.workbook_graphql_query, "variables": {"luid": workbook_id}}
-        return self._fetch_json(url=self.metadata_api_base_url, data=data, method="POST")
+        return self._server.metadata.query(
+            query=self.workbook_graphql_query, variables={"luid": workbook_id}
+        )
 
     @cached_method
     def get_view(
@@ -126,10 +78,11 @@ class BaseTableauClient:
         view_id: str,
     ) -> Mapping[str, object]:
         """Fetches information for a given view."""
-        endpoint = self._with_site_id(f"views/{view_id}")
-        return self._fetch_json(url=f"{self.rest_api_base_url}/{endpoint}")
+        return self._response_to_dict(
+            self._server.views.get_request(f"{self._server.views.baseurl}/{view_id}")
+        )
 
-    def sign_in(self) -> Mapping[str, object]:
+    def sign_in(self) -> Auth.contextmgr:
         """Sign in to the site in Tableau."""
         jwt_token = jwt.encode(
             {
@@ -144,32 +97,15 @@ class BaseTableauClient:
             algorithm="HS256",
             headers={"kid": self.connected_app_secret_id, "iss": self.connected_app_client_id},
         )
-        data = {
-            "credentials": {
-                "jwt": jwt_token,
-                "site": {"contentUrl": self.site_name},
-            }
-        }
-        response = self._fetch_json(
-            url=f"{self.rest_api_base_url}/auth/signin",
-            data=data,
-            method="POST",
-            with_auth_header=False,
+
+        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)
+        return self._server.auth.sign_in(tableau_auth)
+
+    @staticmethod
+    def _response_to_dict(response: requests.Response):
+        return json.loads(
+            json.dumps(xmltodict.parse(response.text, attr_prefix="", cdata_key="")["tsResponse"])
         )
-
-        response = cast(Dict[str, Any], response)
-        self._api_token = response["credentials"]["token"]
-        self._site_id = response["credentials"]["site"]["id"]
-        return response
-
-    def sign_out(self) -> None:
-        """Sign out from the site in Tableau."""
-        self._make_request(url=f"{self.rest_api_base_url}/auth/signout", method="POST")
-        self._api_token = None
-        self._site_id = None
-
-    def _with_site_id(self, endpoint: str) -> str:
-        return f"sites/{self._site_id}/{endpoint}"
 
     @property
     def workbook_graphql_query(self) -> str:
@@ -234,14 +170,9 @@ class TableauCloudClient(BaseTableauClient):
         )
 
     @property
-    def rest_api_base_url(self) -> str:
-        """REST API base URL for Tableau Cloud."""
-        return f"https://{self.pod_name}.online.tableau.com/api/{TABLEAU_REST_API_VERSION}"
-
-    @property
-    def metadata_api_base_url(self) -> str:
-        """Metadata API base URL for Tableau Cloud."""
-        return f"https://{self.pod_name}.online.tableau.com/api/metadata/graphql"
+    def base_url(self) -> str:
+        """Base URL for Tableau Cloud."""
+        return f"https://{self.pod_name}.online.tableau.com"
 
 
 @experimental
@@ -269,14 +200,9 @@ class TableauServerClient(BaseTableauClient):
         )
 
     @property
-    def rest_api_base_url(self) -> str:
-        """REST API base URL for Tableau Server."""
-        return f"https://{self.server_name}/api/{TABLEAU_REST_API_VERSION}"
-
-    @property
-    def metadata_api_base_url(self) -> str:
-        """Metadata API base URL for Tableau Server."""
-        return f"https://{self.server_name}/api/metadata/graphql"
+    def base_url(self) -> str:
+        """Base URL for Tableau Cloud."""
+        return f"https://{self.server_name}"
 
 
 @experimental
@@ -308,11 +234,8 @@ class BaseTableauWorkspace(ConfigurableResource):
     def get_client(self):
         if not self._client:
             self.build_client()
-        self._client.sign_in()
-        try:
+        with self._client.sign_in():
             yield self._client
-        finally:
-            self._client.sign_out()
 
     def fetch_tableau_workspace_data(
         self,
