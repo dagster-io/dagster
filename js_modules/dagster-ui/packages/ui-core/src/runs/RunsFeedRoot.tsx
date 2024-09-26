@@ -70,8 +70,8 @@ export function useRunsFeedEntries(filter: RunsFilter) {
         return undefined;
       }
       return runs.runsFeedOrError.connection.hasMore
-      ? runs.runsFeedOrError.connection.cursor
-      : undefined;
+        ? runs.runsFeedOrError.connection.cursor
+        : undefined;
     },
     getResultArray: (data) => {
       if (!data || data.runsFeedOrError.__typename !== 'RunsFeed') {
