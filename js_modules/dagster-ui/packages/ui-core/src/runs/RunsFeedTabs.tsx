@@ -48,7 +48,9 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
       queuedCount:
         countData?.queuedCount?.__typename === 'RunsFeedCount' ? countData.queuedCount.count : null,
       inProgressCount:
-        countData?.inProgressCount?.__typename === 'RunsFeedCount' ? countData.inProgressCount.count : null,
+        countData?.inProgressCount?.__typename === 'RunsFeedCount'
+          ? countData.inProgressCount.count
+          : null,
     };
   }, [countData]);
 
