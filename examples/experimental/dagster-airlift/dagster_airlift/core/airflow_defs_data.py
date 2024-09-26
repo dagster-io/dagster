@@ -29,7 +29,6 @@ def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str
     task_info, migration_state = mapped_task.task_info, mapped_task.migrated
     task_level_metadata = {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
-        # In this case,
         "Dag ID": task_info.dag_id,
         "Link to DAG": UrlMetadataValue(task_info.dag_url),
     }
