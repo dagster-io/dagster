@@ -47,6 +47,11 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter) {
         message
       }
     }
+    runsFeedCountOrError(filter: $filter) {
+        ... on RunsFeedCount {
+            count
+        }
+    }
 }
 """
 
@@ -98,6 +103,11 @@ def _create_backfill(
     return backfill.backfill_id
 
 
+def _assert_results_match_count_match_expected(query_result, expected_count):
+    assert len(query_result.data["runsFeedOrError"]["results"]) == expected_count
+    assert query_result.data["runsFeedCountOrError"]["count"] == expected_count
+
+
 class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
     """Tests for the runs feed that can be done on a instance that has 10 runs and 10 backfills
     created in alternating order. Split these tests into a separate class so that we can make the runs
@@ -141,8 +151,8 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
+        _assert_results_match_count_match_expected(result, 10)
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -163,7 +173,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
@@ -185,7 +195,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 15
+        _assert_results_match_count_match_expected(result, 15)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -205,7 +215,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        _assert_results_match_count_match_expected(result, 5)
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
@@ -227,7 +237,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -255,7 +265,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
@@ -383,7 +393,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -407,7 +417,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
     def test_get_runs_feed_one_backfill_long_ago(self, graphql_context):
@@ -429,7 +439,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -457,7 +467,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
@@ -490,7 +500,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -514,7 +524,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
@@ -548,7 +558,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        _assert_results_match_count_match_expected(result, 5)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -577,7 +587,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        _assert_results_match_count_match_expected(result, 5)
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
@@ -617,7 +627,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 9
+        _assert_results_match_count_match_expected(result, 9)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -631,7 +641,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -644,7 +654,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -657,7 +667,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -670,7 +680,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -683,7 +693,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
     def test_get_runs_feed_filter_status_and_show_subruns(self, graphql_context):
         _create_run(graphql_context, status=DagsterRunStatus.SUCCESS)
@@ -797,7 +807,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 20
+        _assert_results_match_count_match_expected(result, 20)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -811,7 +821,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -825,7 +835,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -839,7 +849,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 20
+        _assert_results_match_count_match_expected(result, 20)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         # ensure the cursor overrides the createdBefore filter when the query is called multiple times for
@@ -855,7 +865,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
         assert result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -869,7 +879,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        _assert_results_match_count_match_expected(result, 4)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
     def test_get_runs_feed_filter_job_name(self, graphql_context):
@@ -915,7 +925,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        _assert_results_match_count_match_expected(result, 12)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -929,7 +939,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -942,7 +952,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
 
     def test_get_runs_feed_filter_tags(self, graphql_context):
         if not self.supports_filtering():
@@ -974,7 +984,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        _assert_results_match_count_match_expected(result, 12)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -988,7 +998,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
 
         # filtering for tags that are only on sub-runs of backfills should not return the backfill
         result = execute_dagster_graphql(
@@ -1002,7 +1012,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1015,7 +1025,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 3
+        _assert_results_match_count_match_expected(result, 3)
 
     def test_get_runs_feed_filters_that_dont_apply_to_backfills(self, graphql_context):
         run = _create_run(graphql_context)
@@ -1035,7 +1045,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -1049,7 +1059,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
     def test_get_runs_feed_filters_that_dont_apply_to_backfills_and_show_subruns(
         self, graphql_context
@@ -1136,7 +1146,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        _assert_results_match_count_match_expected(result, 12)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -1150,7 +1160,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1166,7 +1176,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        _assert_results_match_count_match_expected(result, 4)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1179,7 +1189,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
     def test_get_backfill_id_filter(self, graphql_context):
         backfill_id = _create_backfill(graphql_context)
@@ -1234,4 +1244,4 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)

@@ -78,6 +78,7 @@ from dagster_graphql.implementation.fetch_runs import (
     get_run_group,
     get_run_tag_keys,
     get_run_tags,
+    get_runs_feed_count,
     get_runs_feed_entries,
     validate_pipeline_config,
 )
@@ -183,7 +184,11 @@ from dagster_graphql.schema.runs import (
     GrapheneRunTagsOrError,
     parse_run_config_input,
 )
-from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnectionOrError
+from dagster_graphql.schema.runs_feed import (
+    GrapheneRunsFeedConnectionOrError,
+    GrapheneRunsFeedCount,
+    GrapheneRunsFeedCountOrError,
+)
 from dagster_graphql.schema.schedules import (
     GrapheneScheduleOrError,
     GrapheneSchedulerOrError,
@@ -372,6 +377,11 @@ class GrapheneQuery(graphene.ObjectType):
         cursor=graphene.String(),
         filter=graphene.Argument(GrapheneRunsFilter),
         description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
+    )
+    runsFeedCountOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunsFeedCountOrError),
+        filter=graphene.Argument(GrapheneRunsFilter),
+        description="Retrieve the number of entries for the Runs Feed after applying a filter.",
     )
     runTagKeysOrError = graphene.Field(
         GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
@@ -849,6 +859,14 @@ class GrapheneQuery(graphene.ObjectType):
         return get_runs_feed_entries(
             graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
         )
+
+    def resolve_runsFeedCountOrError(
+        self,
+        graphene_info: ResolveInfo,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
+    ):
+        selector = filter.to_selector() if filter is not None else None
+        return GrapheneRunsFeedCount(get_runs_feed_count(graphene_info, selector))
 
     @capture_error
     def resolve_partitionSetsOrError(

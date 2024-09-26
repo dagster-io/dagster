@@ -46,9 +46,9 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
   const {queuedCount, inProgressCount} = useMemo(() => {
     return {
       queuedCount:
-        countData?.queuedCount?.__typename === 'Runs' ? countData.queuedCount.count : null,
+        countData?.queuedCount?.__typename === 'RunsFeedCount' ? countData.queuedCount.count : null,
       inProgressCount:
-        countData?.inProgressCount?.__typename === 'Runs' ? countData.inProgressCount.count : null,
+        countData?.inProgressCount?.__typename === 'RunsFeedCount' ? countData.inProgressCount.count : null,
     };
   }, [countData]);
 
@@ -129,13 +129,13 @@ export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => 
 
 export const RUN_FEED_TABS_COUNT_QUERY = gql`
   query RunFeedTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
-    queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
-      ... on Runs {
+    queuedCount: runsFeedCountOrError(filter: $queuedFilter) {
+      ... on RunsFeedCount {
         count
       }
     }
-    inProgressCount: pipelineRunsOrError(filter: $inProgressFilter) {
-      ... on Runs {
+    inProgressCount: runsFeedCountOrError(filter: $inProgressFilter) {
+      ... on RunsFeedCount {
         count
       }
     }

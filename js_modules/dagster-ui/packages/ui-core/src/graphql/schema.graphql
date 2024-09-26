@@ -3287,6 +3287,7 @@ type Query {
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
   runsFeedOrError(limit: Int!, cursor: String, filter: RunsFilter): RunsFeedConnectionOrError!
+  runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3449,6 +3450,12 @@ type RunsFeedConnection {
   results: [RunsFeedEntry!]!
   cursor: String!
   hasMore: Boolean!
+}
+
+union RunsFeedCountOrError = RunsFeedCount | PythonError
+
+type RunsFeedCount {
+  count: Int!
 }
 
 union RunTagKeysOrError = PythonError | RunTagKeys
