@@ -818,21 +818,39 @@ def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPool
         ).code_location
         assert code_location
         external_repo = code_location.get_repository("the_repo")
-        simple_schedule = external_repo.get_external_schedule("simple_schedule")
-        simple_origin = simple_schedule.get_external_origin()
+        running_schedule = external_repo.get_external_schedule("simple_schedule")
+        stopped_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
 
         assert len(instance.all_instigator_state()) == 0
 
+        def _get_ticks(external_schedule):
+            return instance.get_ticks(
+                external_schedule.get_external_origin().get_id(), external_schedule.selector_id
+            )
+
+        def _get_state(external_schedule):
+            return instance.get_instigator_state(
+                external_schedule.get_external_origin().get_id(), external_schedule.selector_id
+            )
+
         with freeze_time(initial_datetime):
-            instance.start_schedule(simple_schedule)
-            assert len(instance.all_instigator_state()) == 1
-            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 0
+            instance.start_schedule(running_schedule)
+            instance.start_schedule(stopped_schedule)
+            instance.stop_schedule(
+                stopped_schedule.get_external_origin().get_id(),
+                stopped_schedule.selector_id,
+                stopped_schedule,
+            )
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            assert len(_get_ticks(running_schedule)) == 0
 
         successful_iteration_time = initial_datetime + relativedelta(days=1)
         with freeze_time(successful_iteration_time):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
-            assert len(instance.all_instigator_state()) == 1
-            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            assert len(_get_ticks(running_schedule)) == 1
 
         # Try with an error workspace - the job state should not be deleted
         remove_datetime = successful_iteration_time + relativedelta(days=1)
@@ -852,13 +870,12 @@ def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPool
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             # state preserved
-            assert instance.get_instigator_state(
-                simple_origin.get_id(), simple_schedule.selector_id
-            )
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
             # ticks preserved
-            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+            assert len(_get_ticks(running_schedule)) == 1
 
-    # Try with an empty workspace, schedule does not exist anymore
+    # Try with an empty workspace, schedules do not exist anymore
     retain_datetime = successful_iteration_time + relativedelta(
         seconds=RETAIN_ORPHANED_STATE_INTERVAL_SECONDS - 1
     )
@@ -868,20 +885,18 @@ def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPool
         with freeze_time(retain_datetime):
             evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
             # state preserved
-            assert instance.get_instigator_state(
-                simple_origin.get_id(), simple_schedule.selector_id
-            )
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
             # ticks preserved
-            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+            assert len(_get_ticks(running_schedule)) == 1
 
         with freeze_time(remove_datetime):
             evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
             # state removed
-            assert not instance.get_instigator_state(
-                simple_origin.get_id(), simple_schedule.selector_id
-            )
+            assert not _get_state(running_schedule)
+            assert not _get_state(stopped_schedule)
             # ticks preserved
-            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+            assert len(_get_ticks(running_schedule)) == 1
 
 
 # Schedules with status defined in code have that status applied

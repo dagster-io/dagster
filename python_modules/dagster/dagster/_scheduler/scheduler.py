@@ -285,7 +285,8 @@ def launch_scheduled_runs(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
-    schedules: Dict[str, RemoteSchedule] = {}
+    running_schedules: Dict[str, RemoteSchedule] = {}
+    all_workspace_schedule_selector_ids = set()
     error_locations = set()
 
     now_timestamp = end_datetime_utc.timestamp()
@@ -296,10 +297,11 @@ def launch_scheduled_runs(
             for repo in code_location.get_repositories().values():
                 for schedule in repo.get_schedules():
                     selector_id = schedule.selector_id
+                    all_workspace_schedule_selector_ids.add(selector_id)
                     if schedule.get_current_instigator_state(
                         all_schedule_states.get(selector_id)
                     ).is_running:
-                        schedules[selector_id] = schedule
+                        running_schedules[selector_id] = schedule
                     elif all_schedule_states.get(selector_id):
                         schedule_state = all_schedule_states[selector_id]
                         # If there is a DB row to update, see if we should still update the
@@ -320,7 +322,7 @@ def launch_scheduled_runs(
     states_to_delete = [
         schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
-        if selector_id not in schedules
+        if selector_id not in all_workspace_schedule_selector_ids
     ]
     for state in states_to_delete:
         location_name = state.origin.repository_origin.code_location_origin.location_name
@@ -346,11 +348,11 @@ def launch_scheduled_runs(
             )
             instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
-    if not schedules:
+    if not running_schedules:
         yield
         return
 
-    for schedule in schedules.values():
+    for schedule in running_schedules.values():
         error_info = None
         try:
             schedule_state = all_schedule_states.get(schedule.selector_id)
