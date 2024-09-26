@@ -1,3 +1,7 @@
+# 1.1.3 (September 25, 2024)
+
+- Revert Rollup upgrade
+
 # 1.1.2 (September 25, 2024)
 
 - Upgrade to Rollup 4
