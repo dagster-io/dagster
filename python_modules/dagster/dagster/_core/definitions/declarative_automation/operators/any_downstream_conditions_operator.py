@@ -7,9 +7,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
+@record
 class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
@@ -45,6 +47,7 @@ class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
+@record
 class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:

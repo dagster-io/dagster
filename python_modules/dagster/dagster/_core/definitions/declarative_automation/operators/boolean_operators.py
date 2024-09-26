@@ -8,10 +8,12 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes(storage_name="AndAssetCondition")
+@record
 class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that all of its children evaluate to true."""
 
@@ -59,6 +61,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")
+@record
 class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that any of its children evaluate to true."""
 
@@ -95,6 +98,7 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
+@record
 class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that none of its children evaluate to true."""
 

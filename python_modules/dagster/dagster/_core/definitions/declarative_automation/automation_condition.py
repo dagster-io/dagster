@@ -21,7 +21,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._model import DagsterModel
+from dagster._record import copy, record
 from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
@@ -556,7 +556,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         return AnyDownstreamConditionsCondition()
 
 
-class BuiltinAutomationCondition(DagsterModel, AutomationCondition[T_EntityKey]):
+@record
+class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
     """Base class for AutomationConditions provided by the core dagster framework."""
 
     label: Optional[str] = None
@@ -567,7 +568,7 @@ class BuiltinAutomationCondition(DagsterModel, AutomationCondition[T_EntityKey])
     @public
     def with_label(self, label: Optional[str]) -> Self:
         """Returns a copy of this AutomationCondition with a human-readable label."""
-        return self.model_copy(update={"label": label})
+        return copy(self, label=label)
 
     def __hash__(self) -> int:
         return self.get_hash()

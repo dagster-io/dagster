@@ -9,10 +9,12 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
+@record
 class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition[T_EntityKey]
 
