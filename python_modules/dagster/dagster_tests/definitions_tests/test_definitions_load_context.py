@@ -10,6 +10,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
     DefinitionsLoadType,
+    StateBackedDefinitionsLoader,
 )
 from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
@@ -26,7 +27,9 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.execution.api import execute_job
 from dagster._core.instance_for_test import instance_for_test
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.test.definitions import lazy_definitions, scoped_reconstruction_serdes_objects
 
 FOO_INTEGRATION_SOURCE_KEY = "foo_integration"
 
@@ -152,3 +155,34 @@ def test_definitions_load_type():
     with instance_for_test() as instance:
         with pytest.raises(Exception, match="Unexpected load type"):
             execute_job(recon_job, instance=instance)
+
+
+def test_state_backed_defs_loader() -> None:
+    @whitelist_for_serdes
+    @record
+    class ExampleDefState:
+        a_string: str
+
+    class ExampleStateBackedDefinitionsLoader(StateBackedDefinitionsLoader[ExampleDefState]):
+        @property
+        def defs_key(self) -> str:
+            return "test_key"
+
+        def fetch_state(self) -> ExampleDefState:
+            return ExampleDefState(a_string="foo")
+
+        def defs_from_state(self, state: ExampleDefState) -> Definitions:
+            return Definitions([AssetSpec(key=state.a_string)])
+
+    loader = ExampleStateBackedDefinitionsLoader()
+
+    defs = loader.build_defs()
+
+    assert len(defs.get_all_asset_specs()) == 1
+    assert defs.get_assets_def("foo")
+
+    with scoped_reconstruction_serdes_objects(dict(test_key=ExampleDefState(a_string="bar"))):
+        loader_cached = ExampleStateBackedDefinitionsLoader()
+        defs = loader_cached.build_defs()
+        assert len(defs.get_all_asset_specs()) == 1
+        assert defs.get_assets_def("bar")
