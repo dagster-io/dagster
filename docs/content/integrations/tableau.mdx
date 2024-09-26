@@ -88,10 +88,10 @@ defs = workspace.build_defs()
 
 ### Customize asset definition metadata for Tableau assets
 
-By default, Dagster will generate asset keys for each Tableau asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom `DagsterTableauTranslator` subclass to the `build_defs()` function. This subclass can implement methods to customize the asset keys or specs for each Tableau asset type.
+By default, Dagster will generate asset keys for each Power BI asset based on its type and name and populate default metadata. You can further customize asset properties by using <PyObject object="Definitions" method="map_asset_specs" />, which applies a function of your choosing to each asset.
 
 ```python file=/integrations/tableau/customize-tableau-asset-defs.py
-from dagster_tableau import DagsterTableauTranslator, TableauCloudWorkspace
+from dagster_tableau import TableauCloudWorkspace
 from dagster_tableau.translator import TableauContentData
 
 from dagster import AssetSpec, EnvVar
@@ -106,15 +106,9 @@ workspace = TableauCloudWorkspace(
 )
 
 
-# A translator class lets us customize properties of the built
-# Tableau assets, such as the owners or asset key
-class MyCustomTableauTranslator(DagsterTableauTranslator):
-    def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
-        # We add a custom team owner tag to all sheets
-        return super().get_sheet_spec(data)._replace(owners=["my_team"])
-
-
-defs = workspace.build_defs(dagster_tableau_translator=MyCustomTableauTranslator)
+defs = workspace.build_defs().map_asset_specs(
+    lambda spec: spec._replace(owners=["my_team"])
+)
 ```
 
 ### Load Tableau assets from multiple workspaces

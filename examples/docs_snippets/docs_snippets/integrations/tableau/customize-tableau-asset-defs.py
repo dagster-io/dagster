@@ -1,4 +1,4 @@
-from dagster_tableau import DagsterTableauTranslator, TableauCloudWorkspace
+from dagster_tableau import TableauCloudWorkspace
 from dagster_tableau.translator import TableauContentData
 
 from dagster import AssetSpec, EnvVar
@@ -13,12 +13,6 @@ workspace = TableauCloudWorkspace(
 )
 
 
-# A translator class lets us customize properties of the built
-# Tableau assets, such as the owners or asset key
-class MyCustomTableauTranslator(DagsterTableauTranslator):
-    def get_sheet_spec(self, data: TableauContentData) -> AssetSpec:
-        # We add a custom team owner tag to all sheets
-        return super().get_sheet_spec(data)._replace(owners=["my_team"])
-
-
-defs = workspace.build_defs(dagster_tableau_translator=MyCustomTableauTranslator)
+defs = workspace.build_defs().map_asset_specs(
+    lambda spec: spec._replace(owners=["my_team"])
+)

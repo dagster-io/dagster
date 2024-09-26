@@ -1,8 +1,4 @@
-from dagster_powerbi import (
-    DagsterPowerBITranslator,
-    PowerBIServicePrincipal,
-    PowerBIWorkspace,
-)
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIWorkspace
 from dagster_powerbi.translator import PowerBIContentData
 
 from dagster import EnvVar
@@ -19,23 +15,14 @@ resource = PowerBIWorkspace(
 )
 
 
-# A translator class lets us customize properties of the built
-# Power BI assets, such as the owners or asset key
-class MyCustomPowerBITranslator(DagsterPowerBITranslator):
-    def get_report_spec(self, data: PowerBIContentData) -> AssetSpec:
-        # We add a team owner tag to all reports
-        return super().get_report_spec(data)._replace(owners=["my_team"])
+def customize_powerbi_asset(spec: AssetSpec) -> AssetSpec:
+    # We prefix all dashboard asset keys with "powerbi-dashboard" for
+    # organizational purposes
+    key = spec.key
+    if spec.tags["dagster-powerbi/asset_type"] == "dashboard":
+        key = key.with_prefix("powerbi-dashboard")
 
-    def get_semantic_model_spec(self, data: PowerBIContentData) -> AssetSpec:
-        return super().get_semantic_model_spec(data)._replace(owners=["my_team"])
-
-    def get_dashboard_spec(self, data: PowerBIContentData) -> AssetSpec:
-        return super().get_dashboard_spec(data)._replace(owners=["my_team"])
-
-    def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
-        # We prefix all dashboard asset keys with "powerbi" for organizational
-        # purposes
-        return super().get_dashboard_asset_key(data).with_prefix("powerbi")
+    return spec._replace(key=key, owners="my_team")
 
 
-defs = resource.build_defs(dagster_powerbi_translator=MyCustomPowerBITranslator)
+defs = resource.build_defs().map_asset_specs(customize_powerbi_asset)
