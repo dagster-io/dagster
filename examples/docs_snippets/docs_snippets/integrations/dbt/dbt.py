@@ -501,7 +501,7 @@ def scope_use_dbt_defer_with_dbt_project(manifest):
         packaged_project_dir=Path(__file__)
         .joinpath("..", "..", "dbt-project")
         .resolve(),
-        state_path=os.getenv("DBT_STATE_PATH"),
+        state_path=Path("state"),
     )
     my_dbt_project.prepare_if_dev()
 
