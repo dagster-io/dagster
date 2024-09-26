@@ -199,8 +199,7 @@ class MdxTranslator(SphinxTranslator):
 
     # From:https://github.com/docutils/docutils/blob/master/docutils/docutils/writers/_html_base.py
     def starttag(self, node, tagname, suffix="\n", empty=False, **attributes):
-        """
-        Construct and return a start tag given a node (id & class attributes
+        """Construct and return a start tag given a node (id & class attributes
         are extracted), tag name, and optional attributes.
         """
         tagname = tagname.lower()

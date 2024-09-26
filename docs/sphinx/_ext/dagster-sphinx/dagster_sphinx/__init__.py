@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Type, TypeVar
+from typing import List, Tuple, Type, TypeVar
 
 import docutils.nodes as nodes
 from dagster._annotations import (
