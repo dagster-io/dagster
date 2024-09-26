@@ -117,6 +117,7 @@ autodoc_mock_imports = [
     "mypy_boto3_glue",
     "mysql",
     "oauth2client",
+    "origami",
     "orjson",
     "pandas_gbq",
     "pandera",

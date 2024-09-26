@@ -1,4 +1,4 @@
-SPHINXOPTS    ?= -j auto
+SPHINXOPTS    ?= -j auto -W --keep-going -v
 SPHINXBUILD   ?= sphinx-build 
 SOURCEDIR     = .
 BUILDDIR      = _build
