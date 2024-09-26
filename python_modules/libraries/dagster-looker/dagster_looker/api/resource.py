@@ -4,6 +4,7 @@ from dagster import (
     ConfigurableResource,
     _check as check,
 )
+from dagster._annotations import experimental, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.cached_method import cached_method
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 logger = get_dagster_logger("dagster_looker")
 
 
+@experimental
 class LookerResource(ConfigurableResource):
     """Represents a connection to a Looker instance and provides methods
     to interact with the Looker API.
@@ -142,6 +144,7 @@ class LookerResource(ConfigurableResource):
             )
         ]
 
+    @public
     def build_defs(
         self,
         *,
