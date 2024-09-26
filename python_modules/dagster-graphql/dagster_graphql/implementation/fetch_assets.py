@@ -156,7 +156,8 @@ def get_asset_node_definition_collisions(
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
     for remote_asset_node in graphene_info.context.asset_graph.asset_nodes:
-        for repo_handle, asset_node_snap in remote_asset_node.repo_node_pairs:
+        for node in remote_asset_node.scoped_asset_nodes:
+            asset_node_snap = node.asset
             if asset_node_snap.asset_key in asset_keys:
                 is_defined = (
                     asset_node_snap.node_definition_name
@@ -166,7 +167,7 @@ def get_asset_node_definition_collisions(
                 if not is_defined:
                     continue
 
-                repos[asset_node_snap.asset_key].append(GrapheneRepository(repo_handle))
+                repos[asset_node_snap.asset_key].append(GrapheneRepository(node.handle))
 
     results: List[GrapheneAssetNodeDefinitionCollision] = []
     for asset_key in repos.keys():
