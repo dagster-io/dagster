@@ -278,6 +278,7 @@ def _build_run_requests_from_partitions_def_mapping(
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
         for entity_keys_for_repo in asset_graph.split_entity_keys_by_repository(entity_keys):
+            asset_check_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)]
             run_requests.append(
                 # Do not call run_request.with_resolved_tags_and_config as the partition key is
                 # valid and there is no config.
@@ -287,9 +288,11 @@ def _build_run_requests_from_partitions_def_mapping(
                     asset_selection=[k for k in entity_keys_for_repo if isinstance(k, AssetKey)],
                     partition_key=partition_key,
                     tags=tags,
-                    asset_check_keys=[
-                        k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)
-                    ],
+                    # for now, we explicitly set asset_check_keys to None if none are selected,
+                    # which allows for required asset check keys to be grouped as part of the
+                    # run if any exist, avoiding errors. however, this should actually be handled
+                    # in the AutomationConditionEvaluator class in the future.
+                    asset_check_keys=asset_check_keys if len(asset_check_keys) > 0 else None,
                 )
             )
 
