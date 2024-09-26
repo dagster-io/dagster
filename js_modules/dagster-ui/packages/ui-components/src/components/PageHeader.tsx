@@ -46,7 +46,7 @@ const PageHeaderContainer = styled(Box)`
   /**
    * Blueprint breadcrumbs annoyingly have a built-in height.
    */
-  .bp4-breadcrumbs {
+  .bp5-breadcrumbs {
     height: auto;
   }
 `;

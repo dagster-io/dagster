@@ -147,8 +147,8 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
     margin-top: 2px;
   }
 
-  &.bp4-active,
-  &.bp4-active:hover {
+  &.bp5-active,
+  &.bp5-active:hover {
     background-color: ${Colors.backgroundBlue()};
     color: ${Colors.textDefault()};
 
@@ -157,11 +157,11 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
     }
   }
 
-  &.bp4-disabled ${IconWrapper} {
+  &.bp5-disabled ${IconWrapper} {
     opacity: 0.5;
   }
 
-  &.bp4-active ${IconWrapper} {
+  &.bp5-active ${IconWrapper} {
     color: ${Colors.textDefault()};
   }
 

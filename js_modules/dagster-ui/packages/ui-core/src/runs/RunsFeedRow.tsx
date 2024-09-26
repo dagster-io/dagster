@@ -199,7 +199,7 @@ const RowGrid = styled(Box)`
   display: grid;
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
-  .bp4-popover2-target {
+  .bp5-popover-target {
     display: block;
   }
   ${CreatedByTagCellWrapper} {
