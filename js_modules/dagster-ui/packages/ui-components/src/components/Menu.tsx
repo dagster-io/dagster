@@ -65,7 +65,7 @@ export interface CommonMenuItemProps {
 
 interface ItemProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'href' | 'icon'> {}
+    Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'ref' | 'href' | 'icon'> {}
 
 export const MenuItem = (props: ItemProps) => {
   const {icon, intent, ...rest} = props;
@@ -81,7 +81,7 @@ export const MenuItem = (props: ItemProps) => {
 
 interface MenuExternalLinkProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'href' | 'icon'> {
+    Omit<React.ComponentProps<typeof BlueprintMenuItem>, 'ref' | 'href' | 'icon'> {
   href: string;
 }
 

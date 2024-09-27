@@ -1,12 +1,12 @@
 import * as React from 'react';
-import {DateRangePicker} from 'react-dates';
+import {DateRangePicker, DateRangePickerShape} from 'react-dates';
 import styled from 'styled-components';
 
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
 import {Colors} from './Color';
 
-export const DateRangePickerWrapper = (props: React.ComponentProps<typeof DateRangePicker>) => {
+export const DateRangePickerWrapper = (props: DateRangePickerShape) => {
   return (
     <DatePickerContainer>
       <DateRangePicker {...props} />
