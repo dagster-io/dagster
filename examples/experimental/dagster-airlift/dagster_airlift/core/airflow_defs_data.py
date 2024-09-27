@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, List, Mapping, Optional
+from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Set
 
 from dagster import (
     AssetKey,
@@ -61,6 +61,10 @@ def make_dag_external_asset(dag_data) -> AssetsDefinition:
     )
 
 
+def key_for_task_asset(dag_id, task_id) -> AssetKey:
+    return AssetKey(["airflow_instance", "dag", dag_id, "task", task_id])
+
+
 @whitelist_for_serdes
 @record
 class AirflowDefinitionsData:
@@ -79,6 +83,27 @@ class AirflowDefinitionsData:
                 for dag_data in self.serialized_data.dag_datas.values()
             ]
         )
+
+    def construct_automapped_dag_assets_def(self) -> Definitions:
+        specs = []
+        for dag_data in self.serialized_data.dag_datas.values():
+            upstream_deps: Dict[str, Set[str]] = {task_id: set() for task_id in dag_data.task_infos}
+            for task_id, task_info in dag_data.task_infos.items():
+                for downstream_id in task_info.downstream_task_ids:
+                    upstream_deps[downstream_id].add(task_id)
+
+            specs.extend(
+                AssetSpec(
+                    key=key_for_task_asset(dag_data.dag_id, task_id),
+                    deps=[
+                        key_for_task_asset(dag_data.dag_id, upstream_task_id)
+                        for upstream_task_id in upstream_task_ids
+                    ],
+                )
+                for task_id, upstream_task_ids in upstream_deps.items()
+            )
+
+        return Definitions.merge(Definitions(assets=specs), self.construct_dag_assets_defs())
 
     @property
     def all_dag_ids(self) -> AbstractSet[str]:

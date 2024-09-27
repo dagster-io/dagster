@@ -16,7 +16,7 @@ def dagster_home_fixture(local_env: None) -> str:
 
 @pytest.fixture(name="dagster_dev_cmd")
 def dagster_dev_cmd_fixture() -> List[str]:
-    return ["make", "run_dagster", "-C", str(makefile_dir())]
+    return ["make", "run_dagster_mapped", "-C", str(makefile_dir())]
 
 
 expected_mats_per_dag = {
