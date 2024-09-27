@@ -497,10 +497,9 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
     )
     backfill_ids = None
     if filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None:
-        if isinstance(filters.tags[BACKFILL_ID_TAG], str):
-            backfill_ids = [filters.tags[BACKFILL_ID_TAG]]
-        else:
-            backfill_ids = filters.tags[BACKFILL_ID_TAG]
+        backfill_ids = filters.tags[BACKFILL_ID_TAG]
+        if isinstance(backfill_ids, str):
+            backfill_ids = [backfill_ids]
 
     tags = (
         {key: value for key, value in filters.tags.items() if key != BACKFILL_ID_TAG}
