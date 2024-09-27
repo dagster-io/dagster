@@ -134,11 +134,9 @@ def _get_current_state(context: WorkspaceRequestContext) -> Mapping[str, Instiga
     state_by_name = {}
     for sensor in _get_automation_sensors(context):
         state = check.not_none(
-            context.instance.get_instigator_state(
-                sensor.get_external_origin_id(), sensor.selector_id
-            )
+            context.instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
         )
-        state_by_name[f"{sensor.name}_{sensor.get_external_origin_id()}"] = state
+        state_by_name[f"{sensor.name}_{sensor.get_remote_origin_id()}"] = state
     return state_by_name
 
 
@@ -163,8 +161,8 @@ def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[Dag
     request_context = context.create_request_context()
     for sensor in _get_automation_sensors(request_context):
         ticks = request_context.instance.get_ticks(
-            sensor.get_external_origin_id(),
-            sensor.get_external_origin().get_selector().get_id(),
+            sensor.get_remote_origin_id(),
+            sensor.get_remote_origin().get_selector().get_id(),
             limit=1,
         )
         latest_tick = next(iter(ticks), None)

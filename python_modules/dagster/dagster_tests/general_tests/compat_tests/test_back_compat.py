@@ -964,7 +964,7 @@ def test_add_bulk_actions_columns():
             assert backfill_count == migrated_row_count
 
             # check that we are writing to selector id, action types
-            external_origin = RemotePartitionSetOrigin(
+            remote_origin = RemotePartitionSetOrigin(
                 repository_origin=RemoteRepositoryOrigin(
                     code_location_origin=GrpcServerCodeLocationOrigin(port=1234, host="localhost"),
                     repository_name="fake_repository",
@@ -974,7 +974,7 @@ def test_add_bulk_actions_columns():
             instance.add_backfill(
                 PartitionBackfill(
                     backfill_id="simple",
-                    partition_set_origin=external_origin,
+                    partition_set_origin=remote_origin,
                     status=BulkActionStatus.REQUESTED,
                     partition_names=["one", "two", "three"],
                     from_failure=False,

@@ -934,7 +934,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
         schedule_id = start_result.data["startSchedule"]["scheduleState"]["id"]
         cid = CompoundID.from_string(schedule_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -959,7 +959,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             variables={"scheduleSelector": schedule_selector},
         )
         reset_instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert reset_instigator_state
@@ -1048,7 +1048,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
         )
         cid = CompoundID.from_string(schedule_id)
         reset_instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert reset_instigator_state

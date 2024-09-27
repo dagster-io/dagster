@@ -111,7 +111,7 @@ def create_valid_pipeline_run(
         root_run_id=execution_params.execution_metadata.root_run_id,
         parent_run_id=execution_params.execution_metadata.parent_run_id,
         status=DagsterRunStatus.NOT_STARTED,
-        external_job_origin=external_pipeline.get_external_origin(),
+        external_job_origin=external_pipeline.get_remote_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
         asset_graph=code_location.get_repository(
             external_pipeline.repository_handle.repository_name

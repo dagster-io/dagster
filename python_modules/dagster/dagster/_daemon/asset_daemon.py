@@ -308,7 +308,7 @@ class AutoMaterializeLaunchContext:
                 continue
             self._instance.purge_ticks(
                 (
-                    self._external_sensor.get_external_origin().get_id()
+                    self._external_sensor.get_remote_origin().get_id()
                     if self._external_sensor
                     else _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
                 ),
@@ -347,7 +347,7 @@ class AssetDaemon(DagsterDaemon):
     def _get_print_sensor_name(self, sensor: Optional[ExternalSensor]) -> str:
         if not sensor:
             return ""
-        repo_origin = sensor.get_external_origin().repository_origin
+        repo_origin = sensor.get_remote_origin().repository_origin
         repo_name = repo_origin.repository_name
         location_name = repo_origin.code_location_origin.location_name
         repo_name = (
@@ -576,7 +576,7 @@ class AssetDaemon(DagsterDaemon):
             elif not auto_materialize_state:
                 assert sensor.default_status == DefaultSensorStatus.RUNNING
                 auto_materialize_state = InstigatorState(
-                    sensor.get_external_origin(),
+                    sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.DECLARED_IN_CODE,
                     SensorInstigatorData(
@@ -629,7 +629,7 @@ class AssetDaemon(DagsterDaemon):
 
         for sensor, repo in sensors_and_repos:
             new_auto_materialize_state = InstigatorState(
-                sensor.get_external_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 (
                     InstigatorStatus.DECLARED_IN_CODE
@@ -719,7 +719,7 @@ class AssetDaemon(DagsterDaemon):
 
         if sensor:
             auto_materialize_instigator_state = check.not_none(
-                instance.get_instigator_state(sensor.get_external_origin_id(), sensor.selector_id)
+                instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
             )
             if is_under_min_interval(auto_materialize_instigator_state, sensor):
                 # check the since we might have been queued before processing
@@ -780,8 +780,8 @@ class AssetDaemon(DagsterDaemon):
                     asset_graph,
                 )
 
-                instigator_origin_id = sensor.get_external_origin().get_id()
-                instigator_selector_id = sensor.get_external_origin().get_selector().get_id()
+                instigator_origin_id = sensor.get_remote_origin().get_id()
+                instigator_selector_id = sensor.get_remote_origin().get_selector().get_id()
                 instigator_name = sensor.name
             else:
                 stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, asset_graph)
@@ -995,7 +995,7 @@ class AssetDaemon(DagsterDaemon):
             # they determine that nothing needs to be retried
             if sensor:
                 state = instance.get_instigator_state(
-                    sensor.get_external_origin_id(), sensor.selector_id
+                    sensor.get_remote_origin_id(), sensor.selector_id
                 )
                 instance.update_instigator_state(
                     check.not_none(state).with_data(
