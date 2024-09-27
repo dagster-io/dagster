@@ -1215,11 +1215,8 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert len(result.data["runsFeedOrError"]["results"]) == 1
 
-        assert (
-            result.data["runsFeedOrError"]["connection"]["results"][0]["__typename"]
-            == "PartitionBackfill"
-        )
-        assert result.data["runsFeedOrError"]["connection"]["results"][0]["id"] == backfill_id
+        assert result.data["runsFeedOrError"]["results"][0]["__typename"] == "PartitionBackfill"
+        assert result.data["runsFeedOrError"]["results"][0]["id"] == backfill_id
 
         result = execute_dagster_graphql(
             graphql_context,
