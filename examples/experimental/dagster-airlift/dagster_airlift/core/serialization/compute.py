@@ -15,7 +15,6 @@ from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo, TaskInfo
 from dagster_airlift.core.dag_asset import dag_asset_spec_data, get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
-    KeyScopedDataItem,
     SerializedAirflowDefinitionsData,
     SerializedAssetKeyScopedAirflowData,
     SerializedDagData,
@@ -29,6 +28,7 @@ from dagster_airlift.core.task_asset import (
 )
 from dagster_airlift.core.utils import spec_iterator
 from dagster_airlift.migration_state import AirflowMigrationState
+from dagster_airlift.utils import items_from_dict
 
 
 @record
@@ -212,10 +212,7 @@ def compute_serialized_data(
         )
     topology_order = toposort_flatten(upstreams_asset_dependency_graph)
     return SerializedAirflowDefinitionsData(
-        key_scoped_data_items=[
-            KeyScopedDataItem(asset_key=k, data=v)
-            for k, v in fetched_airflow_data.airflow_data_by_key.items()
-        ],
+        key_scoped_data_items=items_from_dict(fetched_airflow_data.airflow_data_by_key),
         dag_datas=dag_datas,
         asset_key_topological_ordering=topology_order,
     )

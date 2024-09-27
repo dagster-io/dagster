@@ -6,6 +6,8 @@ from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 
+from dagster_airlift.utils import DictItem, dict_from_items
+
 
 ###################################################################################################
 # Data for reconstructing AssetSpecs from serialized data.
@@ -62,13 +64,6 @@ class SerializedDagData:
     all_asset_keys_in_tasks: AbstractSet[AssetKey]
 
 
-@whitelist_for_serdes
-@record
-class KeyScopedDataItem:
-    asset_key: AssetKey
-    data: "SerializedAssetKeyScopedAirflowData"
-
-
 ###################################################################################################
 # Serializable data that will be cached to avoid repeated calls to the Airflow API, and to avoid
 # repeated scans of passed-in Definitions objects.
@@ -80,13 +75,13 @@ class KeyScopedDataItem:
 @whitelist_for_serdes
 @record
 class SerializedAirflowDefinitionsData:
-    key_scoped_data_items: List[KeyScopedDataItem]
+    key_scoped_data_items: List[DictItem[AssetKey, "SerializedAssetKeyScopedAirflowData"]]
     dag_datas: Mapping[str, SerializedDagData]
     asset_key_topological_ordering: Sequence[AssetKey]
 
     @cached_property
     def key_scope_data_map(self) -> Mapping[AssetKey, "SerializedAssetKeyScopedAirflowData"]:
-        return {item.asset_key: item.data for item in self.key_scoped_data_items}
+        return dict_from_items(self.key_scoped_data_items)
 
 
 # History:
