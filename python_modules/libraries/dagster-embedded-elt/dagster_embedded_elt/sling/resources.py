@@ -291,7 +291,9 @@ class SlingResource(ConfigurableResource):
             ["conns", "exec", target_name, select_stmt],
             force_json=True,
         )
-        return int(self._parse_json_table_output(json.loads(output.strip()))[0]["ct"])
+        return int(
+            next(iter(self._parse_json_table_output(json.loads(output.strip()))[0].values()))
+        )
 
     def run_sling_cli(self, args: Sequence[str], force_json: bool = False) -> str:
         """Runs the Sling CLI with the given arguments and returns the output.
