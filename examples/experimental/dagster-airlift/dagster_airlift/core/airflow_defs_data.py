@@ -11,7 +11,6 @@ from dagster import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 from dagster_airlift.core.dag_asset import dag_asset_metadata, dag_description
 from dagster_airlift.core.serialization.serialized_data import (
@@ -90,10 +89,8 @@ def make_default_dag_asset_key(instance_name: str, dag_id: str) -> AssetKey:
     return AssetKey([instance_name, "dag", convert_to_valid_dagster_name(dag_id)])
 
 
-@whitelist_for_serdes
 @record
 class AirflowDefinitionsData:
-    instance_name: str
     serialized_data: SerializedAirflowDefinitionsData
 
     def map_airflow_data_to_spec(self, spec: AssetSpec) -> AssetSpec:
@@ -104,7 +101,9 @@ class AirflowDefinitionsData:
     def construct_dag_assets_defs(self) -> Definitions:
         return Definitions(
             [
-                make_dag_external_asset(instance_name=self.instance_name, dag_data=dag_data)
+                make_dag_external_asset(
+                    instance_name=self.serialized_data.instance_name, dag_data=dag_data
+                )
                 for dag_data in self.serialized_data.dag_datas.values()
             ]
         )
@@ -123,10 +122,12 @@ class AirflowDefinitionsData:
 
             task_specs.extend(
                 AssetSpec(
-                    key=key_for_automapped_task_asset(self.instance_name, dag_data.dag_id, task_id),
+                    key=key_for_automapped_task_asset(
+                        self.serialized_data.instance_name, dag_data.dag_id, task_id
+                    ),
                     deps=[
                         key_for_automapped_task_asset(
-                            self.instance_name, dag_data.dag_id, upstream_task_id
+                            self.serialized_data.instance_name, dag_data.dag_id, upstream_task_id
                         )
                         for upstream_task_id in upstream_task_ids
                     ],
@@ -139,12 +140,16 @@ class AirflowDefinitionsData:
 
             dag_specs.append(
                 AssetSpec(
-                    key=make_default_dag_asset_key(self.instance_name, dag_data.dag_id),
+                    key=make_default_dag_asset_key(
+                        self.serialized_data.instance_name, dag_data.dag_id
+                    ),
                     description=dag_description(dag_data.dag_info),
                     metadata=dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
                     tags=airflow_kind_dict(),
                     deps=[
-                        key_for_automapped_task_asset(self.instance_name, dag_data.dag_id, task_id)
+                        key_for_automapped_task_asset(
+                            self.serialized_data.instance_name, dag_data.dag_id, task_id
+                        )
                         for task_id in leaf_tasks
                     ],
                 )
@@ -157,7 +162,7 @@ class AirflowDefinitionsData:
         return set(self.serialized_data.dag_datas.keys())
 
     def asset_key_for_dag(self, dag_id: str) -> AssetKey:
-        return make_default_dag_asset_key(self.instance_name, dag_id)
+        return make_default_dag_asset_key(self.serialized_data.instance_name, dag_id)
 
     def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
         return set(self.serialized_data.dag_datas[dag_id].task_handle_data.keys())

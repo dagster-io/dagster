@@ -90,9 +90,11 @@ class KeyScopedDataItem:
 # - created
 # - removed existing_asset_data
 # - added key_scope_data_items
+# - added instance_name
 @whitelist_for_serdes
 @record
 class SerializedAirflowDefinitionsData:
+    instance_name: str
     key_scoped_data_items: List[KeyScopedDataItem]
     dag_datas: Mapping[str, SerializedDagData]
 

@@ -26,7 +26,6 @@ from dagster_airlift.core import (
     task_defs,
 )
 from dagster_airlift.core.airflow_defs_data import (
-    AirflowDefinitionsData,
     key_for_automapped_task_asset,
     make_default_dag_asset_key,
 )
@@ -37,7 +36,10 @@ from dagster_airlift.core.serialization.compute import (
     compute_serialized_data,
     is_mapped_asset_spec,
 )
-from dagster_airlift.core.serialization.serialized_data import TaskHandle
+from dagster_airlift.core.serialization.serialized_data import (
+    SerializedAirflowDefinitionsData,
+    TaskHandle,
+)
 from dagster_airlift.core.state_backed_defs_loader import (
     scoped_reconstruction_metadata,
     unwrap_reconstruction_metadata,
@@ -351,7 +353,7 @@ def test_cached_loading() -> None:
     assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
     assert isinstance(
         deserialize_value(defs.metadata["dagster-airlift/source/test_instance"].value),
-        AirflowDefinitionsData,
+        SerializedAirflowDefinitionsData,
     )
 
     with scoped_reconstruction_metadata(unwrap_reconstruction_metadata(defs)):

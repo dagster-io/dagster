@@ -19,6 +19,7 @@ from dagster_airlift.core.sensor import (
     get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
+from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
 
 
@@ -27,7 +28,7 @@ def _metadata_key(instance_name: str) -> str:
 
 
 @dataclass
-class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsData]):
+class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
     airflow_instance: AirflowInstance
     explicit_defs: Definitions
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
@@ -36,15 +37,15 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsD
     def defs_key(self) -> str:
         return _metadata_key(self.airflow_instance.name)
 
-    def fetch_state(self) -> AirflowDefinitionsData:
-        return AirflowDefinitionsData(
-            instance_name=self.airflow_instance.name,
-            serialized_data=compute_serialized_data(
-                airflow_instance=self.airflow_instance, defs=self.explicit_defs
-            ),
+    def fetch_state(self) -> SerializedAirflowDefinitionsData:
+        return compute_serialized_data(
+            airflow_instance=self.airflow_instance, defs=self.explicit_defs
         )
 
-    def defs_from_state(self, airflow_data: AirflowDefinitionsData) -> Definitions:
+    def defs_from_state(
+        self, serialized_airflow_data: SerializedAirflowDefinitionsData
+    ) -> Definitions:
+        airflow_data = AirflowDefinitionsData(serialized_data=serialized_airflow_data)
         return Definitions.merge(
             enrich_explicit_defs_with_airflow_metadata(self.explicit_defs, airflow_data),
             airflow_data.construct_dag_assets_defs(),
@@ -71,7 +72,7 @@ def build_defs_from_airflow_instance(
     ).build_defs()
 
 
-class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsData]):
+class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
     def __init__(
         self,
         airflow_instance: AirflowInstance,
@@ -84,15 +85,13 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsDa
     def defs_key(self) -> str:
         return _metadata_key(self.airflow_instance.name) + "/full_automapped_dags"
 
-    def fetch_state(self) -> AirflowDefinitionsData:
-        return AirflowDefinitionsData(
-            instance_name=self.airflow_instance.name,
-            serialized_data=compute_serialized_data(
-                airflow_instance=self.airflow_instance, defs=Definitions()
-            ),
-        )
+    def fetch_state(self) -> SerializedAirflowDefinitionsData:
+        return compute_serialized_data(airflow_instance=self.airflow_instance, defs=Definitions())
 
-    def defs_from_state(self, airflow_data: AirflowDefinitionsData) -> Definitions:
+    def defs_from_state(
+        self, serialized_airflow_data: SerializedAirflowDefinitionsData
+    ) -> Definitions:
+        airflow_data = AirflowDefinitionsData(serialized_data=serialized_airflow_data)
         return Definitions.merge(
             airflow_data.construct_automapped_dag_assets_defs(),
             build_airflow_polling_sensor_defs(
