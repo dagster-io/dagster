@@ -12,7 +12,6 @@ export const RunAssetCheckTags = (props: {run: RunFragment}) => {
     {
       variables: {runId: run.id},
       skip,
-      fetchPolicy: 'no-cache',
     },
   );
   const {data, loading} = queryResult;
