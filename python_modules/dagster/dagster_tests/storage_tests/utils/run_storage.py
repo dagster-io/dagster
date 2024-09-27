@@ -1756,9 +1756,10 @@ class TestRunStorage:
             )
         )
 
-        backfills_for_id = self.get_backfills_and_assert_expected_count(
-            storage, BulkActionsFilter(backfill_ids=[backfill.backfill_id]), 1
+        backfills_for_id = storage.get_backfills(
+            filters=BulkActionsFilter(backfill_ids=[backfill.backfill_id])
         )
+        assert len(backfills_for_id) == 1
         assert backfills_for_id[0].backfill_id == backfill.backfill_id
 
     def test_secondary_index(self, storage):
