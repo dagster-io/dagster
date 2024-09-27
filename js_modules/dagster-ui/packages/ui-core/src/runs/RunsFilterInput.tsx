@@ -113,7 +113,6 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
           return {q: tokensAsStringArray(tokens), cursor: undefined};
         },
         decode: ({q = []}) => {
-
           const res = tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY);
           return res.filter(
             (t) =>

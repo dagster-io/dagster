@@ -1,6 +1,6 @@
 import {Box, Checkbox, Colors, NonIdealState, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
@@ -141,30 +141,28 @@ export const RunsFeedRoot = () => {
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       {button}
       <Checkbox
-              label={<span>Show runs within backfills</span>}
-              checked={showRunsWithinBackfills}
-              onChange={() => {
-                setFilterTokens((filterTokens) => {
-                  const copy = [...filterTokens];
-                  const index = copy.findIndex(
-                    (token) => token?.token === 'show_runs_within_backfills',
-                  );
-                  if (index !== -1) {
-                    const [token] = copy.splice(index, 1);
-                    if (token?.value === 'false') {
-                      copy.push({
-                        token: 'show_runs_within_backfills',
-                        value: 'true',
-                      });
-                    }
-                    // if the token value is true, removing it is enough to disable the filter
-                  } else {
-                    copy.push({token: 'show_runs_within_backfills', value: 'true'});
-                  }
-                  return copy;
+        label={<span>Show runs within backfills</span>}
+        checked={showRunsWithinBackfills}
+        onChange={() => {
+          setFilterTokens((filterTokens) => {
+            const copy = [...filterTokens];
+            const index = copy.findIndex((token) => token?.token === 'show_runs_within_backfills');
+            if (index !== -1) {
+              const [token] = copy.splice(index, 1);
+              if (token?.value === 'false') {
+                copy.push({
+                  token: 'show_runs_within_backfills',
+                  value: 'true',
                 });
-              }}
-            />
+              }
+              // if the token value is true, removing it is enough to disable the filter
+            } else {
+              copy.push({token: 'show_runs_within_backfills', value: 'true'});
+            }
+            return copy;
+          });
+        }}
+      />
     </Box>
   );
 
