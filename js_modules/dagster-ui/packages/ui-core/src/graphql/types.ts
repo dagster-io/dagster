@@ -2096,6 +2096,7 @@ export type Job = IPipelineSnapshot &
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -3393,6 +3394,7 @@ export type Pipeline = IPipelineSnapshot &
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -3626,6 +3628,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     name: Scalars['String']['output'];
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     pipelineSnapshotId: Scalars['String']['output'];
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -9178,6 +9181,7 @@ export const buildJob = (
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -11363,6 +11367,7 @@ export const buildPipeline = (
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -11771,6 +11776,7 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
         : 'labore',
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],

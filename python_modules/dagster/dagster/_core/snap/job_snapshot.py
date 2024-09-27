@@ -68,6 +68,8 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
     #     - add kwargs so that if future versions add new args, this version of deserialization will
     #     be able to ignore them. previously, new args would be passed to old versions and cause
     #     deserialization errors.
+    # v5:
+    #     - run_tags added
     def before_unpack(
         self,
         context,
@@ -79,6 +81,8 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
             unpacked_dict["metadata"] = []
         if unpacked_dict.get("lineage_snapshot") is None:
             unpacked_dict["lineage_snapshot"] = None
+        if unpacked_dict.get("run_tags") is None:
+            unpacked_dict["run_tags"] = None
         return unpacked_dict
 
 
@@ -89,6 +93,7 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
     storage_name="PipelineSnapshot",
     serializer=JobSnapshotSerializer,
     skip_when_empty_fields={"metadata"},
+    skip_when_none_fields={"run_tags"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
@@ -99,6 +104,12 @@ class JobSnapshot(
             ("name", str),
             ("description", Optional[str]),
             ("tags", Mapping[str, Any]),
+            # It is important that run_tags is nullable to distinguish in host code between
+            # snapshots from older code servers where run_tags does not exist as a field (and is
+            # therefore None) vs snapshots from newer code servers where run_tags is always set, if
+            # sometimes empty. In the None case, we need to set run_tags to tags (at the level of
+            # ExternalJob) to maintain backcompat.
+            ("run_tags", Optional[Mapping[str, Any]]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
             ("node_defs_snapshot", NodeDefsSnapshot),
@@ -115,6 +126,7 @@ class JobSnapshot(
         name: str,
         description: Optional[str],
         tags: Optional[Mapping[str, Any]],
+        run_tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         node_defs_snapshot: NodeDefsSnapshot,
@@ -129,6 +141,7 @@ class JobSnapshot(
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
+            run_tags=check.opt_nullable_mapping_param(run_tags, "run_tags"),
             config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
             ),
@@ -180,6 +193,7 @@ class JobSnapshot(
             name=job_def.name,
             description=job_def.description,
             tags=job_def.tags,
+            run_tags=job_def.run_tags if job_def.has_separately_defined_run_tags else None,
             metadata=job_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(job_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(job_def),

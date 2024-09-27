@@ -650,6 +650,7 @@ class GrapheneIPipelineSnapshotMixin:
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    run_tags = non_null_list(GraphenePipelineTag)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
@@ -753,6 +754,13 @@ class GrapheneIPipelineSnapshotMixin:
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.job_snapshot.tags.items()
+        ]
+
+    def resolve_run_tags(self, _graphene_info: ResolveInfo):
+        represented_pipeline = self.get_represented_job()
+        return [
+            GraphenePipelineTag(key=key, value=value)
+            for key, value in (represented_pipeline.job_snapshot.run_tags or {}).items()
         ]
 
     def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:

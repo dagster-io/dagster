@@ -1311,7 +1311,7 @@ def _create_sensor_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     job_tags = normalize_tags(
-        external_job.tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
+        external_job.run_tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
     ).tags
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),

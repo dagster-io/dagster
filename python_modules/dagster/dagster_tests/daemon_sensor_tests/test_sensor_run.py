@@ -34,6 +34,7 @@ from dagster import (
     asset,
     asset_check,
     define_asset_job,
+    graph,
     load_asset_checks_from_current_module,
     load_assets_from_current_module,
     materialize,
@@ -795,6 +796,37 @@ auto_materialize_sensor = AutomationConditionSensorDefinition(
 )
 
 
+@graph
+def the_graph():
+    the_op()
+
+
+job_with_tags_with_run_tags = the_graph.to_job(
+    name="job_with_tags_with_run_tags", tags={"tag_foo": "bar"}, run_tags={"run_tag_foo": "bar"}
+)
+job_with_tags_no_run_tags = the_graph.to_job(
+    name="job_with_tags_no_run_tags", tags={"tag_foo": "bar"}
+)
+job_no_tags_with_run_tags = the_graph.to_job(
+    name="job_no_tags_with_run_tags", run_tags={"run_tag_foo": "bar"}
+)
+
+
+@sensor(job=job_with_tags_with_run_tags)
+def job_with_tags_with_run_tags_sensor(context):
+    return RunRequest()
+
+
+@sensor(job=job_with_tags_no_run_tags)
+def job_with_tags_no_run_tags_sensor(context):
+    return RunRequest()
+
+
+@sensor(job=job_no_tags_with_run_tags)
+def job_no_tags_with_run_tags_sensor(context):
+    return RunRequest()
+
+
 @repository
 def the_repo():
     return [
@@ -864,6 +896,12 @@ def the_repo():
         multipartitions_with_static_time_dimensions_run_requests_sensor,
         auto_materialize_sensor,
         run_request_check_only_sensor,
+        job_with_tags_with_run_tags,
+        job_with_tags_with_run_tags_sensor,
+        job_with_tags_no_run_tags,
+        job_with_tags_no_run_tags_sensor,
+        job_no_tags_with_run_tags,
+        job_no_tags_with_run_tags_sensor,
     ]
 
 
@@ -3461,3 +3499,52 @@ def test_start_tick_sensor(executor, instance, workspace_context, external_repo)
 def _get_last_tick(instance, sensor):
     ticks = instance.get_ticks(sensor.get_external_origin_id(), sensor.selector_id)
     return ticks[0]
+
+
+def test_sensor_run_tags(
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+) -> None:
+    freeze_datetime = create_datetime(year=2019, month=2, day=27)
+    with freeze_time(freeze_datetime):
+        job_with_tags_with_run_tags_sensor = external_repo.get_external_sensor(
+            "job_with_tags_with_run_tags_sensor"
+        )
+        instance.start_sensor(job_with_tags_with_run_tags_sensor)
+        job_with_tags_no_run_tags_sensor = external_repo.get_external_sensor(
+            "job_with_tags_no_run_tags_sensor"
+        )
+        instance.start_sensor(job_with_tags_no_run_tags_sensor)
+        job_no_tags_with_run_tags_sensor = external_repo.get_external_sensor(
+            "job_no_tags_with_run_tags_sensor"
+        )
+        instance.start_sensor(job_no_tags_with_run_tags_sensor)
+
+        evaluate_sensors(workspace_context, executor)
+        runs = instance.get_runs()
+
+        with_tags_with_run_tags_run = next(
+            run
+            for run in runs
+            if run.tags.get("dagster/sensor_name") == "job_with_tags_with_run_tags_sensor"
+        )
+        assert "tag_foo" not in with_tags_with_run_tags_run.tags
+        assert with_tags_with_run_tags_run.tags["run_tag_foo"] == "bar"
+
+        with_tags_no_run_tags_run = next(
+            run
+            for run in runs
+            if run.tags.get("dagster/sensor_name") == "job_with_tags_no_run_tags_sensor"
+        )
+        assert with_tags_no_run_tags_run.tags["tag_foo"] == "bar"
+        assert "run_tag_foo" not in with_tags_no_run_tags_run.tags
+
+        no_tags_with_run_tags_run = next(
+            run
+            for run in runs
+            if run.tags.get("dagster/sensor_name") == "job_no_tags_with_run_tags_sensor"
+        )
+        assert "tag_foo" not in no_tags_with_run_tags_run.tags
+        assert no_tags_with_run_tags_run.tags["run_tag_foo"] == "bar"
