@@ -11,7 +11,6 @@ from dagster import (
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._utils.warnings import suppress_dagster_warnings
 
-from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
 from dagster_airlift.core.sensor import (
@@ -20,12 +19,11 @@ from dagster_airlift.core.sensor import (
     get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
-from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
+from dagster_airlift.core.serialization.serialized_data import (
+    SerializedAirflowDefinitionsData,
+    metadata_key,
+)
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
-
-
-def _metadata_key(instance_name: str) -> str:
-    return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
 
 
 @dataclass
@@ -36,7 +34,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
 
     @property
     def defs_key(self) -> str:
-        return _metadata_key(self.airflow_instance.name)
+        return metadata_key(self.airflow_instance.name)
 
     def fetch_state(self) -> SerializedAirflowDefinitionsData:
         return compute_serialized_data(
@@ -44,12 +42,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
         )
 
     def defs_from_state(self, state: SerializedAirflowDefinitionsData) -> Definitions:
-        return definitions_from_airflow_data(
-            state,
-            self.explicit_defs,
-            self.airflow_instance,
-            self.sensor_minimum_interval_seconds,
-        )
+        return definitions_from_airflow_data(state, self.explicit_defs)
 
 
 @suppress_dagster_warnings
@@ -60,40 +53,50 @@ def build_defs_from_airflow_instance(
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     defs = defs or Definitions()
-    return AirflowInstanceDefsLoader(
+    transformed_defs = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         explicit_defs=defs,
         sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
     ).build_defs()
+    return defs_with_sensor(transformed_defs, airflow_instance, sensor_minimum_interval_seconds)
 
 
 def definitions_from_airflow_data(
     serialized_airflow_data: SerializedAirflowDefinitionsData,
     defs: Definitions,
-    airflow_instance: AirflowInstance,
-    sensor_minimum_interval_seconds: int,
 ) -> Definitions:
-    airflow_data = AirflowDefinitionsData(serialized_data=serialized_airflow_data)
     assets_defs = construct_all_assets(
         definitions=defs,
-        airflow_data=airflow_data,
+        airflow_data=serialized_airflow_data,
     )
-    return defs_with_assets_and_sensor(
-        defs,
-        assets_defs,
-        airflow_instance,
-        sensor_minimum_interval_seconds,
-        airflow_data=airflow_data,
-    )
+    return defs_with_assets(defs, assets_defs)
 
 
-def defs_with_assets_and_sensor(
+def defs_with_assets(
     defs: Definitions,
     assets_defs: List[AssetsDefinition],
+) -> Definitions:
+    return Definitions(
+        assets=assets_defs,
+        asset_checks=defs.asset_checks if defs else None,
+        sensors=defs.sensors if defs else None,
+        schedules=defs.schedules if defs else None,
+        jobs=defs.jobs if defs else None,
+        executor=defs.executor if defs else None,
+        loggers=defs.loggers if defs else None,
+        resources=defs.resources if defs else None,
+    )
+
+
+def defs_with_sensor(
+    defs: Definitions,
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int,
-    airflow_data: AirflowDefinitionsData,
 ) -> Definitions:
+    airflow_data = AirflowDefinitionsData(
+        transformed_defs=defs, instance_name=airflow_instance.name
+    )
+
     @airflow_event_sensor(
         airflow_instance=airflow_instance,
         airflow_data=airflow_data,
@@ -107,7 +110,7 @@ def defs_with_assets_and_sensor(
         )
 
     return Definitions(
-        assets=assets_defs,
+        assets=defs.assets if defs else None,
         asset_checks=defs.asset_checks if defs else None,
         sensors=[_airflow_sensor, *defs.sensors] if defs and defs.sensors else [_airflow_sensor],
         schedules=defs.schedules if defs else None,
@@ -115,12 +118,13 @@ def defs_with_assets_and_sensor(
         executor=defs.executor if defs else None,
         loggers=defs.loggers if defs else None,
         resources=defs.resources if defs else None,
+        metadata=defs.metadata if defs else None,
     )
 
 
 def construct_all_assets(
     definitions: Definitions,
-    airflow_data: AirflowDefinitionsData,
+    airflow_data: SerializedAirflowDefinitionsData,
 ) -> List[AssetsDefinition]:
     return (
         list(_apply_airflow_data_to_specs(definitions, airflow_data))
@@ -130,7 +134,7 @@ def construct_all_assets(
 
 def _apply_airflow_data_to_specs(
     definitions: Definitions,
-    airflow_data: AirflowDefinitionsData,
+    airflow_data: SerializedAirflowDefinitionsData,
 ) -> Iterator[AssetsDefinition]:
     """Apply asset spec transformations to the asset definitions."""
     for asset in definitions.assets or []:

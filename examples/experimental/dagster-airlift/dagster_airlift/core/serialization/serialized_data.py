@@ -1,10 +1,16 @@
 from functools import cached_property
 from typing import AbstractSet, Any, List, Mapping, Optional, Sequence
 
-from dagster import AssetDep, AssetKey, AssetSpec
+from dagster import AssetDep, AssetKey, AssetsDefinition, AssetSpec, external_asset_from_spec
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
+
+from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX
+
+
+def metadata_key(instance_name: str) -> str:
+    return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
 
 
 ###################################################################################################
@@ -88,6 +94,17 @@ class SerializedAirflowDefinitionsData:
     @cached_property
     def key_scope_data_map(self) -> Mapping[AssetKey, "SerializedAssetKeyScopedAirflowData"]:
         return {item.asset_key: item.data for item in self.key_scoped_data_items}
+
+    def map_airflow_data_to_spec(self, spec: AssetSpec) -> AssetSpec:
+        """If there is airflow data applicable to the asset key, transform the spec and apply the data."""
+        existing_key_data = self.key_scope_data_map.get(spec.key)
+        return spec if not existing_key_data else existing_key_data.apply_to_spec(spec)
+
+    def construct_dag_assets_defs(self) -> List[AssetsDefinition]:
+        return [
+            external_asset_from_spec(dag_data.spec_data.to_asset_spec())
+            for dag_data in self.dag_datas.values()
+        ]
 
 
 # History:

@@ -1,25 +1,32 @@
-from typing import AbstractSet, List, Optional
+from functools import cached_property
+from typing import AbstractSet, Optional
 
-from dagster import AssetKey, AssetsDefinition, AssetSpec, external_asset_from_spec
+from dagster import (
+    AssetKey,
+    Definitions,
+    _check as check,
+)
 from dagster._record import record
+from dagster._serdes import deserialize_value
 
-from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
+from dagster_airlift.core.serialization.serialized_data import (
+    SerializedAirflowDefinitionsData,
+    metadata_key,
+)
 
 
 @record
 class AirflowDefinitionsData:
-    serialized_data: SerializedAirflowDefinitionsData
+    transformed_defs: Definitions
+    instance_name: str
 
-    def map_airflow_data_to_spec(self, spec: AssetSpec) -> AssetSpec:
-        """If there is airflow data applicable to the asset key, transform the spec and apply the data."""
-        existing_key_data = self.serialized_data.key_scope_data_map.get(spec.key)
-        return spec if not existing_key_data else existing_key_data.apply_to_spec(spec)
-
-    def construct_dag_assets_defs(self) -> List[AssetsDefinition]:
-        return [
-            external_asset_from_spec(dag_data.spec_data.to_asset_spec())
-            for dag_data in self.serialized_data.dag_datas.values()
-        ]
+    @cached_property
+    def serialized_data(self) -> SerializedAirflowDefinitionsData:
+        metadata_str = check.str_param(
+            self.transformed_defs.metadata[metadata_key(self.instance_name)].value,
+            "serialized metadata",
+        )
+        return deserialize_value(metadata_str, SerializedAirflowDefinitionsData)
 
     @property
     def all_dag_ids(self) -> AbstractSet[str]:
