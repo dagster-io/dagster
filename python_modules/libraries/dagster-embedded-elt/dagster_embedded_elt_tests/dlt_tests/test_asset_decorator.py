@@ -19,11 +19,7 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag, has_kind
-from dagster_embedded_elt.dlt import (
-    DagsterDltResource,
-    DagsterDltTranslator,
-    dlt_assets,
-)
+from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
 
@@ -69,9 +65,7 @@ def test_example_pipeline_descs(dlt_pipeline: Pipeline) -> None:
         yield from dlt_pipeline_resource.run(context=context)
 
     assert (
-        example_pipeline_assets.descriptions_by_key[
-            AssetKey("dlt_pipeline_repo_issues")
-        ]
+        example_pipeline_assets.descriptions_by_key[AssetKey("dlt_pipeline_repo_issues")]
         == "Extracted list of issues from repositories."
     )
 
@@ -97,16 +91,12 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
         row = conn.execute("select count(*) from example.repo_issues").fetchone()
         assert row and row[0] == 7
 
-    materializations = [
-        event.materialization for event in res.get_asset_materialization_events()
-    ]
+    materializations = [event.materialization for event in res.get_asset_materialization_events()]
     assert all(
-        "dagster/column_schema" in materialization.metadata
-        for materialization in materializations
+        "dagster/column_schema" in materialization.metadata for materialization in materializations
     )
     assert all(
-        "dagster/row_count" in materialization.metadata
-        for materialization in materializations
+        "dagster/row_count" in materialization.metadata for materialization in materializations
     )
 
     repos_materialization = next(
@@ -115,9 +105,7 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
         if materialization.asset_key == AssetKey("dlt_pipeline_repos")
     )
     assert repos_materialization.metadata["dagster/row_count"] == IntMetadataValue(3)
-    assert repos_materialization.metadata[
-        "dagster/column_schema"
-    ] == TableSchemaMetadataValue(
+    assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
             columns=[
                 TableColumn(name="id", type="bigint"),
@@ -135,9 +123,7 @@ def test_multi_asset_names_do_not_conflict(dlt_pipeline: Pipeline) -> None:
         def get_asset_key(self, resource: DltResource) -> AssetKey:
             return AssetKey("custom_" + resource.name)
 
-    @dlt_assets(
-        dlt_source=pipeline(), dlt_pipeline=dlt_pipeline, name="multi_asset_name1"
-    )
+    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline, name="multi_asset_name1")
     def assets1():
         pass
 
@@ -176,12 +162,8 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
 
 def test_get_automation_condition(dlt_pipeline: Pipeline):
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_automation_condition(
-            self, resource: DltResource
-        ) -> Optional[AutomationCondition]:
-            return AutomationCondition.eager() | AutomationCondition.on_cron(
-                "0 1 * * *"
-            )
+        def get_automation_condition(self, resource: DltResource) -> Optional[AutomationCondition]:
+            return AutomationCondition.eager() | AutomationCondition.on_cron("0 1 * * *")
 
     @dlt_assets(
         dlt_source=pipeline(),
@@ -260,9 +242,7 @@ def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
 
         for key in example_pipeline_assets.asset_and_check_keys:
             if isinstance(key, AssetKey):
-                assert has_kind(
-                    example_pipeline_assets.tags_by_key[key], destination_type
-                )
+                assert has_kind(example_pipeline_assets.tags_by_key[key], destination_type)
 
 
 def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
@@ -290,9 +270,7 @@ def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
 
 
 def test_subset_pipeline_using_with_resources(dlt_pipeline: Pipeline) -> None:
-    @dlt_assets(
-        dlt_source=pipeline().with_resources("repos"), dlt_pipeline=dlt_pipeline
-    )
+    @dlt_assets(dlt_source=pipeline().with_resources("repos"), dlt_pipeline=dlt_pipeline)
     def example_pipeline_assets(
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
@@ -403,9 +381,7 @@ def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
         month = context.partition_key[:-3]
-        yield from dlt_pipeline_resource.run(
-            context=context, dlt_source=pipeline(month)
-        )
+        yield from dlt_pipeline_resource.run(context=context, dlt_source=pipeline(month))
 
     async def run_partition(year: str):
         return materialize(

@@ -1,19 +1,14 @@
-from dlt.extract import DltResource
-from dlt.pipeline.pipeline import Pipeline
 from collections import abc
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterator, Union, List
+from typing import Generic, Iterator, Union
 
-from dagster import (
-    AssetMaterialization,
-    MaterializeResult,
-)
+from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-
 from dagster._core.execution.context.asset_execution_context import (
     AssetExecutionContext,
 )
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
+from dlt import Pipeline
 from typing_extensions import TypeVar
 
 # if TYPE_CHECKING:
@@ -26,11 +21,16 @@ T = TypeVar("T", bound=DltEventType)
 def fetch_row_count_metadata(
     materialization: DltEventType,
     context: Union[OpExecutionContext, AssetExecutionContext],
-    # table_name: str,
     dlt_pipeline: Pipeline,
-) -> Dict[str, Any]:
+) -> TableMetadataSet:
     if not materialization.metadata:
         raise Exception("Missing required metadata to retrieve row count.")
+    if context.has_partition_key:
+        rows_loaded = materialization.metadata.get("rows_loaded")
+        return TableMetadataSet(
+            partition_row_count=rows_loaded.value if rows_loaded else 0  # type: ignore
+        )
+
     jobs_metadata = materialization.metadata.get("jobs")
     if not jobs_metadata or not isinstance(jobs_metadata, list):
         raise Exception("Missing jobs metadata to retrieve row count.")
@@ -50,17 +50,7 @@ def fetch_row_count_metadata(
             f"Exception: {e}"
         )
     row_count = row_count_result[0] if row_count_result else None
-    return {
-        # output object may be a slice/partition, so we output different metadata keys based on
-        # whether this output represents an entire table or just a slice/partition
-        **(
-            TableMetadataSet(
-                partition_row_count=row_count
-            )  # TODO: Should be the same as `rows_loaded`
-            if context.has_partition_key
-            else TableMetadataSet(row_count=row_count)
-        )
-    }
+    return TableMetadataSet(row_count=row_count)
 
 
 class DltEventIterator(Generic[T], abc.Iterator):
@@ -72,12 +62,10 @@ class DltEventIterator(Generic[T], abc.Iterator):
         self,
         events: Iterator[T],
         context: Union[OpExecutionContext, AssetExecutionContext],
-        # resource: DltResource,
         dlt_pipeline: Pipeline,
     ) -> None:
         self._inner_iterator = events
         self._context = context
-        # self._resource = resource
         self._dlt_pipeline = dlt_pipeline
 
     def __next__(self) -> T:
@@ -113,6 +101,5 @@ class DltEventIterator(Generic[T], abc.Iterator):
         return DltEventIterator[T](
             _fetch_row_count(),
             self._context,
-            # self._resource,
             self._dlt_pipeline,
         )

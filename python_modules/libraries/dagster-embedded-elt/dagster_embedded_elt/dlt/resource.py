@@ -23,8 +23,8 @@ from dagster_embedded_elt.dlt.constants import (
     META_KEY_SOURCE,
     META_KEY_TRANSLATOR,
 )
-from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 from dagster_embedded_elt.dlt.dlt_event_iterator import DltEventIterator, DltEventType
+from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
 @experimental
@@ -99,9 +99,7 @@ class DagsterDltResource(ConfigurableResource):
         load_info_dict = self._cast_load_info_metadata(load_info.asdict())
 
         # shared metadata that is displayed for all assets
-        base_metadata = {
-            k: v for k, v in load_info_dict.items() if k in dlt_base_metadata_types
-        }
+        base_metadata = {k: v for k, v in load_info_dict.items() if k in dlt_base_metadata_types}
 
         # job metadata for specific target `resource.table_name`
         base_metadata["jobs"] = [
@@ -126,11 +124,6 @@ class DagsterDltResource(ConfigurableResource):
         base_metadata = {
             **base_metadata,
             **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
-            **(
-                TableMetadataSet(partition_row_count=base_metadata.get("rows_loaded"))
-                if context.has_partition_key
-                else {}
-            ),
         }
 
         return base_metadata
@@ -193,7 +186,6 @@ class DagsterDltResource(ConfigurableResource):
                 dagster_dlt_translator=dagster_dlt_translator,
                 **kwargs,
             ),
-            # resource=,
             context=context,
             dlt_pipeline=dlt_pipeline,
         )
@@ -219,11 +211,8 @@ class DagsterDltResource(ConfigurableResource):
             DltEventIterator[DltEventType]: An iterator of MaterializeResult or AssetMaterialization
 
         """
-
         asset_key_dlt_source_resource_mapping = {
-            dagster_dlt_translator.get_asset_key(
-                dlt_source_resource
-            ): dlt_source_resource
+            dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
             for dlt_source_resource in dlt_source.selected_resources.values()
         }
 
