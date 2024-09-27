@@ -1,9 +1,11 @@
 from functools import cached_property
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set
 
-from dagster import AssetDep, AssetKey, AssetSpec
+from dagster import AssetKey
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+
+from dagster_airlift.core.utils import convert_to_valid_dagster_name
 
 
 @whitelist_for_serdes
@@ -17,6 +19,32 @@ class TaskInfo:
     @property
     def dag_url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
+
+
+@whitelist_for_serdes
+@record
+class DagInfo:
+    webserver_url: str
+    dag_id: str
+    metadata: Dict[str, Any]
+
+    @property
+    def url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}"
+
+    @cached_property
+    def dagster_safe_dag_id(self) -> str:
+        """Name based on the dag_id that is safe to use in dagster."""
+        return convert_to_valid_dagster_name(self.dag_id)
+
+    @property
+    def dag_asset_key(self) -> AssetKey:
+        # Conventional asset key representing a successful run of an airfow dag.
+        return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
+
+    @property
+    def file_token(self) -> str:
+        return self.metadata["file_token"]
 
 
 @whitelist_for_serdes
@@ -34,45 +62,6 @@ class MappedAirflowTaskData:
 
 
 ###################################################################################################
-# Data for reconstructing AssetSpecs from serialized data.
-###################################################################################################
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetSpecData:
-    """Serializable data that can be used to construct a fully qualified AssetSpec."""
-
-    asset_key: AssetKey
-    description: Optional[str]
-    metadata: Mapping[str, Any]
-    tags: Mapping[str, str]
-    deps: Sequence["SerializedAssetDepData"]
-
-    def to_asset_spec(self) -> AssetSpec:
-        return AssetSpec(
-            key=self.asset_key,
-            description=self.description,
-            metadata=self.metadata,
-            tags=self.tags,
-            deps=[AssetDep(asset=dep.asset_key) for dep in self.deps] if self.deps else [],
-        )
-
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetDepData:
-    # A dumbed down version of AssetDep that can be serialized easily to and from a dictionary.
-    asset_key: AssetKey
-
-    @staticmethod
-    def from_asset_dep(asset_dep: AssetDep) -> "SerializedAssetDepData":
-        return SerializedAssetDepData(asset_key=asset_dep.asset_key)
-
-
-###################################################################################################
 # Serialized data that scopes to airflow DAGs and tasks.
 ###################################################################################################
 # History:
@@ -83,8 +72,10 @@ class SerializedDagData:
     """A record containing pre-computed data about a given airflow dag."""
 
     dag_id: str
-    spec_data: SerializedAssetSpecData
     task_handle_data: Mapping[str, "SerializedTaskHandleData"]
+    dag_info: DagInfo
+    source_code: str
+    leaf_asset_keys: Set[AssetKey]
 
 
 @whitelist_for_serdes

@@ -8,9 +8,11 @@ from dagster import (
     UrlMetadataValue,
     external_asset_from_spec,
 )
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
+from dagster_airlift.core.dag_asset import dag_asset_metadata, dag_description
 from dagster_airlift.core.serialization.serialized_data import (
     MappedAirflowTaskData,
     SerializedAirflowDefinitionsData,
@@ -47,6 +49,18 @@ def enrich_spec_with_airflow_metadata(
     )
 
 
+def make_dag_external_asset(dag_data) -> AssetsDefinition:
+    return external_asset_from_spec(
+        AssetSpec(
+            key=dag_data.dag_info.dag_asset_key,
+            description=dag_description(dag_data.dag_info),
+            metadata=dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
+            tags=airflow_kind_dict(),
+            deps=dag_data.leaf_asset_keys,
+        )
+    )
+
+
 @whitelist_for_serdes
 @record
 class AirflowDefinitionsData:
@@ -61,7 +75,7 @@ class AirflowDefinitionsData:
     def construct_dag_assets_defs(self) -> Definitions:
         return Definitions(
             [
-                external_asset_from_spec(dag_data.spec_data.to_asset_spec())
+                make_dag_external_asset(dag_data)
                 for dag_data in self.serialized_data.dag_datas.values()
             ]
         )
@@ -71,7 +85,7 @@ class AirflowDefinitionsData:
         return set(self.serialized_data.dag_datas.keys())
 
     def asset_key_for_dag(self, dag_id: str) -> AssetKey:
-        return self.serialized_data.dag_datas[dag_id].spec_data.asset_key
+        return self.serialized_data.dag_datas[dag_id].dag_info.dag_asset_key
 
     def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
         return set(self.serialized_data.dag_datas[dag_id].task_handle_data.keys())

@@ -12,7 +12,7 @@ from dagster._record import record
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
-from dagster_airlift.core.dag_asset import dag_asset_spec_data, get_leaf_assets_for_dag
+from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
     KeyScopedDataItem,
     MappedAirflowTaskData,
@@ -164,7 +164,6 @@ def compute_serialized_data(
     airflow_instance: AirflowInstance, defs: Definitions
 ) -> "SerializedAirflowDefinitionsData":
     mapping_info = build_airlift_metadata_mapping_info(defs)
-
     fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
 
     dag_datas = {}
@@ -172,11 +171,6 @@ def compute_serialized_data(
         leaf_asset_keys = get_leaf_assets_for_dag(
             asset_keys_in_dag=mapping_info.asset_keys_per_dag_id[dag_id],
             downstreams_asset_dependency_graph=mapping_info.downstream_deps,
-        )
-        dag_spec = dag_asset_spec_data(
-            airflow_instance=airflow_instance,
-            asset_keys_for_leaf_tasks=leaf_asset_keys,
-            dag_info=dag_info,
         )
         task_handle_data = {}
         for task_id in mapping_info.task_id_map[dag_id]:
@@ -186,8 +180,10 @@ def compute_serialized_data(
             )
         dag_datas[dag_id] = SerializedDagData(
             dag_id=dag_id,
-            spec_data=dag_spec,
             task_handle_data=task_handle_data,
+            dag_info=dag_info,
+            source_code=airflow_instance.get_dag_source_code(dag_info.metadata["file_token"]),
+            leaf_asset_keys=set(leaf_asset_keys),
         )
 
     return SerializedAirflowDefinitionsData(
