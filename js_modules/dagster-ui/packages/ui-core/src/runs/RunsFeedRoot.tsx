@@ -146,7 +146,6 @@ export const RunsFeedRoot = () => {
               onChange={() => {
                 setFilterTokens((filterTokens) => {
                   const copy = [...filterTokens];
-                  console.log({copy});
                   const index = copy.findIndex(
                     (token) => token?.token === 'show_runs_within_backfills',
                   );

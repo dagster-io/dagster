@@ -110,14 +110,11 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
     useMemo(
       () => ({
         encode: (tokens) => {
-          console.log({tokens});
           return {q: tokensAsStringArray(tokens), cursor: undefined};
         },
         decode: ({q = []}) => {
-          console.log({q});
 
           const res = tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY);
-          console.log({res});
           return res.filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
@@ -166,9 +163,9 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
         obj.tags = [{key: key!, value}];
       }
     } else if (item.token === 'show_runs_within_backfills') {
-      // the Runs filter expects a boolen on whether to exclude runs that are within
-      // backfills. The UI checkbox is whether to show runs within backfills, so we
-      // negate the value when creating the filter to pass to the backend.
+      // the Runs filter expects a boolen on whether to **exclude** runs that are within
+      // backfills. The UI checkbox is whether to **show** runs within backfills, so we
+      // negate the value when creating the filter
       obj.excludeSubruns = item.value === 'false';
     }
   }
