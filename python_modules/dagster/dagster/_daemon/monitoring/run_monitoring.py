@@ -71,7 +71,8 @@ def monitor_canceling_run(
     )
 
     if not canceling_events:
-        raise Exception("Run in status CANCELING doesn't have a RUN_CANCELING event")
+        logger.warning("Run in status CANCELING doesn't have a RUN_CANCELING event")
+        return
 
     event = canceling_events[0]
 
