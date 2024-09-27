@@ -86,7 +86,7 @@ export const RunsFeedTable = ({
                   intent="warning"
                   title={
                     <Box flex={{direction: 'column'}}>
-                      <Body2>Currently bulk actions are only supported for runs.</Body2>
+                      <Body2>Bulk actions are currently only supported for runs.</Body2>
                       <Body2>
                         {numberFormatter.format(backfillsExcluded)}&nbsp;
                         {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being excluded
