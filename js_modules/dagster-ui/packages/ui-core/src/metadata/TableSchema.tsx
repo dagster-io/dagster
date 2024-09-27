@@ -122,12 +122,14 @@ export const TableSchema = ({
                 <Mono>{column.name}</Mono>
               </td>
               <td>
-                <TypeTag type={column.type} />
-                {!column.constraints.nullable && NonNullableTag}
-                {column.constraints.unique && UniqueTag}
-                {column.constraints.other.map((constraint, i) => (
-                  <ArbitraryConstraintTag key={i} constraint={constraint} />
-                ))}
+                <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
+                  <TypeTag type={column.type} />
+                  {!column.constraints.nullable && NonNullableTag}
+                  {column.constraints.unique && UniqueTag}
+                  {column.constraints.other.map((constraint, i) => (
+                    <ArbitraryConstraintTag key={i} constraint={constraint} />
+                  ))}
+                </Box>
               </td>
               <td>
                 <Description description={column.description} />
