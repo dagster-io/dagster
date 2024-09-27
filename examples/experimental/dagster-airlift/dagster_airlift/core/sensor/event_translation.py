@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Sequence
+from typing import Any, Callable, Iterable, List, Mapping, Sequence
 
 from dagster import (
     AssetMaterialization,
@@ -12,6 +12,10 @@ from dagster._time import get_current_timestamp
 from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
+
+AirflowEventTranslationFn = Callable[
+    [DagRun, Sequence[TaskInstance], AirflowDefinitionsData], Iterable[AssetMaterialization]
+]
 
 
 def get_asset_events(
