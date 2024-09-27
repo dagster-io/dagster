@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, NamedTuple, Optional
+from typing import Any, List, Mapping, Optional
 
 from dagster import JsonMetadataValue
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -7,12 +7,7 @@ from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import TaskInfo
 from dagster_airlift.core.serialization.serialized_data import SerializedAssetKeyScopedAirflowData
-from dagster_airlift.core.utils import airflow_kind_dict
-
-
-class TaskHandle(NamedTuple):
-    dag_id: str
-    task_id: str
+from dagster_airlift.core.utils import TaskHandle, airflow_kind_dict
 
 
 @record
