@@ -11,6 +11,7 @@ from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
+from dagster_airlift.core.serialization.serialized_data import TaskInfo
 from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
@@ -355,18 +356,6 @@ class DagInfo:
     @property
     def file_token(self) -> str:
         return self.metadata["file_token"]
-
-
-@record
-class TaskInfo:
-    webserver_url: str
-    dag_id: str
-    task_id: str
-    metadata: Dict[str, Any]
-
-    @property
-    def dag_url(self) -> str:
-        return f"{self.webserver_url}/dags/{self.dag_id}"
 
 
 @record

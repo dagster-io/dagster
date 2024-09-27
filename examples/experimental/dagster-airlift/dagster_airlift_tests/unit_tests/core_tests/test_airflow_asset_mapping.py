@@ -4,13 +4,14 @@ from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.core.airflow_instance import DagInfo, TaskInfo
+from dagster_airlift.core.airflow_instance import DagInfo
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
     TaskHandle,
     build_airlift_metadata_mapping_info,
     fetch_all_airflow_data,
 )
+from dagster_airlift.core.serialization.serialized_data import TaskInfo
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.migration_state import (
     AirflowMigrationState,
@@ -166,10 +167,11 @@ def test_fetched_airflow_data() -> None:
 
     assert fetched_airflow_data.migration_state_map == {"dag1": {"task1": True, "task2": False}}
 
-    airflow_data_by_key = fetched_airflow_data.airflow_data_by_key
-    assert airflow_data_by_key.keys() == {ak("asset1"), ak("asset2")}
-
-    assert "Dag ID" in fetched_airflow_data.airflow_data_by_key[ak("asset1")].additional_metadata
+    all_mapped_tasks = fetched_airflow_data.all_mapped_tasks
+    assert all_mapped_tasks.keys() == {ak("asset1"), ak("asset2")}
+    assert all_mapped_tasks[ak("asset1")][0].task_handle == TaskHandle(
+        dag_id="dag1", task_id="task1"
+    )
 
 
 def test_produce_fetched_airflow_data() -> None:
