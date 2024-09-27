@@ -66,6 +66,12 @@ DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
+DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
+DEFAULT_RUN_TASK_RETRIES = 5
+
+
+class RetryableEcsException(Exception): ...
+
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run."""
@@ -373,6 +379,36 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         job_origin = check.not_none(context.job_code_origin)
         return job_origin.repository_origin.container_image
 
+    def _run_task(self, **run_task_kwargs):
+        response = self.ecs.run_task(**run_task_kwargs)
+
+        tasks = response["tasks"]
+
+        if not tasks:
+            failures = response["failures"]
+            failure_messages = []
+            for failure in failures:
+                arn = failure.get("arn")
+                reason = failure.get("reason")
+                detail = failure.get("detail")
+
+                failure_message = (
+                    "Task"
+                    + (f" {arn}" if arn else "")
+                    + " failed."
+                    + (f" Failure reason: {reason}" if reason else "")
+                    + (f" Failure details: {detail}" if detail else "")
+                )
+                failure_messages.append(failure_message)
+
+            failure_message = "\n".join(failure_messages) if failure_messages else "Task failed."
+
+            if "Capacity is unavailable at this time" in failure_message:
+                raise RetryableEcsException(failure_message)
+
+            raise Exception(failure_message)
+        return tasks[0]
+
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
         run = context.dagster_run
@@ -435,31 +471,17 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             del run_task_kwargs["launchType"]
 
         # Run a task using the same network configuration as this processes's task.
-        response = self.ecs.run_task(**run_task_kwargs)
+        task = backoff(
+            self._run_task,
+            retry_on=(RetryableEcsException,),
+            kwargs=run_task_kwargs,
+            max_retries=int(
+                os.getenv("RUN_TASK_RETRIES", DEFAULT_RUN_TASK_RETRIES),
+            ),
+        )
 
-        tasks = response["tasks"]
-
-        if not tasks:
-            failures = response["failures"]
-            failure_messages = []
-            for failure in failures:
-                arn = failure.get("arn")
-                reason = failure.get("reason")
-                detail = failure.get("detail")
-
-                failure_message = (
-                    "Task"
-                    + (f" {arn}" if arn else "")
-                    + " failed."
-                    + (f" Failure reason: {reason}" if reason else "")
-                    + (f" Failure details: {detail}" if detail else "")
-                )
-                failure_messages.append(failure_message)
-
-            raise Exception("\n".join(failure_messages) if failure_messages else "Task failed.")
-
-        arn = tasks[0]["taskArn"]
-        cluster_arn = tasks[0]["clusterArn"]
+        arn = task["taskArn"]
+        cluster_arn = task["clusterArn"]
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)
 
@@ -661,7 +683,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     "container_name": container_name,
                     "task_definition_dict": task_definition_dict,
                 },
-                max_retries=5,
+                max_retries=int(
+                    os.getenv(
+                        "REGISTER_TASK_DEFINITION_RETRIES", DEFAULT_REGISTER_TASK_DEFINITION_RETRIES
+                    ),
+                ),
             )
 
             task_definition = family
