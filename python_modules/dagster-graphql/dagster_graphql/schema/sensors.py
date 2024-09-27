@@ -11,6 +11,7 @@ from dagster._core.remote_representation.external import CompoundID, ExternalRep
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.fetch_sensors import (
     get_sensor_next_tick,
     reset_sensor,
@@ -38,6 +39,7 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -84,6 +86,7 @@ class GrapheneSensor(graphene.ObjectType):
     sensorType = graphene.NonNull(GrapheneSensorType)
     assetSelection = graphene.Field(GrapheneAssetSelection)
     tags = non_null_list(GrapheneDefinitionTag)
+    metadataEntries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "Sensor"
@@ -153,6 +156,17 @@ class GrapheneSensor(graphene.ObjectType):
             GrapheneDefinitionTag(key, value)
             for key, value in (self._external_sensor.tags or {}).items()
         ]
+
+    def resolve_metadataEntries(
+        self, _graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneMetadataEntry]:
+        # Standard metadata is nested under the non-standard ExternalSensorMetadata object for
+        # backcompat reasons.
+        sensor_metadata = self._external_sensor.metadata
+        if sensor_metadata and sensor_metadata.standard_metadata:
+            return list(iterate_metadata_entries(sensor_metadata.standard_metadata))
+        else:
+            return []
 
 
 class GrapheneSensorOrError(graphene.Union):

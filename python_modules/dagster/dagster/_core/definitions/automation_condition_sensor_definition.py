@@ -69,6 +69,8 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
         run_tags (Optional[Mapping[str, Any]]): Tags that will be automatically attached to runs launched by this sensor.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
         minimum_interval_seconds (Optional[int]): The frequency at which to try to evaluate the
@@ -87,6 +89,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
+        metadata: Optional[Mapping[str, object]] = None,
         **kwargs,
     ):
         self._user_code = kwargs.get("user_code", False)
@@ -113,6 +116,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             required_resource_keys=None,
             asset_selection=asset_selection,
             tags=tags,
+            metadata=metadata,
         )
 
     @property

@@ -439,9 +439,16 @@ class TargetSnap:
 @whitelist_for_serdes(storage_name="ExternalSensorMetadata")
 @record
 class SensorMetadataSnap:
-    """Stores additional sensor metadata which is available in the Dagster UI."""
+    """Stores sensor metadata which is available in the Dagster UI.
+
+    This is an unfortunate legacy class that is out of line with our preferred pattern of storing
+    standard `Mapping[str, MetadataValue]` under the metadata field. Because this class already
+    existed when adding this standard metadata to sensors, we stash it on here as a field under
+    `standard_metadata`.
+    """
 
     asset_keys: Optional[Sequence[AssetKey]]
+    standard_metadata: Optional[Mapping[str, MetadataValue]] = None
 
 
 @whitelist_for_serdes(
@@ -573,7 +580,9 @@ class SensorSnap(IHaveNew):
             target_dict=target_dict,
             min_interval=sensor_def.minimum_interval_seconds,
             description=sensor_def.description,
-            metadata=SensorMetadataSnap(asset_keys=asset_keys),
+            metadata=SensorMetadataSnap(
+                asset_keys=asset_keys, standard_metadata=sensor_def.metadata
+            ),
             default_status=sensor_def.default_status,
             sensor_type=sensor_def.sensor_type,
             asset_selection=serializable_asset_selection,

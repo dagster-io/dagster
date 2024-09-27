@@ -3,8 +3,14 @@
   dict({
     '__typename': 'Sensor',
     'assetSelection': None,
+    'metadataEntries': list([
+      dict({
+        'label': 'foo',
+        'text': 'bar',
+      }),
+    ]),
     'minIntervalSeconds': 30,
-    'name': 'always_no_config_sensor_with_tags',
+    'name': 'always_no_config_sensor_with_tags_and_metadata',
     'nextTick': None,
     'sensorState': dict({
       'runs': list([
@@ -55,7 +61,7 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
-      'name': 'always_no_config_sensor_with_tags',
+      'name': 'always_no_config_sensor_with_tags_and_metadata',
       'sensorState': dict({
         'runs': list([
         ]),

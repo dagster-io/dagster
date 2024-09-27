@@ -45,6 +45,8 @@ from dagster._core.definitions.dynamic_partitions_request import (
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import normalize_metadata
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import Resources
@@ -586,6 +588,10 @@ class SensorDefinition(IHasInternalInit):
             This can be provided instead of specifying a job.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects. Not currently
+            shown in the UI but available at runtime via
+            `SensorEvaluationContext.repository_def.get_sensor_def(<name>).metadata`.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the sensor will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
@@ -612,6 +618,7 @@ class SensorDefinition(IHasInternalInit):
             asset_selection=self.asset_selection,
             required_resource_keys=self._raw_required_resource_keys,
             tags=self._tags,
+            metadata=self._metadata,
             target=None,
         )
 
@@ -638,6 +645,7 @@ class SensorDefinition(IHasInternalInit):
         asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[Mapping[str, object]] = None,
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -730,6 +738,9 @@ class SensorDefinition(IHasInternalInit):
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
         self._tags = normalize_tags(tags).tags
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)  # type: ignore  # (pyright bug)
+        )
 
     @staticmethod
     def dagster_internal_init(
@@ -745,6 +756,7 @@ class SensorDefinition(IHasInternalInit):
         asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[Set[str]],
         tags: Optional[Mapping[str, str]],
+        metadata: Optional[Mapping[str, object]],
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -766,6 +778,7 @@ class SensorDefinition(IHasInternalInit):
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
             tags=tags,
+            metadata=metadata,
             target=target,
         )
 
@@ -849,6 +862,11 @@ class SensorDefinition(IHasInternalInit):
     def tags(self) -> Mapping[str, str]:
         """Mapping[str, str]: The tags for this sensor."""
         return self._tags
+
+    @property
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        """Mapping[str, str]: The metadata for this sensor."""
+        return self._metadata
 
     @property
     def sensor_type(self) -> SensorType:
