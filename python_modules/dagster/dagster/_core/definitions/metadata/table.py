@@ -207,7 +207,7 @@ class TableSchema(
                         type = "string",
                         description = "Foo description",
                         constraints = TableColumnConstraints(
-                            required = True,
+                            nullable = False,
                             other = [
                                 "starts with the letter 'a'",
                             ],
