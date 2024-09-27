@@ -1654,30 +1654,31 @@ def test_asset_selection(graphql_context):
 
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
+
     assert (
         result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
         == "fresh_diamond_bottom or asset_with_automation_condition"
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
-        {"path": ["fresh_diamond_bottom"]},
         {"path": ["asset_with_automation_condition"]},
+        {"path": ["fresh_diamond_bottom"]},
     ]
     assert result.data["sensorOrError"]["assetSelection"]["assets"] == [
-        {
-            "key": {"path": ["fresh_diamond_bottom"]},
-            "definition": {"assetKey": {"path": ["fresh_diamond_bottom"]}},
-        },
         {
             "key": {"path": ["asset_with_automation_condition"]},
             "definition": {"assetKey": {"path": ["asset_with_automation_condition"]}},
         },
+        {
+            "key": {"path": ["fresh_diamond_bottom"]},
+            "definition": {"assetKey": {"path": ["fresh_diamond_bottom"]}},
+        },
     ]
     assert result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["nodes"] == [
         {
-            "key": {"path": ["fresh_diamond_bottom"]},
+            "key": {"path": ["asset_with_automation_condition"]},
         },
         {
-            "key": {"path": ["asset_with_automation_condition"]},
+            "key": {"path": ["fresh_diamond_bottom"]},
         },
     ]
 
