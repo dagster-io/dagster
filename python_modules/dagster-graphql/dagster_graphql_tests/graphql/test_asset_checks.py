@@ -857,7 +857,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
