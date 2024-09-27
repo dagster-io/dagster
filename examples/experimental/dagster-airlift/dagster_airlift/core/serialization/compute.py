@@ -138,6 +138,15 @@ class FetchedAirflowData:
             for spec in self.mapping_info.mapped_asset_specs
         }
 
+    def task_handle_data_for_dag(self, dag_id: str) -> Dict[str, SerializedTaskHandleData]:
+        return {
+            task_id: SerializedTaskHandleData(
+                migration_state=self.migration_state_map[dag_id].get(task_id),
+                asset_keys_in_task=self.mapping_info.asset_key_map[dag_id][task_id],
+            )
+            for task_id in self.mapping_info.task_id_map[dag_id]
+        }
+
 
 def fetch_all_airflow_data(
     airflow_instance: AirflowInstance, mapping_info: AirliftMetadataMappingInfo
@@ -165,31 +174,22 @@ def compute_serialized_data(
 ) -> "SerializedAirflowDefinitionsData":
     mapping_info = build_airlift_metadata_mapping_info(defs)
     fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
-
-    dag_datas = {}
-    for dag_id, dag_info in fetched_airflow_data.dag_infos.items():
-        leaf_asset_keys = get_leaf_assets_for_dag(
-            asset_keys_in_dag=mapping_info.asset_keys_per_dag_id[dag_id],
-            downstreams_asset_dependency_graph=mapping_info.downstream_deps,
-        )
-        task_handle_data = {}
-        for task_id in mapping_info.task_id_map[dag_id]:
-            task_handle_data[task_id] = SerializedTaskHandleData(
-                migration_state=fetched_airflow_data.migration_state_map[dag_id].get(task_id),
-                asset_keys_in_task=mapping_info.asset_key_map[dag_id][task_id],
-            )
-        dag_datas[dag_id] = SerializedDagData(
-            dag_id=dag_id,
-            task_handle_data=task_handle_data,
-            dag_info=dag_info,
-            source_code=airflow_instance.get_dag_source_code(dag_info.metadata["file_token"]),
-            leaf_asset_keys=set(leaf_asset_keys),
-        )
-
     return SerializedAirflowDefinitionsData(
         key_scoped_data_items=[
             KeyScopedDataItem(asset_key=k, mapped_tasks=v)
             for k, v in fetched_airflow_data.all_mapped_tasks.items()
         ],
-        dag_datas=dag_datas,
+        dag_datas={
+            dag_id: SerializedDagData(
+                dag_id=dag_id,
+                task_handle_data=fetched_airflow_data.task_handle_data_for_dag(dag_id),
+                dag_info=dag_info,
+                source_code=airflow_instance.get_dag_source_code(dag_info.metadata["file_token"]),
+                leaf_asset_keys=get_leaf_assets_for_dag(
+                    asset_keys_in_dag=mapping_info.asset_keys_per_dag_id[dag_id],
+                    downstreams_asset_dependency_graph=mapping_info.downstream_deps,
+                ),
+            )
+            for dag_id, dag_info in fetched_airflow_data.dag_infos.items()
+        },
     )

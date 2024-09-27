@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Set
+from typing import Any, Dict, Mapping, Set
 
 from dagster import AssetKey, JsonMetadataValue, MarkdownMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
@@ -34,7 +34,7 @@ def dag_asset_metadata(dag_info: DagInfo, source_code: str) -> Mapping[str, Any]
 def get_leaf_assets_for_dag(
     asset_keys_in_dag: Set[AssetKey],
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
-) -> List[AssetKey]:
+) -> Set[AssetKey]:
     # An asset is a "leaf" for the dag if it has no transitive dependencies _within_ the dag. It may have
     # dependencies _outside_ the dag.
     leaf_assets = []
@@ -47,7 +47,7 @@ def get_leaf_assets_for_dag(
             == set()
         ):
             leaf_assets.append(asset_key)
-    return leaf_assets
+    return set(leaf_assets)
 
 
 def get_transitive_dependencies_for_asset(
