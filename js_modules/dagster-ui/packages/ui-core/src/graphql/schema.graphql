@@ -2345,6 +2345,7 @@ input RunsFilter {
   createdBefore: Float
   createdAfter: Float
   mode: String
+  excludeSubruns: Boolean
 }
 
 input PipelineSelector {
