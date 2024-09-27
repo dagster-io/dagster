@@ -141,11 +141,13 @@ export const RunsFeedRow = ({
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
       </RowCell>
       <RowCell>
-        {entry.__typename === 'PartitionBackfill' ? (
-          <RunStatusTag status={entry.runStatus} />
-        ) : (
-          <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
-        )}
+        <div>
+          {entry.__typename === 'PartitionBackfill' ? (
+            <RunStatusTag status={entry.runStatus} />
+          ) : (
+            <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
+          )}
+        </div>
       </RowCell>
       <RowCell style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
