@@ -79,6 +79,7 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
+from dagster._core.storage.tags import TICK_ID_TAG
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -795,6 +796,15 @@ auto_materialize_sensor = AutomationConditionSensorDefinition(
 )
 
 
+@sensor(job_name="the_job")
+def asset_event_reporting_sensor(context) -> SensorResult:
+    return SensorResult(
+        asset_events=[
+            AssetMaterialization("asset_one"),
+        ]
+    )
+
+
 @repository
 def the_repo():
     return [
@@ -864,6 +874,7 @@ def the_repo():
         multipartitions_with_static_time_dimensions_run_requests_sensor,
         auto_materialize_sensor,
         run_request_check_only_sensor,
+        asset_event_reporting_sensor,
     ]
 
 
@@ -3456,6 +3467,35 @@ def test_start_tick_sensor(executor, instance, workspace_context, external_repo)
         last_tick = _get_last_tick(instance, start_skip_sensor)
         validate_tick(last_tick, start_skip_sensor, freeze_datetime, TickStatus.SUCCESS)
         assert last_sensor_start_time == last_tick.cursor
+
+
+def test_asset_event_reporting_sensor(
+    executor, instance: DagsterInstance, workspace_context, external_repo
+) -> None:
+    freeze_datetime = create_datetime(year=2019, month=2, day=27)
+    with freeze_time(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("asset_event_reporting_sensor")
+        external_origin_id = external_sensor.get_external_origin_id()
+        instance.start_sensor(external_sensor)
+
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(external_origin_id, external_sensor.selector_id)
+        assert len(ticks) == 1
+        tick = ticks[0]
+
+        assert tick.tick_data.has_emitted_asset_events
+
+        last_materialization = instance.get_latest_materialization_event(AssetKey(["asset_one"]))
+        assert last_materialization
+        assert (
+            last_materialization.asset_materialization
+            and last_materialization.asset_materialization.tags
+        )
+        assert last_materialization.asset_materialization.tags[TICK_ID_TAG] == str(tick.tick_id)
 
 
 def _get_last_tick(instance, sensor):
