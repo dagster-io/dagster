@@ -16,8 +16,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 )
 
 GET_RUNS_FEED_QUERY = """
-query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter) {
-    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter) {
+query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter,  $excludeSubruns: Boolean!) {
+    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter, excludeSubruns: $excludeSubruns) {
       ... on RunsFeedConnection {
           results {
             __typename
@@ -120,6 +120,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
         prev_run_time = None
@@ -135,6 +136,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -159,6 +161,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": old_cursor,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -178,6 +181,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 15,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -201,6 +205,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -220,6 +225,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -251,6 +257,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": old_cursor.to_string(),
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -265,6 +272,94 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
 
             assert res["creationTime"] <= run_cursor_run.create_timestamp.timestamp()
             assert res["creationTime"] <= backfill_cursor_backfill.backfill_timestamp
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+    def test_get_runs_feed_with_subruns(self, gql_context_with_runs_and_backfills):
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+                "filter": None,
+                "excludeSubruns": False,
+            },
+        )
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": None,
+                "excludeSubruns": False,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 5,
+                "cursor": None,
+                "filter": None,
+                "excludeSubruns": False,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert result.data["runsFeedOrError"]["hasMore"]
+        old_cursor = result.data["runsFeedOrError"]["cursor"]
+        assert old_cursor is not None
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 5,
+                "cursor": old_cursor,
+                "filter": None,
+                "excludeSubruns": False,
+            },
+        )
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
 
         assert not result.data["runsFeedOrError"]["hasMore"]
 
@@ -292,6 +387,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -316,6 +412,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -338,6 +435,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -369,6 +467,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -399,6 +498,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -426,6 +526,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -457,6 +558,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 5,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -489,6 +591,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -526,6 +629,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -542,6 +646,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["SUCCESS"]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -555,6 +660,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["FAILURE"]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -568,6 +674,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELING"]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -581,6 +688,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELED"]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -594,11 +702,97 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["NOT_STARTED"]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
         assert result.data
         assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+    def test_get_runs_feed_filter_status_and_show_subruns(self, graphql_context):
+        _create_run(graphql_context, status=DagsterRunStatus.SUCCESS)
+        _create_run(graphql_context, status=DagsterRunStatus.CANCELING)
+        _create_run(graphql_context, status=DagsterRunStatus.FAILURE)
+        _create_run(graphql_context, status=DagsterRunStatus.NOT_STARTED)
+        time.sleep(CREATE_DELAY)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_SUCCESS)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_FAILED)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED)
+        _create_backfill(graphql_context, status=BulkActionStatus.CANCELING)
+        _create_backfill(graphql_context, status=BulkActionStatus.CANCELED)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": None,
+                "excludeSubruns": False,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["SUCCESS"]},
+                "excludeSubruns": False,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["FAILURE"]},
+                "excludeSubruns": False,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["CANCELING"]},
+                "excludeSubruns": False,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["CANCELED"]},
+                "excludeSubruns": False,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 0
 
     def test_get_runs_feed_filter_create_time(self, graphql_context):
         nothing_created_ts = get_current_timestamp()
@@ -626,6 +820,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -642,6 +837,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": nothing_created_ts},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -656,6 +852,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": half_created_ts},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -670,6 +867,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": all_created_ts},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -686,6 +884,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 6,
                 "cursor": None,
                 "filter": {"createdBefore": half_created_ts},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -700,6 +899,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 4,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": {"createdBefore": half_created_ts},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -744,6 +944,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -760,6 +961,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"pipelineName": "foo"},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -773,6 +975,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"pipelineName": "bar"},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -803,6 +1006,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -819,6 +1023,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "bar"}]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -833,6 +1038,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "baz", "value": "quux"}]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -846,6 +1052,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "baz"}]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -864,6 +1071,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -880,6 +1088,45 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"runIds": [run.run_id]},
+                "excludeSubruns": True,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+    def test_get_runs_feed_filters_that_dont_apply_to_backfills_and_show_subruns(
+        self, graphql_context
+    ):
+        run = _create_run(graphql_context)
+        time.sleep(CREATE_DELAY)
+        _create_backfill(graphql_context)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": None,
+                "excludeSubruns": False,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"runIds": [run.run_id]},
+                "excludeSubruns": False,
             },
         )
         assert not result.errors
@@ -929,6 +1176,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "excludeSubruns": True,
             },
         )
 
@@ -945,6 +1193,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "bar"}], "statuses": ["SUCCESS"]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -961,6 +1210,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                     "tags": [{"key": "foo", "value": "bar"}],
                     "statuses": ["FAILURE", "CANCELED"],
                 },
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
@@ -974,6 +1224,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "baz"}], "statuses": ["FAILURE"]},
+                "excludeSubruns": True,
             },
         )
         assert not result.errors
