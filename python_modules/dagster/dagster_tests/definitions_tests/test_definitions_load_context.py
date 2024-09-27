@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 
 import pytest
@@ -25,6 +26,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
     RepositoryLoadData,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance_for_test import instance_for_test
 from dagster._record import record
@@ -50,14 +52,16 @@ def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str
         context.load_type == DefinitionsLoadType.RECONSTRUCTION
         and cache_key in context.reconstruction_metadata
     ):
-        payload = context.reconstruction_metadata[cache_key]
+        serialized_payload = context.reconstruction_metadata[cache_key]
+        payload = json.loads(serialized_payload)
     else:
         payload = fetch_foo_integration_asset_info(workspace_id)
+        serialized_payload = json.dumps(payload)
     asset_specs = [AssetSpec(item["id"]) for item in payload]
     assets = external_assets_from_specs(asset_specs)
     return Definitions(
         assets=assets,
-    ).with_reconstruction_metadata({cache_key: payload})
+    ).with_reconstruction_metadata({cache_key: serialized_payload})
 
 
 @lazy_definitions
@@ -97,7 +101,7 @@ def test_reconstruction_metadata():
             cacheable_asset_data={},
             reconstruction_metadata={
                 f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": MetadataValue.code_location_reconstruction(
-                    fetch_foo_integration_asset_info(WORKSPACE_ID)
+                    json.dumps(fetch_foo_integration_asset_info(WORKSPACE_ID))
                 )
             },
         )
@@ -109,6 +113,13 @@ def test_reconstruction_metadata():
     ) as mock_fetch:
         recon_repo_with_cache.get_definition()
         mock_fetch.assert_not_called()
+
+
+def test_invalid_reconstruction_metadata():
+    with pytest.raises(
+        DagsterInvariantViolationError, match=r"Reconstruction metadata values must be strings"
+    ):
+        Definitions().with_reconstruction_metadata({"foo": {"not": "a string"}})
 
 
 def test_default_global_context():
