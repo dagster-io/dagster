@@ -9,7 +9,6 @@ from dagster import (
     JsonMetadataValue,
     MarkdownMetadataValue,
     RunRequest,
-    SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
     TimestampMetadataValue,
@@ -17,6 +16,7 @@ from dagster import (
     sensor,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -53,11 +53,11 @@ def check_keys_for_asset_keys(
                 yield check_spec.key
 
 
-def build_airflow_polling_sensor(
+def build_airflow_polling_sensor_defs(
     airflow_instance: AirflowInstance,
     airflow_data: AirflowDefinitionsData,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-) -> SensorDefinition:
+) -> Definitions:
     @sensor(
         name="airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -132,7 +132,7 @@ def build_airflow_polling_sensor(
             else None,
         )
 
-    return airflow_dag_sensor
+    return Definitions(sensors=[airflow_dag_sensor])
 
 
 @record
