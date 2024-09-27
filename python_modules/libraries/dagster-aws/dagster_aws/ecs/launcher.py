@@ -68,6 +68,9 @@ DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
+DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
+DEFAULT_RUN_TASK_RETRIES = 5
+
 
 class RetryableEcsException(Exception): ...
 
@@ -343,13 +346,13 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         "register_task_definition": Field(
                             IntSource,
                             is_required=False,
-                            default_value=5,
+                            default_value=DEFAULT_REGISTER_TASK_DEFINITION_RETRIES,
                             description="How many times to retry transient ECS register_task_definition failures (for example, concurrent registrations of the same task defintion)",
                         ),
                         "run_task": Field(
                             IntSource,
                             is_required=False,
-                            default_value=5,
+                            default_value=DEFAULT_RUN_TASK_RETRIES,
                             description="How many times to retry transient ECS run_task failures (for example, AZ capacity failures)",
                         ),
                     }
@@ -495,7 +498,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             self._run_task,
             retry_on=(RetryableEcsException,),
             kwargs=run_task_kwargs,
-            max_retries=self._retry_config["run_task"],
+            max_retries=self._retry_config.get("run_task", DEFAULT_RUN_TASK_RETRIES),
         )
 
         arn = task["taskArn"]
@@ -701,7 +704,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     "container_name": container_name,
                     "task_definition_dict": task_definition_dict,
                 },
-                max_retries=self._retry_config["register_task_definition"],
+                max_retries=self._retry_config.get(
+                    "register_task_definition", DEFAULT_REGISTER_TASK_DEFINITION_RETRIES
+                ),
             )
 
             task_definition = family
