@@ -54,12 +54,13 @@ class DepConditionWrapperCondition(BuiltinAutomationCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes
-class AssetMatchesCondition(BuiltinAutomationCondition[T_EntityKey]):
-    to_key: T_EntityKey
+@record
+class EntityMatchesCondition(BuiltinAutomationCondition[T_EntityKey]):
+    key: T_EntityKey
     operand: AutomationCondition
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
-        to_candidate_subset = context.candidate_subset.compute_mapped_subset(self.to_key)
+        to_candidate_subset = context.candidate_subset.compute_mapped_subset(self.key)
         to_context = context.for_child_condition(
             child_condition=self.operand, child_index=0, candidate_subset=to_candidate_subset
         )

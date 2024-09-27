@@ -9,7 +9,12 @@ import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetKey,
+    CoercibleToAssetKey,
+    T_EntityKey,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -50,7 +55,7 @@ if TYPE_CHECKING:
         AnyChecksCondition,
         AnyDepsCondition,
         AnyDownstreamConditionsCondition,
-        AssetMatchesCondition,
+        EntityMatchesCondition,
         NewlyTrueCondition,
         NotAutomationCondition,
         OrAutomationCondition,
@@ -244,12 +249,15 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @experimental
     @staticmethod
     def asset_matches(
-        to_key: T_EntityKey, condition: "AutomationCondition"
-    ) -> "AssetMatchesCondition":
+        key: "CoercibleToAssetKey", condition: "AutomationCondition[AssetKey]"
+    ) -> "EntityMatchesCondition":
         """Returns an AutomationCondition that is true if this condition is true for the given entity key."""
-        from dagster._core.definitions.declarative_automation.operators import AssetMatchesCondition
+        from dagster._core.definitions.declarative_automation.operators import (
+            EntityMatchesCondition,
+        )
 
-        return AssetMatchesCondition(to_key=to_key, operand=condition)
+        asset_key = AssetKey.from_coercible(key)
+        return EntityMatchesCondition(key=asset_key, operand=condition)
 
     @public
     @experimental

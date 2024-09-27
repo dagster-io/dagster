@@ -271,7 +271,7 @@ class AssetGraphView(LoadingContext):
             )
 
     def compute_mapped_subset(
-        self, to_key: T_EntityKey, from_subset: EntitySubset[AssetKey]
+        self, to_key: T_EntityKey, from_subset: EntitySubset
     ) -> EntitySubset[T_EntityKey]:
         from_key = from_subset.key
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
@@ -294,7 +294,7 @@ class AssetGraphView(LoadingContext):
                 dynamic_partitions_store=self._queryer,
                 current_time=self.effective_dt,
             )
-        elif from_key in self.asset_graph.get(to_key).child_entity_keys:
+        else:
             to_partitions_subset = (
                 partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
                     downstream_partitions_subset=from_subset.get_internal_subset_value(),
@@ -304,16 +304,6 @@ class AssetGraphView(LoadingContext):
                     current_time=self.effective_dt,
                 ).partitions_subset
             )
-        else:
-            to_partitions_subset = (
-                partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                    downstream_partitions_subset=None,
-                    downstream_partitions_def=None,
-                    upstream_partitions_def=to_partitions_def,
-                    dynamic_partitions_store=self._queryer,
-                    current_time=self.effective_dt,
-                )
-            ).partitions_subset
 
         return EntitySubset(
             self,
