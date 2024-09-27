@@ -1,6 +1,7 @@
 # type: ignore
 
-# This file is only loaded by old versions of dagster during backcompat testing.
+# Backcompat test definitions intended for use with our oldest testest release of Dagster. Does not
+# use `Definitions` because it is not available in our oldest supported releases.
 
 from dagster import graph, op, pipeline, repository, solid
 from dagster_graphql import DagsterGraphQLClient
@@ -22,18 +23,21 @@ def the_pipeline():
 
 
 @op
-def my_op():
+def the_op():
     return 5
 
 
 @op
-def ingest(x):
+def the_ingest_op(x):
     return x + 5
 
 
 @graph
-def basic():
-    ingest(my_op())
+def the_graph():
+    the_ingest_op(the_op())
+
+
+the_job = the_graph.to_job(name="the_job")
 
 
 @solid
@@ -50,9 +54,8 @@ def test_graphql():
     ping_dagit()
 
 
-the_job = basic.to_job(name="the_job")
-
-
+# This is named __repository__ so that it has the same name as a RepositoryDefinition generated from
+# a Definitions object.
 @repository
 def basic_repo():
     return [the_job, the_pipeline, test_graphql]

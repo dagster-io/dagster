@@ -6,13 +6,13 @@ import time
 import traceback
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, Mapping, Optional, Sequence
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
 import docker
-import packaging.version
 import pytest
 import requests
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._utils import (
     file_relative_path,
@@ -46,21 +46,12 @@ def get_library_version(version: str) -> str:
         return library_version_from_core_version(version)
 
 
-def is_0_release(release: str) -> bool:
-    """Returns true if on < 1.0 release of dagster, false otherwise."""
-    if release == "current_branch":
-        return False
-    version = packaging.version.parse(release)
-    return version < packaging.version.Version("1.0")
-
-
-def infer_user_code_definitions_files(release: str) -> str:
-    """Returns `repo.py` if on source or version >=1.0, `legacy_repo.py` otherwise."""
-    if release == "current_branch":
-        return "repo.py"
+def infer_user_code_definitions_files(user_code_release: str) -> str:
+    """Returns the definitions file to use for the user code release."""
+    if user_code_release == EARLIEST_TESTED_RELEASE:
+        return "defs_for_earliest_tested_release.py"
     else:
-        version = packaging.version.parse(release)
-        return "legacy_repo.py" if version < packaging.version.Version("1.0") else "repo.py"
+        return "defs_for_latest_release.py"
 
 
 def assert_run_success(client: DagsterGraphQLClient, run_id: str) -> None:
@@ -263,7 +254,7 @@ def test_backcompat_deployed_pipeline(
     graphql_client: DagsterGraphQLClient, release_test_map: Mapping[str, str]
 ):
     # Only run this test on legacy versions
-    if is_0_release(release_test_map["user_code"]):
+    if release_test_map["user_code"] == EARLIEST_TESTED_RELEASE:
         assert_runs_and_exists(graphql_client, "the_pipeline")
 
 
@@ -271,7 +262,7 @@ def test_backcompat_deployed_pipeline_subset(
     graphql_client: DagsterGraphQLClient, release_test_map: Mapping[str, str]
 ):
     # Only run this test on legacy versions
-    if is_0_release(release_test_map["user_code"]):
+    if release_test_map["user_code"] == EARLIEST_TESTED_RELEASE:
         assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
 
 
@@ -280,13 +271,114 @@ def test_backcompat_deployed_job(graphql_client: DagsterGraphQLClient):
 
 
 def test_backcompat_deployed_job_subset(graphql_client: DagsterGraphQLClient):
-    assert_runs_and_exists(graphql_client, "the_job", subset_selection=["my_op"])
+    assert_runs_and_exists(graphql_client, "the_job", subset_selection=["the_op"])
 
 
 def test_backcompat_ping_webserver(graphql_client: DagsterGraphQLClient):
     assert_runs_and_exists(
         graphql_client,
         "test_graphql",
+    )
+
+
+REPO_CONTENT_QUERY = """
+query {
+    repositoryOrError(
+        repositorySelector: {
+            repositoryLocationName: "test_repo"
+            repositoryName: "__repository__"
+        }
+    ) {
+        ... on Repository {
+            name
+            assetNodes {
+                assetKey {
+                    path
+                }
+                assetChecksOrError {
+                    ... on AssetChecks {
+                        checks {
+                            name
+                        }
+                    }
+                }
+                isPartitioned
+                requiredResources {
+                    resourceKey
+                }
+            }
+            jobs {
+                name
+            }
+            schedules {
+                name
+            }
+            sensors {
+                name
+            }
+            allTopLevelResourceDetails {
+                name
+            }
+        }
+    }
+}
+"""
+
+
+# The purpose of the test is primarily to catch typos introduced when renaming serializable classes.
+# For example, if we were to rename `ScheduleSnap` to `FooScheduleSnap`, we would do this:
+#
+# @whitelist_for_serdes(storage_name="ScheduleSnap")
+# class FooScheduleSnap:
+#     ...
+#
+# If there were a typo in the `storage_name` "ScheduleSnap" above, this test would fail since a
+# serialized ScheduleSnap could not be successfully deserialized.
+def test_backcompat_list_repo_contents(
+    graphql_client: DagsterGraphQLClient,
+    release_test_map: Mapping[str, str],
+):
+    # Do not run this test on the earliest tested release, since the repo contents are different.
+    if release_test_map["user_code"] == EARLIEST_TESTED_RELEASE:
+        pytest.skip("Skipping test for earliest tested release-- repo contents are different")
+
+    res = graphql_client._execute(  # noqa: SLF001
+        REPO_CONTENT_QUERY,
+        variables={},
+    )
+    assert res
+    repo_content = res["repositoryOrError"]
+
+    job_names = {job["name"] for job in repo_content["jobs"]}
+    assert "the_partitioned_job" in job_names
+    assert "the_job" in job_names
+    assert "test_graphql" in job_names
+
+    asset_keys = {AssetKey(asset["assetKey"]["path"]) for asset in repo_content["assetNodes"]}
+    assert AssetKey("the_asset") in asset_keys
+    the_static_partitioned_asset = _get_asset(
+        repo_content, AssetKey(["the_static_partitioned_asset"])
+    )
+    assert the_static_partitioned_asset["isPartitioned"]
+    the_time_partitioned_asset = _get_asset(repo_content, AssetKey(["the_time_partitioned_asset"]))
+    assert the_time_partitioned_asset["isPartitioned"]
+    the_resource_asset = _get_asset(repo_content, AssetKey(["the_resource_asset"]))
+    assert the_resource_asset["requiredResources"][0]["resourceKey"] == "the_resource"
+
+    assert repo_content["schedules"][0]["name"] == "the_schedule"
+    assert repo_content["sensors"][0]["name"] == "the_sensor"
+
+    # definitions only present for the modern repo used with the most recent release
+    if release_test_map["user_code"] == MOST_RECENT_RELEASE_PLACEHOLDER:
+        assert repo_content["allTopLevelResourceDetails"][0]["name"] == "the_resource"
+        assert "the_asset_job" in job_names
+        the_asset = _get_asset(repo_content, AssetKey(["the_asset"]))
+        assert the_asset["assetChecksOrError"][0]["checks"][0]["name"] == "the_asset_check"
+
+
+def _get_asset(repo_content: Mapping[str, Any], asset_key: AssetKey) -> Mapping[str, Any]:
+    return next(
+        asset for asset in repo_content["assetNodes"] if asset["assetKey"]["path"] == asset_key.path
     )
 
 

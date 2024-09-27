@@ -1,8 +1,6 @@
 import os
 from typing import Callable, List, Optional, Union
 
-import packaging.version
-
 from dagster_buildkite.defines import (
     GCP_CREDS_FILENAME,
     GCP_CREDS_LOCAL_FILE,
@@ -99,13 +97,12 @@ def backcompat_extra_cmds(_, factor: str) -> List[str]:
     ]
 
 
-def _infer_user_code_definitions_files(release: str) -> str:
-    """Returns `repo.py` if on source or version >=1.0, `legacy_repo.py` otherwise."""
-    if release == "current_branch":
-        return "repo.py"
+def _infer_user_code_definitions_files(user_code_release: str) -> str:
+    """Returns the definitions file to use for the user code release."""
+    if user_code_release == EARLIEST_TESTED_RELEASE:
+        return "defs_for_earliest_tested_release.py"
     else:
-        version = packaging.version.parse(release)
-        return "legacy_repo.py" if version < packaging.version.Version("1.0") else "repo.py"
+        return "defs_for_latest_release.py"
 
 
 def _get_library_version(version: str) -> str:
