@@ -77,7 +77,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink id="scheduled" title="Scheduled" to={`${getRunFeedPath()}/scheduled`} />
+      <TabLink id="scheduled" title="Scheduled" to={`${getRunFeedPath()}scheduled`} />
     </Tabs>
   );
 
@@ -109,7 +109,7 @@ export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
 
 export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => {
   const {pathname} = useLocation();
-  if (pathname === `${getRunFeedPath()}/scheduled`) {
+  if (pathname === `${getRunFeedPath()}scheduled`) {
     return 'scheduled';
   }
   const statusTokens = new Set(

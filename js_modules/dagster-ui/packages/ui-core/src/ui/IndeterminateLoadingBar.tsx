@@ -1,13 +1,16 @@
 import {Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
-export const IndeterminateLoadingBar = styled.div`
+export const IndeterminateLoadingBar = styled.div<{loading?: boolean}>`
   height: 2px;
   width: 100%;
   background: ${Colors.backgroundGray()};
   border-radius: 0 0 8px 8px;
   overflow: hidden;
 
+  ${({loading}) =>
+    loading
+      ? `
   &::after {
     content: '';
     display: block;
@@ -28,4 +31,6 @@ export const IndeterminateLoadingBar = styled.div`
       }
     }
   }
+    `
+      : ''}
 `;
