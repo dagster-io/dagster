@@ -9,7 +9,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedAssetDepData,
     SerializedAssetSpecData,
 )
-from dagster_airlift.core.utils import airflow_kind_dict
+from dagster_airlift.core.utils import airflow_dag_kind_dict
 
 
 def dag_asset_spec_data(
@@ -21,7 +21,7 @@ def dag_asset_spec_data(
         asset_key=dag_info.dag_asset_key,
         description=dag_description(dag_info),
         metadata=dag_asset_metadata(airflow_instance, dag_info),
-        tags=airflow_kind_dict(),
+        tags=airflow_dag_kind_dict(),
         deps=[
             SerializedAssetDepData(asset_key=leaf_asset_key)
             for leaf_asset_key in asset_keys_for_leaf_tasks

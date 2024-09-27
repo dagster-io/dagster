@@ -425,3 +425,21 @@ def test_multiple_tasks_to_single_asset() -> None:
         {"dag_id": "dag1", "task_id": "task1"},
         {"dag_id": "dag2", "task_id": "task2"},
     ]
+
+
+def test_kind_tags_peered_dag() -> None:
+    defs = load_definitions_airflow_asset_graph(
+        assets_per_task={
+            "dag": {"task": []},
+        },
+    )
+    assert defs.assets
+    repo_def = defs.get_repository_def()
+    repo_def.load_all_definitions()
+    assert len(repo_def.assets_defs_by_key) == 1
+    dag_asset = repo_def.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag"])]
+    dag_spec = next(iter(dag_asset.specs))
+    assert dag_spec.tags == {
+        "dagster/kind/airflow": "",
+        "dagster/kind/dag": "",
+    }
