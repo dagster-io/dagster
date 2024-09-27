@@ -6,9 +6,7 @@ from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 from dlt import Pipeline
 
-from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import (
-    pipeline,
-)
+from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline
 
 
 def test_fetch_row_count(dlt_pipeline: Pipeline) -> None:
@@ -23,12 +21,9 @@ def test_fetch_row_count(dlt_pipeline: Pipeline) -> None:
         resources={"dlt_pipeline_resource": DagsterDltResource()},
     )
     assert res.success
-    materializations = [
-        event.materialization for event in res.get_asset_materialization_events()
-    ]
+    materializations = [event.materialization for event in res.get_asset_materialization_events()]
     assert all(
-        "dagster/row_count" in materialization.metadata
-        for materialization in materializations
+        "dagster/row_count" in materialization.metadata for materialization in materializations
     )
 
     repos_materialization = next(
@@ -130,6 +125,4 @@ def test_fetch_row_count_failure(dlt_pipeline: Pipeline):
             asset_materialization.step_materialization_data.materialization.metadata
             for asset_materialization in asset_materializations
         ]
-        assert not any(
-            ["dagster/row_count" in metadata for metadata in metadatas]
-        ), str(metadatas)
+        assert not any(["dagster/row_count" in metadata for metadata in metadatas]), str(metadatas)

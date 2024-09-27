@@ -1,13 +1,10 @@
 from collections import abc
-from typing import Generic, Iterator, Union, Tuple
+from typing import Generic, Iterator, Tuple, Union
 
 from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import experimental, public
-from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-from dagster._core.execution.context.asset_execution_context import (
-    AssetExecutionContext,
-)
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dlt import Pipeline
 from typing_extensions import TypeVar
@@ -100,9 +97,7 @@ class DltEventIterator(Generic[T], abc.Iterator):
                     dlt_pipeline=self._dlt_pipeline,
                 )
                 if event.metadata:
-                    yield event._replace(
-                        metadata={**row_count_metadata, **event.metadata}
-                    )
+                    yield event._replace(metadata={**row_count_metadata, **event.metadata})
 
         return DltEventIterator[T](
             _fetch_row_count(),
