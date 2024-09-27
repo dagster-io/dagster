@@ -69,16 +69,13 @@ def build_defs_from_airflow_instance(
 
 def definitions_from_airflow_data(
     airflow_data: AirflowDefinitionsData,
-    defs: Definitions,
+    explicit_defs: Definitions,
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int,
 ) -> Definitions:
-    assets_defs = construct_all_assets(
-        definitions=defs,
-        airflow_data=airflow_data,
-    )
+    assets_defs = construct_all_assets(explicit_defs=explicit_defs, airflow_data=airflow_data)
     return defs_with_assets_and_sensor(
-        defs,
+        explicit_defs,
         assets_defs,
         airflow_instance,
         sensor_minimum_interval_seconds,
@@ -87,7 +84,7 @@ def definitions_from_airflow_data(
 
 
 def defs_with_assets_and_sensor(
-    defs: Definitions,
+    explicit_defs: Definitions,
     assets_defs: List[AssetsDefinition],
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int,
@@ -100,32 +97,34 @@ def defs_with_assets_and_sensor(
     )
     return Definitions(
         assets=assets_defs,
-        asset_checks=defs.asset_checks if defs else None,
-        sensors=[airflow_sensor, *defs.sensors] if defs and defs.sensors else [airflow_sensor],
-        schedules=defs.schedules if defs else None,
-        jobs=defs.jobs if defs else None,
-        executor=defs.executor if defs else None,
-        loggers=defs.loggers if defs else None,
-        resources=defs.resources if defs else None,
+        asset_checks=explicit_defs.asset_checks if explicit_defs else None,
+        sensors=[airflow_sensor, *explicit_defs.sensors]
+        if explicit_defs and explicit_defs.sensors
+        else [airflow_sensor],
+        schedules=explicit_defs.schedules if explicit_defs else None,
+        jobs=explicit_defs.jobs if explicit_defs else None,
+        executor=explicit_defs.executor if explicit_defs else None,
+        loggers=explicit_defs.loggers if explicit_defs else None,
+        resources=explicit_defs.resources if explicit_defs else None,
     )
 
 
 def construct_all_assets(
-    definitions: Definitions,
+    explicit_defs: Definitions,
     airflow_data: AirflowDefinitionsData,
 ) -> List[AssetsDefinition]:
     return (
-        list(_apply_airflow_data_to_specs(definitions, airflow_data))
+        list(_apply_airflow_data_to_specs(explicit_defs, airflow_data))
         + airflow_data.construct_dag_assets_defs()
     )
 
 
 def _apply_airflow_data_to_specs(
-    definitions: Definitions,
+    explicit_defs: Definitions,
     airflow_data: AirflowDefinitionsData,
 ) -> Iterator[AssetsDefinition]:
     """Apply asset spec transformations to the asset definitions."""
-    for asset in definitions.assets or []:
+    for asset in explicit_defs.assets or []:
         asset = check.inst(  # noqa: PLW2901
             asset,
             (AssetSpec, AssetsDefinition),
