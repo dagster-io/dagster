@@ -25,9 +25,9 @@ backports-tarfile==1.2.0
 beautifulsoup4==4.12.3
 bleach==6.1.0
 boto3==1.35.23
-boto3-stubs-lite==1.35.28
+boto3-stubs-lite==1.35.29
 botocore==1.35.23
-botocore-stubs==1.35.28
+botocore-stubs==1.35.29
 buildkite-test-collector==0.1.9
 cachetools==5.5.0
 caio==0.9.17
@@ -78,7 +78,7 @@ decopatch==1.4.10
 decorator==5.1.1
 deepdiff==8.0.1
 defusedxml==0.7.1
-deltalake==0.20.0
+deltalake==0.20.1
 dill==0.3.8
 distlib==0.3.8
 docker==7.1.0
@@ -129,7 +129,7 @@ isoduration==20.11.0
 isort==5.13.2
 jaraco-classes==3.4.0
 jaraco-context==6.0.1
-jaraco-functools==4.0.2
+jaraco-functools==4.1.0
 jedi==0.19.1
 jinja2==3.1.4
 jmespath==1.0.1
@@ -320,10 +320,10 @@ universal-pathlib==0.2.5
 uri-template==1.3.0
 uritemplate==4.1.1
 urllib3==2.2.3
-uvicorn==0.30.6
+uvicorn==0.31.0
 uvloop==0.20.0
-virtualenv==20.26.5
-watchdog==5.0.2
+virtualenv==20.26.6
+watchdog==5.0.3
 watchfiles==0.24.0
 wcwidth==0.2.13
 webcolors==24.8.0
@@ -332,5 +332,5 @@ websocket-client==1.8.0
 websockets==13.1
 wheel==0.44.0
 wrapt==1.16.0
-yarl==1.13.0
+yarl==1.13.1
 zipp==3.20.2
