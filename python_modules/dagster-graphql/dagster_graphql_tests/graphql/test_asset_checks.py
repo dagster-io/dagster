@@ -873,7 +873,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         checks = [
@@ -909,7 +908,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -928,7 +926,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         check_evaluations = [
@@ -976,7 +973,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         check_evaluations = [
@@ -1041,14 +1037,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         for log in logs:
@@ -1079,14 +1073,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         check_evaluations = [
@@ -1123,14 +1115,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         check_evaluations = [
@@ -1166,14 +1156,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         check_evaluations = [
@@ -1209,14 +1197,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         check_evaluations = [
@@ -1255,14 +1241,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id, timeout=10000000000)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         check_evaluations = [
@@ -1301,14 +1285,12 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id, timeout=10000000000)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         result = execute_dagster_graphql(
@@ -1316,7 +1298,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             GET_ASSET_CHECK_HISTORY_WITH_STEP_KEY,
             variables={"assetKey": {"path": ["one"]}, "checkName": "my_check", "limit": 10},
         )
-        print(result.data)  # noqa: T201
         assert result.data == {
             "assetCheckExecutions": [
                 {
@@ -1374,7 +1355,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -1391,7 +1371,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         res = execute_dagster_graphql(
@@ -1422,7 +1401,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        print(result.data)  # noqa: T201
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -1439,7 +1417,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
         logs = graphql_context.instance.all_logs(run_id)
-        print(logs)  # noqa: T201
         assert run.is_success
 
         res = execute_dagster_graphql(
