@@ -32,7 +32,7 @@ def test_run_task_failure(ecs, instance, workspace, run):
     assert ex.match("Task failed. Failure reason: ran out of arns")
 
 
-def test_run_task_retryrable_failure(ecs, instance, workspace, run):
+def test_run_task_retryrable_failure(ecs, instance, workspace, run, other_run, monkeypatch):
     original = ecs.run_task
 
     out_of_capacity_response = {
@@ -57,3 +57,13 @@ def test_run_task_retryrable_failure(ecs, instance, workspace, run):
     instance.run_launcher.ecs.run_task = run_task
 
     instance.launch_run(run.run_id, workspace)
+
+    # reset our mock and test again with 0 retries
+    retryable_failures = iter([out_of_capacity_response])
+
+    monkeypatch.setenv("RUN_TASK_RETRIES", "0")
+
+    with pytest.raises(Exception) as ex:
+        instance.launch_run(other_run.run_id, workspace)
+
+    assert ex.match("Capacity is unavailable")
