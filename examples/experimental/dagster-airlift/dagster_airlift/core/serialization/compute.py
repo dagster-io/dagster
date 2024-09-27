@@ -198,7 +198,6 @@ def compute_serialized_data(
             dag_id=dag_id,
             spec_data=dag_spec,
             task_handle_data=task_handle_data,
-            all_asset_keys_in_tasks=mapping_info.asset_keys_per_dag_id[dag_id],
         )
 
     return SerializedAirflowDefinitionsData(
