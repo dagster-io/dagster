@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type, TypeVar, cast
 
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
@@ -269,6 +269,48 @@ class AssetGraphView(LoadingContext):
                 key=child_key,
                 value=_ValidatedEntitySubsetValue(child_partitions_subset),
             )
+
+    def compute_map_subset(
+        self, to_key: T_EntityKey, subset: EntitySubset[T_EntityKey]
+    ) -> EntitySubset[T_EntityKey]:
+        from_key = subset.key
+        from_partitions_def = self.asset_graph.get(from_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+
+        if isinstance(to_key, AssetKey):
+            to_subset = self.compute_parent_subset(to_key, subset)
+            if not to_subset.is_empty:
+                return cast(EntitySubset[T_EntityKey], to_subset)
+
+        if isinstance(from_key, AssetKey):
+            to_subset = self.compute_child_subset(to_key, cast(EntitySubset[AssetKey], subset))
+            if not to_subset.is_empty:
+                return to_subset
+
+        partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
+
+        if from_partitions_def is None or to_partitions_def is None:
+            return (
+                self.get_empty_subset(key=to_key)
+                if subset.is_empty
+                else self.get_full_subset(key=to_key)
+            )
+
+        to_partitions_subset = (
+            partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                downstream_partitions_subset=None,
+                downstream_partitions_def=None,
+                upstream_partitions_def=to_partitions_def,
+                dynamic_partitions_store=self._queryer,
+                current_time=self.effective_dt,
+            )
+        ).partitions_subset
+
+        return EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(to_partitions_subset),
+        )
 
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str], asset_subset: EntitySubset[AssetKey]

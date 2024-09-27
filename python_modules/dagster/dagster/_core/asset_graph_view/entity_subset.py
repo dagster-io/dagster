@@ -104,6 +104,10 @@ class EntitySubset(Generic[T_EntityKey]):
     def compute_child_subset(self, child_key: U_EntityKey) -> "EntitySubset[U_EntityKey]":
         return self._asset_graph_view.compute_child_subset(child_key, self)
 
+    @cached_method
+    def compute_map_subset(self, to_key: U_EntityKey) -> "EntitySubset[U_EntityKey]":
+        return self._asset_graph_view.compute_map_subset(to_key, self)  # type: ignore
+
     @property
     def size(self) -> int:
         if isinstance(self._value, bool):

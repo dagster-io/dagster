@@ -50,6 +50,7 @@ if TYPE_CHECKING:
         AnyChecksCondition,
         AnyDepsCondition,
         AnyDownstreamConditionsCondition,
+        AssetMatchesCondition,
         NewlyTrueCondition,
         NotAutomationCondition,
         OrAutomationCondition,
@@ -238,6 +239,17 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
                     | AutomationCondition[AssetKey].newly_updated()
                 ).with_label("handled")
             )
+
+    @public
+    @experimental
+    @staticmethod
+    def asset_matches(
+        to_key: T_EntityKey, condition: "AutomationCondition"
+    ) -> "AssetMatchesCondition":
+        """Returns an AutomationCondition that is true if this condition is true for the given entity key."""
+        from dagster._core.definitions.declarative_automation.operators import AssetMatchesCondition
+
+        return AssetMatchesCondition(to_key=to_key, operand=condition)
 
     @public
     @experimental
