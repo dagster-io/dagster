@@ -12,9 +12,11 @@ from dagster import (
     Array,
     DagsterRunStatus,
     Field,
+    IntSource,
     Noneable,
     Permissive,
     ScalarUnion,
+    Shape,
     StringSource,
     _check as check,
 )
@@ -86,6 +88,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
+        retries: Optional[Dict[str, int]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -176,6 +179,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
+
+        self._retry_config = check.opt_dict_param(retries, "retries")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -332,6 +337,24 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
+            "retries": Field(
+                Shape(
+                    fields={
+                        "register_task_definition": Field(
+                            IntSource,
+                            is_required=False,
+                            default_value=5,
+                            description="How many times to retry transient ECS register_task_definition failures (for example, concurrent registrations of the same task defintion)",
+                        ),
+                        "run_task": Field(
+                            IntSource,
+                            is_required=False,
+                            default_value=5,
+                            description="How many times to retry transient ECS run_task failures (for example, AZ capacity failures)",
+                        ),
+                    }
+                )
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -472,7 +495,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             self._run_task,
             retry_on=(RetryableEcsException,),
             kwargs=run_task_kwargs,
-            max_retries=5,
+            max_retries=self._retry_config["run_task"],
         )
 
         arn = task["taskArn"]
@@ -678,7 +701,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     "container_name": container_name,
                     "task_definition_dict": task_definition_dict,
                 },
-                max_retries=5,
+                max_retries=self._retry_config["register_task_definition"],
             )
 
             task_definition = family
