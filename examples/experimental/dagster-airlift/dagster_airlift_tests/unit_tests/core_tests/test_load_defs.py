@@ -328,7 +328,6 @@ def test_serialization_roundtrip() -> None:
                 )
             ],
             dag_datas={},
-            asset_key_topological_ordering=[],
         ),
     )
 

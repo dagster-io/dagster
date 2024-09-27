@@ -42,6 +42,3 @@ class AirflowDefinitionsData:
 
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
         return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].asset_keys_in_task
-
-    def topo_order_index(self, asset_key: AssetKey) -> int:
-        return self.serialized_data.asset_key_topological_ordering.index(asset_key)

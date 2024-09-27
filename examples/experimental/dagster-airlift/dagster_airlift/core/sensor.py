@@ -93,6 +93,7 @@ def build_airflow_polling_sensor_defs(
         all_materializations: List[Tuple[float, AssetMaterialization]] = []
         all_check_keys: Set[AssetCheckKey] = set()
         latest_offset = current_dag_offset
+        repository_def = check.not_none(context.repository_def)
         while get_current_datetime() - current_date < timedelta(seconds=MAIN_LOOP_TIMEOUT_SECONDS):
             batch_result = next(sensor_iter, None)
             if batch_result is None:
@@ -100,17 +101,10 @@ def build_airflow_polling_sensor_defs(
             all_materializations.extend(batch_result.materializations_and_timestamps)
 
             all_check_keys.update(
-                check_keys_for_asset_keys(
-                    check.not_none(context.repository_def), batch_result.all_asset_keys_materialized
-                )
+                check_keys_for_asset_keys(repository_def, batch_result.all_asset_keys_materialized)
             )
             latest_offset = batch_result.idx
 
-        # Sort materializations by end date and toposort order
-        sorted_mats = sorted(
-            all_materializations,
-            key=lambda x: (x[0], airflow_data.topo_order_index(x[1].asset_key)),
-        )
         if batch_result is not None:
             new_cursor = AirflowPollingSensorCursor(
                 end_date_gte=end_date_gte,
@@ -125,14 +119,29 @@ def build_airflow_polling_sensor_defs(
                 dag_query_offset=0,
             )
         context.update_cursor(serialize_value(new_cursor))
+
         return SensorResult(
-            asset_events=[sorted_mat[1] for sorted_mat in sorted_mats],
+            asset_events=sorted_asset_events(all_materializations, repository_def),
             run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]
             if all_check_keys
             else None,
         )
 
     return Definitions(sensors=[airflow_dag_sensor])
+
+
+def sorted_asset_events(
+    all_materializations: List[Tuple[float, AssetMaterialization]],
+    repository_def: RepositoryDefinition,
+) -> List[AssetMaterialization]:
+    """Sort materializations by end date and toposort order."""
+    topo_aks = repository_def.asset_graph.toposorted_asset_keys
+    return [
+        sorted_mat[1]
+        for sorted_mat in sorted(
+            all_materializations, key=lambda x: (x[0], topo_aks.index(x[1].asset_key))
+        )
+    ]
 
 
 @record
