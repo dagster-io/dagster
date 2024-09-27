@@ -495,24 +495,12 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
     converted_statuses = (
         _bulk_action_statuses_from_run_statuses(filters.statuses) if filters.statuses else None
     )
-    backfill_ids = None
-    if filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None:
-        backfill_ids = filters.tags[BACKFILL_ID_TAG]
-        if isinstance(backfill_ids, str):
-            backfill_ids = [backfill_ids]
-
-    tags = (
-        {key: value for key, value in filters.tags.items() if key != BACKFILL_ID_TAG}
-        if filters.tags
-        else None
-    )
     return BulkActionsFilter(
         created_before=filters.created_before,
         created_after=filters.created_after,
         statuses=converted_statuses,
         job_name=filters.job_name,
-        tags=tags,
-        backfill_ids=backfill_ids,
+        tags=filters.tags,
     )
 
 
