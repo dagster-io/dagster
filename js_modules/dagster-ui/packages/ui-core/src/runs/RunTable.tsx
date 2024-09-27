@@ -132,7 +132,7 @@ export const RunTable = (props: RunTableProps) => {
         }
         bottom={belowActionBarComponents}
       />
-      {loading ? <IndeterminateLoadingBar /> : null}
+      <IndeterminateLoadingBar loading={loading} />
       {content()}
     </>
   );
