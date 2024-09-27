@@ -104,14 +104,18 @@ class AirflowDefinitionsData:
         )
 
     def construct_automapped_dag_assets_defs(self) -> Definitions:
-        specs = []
+        dag_specs = []
+        task_specs = []
         for dag_data in self.serialized_data.dag_datas.values():
+            leaf_tasks = set()
             upstream_deps: Dict[str, Set[str]] = {task_id: set() for task_id in dag_data.task_infos}
             for task_id, task_info in dag_data.task_infos.items():
+                if not task_info.downstream_task_ids:
+                    leaf_tasks.add(task_id)
                 for downstream_id in task_info.downstream_task_ids:
                     upstream_deps[downstream_id].add(task_id)
 
-            specs.extend(
+            task_specs.extend(
                 AssetSpec(
                     key=key_for_automapped_task_asset(dag_data.dag_id, task_id),
                     deps=[
@@ -125,7 +129,20 @@ class AirflowDefinitionsData:
                 for task_id, upstream_task_ids in upstream_deps.items()
             )
 
-        return Definitions.merge(Definitions(assets=specs), self.construct_dag_assets_defs())
+            dag_specs.append(
+                AssetSpec(
+                    key=dag_data.dag_info.dag_asset_key,
+                    description=dag_description(dag_data.dag_info),
+                    metadata=dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
+                    tags=airflow_kind_dict(),
+                    deps=[
+                        key_for_automapped_task_asset(dag_data.dag_id, task_id)
+                        for task_id in leaf_tasks
+                    ],
+                )
+            )
+
+        return Definitions(assets=task_specs + dag_specs)
 
     @property
     def all_dag_ids(self) -> AbstractSet[str]:
