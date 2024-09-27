@@ -60,6 +60,12 @@ export const linkToAssetTableWithColumnsFilter = (columns: string[]) => {
   })}`;
 };
 
+export const linkToAssetTableWithColumnTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
+  return `/assets?${qs.stringify({
+    columnTags: JSON.stringify([tag]),
+  })}`;
+};
+
 export const linkToCodeLocation = (repoAddress: RepoAddress) => {
   return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
 };

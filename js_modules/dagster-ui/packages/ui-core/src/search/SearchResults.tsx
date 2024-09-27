@@ -9,7 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
 import {
@@ -18,9 +18,9 @@ import {
   SearchResultType,
   isAssetFilterSearchResultType,
 } from './types';
-import {assertUnreachable} from '../app/Util';
-import {isCanonicalComputeKindTag} from '../graph/KindTags';
-import {KNOWN_TAGS, TagIcon} from '../graph/OpTags';
+import { assertUnreachable } from '../app/Util';
+import { isCanonicalComputeKindTag } from '../graph/KindTags';
+import { KNOWN_TAGS, TagIcon } from '../graph/OpTags';
 
 const iconForType = (type: SearchResultType | AssetFilterSearchResultType): IconName => {
   switch (type) {
@@ -57,6 +57,8 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'source';
     case AssetFilterSearchResultType.Column:
       return 'view_column';
+    case AssetFilterSearchResultType.ColumnTag:
+      return 'tag';
     default:
       assertUnreachable(type);
   }
@@ -76,6 +78,8 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Group';
     case AssetFilterSearchResultType.Column:
       return 'Column';
+    case AssetFilterSearchResultType.ColumnTag:
+      return 'Column tag';
     default:
       assertUnreachable(type);
   }
