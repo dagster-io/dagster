@@ -22,3 +22,5 @@ print_op = PythonOperator(task_id="print_task", python_callable=print_hello, dag
 downstream_print_op = PythonOperator(
     task_id="downstream_print_task", python_callable=print_hello, dag=dag
 )
+
+downstream_print_op.set_upstream(print_op)

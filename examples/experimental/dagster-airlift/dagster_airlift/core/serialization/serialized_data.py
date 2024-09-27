@@ -1,7 +1,10 @@
 from functools import cached_property
 from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set
 
-from dagster import AssetKey
+from dagster import (
+    AssetKey,
+    _check as check,
+)
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
@@ -19,6 +22,10 @@ class TaskInfo:
     @property
     def dag_url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
+
+    @cached_property
+    def downstream_task_ids(self) -> List[str]:
+        return check.is_list(self.metadata["downstream_task_ids"], str)
 
 
 @whitelist_for_serdes
