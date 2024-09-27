@@ -338,6 +338,7 @@ class ScheduleSnap(IHaveNew):
     description: Optional[str]
     default_status: Optional[DefaultScheduleStatus]
     asset_selection: Optional[AssetSelection]
+    tags: Mapping[str, str]
 
     def __new__(
         cls,
@@ -352,6 +353,7 @@ class ScheduleSnap(IHaveNew):
         description: Optional[str] = None,
         default_status: Optional[DefaultScheduleStatus] = None,
         asset_selection: Optional[AssetSelection] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         if asset_selection is not None:
             check.invariant(
@@ -377,6 +379,7 @@ class ScheduleSnap(IHaveNew):
                 else None
             ),
             asset_selection=asset_selection,
+            tags=tags or {},
         )
 
     @classmethod
@@ -407,6 +410,7 @@ class ScheduleSnap(IHaveNew):
             description=schedule_def.description,
             default_status=schedule_def.default_status,
             asset_selection=serializable_asset_selection,
+            tags=schedule_def.tags,
         )
 
 
@@ -452,6 +456,7 @@ class SensorSnap(IHaveNew):
     default_status: Optional[DefaultSensorStatus]
     sensor_type: Optional[SensorType]
     asset_selection: Optional[AssetSelection]
+    tags: Mapping[str, str]
     run_tags: Mapping[str, str]
 
     def __new__(
@@ -467,6 +472,7 @@ class SensorSnap(IHaveNew):
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
         asset_selection: Optional[AssetSelection] = None,
+        tags: Optional[Mapping[str, str]] = None,
         run_tags: Optional[Mapping[str, str]] = None,
     ):
         if job_name and not target_dict:
@@ -506,6 +512,7 @@ class SensorSnap(IHaveNew):
             ),
             sensor_type=sensor_type,
             asset_selection=asset_selection,
+            tags=tags or {},
             run_tags=run_tags or {},
         )
 
@@ -564,6 +571,7 @@ class SensorSnap(IHaveNew):
             default_status=sensor_def.default_status,
             sensor_type=sensor_def.sensor_type,
             asset_selection=serializable_asset_selection,
+            tags=sensor_def.tags,
             run_tags=(
                 sensor_def.run_tags
                 if isinstance(sensor_def, AutomationConditionSensorDefinition)

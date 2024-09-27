@@ -31,8 +31,6 @@ from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
 
-from dagster_graphql.implementation.fetch_assets import get_external_asset_node
-
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GrapheneUnsupportedOperationError
     from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
@@ -347,7 +345,7 @@ def wipe_assets(
         if apr.partition_range is None:
             whole_assets_to_wipe.append(apr.asset_key)
         else:
-            node = check.not_none(get_external_asset_node(graphene_info, apr.asset_key))
+            node = graphene_info.context.asset_graph.external_asset_nodes_by_key[apr.asset_key]
             partitions_def = check.not_none(node.partitions_def_data).get_partitions_definition()
             partition_keys = partitions_def.get_partition_keys_in_range(apr.partition_range)
             try:

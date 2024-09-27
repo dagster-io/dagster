@@ -28,7 +28,6 @@ mdx-format:  ## Format mdx files
 
 mdx-full-format: docs_ruff mdx-format
 
-
 mdx:
 	tox -e sphinx-mdx
 

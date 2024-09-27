@@ -67,7 +67,7 @@ describe('RunActionsMenu', () => {
       });
 
       // Blueprint doesn't actually set `disabled` on the button element.
-      expect(reExecutionButton.classList.contains('bp4-disabled')).toBe(true);
+      expect(reExecutionButton.classList.contains('bp5-disabled')).toBe(true);
     });
   });
 });

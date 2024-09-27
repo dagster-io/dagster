@@ -32,6 +32,16 @@ def test_airflow_instance(airflow_instance: None) -> None:
     assert task_info.task_id == "print_task"
     assert_link_exists("Dag url from task info object", task_info.dag_url)
 
+    task_infos = instance.get_task_infos(dag_id="print_dag")
+    assert len(task_infos) == 2
+
+    task_dict = {task_info.task_id: task_info for task_info in task_infos}
+    assert set(task_dict.keys()) == {"print_task", "downstream_print_task"}
+    assert task_dict["print_task"].dag_id == "print_dag"
+    assert task_dict["print_task"].task_id == "print_task"
+    assert task_dict["downstream_print_task"].dag_id == "print_dag"
+    assert task_dict["downstream_print_task"].task_id == "downstream_print_task"
+
     task_info = instance.get_task_info(dag_id="print_dag", task_id="downstream_print_task")
     assert task_info.dag_id == "print_dag"
     assert task_info.task_id == "downstream_print_task"

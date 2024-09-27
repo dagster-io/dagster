@@ -5,6 +5,7 @@ import * as Types from '../../graphql/types';
 export type RunsFeedRootQueryVariables = Types.Exact<{
   limit: Types.Scalars['Int']['input'];
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  filter?: Types.InputMaybe<Types.RunsFilter>;
 }>;
 
 export type RunsFeedRootQuery = {
@@ -43,14 +44,14 @@ export type RunsFeedRootQuery = {
               partitionSet: {
                 __typename: 'PartitionSet';
                 id: string;
+                mode: string;
                 name: string;
                 pipelineName: string;
-                mode: string;
                 repositoryOrigin: {
                   __typename: 'RepositoryOrigin';
+                  id: string;
                   repositoryName: string;
                   repositoryLocationName: string;
-                  id: string;
                 };
               } | null;
               assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
@@ -79,9 +80,9 @@ export type RunsFeedRootQuery = {
               pipelineSnapshotId: string | null;
               repositoryOrigin: {
                 __typename: 'RepositoryOrigin';
+                id: string;
                 repositoryName: string;
                 repositoryLocationName: string;
-                id: string;
               } | null;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
               assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
@@ -95,4 +96,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = '3dc4ec68d0d42dff05c4d66bbe5490b2251268c8b68abe84de6e48d64365fb75';
+export const RunsFeedRootQueryVersion = '42006dc8a4bc222d1ef7fe3275fd64769ab2645efacfb3432edc9616bb88d826';

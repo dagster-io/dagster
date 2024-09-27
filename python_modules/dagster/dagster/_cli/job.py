@@ -51,7 +51,7 @@ from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._time import get_current_timestamp
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
@@ -615,7 +615,7 @@ def _execute_backfill_command_at_location(
     cli_args: ClickArgMapping,
     print_fn: PrintFn,
     instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace: BaseWorkspaceRequestContext,
     code_location: CodeLocation,
 ) -> None:
     external_repo = get_external_repository_from_code_location(

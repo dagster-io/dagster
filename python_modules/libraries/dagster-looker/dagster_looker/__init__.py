@@ -2,6 +2,8 @@ from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator as DagsterLookerApiTranslator,
+    LookerStructureData as LookerStructureData,
+    LookerStructureType as LookerStructureType,
     RequestStartPdtBuild as RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerResource as LookerResource

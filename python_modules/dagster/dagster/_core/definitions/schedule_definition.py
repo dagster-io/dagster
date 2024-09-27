@@ -38,7 +38,7 @@ from dagster._core.definitions.target import (
     ExecutableDefinition,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.definitions.utils import NormalizedTags, check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name, normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -507,8 +507,9 @@ class ScheduleDefinition(IHasInternalInit):
         run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Mapping]]]): A function that
             takes a :py:class:`~dagster.ScheduleEvaluationContext` object and returns the run configuration that
             parameterizes this execution, as a dict. **Note**: Only one of the following may be set: You may set ``run_config``, ``run_config_fn``, or ``execution_fn``.
-        tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
-            to the scheduled runs.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the schedule
+            and can be used for searching and filtering in the UI. If no `execution_fn` is provided,
+            then these will also be automatically attached to runs launched by the schedule.
         tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]]): A
             function that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
@@ -566,7 +567,7 @@ class ScheduleDefinition(IHasInternalInit):
         job_name: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Mapping[str, str]] = None,
@@ -651,9 +652,9 @@ class ScheduleDefinition(IHasInternalInit):
 
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
 
-        if execution_fn and (run_config_fn or tags_fn or should_execute or tags or run_config):
+        if execution_fn and (run_config_fn or tags_fn or should_execute or run_config):
             raise DagsterInvalidDefinitionError(
-                "Attempted to provide both execution_fn and individual run_config/tags arguments "
+                "Attempted to provide both execution_fn and individual run_config/tags_fn arguments "
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
@@ -664,6 +665,8 @@ class ScheduleDefinition(IHasInternalInit):
                 self._execution_fn = execution_fn
             else:
                 self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
+            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            self._tags_fn = None
             self._run_config_fn = None
         else:
             if run_config_fn and run_config:
@@ -688,15 +691,14 @@ class ScheduleDefinition(IHasInternalInit):
                     "Attempted to provide both tags_fn and tags as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            elif tags:
-                tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
-                tags_fn = lambda _context: tags
-            else:
-                tags_fn = check.opt_callable_param(
+            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            if tags_fn:
+                self._tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
                 )
-            self._tags_fn = tags_fn
-            self._tags = tags
+            else:
+                tags_fn = lambda _context: self._tags or {}
+                self._tags_fn = tags_fn
 
             self._should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
@@ -889,6 +891,12 @@ class ScheduleDefinition(IHasInternalInit):
     def execution_timezone(self) -> Optional[str]:
         """Optional[str]: The timezone in which this schedule will be evaluated."""
         return self._execution_timezone
+
+    @public
+    @property
+    def tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for this schedule."""
+        return self._tags
 
     @public
     @property

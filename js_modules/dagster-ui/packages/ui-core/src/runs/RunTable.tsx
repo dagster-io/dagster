@@ -10,6 +10,7 @@ import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
@@ -23,6 +24,7 @@ interface RunTableProps {
   belowActionBarComponents?: React.ReactNode;
   hideCreatedBy?: boolean;
   emptyState?: () => React.ReactNode;
+  loading?: boolean;
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -36,7 +38,9 @@ export const RunTable = (props: RunTableProps) => {
     belowActionBarComponents,
     hideCreatedBy,
     emptyState,
+    loading,
   } = props;
+
   const allIds = runs.map((r) => r.id);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
@@ -128,6 +132,7 @@ export const RunTable = (props: RunTableProps) => {
         }
         bottom={belowActionBarComponents}
       />
+      {loading ? <IndeterminateLoadingBar /> : null}
       {content()}
     </>
   );

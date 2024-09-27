@@ -5,6 +5,7 @@ import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
+import {RepositoryCountTags} from './RepositoryCountTags';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {
   LocationStatusEntryFragment,
@@ -101,6 +102,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
               </div>
               <ImageName metadata={allMetadata} />
               <ModuleOrPackageOrFile metadata={allMetadata} />
+              <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
             </Box>
           </RowCell>
           <RowCell>

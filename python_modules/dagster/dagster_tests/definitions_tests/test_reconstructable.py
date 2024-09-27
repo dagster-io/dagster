@@ -118,7 +118,7 @@ def test_bad_target():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, function decorated with @definitions,"
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions,"
             " or RepositoryDefinition. Got None."
         ),
     ):

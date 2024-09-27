@@ -56,6 +56,7 @@ Hudi
 IAM
 JavaScript
 Jupyter
+JWT
 Lakehouse
 Looker
 MLOps
@@ -78,6 +79,7 @@ PingOne
 Polars
 Postgres
 Prometheus
+Power BI
 Pydantic
 RBAC
 RDS
@@ -93,6 +95,7 @@ SSH
 Secoda
 Snowflake
 Spark
+Tableau
 Tensorflow
 Trino
 Twilio
@@ -133,3 +136,15 @@ uncomment
 unpartitioned
 vCPU
 vCPUs
+we have
+
+
+SLA
+SLAs
+performant
+SOC
+GDPR
+HIPAA
+IAM
+ECS
+AWS

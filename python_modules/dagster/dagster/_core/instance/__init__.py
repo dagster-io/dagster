@@ -178,7 +178,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.storage.sql import AlembicVersion
-    from dagster._core.workspace.workspace import IWorkspace
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
 
@@ -885,6 +885,10 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def run_monitoring_cancel_timeout_seconds(self) -> int:
         return self.run_monitoring_settings.get("cancel_timeout_seconds", 180)
+
+    @property
+    def run_monitoring_max_runtime_seconds(self) -> int:
+        return self.run_monitoring_settings.get("max_runtime_seconds", 0)
 
     @property
     def code_server_settings(self) -> Any:
@@ -2595,7 +2599,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Runs coordinator
 
-    def submit_run(self, run_id: str, workspace: "IWorkspace") -> DagsterRun:
+    def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
         """Submit a pipeline run to the coordinator.
 
         This method delegates to the ``RunCoordinator``, configured on the instance, and will
@@ -2645,7 +2649,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Run launcher
 
-    def launch_run(self, run_id: str, workspace: "IWorkspace") -> DagsterRun:
+    def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
         """Launch a pipeline run.
 
         This method is typically called using `instance.submit_run` rather than being invoked
@@ -2691,7 +2695,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return run
 
-    def resume_run(self, run_id: str, workspace: "IWorkspace", attempt_number: int) -> DagsterRun:
+    def resume_run(
+        self, run_id: str, workspace: "BaseWorkspaceRequestContext", attempt_number: int
+    ) -> DagsterRun:
         """Resume a pipeline run.
 
         This method should be called on runs which have already been launched, but whose run workers

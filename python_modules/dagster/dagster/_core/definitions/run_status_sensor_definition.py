@@ -441,6 +441,7 @@ def run_failure_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: bool = False,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> Callable[
     [RunFailureSensorEvaluationFn],
     SensorDefinition,
@@ -490,6 +491,7 @@ def run_failure_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> Union[
     SensorDefinition,
     Callable[
@@ -528,6 +530,8 @@ def run_failure_sensor(
         monitor_all_repositories (bool): (deprecated in favor of monitor_all_code_locations) If set to True,
             the sensor will monitor all runs in the Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
     """
 
     def inner(
@@ -557,6 +561,7 @@ def run_failure_sensor(
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
+            tags=tags,
         )
         @functools.wraps(fn)
         def _run_failure_sensor(*args, **kwargs) -> Any:
@@ -602,6 +607,8 @@ class RunStatusSensorDefinition(SensorDefinition):
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
             execute if yielded from the sensor.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
         request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
@@ -629,6 +636,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[ExecutableDefinition] = None,
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         required_resource_keys: Optional[Set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
@@ -954,6 +962,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             job=request_job,
             jobs=request_jobs,
             required_resource_keys=combined_required_resource_keys,
+            tags=tags,
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
@@ -1022,6 +1031,7 @@ def run_status_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> Callable[
     [RunStatusSensorEvaluationFunction],
     RunStatusSensorDefinition,
@@ -1058,6 +1068,8 @@ def run_status_sensor(
         monitor_all_repositories (Optional[bool]): (deprecated in favor of monitor_all_code_locations) If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
     """
 
     def inner(
@@ -1091,6 +1103,7 @@ def run_status_sensor(
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
+            tags=tags,
         )
 
     return inner

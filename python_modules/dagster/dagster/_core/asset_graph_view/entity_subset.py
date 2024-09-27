@@ -8,7 +8,7 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetValue,
     SerializableEntitySubset,
 )
-from dagster._core.definitions.asset_key import AssetCheckKey, T_EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._utils.cached_method import cached_method
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 
 
-U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey)
+U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey, EntityKey)
 
 
 class _ValidatedEntitySubsetValue(NamedTuple):
@@ -101,11 +101,7 @@ class EntitySubset(Generic[T_EntityKey]):
         return self._asset_graph_view.compute_parent_subset(parent_key, self)
 
     @cached_method
-    def compute_child_subset(
-        self: "EntitySubset[AssetKey]", child_key: U_EntityKey
-    ) -> "EntitySubset[U_EntityKey]":
-        check.inst(self.key, AssetKey)
-
+    def compute_child_subset(self, child_key: U_EntityKey) -> "EntitySubset[U_EntityKey]":
         return self._asset_graph_view.compute_child_subset(child_key, self)
 
     @property

@@ -1,4 +1,4 @@
-import {Box, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, Row, Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -8,7 +8,7 @@ import {VirtualizedAutomationSensorRow} from './VirtualizedAutomationSensorRow';
 import {COMMON_COLLATOR} from '../app/Util';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
-import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
+import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {DynamicRepoRow} from '../workspace/VirtualizedWorkspaceTable';
@@ -99,12 +99,12 @@ export const AutomationsTable = ({
       <Container ref={parentRef}>
         <VirtualizedAutomationHeader checkbox={headerCheckbox} />
         <Inner $totalHeight={totalHeight}>
-          <DynamicRowContainer $start={items[0]?.start ?? 0}>
-            {items.map(({index, key}) => {
-              const row: RowType = flattened[index]!;
-              const type = row!.type;
-              if (type === 'header') {
-                return (
+          {items.map(({index, key, size, start}) => {
+            const row: RowType = flattened[index]!;
+            const type = row!.type;
+            if (type === 'header') {
+              return (
+                <Row $height={size} $start={start} key={key}>
                   <DynamicRepoRow
                     repoAddress={row.repoAddress}
                     key={key}
@@ -137,12 +137,14 @@ export const AutomationsTable = ({
                       </Box>
                     }
                   />
-                );
-              }
+                </Row>
+              );
+            }
 
-              if (type === 'sensor') {
-                const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
-                return (
+            if (type === 'sensor') {
+              const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
+              return (
+                <Row $height={size} $start={start} key={key}>
                   <VirtualizedAutomationSensorRow
                     key={key}
                     index={index}
@@ -152,12 +154,14 @@ export const AutomationsTable = ({
                     onToggleChecked={onToggleCheckFactory(sensorKey)}
                     repoAddress={row.repoAddress}
                   />
-                );
-              }
+                </Row>
+              );
+            }
 
-              if (type === 'schedule') {
-                const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
-                return (
+            if (type === 'schedule') {
+              const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
+              return (
+                <Row $height={size} $start={start} key={key}>
                   <VirtualizedAutomationScheduleRow
                     key={key}
                     index={index}
@@ -167,12 +171,12 @@ export const AutomationsTable = ({
                     onToggleChecked={onToggleCheckFactory(scheduleKey)}
                     repoAddress={row.repoAddress}
                   />
-                );
-              }
+                </Row>
+              );
+            }
 
-              return <div key={key} />;
-            })}
-          </DynamicRowContainer>
+            return <div key={key} />;
+          })}
         </Inner>
       </Container>
     </div>

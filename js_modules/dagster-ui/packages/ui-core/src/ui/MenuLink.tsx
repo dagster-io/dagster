@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
 import {
   Box,
   Colors,
@@ -13,7 +12,7 @@ import styled from 'styled-components';
 
 interface MenuLinkProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick' | 'onFocus' | 'target'>,
+    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick' | 'onFocus' | 'target' | 'ref'>,
     LinkProps {}
 
 /**

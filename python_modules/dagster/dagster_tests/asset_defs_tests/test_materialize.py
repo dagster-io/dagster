@@ -162,9 +162,7 @@ def test_materialize_asset_specs():
         def load_input(self, context):
             return 5
 
-    the_source = AssetSpec(
-        key=AssetKey(["the_source"]), metadata={"dagster/io_manager_key": "my_io_manager"}
-    )
+    the_source = AssetSpec(key=AssetKey(["the_source"])).with_io_manager_key("my_io_manager")
 
     @asset
     def the_asset(the_source):

@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     ForwardRef,
+    Generic,
     Literal,
     Mapping,
     NamedTuple,
@@ -147,6 +148,16 @@ class EvalContext(NamedTuple):
         return local_ns[fn_name]
 
 
+T = TypeVar("T")
+
+
+class _GenClass(Generic[T]): ...
+
+
+# use a sample to avoid direct private imports (_GenericAlias)
+_SampleGeneric = _GenClass[str]
+
+
 def _coerce_type(
     ttype: Optional[TypeOrTupleOfTypes],
     eval_ctx: EvalContext,
@@ -229,7 +240,15 @@ def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
         return target.__name__
 
     if hasattr(target, "_name"):
-        return getattr(target, "_name")
+        n = getattr(target, "_name")
+        if n is not None:
+            return n
+
+    # If a generic falls through to here, just target the base class
+    # and ignore the type hint (for now).
+    # Use a sample generic to avoid custom py version handling
+    if target.__class__ is _SampleGeneric.__class__:
+        return _name(get_origin(target))
 
     failed(f"Could not calculate string name for {target}")
 
@@ -260,6 +279,8 @@ def build_check_call_str(
     name: str,
     eval_ctx: EvalContext,
 ) -> str:
+    from dagster._record import is_record
+
     # assumes this module is in global/local scope as check
     origin = get_origin(ttype)
     args = get_args(ttype)
@@ -359,12 +380,21 @@ def build_check_call_str(
                         return (
                             f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                         )
-
+                    elif is_record(inner_origin):
+                        it = _name(inner_origin)
+                        return f'{name} if isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)
                 if tuple_types is not None:
                     tt_name = _name(tuple_types)
                     return f'{name} if isinstance({name}, {tt_name}) else check.inst_param({name}, "{name}", {tt_name})'
+
+        # origin is some other type, assume ttype is Generic representation
+        else:
+            inst_type = _coerce_type(ttype, eval_ctx)
+            if inst_type:
+                it = _name(inst_type)
+                return f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
 
         failed(f"Unhandled {ttype}")

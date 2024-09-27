@@ -658,6 +658,15 @@ span {
 
 /* Announcement bar */
 div[class^='announcementBar_'] {
-  height: 40px;
-  background-color: var(--theme-color-background-red);
+  color: var(--theme-color-text);
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  background-color: var(--theme-color-background-yellow);
 }
+
+/* Feedback navigation item */
+.feedback-nav-link {
+  color: var(--theme-color-text-yellow);
+  text-decoration: underline;
+}
+

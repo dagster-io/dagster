@@ -16,10 +16,13 @@ export type BackfillStepStatusDialogBackfillFragment = {
   partitionNames: Array<string> | null;
   partitionSet: {
     __typename: 'PartitionSet';
+    id: string;
+    mode: string;
     name: string;
     pipelineName: string;
     repositoryOrigin: {
       __typename: 'RepositoryOrigin';
+      id: string;
       repositoryName: string;
       repositoryLocationName: string;
     };
@@ -37,10 +40,13 @@ export type BackfillActionsBackfillFragment = {
   partitionNames: Array<string> | null;
   partitionSet: {
     __typename: 'PartitionSet';
+    id: string;
+    mode: string;
     name: string;
     pipelineName: string;
     repositoryOrigin: {
       __typename: 'RepositoryOrigin';
+      id: string;
       repositoryName: string;
       repositoryLocationName: string;
     };

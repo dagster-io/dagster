@@ -20,6 +20,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/airbyte.py",
     f"{snippets_folder}/dlt.py",
     f"{snippets_folder}/fivetran.py",
+    # FIXME: this breaks on py3.8 and seems related to the non-dagster dependencies
+    f"{snippets_folder}/pandera.py",
 }
 
 

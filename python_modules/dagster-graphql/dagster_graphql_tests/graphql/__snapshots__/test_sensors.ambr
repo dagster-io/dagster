@@ -4,7 +4,7 @@
     '__typename': 'Sensor',
     'assetSelection': None,
     'minIntervalSeconds': 30,
-    'name': 'always_no_config_sensor',
+    'name': 'always_no_config_sensor_with_tags',
     'nextTick': None,
     'sensorState': dict({
       'runs': list([
@@ -15,6 +15,12 @@
       ]),
     }),
     'sensorType': 'STANDARD',
+    'tags': list([
+      dict({
+        'key': 'foo',
+        'value': 'bar',
+      }),
+    ]),
     'targets': list([
       dict({
         'mode': 'default',
@@ -49,7 +55,7 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
-      'name': 'always_no_config_sensor',
+      'name': 'always_no_config_sensor_with_tags',
       'sensorState': dict({
         'runs': list([
         ]),

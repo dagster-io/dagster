@@ -6,6 +6,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationResult,
     BuiltinAutomationCondition,
 )
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 
 @whitelist_for_serdes
+@record
 class RuleCondition(BuiltinAutomationCondition[AssetKey]):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 

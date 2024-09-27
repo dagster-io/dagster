@@ -1,7 +1,6 @@
-import {useContext} from 'react';
 import {Redirect, Switch} from 'react-router-dom';
+import {JobFallthroughRoot} from 'shared/pipelines/JobFallthroughRoot.oss';
 
-import {JobFeatureContext} from './JobFeatureContext';
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
 import {PipelineRunsRoot} from './PipelineRunsRoot';
 import {Route} from '../app/Route';
@@ -18,7 +17,6 @@ interface Props {
 
 export const PipelineRoot = (props: Props) => {
   const {repoAddress} = props;
-  const {FallthroughRoute} = useContext(JobFeatureContext);
 
   return (
     <div
@@ -92,7 +90,7 @@ export const PipelineRoot = (props: Props) => {
           )}
         />
         <Route path={['/locations/:repoPath/pipelines/(/?.*)', '/locations/:repoPath/jobs/(/?.*)']}>
-          <FallthroughRoute repoAddress={repoAddress} />
+          <JobFallthroughRoot repoAddress={repoAddress} />
         </Route>
       </Switch>
     </div>

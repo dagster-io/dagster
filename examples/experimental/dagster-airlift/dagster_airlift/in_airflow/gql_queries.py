@@ -16,6 +16,10 @@ query AssetNodeQuery {
                 label
                 text
             }
+            ... on JsonMetadataEntry {
+                label
+                jsonString
+            }
             __typename
         }
         jobs {

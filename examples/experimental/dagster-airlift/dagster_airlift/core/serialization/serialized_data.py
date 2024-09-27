@@ -1,100 +1,64 @@
-from typing import AbstractSet, Any, Mapping, Optional, Sequence
+from functools import cached_property
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set
 
-from dagster import AssetCheckKey, AssetDep, AssetKey, AssetSpec
+from dagster import AssetKey
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    SerializableNonScalarKeyMapping,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-    unpack_value,
-)
-from dagster._utils.merger import merge_dicts
+
+from dagster_airlift.core.utils import convert_to_valid_dagster_name
 
 
-###################################################################################################
-# A generic serializer that can be used for any mapping with non-scalar (but still serializable) keys.
-# We should add this to the core framework.
-###################################################################################################
-class GenericNonScalarKeyMappingSerializer(FieldSerializer):
-    """A serializer that can be used for any mapping with non-scalar (but still serializable) keys."""
-
-    def pack(
-        self,
-        mapping: Mapping[str, "SerializedAssetSpecData"],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> JsonSerializableValue:
-        return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
-
-    def unpack(
-        self,
-        unpacked_value: JsonSerializableValue,
-        whitelist_map: WhitelistMap,
-        context: UnpackContext,
-    ) -> PackableValue:
-        return unpack_value(unpacked_value, dict, whitelist_map, context)
-
-
-###################################################################################################
-# Data for reconstructing AssetSpecs from serialized data.
-###################################################################################################
-# History:
-# - created
 @whitelist_for_serdes
 @record
-class SerializedAssetSpecData:
-    """Serializable data that can be used to construct a fully qualified AssetSpec."""
+class TaskInfo:
+    webserver_url: str
+    dag_id: str
+    task_id: str
+    metadata: Dict[str, Any]
 
-    asset_key: AssetKey
-    description: Optional[str]
-    metadata: Mapping[str, Any]
-    tags: Mapping[str, str]
-    deps: Sequence["SerializedAssetDepData"]
-
-    def to_asset_spec(self) -> AssetSpec:
-        return AssetSpec(
-            key=self.asset_key,
-            description=self.description,
-            metadata=self.metadata,
-            tags=self.tags,
-            deps=[AssetDep(asset=dep.asset_key) for dep in self.deps] if self.deps else [],
-        )
+    @property
+    def dag_url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}"
 
 
-# History:
-# - created
 @whitelist_for_serdes
 @record
-class SerializedAssetDepData:
-    # A dumbed down version of AssetDep that can be serialized easily to and from a dictionary.
-    asset_key: AssetKey
+class DagInfo:
+    webserver_url: str
+    dag_id: str
+    metadata: Dict[str, Any]
 
-    @staticmethod
-    def from_asset_dep(asset_dep: AssetDep) -> "SerializedAssetDepData":
-        return SerializedAssetDepData(asset_key=asset_dep.asset_key)
+    @property
+    def url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}"
+
+    @cached_property
+    def dagster_safe_dag_id(self) -> str:
+        """Name based on the dag_id that is safe to use in dagster."""
+        return convert_to_valid_dagster_name(self.dag_id)
+
+    @property
+    def dag_asset_key(self) -> AssetKey:
+        # Conventional asset key representing a successful run of an airfow dag.
+        return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
+
+    @property
+    def file_token(self) -> str:
+        return self.metadata["file_token"]
 
 
-###################################################################################################
-# Serializable data that will be cached to avoid repeated calls to the Airflow API, and to avoid
-# repeated scans of passed-in Definitions objects.
-###################################################################################################
-# History:
-# - created
-@whitelist_for_serdes(
-    field_serializers={
-        "existing_asset_data": GenericNonScalarKeyMappingSerializer,
-    }
-)
+@whitelist_for_serdes
+class TaskHandle(NamedTuple):
+    dag_id: str
+    task_id: str
+
+
+@whitelist_for_serdes
 @record
-class SerializedAirflowDefinitionsData:
-    existing_asset_data: Mapping[AssetKey, "SerializedAssetKeyScopedData"]
-    dag_datas: Mapping[str, "SerializedDagData"]
-    asset_key_topological_ordering: Sequence[AssetKey]
+class MappedAirflowTaskData:
+    task_info: TaskInfo
+    task_handle: TaskHandle
+    migrated: Optional[bool]
 
 
 ###################################################################################################
@@ -108,9 +72,36 @@ class SerializedDagData:
     """A record containing pre-computed data about a given airflow dag."""
 
     dag_id: str
-    spec_data: SerializedAssetSpecData
     task_handle_data: Mapping[str, "SerializedTaskHandleData"]
-    all_asset_keys_in_tasks: AbstractSet[AssetKey]
+    dag_info: DagInfo
+    source_code: str
+    leaf_asset_keys: Set[AssetKey]
+
+
+@whitelist_for_serdes
+@record
+class KeyScopedDataItem:
+    asset_key: AssetKey
+    mapped_tasks: List[MappedAirflowTaskData]
+
+
+###################################################################################################
+# Serializable data that will be cached to avoid repeated calls to the Airflow API, and to avoid
+# repeated scans of passed-in Definitions objects.
+###################################################################################################
+# History:
+# - created
+# - removed existing_asset_data
+# - added key_scope_data_items
+@whitelist_for_serdes
+@record
+class SerializedAirflowDefinitionsData:
+    key_scoped_data_items: List[KeyScopedDataItem]
+    dag_datas: Mapping[str, SerializedDagData]
+
+    @cached_property
+    def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
+        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
 
 
 # History:
@@ -122,49 +113,3 @@ class SerializedTaskHandleData:
 
     migration_state: Optional[bool]
     asset_keys_in_task: AbstractSet[AssetKey]
-
-
-###################################################################################################
-# Serialized data that scopes to a given asset key.
-###################################################################################################
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetKeyScopedData:
-    """All pre-computed data scoped to a given asset key."""
-
-    existing_key_data: Optional["SerializedAssetKeyScopedAirflowData"]
-    asset_graph_data: "SerializedAssetKeyScopedAssetGraphData"
-
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetKeyScopedAirflowData:
-    """Additional data retrieved from airflow that once over the serialization boundary, we can combine with the original asset spec."""
-
-    additional_metadata: Mapping[str, Any]
-    additional_tags: Mapping[str, str]
-
-    def apply_to_spec(self, spec: AssetSpec) -> AssetSpec:
-        return AssetSpec(
-            key=spec.key,
-            description=spec.description,
-            metadata=merge_dicts(spec.metadata, self.additional_metadata),
-            tags=merge_dicts(spec.tags, self.additional_tags),
-            deps=spec.deps,
-        )
-
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedAssetKeyScopedAssetGraphData:
-    """A record of asset graph data scoped to a particular asset key."""
-
-    upstreams: AbstractSet[AssetKey]
-    downstreams: AbstractSet[AssetKey]
-    check_keys: AbstractSet[AssetCheckKey]

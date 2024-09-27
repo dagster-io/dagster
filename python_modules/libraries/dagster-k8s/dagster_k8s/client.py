@@ -6,11 +6,13 @@ from typing import Any, Callable, List, Optional, Set, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
+import six
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
+from kubernetes.client.api_client import ApiClient
 from kubernetes.client.models import V1Job, V1JobStatus
 
 try:
@@ -89,6 +91,39 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
     # typically not transient, but some k8s clusters raise it transiently: https://github.com/aws/containers-roadmap/issues/1810
     401,  # Authorization Failure
 ]
+
+
+class PatchedApiClient(ApiClient):
+    # Forked from ApiClient implementation to pass configuration object down into created model
+    # objects, avoiding lock contention issues. See https://github.com/kubernetes-client/python/issues/2284
+    def __deserialize_model(self, data, klass):
+        """Deserializes list or dict to model.
+
+        :param data: dict, list.
+        :param klass: class literal.
+        :return: model object.
+        """
+        if not klass.openapi_types and not hasattr(klass, "get_real_child_model"):
+            return data
+
+        # Below is the only change from the base ApiClient implementation - pass through the
+        # Configuration object to each newly created model so that each one does not have to create
+        # one and acquire a lock
+        kwargs = {"local_vars_configuration": self.configuration}
+
+        if data is not None and klass.openapi_types is not None and isinstance(data, (list, dict)):
+            for attr, attr_type in six.iteritems(klass.openapi_types):
+                if klass.attribute_map[attr] in data:
+                    value = data[klass.attribute_map[attr]]
+                    kwargs[attr] = self.__deserialize(value, attr_type)
+
+        instance = klass(**kwargs)
+
+        if hasattr(instance, "get_real_child_model"):
+            klass_name = instance.get_real_child_model(data)
+            if klass_name:
+                instance = self.__deserialize(data, klass_name)
+        return instance
 
 
 def k8s_api_retry(
@@ -209,8 +244,12 @@ class DagsterKubernetesClient:
     @staticmethod
     def production_client(batch_api_override=None, core_api_override=None):
         return DagsterKubernetesClient(
-            batch_api=batch_api_override or kubernetes.client.BatchV1Api(),
-            core_api=core_api_override or kubernetes.client.CoreV1Api(),
+            batch_api=(
+                batch_api_override or kubernetes.client.BatchV1Api(api_client=PatchedApiClient())
+            ),
+            core_api=(
+                core_api_override or kubernetes.client.CoreV1Api(api_client=PatchedApiClient())
+            ),
             logger=logging.info,
             sleeper=time.sleep,
             timer=time.time,

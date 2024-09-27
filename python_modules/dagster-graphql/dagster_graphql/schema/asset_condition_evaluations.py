@@ -1,9 +1,12 @@
 import enum
 import itertools
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
@@ -230,7 +233,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
         self._evaluation = evaluation
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
-            expandedLabel=_get_expanded_label(evaluation),
+            expandedLabel=get_expanded_label(evaluation),
             userLabel=evaluation.condition_snapshot.label,
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
@@ -325,16 +328,29 @@ def _flatten_evaluation(
     return list(itertools.chain([e], *(_flatten_evaluation(ce) for ce in e.child_evaluations)))
 
 
-def _get_expanded_label(
-    evaluation: AutomationConditionEvaluation, use_label=False
+def get_expanded_label(
+    item: Union[AutomationConditionEvaluation, AutomationCondition], use_label=False
 ) -> Sequence[str]:
-    if use_label and evaluation.condition_snapshot.label is not None:
-        return [evaluation.condition_snapshot.label]
-    node_text = evaluation.condition_snapshot.name or evaluation.condition_snapshot.description
-    child_labels = [
-        f'({" ".join(_get_expanded_label(ce, use_label=True))})'
-        for ce in evaluation.child_evaluations
-    ]
+    if isinstance(item, AutomationCondition):
+        label, name, description, children = (
+            item.get_label(),
+            item.name,
+            item.description,
+            item.children,
+        )
+    else:
+        snapshot = item.condition_snapshot
+        label, name, description, children = (
+            snapshot.label,
+            snapshot.name,
+            snapshot.description,
+            item.child_evaluations,
+        )
+
+    if use_label and label is not None:
+        return [label]
+    node_text = name or description
+    child_labels = [f'({" ".join(get_expanded_label(c, use_label=True))})' for c in children]
     if len(child_labels) == 0:
         return [node_text]
     elif len(child_labels) == 1:

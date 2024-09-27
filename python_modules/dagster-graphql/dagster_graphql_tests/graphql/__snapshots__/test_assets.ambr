@@ -54,6 +54,14 @@
           }),
         }),
         dict({
+          'id': 'test.test_repo.["asset_with_automation_condition"]',
+          'key': dict({
+            'path': list([
+              'asset_with_automation_condition',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test.test_repo.["asset_yields_observation"]',
           'key': dict({
             'path': list([
@@ -594,6 +602,11 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["asset_two"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["asset_with_automation_condition"]',
       }),
       dict({
         'freshnessInfo': None,

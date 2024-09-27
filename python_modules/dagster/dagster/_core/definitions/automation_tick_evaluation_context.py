@@ -26,7 +26,10 @@ from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -58,6 +61,7 @@ class AutomationTickEvaluationContext:
         auto_observe_asset_keys: AbstractSet[AssetKey],
         asset_selection: AssetSelection,
         logger: logging.Logger,
+        default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
     ):
         resolved_entity_keys = {
@@ -65,11 +69,12 @@ class AutomationTickEvaluationContext:
             for entity_key in (
                 asset_selection.resolve(asset_graph) | asset_selection.resolve_checks(asset_graph)
             )
-            if asset_graph.get(entity_key).automation_condition is not None
+            if default_condition or asset_graph.get(entity_key).automation_condition is not None
         }
         self._evaluation_id = evaluation_id
         self._evaluator = AutomationConditionEvaluator(
             entity_keys=resolved_entity_keys,
+            default_condition=default_condition,
             instance=instance,
             asset_graph=asset_graph,
             cursor=cursor,
@@ -221,15 +226,23 @@ def _get_mapping_from_entity_subsets(
 ) -> _PartitionsDefKeyMapping:
     mapping: _PartitionsDefKeyMapping = defaultdict(set)
 
-    for subset in entity_subsets:
-        partitions_def = asset_graph.get(subset.key).partitions_def
+    entity_subsets_by_key = {es.key: es for es in entity_subsets}
+    for key in entity_subsets_by_key:
+        if isinstance(key, AssetCheckKey) and key.asset_key in entity_subsets_by_key:
+            # all asset checks are currently unpartitioned, so ensure that they get grouped
+            # into a run with the asset they check if that asset is being requested this
+            # tick
+            partitions_def = asset_graph.get(key.asset_key).partitions_def
+            subset = entity_subsets_by_key[key.asset_key]
+        else:
+            partitions_def = asset_graph.get(key).partitions_def
+            subset = entity_subsets_by_key[key]
+
         if partitions_def:
             for asset_partition in subset.expensively_compute_asset_partitions():
-                mapping[partitions_def, asset_partition.partition_key].add(
-                    asset_partition.asset_key
-                )
+                mapping[partitions_def, asset_partition.partition_key].add(key)
         else:
-            mapping[partitions_def, None].add(subset.key)
+            mapping[partitions_def, None].add(key)
 
     return mapping
 

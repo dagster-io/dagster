@@ -20,6 +20,7 @@ import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {showSharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {BulkActionStatus} from '../../graphql/types';
+import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {AnchorButton} from '../../ui/AnchorButton';
 
@@ -161,7 +162,7 @@ export const BackfillActionsMenu = ({
     <>
       {anchorLabel ? (
         <JoinedButtons>
-          <AnchorButton to={`/runs-feed/b/${backfill.id}?tab=runs`}>View run</AnchorButton>
+          <AnchorButton to={getBackfillPath(backfill.id)}>View run</AnchorButton>
           {popover}
         </JoinedButtons>
       ) : (

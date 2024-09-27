@@ -423,6 +423,7 @@ export type AssetNode = {
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
+  automationCondition: Maybe<AutomationCondition>;
   backfillPolicy: Maybe<BackfillPolicy>;
   changedReasons: Array<ChangeReason>;
   computeKind: Maybe<Scalars['String']['output']>;
@@ -684,6 +685,12 @@ export type AutoMaterializeRuleWithRuleEvaluations = {
   __typename: 'AutoMaterializeRuleWithRuleEvaluations';
   rule: AutoMaterializeRule;
   ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
+};
+
+export type AutomationCondition = {
+  __typename: 'AutomationCondition';
+  expandedLabel: Array<Scalars['String']['output']>;
+  label: Maybe<Scalars['String']['output']>;
 };
 
 export type AutomationConditionEvaluationNode = {
@@ -3957,6 +3964,7 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
+  filter?: InputMaybe<RunsFilter>;
   limit: Scalars['Int']['input'];
 };
 
@@ -4839,6 +4847,7 @@ export type Schedule = {
   potentialTickTimestamps: Array<Scalars['Float']['output']>;
   scheduleState: InstigationState;
   solidSelection: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  tags: Array<DefinitionTag>;
 };
 
 export type ScheduleFutureTickArgs = {
@@ -4954,6 +4963,7 @@ export type Sensor = {
   nextTick: Maybe<DryRunInstigationTick>;
   sensorState: InstigationState;
   sensorType: SensorType;
+  tags: Array<DefinitionTag>;
   targets: Maybe<Array<Target>>;
 };
 
@@ -6453,6 +6463,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AutoMaterializePolicy')
         ? ({} as AutoMaterializePolicy)
         : buildAutoMaterializePolicy({}, relationshipsToOmit),
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+        ? ({} as AutomationCondition)
+        : buildAutomationCondition({}, relationshipsToOmit),
     backfillPolicy:
       overrides && overrides.hasOwnProperty('backfillPolicy')
         ? overrides.backfillPolicy!
@@ -6905,6 +6921,20 @@ export const buildAutoMaterializeRuleWithRuleEvaluations = (
         : buildAutoMaterializeRule({}, relationshipsToOmit),
     ruleEvaluations:
       overrides && overrides.hasOwnProperty('ruleEvaluations') ? overrides.ruleEvaluations! : [],
+  };
+};
+
+export const buildAutomationCondition = (
+  overrides?: Partial<AutomationCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AutomationCondition'} & AutomationCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutomationCondition');
+  return {
+    __typename: 'AutomationCondition',
+    expandedLabel:
+      overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'eligendi',
   };
 };
 
@@ -13716,6 +13746,7 @@ export const buildSchedule = (
         : buildInstigationState({}, relationshipsToOmit),
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -13956,6 +13987,7 @@ export const buildSensor = (
       overrides && overrides.hasOwnProperty('sensorType')
         ? overrides.sensorType!
         : SensorType.ASSET,
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     targets: overrides && overrides.hasOwnProperty('targets') ? overrides.targets! : [],
   };
 };

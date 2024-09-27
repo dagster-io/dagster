@@ -5,6 +5,7 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
@@ -72,6 +73,18 @@ class LookerInstanceData:
 
 @record
 class RequestStartPdtBuild:
+    """A request to start a PDT build. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
+    for documentation on all available fields.
+
+    Args:
+        model_name: The model of the PDT to start building.
+        view_name: The view name of the PDT to start building.
+        force_rebuild: Force rebuild of required dependent PDTs, even if they are already materialized.
+        force_full_incremental: Force involved incremental PDTs to fully re-materialize.
+        workspace: Workspace in which to materialize selected PDT ('dev' or default 'production').
+        source: The source of this request.
+    """
+
     model_name: str
     view_name: str
     force_rebuild: Optional[str] = None
@@ -155,6 +168,7 @@ class DagsterLookerApiTranslator:
             },
         )
 
+    @public
     def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         if looker_structure.structure_type == LookerStructureType.VIEW:
             data = check.inst(looker_structure.data, LookmlView)

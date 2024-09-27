@@ -148,7 +148,7 @@ export const VirtualizedBackfillPartitionsHeader = ({
         <Link to={getRunsUrl(backfill.id, 'inProgress')}>In progress</Link>
       </HeaderCell>
       <HeaderCell>
-        <Link to={getRunsUrl(backfill.id, 'complete')}>Completed</Link>
+        <Link to={getRunsUrl(backfill.id, 'complete')}>Succeeded</Link>
       </HeaderCell>
       <HeaderCell>
         <Link to={getRunsUrl(backfill.id, 'failed')}>Failed</Link>
@@ -289,7 +289,7 @@ export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
   }
 `;
 
-function StatusBar({
+export function StatusBar({
   targeted,
   inProgress,
   completed,

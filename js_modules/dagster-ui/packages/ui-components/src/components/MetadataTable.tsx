@@ -50,7 +50,7 @@ export const StyledTable = styled.table`
     vertical-align: top;
   }
 
-  td .bp4-control {
+  td .bp5-control {
     margin-bottom: 0;
   }
 `;

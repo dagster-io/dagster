@@ -662,6 +662,69 @@ def test_named_tuple_skip_when_empty_fields() -> None:
     assert new_tuple_with_bar.bar == "B"
 
 
+def test_named_tuple_skip_when_none_fields() -> None:
+    test_map = WhitelistMap.create()
+
+    # Separate scope since we redefine SameSnapshotTuple
+    def get_orig_obj() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class SameSnapshotTuple(namedtuple("_Tuple", "foo")):
+            def __new__(cls, foo):
+                return super(SameSnapshotTuple, cls).__new__(cls, foo)
+
+        return SameSnapshotTuple(foo="A")
+
+    old_tuple = get_orig_obj()
+    old_serialized = serialize_value(old_tuple, whitelist_map=test_map)
+    old_snapshot = hash_str(old_serialized)
+
+    # Separate scope since we redefine SameSnapshotTuple
+    test_map = WhitelistMap.create()
+
+    def get_new_obj_no_skip() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class SameSnapshotTuple(namedtuple("_SameSnapshotTuple", "foo bar")):
+            def __new__(cls, foo, bar=None):
+                return super(SameSnapshotTuple, cls).__new__(cls, foo, bar)
+
+        return SameSnapshotTuple(foo="A")
+
+    new_tuple_without_serializer = get_new_obj_no_skip()
+    new_snapshot_without_serializer = hash_str(
+        serialize_value(new_tuple_without_serializer, whitelist_map=test_map)
+    )
+
+    # Without setting skip_when_none, the ID changes
+    assert new_snapshot_without_serializer != old_snapshot
+
+    # By setting `skip_when_none_fields`, the ID stays the same as long as the new field is None
+
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map, skip_when_none_fields={"bar"})
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
+        def __new__(cls, foo, bar=None):
+            return super(SameSnapshotTuple, cls).__new__(cls, foo, bar)
+
+    for bar_val in [None, [], {}, set()]:
+        new_tuple = SameSnapshotTuple(foo="A", bar=bar_val)
+        new_snapshot = hash_str(serialize_value(new_tuple, whitelist_map=test_map))
+
+        # Only None is dropped, not empty collections
+        if bar_val is None:
+            assert old_snapshot == new_snapshot
+        else:
+            assert old_snapshot != new_snapshot
+
+    rehydrated_tuple = deserialize_value(old_serialized, SameSnapshotTuple, whitelist_map=test_map)
+    assert rehydrated_tuple.foo == "A"
+    assert rehydrated_tuple.bar is None
+
+    new_tuple_with_bar = SameSnapshotTuple(foo="A", bar="B")
+    assert new_tuple_with_bar.foo == "A"
+    assert new_tuple_with_bar.bar == "B"
+
+
 def test_named_tuple_custom_serializer():
     test_map = WhitelistMap.create()
 

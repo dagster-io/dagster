@@ -87,6 +87,9 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Failure
@@ -1055,8 +1058,9 @@ def define_schedules():
         cron_schedule="@daily",
         job_name="no_config_job",
         execution_timezone="US/Central",
+        tags={"foo": "bar"},
     )
-    def timezone_schedule(_context):
+    def timezone_schedule_with_tags(_context):
         return {}
 
     tagged_job_schedule = ScheduleDefinition(
@@ -1115,7 +1119,7 @@ def define_schedules():
         tagged_job_schedule,
         tagged_job_override_schedule,
         tags_error_schedule,
-        timezone_schedule,
+        timezone_schedule_with_tags,
         invalid_config_schedule,
         running_in_code_schedule,
         composite_cron_schedule,
@@ -1127,8 +1131,8 @@ def define_schedules():
 
 
 def define_sensors():
-    @sensor(job_name="no_config_job")
-    def always_no_config_sensor(_):
+    @sensor(job_name="no_config_job", tags={"foo": "bar"})
+    def always_no_config_sensor_with_tags(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
@@ -1243,11 +1247,13 @@ def define_sensors():
 
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
+        asset_selection=AssetSelection.assets(
+            "fresh_diamond_bottom", "asset_with_automation_condition"
+        ),
     )
 
     return [
-        always_no_config_sensor,
+        always_no_config_sensor_with_tags,
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
@@ -1791,6 +1797,10 @@ def asset_with_compute_storage_kinds():
     return 1
 
 
+@asset(automation_condition=AutomationCondition.eager())
+def asset_with_automation_condition() -> None: ...
+
+
 fresh_diamond_assets_job = define_asset_job(
     "fresh_diamond_assets_job", AssetSelection.assets(fresh_diamond_bottom).upstream()
 )
@@ -2106,6 +2116,7 @@ def define_assets():
         ungrouped_asset_5,
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
+        asset_with_automation_condition,
     ]
 
 

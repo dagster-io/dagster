@@ -4,7 +4,7 @@ import sys
 import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -128,7 +128,7 @@ def test_no_loadable_targets():
 
     assert (
         str(exc_info.value)
-        == 'No Definitions, function decorated with @definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "nada".'
+        == 'No Definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "nada".'
     )
 
 
@@ -267,11 +267,8 @@ def test_local_directory_file():
         loadable_targets_from_python_file(path, working_directory=os.path.dirname(path))
 
 
-@pytest.mark.parametrize(
-    "filename", ["definitions_loader_with_context.py", "definitions_loader_no_context.py"]
-)
-def test_definitions_loader(filename):
-    module_path = file_relative_path(__file__, filename)
+def test_lazy_definitions():
+    module_path = file_relative_path(__file__, "lazy_definitions.py")
     loadable_targets = loadable_targets_from_python_file(module_path)
 
     assert len(loadable_targets) == 1

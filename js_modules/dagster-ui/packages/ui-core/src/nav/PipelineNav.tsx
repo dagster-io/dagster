@@ -1,11 +1,10 @@
 import {Box, Heading, PageHeader, Tag} from '@dagster-io/ui-components';
-import {useContext} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
+import {buildJobTabs} from 'shared/pipelines/buildJobTabs.oss';
 
 import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
 import {usePermissionsForLocation} from '../app/Permissions';
-import {JobFeatureContext} from '../pipelines/JobFeatureContext';
 import {JobTabs} from '../pipelines/JobTabs';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useRepository} from '../workspace/WorkspaceContext/util';
@@ -18,8 +17,6 @@ interface Props {
 export const PipelineNav = (props: Props) => {
   const {repoAddress} = props;
   const permissions = usePermissionsForLocation(repoAddress.location);
-
-  const {tabBuilder} = useContext(JobFeatureContext);
 
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/locations/:repoPath/pipelines/:selector/:tab?',
@@ -45,7 +42,7 @@ export const PipelineNav = (props: Props) => {
     (partitionSet) => partitionSet.pipelineName === pipelineName,
   );
 
-  const tabs = tabBuilder({hasLaunchpad, hasPartitionSet});
+  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet});
 
   return (
     <>
