@@ -549,6 +549,9 @@ def get_runs_feed_entries(
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
+    exclude_subruns = (
+        filters.exclude_subruns if filters and filters.exclude_subruns is not None else True
+    )
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1
@@ -558,15 +561,19 @@ def get_runs_feed_entries(
         datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
     )
 
-    should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
+    should_fetch_backfills = exclude_subruns and (
+        _filters_apply_to_backfills(filters) if filters else True
+    )
     if filters:
-        run_filters = copy(filters, exclude_subruns=True)
+        run_filters = copy(filters, exclude_subruns=exclude_subruns)
         run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
             _bulk_action_filters_from_run_filters(run_filters) if should_fetch_backfills else None
         )
     else:
-        run_filters = RunsFilter(created_before=created_before_cursor, exclude_subruns=True)
+        run_filters = RunsFilter(
+            created_before=created_before_cursor, exclude_subruns=exclude_subruns
+        )
         backfill_filters = BulkActionsFilter(created_before=created_before_cursor)
 
     if should_fetch_backfills:
