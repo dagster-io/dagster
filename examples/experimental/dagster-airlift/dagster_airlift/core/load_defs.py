@@ -20,6 +20,7 @@ from dagster_airlift.core.sensor import (
     get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
+from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
 
 
@@ -28,7 +29,7 @@ def _metadata_key(instance_name: str) -> str:
 
 
 @dataclass
-class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsData]):
+class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
     airflow_instance: AirflowInstance
     explicit_defs: Definitions
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
@@ -37,15 +38,12 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsD
     def defs_key(self) -> str:
         return _metadata_key(self.airflow_instance.name)
 
-    def fetch_state(self) -> AirflowDefinitionsData:
-        return AirflowDefinitionsData(
-            instance_name=self.airflow_instance.name,
-            serialized_data=compute_serialized_data(
-                airflow_instance=self.airflow_instance, defs=self.explicit_defs
-            ),
+    def fetch_state(self) -> SerializedAirflowDefinitionsData:
+        return compute_serialized_data(
+            airflow_instance=self.airflow_instance, defs=self.explicit_defs
         )
 
-    def defs_from_state(self, state: AirflowDefinitionsData) -> Definitions:
+    def defs_from_state(self, state: SerializedAirflowDefinitionsData) -> Definitions:
         return definitions_from_airflow_data(
             state,
             self.explicit_defs,
@@ -70,11 +68,12 @@ def build_defs_from_airflow_instance(
 
 
 def definitions_from_airflow_data(
-    airflow_data: AirflowDefinitionsData,
+    serialized_airflow_data: SerializedAirflowDefinitionsData,
     defs: Definitions,
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int,
 ) -> Definitions:
+    airflow_data = AirflowDefinitionsData(serialized_data=serialized_airflow_data)
     assets_defs = construct_all_assets(
         definitions=defs,
         airflow_data=airflow_data,

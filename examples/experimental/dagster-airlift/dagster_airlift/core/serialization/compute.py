@@ -212,6 +212,7 @@ def compute_serialized_data(
         )
     topology_order = toposort_flatten(upstreams_asset_dependency_graph)
     return SerializedAirflowDefinitionsData(
+        instance_name=airflow_instance.name,
         key_scoped_data_items=[
             KeyScopedDataItem(asset_key=k, data=v)
             for k, v in fetched_airflow_data.airflow_data_by_key.items()

@@ -80,6 +80,7 @@ class KeyScopedDataItem:
 @whitelist_for_serdes
 @record
 class SerializedAirflowDefinitionsData:
+    instance_name: str
     key_scoped_data_items: List[KeyScopedDataItem]
     dag_datas: Mapping[str, SerializedDagData]
     asset_key_topological_ordering: Sequence[AssetKey]

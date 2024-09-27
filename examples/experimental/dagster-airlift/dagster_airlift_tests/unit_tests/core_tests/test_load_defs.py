@@ -22,7 +22,6 @@ from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.serialization.compute import compute_serialized_data, is_mapped_asset_spec
 from dagster_airlift.core.serialization.serialized_data import (
     KeyScopedDataItem,
@@ -316,26 +315,24 @@ def test_local_airflow_instance() -> None:
 
 
 def test_serialization_roundtrip() -> None:
-    data = AirflowDefinitionsData(
+    data = SerializedAirflowDefinitionsData(
         instance_name="test_instance",
-        serialized_data=SerializedAirflowDefinitionsData(
-            key_scoped_data_items=[
-                KeyScopedDataItem(
-                    asset_key=AssetKey("a"),
-                    data=SerializedAssetKeyScopedAirflowData(
-                        additional_metadata={"foo": "bar"}, additional_tags={"baz": "qux"}
-                    ),
-                )
-            ],
-            dag_datas={},
-            asset_key_topological_ordering=[],
-        ),
+        key_scoped_data_items=[
+            KeyScopedDataItem(
+                asset_key=AssetKey("a"),
+                data=SerializedAssetKeyScopedAirflowData(
+                    additional_metadata={"foo": "bar"}, additional_tags={"baz": "qux"}
+                ),
+            )
+        ],
+        dag_datas={},
+        asset_key_topological_ordering=[],
     )
 
     data_str = serialize_value(data)
     assert isinstance(data_str, str)
     deserialized_data = deserialize_value(data_str)
-    assert isinstance(deserialized_data, AirflowDefinitionsData)
+    assert isinstance(deserialized_data, SerializedAirflowDefinitionsData)
 
 
 def test_cached_loading() -> None:
@@ -359,7 +356,7 @@ def test_cached_loading() -> None:
     assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
     assert isinstance(
         deserialize_value(defs.metadata["dagster-airlift/source/test_instance"].value),
-        AirflowDefinitionsData,
+        SerializedAirflowDefinitionsData,
     )
 
     with scoped_reconstruction_metadata(unwrap_reconstruction_metadata(defs)):
