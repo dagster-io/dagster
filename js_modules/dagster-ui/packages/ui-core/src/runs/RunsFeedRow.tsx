@@ -16,7 +16,7 @@ import {CreatedByTagCell, CreatedByTagCellWrapper} from './CreatedByTag';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RUN_ACTIONS_MENU_RUN_FRAGMENT, RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
-import {RunStatusTagWithStats, RunStatusTag} from './RunStatusTag';
+import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
@@ -141,9 +141,11 @@ export const RunsFeedRow = ({
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
       </RowCell>
       <RowCell>
-      {entry.__typename === 'PartitionBackfill' ? <RunStatusTag status={entry.runStatus} />
-        : <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
-      }
+        {entry.__typename === 'PartitionBackfill' ? (
+          <RunStatusTag status={entry.runStatus} />
+        ) : (
+          <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
+        )}
       </RowCell>
       <RowCell style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
