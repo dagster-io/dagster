@@ -944,7 +944,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             if asset_key in asset_selection:
                 return True
 
-        return any(target.job_name in job_names for target in sensor.get_external_targets())
+        return any(target.job_name in job_names for target in sensor.get_targets())
 
     def resolve_targetingInstigators(self, graphene_info) -> Sequence[GrapheneSensor]:
         external_sensors = self._external_repository.get_external_sensors()

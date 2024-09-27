@@ -48,7 +48,7 @@ from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
-from dagster._core.remote_representation.external_data import ExternalTargetData
+from dagster._core.remote_representation.external_data import TargetSnap
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -689,9 +689,7 @@ def _submit_run_request(
 
     sensor_origin = external_sensor.get_external_origin()
 
-    target_data: ExternalTargetData = check.not_none(
-        external_sensor.get_target_data(run_request.job_name)
-    )
+    target_data: TargetSnap = check.not_none(external_sensor.get_target(run_request.job_name))
 
     # reload the code_location on each submission, request_context derived data can become out date
     # * non-threaded: if number of serial submissions is too many
@@ -1266,7 +1264,7 @@ def _get_or_create_sensor_run(
     external_job: ExternalJob,
     run_id: str,
     run_request: RunRequest,
-    target_data: ExternalTargetData,
+    target_data: TargetSnap,
     existing_runs_by_key: Mapping[Optional[str], DagsterRun],
 ) -> Union[DagsterRun, SkippedSensorRun]:
     run = existing_runs_by_key.get(run_request.run_key) or instance.get_run_by_id(run_id)
@@ -1297,7 +1295,7 @@ def _create_sensor_run(
     external_job: ExternalJob,
     run_id: str,
     run_request: RunRequest,
-    target_data: ExternalTargetData,
+    target_data: TargetSnap,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
