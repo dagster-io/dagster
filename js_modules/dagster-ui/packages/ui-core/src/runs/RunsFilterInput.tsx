@@ -50,7 +50,8 @@ export type RunFilterTokenType =
   | 'tag'
   | 'backfill'
   | 'created_date_before'
-  | 'created_date_after';
+  | 'created_date_after'
+  | 'exclude_runs_within_backfills';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
@@ -90,6 +91,10 @@ const RUN_PROVIDERS_EMPTY = [
     token: 'created_date_after',
     values: () => [],
   },
+  {
+    token: 'exclude_runs_within_backfills',
+    values: () => [],
+  },
 ];
 
 /**
@@ -104,12 +109,20 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
-        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
-        decode: ({q = []}) =>
-          tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
+        encode: (tokens) => {
+          console.log({tokens});
+          return {q: tokensAsStringArray(tokens), cursor: undefined};
+        },
+        decode: ({q = []}) => {
+          console.log({q});
+
+          const res = tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY);
+          console.log({res});
+          return res.filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-          ) as RunFilterToken[],
+          ) as RunFilterToken[];
+        },
       }),
       [enabledFilters],
     ),
@@ -152,6 +165,8 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       } else {
         obj.tags = [{key: key!, value}];
       }
+    } else if (item.token === 'exclude_runs_within_backfills') {
+      obj.excludeSubruns = item.value == 'true';
     }
   }
 

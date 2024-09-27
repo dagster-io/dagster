@@ -85,6 +85,7 @@ export function tokenizedValueFromString(
   providers: SuggestionProvider[],
 ): TokenizingFieldValue {
   const [token, value] = tokenizeString(str);
+  console.log({token, value});
   if (findProviderByToken(token, providers)) {
     if (token && value) {
       return {token, value};

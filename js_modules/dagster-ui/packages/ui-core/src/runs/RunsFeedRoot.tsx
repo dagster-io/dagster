@@ -126,7 +126,15 @@ export const RunsFeedRoot = () => {
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
   const {error} = queryResult;
 
-  const [hideSubRuns, setHideSubRuns] = useState(false);
+  const showRunsWithinBackfills = useMemo(() => {
+    const excludeToken = filterTokens.find(
+      (token) => token?.token === 'exclude_runs_within_backfills',
+    );
+    if (!excludeToken) {
+      return false;
+    }
+    return excludeToken.value === 'false';
+  }, [filterTokens]);
 
   const actionBarComponents = (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
