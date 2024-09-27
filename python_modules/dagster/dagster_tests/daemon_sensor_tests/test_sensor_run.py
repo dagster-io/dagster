@@ -1015,7 +1015,7 @@ def evaluate_sensors(workspace_context, executor, submit_executor=None, timeout=
         execute_sensor_iteration(
             workspace_context,
             logger,
-            threadpool_executor=executor,
+            evaluate_threadpool_executor=executor,
             sensor_tick_futures=futures,
             submit_threadpool_executor=submit_executor,
         )
@@ -3352,7 +3352,7 @@ def test_stale_request_context(instance, workspace_context, external_repo):
             execute_sensor_iteration(
                 workspace_context,
                 get_default_daemon_logger("SensorDaemon"),
-                threadpool_executor=executor,
+                evaluate_threadpool_executor=executor,
                 submit_threadpool_executor=None,
                 sensor_tick_futures=futures,
             )
@@ -3381,7 +3381,7 @@ def test_stale_request_context(instance, workspace_context, external_repo):
             execute_sensor_iteration(
                 workspace_context,
                 get_default_daemon_logger("SensorDaemon"),
-                threadpool_executor=executor,
+                evaluate_threadpool_executor=executor,
                 sensor_tick_futures=futures,
                 submit_threadpool_executor=blocking_executor,
             )

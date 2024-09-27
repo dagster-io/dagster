@@ -1239,7 +1239,7 @@ def _create_tick(graphql_context):
         execute_sensor_iteration(
             graphql_context.process_context,
             logger,
-            threadpool_executor=SingleThreadPoolExecutor(),
+            evaluate_threadpool_executor=SingleThreadPoolExecutor(),
             submit_threadpool_executor=None,
             sensor_tick_futures=futures,
         )

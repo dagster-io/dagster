@@ -120,7 +120,7 @@ def _execute_ticks(
         execute_sensor_iteration(
             context,
             get_default_daemon_logger("SensorDaemon"),
-            threadpool_executor=threadpool_executor,
+            evaluate_threadpool_executor=threadpool_executor,
             sensor_tick_futures=sensor_daemon_futures,
             submit_threadpool_executor=None,
         )

@@ -43,7 +43,7 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
                         execute_sensor_iteration(
                             workspace_context,
                             logger,
-                            threadpool_executor=executor,
+                            evaluate_threadpool_executor=executor,
                             submit_threadpool_executor=None,
                             debug_crash_flags=debug_crash_flags,
                             sensor_tick_futures=futures,
