@@ -107,9 +107,7 @@ def test_fetch_row_count_partitioned(dlt_pipeline: Pipeline) -> None:
 
 def test_fetch_row_count_failure(dlt_pipeline: Pipeline):
     with mock.patch(
-        "dagster_embedded_elt.dlt.dlt_event_iterator.fetch_row_count_metadata",
-        # "dlt.destinations.impl.duckdb.sql_client.DuckDbSqlClient.execute_query",
-        # "duckdb.duckdb.DuckDBPyConnection.execute",
+        "dagster_embedded_elt.dlt.dlt_event_iterator._fetch_row_count",
         side_effect=Exception("test error"),
     ):
 
