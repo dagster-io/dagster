@@ -5,6 +5,7 @@ import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
 from dagster._time import get_current_timestamp
@@ -1179,3 +1180,58 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+    def test_get_backfill_id_filter(self, graphql_context):
+        backfill_id = _create_backfill(graphql_context)
+        _create_run_for_backfill(graphql_context, backfill_id)
+        _create_run_for_backfill(graphql_context, backfill_id)
+        _create_run_for_backfill(graphql_context, backfill_id)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"tags": [{"key": BACKFILL_ID_TAG, "value": backfill_id}]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        assert result.data["runsFeedOrError"]["results"][0]["__typename"] == "PartitionBackfill"
+        assert result.data["runsFeedOrError"]["results"][0]["id"] == backfill_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {
+                    "tags": [
+                        {"key": BACKFILL_ID_TAG, "value": backfill_id},
+                        {"key": "not", "value": "present"},
+                    ]
+                },
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 0
