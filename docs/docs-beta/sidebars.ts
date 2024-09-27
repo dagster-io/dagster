@@ -78,7 +78,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Self-hosting Dagster',
-          items: ['guides/kubernetes', 'guides/docker'],
+          items: ['guides/kubernetes', 'guides/docker', 'guides/dagster-service'],
         },
         {
           type: 'category',
