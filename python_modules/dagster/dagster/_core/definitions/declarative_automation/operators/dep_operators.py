@@ -59,14 +59,14 @@ class AssetMatchesCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
-        to_candidate_subset = context.candidate_subset.compute_map_subset(self.to_key)
+        to_candidate_subset = context.candidate_subset.compute_mapped_subset(self.to_key)
         to_context = context.for_child_condition(
             child_condition=self.operand, child_index=0, candidate_subset=to_candidate_subset
         )
 
         to_result = self.operand.evaluate(to_context)
 
-        true_subset = to_result.true_subset.compute_map_subset(context.key)
+        true_subset = to_result.true_subset.compute_mapped_subset(context.key)
         return AutomationResult(context=context, true_subset=true_subset, child_results=[to_result])
 
 
