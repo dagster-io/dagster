@@ -3,9 +3,13 @@ import json
 import pandas as pd
 import requests
 
-from dagster import MaterializeResult, MetadataValue, asset
+from dagster import Config, MaterializeResult, MetadataValue, asset
 
-from .configurations import HNStoriesConfig
+
+class HNStoriesConfig(Config):
+    top_stories_limit: int = 10
+    hn_top_story_ids_path: str = "hackernews_top_story_ids.json"
+    hn_top_stories_path: str = "hackernews_top_stories.csv"
 
 
 @asset

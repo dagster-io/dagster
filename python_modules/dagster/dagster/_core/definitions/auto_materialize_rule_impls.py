@@ -15,12 +15,16 @@ from typing import (
 )
 
 from dagster._annotations import deprecated, experimental
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
+)
+from dagster._core.definitions.base_asset_graph import sort_key_for_asset_partition
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
@@ -39,22 +43,16 @@ from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
-from .base_asset_graph import sort_key_for_asset_partition
-
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationResult,
     )
+    from dagster._core.definitions.declarative_automation.automation_context import (
+        AutomationContext,
+    )
 
-    from .declarative_automation.automation_context import AutomationContext
 
-
-@deprecated(
-    breaking_version="1.8",
-    additional_warn_text="Lazy auto-materialize is deprecated, in favor of explicit cron-based "
-    "scheduling rules. Additional alternatives to replicate more of the lazy auto-materialize "
-    "behavior will be provided before this is fully removed.",
-)
+@deprecated(breaking_version="1.9")
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
@@ -68,13 +66,17 @@ class MaterializeOnRequiredForFreshnessRule(
         return "required to meet this or downstream asset's freshness policy"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
             context.legacy_context.root_context
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -183,7 +185,9 @@ class MaterializeOnCronRule(
             }
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         missed_ticks = self.missed_cron_ticks(context)
         new_asset_partitions = self.get_new_candidate_asset_partitions(context, missed_ticks)
@@ -193,27 +197,28 @@ class MaterializeOnCronRule(
         # before the previous evaluation, which
         # `context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset` would not capture
         if context.legacy_context.node_cursor is None:
-            new_asset_partitions -= (
+            new_asset_partitions -= ValidAssetSubset.coerce_from_subset(
                 context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
                     asset_key=context.legacy_context.asset_key, after_time=missed_ticks[-1]
-                ).asset_partitions
-            )
+                ),
+                context.partitions_def,
+            ).asset_partitions
 
-        asset_subset_to_request = AssetSubset.from_asset_partitions_set(
+        asset_subset_to_request = ValidAssetSubset.from_asset_partitions_set(
             context.legacy_context.asset_key,
             context.legacy_context.partitions_def,
             new_asset_partitions,
         ) | (
-            context.legacy_context.previous_true_subset.as_valid(
-                context.legacy_context.partitions_def
+            ValidAssetSubset.coerce_from_subset(
+                context.legacy_context.previous_true_subset, context.legacy_context.partitions_def
             )
             - context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
             asset_subset_to_request
         )
-        return AutomationResult.create(context, true_slice=true_slice)
+        return AutomationResult(context, true_subset=true_subset)
 
 
 @whitelist_for_serdes
@@ -281,17 +286,22 @@ class AutoMaterializeAssetPartitionsFilter(
                         AssetKeyPartitionKey(asset_key, record.partition_key)
                     )
 
+        run_ids_with_required_tags = set()
+
         if len(asset_partitions_by_latest_run_id) > 0:
-            run_ids_with_required_tags = (
-                context.legacy_context.instance_queryer.instance.get_run_ids(
-                    filters=RunsFilter(
-                        run_ids=list(asset_partitions_by_latest_run_id.keys()),
-                        tags=self.latest_run_required_tags,
-                    )
+            run_step = int(os.getenv("DAGSTER_ASSET_DAEMON_RUN_TAGS_RUN_FETCH_LIMIT", "1000"))
+
+            required_tag_items = self.latest_run_required_tags.items()
+
+            run_ids_to_fetch = list(asset_partitions_by_latest_run_id.keys())
+            for i in range(0, len(run_ids_to_fetch), run_step):
+                run_ids = run_ids_to_fetch[i : i + run_step]
+                runs = context.legacy_context.instance_queryer.instance.get_runs(
+                    filters=RunsFilter(run_ids=run_ids)
                 )
-            )
-        else:
-            run_ids_with_required_tags = set()
+                run_ids_with_required_tags.update(
+                    {run.run_id for run in runs if required_tag_items <= run.tags.items()}
+                )
 
         updated_partitions_with_required_tags = {
             asset_partition
@@ -342,7 +352,9 @@ class MaterializeOnParentUpdatedRule(
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_updated_parents: Mapping[
             AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
@@ -430,8 +442,10 @@ class MaterializeOnParentUpdatedRule(
                 ignore_subset=context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset,
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -444,12 +458,12 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def description(self) -> str:
         return "materialization is missing"
 
-    def get_handled_subset(self, context: "AutomationContext") -> AssetSubset:
+    def get_handled_subset(self, context: "AutomationContext") -> SerializableEntitySubset:
         """Returns the AssetSubset which has been handled (materialized, requested, or discarded).
         Accounts for cases in which the partitions definition may have changed between ticks.
         """
         previous_handled_subset = (
-            context.legacy_context.node_cursor.get_extra_state(AssetSubset)
+            context.legacy_context.node_cursor.get_structured_cursor(SerializableEntitySubset)
             if context.legacy_context.node_cursor
             else None
         )
@@ -473,7 +487,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """Evaluates the set of asset partitions for this asset which are missing and were not
         previously discarded.
         """
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         if (
             context.legacy_context.asset_key
@@ -482,7 +498,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             handled_subset = self.get_handled_subset(context)
             unhandled_candidates = (
                 context.legacy_context.candidate_subset
-                & handled_subset.as_valid(context.legacy_context.partitions_def).inverse(
+                & ValidAssetSubset.coerce_from_subset(
+                    handled_subset, context.legacy_context.partitions_def
+                ).inverse(
                     context.legacy_context.partitions_def,
                     context.legacy_context.evaluation_time,
                     context.legacy_context.instance_queryer,
@@ -518,7 +536,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
 
             handled_subset = None
             unhandled_candidates = (
-                AssetSubset.from_asset_partitions_set(
+                ValidAssetSubset.from_asset_partitions_set(
                     context.legacy_context.asset_key,
                     context.legacy_context.partitions_def,
                     {
@@ -532,14 +550,14 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 | context.legacy_context.previous_true_subset
             ) - context.legacy_context.previous_tick_requested_subset
 
-        return AutomationResult.create(
+        return AutomationResult(
             context,
-            true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
+            true_subset=context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                 unhandled_candidates
             ),
             # we keep track of the handled subset instead of the unhandled subset because new
             # partitions may spontaneously jump into existence at any time
-            extra_state=handled_subset,
+            structured_cursor=handled_subset,
         )
 
 
@@ -554,7 +572,9 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return "waiting on upstream data to be up to date"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -590,8 +610,10 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -608,7 +630,9 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         self,
         context: "AutomationContext",
     ) -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -647,8 +671,10 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -685,7 +711,9 @@ class SkipOnNotAllParentsUpdatedRule(
         self,
         context: "AutomationContext",
     ) -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -741,8 +769,10 @@ class SkipOnNotAllParentsUpdatedRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -788,6 +818,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         then this value will be calculated incrementally from the previous value to avoid expensive
         queries.
         """
+        parent_partitions_def = context.asset_graph.get(parent_asset_key).partitions_def
         if (
             # first tick of evaluating this condition
             context.legacy_context.node_cursor is None
@@ -804,23 +835,31 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             or passed_time_window.end.timestamp()
             > context.legacy_context.previous_evaluation_timestamp
         ):
-            return context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
-                asset_key=parent_asset_key, after_time=passed_time_window.end
+            return ValidAssetSubset.coerce_from_subset(
+                context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
+                    asset_key=parent_asset_key, after_time=passed_time_window.end
+                ),
+                parent_partitions_def,
             )
         else:
             # previous state still valid
-            previous_parent_subsets = context.legacy_context.node_cursor.get_extra_state(list) or []
+            previous_parent_subsets = (
+                context.legacy_context.node_cursor.get_structured_cursor(list) or []
+            )
             previous_parent_subset = next(
-                (s for s in previous_parent_subsets if s.asset_key == parent_asset_key),
-                context.legacy_context.empty_subset(),
+                (s for s in previous_parent_subsets if s.key == parent_asset_key),
+                ValidAssetSubset.empty(
+                    parent_asset_key, context.asset_graph.get(parent_asset_key).partitions_def
+                ),
             )
 
             # the set of asset partitions that have been updated since the previous evaluation
-            new_parent_subset = (
+            new_parent_subset = ValidAssetSubset.coerce_from_subset(
                 context.legacy_context.instance_queryer.get_asset_subset_updated_after_cursor(
                     asset_key=parent_asset_key,
                     after_cursor=context.legacy_context.previous_max_storage_id,
-                )
+                ),
+                parent_partitions_def,
             )
             return new_parent_subset | previous_parent_subset
 
@@ -896,7 +935,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 )
 
                 non_updated_parent_asset_partitions = (
-                    ValidAssetSubset(asset_key=parent_asset_key, value=parent_subset)
+                    ValidAssetSubset(key=parent_asset_key, value=parent_subset)
                     - updated_parent_subset
                 ).asset_partitions
 
@@ -906,7 +945,9 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             )
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         passed_time_window = self.passed_time_window(context)
         has_new_passed_time_window = passed_time_window.end.timestamp() > (
@@ -928,7 +969,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         )
 
         # the set of candidates for whom all parents have been updated since the previous cron tick
-        all_parents_updated_subset = AssetSubset.from_asset_partitions_set(
+        all_parents_updated_subset = ValidAssetSubset.from_asset_partitions_set(
             context.legacy_context.asset_key,
             context.legacy_context.partitions_def,
             {
@@ -941,7 +982,11 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                         parent_asset_key,
                         candidate,
                         updated_subsets_by_key.get(
-                            parent_asset_key, context.legacy_context.empty_subset()
+                            parent_asset_key,
+                            ValidAssetSubset.empty(
+                                parent_asset_key,
+                                context.asset_graph.get(parent_asset_key).partitions_def,
+                            ),
                         ),
                     )
                     for parent_asset_key in context.legacy_context.asset_graph.get(
@@ -954,18 +999,19 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         # that will still be true unless a new cron tick has happened since the previous evaluation
         if not has_new_passed_time_window:
             all_parents_updated_subset = (
-                context.legacy_context.previous_candidate_subset.as_valid(
-                    context.legacy_context.partitions_def
+                ValidAssetSubset.coerce_from_subset(
+                    context.legacy_context.previous_candidate_subset,
+                    context.legacy_context.partitions_def,
                 )
                 - context.legacy_context.previous_true_subset
             ) | all_parents_updated_subset
 
-        return AutomationResult.create(
+        return AutomationResult(
             context,
-            true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
+            true_subset=context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                 context.legacy_context.candidate_subset - all_parents_updated_subset
             ),
-            extra_state=list(updated_subsets_by_key.values()),
+            structured_cursor=list(updated_subsets_by_key.values()),
         )
 
 
@@ -982,7 +1028,9 @@ class SkipOnRequiredButNonexistentParentsRule(
         return "required parent partitions do not exist"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -1013,8 +1061,10 @@ class SkipOnRequiredButNonexistentParentsRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -1034,16 +1084,19 @@ class SkipOnBackfillInProgressRule(
             return "targeted by an in-progress backfill"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
-        backfilling_subset = (
+        backfilling_subset = ValidAssetSubset.coerce_from_subset(
             # this backfilling subset is aware of the current partitions definitions, and so will
             # be valid
             (
                 context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-            )
-            .get_asset_subset(context.legacy_context.asset_key, context.legacy_context.asset_graph)
-            .as_valid(context.legacy_context.partitions_def)
+            ).get_asset_subset(
+                context.legacy_context.asset_key, context.legacy_context.asset_graph
+            ),
+            context.legacy_context.partitions_def,
         )
 
         if backfilling_subset.size == 0:
@@ -1053,8 +1106,10 @@ class SkipOnBackfillInProgressRule(
         else:
             true_subset = context.legacy_context.candidate_subset & backfilling_subset
 
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset)
 
 
 @whitelist_for_serdes
@@ -1070,7 +1125,9 @@ class DiscardOnMaxMaterializationsExceededRule(
         return f"exceeds {self.limit} materialization(s) per minute"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
@@ -1080,10 +1137,10 @@ class DiscardOnMaxMaterializationsExceededRule(
             )[self.limit :]
         )
 
-        return AutomationResult.create(
+        return AutomationResult(
             context,
-            context.asset_graph_view.get_asset_slice_from_valid_subset(
-                AssetSubset.from_asset_partitions_set(
+            context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+                ValidAssetSubset.from_asset_partitions_set(
                     context.legacy_context.asset_key,
                     context.legacy_context.partitions_def,
                     rate_limited_asset_partitions,
@@ -1103,7 +1160,9 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
         return "in-progress run for asset"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         if context.legacy_context.partitions_def is not None:
             raise DagsterInvariantViolationError(
@@ -1118,15 +1177,15 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
         if planned_materialization_info:
             dagster_run = instance.get_run_by_id(planned_materialization_info.run_id)
             if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
-                return AutomationResult.create(
+                return AutomationResult(
                     context,
-                    context.asset_graph_view.get_asset_slice_from_valid_subset(
+                    context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                         context.legacy_context.candidate_subset
                     ),
                 )
-        return AutomationResult.create(
+        return AutomationResult(
             context,
-            context.asset_graph_view.get_asset_slice_from_valid_subset(
+            context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                 context.legacy_context.empty_subset()
             ),
         )

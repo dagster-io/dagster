@@ -492,8 +492,10 @@ def test_executor_def():
 
 def test_tags():
     my_tags = {"foo": "bar"}
-    job = create_test_asset_job([foo], tags=my_tags)
+    my_run_tags = {"baz": "quux"}
+    job = create_test_asset_job([foo], tags=my_tags, run_tags=my_run_tags)
     assert job.tags == my_tags
+    assert job.run_tags == my_run_tags
 
 
 def test_description():
@@ -811,7 +813,7 @@ def test_op_retry_policy():
         raise Exception()
 
     job1 = create_test_asset_job([a, b], op_retry_policy=ops_retry_policy)
-    assert job1._op_retry_policy == ops_retry_policy  # noqa: SLF001
+    assert job1.op_retry_policy == ops_retry_policy
     job1.execute_in_process(raise_on_error=False)
 
     assert tries == {"a": 3, "b": 4}

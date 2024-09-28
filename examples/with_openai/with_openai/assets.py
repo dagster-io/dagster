@@ -75,12 +75,20 @@ def completion(
     search_index: Dict[str, Any],
 ):
     merged_index: Any = None
+    # allow_dangerous_deserialization set to True since since we created the search index ourselves
+    # in the search_index asset
     for index in search_index.values():
-        curr = FAISS.deserialize_from_bytes(index, OpenAIEmbeddings())
+        curr = FAISS.deserialize_from_bytes(
+            index, OpenAIEmbeddings(), allow_dangerous_deserialization=True
+        )
         if not merged_index:
             merged_index = curr
         else:
-            merged_index.merge_from(FAISS.deserialize_from_bytes(index, OpenAIEmbeddings()))
+            merged_index.merge_from(
+                FAISS.deserialize_from_bytes(
+                    index, OpenAIEmbeddings(), allow_dangerous_deserialization=True
+                )
+            )
     with openai.get_client(context) as client:
         prompt = stuff_prompt.PROMPT
         model = ChatOpenAI(client=client.chat.completions, model=config.model, temperature=0)

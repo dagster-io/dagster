@@ -11,7 +11,7 @@ from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
-from dagster._core.execution.context.compute import AbstractComputeExecutionContext
+from dagster._core.execution.context.op_execution_context import AbstractComputeExecutionContext
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig

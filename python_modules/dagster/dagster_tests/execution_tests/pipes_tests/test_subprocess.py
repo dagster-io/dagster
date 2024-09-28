@@ -51,6 +51,7 @@ from dagster._core.pipes.utils import (
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils import process_is_alive
 from dagster._utils.env import environ
+from dagster._utils.warnings import ExperimentalWarning
 from dagster_pipes import DagsterPipesError
 
 _PYTHON_EXECUTABLE = shutil.which("python")
@@ -452,7 +453,11 @@ def test_pipes_manual_close():
             return pipes_client.run(command=cmd, context=context).get_results()
 
     with instance_for_test() as instance:
-        materialize([foo], instance=instance, resources={"pipes_client": PipesSubprocessClient()})
+        materialize(
+            [foo],
+            instance=instance,
+            resources={"pipes_client": PipesSubprocessClient()},
+        )
         mat = instance.get_latest_materialization_event(foo.key)
         assert mat and mat.asset_materialization
 
@@ -472,7 +477,9 @@ def test_pipes_no_close():
 
     with instance_for_test() as instance:
         result = materialize(
-            [foo], instance=instance, resources={"pipes_client": PipesSubprocessClient()}
+            [foo],
+            instance=instance,
+            resources={"pipes_client": PipesSubprocessClient()},
         )
         assert result.success  # doesn't fail out, just warns
         conn = instance.get_records_for_run(result.run_id)
@@ -751,3 +758,70 @@ def test_cancellation():
         assert not p.is_alive()
         assert pid
         assert not process_is_alive(pid)
+
+
+def test_pipes_cli_args_params_loader():
+    # let's use non-trivial message/context channels to make sure the CLI args are being used to pass important params
+
+    def script_fn():
+        from dagster_pipes import (
+            PipesCliArgsParamsLoader,
+            PipesDefaultContextLoader,
+            PipesDefaultMessageWriter,
+            open_dagster_pipes,
+        )
+
+        with open_dagster_pipes(
+            params_loader=PipesCliArgsParamsLoader(),
+            context_loader=PipesDefaultContextLoader(),
+            message_writer=PipesDefaultMessageWriter(),
+        ) as pipes:
+            # this assert will only pass if PipesCliArgsParamsLoader is working correctly
+            assert pipes.asset_key == "asset_with_pipes_cli_args_params_loader"
+
+    @asset
+    def asset_with_pipes_cli_args_params_loader(
+        context: OpExecutionContext, pipes_client: PipesSubprocessClient
+    ):
+        with temp_script(script_fn) as script_path, open_pipes_session(
+            context=context,
+            context_injector=PipesTempFileContextInjector(),  # this doesn't really matter
+            message_reader=PipesTempFileMessageReader(),  # this doesn't really matter
+        ) as session:
+            pipes_args = session.get_bootstrap_cli_arguments()
+
+            cmd = [_PYTHON_EXECUTABLE, script_path] + sum(  # noqa: RUF017
+                [list(pair) for pair in pipes_args.items()], []
+            )
+
+            return pipes_client.run(command=cmd, context=context).get_materialize_result()
+
+    result = materialize(
+        [asset_with_pipes_cli_args_params_loader],
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
+    assert result.success
+
+
+def test_pipes_subprocess_client_no_experimental_warning():
+    def script_fn():
+        pass
+
+    @asset
+    def foo(context: OpExecutionContext, pipes_client: PipesSubprocessClient):
+        # print("blah")
+        with temp_script(script_fn) as external_script:
+            cmd = [_PYTHON_EXECUTABLE, external_script]
+            return pipes_client.run(command=cmd, context=context).get_materialize_result()
+
+    with pytest.warns() as record:
+        materialize(
+            [foo],
+            resources={"pipes_client": PipesSubprocessClient()},
+        )
+
+    experimental_warnings = [w for w in record if issubclass(w.category, ExperimentalWarning)]
+
+    if experimental_warnings:
+        for warning in experimental_warnings:
+            assert "Pipes" not in str(warning.message)

@@ -1,7 +1,8 @@
-import {DocumentNode, OperationVariables} from '@apollo/client';
 import {MockedResponse} from '@apollo/client/testing';
 import deepmerge from 'deepmerge';
 import {GraphQLError} from 'graphql';
+
+import {DocumentNode, OperationVariables} from '../apollo-client';
 
 export function buildQueryMock<
   TQuery extends {__typename: 'Query'},
@@ -145,4 +146,27 @@ function removeDefaultValues<T extends Record<string | number, any> | Array<any>
   }
 
   return dataWithoutDefaultValues as T; // Cast to the original type 'T'
+}
+
+let nativeGBRC: any;
+
+/* simulate getBoundingCLientRect returning a > 0x0 size, important for
+testing React trees that useVirtualized()
+*/
+export function mockViewportClientRect() {
+  if (nativeGBRC) {
+    return;
+  }
+  nativeGBRC = window.Element.prototype.getBoundingClientRect;
+  window.Element.prototype.getBoundingClientRect = jest
+    .fn()
+    .mockReturnValue({height: 400, width: 400});
+}
+
+export function restoreViewportClientRect() {
+  if (!nativeGBRC) {
+    return;
+  }
+  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  nativeGBRC = null;
 }

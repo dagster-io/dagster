@@ -11,7 +11,7 @@ In this guide, we'll walk you through setting environment variables for a Dagste
 
 There are two ways to set environment variables:
 
-- **On a per-code location basis**, which involves modifying the `dagster.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/managing-deployments/environment-variables-and-secrets). Values will pass through Dagster+.
+- **On a per-code location basis**, which involves modifying the `dagster_cloud.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/managing-deployments/environment-variables-and-secrets). Values will pass through Dagster+.
 - **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster+ deployment. As values are pulled from the user cluster, values will bypass Dagster+ entirely.
 
 ---
@@ -160,7 +160,7 @@ To make environment variables accessible to a full deployment with an Amazon ECS
        env_vars:
          - SNOWFLAKE_USERNAME=dev
          - SNOWFLAKE_PASSWORD       ## pulled from agent environment
-   ' > $DAGSTER_HOME/dagster.yaml && cat $DAGSTER_HOME/dagster.yaml && dagster-plus agent run"
+   ' > $DAGSTER_HOME/dagster.yaml && cat $DAGSTER_HOME/dagster.yaml && dagster-cloud agent run"
    ```
 
 8. When finished, click the **Create Stack** button:

@@ -1,30 +1,27 @@
 from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional, Sequence, Type, Union, cast
 
-from dagster import (
-    Definitions,
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
 from dagster._model.pydantic_compat_layer import json_schema_from_type
+from dagster._record import copy
 from dagster._utils.pydantic_yaml import (
     parse_yaml_file_to_pydantic,
     parse_yaml_file_to_pydantic_sequence,
 )
 from typing_extensions import get_args, get_origin
 
-from .blueprint import Blueprint, BlueprintDefinitions
+from .blueprint import Blueprint
 
 
-def _attach_code_references_to_definitions(
-    blueprint: Blueprint, defs: BlueprintDefinitions
-) -> BlueprintDefinitions:
+def _attach_code_references_to_definitions(blueprint: Blueprint, defs: Definitions) -> Definitions:
     """Attaches code reference metadata pointing to the specified file path to all assets in the
     output blueprint definitions.
     """
@@ -69,19 +66,11 @@ def _attach_code_references_to_definitions(
             }
 
         new_assets_defs.append(
-            AssetsDefinition.dagster_internal_init(
-                **{
-                    **assets_def.get_attributes_dict(),
-                    **{
-                        "specs": [
-                            spec._replace(metadata=new_metadata_by_key[spec.key])
-                            for spec in assets_def.specs
-                        ]
-                    },
-                }
+            assets_def.map_asset_specs(
+                lambda spec: spec._replace(metadata=new_metadata_by_key[spec.key])
             )
         )
-    return defs._replace(assets=new_assets_defs)
+    return copy(defs, assets=new_assets_defs)
 
 
 def load_defs_from_yaml(
@@ -95,7 +84,7 @@ def load_defs_from_yaml(
     Args:
         path (Path | str): The path to the YAML file or directory of YAML files containing the
             blueprints for Dagster definitions.
-        per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type
+        per_file_blueprint_type (Union[Type[Blueprint], Type[Sequence[Blueprint]]]): The type
             of blueprint that each of the YAML files are expected to conform to. If a sequence
             type is provided, the function will expect each YAML file to contain a list of
             blueprints.
@@ -147,23 +136,36 @@ def load_defs_from_yaml(
         for blueprint in blueprints
     ]
 
-    return BlueprintDefinitions.merge(
-        *def_sets_with_code_references, BlueprintDefinitions(resources=resources or {})
-    ).to_definitions()
-    return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions()
+    return Definitions.merge(*def_sets_with_code_references, Definitions(resources=resources or {}))
 
 
 class YamlBlueprintsLoader(NamedTuple):
     """A loader is responsible for loading a set of Dagster definitions from one or more YAML
     files based on a set of supplied blueprints.
+
+    Attributes:
+        path (Path | str): The path to the YAML file or directory of YAML files containing the
+            blueprints for Dagster definitions.
+        per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type
+            of blueprint that each of the YAML files are expected to conform to. If a sequence
+            type is provided, the function will expect each YAML file to contain a list of
+            blueprints.
     """
 
     path: Path
     per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]]
 
-    def load_defs(self) -> Definitions:
+    def load_defs(self, resources: Optional[Dict[str, Any]] = None) -> Definitions:
+        """Load Dagster definitions from a YAML file of blueprints.
+
+        Args:
+            resources (Dict[str, Any], optional): A dictionary of resources to be bound to the
+                definitions. Defaults to None.
+        """
         return load_defs_from_yaml(
-            path=self.path, per_file_blueprint_type=self.per_file_blueprint_type
+            path=self.path,
+            per_file_blueprint_type=self.per_file_blueprint_type,
+            resources=resources,
         )
 
     def model_json_schema(self) -> Dict[str, Any]:

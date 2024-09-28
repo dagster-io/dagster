@@ -11,8 +11,8 @@ from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 from pydantic import Field
 
-from .configs import define_dataproc_create_cluster_config
-from .types import DataprocError
+from dagster_gcp.dataproc.configs import define_dataproc_create_cluster_config
+from dagster_gcp.dataproc.types import DataprocError
 
 TWENTY_MINUTES = 20 * 60
 DEFAULT_ITER_TIME_SEC = 5

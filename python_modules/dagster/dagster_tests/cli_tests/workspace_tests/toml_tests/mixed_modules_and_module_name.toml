@@ -1,0 +1,6 @@
+[tool.dagster]
+module_name = "foo"
+modules = [
+    { type = "module", name = "foo" },
+    { type = "module", name = "bar" }
+]

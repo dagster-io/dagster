@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
@@ -37,6 +36,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
@@ -61,33 +61,8 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import (
-    db_case,
-    db_fetch_mappings,
-    db_select,
-    db_subquery,
-)
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.errors import DeserializationError
-from dagster._utils import (
-    PrintFn,
-    datetime_as_float,
-    utc_datetime_from_naive,
-    utc_datetime_from_timestamp,
-)
-from dagster._utils.concurrency import (
-    ClaimedSlotInfo,
-    ConcurrencyClaimStatus,
-    ConcurrencyKeyInfo,
-    ConcurrencySlotStatus,
-    PendingStepInfo,
-    get_max_concurrency_limit_value,
-)
-from dagster._utils.warnings import deprecation_warning
-
-from ..dagster_run import DagsterRunStatsSnapshot
-from .base import (
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
+from dagster._core.storage.event_log.base import (
     AssetCheckSummaryRecord,
     AssetEntry,
     AssetRecord,
@@ -99,8 +74,12 @@ from .base import (
     EventRecordsFilter,
     PlannedMaterializationInfo,
 )
-from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
-from .schema import (
+from dagster._core.storage.event_log.migration import (
+    ASSET_DATA_MIGRATIONS,
+    ASSET_KEY_INDEX_COLS,
+    EVENT_LOG_DATA_MIGRATIONS,
+)
+from dagster._core.storage.event_log.schema import (
     AssetCheckExecutionsTable,
     AssetEventTagsTable,
     AssetKeyTable,
@@ -111,6 +90,27 @@ from .schema import (
     SecondaryIndexMigrationTable,
     SqlEventLogStorageTable,
 )
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sqlalchemy_compat import (
+    db_case,
+    db_fetch_mappings,
+    db_select,
+    db_subquery,
+)
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_values
+from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
+from dagster._utils import PrintFn
+from dagster._utils.concurrency import (
+    ClaimedSlotInfo,
+    ConcurrencyClaimStatus,
+    ConcurrencyKeyInfo,
+    ConcurrencySlotStatus,
+    PendingStepInfo,
+    get_max_concurrency_limit_value,
+)
+from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -300,9 +300,7 @@ class SqlEventLogStorage(EventLogStorage):
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
         elif dagster_event.is_asset_materialization_planned:
@@ -315,18 +313,14 @@ class SqlEventLogStorage(EventLogStorage):
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
         elif dagster_event.is_asset_observation:
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
 
@@ -613,10 +607,16 @@ class SqlEventLogStorage(EventLogStorage):
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
                 materializations=counts.get(DagsterEventType.ASSET_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
-                enqueued_time=datetime_as_float(enqueued_time) if enqueued_time else None,
-                launch_time=datetime_as_float(launch_time) if launch_time else None,
-                start_time=datetime_as_float(start_time) if start_time else None,
-                end_time=datetime_as_float(end_time) if end_time else None,
+                enqueued_time=(
+                    utc_datetime_from_naive(enqueued_time).timestamp() if enqueued_time else None
+                ),
+                launch_time=(
+                    utc_datetime_from_naive(launch_time).timestamp() if launch_time else None
+                ),
+                start_time=(
+                    utc_datetime_from_naive(start_time).timestamp() if start_time else None
+                ),
+                end_time=(utc_datetime_from_naive(end_time).timestamp() if end_time else None),
             )
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
@@ -670,7 +670,7 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(raw_event_query).fetchall()
 
         try:
-            records = [deserialize_value(json_str, EventLogEntry) for (json_str,) in results]
+            records = deserialize_values((json_str for (json_str,) in results), EventLogEntry)
             return build_run_step_stats_from_events(run_id, records)
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
@@ -1191,7 +1191,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         row,
         last_materialization_record: Optional[EventLogRecord],
-        can_cache_asset_status_data: bool,
+        can_read_asset_status_cache: bool,
     ) -> AssetRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -1206,7 +1206,7 @@ class SqlEventLogStorage(EventLogStorage):
                     asset_details=AssetDetails.from_db_string(row["asset_details"]),
                     cached_status=(
                         AssetStatusCacheValue.from_db_string(row["cached_status_data"])
-                        if can_cache_asset_status_data
+                        if can_read_asset_status_cache
                         else None
                     ),
                     last_planned_materialization_storage_id=None,
@@ -1283,11 +1283,14 @@ class SqlEventLogStorage(EventLogStorage):
                 )
         return results
 
-    def can_cache_asset_status_data(self) -> bool:
+    def can_read_asset_status_cache(self) -> bool:
+        return self.has_asset_key_col("cached_status_data")
+
+    def can_write_asset_status_cache(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 
     def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             check.inst_param(asset_key, "asset_key", AssetKey)
             with self.index_connection() as conn:
                 conn.execute(
@@ -1303,7 +1306,7 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> Sequence[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materialization_records = self._get_latest_materialization_records(rows)
-        can_cache_asset_status_data = self.can_cache_asset_status_data()
+        can_read_asset_status_cache = self.can_read_asset_status_cache()
 
         asset_records: List[AssetRecord] = []
         for row in rows:
@@ -1313,7 +1316,7 @@ class SqlEventLogStorage(EventLogStorage):
                     self._construct_asset_record_from_row(
                         row,
                         latest_materialization_records.get(asset_key),
-                        can_cache_asset_status_data,
+                        can_read_asset_status_cache,
                     )
                 )
 
@@ -1431,7 +1434,7 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.last_run_id,
             AssetKeyTable.c.asset_details,
         ]
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             columns.extend([AssetKeyTable.c.cached_status_data])
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
@@ -1499,7 +1502,7 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization_time = materialization_times.get(asset_key)
                 if not materialization_time or utc_datetime_from_naive(
                     materialization_time
-                ) < utc_datetime_from_timestamp(wiped_timestamp):
+                ) < datetime_from_timestamp(wiped_timestamp):
                     # remove rows that have not been materialized since being wiped
                     row_by_asset_key.pop(asset_key)
 
@@ -1511,7 +1514,7 @@ class SqlEventLogStorage(EventLogStorage):
     def update_asset_cached_status_data(
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             with self.index_connection() as conn:
                 conn.execute(
                     AssetKeyTable.update()
@@ -1757,7 +1760,7 @@ class SqlEventLogStorage(EventLogStorage):
         return event_or_materialization.dagster_event.step_materialization_data.materialization  # type: ignore
 
     def _get_asset_key_values_on_wipe(self) -> Mapping[str, Any]:
-        wipe_timestamp = pendulum.now("UTC").timestamp()
+        wipe_timestamp = get_current_timestamp()
         values = {
             "asset_details": serialize_value(AssetDetails(last_wipe_timestamp=wipe_timestamp)),
             "last_run_id": None,
@@ -1765,10 +1768,10 @@ class SqlEventLogStorage(EventLogStorage):
         if self.has_asset_key_index_cols():
             values.update(
                 dict(
-                    wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
+                    wipe_timestamp=datetime_from_timestamp(wipe_timestamp),
                 )
             )
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             values.update(dict(cached_status_data=None))
         return values
 
@@ -1784,6 +1787,12 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetKeyTable.c.asset_key == asset_key.to_string(),
                 )
             )
+
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
+        raise NotImplementedError(
+            "Partitioned asset wipe is not supported yet for this event log storage."
+        )
 
     def get_materialized_partitions(
         self,
@@ -2906,7 +2915,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        return [AssetCheckExecutionRecord.from_db_row(row) for row in rows]
+        return [AssetCheckExecutionRecord.from_db_row(row, key=check_key) for row in rows]
 
     def get_latest_asset_check_execution_by_key(
         self, check_keys: Sequence[AssetCheckKey]
@@ -2956,13 +2965,14 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        return {
-            AssetCheckKey(
+        results = {}
+        for row in rows:
+            check_key = AssetCheckKey(
                 asset_key=check.not_none(AssetKey.from_db_string(cast(str, row["asset_key"]))),
                 name=cast(str, row["check_name"]),
-            ): AssetCheckExecutionRecord.from_db_row(row)
-            for row in rows
-        }
+            )
+            results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
+        return results
 
     @property
     def supports_asset_checks(self):
@@ -2989,6 +2999,114 @@ class SqlEventLogStorage(EventLogStorage):
             storage_id=records[0].storage_id,
             run_id=records[0].run_id,
         )
+
+    def _get_partition_data_versions(
+        self,
+        asset_key: AssetKey,
+        partitions: Sequence[str],
+        before_storage_id: Optional[int] = None,
+        after_storage_id: Optional[int] = None,
+    ) -> Dict[str, str]:
+        partition_subquery = db_select(
+            [SqlEventLogStorageTable.c.partition, SqlEventLogStorageTable.c.id]
+        ).where(
+            db.and_(
+                db.or_(
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.ASSET_MATERIALIZATION.value,
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.ASSET_OBSERVATION.value,
+                ),
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                SqlEventLogStorageTable.c.partition.in_(partitions),
+            )
+        )
+        data_version_subquery = db_select(
+            [
+                AssetEventTagsTable.c.event_id,
+                AssetEventTagsTable.c.value,
+            ]
+        ).where(
+            db.and_(
+                AssetEventTagsTable.c.key == DATA_VERSION_TAG,
+                AssetEventTagsTable.c.asset_key == asset_key.to_string(),
+            )
+        )
+
+        if before_storage_id is not None:
+            partition_subquery = partition_subquery.where(
+                SqlEventLogStorageTable.c.id < before_storage_id
+            )
+            data_version_subquery = data_version_subquery.where(
+                AssetEventTagsTable.c.event_id < before_storage_id
+            )
+        if after_storage_id is not None:
+            partition_subquery = partition_subquery.where(
+                SqlEventLogStorageTable.c.id > after_storage_id
+            )
+            data_version_subquery = data_version_subquery.where(
+                AssetEventTagsTable.c.event_id > after_storage_id
+            )
+
+        partition_subquery = db_subquery(partition_subquery, "partition_subquery")
+        data_version_subquery = db_subquery(data_version_subquery, "data_version_subquery")
+        data_version_by_partition_subquery = db_subquery(
+            db_select(
+                [
+                    partition_subquery.c.partition,
+                    data_version_subquery.c.value,
+                    db.func.rank()
+                    .over(
+                        order_by=db.desc(partition_subquery.c.id),
+                        partition_by=partition_subquery.c.partition,
+                    )
+                    .label("rank"),
+                ]
+            ).select_from(
+                partition_subquery.join(
+                    data_version_subquery,
+                    data_version_subquery.c.event_id == partition_subquery.c.id,
+                )
+            ),
+            "data_version_by_partition_subquery",
+        )
+        latest_data_version_by_partition_query = (
+            db_select(
+                [
+                    data_version_by_partition_subquery.c.partition,
+                    data_version_by_partition_subquery.c.value,
+                ]
+            )
+            .order_by(data_version_by_partition_subquery.c.rank.asc())
+            .where(data_version_by_partition_subquery.c.rank == 1)
+        )
+
+        with self.index_connection() as conn:
+            rows = conn.execute(latest_data_version_by_partition_query).fetchall()
+
+        return {cast(str, row[0]): cast(str, row[1]) for row in rows}
+
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        previous_data_versions = self._get_partition_data_versions(
+            asset_key=asset_key,
+            partitions=list(partitions),
+            before_storage_id=since_storage_id + 1,
+        )
+        current_data_versions = self._get_partition_data_versions(
+            asset_key=asset_key,
+            partitions=list(partitions),
+            after_storage_id=since_storage_id,
+        )
+
+        updated_partitions = set()
+        for partition, data_version in current_data_versions.items():
+            previous_data_version = previous_data_versions.get(partition)
+            if data_version and data_version != previous_data_version:
+                updated_partitions.add(partition)
+
+        return updated_partitions
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

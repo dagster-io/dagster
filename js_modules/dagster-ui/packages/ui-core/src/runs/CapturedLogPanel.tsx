@@ -1,4 +1,3 @@
-import {gql, useQuery, useSubscription} from '@apollo/client';
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -13,9 +12,9 @@ import {
   CapturedLogsSubscription,
   CapturedLogsSubscriptionVariables,
 } from './types/CapturedLogPanel.types';
+import {gql, useQuery, useSubscription} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -251,7 +250,6 @@ const CapturedLogPanel = React.memo(
         variables: {logKey},
       },
     );
-    useBlockTraceOnQueryResult(queryResult, 'CapturedLogsMetadataQuery');
 
     React.useEffect(() => {
       if (!onSetDownloadUrl || !queryResult.data) {

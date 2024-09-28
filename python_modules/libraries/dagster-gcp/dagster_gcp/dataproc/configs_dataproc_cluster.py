@@ -9,7 +9,7 @@ parse_dataproc_configs.py \
 
 from dagster import Bool, Field, Int, Permissive, Shape, String
 
-from .types_dataproc_cluster import Component
+from dagster_gcp.dataproc.types_dataproc_cluster import Component
 
 
 def define_dataproc_cluster_config():

@@ -5,6 +5,8 @@ import dagster._check as check
 SYSTEM_TAG_PREFIX = "dagster/"
 HIDDEN_TAG_PREFIX = ".dagster/"
 
+KIND_PREFIX = f"{SYSTEM_TAG_PREFIX}kind/"
+
 REPOSITORY_LABEL_TAG = f"{HIDDEN_TAG_PREFIX}repository"
 
 SCHEDULE_NAME_TAG = f"{SYSTEM_TAG_PREFIX}schedule_name"
@@ -35,8 +37,6 @@ ROOT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}root_run_id"
 
 RESUME_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}is_resume_retry"
 
-MEMOIZED_RUN_TAG = f"{SYSTEM_TAG_PREFIX}is_memoized_run"
-
 STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
 OP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"
@@ -59,6 +59,7 @@ RETRY_ON_ASSET_OR_OP_FAILURE_TAG = f"{SYSTEM_TAG_PREFIX}retry_on_asset_or_op_fai
 MAX_RUNTIME_SECONDS_TAG = f"{SYSTEM_TAG_PREFIX}max_runtime"
 
 AUTO_MATERIALIZE_TAG = f"{SYSTEM_TAG_PREFIX}auto_materialize"
+AUTOMATION_CONDITION_TAG = f"{SYSTEM_TAG_PREFIX}from_automation_condition"
 ASSET_EVALUATION_ID_TAG = f"{SYSTEM_TAG_PREFIX}asset_evaluation_id"
 AUTO_OBSERVE_TAG = f"{SYSTEM_TAG_PREFIX}auto_observe"
 

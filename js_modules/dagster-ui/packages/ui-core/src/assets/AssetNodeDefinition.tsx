@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Body,
   Box,
@@ -25,6 +24,7 @@ import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {Version} from './Version';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {gql} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -296,9 +296,7 @@ const DescriptionAnnotations = ({
         </Mono>
       ))}
     <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
-    {assetNode.isSource ? (
-      <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
-    ) : !assetNode.isExecutable ? (
+    {!assetNode.isMaterializable ? (
       <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
@@ -313,7 +311,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     opNames
     opVersion
     jobNames
-    isSource
+    isMaterializable
     isExecutable
     tags {
       key
@@ -333,6 +331,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         description
         decisionType
       }
+    }
+    automationCondition {
+      label
+      expandedLabel
     }
     freshnessPolicy {
       maximumLagMinutes

@@ -16,7 +16,6 @@ export type SingleSensorQuery = {
         description: string | null;
         name: string;
         minIntervalSeconds: number;
-        jobOriginId: string;
         sensorType: Types.SensorType;
         targets: Array<{__typename: 'Target'; pipelineName: string}> | null;
         metadata: {
@@ -27,6 +26,8 @@ export type SingleSensorQuery = {
           __typename: 'InstigationState';
           id: string;
           runningCount: number;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           selectorId: string;
           status: Types.InstigationStatus;
           ticks: Array<{
@@ -52,6 +53,7 @@ export type SingleSensorQuery = {
             __typename: 'Run';
             id: string;
             status: Types.RunStatus;
+            creationTime: number;
             startTime: number | null;
             endTime: number | null;
             updateTime: number | null;
@@ -66,3 +68,5 @@ export type SingleSensorQuery = {
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
 };
+
+export const SingleSensorQueryVersion = 'dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b';

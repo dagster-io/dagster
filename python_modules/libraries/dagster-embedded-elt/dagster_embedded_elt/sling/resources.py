@@ -2,13 +2,14 @@ import contextlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import time
 import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Union
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Sequence, Union
 
 import sling
 from dagster import (
@@ -21,9 +22,8 @@ from dagster import (
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import public
 from dagster._utils.env import environ
-from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
 
 from dagster_embedded_elt.sling.asset_decorator import (
@@ -33,12 +33,12 @@ from dagster_embedded_elt.sling.asset_decorator import (
     streams_with_default_dagster_meta,
 )
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_embedded_elt.sling.sling_event_iterator import SlingEventIterator, SlingEventType
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 logger = get_dagster_logger()
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-DEPRECATION_WARNING_TEXT = "{name} has been deprecated, use `SlingConnectionResource` for both source and target connections."
 
 
 @public
@@ -53,83 +53,6 @@ class SlingMode(str, Enum):
     FULL_REFRESH = "full-refresh"
     SNAPSHOT = "snapshot"
     BACKFILL = "backfill"
-
-
-@deprecated(
-    breaking_version="0.23.0",
-    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingSourceConnection"),
-)
-class SlingSourceConnection(PermissiveConfig):
-    """A Sling Source Connection defines the source connection used by :py:class:`~dagster_elt.sling.SlingResource`.
-
-    Examples:
-        Creating a Sling Source for a file, such as CSV or JSON:
-
-        .. code-block:: python
-
-             source = SlingSourceConnection(type="file")
-
-        Create a Sling Source for a Postgres database, using a connection string:
-
-        .. code-block:: python
-
-            source = SlingTargetConnection(type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
-            source = SlingSourceConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema")
-
-        Create a Sling Source for a Postgres database, using keyword arguments, as described here:
-        https://docs.slingdata.io/connections/database-connections/postgres
-
-        .. code-block:: python
-
-            source = SlingTargetConnection(type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
-
-    """
-
-    type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
-    connection_string: Optional[str] = Field(
-        description="The connection string for the source database.",
-        default=None,
-    )
-
-
-@deprecated(
-    breaking_version="0.23.0",
-    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingTargetConnection"),
-)
-class SlingTargetConnection(PermissiveConfig):
-    """A Sling Target Connection defines the target connection used by :py:class:`~dagster_elt.sling.SlingResource`.
-
-    Examples:
-        Creating a Sling Target for a file, such as CSV or JSON:
-
-        .. code-block:: python
-
-             source = SlingTargetConnection(type="file")
-
-        Create a Sling Source for a Postgres database, using a connection string:
-
-        .. code-block:: python
-
-            source = SlingTargetConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema"
-            source = SlingTargetConnection(type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
-
-        Create a Sling Source for a Postgres database, using keyword arguments, as described here:
-        https://docs.slingdata.io/connections/database-connections/postgres
-
-        .. code-block::python
-
-            source = SlingTargetConnection(type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
-
-
-    """
-
-    type: str = Field(
-        description="Type of the destination connection. Use 'file' for local storage."
-    )
-    connection_string: Optional[str] = Field(
-        description="The connection string for the target database.",
-        default=None,
-    )
 
 
 @public
@@ -190,14 +113,11 @@ class SlingConnectionResource(PermissiveConfig):
     )
 
 
-@experimental
 class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package. This resource can be used to run Sling replications.
 
     Args:
         connections (List[SlingConnectionResource]): A list of connections to use for the replication.
-        source_connection (Optional[SlingSourceConnection]): Deprecated, use `connections` instead.
-        target_connection (Optional[SlingTargetConnection]): Deprecated, use `connections` instead.
 
     Examples:
         .. code-block:: python
@@ -224,8 +144,6 @@ class SlingResource(ConfigurableResource):
             )
     """
 
-    source_connection: Optional[SlingSourceConnection] = None
-    target_connection: Optional[SlingTargetConnection] = None
     connections: List[SlingConnectionResource] = []
     _stdout: List[str] = []
 
@@ -297,21 +215,7 @@ class SlingResource(ConfigurableResource):
         return d
 
     def prepare_environment(self) -> Dict[str, Any]:
-        sling_source = None
-        sling_target = None
-
-        if self.source_connection:
-            sling_source = self._clean_connection_dict(dict(self.source_connection))
-        if self.target_connection:
-            sling_target = self._clean_connection_dict(dict(self.target_connection))
-
         env = {}
-
-        if sling_source:
-            env["SLING_SOURCE"] = json.dumps(sling_source)
-
-        if sling_target:
-            env["SLING_TARGET"] = json.dumps(sling_target)
 
         for conn in self.connections:
             d = self._clean_connection_dict(dict(conn))
@@ -322,22 +226,6 @@ class SlingResource(ConfigurableResource):
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
-        if self.source_connection:
-            deprecation_warning(
-                "source_connection",
-                "0.23",
-                "source_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
-                stacklevel=4,
-            )
-
-        if self.target_connection:
-            deprecation_warning(
-                "target_connection",
-                "0.23",
-                "target_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
-                stacklevel=4,
-            )
-
         prepared_environment = self.prepare_environment()
         with environ(prepared_environment):
             yield
@@ -365,62 +253,57 @@ class SlingResource(ConfigurableResource):
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
 
-    @deprecated(
-        breaking_version="0.23.0",
-        additional_warn_text="sync has been deprecated, use `replicate` instead.",
-    )
-    def sync(
-        self,
-        source_stream: str,
-        target_object: str,
-        mode: SlingMode = SlingMode.FULL_REFRESH,
-        primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
-        source_options: Optional[Dict[str, Any]] = None,
-        target_options: Optional[Dict[str, Any]] = None,
-        encoding: str = "utf8",
-    ) -> Generator[str, None, None]:
-        """Runs a Sling sync from the given source table to the given destination table. Generates
-        output lines from the Sling CLI. Deprecated, use `replicate` instead.
+    def _parse_json_table_output(self, table_output: Dict[str, Any]) -> List[Dict[str, str]]:
+        column_keys: List[str] = table_output["fields"]
+        column_values: List[List[str]] = table_output["rows"]
+
+        return [dict(zip(column_keys, column_values)) for column_values in column_values]
+
+    def get_column_info_for_table(self, target_name: str, table_name: str) -> List[Dict[str, str]]:
+        """Fetches column metadata for a given table in a Sling target and parses it into a list of
+        dictionaries, keyed by column name.
+
+        Args:
+            target_name (str): The name of the target connection to use.
+            table_name (str): The name of the table to fetch column metadata for.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries, keyed by column name, containing column metadata.
         """
-        if (
-            self.source_connection
-            and self.source_connection.type == "file"
-            and not source_stream.startswith("file://")
-        ):
-            source_stream = "file://" + source_stream
+        output = self.run_sling_cli(
+            ["conns", "discover", target_name, "--pattern", table_name, "--columns"],
+            force_json=True,
+        )
+        return self._parse_json_table_output(json.loads(output.strip()))
 
-        if (
-            self.target_connection
-            and self.target_connection.type == "file"
-            and not target_object.startswith("file://")
-        ):
-            target_object = "file://" + target_object
+    def get_row_count_for_table(self, target_name: str, table_name: str) -> int:
+        """Queries the target connection to get the row count for a given table.
 
-        with self._setup_config():
-            config = {
-                "mode": mode,
-                "source": {
-                    "conn": "SLING_SOURCE",
-                    "stream": source_stream,
-                    "primary_key": primary_key,
-                    "update_key": update_key,
-                    "options": source_options,
-                },
-                "target": {
-                    "conn": "SLING_TARGET",
-                    "object": target_object,
-                    "options": target_options,
-                },
-            }
-            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
-            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
+        Args:
+            target_name (str): The name of the target connection to use.
+            table_name (str): The name of the table to fetch the row count for.
 
-            sling_cli = sling.Sling(**config)
-            logger.info("Starting Sling sync with mode: %s", mode)
-            cmd = sling_cli._prep_cmd()  # noqa: SLF001
+        Returns:
+            int: The number of rows in the table.
+        """
+        select_stmt: str = f"select count(*) as ct from {table_name}"
+        output = self.run_sling_cli(
+            ["conns", "exec", target_name, select_stmt],
+            force_json=True,
+        )
+        return int(self._parse_json_table_output(json.loads(output.strip()))[0]["ct"])
 
-            yield from self._exec_sling_cmd(cmd, encoding=encoding)
+    def run_sling_cli(self, args: Sequence[str], force_json: bool = False) -> str:
+        """Runs the Sling CLI with the given arguments and returns the output.
+
+        Args:
+            args (Sequence[str]): The arguments to pass to the Sling CLI.
+
+        Returns:
+            str: The output from the Sling CLI.
+        """
+        with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
+            return subprocess.check_output(args=[sling.SLING_BIN, *args], text=True)
 
     def replicate(
         self,
@@ -429,7 +312,7 @@ class SlingResource(ConfigurableResource):
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> SlingEventIterator[SlingEventType]:
         """Runs a Sling replication from the given replication config.
 
         Args:
@@ -439,20 +322,39 @@ class SlingResource(ConfigurableResource):
             debug: Whether to run the replication in debug mode.
 
         Returns:
-            Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
+            SlingEventIterator[MaterializeResult]: A generator of MaterializeResult
         """
-        # attempt to retrieve params from asset context if not passed as a parameter
         if not (replication_config or dagster_sling_translator):
             metadata_by_key = context.assets_def.metadata_by_key
             first_asset_metadata = next(iter(metadata_by_key.values()))
             dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
             replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
 
-        # if translator has not been defined on metadata _or_ through param, then use the default constructor
         dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
+        replication_config_dict = dict(validate_replication(replication_config))
+        return SlingEventIterator(
+            self._replicate(
+                context=context,
+                replication_config=replication_config_dict,
+                dagster_sling_translator=dagster_sling_translator,
+                debug=debug,
+            ),
+            sling_cli=self,
+            replication_config=replication_config_dict,
+            context=context,
+        )
+
+    def _replicate(
+        self,
+        *,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        replication_config: Dict[str, Any],
+        dagster_sling_translator: DagsterSlingTranslator,
+        debug: bool,
+    ) -> Iterator[SlingEventType]:
+        # if translator has not been defined on metadata _or_ through param, then use the default constructor
 
         # convert to dict to enable updating the index
-        replication_config = dict(validate_replication(replication_config))
         context_streams = self._get_replication_streams_for_context(context)
         if context_streams:
             replication_config.update({"streams": context_streams})
@@ -483,25 +385,27 @@ class SlingResource(ConfigurableResource):
                 return_output=True,
                 env=env,
             )
-        for row in results.split("\n"):
-            clean_line = self._clean_line(row)
-            sys.stdout.write(clean_line + "\n")
-            self._stdout.append(clean_line)
+            for row in results.split("\n"):
+                clean_line = self._clean_line(row)
+                sys.stdout.write(clean_line + "\n")
+                self._stdout.append(clean_line)
 
-        end_time = time.time()
+            end_time = time.time()
 
-        has_asset_def: bool = bool(context and context.has_assets_def)
+            # TODO: In the future, it'd be nice to yield these materializations as they come in
+            # rather than waiting until the end of the replication
+            for stream in stream_definition:
+                asset_key = dagster_sling_translator.get_asset_key(stream)
 
-        for stream in stream_definition:
-            output_name = dagster_sling_translator.get_asset_key(stream)
-            if has_asset_def:
-                yield MaterializeResult(
-                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
-                )
-            else:
-                yield AssetMaterialization(
-                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
-                )
+                metadata = {
+                    "elapsed_time": end_time - start_time,
+                    "stream_name": stream["name"],
+                }
+
+                if context.has_assets_def:
+                    yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+                else:
+                    yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
         """Returns a generator of raw logs from the Sling CLI."""

@@ -1,9 +1,15 @@
 from typing import Dict, cast
 from unittest.mock import MagicMock
 
-from dagster import AssetKey, AssetsDefinition, MaterializeResult, PipesClient, materialize
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    Definitions,
+    MaterializeResult,
+    PipesClient,
+    materialize,
+)
 from dagster._core.pipes.client import PipesClientCompletedInvocation
-from dagster_blueprints.blueprint import BlueprintDefinitions
 from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
 from dagster_blueprints.databricks_blueprint import DatabricksTaskBlueprint
 from databricks.sdk.service import jobs
@@ -54,7 +60,7 @@ def test_single_databricks_task_blueprint() -> None:
         assets=[AssetSpecModel(key="asset1")], task=databricks_task_dict
     )
     defs = single_asset_blueprint.build_defs()
-    asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+    asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert asset1.key == AssetKey("asset1")
     assert materialize(
         [asset1],
@@ -73,7 +79,7 @@ def test_single_databricks_task_blueprint_with_result() -> None:
         assets=[AssetSpecModel(key="asset1")], task=databricks_task_dict
     )
     defs = single_asset_blueprint.build_defs()
-    asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+    asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert asset1.key == AssetKey("asset1")
     result = materialize(
         [asset1],
@@ -96,7 +102,7 @@ def test_multi_asset_databricks_task_blueprint() -> None:
         task=databricks_task_dict,
     )
     defs = multi_asset_blueprint.build_defs()
-    assets = cast(AssetsDefinition, next(iter(defs.assets)))
+    assets = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert assets.keys == {AssetKey("asset1"), AssetKey("asset2")}
     assert materialize(
         [assets],
@@ -116,7 +122,7 @@ def test_multi_asset_databricks_task_blueprint_with_results() -> None:
         task=databricks_task_dict,
     )
     defs = multi_asset_blueprint.build_defs()
-    assets = cast(AssetsDefinition, next(iter(defs.assets)))
+    assets = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert assets.keys == {AssetKey("asset1"), AssetKey("asset2")}
     result = materialize(
         [assets],
@@ -149,9 +155,9 @@ def test_op_name_collisions() -> None:
         assets=[AssetSpecModel(key="asset2")], task={"placeholder": "placeholder"}
     )
     resources = {"pipes_databricks_client": object()}
-    blueprint_defs = BlueprintDefinitions.merge(
+    blueprint_defs = Definitions.merge(
         single_asset_blueprint1.build_defs(),
         single_asset_blueprint2.build_defs(),
-        BlueprintDefinitions(resources=resources),
+        Definitions(resources=resources),
     )
-    blueprint_defs.to_definitions()
+    Definitions.validate_loadable(blueprint_defs)

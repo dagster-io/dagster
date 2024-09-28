@@ -1,18 +1,19 @@
 import inspect
 import os
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import experimental
-from dagster._model import DagsterModel
-from dagster._serdes import whitelist_for_serdes
-
-from .metadata_set import (
+from dagster._annotations import experimental, public
+from dagster._core.definitions.metadata.metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,
     TableMetadataSet as TableMetadataSet,
 )
-from .metadata_value import MetadataValue
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._model import DagsterModel
+from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
@@ -97,12 +98,24 @@ def _with_code_source_single_definition(
     metadata_by_key = dict(assets_def.metadata_by_key) or {}
 
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
 
-    base_fn = (
-        assets_def.op.compute_fn.decorated_fn
-        if isinstance(assets_def.op.compute_fn, DecoratedOpFunction)
-        else assets_def.op.compute_fn
-    )
+    base_fn = None
+    if isinstance(assets_def.node_def, OpDefinition):
+        base_fn = (
+            assets_def.node_def.compute_fn.decorated_fn
+            if isinstance(assets_def.node_def.compute_fn, DecoratedOpFunction)
+            else assets_def.node_def.compute_fn
+        )
+    elif isinstance(assets_def.node_def, GraphDefinition):
+        # For graph-backed assets, point to the composition fn, e.g. the
+        # function decorated by @graph_asset
+        base_fn = assets_def.node_def.composition_fn
+
+    if not base_fn:
+        return assets_def
+
     source_path = local_source_path_from_fn(base_fn)
 
     if source_path:
@@ -130,37 +143,105 @@ def _with_code_source_single_definition(
                 ),
             }
 
-    return AssetsDefinition.dagster_internal_init(
-        **{
-            **assets_def.get_attributes_dict(),
-            **{
-                "specs": [
-                    spec._replace(metadata=metadata_by_key[spec.key]) for spec in assets_def.specs
-                ]
-            },
-        }
+    return assets_def.map_asset_specs(
+        lambda spec: spec._replace(metadata=metadata_by_key[spec.key])
     )
 
 
-def convert_local_path_to_source_control_path(
-    base_source_control_url: str,
-    repository_root_absolute_path: str,
+@experimental
+class FilePathMapping(ABC):
+    """Base class which defines a file path mapping function. These functions are used to map local file paths
+    to their corresponding paths in a source control repository.
+
+    In many cases where a source control repository is reproduced exactly on a local machine, the included
+    AnchorBasedFilePathMapping class can be used to specify a direct mapping between the local file paths and the
+    repository paths. However, in cases where the repository structure differs from the local structure, a custom
+    mapping function can be provided to handle these cases.
+    """
+
+    @public
+    @abstractmethod
+    def convert_to_source_control_path(self, local_path: Path) -> str:
+        """Maps a local file path to the corresponding path in a source control repository.
+
+        Args:
+            local_path (Path): The local file path to map.
+
+        Returns:
+            str: The corresponding path in the hosted source control repository, relative to the repository root.
+        """
+
+
+@experimental
+@dataclass
+class AnchorBasedFilePathMapping(FilePathMapping):
+    """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
+    using a specific file "anchor" as a reference point. All other paths are calculated relative to this anchor file.
+
+    For example, if the chosen anchor file is `/Users/dagster/Documents/python_modules/my_module/my-module/__init__.py`
+    locally, and `python_modules/my_module/my-module/__init__.py` in a source control repository, in order to map a
+    different file `/Users/dagster/Documents/python_modules/my_module/my-module/my_asset.py` to the repository path,
+    the mapping function will position the file in the repository relative to the anchor file's position in the repository,
+    resulting in `python_modules/my_module/my-module/my_asset.py`.
+
+    Args:
+        local_file_anchor (Path): The path to a local file that is present in the repository.
+        file_anchor_path_in_repository (str): The path to the anchor file in the repository.
+
+    Example:
+        .. code-block:: python
+
+            mapping_fn = AnchorBasedFilePathMapping(
+                local_file_anchor=Path(__file__),
+                file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
+            )
+    """
+
+    local_file_anchor: Path
+    file_anchor_path_in_repository: str
+
+    @public
+    def convert_to_source_control_path(self, local_path: Path) -> str:
+        """Maps a local file path to the corresponding path in a source control repository
+        based on the anchor file and its corresponding path in the repository.
+
+        Args:
+            local_path (Path): The local file path to map.
+
+        Returns:
+            str: The corresponding path in the hosted source control repository, relative to the repository root.
+        """
+        path_from_anchor_to_target = os.path.relpath(
+            local_path,
+            self.local_file_anchor,
+        )
+        return os.path.normpath(
+            os.path.join(
+                self.file_anchor_path_in_repository,
+                path_from_anchor_to_target,
+            )
+        )
+
+
+def convert_local_path_to_git_path(
+    base_git_url: str,
+    file_path_mapping: FilePathMapping,
     local_path: LocalFileCodeReference,
 ) -> UrlCodeReference:
-    source_file_from_repo_root = os.path.relpath(
-        local_path.file_path, repository_root_absolute_path
+    source_file_from_repo_root = file_path_mapping.convert_to_source_control_path(
+        Path(local_path.file_path)
     )
     line_number_suffix = f"#L{local_path.line_number}" if local_path.line_number else ""
 
     return UrlCodeReference(
-        url=f"{base_source_control_url}/{source_file_from_repo_root}{line_number_suffix}",
+        url=f"{base_git_url}/{source_file_from_repo_root}{line_number_suffix}",
         label=local_path.label,
     )
 
 
-def _convert_local_path_to_source_control_path_single_definition(
-    base_source_control_url: str,
-    repository_root_absolute_path: str,
+def _convert_local_path_to_git_path_single_definition(
+    base_git_url: str,
+    file_path_mapping: FilePathMapping,
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -180,9 +261,9 @@ def _convert_local_path_to_source_control_path_single_definition(
             continue
 
         sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
-            convert_local_path_to_source_control_path(
-                base_source_control_url,
-                repository_root_absolute_path,
+            convert_local_path_to_git_path(
+                base_git_url,
+                file_path_mapping,
                 source,
             )
             if isinstance(source, LocalFileCodeReference)
@@ -197,15 +278,8 @@ def _convert_local_path_to_source_control_path_single_definition(
             ),
         }
 
-    return AssetsDefinition.dagster_internal_init(
-        **{
-            **assets_def.get_attributes_dict(),
-            **{
-                "specs": [
-                    spec._replace(metadata=metadata_by_key[spec.key]) for spec in assets_def.specs
-                ]
-            },
-        }
+    return assets_def.map_asset_specs(
+        lambda spec: spec._replace(metadata=metadata_by_key[spec.key])
     )
 
 
@@ -218,11 +292,11 @@ def _build_gitlab_url(url: str, branch: str) -> str:
 
 
 @experimental
-def link_to_source_control(
+def link_code_references_to_git(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
-    source_control_url: str,
-    source_control_branch: str,
-    repository_root_absolute_path: Union[Path, str],
+    git_url: str,
+    git_branch: str,
+    file_path_mapping: FilePathMapping,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
@@ -232,27 +306,45 @@ def link_to_source_control(
             The asset definitions to which source control metadata should be attached.
             Only assets with local file code references (such as those created by
             `with_source_code_references`) will be converted.
-        source_control_url (str): The base URL for the source control system. For example,
+        git_url (str): The base URL for the source control system. For example,
             "https://github.com/dagster-io/dagster".
-        source_control_branch (str): The branch in the source control system, such as "master".
-        repository_root_absolute_path (Union[Path, str]): The absolute path to the root of the
-            repository on disk. This is used to calculate the relative path to the source file
-            from the repository root and append it to the source control URL.
+        git_branch (str): The branch in the source control system, such as "master".
+        file_path_mapping (FilePathMapping):
+            Specifies the mapping between local file paths and their corresponding paths in a source control repository.
+            Simple usage is to provide a `AnchorBasedFilePathMapping` instance, which specifies an anchor file in the
+            repository and the corresponding local file path, which is extrapolated to all other local file paths.
+            Alternatively, a custom function can be provided which takes a local file path and returns the corresponding
+            path in the repository, allowing for more complex mappings.
+
+    Example:
+        .. code-block:: python
+
+                defs = Definitions(
+                    assets=link_code_references_to_git(
+                        with_source_code_references([my_dbt_assets]),
+                        git_url="https://github.com/dagster-io/dagster",
+                        git_branch="master",
+                        file_path_mapping=AnchorBasedFilePathMapping(
+                            local_file_anchor=Path(__file__),
+                            file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
+                        ),
+                    )
+                )
     """
-    if "gitlab.com" in source_control_url:
-        source_control_url = _build_gitlab_url(source_control_url, source_control_branch)
-    elif "github.com" in source_control_url:
-        source_control_url = _build_github_url(source_control_url, source_control_branch)
+    if "gitlab" in git_url:
+        git_url = _build_gitlab_url(git_url, git_branch)
+    elif "github.com" in git_url:
+        git_url = _build_github_url(git_url, git_branch)
     else:
         raise ValueError(
-            "Invalid `source_control_url`."
+            "Invalid `git_url`."
             " Only GitHub and GitLab are supported for linking to source control at this time."
         )
 
     return [
-        _convert_local_path_to_source_control_path_single_definition(
-            base_source_control_url=source_control_url,
-            repository_root_absolute_path=str(repository_root_absolute_path),
+        _convert_local_path_to_git_path_single_definition(
+            base_git_url=git_url,
+            file_path_mapping=file_path_mapping,
             assets_def=assets_def,
         )
         for assets_def in assets_defs

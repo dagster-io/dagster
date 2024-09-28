@@ -35,7 +35,7 @@ export const assetNodes: AssetNode[] = [
     }),
     isObservable: false,
     isExecutable: true,
-    isSource: false,
+    isMaterializable: true,
     assetKey: buildAssetKey({
       path: ['release_files'],
     }),
@@ -84,7 +84,7 @@ export const assetNodes: AssetNode[] = [
     }),
     isObservable: false,
     isExecutable: true,
-    isSource: false,
+    isMaterializable: true,
     assetKey: buildAssetKey({
       path: ['release_files_metadata'],
     }),
@@ -133,7 +133,7 @@ export const assetNodes: AssetNode[] = [
     }),
     isObservable: false,
     isExecutable: true,
-    isSource: false,
+    isMaterializable: true,
     assetKey: buildAssetKey({
       path: ['release_zips'],
     }),
@@ -182,7 +182,7 @@ export const assetNodes: AssetNode[] = [
     }),
     isObservable: false,
     isExecutable: true,
-    isSource: false,
+    isMaterializable: true,
     assetKey: buildAssetKey({
       path: ['releases_metadata'],
     }),
@@ -218,7 +218,7 @@ export const assetNodes: AssetNode[] = [
     partitionDefinition: null,
     isObservable: false,
     isExecutable: true,
-    isSource: false,
+    isMaterializable: true,
     assetKey: buildAssetKey({
       path: ['releases_summary'],
     }),

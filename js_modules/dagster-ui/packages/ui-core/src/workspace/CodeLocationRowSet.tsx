@@ -3,17 +3,22 @@ import {
   Button,
   ButtonLink,
   Colors,
+  FontFamily,
   Icon,
   MiddleTruncate,
   Tag,
   Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceQueries.types';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
+import {
+  LocationStatusEntryFragment,
+  WorkspaceDisplayMetadataFragment,
+} from './WorkspaceContext/types/WorkspaceQueries.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -44,9 +49,9 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
       <ImageNameBox flex={{direction: 'row', gap: 4}}>
         <span style={{fontWeight: 500}}>image:</span>
         <Tooltip content="Click to copy" placement="top" display="block">
-          <button onClick={onClick}>
+          <UnstyledButton onClick={onClick} style={MetadataValueButtonStyle}>
             <MiddleTruncate text={imageKV.value} />
-          </button>
+          </UnstyledButton>
         </Tooltip>
       </ImageNameBox>
     );
@@ -59,24 +64,8 @@ const ImageNameBox = styled(Box)`
   color: ${Colors.textLight()};
   font-size: 12px;
 
-  .bp4-popover2-target {
+  .bp5-popover-target {
     overflow: hidden;
-  }
-
-  button {
-    background: ${Colors.backgroundDefault()};
-    border: none;
-    color: ${Colors.textLight()};
-    cursor: pointer;
-    font-size: 12px;
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-    width: 100%;
-
-    :focus {
-      outline: none;
-    }
   }
 `;
 
@@ -95,7 +84,9 @@ export const ModuleOrPackageOrFile = ({
         style={{width: '100%', color: Colors.textLight(), fontSize: 12}}
       >
         <span style={{fontWeight: 500}}>{imageKV.key}:</span>
-        <MiddleTruncate text={imageKV.value} />
+        <div style={MetadataValueButtonStyle}>
+          <MiddleTruncate text={imageKV.value} />
+        </div>
       </Box>
     );
   }
@@ -103,35 +94,38 @@ export const ModuleOrPackageOrFile = ({
 };
 
 export const LocationStatus = (props: {
-  location: string;
-  locationOrError: WorkspaceRepositoryLocationNode;
+  locationStatus: LocationStatusEntryFragment;
+  locationOrError: WorkspaceRepositoryLocationNode | null;
 }) => {
-  const {location, locationOrError} = props;
+  const {locationStatus, locationOrError} = props;
   const [showDialog, setShowDialog] = useState(false);
 
-  const reloadFn = useMemo(() => buildReloadFnForLocation(location), [location]);
+  const reloadFn = useMemo(
+    () => buildReloadFnForLocation(locationStatus.name),
+    [locationStatus.name],
+  );
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,
   });
 
-  if (locationOrError.loadStatus === 'LOADING') {
-    if (locationOrError.locationOrLoadError) {
-      return (
-        <Tag minimal intent="primary">
-          Updating...
-        </Tag>
-      );
-    } else {
-      return (
-        <Tag minimal intent="primary">
-          Loading...
-        </Tag>
-      );
-    }
+  if (locationStatus.loadStatus === 'LOADING') {
+    return (
+      <Tag minimal intent="primary">
+        Updating…
+      </Tag>
+    );
   }
 
-  if (locationOrError.locationOrLoadError?.__typename === 'PythonError') {
+  if (locationOrError?.versionKey !== locationStatus.versionKey) {
+    return (
+      <Tag minimal intent="primary">
+        Loading…
+      </Tag>
+    );
+  }
+
+  if (locationOrError?.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <Box flex={{alignItems: 'center', gap: 12}}>
@@ -139,11 +133,11 @@ export const LocationStatus = (props: {
             Failed
           </Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
-            <span style={{fontSize: '14px'}}>View error</span>
+            <span style={{fontSize: '12px'}}>View error</span>
           </ButtonLink>
         </Box>
         <RepositoryLocationNonBlockingErrorDialog
-          location={location}
+          location={locationStatus.name}
           isOpen={showDialog}
           error={locationOrError.locationOrLoadError}
           reloading={reloading}
@@ -174,7 +168,7 @@ export const ReloadButton = ({location}: {location: string}) => {
               useDisabledButtonTooltipFix
             >
               <Button
-                icon={<Icon name="refresh" />}
+                icon={<Icon name="code_location_reload" />}
                 disabled={!hasReloadPermission}
                 loading={reloading}
                 onClick={() => tryReload()}
@@ -187,4 +181,12 @@ export const ReloadButton = ({location}: {location: string}) => {
       }}
     />
   );
+};
+
+const MetadataValueButtonStyle = {
+  width: '100%',
+  display: 'block',
+  fontFamily: FontFamily.monospace,
+  fontSize: '12px',
+  color: Colors.textLight(),
 };

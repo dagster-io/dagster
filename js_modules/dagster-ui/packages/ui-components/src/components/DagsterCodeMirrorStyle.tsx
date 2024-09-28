@@ -15,7 +15,7 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
     }
   }
 
-  .CodeMirror-cursor {
+  .CodeMirror-cursor.CodeMirror-cursor {
     border-color: ${Colors.textLight()};
   }
 
@@ -26,7 +26,9 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   .CodeMirror-lint-message-warning {
     font-family: ${FontFamily.monospace};
     font-size: 14px;
+    font-variant-ligatures: none;
   }
+
 
   .CodeMirror.cm-s-dagster {
     background-color: ${Colors.backgroundLight()};
@@ -34,6 +36,11 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
 
     font-family: ${FontFamily.monospace};
     font-size: 14px;
+    font-variant-ligatures: none;
+
+    .CodeMirror-code .CodeMirror-line {
+      font-variant-ligatures: none;
+    }
 
     /* Note: Theme overrides */
     &.cm-s-default .cm-comment {

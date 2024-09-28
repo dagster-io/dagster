@@ -3,7 +3,11 @@ import os
 from enum import Enum
 from typing import Optional, TypedDict
 
-import pendulum
+from dagster._time import get_current_timestamp
+
+# When cgroup memory is not constrained, the limit value will be a high value close to 2^63 - 1,
+# Ex: AWS ECS returns 2^63 - 2^10 = 9223372036854000000
+UNCONSTRAINED_CGROUP_MEMORY_LIMIT = 9223372036854000000
 
 
 def cpu_usage_path_cgroup_v1():
@@ -125,7 +129,7 @@ def retrieve_containerized_utilization_metrics(
         "cpu_cfs_period_us": _retrieve_containerized_cpu_cfs_period_us(logger, cgroup_version),
         "memory_usage": _retrieve_containerized_memory_usage(logger, cgroup_version),
         "memory_limit": _retrieve_containerized_memory_limit(logger, cgroup_version),
-        "measurement_timestamp": pendulum.now("UTC").float_timestamp,
+        "measurement_timestamp": get_current_timestamp(),
         "cgroup_version": cgroup_version.value if cgroup_version else None,
     }
 

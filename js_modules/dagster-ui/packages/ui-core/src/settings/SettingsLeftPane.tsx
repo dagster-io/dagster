@@ -1,9 +1,9 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useLocation} from 'react-router-dom';
+import {useVisibleFeatureFlagRows} from 'shared/app/useVisibleFeatureFlagRows.oss';
 
 import {UserSettingsDialog} from '../app/UserSettingsDialog/UserSettingsDialog';
-import {getVisibleFeatureFlagRows} from '../app/getVisibleFeatureFlagRows';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
 
 const items: SideNavItemConfig[] = [
@@ -12,28 +12,28 @@ const items: SideNavItemConfig[] = [
     type: 'link',
     icon: <Icon name="code_location" />,
     label: 'Code locations',
-    path: '/settings/locations',
+    path: '/deployment/locations',
   },
   {
     key: 'daemons',
     type: 'link',
-    icon: <Icon name="sync_alt" />,
+    icon: <Icon name="daemon" />,
     label: 'Daemons',
-    path: '/settings/daemons',
+    path: '/deployment/daemons',
   },
   {
     key: 'concurrency-limits',
     type: 'link',
-    icon: <Icon name="stacks" />,
+    icon: <Icon name="concurrency" />,
     label: 'Concurrency limits',
-    path: '/settings/concurrency',
+    path: '/deployment/concurrency',
   },
   {
     key: 'config',
     type: 'link',
     icon: <Icon name="tune" />,
     label: 'Configuration (read-only)',
-    path: '/settings/config',
+    path: '/deployment/config',
   },
 ];
 
@@ -68,7 +68,7 @@ export const SettingsLeftPane = () => {
           <UserSettingsDialog
             isOpen={showUserSettings}
             onClose={() => setShowUserSettings(false)}
-            visibleFlags={getVisibleFeatureFlagRows()}
+            visibleFlags={useVisibleFeatureFlagRows()}
           />
         </>
       </Box>

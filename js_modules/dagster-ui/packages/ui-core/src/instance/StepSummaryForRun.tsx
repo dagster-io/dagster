@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Caption, Colors} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useMemo} from 'react';
@@ -8,8 +7,8 @@ import {
   StepSummaryForRunQuery,
   StepSummaryForRunQueryVariables,
 } from './types/StepSummaryForRun.types';
+import {gql, useQuery} from '../apollo-client';
 import {StepEventStatus} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 
 interface Props {
@@ -25,7 +24,6 @@ export const StepSummaryForRun = (props: Props) => {
     },
   );
   const {data} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'StepSummaryForRunQuery');
 
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;

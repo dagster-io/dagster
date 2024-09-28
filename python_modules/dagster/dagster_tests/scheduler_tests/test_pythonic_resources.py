@@ -24,9 +24,13 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
 from dagster._time import create_datetime, get_current_datetime, get_timezone
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_scheduler_run import evaluate_schedules, validate_tick, wait_for_all_runs_to_start
+from dagster_tests.scheduler_tests.test_scheduler_run import (
+    evaluate_schedules,
+    validate_tick,
+    wait_for_all_runs_to_start,
+)
 
 
 @op
@@ -138,7 +142,7 @@ def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessCo
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
-            .get_workspace_snapshot()
+            .get_code_location_entries()
             .values()
         )
     ).code_location
@@ -187,7 +191,7 @@ def test_resources(
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 0
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
@@ -197,7 +201,7 @@ def test_resources(
         wait_for_all_runs_to_start(instance)
 
         ticks: Sequence[InstigatorTick] = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
 
         assert len(ticks) == 1

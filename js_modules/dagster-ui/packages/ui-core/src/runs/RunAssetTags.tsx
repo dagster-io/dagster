@@ -1,10 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {AssetKeyTagCollection} from './AssetTagCollections';
 import {RunAssetsQuery, RunAssetsQueryVariables} from './types/RunAssetTags.types';
 import {RunFragment} from './types/RunFragments.types';
+import {gql, useQuery} from '../apollo-client';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const RunAssetTags = (props: {run: RunFragment}) => {
   const {run} = props;
@@ -12,9 +10,9 @@ export const RunAssetTags = (props: {run: RunFragment}) => {
   const queryResult = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
     variables: {runId: run.id},
     skip,
+    fetchPolicy: 'no-cache',
   });
   const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'RunAssetsQuery', {skip});
 
   if (loading || !data || data.pipelineRunOrError.__typename !== 'Run') {
     return null;

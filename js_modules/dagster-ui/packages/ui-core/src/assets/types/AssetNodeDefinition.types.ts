@@ -11,13 +11,14 @@ export type AssetNodeDefinitionFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
-  isSource: boolean;
+  isMaterializable: boolean;
   isExecutable: boolean;
   hasMaterializePermission: boolean;
   changedReasons: Array<Types.ChangeReason>;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  kinds: Array<string>;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -30,6 +31,11 @@ export type AssetNodeDefinitionFragment = {
       description: string;
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
@@ -16114,7 +16120,6 @@ export type AssetNodeDefinitionFragment = {
     | {
         __typename: 'Sensor';
         id: string;
-        jobOriginId: string;
         name: string;
         sensorType: Types.SensorType;
         sensorState: {

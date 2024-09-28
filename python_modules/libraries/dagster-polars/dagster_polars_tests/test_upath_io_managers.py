@@ -28,7 +28,7 @@ from dagster_polars import (
     StorageMetadata,
 )
 
-from dagster_polars_tests.utils import get_saved_path
+from dagster_polars_tests.utils import DEPRECATED_STORAGE_METADATA_STRING, get_saved_path
 
 
 def test_polars_upath_io_manager_type_annotations(
@@ -354,9 +354,10 @@ def test_upath_io_manager_storage_metadata_eager(
         assert upstream_metadata == metadata
         pl_testing.assert_frame_equal(loaded_df, df)
 
-    materialize(
-        [upstream, downstream],
-    )
+    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
+        materialize(
+            [upstream, downstream],
+        )
 
 
 def test_upath_io_manager_storage_metadata_lazy(
@@ -396,9 +397,10 @@ def test_upath_io_manager_storage_metadata_optional_eager_exists(
         df, upstream_metadata = upstream
         assert upstream_metadata == metadata
 
-    materialize(
-        [upstream, downstream],
-    )
+    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
+        materialize(
+            [upstream, downstream],
+        )
 
 
 def test_upath_io_manager_storage_metadata_optional_eager_missing(
@@ -415,9 +417,10 @@ def test_upath_io_manager_storage_metadata_optional_eager_missing(
     def downstream(upstream: Optional[Tuple[pl.DataFrame, StorageMetadata]]) -> None:
         assert upstream is None
 
-    materialize(
-        [upstream, downstream],
-    )
+    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
+        materialize(
+            [upstream, downstream],
+        )
 
 
 def test_upath_io_manager_storage_metadata_optional_lazy_exists(
@@ -437,9 +440,10 @@ def test_upath_io_manager_storage_metadata_optional_lazy_exists(
         assert isinstance(df, pl.LazyFrame)
         assert upstream_metadata == metadata
 
-    materialize(
-        [upstream, downstream],
-    )
+    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
+        materialize(
+            [upstream, downstream],
+        )
 
 
 def test_upath_io_manager_storage_metadata_optional_lazy_missing(

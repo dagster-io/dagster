@@ -1,5 +1,5 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Box, Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
 import {
   START_SCHEDULE_MUTATION,
@@ -17,8 +17,10 @@ import {
   ScheduleStateQueryVariables,
   ScheduleSwitchFragment,
 } from './types/ScheduleSwitch.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus} from '../graphql/types';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -26,30 +28,31 @@ interface Props {
   repoAddress: RepoAddress;
   schedule: ScheduleSwitchFragment;
   size?: 'small' | 'large';
-  shouldFetchLatestState?: boolean;
 }
 
 export const ScheduleSwitch = (props: Props) => {
-  const {repoAddress, schedule, size = 'large', shouldFetchLatestState} = props;
+  const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
-  const {id, selectorId} = scheduleState;
+  const {id} = scheduleState;
 
   const {
     permissions: {canStartSchedule, canStopRunningSchedule},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
-  const scheduleSelector = {
-    ...repoAddressToSelector(repoAddress),
-    scheduleName: name,
+  const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
+
+  const variables = {
+    id: schedule.id,
+    selector: {
+      ...repoAddressSelector,
+      name,
+    },
   };
 
   const {data, loading} = useQuery<ScheduleStateQuery, ScheduleStateQueryVariables>(
     SCHEDULE_STATE_QUERY,
-    {
-      variables: {scheduleSelector},
-      skip: !shouldFetchLatestState,
-    },
+    {variables},
   );
 
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
@@ -57,42 +60,60 @@ export const ScheduleSwitch = (props: Props) => {
     StartThisScheduleMutationVariables
   >(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
+    refetchQueries: [{variables, query: SCHEDULE_STATE_QUERY}],
+    awaitRefetchQueries: true,
   });
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
     StopScheduleMutation,
     StopScheduleMutationVariables
   >(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
+    refetchQueries: [{variables, query: SCHEDULE_STATE_QUERY}],
+    awaitRefetchQueries: true,
   });
 
   const onStatusChange = () => {
     if (status === InstigationStatus.RUNNING) {
       stopSchedule({
-        variables: {scheduleOriginId: id, scheduleSelectorId: selectorId},
+        variables: {id},
       });
     } else {
       startSchedule({
-        variables: {scheduleSelector},
+        variables: {
+          scheduleSelector: {
+            ...repoAddressSelector,
+            scheduleName: name,
+          },
+        },
       });
     }
   };
 
-  if (shouldFetchLatestState && !data && loading) {
-    return <Spinner purpose="body-text" />;
-  }
+  // Status according to schedule object passed in (may be outdated if its from the workspace snapshot)
+  let status = schedule.scheduleState.status;
 
-  if (shouldFetchLatestState && data?.scheduleOrError.__typename !== 'Schedule') {
+  if (!data && loading) {
+    return (
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{width: '30px'}}>
+        <Spinner purpose="body-text" />
+      </Box>
+    );
+  }
+  if (
+    !['InstigationState', 'InstigationStateNotFoundError'].includes(
+      data?.instigationStateOrError.__typename as any,
+    )
+  ) {
     return (
       <Tooltip content="Error loading schedule state">
         <Icon name="error" color={Colors.accentRed()} />;
       </Tooltip>
     );
+  } else if (data?.instigationStateOrError.__typename === 'InstigationState') {
+    // status according to latest data
+    status = data?.instigationStateOrError.status;
   }
 
-  const status = shouldFetchLatestState
-    ? // @ts-expect-error - we refined the type based on shouldFetchLatestState above
-      data.scheduleOrError.scheduleState.status
-    : schedule.scheduleState.status;
   const running = status === InstigationStatus.RUNNING;
 
   if (canStartSchedule && canStopRunningSchedule) {
@@ -150,15 +171,13 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
 `;
 
 const SCHEDULE_STATE_QUERY = gql`
-  query ScheduleStateQuery($scheduleSelector: ScheduleSelector!) {
-    scheduleOrError(scheduleSelector: $scheduleSelector) {
-      ... on Schedule {
+  query ScheduleStateQuery($id: String!, $selector: InstigationSelector!) {
+    instigationStateOrError(id: $id, instigationSelector: $selector) {
+      ... on InstigationState {
         id
-        scheduleState {
-          id
-          status
-        }
+        ...InstigationStateBaseFragment
       }
     }
   }
+  ${INSTIGATION_STATE_BASE_FRAGMENT}
 `;

@@ -1,37 +1,55 @@
-import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import React from 'react';
 
-import {asAssetKeyInput} from './asInput';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {AssetKey} from './types';
 import {
   AssetOverviewMetadataEventsQuery,
   AssetOverviewMetadataEventsQueryVariables,
 } from './types/useLatestPartitionEvents.types';
+import {gql, useQuery} from '../apollo-client';
 import {LiveDataForNode} from '../asset-graph/Utils';
+import {usePredicateChangeSignal} from '../hooks/usePredicateChangeSignal';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export function useLatestPartitionEvents(
-  assetNode: AssetNodeDefinitionFragment,
+  assetKey: AssetKey,
   assetNodeLoadTimestamp: number | undefined,
   liveData: LiveDataForNode | undefined,
 ) {
-  const refreshHint = liveData?.lastMaterialization?.timestamp;
+  const lastMaterializationTimestamp = liveData?.lastMaterialization?.timestamp;
 
   const queryResult = useQuery<
     AssetOverviewMetadataEventsQuery,
     AssetOverviewMetadataEventsQueryVariables
   >(ASSET_OVERVIEW_METADATA_EVENTS_QUERY, {
-    variables: {assetKey: asAssetKeyInput(assetNode)},
+    variables: {assetKey: {path: assetKey.path}},
   });
-  useBlockTraceOnQueryResult(queryResult, 'AssetOverviewMetadataEventsQuery');
 
   const {data, refetch} = queryResult;
 
+  const refreshHint = usePredicateChangeSignal(
+    (prevHints, [lastMaterializationTimestamp, assetNodeLoadTimestamp]) => {
+      const [prevLastMaterializationTimestamp, prevAssetNodeLoadTimestamp] =
+        prevHints || ([undefined, undefined] as const);
+
+      return !!(
+        /**
+         * Trigger a refetch only if a previous a timestamp hint existed and has changed.
+         * This avoids redundant queries since these timestamps are fetched in parallel.
+         */
+        (
+          (prevLastMaterializationTimestamp &&
+            lastMaterializationTimestamp !== prevLastMaterializationTimestamp) ||
+          (prevAssetNodeLoadTimestamp && prevAssetNodeLoadTimestamp !== assetNodeLoadTimestamp)
+        )
+      );
+    },
+    [lastMaterializationTimestamp, assetNodeLoadTimestamp],
+  );
+
   React.useEffect(() => {
     refetch();
-  }, [refetch, refreshHint, assetNodeLoadTimestamp]);
+  }, [refetch, refreshHint]);
 
   const materialization =
     data?.assetOrError.__typename === 'Asset'

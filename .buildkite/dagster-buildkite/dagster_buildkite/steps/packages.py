@@ -23,6 +23,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
             _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
             + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
         )
+        if pkg != "examples/deploy_ecs"
     ]
 
     example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
@@ -73,7 +74,7 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 
 
 # Find packages under a root subdirectory that are not configured above.
-def _get_uncustomized_pkg_roots(root, custom_pkg_roots) -> List[str]:
+def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[str]:
     all_files_in_root = [
         os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]
@@ -294,6 +295,10 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "examples/docs_beta_snippets",
+        pytest_tox_factors=["all", "integrations"],
+    ),
+    PackageSpec(
         "examples/project_fully_featured",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
@@ -352,6 +357,31 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-blueprints",
     ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_8,
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/dbt-example",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/perf-harness",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/tutorial-example",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
 ]
 
 
@@ -360,10 +390,6 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
         return [AvailablePythonVersion.V3_11, AvailablePythonVersion.V3_12]
 
     if tox_factor in {
-        "definitions_tests_pendulum_1",
-        "definitions_tests_pendulum_2",
-        "scheduler_tests_pendulum_1",
-        "scheduler_tests_pendulum_2",
         "type_signature_tests",
     }:
         return [AvailablePythonVersion.V3_12]
@@ -412,8 +438,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests",
-            "definitions_tests_pendulum_1",
-            "definitions_tests_pendulum_2",
             "general_tests",
             "general_tests_old_protobuf",
             "launcher_tests",
@@ -421,8 +445,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "model_tests_pydantic1",
             "model_tests_pydantic2",
             "scheduler_tests",
-            "scheduler_tests_pendulum_1",
-            "scheduler_tests_pendulum_2",
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
@@ -479,12 +501,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
-            for deps_factor in ["dbt16", "dbt17", "dbt18", "pydantic1"]
-            for command_factor in ["cloud", "core-main", "legacy", "core-derived-metadata"]
-        ],
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
+            for deps_factor in ["dbt17", "dbt18", "pydantic1"]
+            for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
     ),
     PackageSpec(
@@ -517,9 +535,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
         pytest_extra_cmds=airflow_extra_cmds,
         pytest_tox_factors=[
-            "default-airflow1",
-            "localdb-airflow1",
-            "persistentdb-airflow1",
             "default-airflow2",
             "localdb-airflow2",
             "persistentdb-airflow2",

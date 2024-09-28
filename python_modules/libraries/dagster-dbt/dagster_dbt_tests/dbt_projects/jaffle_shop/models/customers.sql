@@ -67,3 +67,9 @@ final as (
 )
 
 select * from final
+
+{% if var('break_customer_build', 'false') == 'true' %}
+
+does not work
+
+{% endif %}

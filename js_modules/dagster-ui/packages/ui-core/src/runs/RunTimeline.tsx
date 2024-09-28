@@ -13,16 +13,18 @@ import {
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {RunStatusDot} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses';
+import {RunTimelineRowIcon} from './RunTimelineRowIcon';
+import {RowObjectType, TimelineRow, TimelineRun} from './RunTimelineTypes';
 import {TimeElapsed} from './TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
 import {COMMON_COLLATOR} from '../app/Util';
-import {RunStatus} from '../graphql/types';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -55,34 +57,27 @@ export const CONSTANTS = {
   LEFT_SIDE_SPACE_ALLOTTED,
 };
 
-export type TimelineRun = {
-  id: string;
-  status: RunStatus | 'SCHEDULED';
-  startTime: number;
-  endTime: number;
-};
-
-export type TimelineJob = {
-  key: string;
-  repoAddress: RepoAddress;
-  jobName: string;
-  jobType: 'job' | 'asset';
-  path: string;
-  runs: TimelineRun[];
+const SORT_PRIORITY: Record<RowObjectType, number> = {
+  asset: 0,
+  manual: 0,
+  'legacy-amp': 0,
+  schedule: 1,
+  sensor: 1,
+  job: 2,
 };
 
 type RowType =
-  | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
-  | {type: 'job'; repoAddress: RepoAddress; job: TimelineJob};
+  | {type: 'header'; repoAddress: RepoAddress; rowCount: number}
+  | {type: RowObjectType; repoAddress: RepoAddress; row: TimelineRow};
 
 interface Props {
   loading?: boolean;
-  jobs: TimelineJob[];
+  rows: TimelineRow[];
   rangeMs: [number, number];
 }
 
 export const RunTimeline = (props: Props) => {
-  const {loading = false, jobs, rangeMs} = props;
+  const {loading = false, rows, rangeMs} = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const {
     viewport: {width},
@@ -95,17 +90,17 @@ export const RunTimeline = (props: Props) => {
 
   const buckets = React.useMemo(
     () =>
-      jobs.reduce(
-        (accum, job) => {
-          const {repoAddress} = job;
+      rows.reduce(
+        (accum, row) => {
+          const {repoAddress} = row;
           const repoKey = repoAddressAsURLString(repoAddress);
           accum[repoKey] = accum[repoKey] || [];
-          accum[repoKey]!.push(job);
+          accum[repoKey]!.push(row);
           return accum;
         },
-        {} as Record<string, TimelineJob[]>,
+        {} as Record<string, TimelineRow[]>,
       ),
-    [jobs],
+    [rows],
   );
 
   const allKeys = Object.keys(buckets);
@@ -124,12 +119,17 @@ export const RunTimeline = (props: Props) => {
           return;
         }
 
-        flat.push({type: 'header', repoAddress, jobCount: bucket.length});
+        flat.push({type: 'header', repoAddress, rowCount: bucket.length});
         if (expandedKeys.includes(repoKey)) {
           bucket
-            .sort((a, b) => COMMON_COLLATOR.compare(a.jobName, b.jobName))
-            .forEach((job) => {
-              flat.push({type: 'job', repoAddress, job});
+            .sort((a, b) => {
+              return (
+                SORT_PRIORITY[a.type] - SORT_PRIORITY[b.type] ||
+                COMMON_COLLATOR.compare(a.name, b.name)
+              );
+            })
+            .forEach((row) => {
+              flat.push({type: row.type, repoAddress, row});
             });
         }
       });
@@ -162,7 +162,7 @@ export const RunTimeline = (props: Props) => {
   const duplicateRepoNames = findDuplicateRepoNames(
     repoOrder.map((repoKey) => repoAddressFromPath(repoKey)?.name || ''),
   );
-  const anyJobs = repoOrder.length > 0;
+  const anyObjects = repoOrder.length > 0;
 
   return (
     <>
@@ -173,10 +173,10 @@ export const RunTimeline = (props: Props) => {
         style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
         border="top-and-bottom"
       >
-        Jobs
+        Runs
       </Box>
       <div style={{position: 'relative'}}>
-        <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyJobs ? height : 0} />
+        <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyObjects ? height : 0} />
       </div>
       {repoOrder.length ? (
         <div style={{overflow: 'hidden', position: 'relative'}}>
@@ -196,7 +196,7 @@ export const RunTimeline = (props: Props) => {
                       top={start}
                       repoAddress={row.repoAddress}
                       isDuplicateRepoName={!!(repoName && duplicateRepoNames.has(repoName))}
-                      jobs={buckets[repoKey]!}
+                      rows={buckets[repoKey]!}
                       onToggle={onToggle}
                       onToggleAll={onToggleAll}
                     />
@@ -205,7 +205,7 @@ export const RunTimeline = (props: Props) => {
 
                 return (
                   <RunTimelineRow
-                    job={row.job}
+                    row={row.row}
                     key={key}
                     height={size}
                     top={start}
@@ -228,7 +228,7 @@ interface TimelineHeaderRowProps {
   expanded: boolean;
   repoAddress: RepoAddress;
   isDuplicateRepoName: boolean;
-  jobs: TimelineJob[];
+  rows: TimelineRow[];
   height: number;
   top: number;
   onToggle: (repoAddress: RepoAddress) => void;
@@ -236,7 +236,7 @@ interface TimelineHeaderRowProps {
 }
 
 const TimelineHeaderRow = (props: TimelineHeaderRowProps) => {
-  const {expanded, onToggle, onToggleAll, repoAddress, isDuplicateRepoName, jobs, height, top} =
+  const {expanded, onToggle, onToggleAll, repoAddress, isDuplicateRepoName, rows, height, top} =
     props;
 
   return (
@@ -248,17 +248,17 @@ const TimelineHeaderRow = (props: TimelineHeaderRowProps) => {
       showLocation={isDuplicateRepoName}
       onToggle={onToggle}
       onToggleAll={onToggleAll}
-      rightElement={<RunStatusTags jobs={jobs} />}
+      rightElement={<RunStatusTags rows={rows} />} // todo dish: Fix this
     />
   );
 };
 
-const RunStatusTags = React.memo(({jobs}: {jobs: TimelineJob[]}) => {
+const RunStatusTags = React.memo(({rows}: {rows: TimelineRow[]}) => {
   const counts = React.useMemo(() => {
     let inProgressCount = 0;
     let failedCount = 0;
     let succeededCount = 0;
-    jobs.forEach(({runs}) => {
+    rows.forEach(({runs}) => {
       runs.forEach(({status}) => {
         // Refine `SCHEDULED` out so that our Set checks below pass TypeScript.
         if (status === 'SCHEDULED') {
@@ -274,7 +274,7 @@ const RunStatusTags = React.memo(({jobs}: {jobs: TimelineJob[]}) => {
       });
     });
     return {inProgressCount, failedCount, succeededCount};
-  }, [jobs]);
+  }, [rows]);
 
   return <RunStatusTagsWithCounts {...counts} />;
 });
@@ -367,20 +367,26 @@ export const TimeDividers = (props: TimeDividersProps) => {
   const [start, end] = rangeMs;
   const formatDateTime = useFormatDateTime();
 
-  const dateMarkers: DateMarker[] = React.useMemo(() => {
-    const totalTime = end - start;
+  // Create a cursor date at midnight in the user's timezone, to be used when
+  // generating date and time markers.
+  const boundaryCursor = useMemo(() => {
     const startDate = new Date(start);
     const startDateStringWithTimezone = formatDateTime(
       startDate,
       dateTimeOptionsWithTimezone,
       'en-US',
     );
+    return new Date(startDateStringWithTimezone);
+  }, [formatDateTime, start]);
 
+  const dateMarkers: DateMarker[] = React.useMemo(() => {
+    const totalTime = end - start;
     const dayBoundaries = [];
 
-    // Create a date at midnight on this date in this timezone.
-    let cursor = new Date(startDateStringWithTimezone);
+    let cursor = boundaryCursor;
 
+    // Add date boundaries. This is not identical to time interval boundaries, due to
+    // daylight savings.
     while (cursor.valueOf() < end) {
       const dayStart = cursor.getTime();
       const dayEnd = new Date(dayStart).setDate(cursor.getDate() + 1); // Increment by one day.
@@ -404,29 +410,41 @@ export const TimeDividers = (props: TimeDividersProps) => {
         width: right - left,
       };
     });
-  }, [end, formatDateTime, start]);
+  }, [boundaryCursor, end, formatDateTime, start]);
 
   const timeMarkers: TimeMarker[] = React.useMemo(() => {
     const totalTime = end - start;
-    const startGap = start % interval;
-    const firstMarker = start - startGap;
-    const markerCount = Math.ceil(totalTime / interval) + 1;
-    return [...new Array(markerCount)]
-      .map((_, ii) => {
-        const time = firstMarker + ii * interval;
-        const date = new Date(time);
+    const timeBoundaries = [];
+
+    let cursor = boundaryCursor;
+
+    // Add time boundaries at every interval.
+    while (cursor.valueOf() < end) {
+      const intervalStart = cursor.getTime();
+      const intervalEnd = new Date(intervalStart).setTime(cursor.getTime() + interval); // Increment by interval.
+      cursor = new Date(intervalEnd);
+      timeBoundaries.push(intervalStart);
+    }
+
+    // Create boundary markers, then slice off any markers that would be offscreen.
+    return timeBoundaries
+      .map((intervalStart) => {
+        const date = new Date(intervalStart);
+        const startLeftMsec = intervalStart - start;
+        const left = Math.max(0, (startLeftMsec / totalTime) * 100);
         const label =
           interval < ONE_HOUR_MSEC
             ? formatDateTime(date, timeOnlyOptionsWithMinute).replace(' ', '')
             : formatDateTime(date, timeOnlyOptions).replace(' ', '');
+
         return {
           label,
           key: date.toString(),
-          left: ((time - start) / totalTime) * 100,
+          left,
         };
       })
       .filter((marker) => marker.left > 0);
-  }, [end, start, interval, formatDateTime]);
+  }, [end, start, boundaryCursor, interval, formatDateTime]);
 
   const now = _now || Date.now();
   const msToLeft = (ms: number) => `${(((ms - start) / (end - start)) * 100).toPrecision(3)}%`;
@@ -571,13 +589,13 @@ const MIN_CHUNK_WIDTH = 4;
 const MIN_WIDTH_FOR_MULTIPLE = 12;
 
 const RunTimelineRow = ({
-  job,
+  row,
   top,
   height,
   rangeMs,
   width: containerWidth,
 }: {
-  job: TimelineJob;
+  row: TimelineRow;
   top: number;
   height: number;
   rangeMs: [number, number];
@@ -585,7 +603,7 @@ const RunTimelineRow = ({
 }) => {
   const [start, end] = rangeMs;
   const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
-  const {runs} = job;
+  const {runs} = row;
 
   // Batch overlapping runs in this row.
   const batched = React.useMemo(() => {
@@ -601,26 +619,26 @@ const RunTimelineRow = ({
     return batches;
   }, [runs, start, end, width]);
 
-  if (!job.runs.length) {
+  if (!row.runs.length) {
     return null;
   }
 
   return (
     <TimelineRowContainer $height={height} $start={top}>
-      <JobName>
-        <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
+      <RowName>
+        <RunTimelineRowIcon type={row.type} />
         <div style={{width: LABEL_WIDTH}}>
-          {job.jobType === 'asset' ? (
-            <span style={{color: Colors.textDefault()}}>
-              <MiddleTruncate text={job.jobName} />
-            </span>
-          ) : (
-            <Link to={job.path}>
-              <MiddleTruncate text={job.jobName} />
+          {row.path ? (
+            <Link to={row.path}>
+              <MiddleTruncate text={row.name} />
             </Link>
+          ) : (
+            <span style={{color: Colors.textDefault()}}>
+              <MiddleTruncate text={row.name} />
+            </span>
           )}
         </div>
-      </JobName>
+      </RowName>
       <RunChunks>
         {batched.map((batch) => {
           const {left, width, runs} = batch;
@@ -636,7 +654,7 @@ const RunTimelineRow = ({
               }}
             >
               <Popover
-                content={<RunHoverContent job={job} batch={batch} />}
+                content={<RunHoverContent row={row} batch={batch} />}
                 position="top"
                 interactionKind="hover"
                 className="chunk-popover-target"
@@ -656,7 +674,7 @@ const RunTimelineRow = ({
   );
 };
 
-export const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
+const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
   const {loading, includesTicks} = props;
 
   const content = () => {
@@ -727,7 +745,7 @@ export const TimelineRowContainer = styled.div.attrs<RowProps>(({$height, $start
   }
 `;
 
-const JobName = styled.div`
+const RowName = styled.div`
   align-items: center;
   display: flex;
   font-size: 13px;
@@ -786,19 +804,20 @@ const BatchCount = styled.div`
 `;
 
 interface RunHoverContentProps {
-  job: TimelineJob;
+  row: TimelineRow;
   batch: RunBatch<TimelineRun>;
 }
 
 const RunHoverContent = (props: RunHoverContentProps) => {
-  const {job, batch} = props;
+  const {row, batch} = props;
   const sliced = batch.runs.slice(0, 50);
   const remaining = batch.runs.length - sliced.length;
 
   return (
     <Box style={{width: '260px'}}>
-      <Box padding={12} border="bottom">
-        <HoverContentJobName>{job.jobName}</HoverContentJobName>
+      <Box padding={12} border="bottom" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+        <RunTimelineRowIcon type={row.type} />
+        <HoverContentRowName>{row.name}</HoverContentRowName>
       </Box>
       <div style={{maxHeight: '240px', overflowY: 'auto'}}>
         {sliced.map((run, ii) => (
@@ -830,14 +849,14 @@ const RunHoverContent = (props: RunHoverContentProps) => {
       </div>
       {remaining > 0 ? (
         <Box padding={12} border="top">
-          <Link to={`${job.path}/runs`}>+ {remaining} more</Link>
+          <Link to={`${row.path}/runs`}>+ {remaining} more</Link>
         </Box>
       ) : null}
     </Box>
   );
 };
 
-const HoverContentJobName = styled.strong`
+const HoverContentRowName = styled.strong`
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;

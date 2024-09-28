@@ -1,0 +1,10 @@
+version: 2
+sources:
+  - name: raw
+    tables:
+      - name: raw_customers
+        # highlight-start
+        meta:                               # This metadata: 
+          dagster:                          # Tells dbt where this model's source data is, and
+            asset_key: ["raw_customers"]    # Tells Dagster which asset represents the source data
+        # highlight-end

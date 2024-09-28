@@ -71,10 +71,9 @@ def generate_schema_file_for_loader(loader: YamlBlueprintsLoader) -> Path:
     "-p",
     is_flag=True,
     help="Whether to pretty-print the generated schema.",
+    default=True,
 )
-def generate_schema(
-    loader_module: Optional[str] = None, loader_name: Optional[str] = None, pretty: bool = False
-) -> None:
+def print_schema(loader_module: Optional[str], loader_name: Optional[str], pretty: bool) -> None:
     loaders: Mapping[str, YamlBlueprintsLoader] = load_blueprints_loaders_from_module_path_or_infer(
         loader_module
     )
@@ -192,6 +191,7 @@ def recommend_yaml_extension() -> None:
         )
         return
 
+    click.echo("Checking whether redhat.vscode-yaml extension is installed.")
     extensions = run_vscode_cli_command(["--list-extensions"]).decode("utf-8").split("\n")
     if "redhat.vscode-yaml" in extensions:
         click.echo("redhat.vscode-yaml extension is already installed.")
@@ -239,7 +239,7 @@ def install_yaml_schema_extension(
 
 def main():
     @click.group(
-        commands=[configure_vscode, generate_schema],
+        commands=[configure_vscode, print_schema],
         context_settings={"max_content_width": 120, "help_option_names": ["-h", "--help"]},
     )
     @click.version_option(__version__, "--version", "-v")

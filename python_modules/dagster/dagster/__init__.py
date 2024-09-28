@@ -1,6 +1,6 @@
 import sys
 
-from . import _module_alias_map
+from dagster import _module_alias_map
 
 # Imports of a key will return the module named by the corresponding value.
 sys.meta_path.insert(
@@ -151,8 +151,8 @@ from dagster._core.definitions.auto_materialize_rule import (
 from dagster._core.definitions.auto_materialize_rule_impls import (
     AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
 )
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition as AutoMaterializeSensorDefinition,
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    AutomationConditionSensorDefinition as AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
@@ -163,9 +163,10 @@ from dagster._core.definitions.data_version import (
     DataVersion as DataVersion,
     DataVersionsByPartition as DataVersionsByPartition,
 )
-from dagster._core.definitions.declarative_automation import (
-    AssetCondition as AssetCondition,
+from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition as AutomationCondition,
+)
+from dagster._core.definitions.declarative_automation.automation_condition_tester import (
     evaluate_automation_conditions as evaluate_automation_conditions,
 )
 from dagster._core.definitions.decorators.asset_check_decorator import (
@@ -208,6 +209,10 @@ from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
+)
+from dagster._core.definitions.dynamic_partitions_request import (
+    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
 )
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
@@ -270,13 +275,17 @@ from dagster._core.definitions.materialize import (
     materialize_to_memory as materialize_to_memory,
 )
 from dagster._core.definitions.metadata import (
+    AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     BoolMetadataValue as BoolMetadataValue,
+    CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
     DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
+    FilePathMapping as FilePathMapping,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,
     JsonMetadataValue as JsonMetadataValue,
+    LocalFileCodeReference as LocalFileCodeReference,
     MarkdownMetadataValue as MarkdownMetadataValue,
     MetadataEntry as MetadataEntry,
     MetadataValue as MetadataValue,
@@ -289,7 +298,10 @@ from dagster._core.definitions.metadata import (
     TableSchemaMetadataValue as TableSchemaMetadataValue,
     TextMetadataValue as TextMetadataValue,
     TimestampMetadataValue as TimestampMetadataValue,
+    UrlCodeReference as UrlCodeReference,
     UrlMetadataValue as UrlMetadataValue,
+    link_code_references_to_git as link_code_references_to_git,
+    with_source_code_references as with_source_code_references,
 )
 from dagster._core.definitions.metadata.table import (
     TableColumn as TableColumn,
@@ -366,8 +378,6 @@ from dagster._core.definitions.result import (
 )
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
-    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
-    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
     RunRequest as RunRequest,
     SensorResult as SensorResult,
     SkipReason as SkipReason,
@@ -424,12 +434,6 @@ from dagster._core.definitions.utils import (
     config_from_files as config_from_files,
     config_from_pkg_resources as config_from_pkg_resources,
     config_from_yaml_strings as config_from_yaml_strings,
-)
-from dagster._core.definitions.version_strategy import (
-    OpVersionContext as OpVersionContext,
-    ResourceVersionContext as ResourceVersionContext,
-    SourceHashVersionStrategy as SourceHashVersionStrategy,
-    VersionStrategy as VersionStrategy,
 )
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError as DagsterConfigMappingFunctionError,
@@ -526,6 +530,7 @@ from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
 from dagster._core.pipes.client import (
     PipesClient as PipesClient,
     PipesContextInjector as PipesContextInjector,
+    PipesExecutionResult as PipesExecutionResult,
     PipesMessageReader as PipesMessageReader,
 )
 from dagster._core.pipes.context import (
@@ -578,14 +583,10 @@ from dagster._core.storage.mem_io_manager import (
     InMemoryIOManager as InMemoryIOManager,
     mem_io_manager as mem_io_manager,
 )
-from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
 from dagster._core.storage.partition_status_cache import (
     AssetPartitionStatus as AssetPartitionStatus,
 )
-from dagster._core.storage.tags import (
-    MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG,
-    MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG,
-)
+from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG
 from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
 from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,

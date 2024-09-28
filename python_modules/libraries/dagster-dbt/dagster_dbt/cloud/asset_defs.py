@@ -48,11 +48,11 @@ from dagster_dbt.asset_utils import (
     get_asset_deps,
     get_deps,
 )
+from dagster_dbt.cloud.resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
+from dagster_dbt.cloud.utils import result_to_events
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-
-from ..errors import DagsterDbtCloudJobInvariantViolationError
-from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
+from dagster_dbt.errors import DagsterDbtCloudJobInvariantViolationError
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
@@ -361,7 +361,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             asset_outs,
             group_names_by_key,
             freshness_policies_by_key,
-            auto_materialize_policies_by_key,
+            automation_conditions_by_key,
             _,
             fqns_by_output_name,
             metadata_by_output_name,
@@ -410,8 +410,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 for asset_key, freshness_policy in freshness_policies_by_key.items()
             },
             auto_materialize_policies_by_output_name={
-                asset_outs[asset_key][0]: auto_materialize_policy
-                for asset_key, auto_materialize_policy in auto_materialize_policies_by_key.items()
+                asset_outs[asset_key][0]: automation_condition.as_auto_materialize_policy()
+                for asset_key, automation_condition in automation_conditions_by_key.items()
             },
         )
 
@@ -509,6 +509,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
                     for output_name in context.op_execution_context.selected_output_names
+                    # outputs corresponding to asset checks from dbt tests won't be in this dict
+                    if output_name in fqns_by_output_name
                 ]
 
                 dbt_options.append(f"--select {' '.join(sorted(selected_models))}")

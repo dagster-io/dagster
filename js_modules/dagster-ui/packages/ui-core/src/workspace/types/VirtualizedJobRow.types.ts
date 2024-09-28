@@ -21,6 +21,7 @@ export type SingleJobQuery = {
           __typename: 'Run';
           id: string;
           status: Types.RunStatus;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -41,7 +42,6 @@ export type SingleJobQuery = {
         sensors: Array<{
           __typename: 'Sensor';
           id: string;
-          jobOriginId: string;
           name: string;
           sensorType: Types.SensorType;
           sensorState: {
@@ -59,3 +59,5 @@ export type SingleJobQuery = {
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SingleJobQueryVersion = '5ff8f070e59507f5369f1a19abb9a72cfa12439ab04a08dc340866885f6e4702';

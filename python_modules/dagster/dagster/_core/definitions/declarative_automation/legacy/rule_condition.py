@@ -1,20 +1,24 @@
 from typing import TYPE_CHECKING, Optional
 
-from dagster._annotations import experimental
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationResult,
+    BuiltinAutomationCondition,
+)
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .asset_condition import AssetCondition
-
 if TYPE_CHECKING:
-    from ..automation_condition import AutomationResult
-    from ..automation_context import AutomationContext
+    from dagster._core.definitions.declarative_automation.automation_context import (
+        AutomationContext,
+    )
 
 
-@experimental
 @whitelist_for_serdes
-class RuleCondition(AssetCondition):
+@record
+class RuleCondition(BuiltinAutomationCondition[AssetKey]):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 
     rule: AutoMaterializeRule
@@ -29,11 +33,11 @@ class RuleCondition(AssetCondition):
     def description(self) -> str:
         return self.rule.description
 
-    def evaluate(self, context: "AutomationContext") -> "AutomationResult":
-        context.logger.debug(f"Evaluating rule: {self.rule.to_snapshot()}")
+    def evaluate(self, context: "AutomationContext[AssetKey]") -> AutomationResult[AssetKey]:
+        context.log.debug(f"Evaluating rule: {self.rule.to_snapshot()}")
         # Allow for access to legacy context in legacy rule evaluation
         evaluation_result = self.rule.evaluate_for_asset(context)
-        context.logger.debug(
+        context.log.debug(
             f"Rule returned {evaluation_result.true_subset.size} partitions "
             f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
         )

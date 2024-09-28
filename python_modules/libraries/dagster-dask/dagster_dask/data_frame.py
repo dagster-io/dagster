@@ -23,7 +23,7 @@ from dagster import (
     dagster_type_loader,
 )
 
-from .utils import DataFrameUtilities, apply_utilities_to_df
+from dagster_dask.utils import DataFrameUtilities, apply_utilities_to_df
 
 WriteCompressionTextOptions = Enum(
     "WriteCompressionText",

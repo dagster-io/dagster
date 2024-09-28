@@ -5,11 +5,11 @@ import textwrap
 from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
 
 import click
-import pendulum
-from tabulate import tabulate
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._cli.config_scaffolder import scaffold_job_config
+from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     ClickArgMapping,
@@ -32,7 +32,7 @@ from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterBackfillFailedError
-from dagster._core.execution.api import create_execution_plan, execute_job
+from dagster._core.execution.api import execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
@@ -49,11 +49,11 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
+from dagster._time import get_current_timestamp
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_job_from_origin
@@ -61,9 +61,6 @@ from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
-
-from .config_scaffolder import scaffold_job_config
-from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
@@ -238,65 +235,9 @@ def print_op(
             printer.line(output_def_snap.name)
 
 
-@job_cli.command(
-    name="list_versions",
-    help="Display the freshness of memoized results for the given job.\n\n{instructions}".format(
-        instructions=get_job_in_same_python_env_instructions("list_versions")
-    ),
-)
-@python_job_target_argument
-@python_job_config_argument("list_versions")
-def job_list_versions_command(**kwargs):
-    with get_instance_for_cli() as instance:
-        execute_list_versions_command(instance, kwargs)
-
-
-def execute_list_versions_command(instance: DagsterInstance, kwargs: ClickArgMapping):
-    check.inst_param(instance, "instance", DagsterInstance)
-
-    config = list(
-        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
-    )
-
-    job_origin = get_job_python_origin_from_kwargs(kwargs)
-    job = recon_job_from_origin(job_origin)
-    run_config = get_run_config_from_file_list(config)
-
-    memoized_plan = create_execution_plan(
-        job,
-        run_config=run_config,
-        instance_ref=instance.get_ref(),
-        tags={MEMOIZED_RUN_TAG: "true"},
-    )
-
-    add_step_to_table(memoized_plan)
-
-
 def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
     check.opt_sequence_param(file_list, "file_list", of_type=str)
     return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
-
-
-def add_step_to_table(memoized_plan):
-    # the step keys that we need to execute are those which do not have their inputs populated.
-    step_keys_not_stored = set(memoized_plan.step_keys_to_execute)
-    table = []
-    for step_output_handle, version in memoized_plan.step_output_versions.items():
-        table.append(
-            [
-                f"{step_output_handle.step_key}.{step_output_handle.output_name}",
-                version,
-                (
-                    "stored"
-                    if step_output_handle.step_key not in step_keys_not_stored
-                    else "to-be-recomputed"
-                ),
-            ]
-        )
-    table_str = tabulate(
-        table, headers=["Step Output", "Version", "Status of Output"], tablefmt="github"
-    )
-    click.echo(table_str)
 
 
 @job_cli.command(
@@ -551,11 +492,11 @@ def _create_external_run(
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         asset_check_selection=None,
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
+        asset_graph=external_repo.asset_graph,
     )
 
 
@@ -674,7 +615,7 @@ def _execute_backfill_command_at_location(
     cli_args: ClickArgMapping,
     print_fn: PrintFn,
     instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace: BaseWorkspaceRequestContext,
     code_location: CodeLocation,
 ) -> None:
     external_repo = get_external_repository_from_code_location(
@@ -708,7 +649,10 @@ def _execute_backfill_command_at_location(
 
     try:
         partition_names_or_error = code_location.get_external_partition_names(
-            job_partition_set, instance=instance
+            repository_handle=repo_handle,
+            job_name=external_job.name,
+            instance=instance,
+            selected_asset_keys=None,
         )
     except Exception as e:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -738,13 +682,13 @@ def _execute_backfill_command_at_location(
         backfill_id = make_new_backfill_id()
         backfill_job = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=job_partition_set.get_external_origin(),
+            partition_set_origin=job_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=False,
             reexecution_steps=None,
             tags=run_tags,
-            backfill_timestamp=pendulum.now("UTC").timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
         try:
             partition_execution_data = (
@@ -778,6 +722,7 @@ def _execute_backfill_command_at_location(
             if dagster_run:
                 instance.submit_run(dagster_run.run_id, workspace)
 
+        # TODO - figure out what to do here
         instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 
         print_fn(f"Launched backfill job `{backfill_id}`")

@@ -1,8 +1,11 @@
+from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
+    Dict,
     List,
     Mapping,
     NamedTuple,
@@ -10,13 +13,21 @@ from typing import (
     Sequence,
     Set,
     Union,
-    cast,
 )
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluation,
+)
+from dagster._core.definitions.dynamic_partitions_request import (
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+)
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import NormalizedTags, normalize_tags
@@ -27,16 +38,14 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
-    from dagster._core.definitions.unresolved_asset_job_definition import (
-        UnresolvedAssetJobDefinition,
-    )
 
 
 @whitelist_for_serdes(old_storage_names={"JobType"})
@@ -63,70 +72,18 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
         )
 
 
-@whitelist_for_serdes
-class AddDynamicPartitionsRequest(
-    NamedTuple(
-        "_AddDynamicPartitionsRequest",
-        [
-            ("partitions_def_name", str),
-            ("partition_keys", Sequence[str]),
-        ],
-    )
-):
-    """A request to add partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
-
-    def __new__(
-        cls,
-        partitions_def_name: str,
-        partition_keys: Sequence[str],
-    ):
-        return super(AddDynamicPartitionsRequest, cls).__new__(
-            cls,
-            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
-            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
-        )
-
-
-@whitelist_for_serdes
-class DeleteDynamicPartitionsRequest(
-    NamedTuple(
-        "_AddDynamicPartitionsRequest",
-        [
-            ("partitions_def_name", str),
-            ("partition_keys", Sequence[str]),
-        ],
-    )
-):
-    """A request to delete partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
-
-    def __new__(
-        cls,
-        partitions_def_name: str,
-        partition_keys: Sequence[str],
-    ):
-        return super(DeleteDynamicPartitionsRequest, cls).__new__(
-            cls,
-            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
-            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
-        )
-
-
-@whitelist_for_serdes
-class RunRequest(
-    NamedTuple(
-        "_RunRequest",
-        [
-            ("run_key", PublicAttr[Optional[str]]),
-            ("run_config", PublicAttr[Mapping[str, Any]]),
-            ("tags", PublicAttr[Mapping[str, str]]),
-            ("job_name", PublicAttr[Optional[str]]),
-            ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
-            ("stale_assets_only", PublicAttr[bool]),
-            ("partition_key", PublicAttr[Optional[str]]),
-            ("asset_check_keys", PublicAttr[Optional[Sequence[AssetCheckKey]]]),
-        ],
-    )
-):
+@whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
+@record_custom
+class RunRequest(IHaveNew, LegacyNamedTupleMixin):
+    run_key: Optional[str]
+    run_config: Mapping[str, Any]
+    tags: Mapping[str, str]
+    job_name: Optional[str]
+    asset_selection: Optional[Sequence[AssetKey]]
+    stale_assets_only: bool
+    partition_key: Optional[str]
+    asset_check_keys: Optional[Sequence[AssetCheckKey]]
+    asset_graph_subset: Optional[AssetGraphSubset]
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
@@ -171,26 +128,53 @@ class RunRequest(
         stale_assets_only: bool = False,
         partition_key: Optional[str] = None,
         asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
+        **kwargs,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
-        return super(RunRequest, cls).__new__(
+        if kwargs.get("asset_graph_subset") is not None:
+            # asset_graph_subset is only passed if you use the RunRequest.for_asset_graph_subset helper
+            # constructor, so we assume that no other parameters were passed.
+            return super().__new__(
+                cls,
+                run_key=None,
+                run_config={},
+                tags=normalize_tags(tags).tags,
+                job_name=None,
+                asset_selection=None,
+                stale_assets_only=False,
+                partition_key=None,
+                asset_check_keys=None,
+                asset_graph_subset=check.inst_param(
+                    kwargs["asset_graph_subset"], "asset_graph_subset", AssetGraphSubset
+                ),
+            )
+
+        return super().__new__(
             cls,
-            run_key=check.opt_str_param(run_key, "run_key"),
-            run_config=check.opt_mapping_param(
-                convert_config_input(run_config), "run_config", key_type=str
-            ),
+            run_key=run_key,
+            run_config=convert_config_input(run_config) or {},
             tags=normalize_tags(tags).tags,
-            job_name=check.opt_str_param(job_name, "job_name"),
-            asset_selection=check.opt_nullable_sequence_param(
-                asset_selection, "asset_selection", of_type=AssetKey
-            ),
-            stale_assets_only=check.bool_param(stale_assets_only, "stale_assets_only"),
-            partition_key=check.opt_str_param(partition_key, "partition_key"),
-            asset_check_keys=check.opt_nullable_sequence_param(
-                asset_check_keys, "asset_check_keys", of_type=AssetCheckKey
-            ),
+            job_name=job_name,
+            asset_selection=asset_selection,
+            stale_assets_only=stale_assets_only,
+            partition_key=partition_key,
+            asset_check_keys=asset_check_keys,
+            asset_graph_subset=None,
         )
+
+    @classmethod
+    def for_asset_graph_subset(
+        cls,
+        asset_graph_subset: AssetGraphSubset,
+        tags: Optional[Mapping[str, str]],
+    ) -> "RunRequest":
+        """Constructs a RunRequest from an AssetGraphSubset. When processed by the sensor
+        daemon, this will launch a backfill instead of a run.
+        Note: This constructor is intentionally left private since AssetGraphSubset is not part of the
+        public API. Other constructor methods will be public.
+        """
+        return RunRequest(tags=tags, asset_graph_subset=asset_graph_subset)
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
         fields = self._asdict()
@@ -201,52 +185,35 @@ class RunRequest(
 
     def with_resolved_tags_and_config(
         self,
-        target_definition: Union["JobDefinition", "UnresolvedAssetJobDefinition"],
+        target_definition: "JobDefinition",
         dynamic_partitions_requests: Sequence[
             Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
         ],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "RunRequest":
-        from dagster._core.definitions.job_definition import JobDefinition
-        from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
-
         if self.partition_key is None:
             check.failed(
                 "Cannot resolve partition for run request without partition key",
             )
 
-        partitions_def = target_definition.partitions_def
-        if partitions_def is None:
-            check.failed(
-                "Cannot resolve partition for run request when target job"
-                f" '{target_definition.name}' is unpartitioned.",
+        dynamic_partitions_store_after_requests = (
+            DynamicPartitionsStoreAfterRequests.from_requests(
+                dynamic_partitions_store, dynamic_partitions_requests
             )
-        partitions_def = cast(PartitionsDefinition, partitions_def)
-
-        partitioned_config = (
-            target_definition.partitioned_config
-            if isinstance(target_definition, JobDefinition)
-            else PartitionedConfig.from_flexible_config(target_definition.config, partitions_def)
+            if dynamic_partitions_store
+            else None
         )
-        if partitioned_config is None:
-            check.failed(
-                "Cannot resolve partition for run request on unpartitioned job",
-            )
-
-        _check_valid_partition_key_after_dynamic_partitions_requests(
+        target_definition.validate_partition_key(
             self.partition_key,
-            partitions_def,
-            dynamic_partitions_requests,
-            current_time,
-            dynamic_partitions_store,
+            dynamic_partitions_store=dynamic_partitions_store_after_requests,
+            selected_asset_keys=self.asset_selection,
         )
 
         tags = {
             **(self.tags or {}),
-            **partitioned_config.get_tags_for_partition_key(
-                self.partition_key,
-                job_name=target_definition.name,
+            **target_definition.get_tags_for_partition_key(
+                self.partition_key, selected_asset_keys=self.asset_selection
             ),
         }
 
@@ -254,7 +221,7 @@ class RunRequest(
             run_config=(
                 self.run_config
                 if self.run_config
-                else partitioned_config.get_run_config_for_partition_key(self.partition_key)
+                else target_definition.get_run_config_for_partition_key(self.partition_key)
             ),
             tags=tags,
         )
@@ -276,69 +243,75 @@ class RunRequest(
         else:
             return None
 
+    @property
+    def entity_keys(self) -> Sequence[EntityKey]:
+        return [*(self.asset_selection or []), *(self.asset_check_keys or [])]
 
-def _check_valid_partition_key_after_dynamic_partitions_requests(
-    partition_key: str,
-    partitions_def: "PartitionsDefinition",
-    dynamic_partitions_requests: Sequence[
-        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
-    ],
-    current_time: Optional[datetime] = None,
-    dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-):
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+    def requires_backfill_daemon(self) -> bool:
+        """For now we always send RunRequests with an asset_graph_subset to the backfill daemon, but
+        eventaully we will want to introspect on the asset_graph_subset to determine if we can
+        execute it as a single run instead.
+        """
+        return self.asset_graph_subset is not None
 
-    if isinstance(partitions_def, MultiPartitionsDefinition):
-        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
 
-        for dimension in partitions_def.partitions_defs:
-            _check_valid_partition_key_after_dynamic_partitions_requests(
-                multipartition_key.keys_by_dimension[dimension.name],
-                dimension.partitions_def,
-                dynamic_partitions_requests,
-                current_time,
-                dynamic_partitions_store,
-            )
+@record
+class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
+    """Represents the dynamic partitions that will be in the contained DynamicPartitionsStore
+    after the contained requests are satisfied.
+    """
 
-    elif isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name:
-        if not dynamic_partitions_store:
-            check.failed(
-                "Cannot resolve partition for run request on dynamic partitions without"
-                " dynamic_partitions_store"
-            )
+    wrapped_dynamic_partitions_store: DynamicPartitionsStore
+    added_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
+    deleted_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
 
-        add_partition_keys: Set[str] = set()
-        delete_partition_keys: Set[str] = set()
+    @staticmethod
+    def from_requests(
+        wrapped_dynamic_partitions_store: DynamicPartitionsStore,
+        dynamic_partitions_requests: Sequence[
+            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        ],
+    ) -> "DynamicPartitionsStoreAfterRequests":
+        added_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
+        deleted_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
+
         for req in dynamic_partitions_requests:
+            name = req.partitions_def_name
             if isinstance(req, AddDynamicPartitionsRequest):
-                if req.partitions_def_name == partitions_def.name:
-                    add_partition_keys.update(set(req.partition_keys))
+                added_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
             elif isinstance(req, DeleteDynamicPartitionsRequest):
-                if req.partitions_def_name == partitions_def.name:
-                    delete_partition_keys.update(set(req.partition_keys))
+                deleted_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
+            else:
+                check.failed(f"Unexpected request type: {req}")
 
-        partition_keys_after_requests_resolved = (
-            set(
-                dynamic_partitions_store.get_dynamic_partitions(
-                    partitions_def_name=partitions_def.name
-                )
+        return DynamicPartitionsStoreAfterRequests(
+            wrapped_dynamic_partitions_store=wrapped_dynamic_partitions_store,
+            added_partition_keys_by_partitions_def_name=added_partition_keys_by_partitions_def_name,
+            deleted_partition_keys_by_partitions_def_name=deleted_partition_keys_by_partitions_def_name,
+        )
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        partition_keys = set(
+            self.wrapped_dynamic_partitions_store.get_dynamic_partitions(partitions_def_name)
+        )
+        added_partition_keys = self.added_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        )
+        deleted_partition_keys = self.deleted_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        )
+        return list((partition_keys | added_partition_keys) - deleted_partition_keys)
+
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return partition_key not in self.deleted_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        ) and (
+            partition_key
+            in self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+            or self.wrapped_dynamic_partitions_store.has_dynamic_partition(
+                partitions_def_name, partition_key
             )
-            | add_partition_keys
-        ) - delete_partition_keys
-
-        if partition_key not in partition_keys_after_requests_resolved:
-            check.failed(
-                f"Dynamic partition key {partition_key} for partitions def"
-                f" '{partitions_def.name}' is invalid. After dynamic partitions requests are"
-                " applied, it does not exist in the set of valid partition keys."
-            )
-
-    else:
-        partitions_def.validate_partition_key(
-            partition_key,
-            dynamic_partitions_store=dynamic_partitions_store,
-            current_time=current_time,
         )
 
 
@@ -401,6 +374,10 @@ class SensorResult(
                 "asset_events",
                 List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
             ),
+            (
+                "automation_condition_evaluations",
+                Optional[Sequence[AutomationConditionEvaluation[EntityKey]]],
+            ),
         ],
     )
 ):
@@ -438,6 +415,7 @@ class SensorResult(
         asset_events: Optional[
             Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]
         ] = None,
+        **kwargs,
     ):
         if skip_reason and len(run_requests if run_requests else []) > 0:
             check.failed(
@@ -465,5 +443,10 @@ class SensorResult(
                     "asset_check_evaluations",
                     (AssetObservation, AssetMaterialization, AssetCheckEvaluation),
                 )
+            ),
+            automation_condition_evaluations=check.opt_sequence_param(
+                kwargs.get("automation_condition_evaluations"),
+                "automation_condition_evaluations",
+                AutomationConditionEvaluation,
             ),
         )

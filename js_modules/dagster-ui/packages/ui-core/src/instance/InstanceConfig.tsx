@@ -1,6 +1,5 @@
 import 'codemirror/addon/search/searchcursor';
 
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Code,
@@ -18,6 +17,7 @@ import {createGlobalStyle} from 'styled-components';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
+import {gql, useQuery} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -25,7 +25,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 const InstanceConfigStyle = createGlobalStyle`
   .CodeMirror.cm-s-instance-config.cm-s-instance-config {
@@ -50,7 +49,6 @@ export const InstanceConfigContent = memo(() => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'InstanceConfigQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;

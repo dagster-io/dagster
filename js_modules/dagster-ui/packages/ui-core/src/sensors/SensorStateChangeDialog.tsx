@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
@@ -19,6 +18,7 @@ import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
+import {useMutation} from '../apollo-client';
 import {
   OpenWithIntent,
   useInstigationStateReducer,
@@ -91,8 +91,7 @@ export const SensorStateChangeDialog = (props: Props) => {
   const stop = async (sensor: SensorInfo) => {
     const {sensorName, sensorState} = sensor;
     const variables = {
-      jobOriginId: sensorState.id,
-      jobSelectorId: sensorState.selectorId,
+      id: sensorState.id,
     };
 
     const {data} = await stopSensor({variables});

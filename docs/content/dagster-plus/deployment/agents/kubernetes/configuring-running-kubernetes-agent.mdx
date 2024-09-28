@@ -69,20 +69,27 @@ In this step, you'll spin up the agent with Helm.
 1. Add the [agent chart repository](https://dagster-io.github.io/helm-user-cloud):
 
    ```shell
-   helm repo add dagster-plus https://dagster-io.github.io/helm-user-cloud
+   helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
    helm repo update
    ```
 
-2. Install the agent chart, specifying:
+2. Create a `values.yaml` file, indicating the Dagster+ deployment the agent will be responsible for. **Note**: When your Dagster+ organization is first created, the default deployment is `prod`:
+
+   ```yaml
+   dagsterCloud:
+     deployment: prod
+   ```
+
+3. Install the agent chart, specifying:
 
    - The namespace into which to install the chart
-   - The Dagster+ deployment the agent will be responsible for. **Note**: When your Dagster+ organization is first created, the default deployment is `prod`:
+   - The `values.yaml` file created in the previous step
 
    ```shell
    helm upgrade \
       --install user-cloud dagster-cloud/dagster-cloud-agent \
       --namespace dagster-plus \
-      --set dagsterCloud.deployment=prod
+      --values ./values.yaml
    ```
 
 After the Helm chart is installed into the Kubernetes cluster, you can view the agent in Dagster+.

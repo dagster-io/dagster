@@ -47,7 +47,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
        The `partition_by` value will be used in `delta_write_options` of `pl.DataFrame.write_delta` and `pyarrow_options` of `pl.scan_detla`).
        When using a one-dimensional `PartitionsDefinition`, it should be a single string like "column`. When using a `MultiPartitionsDefinition`,
        it should be a dict with dimension to column names mapping, like `{"dimension": "column"}`.
-     - Supports writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
+     - **Deprecated, will be removed in 0.25.0**: writing/reading custom metadata to/from `.dagster_polars_metadata/<version>.json` file in the DeltaLake table directory.
 
     Install `dagster-polars[delta]` to use this IOManager.
 
@@ -268,11 +268,11 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if (
             partition_by
             and len(context.asset_partition_keys) > 0
-            and context.upstream_output.asset_info is not None
-            and context.upstream_output.asset_info.partitions_def is not None
+            and context.has_asset_key is not None
+            and context.has_asset_partitions is not None
             and context.asset_partition_keys
             != set(
-                context.upstream_output.asset_info.partitions_def.get_partition_keys(
+                context.upstream_output.asset_partitions_def.get_partition_keys(
                     dynamic_partitions_store=context.instance
                 )
             )
@@ -285,7 +285,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         delta_table_options = context_metadata.get("delta_table_options")
 
         if delta_table_options:
-            context.log.debug("Reading with delta_table_optilns: {delta_table_options}")
+            context.log.debug("Reading with delta_table_options: {delta_table_options}")
 
         ldf = pl.scan_delta(
             str(path),
@@ -311,6 +311,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         assert context.upstream_output is not None
         # any partition would work as they all are stored in the same DeltaLake table
         path = self._get_path_without_extension(context)
+        context.log.debug(
+            f"Loading {len(context.asset_partition_keys)} partitions from {path} using {self.__class__.__name__}..."
+        )
         if context.upstream_output.definition_metadata.get("partition_by") and not is_dict_type(
             context.dagster_type.typing_type
         ):

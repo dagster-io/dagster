@@ -1,6 +1,10 @@
 from dagster_pipes import open_dagster_pipes
 
-from .util import compute_data_version, load_asset_value, store_asset_value
+from dagster_test.toys.external_execution.numbers_example.util import (
+    compute_data_version,
+    load_asset_value,
+    store_asset_value,
+)
 
 with open_dagster_pipes() as context:
     storage_root = context.get_extra("storage_root")

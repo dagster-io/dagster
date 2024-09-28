@@ -17,39 +17,49 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import deprecated_param, experimental_param
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_out import AssetOut
+from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
-    validate_and_assign_output_names_to_check_specs,
-)
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.warnings import disable_dagster_warnings
-
-from ..asset_check_spec import AssetCheckSpec
-from ..asset_in import AssetIn
-from ..asset_out import AssetOut
-from ..asset_spec import AssetSpec
-from ..assets import AssetsDefinition
-from ..backfill_policy import BackfillPolicy, BackfillPolicyType
-from ..decorators.graph_decorator import graph
-from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from ..input import GraphIn
-from ..output import GraphOut
-from ..partition import PartitionsDefinition
-from ..policy import RetryPolicy
-from ..resource_definition import ResourceDefinition
-from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel, validate_tags_strict
-from .decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilderArgs,
     build_named_ins,
     build_named_outs,
     create_check_specs_by_output_name,
+    validate_and_assign_output_names_to_check_specs,
 )
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+)
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.input import GraphIn
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
+from dagster._core.definitions.output import GraphOut
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    DEFAULT_OUTPUT,
+    NoValueSentinel,
+    resolve_automation_condition,
+    validate_tags_strict,
+)
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.types.dagster_type import DagsterType
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 @overload
@@ -80,7 +90,9 @@ def asset(
     group_name: Optional[str] = ...,
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
+    # TODO: FOU-243
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
+    automation_condition: Optional[AutomationCondition] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
@@ -93,12 +105,17 @@ def asset(
 
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
-@experimental_param(param="auto_materialize_policy")
+@experimental_param(param="automation_condition")
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+)
+@deprecated_param(
+    param="auto_materialize_policy",
+    breaking_version="1.9.0",
+    additional_warn_text="use `automation_condition` instead.",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
@@ -122,7 +139,7 @@ def asset(
     group_name: Optional[str] = None,
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
@@ -130,6 +147,8 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
+    # TODO: FOU-243
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -193,8 +212,8 @@ def asset(
             storage and will halt execution of downstream assets.
         freshness_policy (FreshnessPolicy): (Deprecated) A constraint telling Dagster how often this
             asset is intended to be updated with respect to its root data.
-        auto_materialize_policy (AutoMaterializePolicy): (Experimental) Configure Dagster to automatically materialize
-            this asset according to its FreshnessPolicy and when upstream dependencies change.
+        automation_condition (AutomationCondition): (Experimental) A condition describing when
+            Dagster should materialize this asset.
         backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
             BackfillPolicy.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
@@ -244,7 +263,9 @@ def asset(
         group_name=group_name,
         output_required=output_required,
         freshness_policy=freshness_policy,
-        auto_materialize_policy=auto_materialize_policy,
+        automation_condition=resolve_automation_condition(
+            automation_condition, auto_materialize_policy
+        ),
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
         code_version=code_version,
@@ -316,7 +337,7 @@ class AssetDecoratorArgs(NamedTuple):
     group_name: Optional[str]
     output_required: bool
     freshness_policy: Optional[FreshnessPolicy]
-    auto_materialize_policy: Optional[AutoMaterializePolicy]
+    automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]
     code_version: Optional[str]
@@ -430,7 +451,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     group_name=args.group_name,
                     code_version=args.code_version,
                     freshness_policy=args.freshness_policy,
-                    auto_materialize_policy=args.auto_materialize_policy,
+                    automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,
                     tags=validate_tags_strict(args.tags),
@@ -446,6 +467,7 @@ def create_assets_def_from_fn_and_decorator_args(
             asset_deps={},
             can_subset=False,
             decorator_name="@asset",
+            execution_type=AssetExecutionType.MATERIALIZATION,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -579,7 +601,7 @@ def multi_asset(
     args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
         op_description=description,
-        specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
+        specs=check.opt_sequence_param(specs, "specs", of_type=AssetSpec),
         check_specs_by_output_name=create_check_specs_by_output_name(check_specs),
         asset_out_map=check.opt_mapping_param(outs, "outs", key_type=str, value_type=AssetOut),
         upstream_asset_deps=_deps_and_non_argument_deps_to_asset_deps(
@@ -612,6 +634,7 @@ def multi_asset(
         ),
         backfill_policy=backfill_policy,
         decorator_name="@multi_asset",
+        execution_type=AssetExecutionType.MATERIALIZATION,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -646,8 +669,10 @@ def graph_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     metadata: Optional[RawMetadataMapping] = ...,
     tags: Optional[Mapping[str, str]] = ...,
+    owners: Optional[Sequence[str]] = None,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
+    automation_condition: Optional[AutomationCondition] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
@@ -671,7 +696,9 @@ def graph_asset(
     tags: Optional[Mapping[str, str]] = None,
     owners: Optional[Sequence[str]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    # TODO: FOU-243
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
@@ -721,7 +748,7 @@ def graph_asset(
             e.g. `team:finops`.
         freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
             intended to be updated with respect to its root data.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): The AutoMaterializePolicy to use
+        automation_condition (Optional[AutomationCondition]): The AutomationCondition to use
             for this asset.
         backfill_policy (Optional[BackfillPolicy]): The BackfillPolicy to use for this asset.
         key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
@@ -743,7 +770,7 @@ def graph_asset(
     """
     if compose_fn is None:
         return lambda fn: graph_asset(
-            fn,
+            fn,  # type: ignore
             name=name,
             description=description,
             ins=ins,
@@ -755,7 +782,9 @@ def graph_asset(
             tags=tags,
             owners=owners,
             freshness_policy=freshness_policy,
-            auto_materialize_policy=auto_materialize_policy,
+            automation_condition=resolve_automation_condition(
+                automation_condition, auto_materialize_policy
+            ),
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
             check_specs=check_specs,
@@ -775,7 +804,9 @@ def graph_asset(
             tags=tags,
             owners=owners,
             freshness_policy=freshness_policy,
-            auto_materialize_policy=auto_materialize_policy,
+            automation_condition=resolve_automation_condition(
+                automation_condition, auto_materialize_policy
+            ),
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
             check_specs=check_specs,
@@ -797,7 +828,7 @@ def graph_asset_no_defaults(
     tags: Optional[Mapping[str, str]],
     owners: Optional[Sequence[str]],
     freshness_policy: Optional[FreshnessPolicy],
-    auto_materialize_policy: Optional[AutoMaterializePolicy],
+    automation_condition: Optional[AutomationCondition],
     backfill_policy: Optional[BackfillPolicy],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     check_specs: Optional[Sequence[AssetCheckSpec]],
@@ -851,8 +882,8 @@ def graph_asset_no_defaults(
         freshness_policies_by_output_name=(
             {"result": freshness_policy} if freshness_policy else None
         ),
-        auto_materialize_policies_by_output_name=(
-            {"result": auto_materialize_policy} if auto_materialize_policy else None
+        automation_conditions_by_output_name=(
+            {"result": automation_condition} if automation_condition else None
         ),
         backfill_policy=backfill_policy,
         descriptions_by_output_name={"result": description} if description else None,
@@ -956,10 +987,10 @@ def graph_multi_asset(
         }
 
         # source auto materialize policies from the AssetOuts (if any)
-        auto_materialize_policies_by_output_name = {
-            output_name: out.auto_materialize_policy
+        automation_conditions_by_output_name = {
+            output_name: out.automation_condition
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.auto_materialize_policy is not None
+            if isinstance(out, AssetOut) and out.automation_condition is not None
         }
 
         # source descriptions from the AssetOuts (if any)
@@ -994,7 +1025,7 @@ def graph_multi_asset(
             can_subset=can_subset,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
-            auto_materialize_policies_by_output_name=auto_materialize_policies_by_output_name,
+            automation_conditions_by_output_name=automation_conditions_by_output_name,
             backfill_policy=backfill_policy,
             descriptions_by_output_name=descriptions_by_output_name,
             resource_defs=resource_defs,

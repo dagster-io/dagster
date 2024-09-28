@@ -4,7 +4,7 @@ from collections import namedtuple
 
 import requests
 
-from .printer import IndentingBufferPrinter
+from automation.printer import IndentingBufferPrinter
 
 SCALAR_TYPES = {
     "string": "String",

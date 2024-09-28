@@ -4,18 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Hashable, Optional, TypeVar
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 from typing_extensions import Annotated, Self, TypeAlias
 
-# decorator based models public API
-from .decorator import (
-    IHaveNew as IHaveNew,
-    LegacyNamedTupleMixin as LegacyNamedTupleMixin,
-    as_dict as as_dict,
-    copy as copy,
-    dagster_model as dagster_model,
-    dagster_model_custom as dagster_model_custom,
-    has_generated_new as has_generated_new,
-    is_dagster_model as is_dagster_model,
-)
-from .pydantic_compat_layer import USING_PYDANTIC_2
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
 
 if USING_PYDANTIC_2:
     from pydantic import InstanceOf as InstanceOf  # type: ignore

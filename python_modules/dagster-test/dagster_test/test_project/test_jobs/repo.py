@@ -10,27 +10,29 @@ import boto3
 from dagster import (
     AssetMaterialization,
     Bool,
+    DagsterEvent,
     Field,
     In,
     Int,
     IntSource,
     List,
     Output,
+    RetryPolicy,
     RetryRequested,
-    VersionStrategy,
     file_relative_path,
     graph,
     job,
     op,
     repository,
     resource,
+    schedule,
 )
-from dagster._core.definitions.decorators import schedule
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.test_utils import nesting_graph
+from dagster._core.execution.plan.objects import StepSuccessData
+from dagster._core.test_utils import nesting_graph, poll_for_step_start
 from dagster._utils import segfault
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
@@ -79,15 +81,6 @@ def define_job(
         return lambda: apply_platform_settings(job_def, platform, extra_resources or {})
     else:
         return job_def
-
-
-# keep this separate because we need to call it externally for cleanup in some lib tests
-def define_memoization_job(platform: str) -> Callable[[], JobDefinition]:
-    return define_job(
-        graph_def=memoization_graph,
-        platform=platform,
-        version_strategy=BasicVersionStrategy(),
-    )
 
 
 def apply_platform_settings(
@@ -141,6 +134,9 @@ def apply_platform_settings(
         "factor": IntSource,
         "should_segfault": Field(bool, is_required=False, default_value=False),
     },
+    retry_policy=RetryPolicy(
+        max_retries=2,
+    ),
 )
 def multiply_the_word(context, word: str) -> str:
     if context.op_config.get("should_segfault"):
@@ -514,18 +510,28 @@ def volume_mount_graph():
 
 
 @op
-def foo_op():
-    return "foo"
+def op_that_emits_duplicate_step_success_event(context):
+    # Wait for the other op to start so that it will be terminated mid-execution
+    poll_for_step_start(context.instance, context.dagster_run.run_id, message="hanging_op")
 
-
-class BasicVersionStrategy(VersionStrategy):
-    def get_op_version(self, _):
-        return "foo"
+    # emits a duplicate step success event which will mess up the execution
+    # machinery and fail the run worker
+    yield DagsterEvent.step_success_event(
+        context._step_execution_context,  # noqa
+        StepSuccessData(duration_ms=50.0),
+    )
+    yield Output(5)
 
 
 @graph
-def memoization_graph():
-    foo_op()
+def fails_run_worker_graph():
+    hanging_op()
+    op_that_emits_duplicate_step_success_event()
+
+
+@op
+def foo_op():
+    return "foo"
 
 
 def define_demo_execution_repo():
@@ -559,8 +565,6 @@ def define_demo_execution_repo():
                 "volume_mount_job_k8s": define_job(volume_mount_graph, "k8s"),
                 "large_job_celery": define_job(large_graph, "celery"),
                 "long_running_job_celery_k8s": define_job(long_running_graph, "celery_k8s"),
-                "memoization_job_celery_k8s": define_memoization_job("celery_k8s"),
-                "memoization_job_k8s": define_memoization_job("k8s"),
                 "optional_outputs_job": define_job(optional_outputs_graph),
                 "resources_limit_job_k8s": define_job(
                     resources_limit_graph, "k8s", tags=resources_limit_tags
@@ -582,6 +586,7 @@ def define_demo_execution_repo():
                 "slow_execute_k8s_op_job": define_job(slow_execute_k8s_op_graph),
                 "step_retries_job_docker": define_job(step_retries_graph, "docker"),
                 "volume_mount_job_celery_k8s": define_job(volume_mount_graph, "celery_k8s"),
+                "fails_run_worker_job_docker": define_job(fails_run_worker_graph, "docker"),
             },
             "schedules": define_schedules(),
         }

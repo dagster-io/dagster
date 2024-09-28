@@ -2,6 +2,8 @@ import {Button, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {MAX_ROW_HEIGHT_PX} from './LogsRowComponents';
+
 const OverflowFade = styled.div`
   position: absolute;
   bottom: 0;
@@ -54,8 +56,7 @@ export class CellTruncationProvider extends React.Component<
       return;
     }
 
-    const isOverflowing =
-      typeof this.props.style.height === 'number' && child.scrollHeight > this.props.style.height;
+    const isOverflowing = child.scrollHeight > MAX_ROW_HEIGHT_PX;
     if (isOverflowing !== this.state.isOverflowing) {
       this.setState({isOverflowing});
     }

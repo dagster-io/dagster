@@ -5,11 +5,12 @@ import {useContext} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {__resetForJest} from '../../search/useIndexedDBCachedQuery';
+import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {
   HIDDEN_REPO_KEYS,
   WorkspaceContext,
   WorkspaceProvider,
-} from '../../workspace/WorkspaceContext';
+} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 import {LeftNavRepositorySection} from '../LeftNavRepositorySection';
 import {
@@ -27,18 +28,13 @@ describe('Repository options', () => {
   const locationOne = 'ipsum';
   const repoOne = 'lorem';
 
-  let nativeGBRC: any;
-
   beforeEach(() => {
     window.localStorage.clear();
-    nativeGBRC = window.Element.prototype.getBoundingClientRect;
-    window.Element.prototype.getBoundingClientRect = jest
-      .fn()
-      .mockReturnValue({height: 400, width: 400});
+    mockViewportClientRect();
   });
 
   afterEach(() => {
-    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+    restoreViewportClientRect();
     window.localStorage.clear();
     __resetForJest();
     jest.resetModules();
@@ -90,7 +86,7 @@ describe('Repository options', () => {
     });
 
     it(`initializes with one repo if it's the only one, even though it's hidden`, async () => {
-      window.localStorage.setItem(HIDDEN_REPO_KEYS, `["${repoOne}:${locationOne}"]`);
+      window.localStorage.setItem(`:${HIDDEN_REPO_KEYS}`, `["${repoOne}:${locationOne}"]`);
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
@@ -140,7 +136,7 @@ describe('Repository options', () => {
 
     it('initializes with correct repo option, if `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(
-        HIDDEN_REPO_KEYS,
+        `:${HIDDEN_REPO_KEYS}`,
         `["lorem:ipsum","${DUNDER_REPO_NAME}:abc_location"]`,
       );
 
@@ -166,7 +162,7 @@ describe('Repository options', () => {
     });
 
     it('initializes with all repo options, no matching `HIDDEN_REPO_KEYS` localStorage', async () => {
-      window.localStorage.setItem(HIDDEN_REPO_KEYS, '["hello:world"]');
+      window.localStorage.setItem(`:${HIDDEN_REPO_KEYS}`, '["hello:world"]');
 
       await act(() =>
         render(
@@ -202,7 +198,7 @@ describe('Repository options', () => {
 
     it('initializes empty, if all items in `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(
-        HIDDEN_REPO_KEYS,
+        `:${HIDDEN_REPO_KEYS}`,
         `["lorem:ipsum", "foo:bar", "${DUNDER_REPO_NAME}:abc_location"]`,
       );
 

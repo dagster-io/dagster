@@ -172,8 +172,10 @@ def test_source_asset_observation_job_with_pythonic_resource(is_valid, resource_
             DagsterInvalidDefinitionError,
             match="resource with key 'bar' required by op 'foo' was not provided",
         ):
-            Definitions(
-                assets=[foo],
-                jobs=[define_asset_job("source_asset_job", [foo])],
-                resources=resource_defs,
+            Definitions.validate_loadable(
+                Definitions(
+                    assets=[foo],
+                    jobs=[define_asset_job("source_asset_job", [foo])],
+                    resources=resource_defs,
+                )
             )

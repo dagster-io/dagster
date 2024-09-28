@@ -1,4 +1,3 @@
-import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import keyBy from 'lodash/keyBy';
 import {useEffect, useMemo, useState} from 'react';
@@ -11,6 +10,7 @@ import {
   PartitionHealthQuery,
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
+import {gql, useApolloClient} from '../apollo-client';
 import {assertUnreachable} from '../app/Util';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';

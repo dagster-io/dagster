@@ -3,13 +3,15 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.source_asset import SourceAsset
 
 
@@ -27,31 +29,6 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-@whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
-class AssetCheckKey(NamedTuple):
-    """Check names are expected to be unique per-asset. Thus, this combination of asset key and
-    check name uniquely identifies an asset check within a deployment.
-    """
-
-    asset_key: PublicAttr[AssetKey]
-    name: PublicAttr[str]
-
-    @staticmethod
-    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
-        return AssetCheckKey(
-            asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
-            name=graphql_input["name"],
-        )
-
-    def to_user_string(self) -> str:
-        return f"{self.asset_key.to_user_string()}:{self.name}"
-
-    @staticmethod
-    def from_user_string(user_string: str) -> "AssetCheckKey":
-        asset_key_str, name = user_string.split(":")
-        return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
-
-
 class AssetCheckSpec(
     NamedTuple(
         "_AssetCheckSpec",
@@ -65,6 +42,7 @@ class AssetCheckSpec(
                 bool,
             ),
             ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("automation_condition", Optional["AutomationCondition[AssetCheckKey]"]),
         ],
     )
 ):
@@ -95,9 +73,13 @@ class AssetCheckSpec(
         description: Optional[str] = None,
         additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         blocking: bool = False,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
+        automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationCondition,
+        )
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
@@ -120,6 +102,9 @@ class AssetCheckSpec(
             additional_deps=additional_asset_deps,
             blocking=check.bool_param(blocking, "blocking"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+            automation_condition=check.opt_inst_param(
+                automation_condition, "automation_condition", AutomationCondition
+            ),
         )
 
     def get_python_identifier(self) -> str:

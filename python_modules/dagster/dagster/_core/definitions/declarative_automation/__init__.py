@@ -1,10 +1,5 @@
-from .automation_condition import AutomationCondition as AutomationCondition
-from .automation_condition_tester import (
-    evaluate_automation_conditions as evaluate_automation_conditions,
-)
-from .legacy import RuleCondition as RuleCondition
-from .legacy.asset_condition import AssetCondition as AssetCondition
-from .operands import (
+from dagster._core.definitions.declarative_automation.operands import (
+    CodeVersionChangedCondition as CodeVersionChangedCondition,
     CronTickPassedCondition as CronTickPassedCondition,
     FailedAutomationCondition as FailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
@@ -14,18 +9,13 @@ from .operands import (
     NewlyUpdatedCondition as NewlyUpdatedCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,
 )
-from .operators import (
+from dagster._core.definitions.declarative_automation.operators import (
     AllDepsCondition as AllDepsCondition,
-    AndAssetCondition as AndAssetCondition,
+    AndAutomationCondition as AndAutomationCondition,
     AnyDepsCondition as AnyDepsCondition,
+    AnyDownstreamConditionsCondition as AnyDownstreamConditionsCondition,
     NewlyTrueCondition as NewlyTrueCondition,
-    NotAssetCondition as NotAssetCondition,
-    OrAssetCondition as OrAssetCondition,
+    NotAutomationCondition as NotAutomationCondition,
+    OrAutomationCondition as OrAutomationCondition,
     SinceCondition as SinceCondition,
-)
-from .serialized_objects import (
-    AssetConditionEvaluationState as AssetConditionEvaluationState,
-    AssetConditionSnapshot as AssetConditionSnapshot,
-    AssetSubsetWithMetadata as AssetSubsetWithMetadata,
-    HistoricalAllPartitionsSubsetSentinel as HistoricalAllPartitionsSubsetSentinel,
 )

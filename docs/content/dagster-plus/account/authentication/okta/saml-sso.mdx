@@ -35,21 +35,7 @@ To complete the steps in this guide, you'll need:
 
 3. On the **Applications** page, click **Browse App Catalog**.
 
-   <Image
-   alt="Okta Browse App Catalog"
-   src="/images/dagster-cloud/sso/okta/browse_app_catalog.jpg"
-   width={1262}
-   height={296}
-   />
-
-4. On the **Browse App Integration Catalog** page, search for `Dagster+`:
-
-   <Image
-   alt="Okta App Integration Catalog"
-   src="/images/dagster-cloud/sso/okta/app_integration_catalog.png"
-   width={2531}
-   height={1395}
-   />
+4. On the **Browse App Integration Catalog** page, search for `Dagster Cloud`.
 
 5. Add and save the application.
 
@@ -57,20 +43,24 @@ To complete the steps in this guide, you'll need:
 
 ## Step 2: Configure SSO in Okta
 
-1. In Okta, open the application and navigate to its **General Settings**.
+1. In Okta, open the Dagster Cloud application and navigate to its **Sign On Settings**.
 
-2. In the **Subdomain** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
+2. Scroll down to the **Advanced Sign-on settings** section.
 
-   In the following example, the organization name is `hooli` and our Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, we'd enter `hooli` into the **Subdomain** field:
+3. In the **Organization** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
+
+   In the following example, the organization name is `hooli` and our Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, we'd enter `hooli` into the **Organization** field:
+
+   <!-- ![Okta Subdomain Configuration](/images/dagster-cloud/sso/okta/subdomain_configuration.png) -->
 
    <Image
    alt="Okta Subdomain Configuration"
-   src="/images/dagster-cloud/sso/okta/subdomain_configuration.jpg"
-   width={2560}
-   height={1437}
+   src="/images/dagster-cloud/sso/okta/subdomain_configuration.png"
+   width={709}
+   height={215}
    />
 
-3. When finished, click **Done**.
+4. When finished, click **Done**.
 
 ---
 
@@ -78,20 +68,32 @@ To complete the steps in this guide, you'll need:
 
 Next, you'll save and upload the application's SAML metadata to Dagster+. This will enable single sign-on.
 
-1. In Okta, navigate to the Dagster+ application.
+1. In the **Sign On Settings**, navigate to the **SAML Signing Certificates** section.
 
-2. Navigate to **Sign On**.
+2. Click the **Actions** button of the **Active** certificate.
 
-3. Click **Identity Provider metadata** to initiate a download. This will save the SAML metadata file to your computer.
+3. Click **View IdP metadata**:
 
    <Image
-   alt="Okta Save Identity Provider Metadata"
-   src="/images/dagster-cloud/sso/okta/save_identity_provider_metadata.jpg"
-   width={1431}
-   height={687}
+   alt="The View IdP metadata options in the Okta UI"
+   src="/images/dagster-cloud/sso/okta/save_identity_provider_metadata.png"
+   width={1920}
+   height={970}
    />
 
-4. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
+   This will open a new page in your browser with the IdP metadata in XML format.
+
+4. Right-click on the page and use **Save As** or **Save Page As**:
+
+   <Image
+   src="/images/dagster-cloud/sso/okta/save-xml-as-page.png"
+   width={1920}
+   height={743}
+   />
+
+   In Chrome and Edge, the file will be downloaded as an XML file. In Firefox, choose **Save Page As > Save as type**, then select **All files**. **Note**: Copying and pasting the metadata can cause formatting issues that will prevent successful setup. Saving the page directly from the browser will avoid this.
+
+5. After you've downloaded the metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
 
    ```shell
    dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
@@ -116,7 +118,10 @@ Next, you'll assign users to the Dagster+ application in Okta. This will allow t
 Lastly, you'll test your SSO configuration:
 
 - [Service provider (SP)-initiated login](#testing-a-service-provider-initiated-login)
-- [Identity provider (idP)-initiated login](#testing-an-identity-provider-initiated-login)
+- [Identity provider (IdP)-initiated login](#testing-an-identity-provider-initiated-login)
+
+<TabGroup>
+<TabItem name="Service provider-initiated">
 
 ### Testing a service provider-initiated login
 
@@ -125,6 +130,9 @@ Lastly, you'll test your SSO configuration:
 2. Click the **Sign in with SSO** button.
 
 3. Initiate the login flow and address issues that arise, if any.
+
+</TabItem>
+<TabItem name="Identity provider-initiated">
 
 ### Testing an identity provider-initiated login
 
@@ -136,5 +144,8 @@ src="/images/dagster-cloud/sso/okta/idp_login.png"
 width={1150}
 height={780}
 />
+
+</TabItem>
+</TabGroup>
 
 If successful, you'll be automatically signed into your Dagster+ organization.

@@ -1,10 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {
   AutoMaterializeSensorFlagQuery,
   AutoMaterializeSensorFlagQueryVariables,
 } from './types/AutoMaterializeSensorFlag.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {gql, useQuery} from '../apollo-client';
 
 type FlagState = 'unknown' | 'has-sensor-amp' | 'has-global-amp';
 
@@ -13,7 +11,6 @@ export const useAutoMaterializeSensorFlag = (): FlagState => {
     AutoMaterializeSensorFlagQuery,
     AutoMaterializeSensorFlagQueryVariables
   >(AUTO_MATERIALIZE_POLICY_SENSOR_FLAG_QUERY);
-  useBlockTraceOnQueryResult(queryResult, 'AutoMaterializeSensorFlagQuery');
   const {data} = queryResult;
   if (!data) {
     return 'unknown';

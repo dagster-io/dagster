@@ -10,6 +10,7 @@ from dagster import (
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
+    Definitions,
     DynamicPartitionsDefinition,
     EnvVar,
     IOManagerDefinition,
@@ -182,6 +183,37 @@ def test_io_manager_with_snowflake_pyspark(spark, io_manager):
 
         res = io_manager_test_job.execute_in_process()
         assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.integration
+def test_io_manager_asset_metadata(spark) -> None:
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+
+        @asset(key_prefix=SCHEMA, name=table_name)
+        def my_spark_df():
+            columns = ["foo", "quux"]
+            data = [("bar", 1), ("baz", 2)]
+            df = spark.createDataFrame(data).toDF(*columns)
+            return df
+
+        defs = Definitions(
+            assets=[my_spark_df], resources={"io_manager": pythonic_snowflake_io_manager}
+        )
+
+        res = defs.get_implicit_global_asset_job_def().execute_in_process()
+        assert res.success
+
+        mats = res.get_asset_materialization_events()
+        assert len(mats) == 1
+        mat = mats[0]
+
+        assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+            f"{DATABASE}.{SCHEMA}.{table_name}"
+        )
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")

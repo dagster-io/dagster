@@ -30,7 +30,6 @@ import {AssetCatalogTableQuery} from '../assets/types/AssetsCatalogTable.types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {usePageLoadTrace} from '../performance';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -79,14 +78,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     () => groupedAssets.flatMap((group) => group.assets.map((asset) => asset.key)) ?? [],
     [groupedAssets],
   );
-  const {liveDataByNode} = useAssetsBaseData(orderedAssets, 'OverviewAssetsRoot');
-  const trace = usePageLoadTrace('OverviewAssetsRoot');
-  const isFullyLoaded = Object.keys(liveDataByNode).length === orderedAssets.length;
-  React.useEffect(() => {
-    if (isFullyLoaded) {
-      trace.endTrace();
-    }
-  }, [isFullyLoaded, trace]);
+  useAssetsBaseData(orderedAssets, 'OverviewAssetsRoot');
 
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -230,7 +222,6 @@ function VirtualRow({height, start, group}: RowProps) {
   );
 
   const {liveDataByNode} = useAssetsBaseData(assetKeys);
-  const trace = usePageLoadTrace('OverviewAssetsRoot:GroupBatch');
 
   const statuses = React.useMemo(() => {
     return groupAssetsByStatus(group.assets, liveDataByNode);
@@ -243,12 +234,6 @@ function VirtualRow({height, start, group}: RowProps) {
 
   const isBatchStillLoading = assetKeys.length !== Object.keys(liveDataByNode).length;
   const zeroOrBlank = isBatchStillLoading ? '' : '0';
-
-  React.useEffect(() => {
-    if (!isBatchStillLoading) {
-      trace.endTrace();
-    }
-  }, [trace, isBatchStillLoading]);
 
   return (
     <Row $height={height} $start={start}>

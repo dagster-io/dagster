@@ -1,4 +1,3 @@
-import {gql, useMutation} from '@apollo/client';
 import {
   Body2,
   Box,
@@ -19,51 +18,56 @@ import {
   explodePartitionKeysInSelectionMatching,
   mergedAssetHealth,
 } from './MultipartitioningSupport';
+import {asAssetKeyInput} from './asInput';
 import {
   ReportEventMutation,
   ReportEventMutationVariables,
+  ReportEventPartitionDefinitionQuery,
+  ReportEventPartitionDefinitionQueryVariables,
 } from './types/useReportEventsModal.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {keyCountInSelections, usePartitionHealthData} from './usePartitionHealthData';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetEventType, AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
-import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
+import {DimensionRangeWizards} from '../partitions/DimensionRangeWizards';
 import {ToggleableSection} from '../ui/ToggleableSection';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
 type Asset = {
   isPartitioned: boolean;
   assetKey: AssetKeyInput;
-  repository: {name: string; location: {name: string}};
+  repoAddress: RepoAddress;
+  hasReportRunlessAssetEventPermission: boolean;
 };
 
-export function useReportEventsModal(asset: Asset | null, onEventReported: () => void) {
+export function useReportEventsModal(asset: Asset | null, onEventReported?: () => void) {
   const [isOpen, setIsOpen] = useState(false);
+  const isPartitioned = asset?.isPartitioned;
+  const hasReportRunlessAssetEventPermission = asset?.hasReportRunlessAssetEventPermission;
 
   const dropdownOptions = useMemo(
     () => [
       {
-        label: asset?.isPartitioned
-          ? 'Report materialization events'
-          : 'Report materialization event',
+        label: isPartitioned ? 'Report materialization events' : 'Report materialization event',
         icon: <Icon name="asset_non_sda" />,
         onClick: () => setIsOpen(true),
+        disabled: !hasReportRunlessAssetEventPermission,
       },
     ],
-    [asset?.isPartitioned],
+    [isPartitioned, hasReportRunlessAssetEventPermission],
   );
 
   const element = asset ? (
-    <ReportEventDialogBody
+    <ReportEventsDialog
       asset={asset}
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      repoAddress={buildRepoAddress(asset.repository?.name, asset.repository?.location?.name)}
+      repoAddress={asset.repoAddress}
       onEventReported={onEventReported}
     />
   ) : undefined;
@@ -74,7 +78,7 @@ export function useReportEventsModal(asset: Asset | null, onEventReported: () =>
   };
 }
 
-const ReportEventDialogBody = ({
+const ReportEventsDialog = ({
   asset,
   repoAddress,
   isOpen,
@@ -85,13 +89,52 @@ const ReportEventDialogBody = ({
   repoAddress: RepoAddress;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  onEventReported: () => void;
+  onEventReported?: () => void;
+}) => {
+  return (
+    <Dialog
+      style={{width: 700}}
+      isOpen={isOpen}
+      canEscapeKeyClose
+      canOutsideClickClose
+      onClose={() => setIsOpen(false)}
+    >
+      <ReportEventDialogBody
+        asset={asset}
+        setIsOpen={setIsOpen}
+        repoAddress={repoAddress}
+        onEventReported={onEventReported}
+      />
+    </Dialog>
+  );
+};
+
+const ReportEventDialogBody = ({
+  asset,
+  repoAddress,
+  setIsOpen,
+  onEventReported,
+}: {
+  asset: Asset;
+  repoAddress: RepoAddress;
+  setIsOpen: (open: boolean) => void;
+  onEventReported?: () => void;
 }) => {
   const [description, setDescription] = useState('');
-  const {
-    permissions: {canReportRunlessAssetEvents},
-    disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
+
+  const assetPartitionDefResult = useQuery<
+    ReportEventPartitionDefinitionQuery,
+    ReportEventPartitionDefinitionQueryVariables
+  >(REPORT_EVENT_PARTITION_DEFINITION_QUERY, {
+    variables: {
+      assetKey: asAssetKeyInput(asset.assetKey),
+    },
+  });
+
+  const assetPartitionDef =
+    assetPartitionDefResult.data?.assetNodeOrError.__typename === 'AssetNode'
+      ? assetPartitionDefResult.data?.assetNodeOrError.partitionDefinition
+      : null;
 
   const [mutation] = useMutation<ReportEventMutation, ReportEventMutationVariables>(
     REPORT_EVENT_MUTATION,
@@ -159,19 +202,13 @@ const ReportEventDialogBody = ({
         icon: 'materialization',
         intent: 'success',
       });
-      onEventReported();
+      onEventReported?.();
       setIsOpen(false);
     }
   };
 
   return (
-    <Dialog
-      style={{width: 700}}
-      isOpen={isOpen}
-      canEscapeKeyClose
-      canOutsideClickClose
-      onClose={() => setIsOpen(false)}
-    >
+    <>
       <DialogHeader
         icon="info"
         label={
@@ -199,46 +236,14 @@ const ReportEventDialogBody = ({
             </Box>
           }
         >
-          {selections.map((range, idx) => (
-            <Box
-              key={range.dimension.name}
-              border="bottom"
-              padding={{vertical: 12, horizontal: 20}}
-            >
-              <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
-                <Icon name="partition" />
-                {range.dimension.name}
-              </Box>
-              <Box>
-                Select partitions to materialize.{' '}
-                {range.dimension.type === PartitionDefinitionType.TIME_WINDOW
-                  ? 'Click and drag to select a range on the timeline.'
-                  : null}
-              </Box>
-
-              <DimensionRangeWizard
-                partitionKeys={range.dimension.partitionKeys}
-                health={{
-                  ranges: assetHealth.rangesForSingleDimension(
-                    idx,
-                    selections.length === 2 ? selections[1 - idx]!.selectedRanges : undefined,
-                  ),
-                }}
-                dimensionType={range.dimension.type}
-                selected={range.selectedKeys}
-                setSelected={(selectedKeys) =>
-                  setSelections((selections) =>
-                    selections.map((r) =>
-                      r.dimension === range.dimension ? {...r, selectedKeys} : r,
-                    ),
-                  )
-                }
-                partitionDefinitionName={range.dimension.name}
-                repoAddress={repoAddress}
-                refetch={async () => setLastRefresh(Date.now())}
-              />
-            </Box>
-          ))}
+          <DimensionRangeWizards
+            repoAddress={repoAddress}
+            refetch={async () => setLastRefresh(Date.now())}
+            selections={selections}
+            setSelections={setSelections}
+            displayedHealth={assetHealth}
+            displayedPartitionDefinition={assetPartitionDef}
+          />
         </ToggleableSection>
       ) : undefined}
 
@@ -258,19 +263,43 @@ const ReportEventDialogBody = ({
       <DialogFooter topBorder>
         <Button onClick={() => setIsOpen(false)}>Cancel</Button>
         <Tooltip
-          content={disabledReasons.canReportRunlessAssetEvents}
-          canShow={!canReportRunlessAssetEvents}
+          content={DEFAULT_DISABLED_REASON}
+          canShow={!asset.hasReportRunlessAssetEventPermission}
         >
-          <Button intent="primary" onClick={onReportEvent} disabled={!canReportRunlessAssetEvents}>
+          <Button
+            intent="primary"
+            onClick={onReportEvent}
+            disabled={!asset.hasReportRunlessAssetEventPermission}
+          >
             {keysFiltered.length > 1
               ? `Report ${keysFiltered.length.toLocaleString()} events`
               : 'Report event'}
           </Button>
         </Tooltip>
       </DialogFooter>
-    </Dialog>
+    </>
   );
 };
+
+const REPORT_EVENT_PARTITION_DEFINITION_QUERY = gql`
+  query ReportEventPartitionDefinitionQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      __typename
+      ... on AssetNode {
+        id
+        partitionDefinition {
+          type
+          name
+          dimensionTypes {
+            type
+            name
+            dynamicPartitionsDefinitionName
+          }
+        }
+      }
+    }
+  }
+`;
 
 const REPORT_EVENT_MUTATION = gql`
   mutation ReportEventMutation($eventParams: ReportRunlessAssetEventsParams!) {

@@ -143,8 +143,7 @@ class ResolvedRunConfig(
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         """
         from dagster._config import process_config
-
-        from .composite_descent import composite_descent
+        from dagster._core.system_config.composite_descent import composite_descent
 
         check.inst_param(job_def, "job_def", JobDefinition)
         run_config = check.opt_mapping_param(run_config, "run_config")

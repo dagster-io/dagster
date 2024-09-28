@@ -14,14 +14,12 @@ import {memo} from 'react';
 import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
-import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunRootTrace} from './RunRootTrace';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {
   matchingComputeLogKeyFromStepKey,
@@ -38,13 +36,11 @@ import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
-  trace: RunRootTrace;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -63,7 +59,7 @@ const runStatusFavicon = (status: RunStatus) => {
 };
 
 export const Run = memo((props: RunProps) => {
-  const {run, runId, trace} = props;
+  const {run, runId} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
@@ -107,7 +103,7 @@ export const Run = memo((props: RunProps) => {
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <>
-            <OnLogsLoaded trace={trace} dependency={logsDependency} />
+            <OnLogsLoaded dependency={logsDependency} />
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
                 <RunWithData
@@ -130,17 +126,10 @@ export const Run = memo((props: RunProps) => {
   );
 });
 
-const OnLogsLoaded = ({
-  trace,
-  dependency,
-}: {
-  trace: RunRootTrace;
-  dependency: ReturnType<typeof useTraceDependency>;
-}) => {
+const OnLogsLoaded = ({dependency}: {dependency: ReturnType<typeof useTraceDependency>}) => {
   React.useLayoutEffect(() => {
-    trace.onLogsLoaded();
     dependency.completeDependency(CompletionType.SUCCESS);
-  }, [dependency, trace]);
+  }, [dependency]);
   return null;
 };
 
@@ -210,7 +199,6 @@ const RunWithData = ({
       : [];
   }, [runtimeGraph, selectionQuery]);
 
-  const supportsCapturedLogs = useSupportsCapturedLogs();
   const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
     useComputeLogFileKeyForSelection({
       stepKeys,
@@ -369,19 +357,12 @@ const RunWithData = ({
               {logType !== LogType.structured ? (
                 !computeLogFileKey ? (
                   <NoStepSelectionState type={logType} />
-                ) : supportsCapturedLogs ? (
+                ) : (
                   <CapturedOrExternalLogPanel
                     logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
                     logCaptureInfo={logCaptureInfo}
                     visibleIOType={LogType[logType]}
                     onSetDownloadUrl={setComputeLogUrl}
-                  />
-                ) : (
-                  <ComputeLogPanel
-                    runId={runId}
-                    computeLogFileKey={stepKeys.length ? computeLogFileKey : undefined}
-                    ioType={LogType[logType]}
-                    setComputeLogUrl={setComputeLogUrl}
                   />
                 )
               ) : (

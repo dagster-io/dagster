@@ -1,6 +1,6 @@
 import pytest
 from dagster import AssetExecutionContext, OpExecutionContext, asset, materialize
-from dagster._core.execution.context.compute import _get_deprecation_kwargs
+from dagster._core.execution.context.asset_execution_context import _get_deprecation_kwargs
 from dagster._core.test_utils import raise_exception_on_warnings
 
 

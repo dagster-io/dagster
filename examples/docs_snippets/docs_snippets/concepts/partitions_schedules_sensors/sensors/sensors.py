@@ -12,12 +12,11 @@ from dagster import (
     DagsterRunStatus,
     run_status_sensor,
     run_failure_sensor,
-    OpExecutionContext,
 )
 
 
 # start_sensor_job_marker
-from dagster import op, job, Config
+from dagster import op, job, Config, OpExecutionContext
 
 
 class FileConfig(Config):
@@ -254,7 +253,7 @@ def code_location_a_data_update_failure_sensor():
     run_status=DagsterRunStatus.SUCCESS,
 )
 def sensor_monitor_all_code_locations():
-    # when any job in the Dagster instance succeeds, this sensor will trigger
+    # when any job in the Dagster deployment succeeds, this sensor will trigger
     send_slack_alert()
 
 

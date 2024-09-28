@@ -1,11 +1,16 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import React from 'react';
 
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
 } from './types/AssetBaseDataProvider.types';
-import {buildLiveDataForNode, tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
+import {
+  LiveDataForNode,
+  buildLiveDataForNode,
+  tokenForAssetKey,
+  tokenToAssetKey,
+} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
@@ -24,17 +29,20 @@ function init() {
           assetKeys: keys.map(tokenToAssetKey),
         },
       });
+
       const nodesByKey = Object.fromEntries(
         data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
       );
 
-      const liveDataByKey = Object.fromEntries(
-        data.assetsLatestInfo.map((assetLatestInfo) => {
-          const id = tokenForAssetKey(assetLatestInfo.assetKey);
-          return [id, buildLiveDataForNode(nodesByKey[id]!, assetLatestInfo)];
-        }),
+      return Object.fromEntries(
+        data.assetsLatestInfo
+          .map((assetLatestInfo) => {
+            const id = tokenForAssetKey(assetLatestInfo.assetKey);
+            const node = nodesByKey[id];
+            return node ? [id, buildLiveDataForNode(node, assetLatestInfo)] : null;
+          })
+          .filter((entry): entry is [string, LiveDataForNode] => !!entry),
       );
-      return liveDataByKey;
     },
   );
 }

@@ -24,7 +24,6 @@ from dagster._core.events import (
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.partition_status_cache import (
     RUN_FETCH_BATCH_SIZE,
-    AssetStatusCacheValue,
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
     get_last_planned_storage_id,
@@ -33,7 +32,7 @@ from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils import Counter, traced_counter
 
-from .event_log_storage import create_and_delete_test_runs
+from dagster_tests.storage_tests.utils.event_log_storage import create_and_delete_test_runs
 
 
 class TestPartitionStatusCache:
@@ -441,14 +440,6 @@ class TestPartitionStatusCache:
         asset_key = AssetKey("asset1")
         asset_graph = AssetGraph.from_assets([asset1])
         asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
-
-        instance.update_asset_cached_status_data(
-            asset_key,
-            AssetStatusCacheValue(
-                latest_storage_id=0,
-                partitions_def_id=partitions_def.get_serializable_unique_identifier(),
-            ),
-        )
 
         asset_job.execute_in_process(instance=instance, partition_key="fail1", raise_on_error=False)
 

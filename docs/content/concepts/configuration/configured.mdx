@@ -155,7 +155,7 @@ def another_configured_example(config):
 A common pattern in the development cycle is to use different configuration for each environment. For example, you might connect to a local database during local development and to a production database in your cloud environment. You can use the `configured` API to select between different configurations at runtime:
 
 ```python file=/guides/dagster/using_environment_variables_and_secrets/repository_v2.py startafter=start_old endbefore=end_old
-# __init__.py
+# definitions.py
 
 resources = {
     "local": {

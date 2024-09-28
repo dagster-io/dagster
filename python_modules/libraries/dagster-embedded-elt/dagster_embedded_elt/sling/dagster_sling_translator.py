@@ -157,6 +157,19 @@ class DagsterSlingTranslator:
 
     @public
     def get_description(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
+        """Retrieves the description for a given stream definition.
+
+        This method checks the provided stream definition for a description. It first looks
+        for an "sql" key in the configuration and returns its value if found. If not, it looks
+        for a description in the metadata under the "dagster" key.
+
+        Parameters:
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition,
+            which includes configuration details.
+
+        Returns:
+            Optional[str]: The description of the stream if found, otherwise None.
+        """
         config = stream_definition.get("config", {}) or {}
         if "sql" in config:
             return config["sql"]
@@ -166,14 +179,50 @@ class DagsterSlingTranslator:
 
     @public
     def get_metadata(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Retrieves the metadata for a given stream definition.
+
+        This method extracts the configuration from the provided stream definition and returns
+        it as a JSON metadata value.
+
+        Parameters:
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition,
+            which includes configuration details.
+
+        Returns:
+            Mapping[str, Any]: A dictionary containing the stream configuration as JSON metadata.
+        """
         return {"stream_config": MetadataValue.json(stream_definition.get("config", {}))}
 
     @public
     def get_tags(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Retrieves the tags for a given stream definition.
+
+        This method returns an empty dictionary, indicating that no tags are associated with
+        the stream definition by default. This method can be overridden to provide custom tags.
+
+        Parameters:
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition,
+            which includes configuration details.
+
+        Returns:
+            Mapping[str, Any]: An empty dictionary.
+        """
         return {}
 
     @public
     def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
+        """Retrieves the group name for a given stream definition.
+
+        This method checks the provided stream definition for a group name in the metadata
+        under the "dagster" key.
+
+        Parameters:
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition,
+            which includes configuration details.
+
+        Returns:
+            Optional[str]: The group name if found, otherwise None.
+        """
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
         return meta.get("dagster", {}).get("group")
@@ -182,6 +231,21 @@ class DagsterSlingTranslator:
     def get_freshness_policy(
         self, stream_definition: Mapping[str, Any]
     ) -> Optional[FreshnessPolicy]:
+        """Retrieves the freshness policy for a given stream definition.
+
+        This method checks the provided stream definition for a specific configuration
+        indicating a freshness policy. If the configuration is found, it constructs and
+        returns a FreshnessPolicy object based on the provided parameters. Otherwise,
+        it returns None.
+
+        Parameters:
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition,
+            which includes configuration details.
+
+        Returns:
+            Optional[FreshnessPolicy]: A FreshnessPolicy object if the configuration is found,
+            otherwise None.
+        """
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
         freshness_policy_config = meta.get("dagster", {}).get("freshness_policy")
@@ -196,6 +260,20 @@ class DagsterSlingTranslator:
     def get_auto_materialize_policy(
         self, stream_definition: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
+        """Defines the auto-materialize policy for a given stream definition.
+
+        This method checks the provided stream definition for a specific configuration
+        indicating an auto-materialize policy. If the configuration is found, it returns
+        an eager auto-materialize policy. Otherwise, it returns None.
+
+        Parameters:
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition,
+            which includes configuration details.
+
+        Returns:
+            Optional[AutoMaterializePolicy]: An eager auto-materialize policy if the configuration
+            is found, otherwise None.
+        """
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
         auto_materialize_policy_config = "auto_materialize_policy" in meta.get("dagster", {})

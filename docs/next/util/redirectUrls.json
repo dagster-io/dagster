@@ -5,6 +5,11 @@
     "statusCode": 302
   },
   {
+    "source": "/concepts/assets/asset-auto-execution",
+    "destination": "/concepts/automation/declarative-automation",
+    "statusCode": 302
+  },
+  {
     "source": "/concepts/assets/software-defined-assets#recording-materialization-metadata",
     "destination": "/concepts/metadata-tags/asset-metadata",
     "statusCode": 302
@@ -690,24 +695,24 @@
     "statusCode": 302
   },
   {
-      "source": "/dagster-cloud",
-      "destination": "/dagster-plus",
-      "statusCode": 302
+    "source": "/dagster-cloud",
+    "destination": "/dagster-plus",
+    "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
-      "destination": "/dagster-plus/managing-deployments/alerts",
-      "statusCode": 302
+    "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
+    "destination": "/dagster-plus/managing-deployments/alerts",
+    "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
-      "destination": "/dagster-plus/managing-deployments/dagster-plus-cli",
-      "statusCode": 302
+    "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
+    "destination": "/dagster-plus/managing-deployments/dagster-plus-cli",
+    "statusCode": 302
   },
   {
-      "source": "/dagster-cloud/:slug*",
-      "destination": "/dagster-plus/:slug*",
-      "statusCode": 302
+    "source": "/dagster-cloud/:slug*",
+    "destination": "/dagster-plus/:slug*",
+    "statusCode": 302
   },
   {
     "source": "/guides/dagster-pipes/:slug*",
@@ -717,6 +722,41 @@
   {
     "source": "/deployment/open-source",
     "destination": "/deployment",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/airflow/migrating-to-dagster",
+    "destination": "/guides/migrations/migrating-airflow-to-dagster",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/airflow/reference",
+    "destination": "/integrations/airflow",
+    "statusCode": 302
+  },
+  {
+    "source": "/deployment/open-source",
+    "destination": "/deployment",
+    "statusCode": 302
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-airflow",
+    "destination": "/integrations/airflow",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/great-expectations",
+    "destination": "https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations",
+    "statusCode": 302
+  },
+  {
+    "source": "/guides/dagster/airbyte-ingestion-as-code",
+    "destination": "/integrations/airbyte",
+    "statusCode": 302
+  },
+  {
+    "source": "/integrations/databricks",
+    "destination": "/concepts/dagster-pipes/databricks",
     "statusCode": 302
   }
 ]

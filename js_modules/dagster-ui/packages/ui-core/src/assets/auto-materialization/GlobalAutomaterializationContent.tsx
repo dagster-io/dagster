@@ -1,16 +1,17 @@
-import {useLazyQuery} from '@apollo/client';
-import {Alert, Box, Checkbox, Colors, Spinner, Subtitle2, Table} from '@dagster-io/ui-components';
+import {Box, Checkbox, Colors, Spinner, Subtitle2, Table} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
+import {DeclarativeAutomationBanner} from './DeclarativeAutomationBanner';
 import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
 import {
   AssetDaemonTickFragment,
   AssetDaemonTicksQuery,
   AssetDaemonTicksQueryVariables,
 } from './types/AssetDaemonTicksQuery.types';
+import {useLazyQuery} from '../../apollo-client';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
@@ -18,7 +19,6 @@ import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 const MINUTE = 60 * 1000;
@@ -59,8 +59,6 @@ export const GlobalAutomaterializationContent = () => {
     async () => await fetch({variables: getVariables()}),
     [fetch, getVariables],
   );
-
-  useBlockTraceOnQueryResult(queryResult, 'AssetDaemonTicksQuery');
 
   useRefreshAtInterval({
     refresh,
@@ -122,26 +120,8 @@ export const GlobalAutomaterializationContent = () => {
 
   return (
     <>
-      <Box padding={{vertical: 12, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
-        <Alert
-          intent="info"
-          title="[Experimental] Dagster can automatically materialize assets when criteria are met."
-          description={
-            <>
-              Auto-materialization enables a declarative approach to asset scheduling – instead of
-              defining imperative workflows to materialize your assets, you just describe the
-              conditions under which they should be materialized.{' '}
-              <a
-                href="https://docs.dagster.io/concepts/assets/asset-auto-execution"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Learn more about auto-materialization here
-              </a>
-              .
-            </>
-          }
-        />
+      <Box padding={{vertical: 12, horizontal: 24}}>
+        <DeclarativeAutomationBanner />
       </Box>
       <Table>
         <tbody>

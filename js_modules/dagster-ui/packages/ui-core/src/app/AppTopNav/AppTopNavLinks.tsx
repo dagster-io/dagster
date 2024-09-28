@@ -1,23 +1,25 @@
 import {Box} from '@dagster-io/ui-components';
-import {ReactNode} from 'react';
+import {ReactElement} from 'react';
 import {useHistory} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {TopNavLink} from './AppTopNav';
 import {
   assetsPathMatcher,
   automationPathMatcher,
+  deploymentPathMatcher,
   jobsPathMatcher,
   locationPathMatcher,
-  settingsPathMatcher,
 } from './activePathMatchers';
+import {JobStateForNav} from './useJobStateForNav';
 import {DeploymentStatusIcon} from '../../nav/DeploymentStatusIcon';
-import {FeatureFlag, featureEnabled} from '../Flags';
+import {featureEnabled} from '../Flags';
 import {ShortcutHandler} from '../ShortcutHandler';
 
 export type AppNavLinkType = {
   key: string;
   path: string;
-  element: ReactNode;
+  element: ReactElement;
 };
 
 export const AppTopNavLinks = ({links}: {links: AppNavLinkType[]}) => {
@@ -41,7 +43,13 @@ export const AppTopNavLinks = ({links}: {links: AppNavLinkType[]}) => {
   );
 };
 
-export const navLinks = () => {
+type Config = {
+  jobState?: JobStateForNav;
+};
+
+export const navLinks = (config: Config): AppNavLinkType[] => {
+  const {jobState = 'unknown'} = config;
+
   const overview = {
     key: 'overview',
     path: '/overview',
@@ -58,16 +66,6 @@ export const navLinks = () => {
     element: (
       <TopNavLink to="/runs" data-cy="AppTopNav_RunsLink">
         Runs
-      </TopNavLink>
-    ),
-  };
-
-  const jobs = {
-    key: 'jobs',
-    path: '/jobs',
-    element: (
-      <TopNavLink to="/jobs" data-cy="AppTopNav_JobsLink" isActive={jobsPathMatcher}>
-        Jobs
       </TopNavLink>
     ),
   };
@@ -96,21 +94,44 @@ export const navLinks = () => {
     ),
   };
 
-  const settings = {
-    key: 'settings',
-    path: '/settings',
-    element: (
-      <TopNavLink to="/settings" data-cy="AppTopNav_SettingsLink" isActive={settingsPathMatcher}>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-          Settings
-          <DeploymentStatusIcon />
-        </Box>
-      </TopNavLink>
-    ),
-  };
+  if (featureEnabled(FeatureFlag.flagSettingsPage)) {
+    const jobs =
+      jobState === 'has-jobs'
+        ? {
+            key: 'jobs',
+            path: '/jobs',
+            element: (
+              <TopNavLink to="/jobs" data-cy="AppTopNav_JobsLink" isActive={jobsPathMatcher}>
+                Jobs
+              </TopNavLink>
+            ),
+          }
+        : null;
+
+    const deployment = {
+      key: 'deployment',
+      path: '/deployment',
+      element: (
+        <TopNavLink
+          to="/deployment"
+          data-cy="AppTopNav_DeploymentLink"
+          isActive={deploymentPathMatcher}
+        >
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+            Deployment
+            <DeploymentStatusIcon />
+          </Box>
+        </TopNavLink>
+      ),
+    };
+
+    return [overview, runs, assets, jobs, automation, deployment].filter(
+      (link): link is AppNavLinkType => !!link,
+    );
+  }
 
   const deployment = {
-    key: 'deployment',
+    key: 'locations',
     path: '/locations',
     element: (
       <TopNavLink to="/locations" data-cy="AppTopNav_StatusLink" isActive={locationPathMatcher}>
@@ -121,10 +142,6 @@ export const navLinks = () => {
       </TopNavLink>
     ),
   };
-
-  if (featureEnabled(FeatureFlag.flagSettingsPage)) {
-    return [overview, assets, jobs, automation, runs, settings];
-  }
 
   return [overview, runs, assets, deployment];
 };

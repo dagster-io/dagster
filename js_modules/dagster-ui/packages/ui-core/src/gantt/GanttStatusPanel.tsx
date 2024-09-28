@@ -24,117 +24,119 @@ interface GanttStatusPanelProps {
   onDoubleClickStep?: (step: string) => void;
 }
 
-export const GanttStatusPanel = ({
-  runId,
-  nowMs,
-  graph,
-  metadata,
-  selection,
-  onClickStep,
-  onDoubleClickStep,
-  onHighlightStep,
-}: GanttStatusPanelProps) => {
-  const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
-    const keys = Object.keys(metadata.steps);
-    const preparing = [];
-    const executing = [];
-    const errored = [];
-    const succeeded = [];
-    const notExecuted = [];
-    for (const key of keys) {
-      const state = metadata.steps[key]!.state;
-      switch (state) {
-        case IStepState.PREPARING:
-          preparing.push(key);
-          break;
-        case IStepState.RUNNING:
-        case IStepState.UNKNOWN:
-          executing.push(key);
-          break;
-        case IStepState.FAILED:
-          errored.push(key);
-          break;
-        case IStepState.SUCCEEDED:
-          succeeded.push(key);
-          break;
-      }
-    }
-
-    for (const node of graph) {
-      const name = node.name;
-      // Leave out [?] steps since they don't receive event log entries or have states
-      if (!isPlannedDynamicStep(name) && !metadata.steps[name]?.state) {
-        notExecuted.push(name);
-      }
-    }
-    return {preparing, executing, errored, succeeded, notExecuted};
-  }, [metadata, graph]);
-
-  const renderStepItem = (stepName: string) => (
-    <StepItem
-      nowMs={nowMs}
-      name={stepName}
-      key={stepName}
-      metadata={metadata}
-      selected={selection.keys.includes(stepName)}
-      onClick={onClickStep}
-      onDoubleClick={onDoubleClickStep}
-      onHover={onHighlightStep}
-    />
-  );
-
-  return (
-    <div style={{overflowY: 'auto'}}>
-      <RunGroupPanel
-        runId={runId}
-        runStatusLastChangedAt={
-          metadata.exitedAt || metadata.startedProcessAt || metadata.startedPipelineAt || 0
+export const GanttStatusPanel = React.memo(
+  ({
+    runId,
+    nowMs,
+    graph,
+    metadata,
+    selection,
+    onClickStep,
+    onDoubleClickStep,
+    onHighlightStep,
+  }: GanttStatusPanelProps) => {
+    const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
+      const keys = Object.keys(metadata.steps);
+      const preparing = [];
+      const executing = [];
+      const errored = [];
+      const succeeded = [];
+      const notExecuted = [];
+      for (const key of keys) {
+        const state = metadata.steps[key]!.state;
+        switch (state) {
+          case IStepState.PREPARING:
+            preparing.push(key);
+            break;
+          case IStepState.RUNNING:
+          case IStepState.UNKNOWN:
+            executing.push(key);
+            break;
+          case IStepState.FAILED:
+            errored.push(key);
+            break;
+          case IStepState.SUCCEEDED:
+            succeeded.push(key);
+            break;
         }
+      }
+
+      for (const node of graph) {
+        const name = node.name;
+        // Leave out [?] steps since they don't receive event log entries or have states
+        if (!isPlannedDynamicStep(name) && !metadata.steps[name]?.state) {
+          notExecuted.push(name);
+        }
+      }
+      return {preparing, executing, errored, succeeded, notExecuted};
+    }, [metadata, graph]);
+
+    const renderStepItem = (stepName: string) => (
+      <StepItem
+        nowMs={nowMs}
+        name={stepName}
+        key={stepName}
+        metadata={metadata}
+        selected={selection.keys.includes(stepName)}
+        onClick={onClickStep}
+        onDoubleClick={onDoubleClickStep}
+        onHover={onHighlightStep}
       />
-      <SidebarSection title={`Preparing (${preparing.length})`}>
-        <div>
-          {preparing.length === 0 ? (
-            <EmptyNotice>No steps are waiting to execute</EmptyNotice>
-          ) : (
-            preparing.map(renderStepItem)
-          )}
-        </div>
-      </SidebarSection>
-      <SidebarSection title={`Executing (${executing.length})`}>
-        <div>
-          {executing.length === 0 ? (
-            <EmptyNotice>No steps are executing</EmptyNotice>
-          ) : (
-            executing.map(renderStepItem)
-          )}
-        </div>
-      </SidebarSection>
-      <SidebarSection title={`Errored (${errored.length})`}>
-        <div>
-          {errored.length === 0 ? (
-            <EmptyNotice>No steps have errored</EmptyNotice>
-          ) : (
-            errored.map(renderStepItem)
-          )}
-        </div>
-      </SidebarSection>
-      <SidebarSection collapsedByDefault title={`Succeeded (${succeeded.length})`}>
-        <div>
-          {succeeded.length === 0 ? (
-            <EmptyNotice>No steps have succeeded</EmptyNotice>
-          ) : (
-            succeeded.map(renderStepItem)
-          )}
-        </div>
-      </SidebarSection>
-      {notExecuted.length > 0 ? (
-        <SidebarSection collapsedByDefault title={`Not executed (${notExecuted.length})`}>
-          <div>{notExecuted.map(renderStepItem)}</div>
+    );
+
+    return (
+      <div style={{overflowY: 'auto'}}>
+        <RunGroupPanel
+          runId={runId}
+          runStatusLastChangedAt={
+            metadata.exitedAt || metadata.startedProcessAt || metadata.startedPipelineAt || 0
+          }
+        />
+        <SidebarSection title={`Preparing (${preparing.length})`}>
+          <div>
+            {preparing.length === 0 ? (
+              <EmptyNotice>No steps are waiting to execute</EmptyNotice>
+            ) : (
+              preparing.map(renderStepItem)
+            )}
+          </div>
         </SidebarSection>
-      ) : null}
-    </div>
-  );
-};
+        <SidebarSection title={`Executing (${executing.length})`}>
+          <div>
+            {executing.length === 0 ? (
+              <EmptyNotice>No steps are executing</EmptyNotice>
+            ) : (
+              executing.map(renderStepItem)
+            )}
+          </div>
+        </SidebarSection>
+        <SidebarSection title={`Errored (${errored.length})`}>
+          <div>
+            {errored.length === 0 ? (
+              <EmptyNotice>No steps have errored</EmptyNotice>
+            ) : (
+              errored.map(renderStepItem)
+            )}
+          </div>
+        </SidebarSection>
+        <SidebarSection collapsedByDefault title={`Succeeded (${succeeded.length})`}>
+          <div>
+            {succeeded.length === 0 ? (
+              <EmptyNotice>No steps have succeeded</EmptyNotice>
+            ) : (
+              succeeded.map(renderStepItem)
+            )}
+          </div>
+        </SidebarSection>
+        {notExecuted.length > 0 ? (
+          <SidebarSection collapsedByDefault title={`Not executed (${notExecuted.length})`}>
+            <div>{notExecuted.map(renderStepItem)}</div>
+          </SidebarSection>
+        ) : null}
+      </div>
+    );
+  },
+);
 
 const StepItem = ({
   nowMs,

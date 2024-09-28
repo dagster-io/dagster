@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypeVar,
     Union,
     cast,
 )
@@ -20,9 +19,17 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
+from dagster._core.definitions.definition_config_schema import (
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.inference import infer_output_props
+from dagster._core.definitions.input import In, InputDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
+from dagster._core.definitions.output import Out, OutputDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
     InputManagerRequirement,
@@ -30,6 +37,7 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
+from dagster._core.definitions.result import MaterializeResult, ObserveResult
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -41,21 +49,10 @@ from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
-from .definition_config_schema import (
-    IDefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
-)
-from .hook_definition import HookDefinition
-from .inference import infer_output_props
-from .input import In, InputDefinition
-from .output import Out, OutputDefinition
-from .result import MaterializeResult, ObserveResult
-
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
-
-    from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
@@ -65,9 +62,6 @@ OpComputeFunction: TypeAlias = Callable[..., Any]
 )
 class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
-
-    For more details on what a op is, refer to the
-    `Ops Overview <../../concepts/ops-jobs-graphs/ops>`_ .
 
     End users should prefer the :func:`@op <op>` decorator. OpDefinition is generally intended to be
     used by framework authors or for programatically generated ops.
@@ -134,7 +128,10 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
-        from .decorators.op_decorator import DecoratedOpFunction, resolve_checked_op_fn_inputs
+        from dagster._core.definitions.decorators.op_decorator import (
+            DecoratedOpFunction,
+            resolve_checked_op_fn_inputs,
+        )
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
@@ -302,7 +299,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return super(OpDefinition, self).with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
-        from .decorators.op_decorator import DecoratedOpFunction
+        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
         return isinstance(self._compute_fn, DecoratedOpFunction)
 
@@ -323,11 +320,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def iterate_op_defs(self) -> Iterator["OpDefinition"]:
         yield self
 
-    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
-
     def resolve_output_to_origin(
-        self, output_name: str, handle: T_Handle
-    ) -> Tuple[OutputDefinition, T_Handle]:
+        self, output_name: str, handle: Optional[NodeHandle]
+    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
         return self.output_def_named(output_name), handle
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
@@ -403,16 +398,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def get_resource_requirements(
         self,
-        outer_context: Optional[object] = None,
+        handle: Optional[NodeHandle],
+        asset_layer: Optional["AssetLayer"],
     ) -> Iterator[ResourceRequirement]:
-        # Outer requiree in this context is the outer-calling node handle. If not provided, then
-        # just use the op name.
-        outer_context = cast(Optional[Tuple[NodeHandle, Optional["AssetLayer"]]], outer_context)
-        if not outer_context:
-            handle = None
-            asset_layer = None
-        else:
-            handle, asset_layer = outer_context
         node_description = f"{self.node_type_str} '{handle or self.name}'"
         for resource_key in sorted(list(self.required_resource_keys)):
             yield OpDefinitionResourceRequirement(
@@ -453,13 +441,27 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     ) -> Sequence[NodeInputHandle]:
         return [input_handle]
 
+    def resolve_output_to_destinations(
+        self, output_name: str, handle: Optional[NodeHandle]
+    ) -> Sequence[NodeInputHandle]:
+        return []
+
     def __call__(self, *args, **kwargs) -> Any:
-        from .composition import is_in_composition
+        from dagster._core.definitions.composition import is_in_composition
 
         if is_in_composition():
             return super(OpDefinition, self).__call__(*args, **kwargs)
 
         return direct_invocation_result(self, *args, **kwargs)
+
+    def get_op_handles(self, parent: NodeHandle) -> AbstractSet[NodeHandle]:
+        return {parent}
+
+    def get_op_output_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeOutputHandle]:
+        return {
+            NodeOutputHandle(node_handle=parent, output_name=output_def.name)
+            for output_def in self.output_defs
+        }
 
 
 def _resolve_output_defs_from_outs(
@@ -467,7 +469,7 @@ def _resolve_output_defs_from_outs(
     outs: Optional[Mapping[str, Out]],
     default_code_version: Optional[str],
 ) -> Sequence[OutputDefinition]:
-    from .decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     if isinstance(compute_fn, DecoratedOpFunction):
         inferred_output_props = infer_output_props(compute_fn.decorated_fn)

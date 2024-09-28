@@ -11,6 +11,7 @@ import click
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._cli.utils import get_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
@@ -21,6 +22,11 @@ from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
+from dagster._core.execution.run_metrics_thread import (
+    DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
+    start_run_metrics_thread,
+    stop_run_metrics_thread,
+)
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -39,13 +45,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
-
-from .._core.execution.run_metrics_thread import (
-    DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
-    start_run_metrics_thread,
-    stop_run_metrics_thread,
-)
-from .utils import get_instance_for_cli
+from dagster._utils.tags import get_boolean_tag_value
 
 
 @click.group(name="api", hidden=True)
@@ -84,20 +84,12 @@ def execute_run_command(input_json):
                 sys.exit(return_code)
 
 
-def _truthy_tag_value(dagster_run: DagsterRun, tag: str, default: str = "false") -> bool:
-    return dagster_run.tags.get(tag, default).casefold() not in ["false", "0", "off", "no", ""]
-
-
 def _should_start_metrics_thread(dagster_run: DagsterRun) -> bool:
-    return _truthy_tag_value(dagster_run, "dagster/run_metrics")
+    return get_boolean_tag_value(dagster_run.tags.get("dagster/run_metrics"))
 
 
 def _enable_python_runtime_metrics(dagster_run: DagsterRun) -> bool:
-    return _truthy_tag_value(dagster_run, "dagster/python_runtime_metrics")
-
-
-def _report_container_metrics_as_engine_events(dagster_run: DagsterRun) -> bool:
-    return _truthy_tag_value(dagster_run, "dagster/container_metrics_engine_events")
+    return get_boolean_tag_value(dagster_run.tags.get("dagster/python_runtime_metrics"))
 
 
 def _metrics_polling_interval(

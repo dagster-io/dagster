@@ -11,9 +11,12 @@ from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
+from dagster_aws.secretsmanager.secrets import (
+    construct_secretsmanager_client,
+    get_secrets_from_arns,
+    get_tagged_secrets,
+)
 from dagster_aws.utils import ResourceWithBoto3Configuration
-
-from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
 if TYPE_CHECKING:
     import botocore
@@ -56,7 +59,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def get_client(self) -> "botocore.client.SecretsManager":
+    def get_client(self) -> "botocore.client.SecretsManager":  # pyright: ignore (reportAttributeAccessIssue)
         return construct_secretsmanager_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -72,7 +75,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
 
 @dagster_maintained_resource
 @resource(SecretsManagerResource.to_config_schema())
-def secretsmanager_resource(context) -> "botocore.client.SecretsManager":
+def secretsmanager_resource(context) -> "botocore.client.SecretsManager":  # pyright: ignore (reportAttributeAccessIssue)
     """Resource that gives access to AWS SecretsManager.
 
     The underlying SecretsManager session is created by calling

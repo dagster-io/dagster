@@ -8,16 +8,13 @@ import {
   buildPartitionedAssetConditionEvaluationNode,
   buildUnpartitionedAssetConditionEvaluationNode,
 } from '../../../graphql/types';
-import {
-  AutomaterializeMiddlePanel,
-  AutomaterializeMiddlePanelWithData,
-} from '../AutomaterializeMiddlePanel';
+import {AutomaterializeMiddlePanel} from '../AutomaterializeMiddlePanel';
 import {Evaluations, TEST_EVALUATION_ID} from '../__fixtures__/AutoMaterializePolicyPage.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Asset Details/Automaterialize/AutomaterializeMiddlePanelWithData',
-  component: AutomaterializeMiddlePanelWithData,
+  title: 'Asset Details/Automaterialize/AutomaterializeMiddlePanel',
+  component: AutomaterializeMiddlePanel,
 };
 
 const path = ['test'];

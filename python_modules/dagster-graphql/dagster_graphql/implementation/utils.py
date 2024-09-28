@@ -86,22 +86,19 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
-def assert_permission_for_asset_graph(
+def has_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteAssetGraph,
     asset_selection: Optional[Sequence[AssetKey]],
     permission: str,
-) -> None:
+) -> bool:
     asset_keys = set(asset_selection or [])
+    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
 
     # If any of the asset keys don't map to a location (e.g. because they are no longer in the
     # graph) need deployment-wide permissions - no valid code location to check
     if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
-        assert_permission(
-            graphene_info,
-            permission,
-        )
-        return
+        return context.has_permission(permission)
 
     if asset_keys:
         repo_handles = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
@@ -113,13 +110,24 @@ def assert_permission_for_asset_graph(
     )
 
     if not location_names:
-        assert_permission(
-            graphene_info,
-            permission,
-        )
+        return context.has_permission(permission)
     else:
-        for location_name in location_names:
-            assert_permission_for_location(graphene_info, permission, location_name)
+        return all(
+            context.has_permission_for_location(permission, location_name)
+            for location_name in location_names
+        )
+
+
+def assert_permission_for_asset_graph(
+    graphene_info: "ResolveInfo",
+    asset_graph: RemoteAssetGraph,
+    asset_selection: Optional[Sequence[AssetKey]],
+    permission: str,
+) -> None:
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not has_permission_for_asset_graph(graphene_info, asset_graph, asset_selection, permission):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
 def _noop(_) -> None:
@@ -288,6 +296,30 @@ class ExecutionMetadata(
             "rootRunId": self.root_run_id,
             "parentRunId": self.parent_run_id,
         }
+
+
+def apply_cursor_limit_reverse(
+    items: Sequence[str], cursor: Optional[str], limit: Optional[int], reverse: Optional[bool]
+) -> Sequence[str]:
+    start = 0
+    end = len(items)
+    index = 0
+
+    if cursor:
+        index = next((idx for (idx, item) in enumerate(items) if item == cursor))
+
+        if reverse:
+            end = index
+        else:
+            start = index + 1
+
+    if limit:
+        if reverse:
+            start = end - limit
+        else:
+            end = start + limit
+
+    return items[max(start, 0) : end]
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]

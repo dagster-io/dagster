@@ -3,7 +3,6 @@ from dagster import (
     AssetSpec,
     Definitions,
     OpExecutionContext,
-    external_asset_from_spec,
     job,
     op,
 )
@@ -19,6 +18,4 @@ def a_job() -> None:
     an_op()
 
 
-defs = Definitions(
-    assets=[external_asset_from_spec(AssetSpec("external_asset"))], jobs=[a_job]
-)
+defs = Definitions(assets=[AssetSpec("external_asset")], jobs=[a_job])

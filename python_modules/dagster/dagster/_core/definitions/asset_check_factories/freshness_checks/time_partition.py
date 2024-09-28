@@ -1,28 +1,8 @@
 from typing import Any, Dict, Iterable, Sequence, Union
 
-import pendulum
-
 from dagster import _check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import (
-    JsonMetadataValue,
-    MetadataValue,
-    TimestampMetadataValue,
-)
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.execution.context.compute import AssetCheckExecutionContext
-from dagster._utils.schedules import (
-    get_latest_completed_cron_tick,
-    get_next_cron_tick,
-    is_valid_cron_string,
-)
-
-from ..utils import (
+from dagster._core.definitions.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
@@ -35,7 +15,25 @@ from ..utils import (
     ensure_no_duplicate_assets,
     freshness_multi_asset_check,
     get_last_updated_timestamp,
-    retrieve_latest_record,
+    retrieve_last_update_record,
+)
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.metadata import (
+    JsonMetadataValue,
+    MetadataValue,
+    TimestampMetadataValue,
+)
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._time import datetime_from_timestamp, get_current_timestamp
+from dagster._utils.schedules import (
+    get_latest_completed_cron_tick,
+    get_next_cron_tick,
+    is_valid_cron_string,
 )
 
 
@@ -143,26 +141,26 @@ def _build_freshness_multi_check(
     def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
         for check_key in context.selected_asset_check_keys:
             asset_key = check_key.asset_key
-            current_timestamp = pendulum.now("UTC").timestamp()
+            current_timestamp = get_current_timestamp()
 
             partitions_def = check.inst(
                 context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def,
                 TimeWindowPartitionsDefinition,
             )
-            current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+            current_time_in_freshness_tz = datetime_from_timestamp(current_timestamp, tz=timezone)
             deadline = get_latest_completed_cron_tick(
                 deadline_cron, current_time_in_freshness_tz, timezone
             )
-            deadline_in_partitions_def_tz = pendulum.from_timestamp(
+            deadline_in_partitions_def_tz = datetime_from_timestamp(
                 deadline.timestamp(), tz=partitions_def.timezone
             )
             last_completed_time_window = check.not_none(
-                partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)
+                partitions_def.get_last_partition_window(current_time=deadline_in_partitions_def_tz)
             )
             expected_partition_key = partitions_def.get_partition_key_range_for_time_window(
                 last_completed_time_window
             ).start
-            latest_record = retrieve_latest_record(
+            latest_record = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=expected_partition_key
             )
             passed = latest_record is not None
@@ -174,7 +172,7 @@ def _build_freshness_multi_check(
 
             # Allows us to distinguish between the case where the asset has never been
             # observed/materialized, and the case where this partition in particular is missing
-            latest_record_any_partition = retrieve_latest_record(
+            latest_record_any_partition = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None
             )
 

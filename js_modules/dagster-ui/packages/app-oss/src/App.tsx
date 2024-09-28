@@ -12,7 +12,6 @@ import {LiveDataPollRateContext} from '@dagster-io/ui-core/live-data-provider/Li
 import {Suspense} from 'react';
 import {RecoilRoot} from 'recoil';
 
-import {InjectedComponents} from './InjectedComponents';
 import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
@@ -42,22 +41,20 @@ const appCache = createAppCache();
 export default function AppPage() {
   return (
     <RecoilRoot>
-      <InjectedComponents>
-        <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
-          <AppProvider appCache={appCache} config={config} localCacheIdPrefix={instanceId}>
-            <AppTopNav allowGlobalReload>
-              <HelpMenu showContactSales={false} />
-              <UserSettingsButton />
-            </AppTopNav>
-            <App>
-              <ContentRoot />
-              <Suspense>
-                <CommunityNux />
-              </Suspense>
-            </App>
-          </AppProvider>
-        </LiveDataPollRateContext.Provider>
-      </InjectedComponents>
+      <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
+        <AppProvider appCache={appCache} config={config} localCacheIdPrefix={instanceId}>
+          <AppTopNav allowGlobalReload>
+            <HelpMenu showContactSales={false} />
+            <UserSettingsButton />
+          </AppTopNav>
+          <App>
+            <ContentRoot />
+            <Suspense>
+              <CommunityNux />
+            </Suspense>
+          </App>
+        </AppProvider>
+      </LiveDataPollRateContext.Provider>
     </RecoilRoot>
   );
 }

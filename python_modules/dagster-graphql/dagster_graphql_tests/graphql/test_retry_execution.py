@@ -20,12 +20,16 @@ from dagster_graphql.test.utils import (
     infer_job_selector,
 )
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from .repo import csv_hello_world_ops_config, get_retry_multi_execution_params, retry_config
-from .utils import (
+from dagster_graphql_tests.graphql.repo import (
+    csv_hello_world_ops_config,
+    get_retry_multi_execution_params,
+    retry_config,
+)
+from dagster_graphql_tests.graphql.utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_fail,
     step_did_fail_in_records,
@@ -69,7 +73,7 @@ class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
         repository = code_location.get_repository("test_repo")
         external_job_origin = repository.get_full_external_job(
             "eventually_successful"
-        ).get_external_origin()
+        ).get_remote_origin()
 
         run_id = create_run_for_test(
             graphql_context.instance,
@@ -404,7 +408,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         )
         query_result_one = info_result_one.data["pipelineRunOrError"]
         assert query_result_one["__typename"] == "Run"
-        assert query_result_one["stepKeysToExecute"] is None
+        assert query_result_one["stepKeysToExecute"] == ["sum_op", "sum_sq_op"]  # full execution
 
         info_result_two = execute_dagster_graphql_and_finish_runs(
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": new_run_id}
@@ -412,8 +416,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         query_result_two = info_result_two.data["pipelineRunOrError"]
         assert query_result_two["__typename"] == "Run"
         stepKeysToExecute = query_result_two["stepKeysToExecute"]
-        assert stepKeysToExecute is not None
-        snapshot.assert_match(stepKeysToExecute)
+        assert stepKeysToExecute == ["sum_sq_op"]  # selected key
 
     def test_pipeline_reexecution_invalid_step_in_subset(
         self, graphql_context: WorkspaceRequestContext

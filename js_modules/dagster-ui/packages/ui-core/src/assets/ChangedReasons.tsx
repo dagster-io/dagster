@@ -45,10 +45,13 @@ export const ChangedReasonsPopover = ({
   assetKey: AssetKeyInput;
   children: React.ReactNode;
 }) => {
-  const modifiedChanges = changedReasons.filter((reason) => reason !== ChangeReason.NEW);
+  const modifiedChanges = changedReasons.filter(
+    (reason) => reason !== ChangeReason.NEW && reason !== ChangeReason.REMOVED,
+  );
   function getDescription(change: ChangeReason) {
     switch (change) {
       case ChangeReason.NEW:
+      case ChangeReason.REMOVED:
         return '';
       case ChangeReason.CODE_VERSION:
         return 'has a changed code version';

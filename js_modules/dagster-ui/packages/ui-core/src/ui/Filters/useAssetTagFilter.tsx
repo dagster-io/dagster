@@ -2,9 +2,10 @@ import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
+import {isKindTag} from '../../graph/KindTags';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];
@@ -20,8 +21,7 @@ export const useAssetTagFilter = ({
 }) => {
   const memoizedState = useMemo(() => tags?.map(buildDefinitionTag), [tags]);
   return useStaticSetFilter<DefinitionTag>({
-    name: 'Tag',
-    icon: 'tag',
+    ...BaseConfig,
     allValues: useMemo(
       () =>
         allAssetTags.map((value) => ({
@@ -31,19 +31,10 @@ export const useAssetTagFilter = ({
       [allAssetTags],
     ),
     menuWidth: '300px',
-    renderLabel: ({value}) => {
-      return (
-        <TruncatedTextWithFullTextOnHover
-          text={buildTagString({key: value.key, value: value.value})}
-        />
-      );
-    },
-    getStringValue: ({value, key}) => `${key}: ${value}`,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setTags?.(Array.from(values));
     },
-    matchType: 'all-of',
     canSelectAll: false,
   });
 };
@@ -56,14 +47,19 @@ export const buildDefinitionTag = memoize(
 );
 
 export function useAssetTagsForAssets(
-  assets: {definition?: {tags: DefinitionTag[]} | null}[],
+  assets: {definition?: {tags?: DefinitionTag[] | null} | null}[],
 ): DefinitionTag[] {
   return useMemo(
     () =>
       Array.from(
         new Set(
           assets
-            .flatMap((a) => a.definition?.tags.map((tag) => JSON.stringify(tag)) ?? [])
+            .flatMap(
+              (a) =>
+                a.definition?.tags
+                  ?.filter((tag) => !isKindTag(tag))
+                  .map((tag) => JSON.stringify(tag)) ?? [],
+            )
             .filter((o) => o),
         ),
       )
@@ -94,3 +90,17 @@ export function doesFilterArrayMatchValueArray<T, V>(
       !valueArray.find((value) => isMatch(filterTag, value)),
   );
 }
+
+export const BaseConfig: StaticBaseConfig<DefinitionTag> = {
+  name: 'Tag',
+  icon: 'tag',
+  renderLabel: ({value}: {value: DefinitionTag}) => {
+    return (
+      <TruncatedTextWithFullTextOnHover
+        text={buildTagString({key: value.key, value: value.value})}
+      />
+    );
+  },
+  getStringValue: ({value, key}: DefinitionTag) => `${key}: ${value}`,
+  matchType: 'all-of',
+};

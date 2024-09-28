@@ -1,6 +1,5 @@
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {GetEvaluationsQuery, GetEvaluationsQueryVariables} from './types/GetEvaluationsQuery.types';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
 import {AssetKey} from '../types';
 
@@ -35,6 +34,5 @@ export function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
     query: GET_EVALUATIONS_QUERY,
     pageSize: PAGE_SIZE,
   });
-  useBlockTraceOnQueryResult(result.queryResult, 'GetEvaluationsQuery');
   return result;
 }

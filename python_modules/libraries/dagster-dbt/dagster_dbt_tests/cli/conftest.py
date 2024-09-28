@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from ..dbt_projects import test_jaffle_shop_path
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 
 @pytest.fixture(name="dbt_project_dir", scope="function")

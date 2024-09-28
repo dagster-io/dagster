@@ -1,27 +1,29 @@
-import {QueryResult, gql, useApolloClient} from '@apollo/client';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
 import {doneStatuses} from './RunStatuses';
-import {TimelineJob, TimelineRun} from './RunTimeline';
+import {TimelineRow, TimelineRun} from './RunTimelineTypes';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
 import {fetchPaginatedBucketData, fetchPaginatedData} from './fetchPaginatedBucketData';
+import {getAutomationForRun} from './getAutomationForRun';
 import {
   CompletedRunTimelineQuery,
   CompletedRunTimelineQueryVariables,
+  CompletedRunTimelineQueryVersion,
   FutureTicksQuery,
   FutureTicksQueryVariables,
   OngoingRunTimelineQuery,
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
+import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -60,15 +62,17 @@ export const useRunsForTimeline = ({
   const {localCacheIdPrefix} = useContext(AppContext);
   const completedRunsCache = useMemo(() => {
     if (filter) {
-      return new HourlyDataCache<RunTimelineFragment>(
-        localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
-        JSON.stringify(filter),
-        3,
-      );
+      return new HourlyDataCache<RunTimelineFragment>({
+        id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
+        keyPrefix: JSON.stringify(filter),
+        keyMaxCount: 3,
+        version: CompletedRunTimelineQueryVersion,
+      });
     }
-    return new HourlyDataCache<RunTimelineFragment>(
-      localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
-    );
+    return new HourlyDataCache<RunTimelineFragment>({
+      id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
+      version: CompletedRunTimelineQueryVersion,
+    });
   }, [filter, localCacheIdPrefix]);
   const [completedRuns, setCompletedRuns] = useState<RunTimelineFragment[]>([]);
 
@@ -115,8 +119,25 @@ export const useRunsForTimeline = ({
 
   const {data: ongoingRunsData} = ongoingRunsQueryData;
 
+  const [didLoadCache, setDidLoadCache] = useState(false);
+  useBlockTraceUntilTrue('IndexedDBCache', didLoadCache);
+
   const fetchCompletedRunsQueryData = useCallback(async () => {
     await completedRunsCache.loadCacheFromIndexedDB();
+    setDidLoadCache(true);
+
+    // Accumulate the data to commit to the cache.
+    // Intentionally don't commit until everything is done in order to avoid
+    // committing incomplete data (and then assuming its full data later) in case the tab is closed early.
+    const dataToCommitToCacheByBucket: WeakMap<
+      [number, number],
+      Array<{
+        updatedBefore: number;
+        updatedAfter: number;
+        runs: RunTimelineFragment[];
+      }>
+    > = new WeakMap();
+
     return await fetchPaginatedBucketData({
       buckets: buckets
         .filter((bucket) => !completedRunsCache.isCompleteRange(bucket[0], bucket[1]))
@@ -178,10 +199,24 @@ export const useRunsForTimeline = ({
           };
         }
         const runs: RunTimelineFragment[] = data.completed.results;
-        completedRunsCache.addData(updatedAfter, updatedBefore, runs);
 
         const hasMoreData = runs.length === batchLimit;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+
+        const accumulatedData = dataToCommitToCacheByBucket.get(bucket) ?? [];
+        dataToCommitToCacheByBucket.set(bucket, accumulatedData);
+
+        if (hasMoreData) {
+          // If there are runs lets accumulate this data to commit to the cache later
+          // once all of the runs for this bucket have been fetched.
+          accumulatedData.push({updatedAfter, updatedBefore, runs});
+        } else {
+          // If there is no more data lets commit all of the accumulated data to the cache
+          completedRunsCache.addData(updatedAfter, updatedBefore, runs);
+          accumulatedData.forEach(({updatedAfter, updatedBefore, runs}) => {
+            completedRunsCache.addData(updatedAfter, updatedBefore, runs);
+          });
+        }
 
         return {
           data: [],
@@ -284,14 +319,13 @@ export const useRunsForTimeline = ({
     }
   }, [startSec, _end, client, showTicks]);
 
-  useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
-  useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
+  useBlockTraceUntilTrue('CompletedRunTimelineQuery', !completedRunsQueryData.loading);
 
   const {data: futureTicksData} = futureTicksQueryData;
 
   const {workspaceOrError} = futureTicksData || {workspaceOrError: undefined};
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const previousRunsByJobKey = useRef<{
     jobInfo: Record<string, {repoAddress: RepoAddress; pipelineName: string; isAdHoc: boolean}>;
@@ -322,17 +356,23 @@ export const useRunsForTimeline = ({
       if (run.startTime === null) {
         return;
       }
+
+      // If the run has ended prior to the start of the range, discard it. This can occur
+      // because we are using "updated" time for filtering our runs, which is a value
+      // independent of start/end timestamps.
+      if (run.endTime && run.endTime * 1000 < start) {
+        return;
+      }
       if (!run.repositoryOrigin) {
         return;
       }
 
-      const runJobKey = makeJobKey(
-        {
-          name: run.repositoryOrigin.repositoryName,
-          location: run.repositoryOrigin.repositoryLocationName,
-        },
-        run.pipelineName,
+      const repoAddress = buildRepoAddress(
+        run.repositoryOrigin.repositoryName,
+        run.repositoryOrigin.repositoryLocationName,
       );
+
+      const runJobKey = makeJobKey(repoAddress, run.pipelineName);
 
       map[runJobKey] = map[runJobKey] || {};
       map[runJobKey]![run.id] = {
@@ -340,15 +380,13 @@ export const useRunsForTimeline = ({
         status: run.status,
         startTime: run.startTime * 1000,
         endTime: run.endTime ? run.endTime * 1000 : now,
+        automation: getAutomationForRun(repoAddress, run),
       };
-      if (!jobInfo[runJobKey] && run.repositoryOrigin) {
+
+      if (!jobInfo[runJobKey]) {
         const pipelineName = run.pipelineName;
         const isAdHoc = isHiddenAssetGroupJob(pipelineName);
 
-        const repoAddress = buildRepoAddress(
-          run.repositoryOrigin!.repositoryName,
-          run.repositoryOrigin!.repositoryLocationName,
-        );
         jobInfo[runJobKey] = {
           repoAddress,
           isAdHoc,
@@ -363,10 +401,10 @@ export const useRunsForTimeline = ({
     const current = {jobInfo, runsByJobKey: map};
     previousRunsByJobKey.current = current;
     return current;
-  }, [loading, ongoingRunsData, completedRuns]);
+  }, [loading, ongoingRunsData, completedRuns, start]);
 
   const jobsWithCompletedRunsAndOngoingRuns = useMemo(() => {
-    const jobs: Record<string, TimelineJob> = {};
+    const jobs: Record<string, TimelineRow> = {};
     if (!Object.keys(runsByJobKey).length) {
       return jobs;
     }
@@ -382,17 +420,19 @@ export const useRunsForTimeline = ({
 
       jobs[jobKey] = {
         key: jobKey,
-        jobName: isAdHoc ? 'Ad hoc materializations' : pipelineName,
-        jobType: isAdHoc ? 'asset' : 'job',
+        name: isAdHoc ? 'Ad hoc materializations' : pipelineName,
+        type: isAdHoc ? 'asset' : 'job',
         repoAddress,
-        path: workspacePipelinePath({
-          repoName: repoAddress.name,
-          repoLocation: repoAddress.location,
-          pipelineName,
-          isJob: true,
-        }),
+        path: isAdHoc
+          ? null
+          : workspacePipelinePath({
+              repoName: repoAddress.name,
+              repoLocation: repoAddress.location,
+              pipelineName,
+              isJob: true,
+            }),
         runs,
-      } as TimelineJob;
+      } as TimelineRow;
     });
 
     return jobs;
@@ -402,12 +442,12 @@ export const useRunsForTimeline = ({
     return Object.values(jobsWithCompletedRunsAndOngoingRuns);
   }, [jobsWithCompletedRunsAndOngoingRuns]);
 
-  const unsortedJobs: TimelineJob[] = useMemo(() => {
+  const unsortedJobs: TimelineRow[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename === 'PythonError' || _end < Date.now()) {
       return jobsWithCompletedRunsAndOngoingRunsValues;
     }
     const addedAdHocJobs = new Set();
-    const jobs: TimelineJob[] = [];
+    const jobs: TimelineRow[] = [];
     for (const locationEntry of workspaceOrError.locationEntries) {
       if (
         !locationEntry.locationOrLoadError ||
@@ -442,6 +482,7 @@ export const useRunsForTimeline = ({
                     status: 'SCHEDULED',
                     startTime,
                     endTime: startTime + 5 * 1000,
+                    automation: {type: 'schedule', repoAddress, name: schedule.name},
                   });
                 }
               });
@@ -467,17 +508,14 @@ export const useRunsForTimeline = ({
 
           const runs = [...jobRuns, ...jobTicks];
 
-          let job = jobsWithCompletedRunsAndOngoingRuns[jobKey];
-          if (job) {
-            job = {
-              ...job,
-              runs,
-            };
+          let row = jobsWithCompletedRunsAndOngoingRuns[jobKey];
+          if (row) {
+            row = {...row, runs};
           } else {
-            job = {
+            row = {
               key: jobKey,
-              jobName,
-              jobType: isAdHoc ? 'asset' : 'job',
+              name: jobName,
+              type: isAdHoc ? 'asset' : 'job',
               repoAddress,
               path: workspacePipelinePath({
                 repoName: repoAddress.name,
@@ -486,10 +524,10 @@ export const useRunsForTimeline = ({
                 isJob: pipeline.isJob,
               }),
               runs,
-            } as TimelineJob;
+            } as TimelineRow;
           }
 
-          jobs.push(job);
+          jobs.push(row);
         }
       }
     }
@@ -569,6 +607,10 @@ const RUN_TIMELINE_FRAGMENT = gql`
   fragment RunTimelineFragment on Run {
     id
     pipelineName
+    tags {
+      key
+      value
+    }
     repositoryOrigin {
       id
       repositoryName

@@ -1,18 +1,19 @@
 from pathlib import Path
 
 from dagster import asset
-from dagster_blueprints.blueprint import Blueprint, BlueprintDefinitions
+from dagster._core.definitions.definitions_class import Definitions
+from dagster_blueprints.blueprint import Blueprint
 from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader
 
 
 class SimpleAssetBlueprint(Blueprint):
     key: str
 
-    def build_defs(self) -> BlueprintDefinitions:
+    def build_defs(self) -> Definitions:
         @asset(key=self.key)
         def blueprint_asset(): ...
 
-        return BlueprintDefinitions(assets=[blueprint_asset])
+        return Definitions(assets=[blueprint_asset])
 
 
 loader = YamlBlueprintsLoader(

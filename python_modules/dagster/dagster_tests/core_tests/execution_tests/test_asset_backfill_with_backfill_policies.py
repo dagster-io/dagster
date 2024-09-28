@@ -288,7 +288,7 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
     assert result.backfill_data != backfill_data
     assert len(result.run_requests) == 1
     assert result.run_requests[0].partition_key is None
-    assert result.run_requests[0].tags == {"dagster/backfill": backfill_id}
+    assert result.run_requests[0].tags == {}
 
 
 def test_asset_backfill_return_single_run_request_for_partitioned():

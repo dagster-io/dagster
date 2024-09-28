@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import * as React from 'react';
-import {useCallback, useMemo} from 'react';
+import {useCallback, useContext, useMemo} from 'react';
 import {Bar} from 'react-chartjs-2';
 
 import {iconNameForMetric} from './IconForMetricName';
@@ -19,6 +19,7 @@ import {EmptyStateContainer, LoadingStateContainer} from './InsightsChartShared'
 import {formatMetric} from './formatMetric';
 import {RenderTooltipFn, renderInsightsChartTooltip} from './renderInsightsChartTooltip';
 import {BarDatapoint, BarValue, DatapointType, ReportingUnitType} from './types';
+import {TimeContext} from '../app/time/TimeContext';
 import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 
@@ -71,6 +72,10 @@ export const InsightsBarChart = (props: Props) => {
   }, [values]);
 
   const formatDateTime = useFormatDateTime();
+  const {
+    timezone: [timezone],
+    hourCycle: [hourCycle],
+  } = useContext(TimeContext);
 
   // Don't show the y axis while loading datapoints, to avoid jumping renders.
   const showYAxis = values.length > 0;
@@ -115,6 +120,8 @@ export const InsightsBarChart = (props: Props) => {
           type={datapointType}
           label={label || ''}
           date={date}
+          timezone={timezone}
+          hourCycle={hourCycle}
           formattedValue={formattedValue}
           unitType={unitType}
           costMultiplier={costMultiplier}
@@ -122,7 +129,7 @@ export const InsightsBarChart = (props: Props) => {
         />
       );
     },
-    [costMultiplier, datapointType, metricLabel, unitType],
+    [datapointType, timezone, hourCycle, unitType, costMultiplier, metricLabel],
   );
 
   const yAxis = useMemo(() => {
@@ -208,7 +215,6 @@ export const InsightsBarChart = (props: Props) => {
                 day: 'numeric',
                 hour: 'numeric',
                 minute: 'numeric',
-                timeZone: 'UTC',
               });
             },
           },

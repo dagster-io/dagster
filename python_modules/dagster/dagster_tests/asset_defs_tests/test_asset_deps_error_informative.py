@@ -42,7 +42,7 @@ def test_typo_upstream_asset_one_similar(group_name, asset_key_prefix) -> None:
             rf"\n\t{re.escape(asset1.key.to_string())}"
         ),
     ):
-        Definitions(assets=[asset1, asset2])
+        Definitions.validate_loadable(Definitions(assets=[asset1, asset2]))
 
 
 def test_typo_upstream_asset_no_similar() -> None:
@@ -59,7 +59,7 @@ def test_typo_upstream_asset_no_similar() -> None:
             r" ops and is not one of the provided sources."
         ),
     ):
-        Definitions(assets=[asset1, asset2])
+        Definitions.validate_loadable(Definitions(assets=[asset1, asset2]))
 
 
 def test_typo_upstream_asset_many_similar() -> None:
@@ -85,7 +85,7 @@ def test_typo_upstream_asset_many_similar() -> None:
             rf" {re.escape(asst.key.to_string())}"
         ),
     ):
-        Definitions(assets=[asst, asset1, assets1, asset2])
+        Definitions.validate_loadable(Definitions(assets=[asst, asset1, assets1, asset2]))
 
 
 def test_typo_upstream_asset_wrong_prefix() -> None:
@@ -103,7 +103,7 @@ def test_typo_upstream_asset_wrong_prefix() -> None:
             rf"\n\t{re.escape(asset1.key.to_string())}"
         ),
     ):
-        Definitions(assets=[asset1, asset2])
+        Definitions.validate_loadable(Definitions(assets=[asset1, asset2]))
 
 
 def test_typo_upstream_asset_wrong_prefix_and_wrong_key() -> None:
@@ -122,7 +122,7 @@ def test_typo_upstream_asset_wrong_prefix_and_wrong_key() -> None:
             r" not one of the provided sources."
         ),
     ):
-        Definitions(assets=[asset1, asset2])
+        Definitions.validate_loadable(Definitions(assets=[asset1, asset2]))
 
 
 def test_one_off_component_prefix() -> None:
@@ -141,7 +141,7 @@ def test_one_off_component_prefix() -> None:
             rf"\n\t{re.escape(asset1.key.to_string())}"
         ),
     ):
-        Definitions(assets=[asset1, asset2])
+        Definitions.validate_loadable(Definitions(assets=[asset1, asset2]))
 
     # One fewer component in the prefix
     @asset(ins={"asset1": AssetIn(key=AssetKey(["my", "asset1"]))})
@@ -155,7 +155,7 @@ def test_one_off_component_prefix() -> None:
             rf"\n\t{re.escape(asset1.key.to_string())}"
         ),
     ):
-        Definitions(assets=[asset1, asset3])
+        Definitions.validate_loadable(Definitions(assets=[asset1, asset3]))
 
 
 def test_accidentally_using_slashes() -> None:
@@ -174,7 +174,7 @@ def test_accidentally_using_slashes() -> None:
             rf"\n\t{re.escape(asset1.key.to_string())}"
         ),
     ):
-        Definitions(assets=[asset1, asset2])
+        Definitions.validate_loadable(Definitions(assets=[asset1, asset2]))
 
 
 NUM_ASSETS_TO_TEST_PERF = 5000

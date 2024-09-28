@@ -1,19 +1,18 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {Box, MiddleTruncate} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {buildPipelineSelector} from './WorkspaceContext';
+import {buildPipelineSelector} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunStatusPezList} from '../runs/RunStatusPez';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
@@ -41,7 +40,6 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
       },
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'SingleJobQuery');
   useDelayedRowQuery(queryJob);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -150,7 +148,7 @@ const RowGrid = styled(Box)`
 const ScheduleSensorTagContainer = styled.div`
   width: 100%;
 
-  > .bp4-popover2-target {
+  > .bp5-popover-target {
     width: 100%;
   }
 `;

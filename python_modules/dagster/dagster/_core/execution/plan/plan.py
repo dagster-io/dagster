@@ -41,22 +41,13 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterUnmetExecutorRequirementsError,
 )
+from dagster._core.execution.plan.compute import create_step_outputs
 from dagster._core.execution.plan.handle import (
     ResolvedFromDynamicStepHandle,
     StepHandle,
     UnresolvedStepHandle,
 )
-from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
-from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.storage.mem_io_manager import mem_io_manager
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.utils import toposort
-
-from ..context.output import get_output_context
-from ..resolve_versions import resolve_step_output_versions
-from .compute import create_step_outputs
-from .inputs import (
+from dagster._core.execution.plan.inputs import (
     FromConfig,
     FromDefaultValue,
     FromDirectInputValue,
@@ -75,23 +66,32 @@ from .inputs import (
     UnresolvedCollectStepInput,
     UnresolvedMappedStepInput,
 )
-from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
-from .state import KnownExecutionState
-from .step import (
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
+from dagster._core.execution.plan.outputs import (
+    StepOutput,
+    StepOutputHandle,
+    UnresolvedStepOutputHandle,
+)
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.plan.step import (
     ExecutionStep,
     IExecutionStep,
     StepKind,
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
+from dagster._core.execution.retries import RetryMode
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.utils import toposort
 
 if TYPE_CHECKING:
+    from dagster._core.execution.plan.active import ActiveExecution
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionPlanSnapshot,
         ExecutionStepInputSnap,
     )
-
-    from .active import ActiveExecution
 
 
 StepHandleTypes = (StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle)
@@ -140,11 +140,11 @@ class _PlanBuilder:
             keys = list(self._steps.keys())
             check.failed(f"Duplicated key {step.key}. Full list seen so far: {keys}.")
         self._seen_handles.add(step.handle)
-        self._steps[step.node_handle.to_string()] = step
+        self._steps[str(step.node_handle)] = step
 
     def get_step_by_node_handle(self, handle: NodeHandle) -> IExecutionStep:
         check.inst_param(handle, "handle", NodeHandle)
-        return self._steps[handle.to_string()]
+        return self._steps[str(handle)]
 
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan."""
@@ -156,7 +156,7 @@ class _PlanBuilder:
         root_inputs: List[
             Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]
         ] = []
-        # Recursively bjob_defd the execution plan starting at the root pipeline
+        # Recursively build the execution plan starting at the root pipeline
         for input_def in self.job_def.graph.input_defs:
             input_name = input_def.name
 
@@ -197,7 +197,6 @@ class _PlanBuilder:
         )
 
         executor_name = self.resolved_run_config.execution.execution_engine_name
-        step_output_versions = self.known_state.step_output_versions if self.known_state else []
 
         plan = ExecutionPlan(
             step_dict,
@@ -217,22 +216,13 @@ class _PlanBuilder:
             repository_load_data=self.repository_load_data,
         )
 
-        if self.step_keys_to_execute is not None:
+        if (
+            self.step_keys_to_execute is not None
+            # no need to subset if plan already matches request
+            and self.step_keys_to_execute != plan.step_keys_to_execute
+        ):
             plan = plan.build_subset_plan(
                 self.step_keys_to_execute, self.job_def, self.resolved_run_config
-            )
-
-        # Expects that if step_keys_to_execute was set, that the `plan` variable will have the
-        # reflected step_keys_to_execute
-        if self.job_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
-            if self._instance_ref is None:
-                raise DagsterInvariantViolationError(
-                    "Attempted to build memoized execution plan without providing a persistent "
-                    "DagsterInstance to create_execution_plan."
-                )
-            instance = DagsterInstance.from_ref(self._instance_ref)
-            plan = plan.build_memoized_plan(
-                self.job_def, self.resolved_run_config, instance, self.step_keys_to_execute
             )
 
         return plan
@@ -441,7 +431,7 @@ def get_step_input_source(
     ):
         # can only load from source asset if assets defs are available
         if asset_layer.asset_key_for_input(handle, input_handle.input_name):
-            return FromLoadableAsset(node_handle=handle, input_name=input_name)
+            return FromLoadableAsset()
         elif input_def.input_manager_key:
             return FromInputManager(node_handle=handle, input_name=input_name)
 
@@ -815,13 +805,21 @@ class ExecutionPlan(
             step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
         )
 
-        step_handles_to_validate_set: Set[StepHandleUnion] = {
-            StepHandle.parse_from_key(key) for key in step_keys_to_execute
-        }
+        step_handles_to_validate: Sequence[StepHandleUnion] = []
+        step_handles_to_validate_set: Set[StepHandleUnion] = set()
+
+        # preserve order of step_keys_to_execute since we build the new step_keys_to_execute
+        # from iterating step_handles_to_validate
+        for key in step_keys_to_execute:
+            handle = StepHandle.parse_from_key(key)
+            if handle not in step_handles_to_validate_set:
+                step_handles_to_validate_set.add(handle)
+                step_handles_to_validate.append(handle)
+
         step_handles_to_execute: List[StepHandleUnion] = []
         bad_keys = []
 
-        for handle in step_handles_to_validate_set:
+        for handle in step_handles_to_validate:
             if handle not in self.step_dict:
                 # Ok if the entire dynamic step is selected to execute.
                 # https://github.com/dagster-io/dagster/issues/8000
@@ -864,13 +862,9 @@ class ExecutionPlan(
 
         # If step output versions were provided when constructing the subset plan, add them to the
         # known state.
+        known_state = self.known_state
         if len(step_output_versions) > 0:
-            if self.known_state:
-                known_state = self.known_state._replace(step_output_versions=step_output_versions)
-            else:
-                known_state = KnownExecutionState(step_output_versions=step_output_versions)  # type: ignore  # (possible none)
-        else:
-            known_state = self.known_state
+            known_state = self.known_state._replace(step_output_versions=step_output_versions)
 
         return ExecutionPlan(
             self.step_dict,
@@ -895,102 +889,6 @@ class ExecutionPlan(
     ) -> Optional[str]:
         return self.step_output_versions.get(step_output_handle)
 
-    def build_memoized_plan(
-        self,
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-        instance: DagsterInstance,
-        selected_step_keys: Optional[Sequence[str]],
-    ) -> "ExecutionPlan":
-        """Returns:
-        ExecutionPlan: Execution plan that runs only unmemoized steps.
-        """
-        from ...storage.memoizable_io_manager import MemoizableIOManager
-        from ..build_resources import build_resources, initialize_console_manager
-        from ..resources_init import get_dependencies, resolve_resource_dependencies
-
-        # Memoization cannot be used with dynamic orchestration yet.
-        # Tracking: https://github.com/dagster-io/dagster/issues/4451
-        for node_def in job_def.all_node_defs:
-            if job_def.dependency_structure.is_dynamic_mapped(
-                node_def.name
-            ) or job_def.dependency_structure.has_dynamic_downstreams(node_def.name):
-                raise DagsterInvariantViolationError(
-                    "Attempted to use memoization with dynamic orchestration, which is not yet "
-                    "supported."
-                )
-
-        unmemoized_step_keys = set()
-
-        log_manager = initialize_console_manager(None)
-
-        step_output_versions = resolve_step_output_versions(job_def, self, resolved_run_config)
-
-        resource_defs_to_init = {}
-        io_manager_keys = {}  # Map step output handles to io manager keys
-
-        for step in self.steps:
-            for output_name in cast(ExecutionStepUnion, step).step_output_dict.keys():
-                step_output_handle = StepOutputHandle(step.key, output_name)
-
-                io_manager_key = self.get_manager_key(step_output_handle, job_def)
-                io_manager_keys[step_output_handle] = io_manager_key
-
-                resource_deps = resolve_resource_dependencies(job_def.resource_defs)
-                resource_keys_to_init = get_dependencies(io_manager_key, resource_deps)
-                for resource_key in resource_keys_to_init:
-                    resource_defs_to_init[resource_key] = job_def.resource_defs[resource_key]
-
-        all_resources_config = resolved_run_config.to_dict().get("resources", {})
-        resource_config = {
-            resource_key: config_val
-            for resource_key, config_val in all_resources_config.items()
-            if resource_key in resource_defs_to_init
-        }
-
-        with build_resources(
-            resources=resource_defs_to_init,
-            instance=instance,
-            resource_config=resource_config,
-            log_manager=log_manager,
-        ) as resources:
-            for step_output_handle, io_manager_key in io_manager_keys.items():
-                io_manager = getattr(resources, io_manager_key)
-                if not isinstance(io_manager, MemoizableIOManager):
-                    raise DagsterInvariantViolationError(
-                        f"{job_def.describe_target().capitalize()} uses memoization, but IO"
-                        " manager "
-                        f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
-                        "memoization, all io managers need to subclass MemoizableIOManager. "
-                        "Learn more about MemoizableIOManagers here: "
-                        "https://docs.dagster.io/_apidocs/internals#memoizable-io-manager-experimental."
-                    )
-                context = get_output_context(
-                    execution_plan=self,
-                    job_def=job_def,
-                    resolved_run_config=resolved_run_config,
-                    step_output_handle=step_output_handle,
-                    run_id=None,
-                    log_manager=log_manager,
-                    step_context=None,
-                    resources=resources,
-                    version=step_output_versions[step_output_handle],
-                )
-                if not io_manager.has_output(context):
-                    unmemoized_step_keys.add(step_output_handle.step_key)
-
-        if selected_step_keys is not None:
-            # Take the intersection unmemoized steps and selected steps
-            step_keys_to_execute = list(unmemoized_step_keys & set(selected_step_keys))
-        else:
-            step_keys_to_execute = list(unmemoized_step_keys)
-        return self.build_subset_plan(
-            step_keys_to_execute,
-            job_def,
-            resolved_run_config,
-            step_output_versions=step_output_versions,
-        )
-
     def start(
         self,
         retry_mode: RetryMode,
@@ -999,7 +897,7 @@ class ExecutionPlan(
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
     ) -> "ActiveExecution":
-        from .active import ActiveExecution
+        from dagster._core.execution.plan.active import ActiveExecution
 
         return ActiveExecution(
             self,
@@ -1070,22 +968,22 @@ class ExecutionPlan(
             (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
         ):
             return UnresolvedMappedStepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_source,
+                name=step_input_snap.name,
+                dagster_type_key=step_input_snap.dagster_type_key,
+                source=step_input_source,
             )
         elif isinstance(step_input_source, FromDynamicCollect):
             return UnresolvedCollectStepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_source,
+                name=step_input_snap.name,
+                dagster_type_key=step_input_snap.dagster_type_key,
+                source=step_input_source,
             )
         else:
             check.inst_param(step_input_source, "step_input_source", StepInputSource)
             return StepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_snap.source,  # type: ignore  # (possible none)
+                name=step_input_snap.name,
+                dagster_type_key=step_input_snap.dagster_type_key,
+                source=step_input_snap.source,  # type: ignore  # (possible none)
             )
 
     @staticmethod

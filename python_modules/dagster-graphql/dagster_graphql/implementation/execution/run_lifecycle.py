@@ -12,8 +12,11 @@ from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.merger import merge_dicts
 
-from ..external import ensure_valid_config, get_external_execution_plan_or_raise
-from ..utils import ExecutionParams
+from dagster_graphql.implementation.external import (
+    ensure_valid_config,
+    get_external_execution_plan_or_raise,
+)
+from dagster_graphql.implementation.utils import ExecutionParams
 
 
 def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:
@@ -103,14 +106,16 @@ def create_valid_pipeline_run(
             else None
         ),
         run_config=execution_params.run_config,
-        step_keys_to_execute=step_keys_to_execute,
+        step_keys_to_execute=external_execution_plan.execution_plan_snapshot.step_keys_to_execute,
         tags=tags,
         root_run_id=execution_params.execution_metadata.root_run_id,
         parent_run_id=execution_params.execution_metadata.parent_run_id,
         status=DagsterRunStatus.NOT_STARTED,
-        external_job_origin=external_pipeline.get_external_origin(),
+        external_job_origin=external_pipeline.get_remote_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_pipeline),
+        asset_graph=code_location.get_repository(
+            external_pipeline.repository_handle.repository_name
+        ).asset_graph,
     )
 
     return dagster_run

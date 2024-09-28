@@ -1,12 +1,14 @@
 import graphene
-import pendulum
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.events import DagsterEventType
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._time import datetime_from_timestamp
 from dagster._utils import check
 
-from .pipelines.status import GrapheneRunStatus
-from .runs import GrapheneRunConfigData
-from .util import non_null_list
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.runs import GrapheneRunConfigData
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneAssetKeyInput(graphene.InputObjectType):
@@ -14,6 +16,9 @@ class GrapheneAssetKeyInput(graphene.InputObjectType):
 
     class Meta:
         name = "AssetKeyInput"
+
+    def to_asset_key(self) -> AssetKey:
+        return AssetKey(self.path)
 
 
 class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
@@ -43,6 +48,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
+    excludeSubruns = graphene.InputField(graphene.Boolean)
 
     class Meta:
         description = """This type represents a filter on Dagster runs."""
@@ -60,10 +66,10 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
-        updated_before = pendulum.from_timestamp(self.updatedBefore) if self.updatedBefore else None
-        updated_after = pendulum.from_timestamp(self.updatedAfter) if self.updatedAfter else None
-        created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
-        created_after = pendulum.from_timestamp(self.createdAfter) if self.createdAfter else None
+        updated_before = datetime_from_timestamp(self.updatedBefore) if self.updatedBefore else None
+        updated_after = datetime_from_timestamp(self.updatedAfter) if self.updatedAfter else None
+        created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
@@ -75,6 +81,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             updated_after=updated_after,
             created_before=created_before,
             created_after=created_after,
+            exclude_subruns=self.excludeSubruns,
         )
 
 
@@ -165,7 +172,8 @@ class GraphenePartitionRangeSelector(graphene.InputObjectType):
 
 
 class GraphenePartitionsSelector(graphene.InputObjectType):
-    range = graphene.NonNull(GraphenePartitionRangeSelector)
+    range = graphene.InputField(GraphenePartitionRangeSelector)
+    ranges = graphene.InputField(graphene.List(graphene.NonNull(GraphenePartitionRangeSelector)))
 
     class Meta:
         description = """This type represents a partitions selection."""
@@ -365,12 +373,37 @@ class GrapheneInstigationSelector(graphene.InputObjectType):
     name = graphene.NonNull(graphene.String)
 
 
-class GrapheneInputTag(graphene.InputObjectType):
-    name = graphene.NonNull(graphene.String)
+class GrapheneTagInput(graphene.InputObjectType):
+    key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "InputTag"
+        name = "TagInput"
+
+
+class GrapheneBulkActionsFilter(graphene.InputObjectType):
+    statuses = graphene.List(
+        graphene.NonNull("dagster_graphql.schema.backfill.GrapheneBulkActionStatus")
+    )
+    createdBefore = graphene.InputField(graphene.Float)
+    createdAfter = graphene.InputField(graphene.Float)
+
+    class Meta:
+        description = """This type represents a filter on Dagster Bulk Actions (backfills)."""
+        name = "BulkActionsFilter"
+
+    def to_selector(self):
+        statuses = (
+            [BulkActionStatus[status.value] for status in self.statuses] if self.statuses else None
+        )
+        created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
+
+        return BulkActionsFilter(
+            statuses=statuses,
+            created_before=created_before,
+            created_after=created_after,
+        )
 
 
 types = [
@@ -392,6 +425,7 @@ types = [
     GrapheneSensorSelector,
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
-    GrapheneInputTag,
+    GrapheneTagInput,
     GrapheneReportRunlessAssetEventsParams,
+    GrapheneBulkActionsFilter,
 ]

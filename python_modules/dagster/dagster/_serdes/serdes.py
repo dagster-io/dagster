@@ -28,6 +28,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -47,12 +48,17 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._model import as_dict, has_generated_new, is_dagster_model
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
+from dagster._record import (
+    IHaveNew,
+    as_dict_for_new,
+    get_record_annotations,
+    has_generated_new,
+    is_record,
+)
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
-
-from .errors import DeserializationError, SerdesUsageError, SerializationError
 
 if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this
@@ -88,6 +94,7 @@ PackableValue: TypeAlias = Union[
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
+    IHaveNew,  # indirect way of indicating @record_custom classes are packable
 ]
 
 UnpackedValue: TypeAlias = Union[
@@ -105,6 +112,7 @@ UnpackedValue: TypeAlias = Union[
     FrozenSet["PackableValue"],
     Enum,
     "UnknownSerdesValue",
+    IHaveNew,
 ]
 
 SerializableObject: TypeAlias = Union[
@@ -148,6 +156,7 @@ class WhitelistMap(NamedTuple):
     object_serializers: Dict[str, "ObjectSerializer"]
     object_deserializers: Dict[str, "ObjectSerializer"]
     enum_serializers: Dict[str, "EnumSerializer"]
+    object_type_map: Dict[str, Type]
 
     def register_object(
         self,
@@ -159,7 +168,9 @@ class WhitelistMap(NamedTuple):
         storage_field_names: Optional[Mapping[str, str]] = None,
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+        skip_when_none_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
+        kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
         """Register a model class in the whitelist map.
 
@@ -175,11 +186,13 @@ class WhitelistMap(NamedTuple):
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
+            skip_when_none_fields=skip_when_none_fields,
             field_serializers=(
                 {k: klass.get_instance() for k, klass in field_serializers.items()}
                 if field_serializers
                 else None
             ),
+            kwargs_fields=kwargs_fields,
         )
         self.object_serializers[name] = serializer
         deserializer_name = storage_name or name
@@ -191,6 +204,8 @@ class WhitelistMap(NamedTuple):
         if old_storage_names:
             for old_storage_name in old_storage_names:
                 self.object_deserializers[old_storage_name] = serializer
+
+        self.object_type_map[name] = serializer.klass
 
     def register_enum(
         self,
@@ -214,7 +229,12 @@ class WhitelistMap(NamedTuple):
 
     @staticmethod
     def create() -> "WhitelistMap":
-        return WhitelistMap(object_serializers={}, object_deserializers={}, enum_serializers={})
+        return WhitelistMap(
+            object_serializers={},
+            object_deserializers={},
+            enum_serializers={},
+            object_type_map={},
+        )
 
 
 _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
@@ -239,8 +259,9 @@ def whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = ...,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
+    skip_when_none_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
+    kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Callable[[T_Type], T_Type]: ...
 
 
@@ -253,8 +274,9 @@ def whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = None,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+    skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
+    kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorator to whitelist an object (NamedTuple / dataclass / pydantic model) or
     Enum subclass to be serializable. Various arguments can be passed to alter
@@ -288,11 +310,19 @@ def whitelist_for_serdes(
          Does not apply to enums.
       skip_when_empty_fields (Optional[AbstractSet[str]]):
           A set of fields that should be skipped when serializing if they are an empty collection
-          (list, dict, tuple, or set). This allows a stable snapshot ID to be maintained when a new
+          (list, dict, tuple, or set) or None. This allows a stable snapshot ID to be maintained when a new
           field is added. For example, if `{"bar"}` is passed as `skip_when_empty_fields` for `Foo`,
           then serializing `Foo(bar=[])` will give `{"__class__": "Foo"}` (no `bar` in the
           serialization). This is because the `[]` is an empty list and so is dropped. Does not
           apply to enums.
+      skip_when_none_fields (Optional[AbstractSet[str]]):
+          A set of fields that should be skipped when serializing if they are None. Unlike `skip_when_empty_fields`,
+          this will not skip fields that are empty collections, allowing preservation of a
+          distinction between None and empty collections across serialization boundaries. This
+          allows a stable snapshot ID to be maintained when a new field is added. For example, if
+          `{"bar"}` is passed as `skip_when_none_fields` for `Foo`, then serializing `Foo(bar=None)`
+          will give `{"__class__": "Foo"}` (no `bar` in the serialization). This is because the `None`
+          is an empty list and so is dropped. Does not apply to enums.
       field_serializers (Optional[Mapping[str, FieldSerializer]]):
           A mapping of field names to `FieldSerializer` classes containing custom serialization
           logic. If a field has an associated `FieldSerializer`, then the `pack` and `unpack`
@@ -301,18 +331,18 @@ def whitelist_for_serdes(
           The canonical example is `MetadataFieldSerializer`.  Note that if the field needs to be
           stored under a different name, then it still needs an entry in `storage_field_names` even
           if a `FieldSerializer` is provided. Does not apply to enums.
+        kwargs_fields (Optional[AbstractSet[str]]): A set of fields that will be passed to the constructor in kwargs.
     """
-    if storage_field_names or old_fields or skip_when_empty_fields:
+    if storage_field_names or old_fields or skip_when_empty_fields or skip_when_none_fields:
         check.invariant(
             serializer is None or issubclass(serializer, ObjectSerializer),
-            "storage_field_names, old_fields, skip_when_empty_fields can only be used with a"
+            "storage_field_names, old_fields, skip_when_empty_fields, skip_when_none_fields can only be used with a"
             " ObjectSerializer",
         )
     if __cls is not None:  # decorator invoked directly on class
         check.class_param(__cls, "__cls")
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP,
-            is_pickleable=is_pickleable,
         )(__cls)
     else:  # decorator passed params
         check.opt_class_param(serializer, "serializer", superclass=Serializer)
@@ -325,8 +355,9 @@ def whitelist_for_serdes(
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
+            skip_when_none_fields=skip_when_none_fields,
             field_serializers=field_serializers,
-            is_pickleable=is_pickleable,
+            kwargs_fields=kwargs_fields,
         )
 
 
@@ -338,8 +369,9 @@ def _whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = None,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+    skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
+    kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if issubclass(klass, Enum) and (
@@ -356,7 +388,10 @@ def _whitelist_for_serdes(
         elif is_named_tuple_subclass(klass) and (
             serializer is None or issubclass(serializer, NamedTupleSerializer)
         ):
-            _check_serdes_tuple_class_invariants(klass, is_pickleable=is_pickleable)
+            _check_serdes_tuple_class_invariants(
+                klass,
+                kwargs_fields=kwargs_fields,
+            )
 
             whitelist_map.register_object(
                 klass.__name__,
@@ -367,7 +402,9 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
+                kwargs_fields=kwargs_fields,
             )
             return klass  # type: ignore  # (NamedTuple quirk)
 
@@ -383,6 +420,7 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
             return klass  # type: ignore
@@ -398,6 +436,7 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
             return klass
@@ -455,6 +494,7 @@ class UnpackContext:
     def clear_ignored_unknown_values(self, obj: T) -> T:
         if isinstance(obj, UnknownSerdesValue):
             self.observed_unknown_serdes_values.discard(obj)
+            self.clear_ignored_unknown_values(obj.value)
         elif isinstance(obj, (list, set, frozenset)):
             for inner in obj:
                 self.clear_ignored_unknown_values(inner)
@@ -501,7 +541,12 @@ class EnumSerializer(Serializer, Generic[T_Enum]):
         return self.storage_name or self.klass.__name__
 
 
-EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (None, [], {}, set())
+EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (
+    None,
+    [],
+    {},
+    set(),
+)
 
 
 class ObjectSerializer(Serializer, Generic[T]):
@@ -514,7 +559,9 @@ class ObjectSerializer(Serializer, Generic[T]):
         storage_field_names: Optional[Mapping[str, str]] = None,
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+        skip_when_none_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, "FieldSerializer"]] = None,
+        kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
         self.klass = klass
         self.storage_name = storage_name
@@ -522,7 +569,9 @@ class ObjectSerializer(Serializer, Generic[T]):
         self.loaded_field_names = {v: k for k, v in self.storage_field_names.items()}
         self.old_fields = old_fields or {}
         self.skip_when_empty_fields = skip_when_empty_fields or set()
+        self.skip_when_none_fields = skip_when_none_fields or set()
         self.field_serializers = field_serializers or {}
+        self.kwargs_fields = kwargs_fields
 
     @abstractmethod
     def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]: ...
@@ -594,7 +643,9 @@ class ObjectSerializer(Serializer, Generic[T]):
     ) -> Iterator[Tuple[str, JsonSerializableValue]]:
         yield "__class__", self.get_storage_name()
         for key, inner_value in self.object_as_mapping(self.before_pack(value)).items():
-            if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
+            if (key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP) or (
+                key in self.skip_when_none_fields and inner_value is None
+            ):
                 continue
             storage_key = self.storage_field_names.get(key, key)
             custom = self.field_serializers.get(key)
@@ -637,18 +688,31 @@ T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple, default=NamedTuple)
 
 class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
     def object_as_mapping(self, value: T_NamedTuple) -> Mapping[str, Any]:
-        if is_dagster_model(value):
-            return as_dict(value)
+        if is_record(value):
+            return as_dict_for_new(value)
 
         return value._asdict()
 
     @cached_property
     def constructor_param_names(self) -> Sequence[str]:
-        # if its an @dagster_model generated new, just use annotations
         if has_generated_new(self.klass):
-            return list(self.klass.__annotations__.keys())
+            return list(get_record_annotations(self.klass).keys())
 
-        return list(signature(self.klass.__new__).parameters.keys())
+        names = []
+        for name, parameter in signature(self.klass.__new__).parameters.items():
+            if parameter.kind is Parameter.VAR_POSITIONAL:
+                check.failed("Can not use positional args capture on serdes object.")
+            elif parameter.kind is Parameter.VAR_KEYWORD:
+                names.extend(
+                    check.not_none(
+                        self.kwargs_fields,
+                        "Must specify kwargs_fields when using kwarg capture in __new__.",
+                    )
+                )
+            else:
+                names.append(name)
+
+        return names
 
 
 T_Dataclass = TypeVar("T_Dataclass", bound="DataclassInstance", default="DataclassInstance")
@@ -729,7 +793,10 @@ class SetToSequenceFieldSerializer(FieldSerializer):
         return set(sequence_value) if sequence_value is not None else None
 
     def pack(
-        self, set_value: Optional[AbstractSet[Any]], whitelist_map: WhitelistMap, descent_path: str
+        self,
+        set_value: Optional[AbstractSet[Any]],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
     ) -> Optional[Sequence[Any]]:
         return (
             sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
@@ -1048,23 +1115,65 @@ def deserialize_value(
     """
     check.str_param(val, "val")
 
-    # Never issue warnings when deserializing deprecated objects.
-    with disable_dagster_warnings():
-        context = UnpackContext()
-        unpacked_value = seven.json.loads(
-            val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)
-        )
-        unpacked_value = context.finalize_unpack(unpacked_value)
-        if as_type and not (
-            is_named_tuple_instance(unpacked_value)
-            if as_type is NamedTuple
-            else isinstance(unpacked_value, as_type)
-        ):
-            raise DeserializationError(
-                f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
-            )
+    return deserialize_values([val], as_type, whitelist_map)[0]
 
-    return unpacked_value
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Type[T_PackableValue],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[T_PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: None = ...,
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]: ...
+
+
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ] = None,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
+    """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
+    with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
+        whitelist_map.object_type_map
+    ):
+        unpacked_values = []
+        for val in vals:
+            context = UnpackContext()
+            unpacked_value = seven.json.loads(
+                val,
+                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
+            )
+            unpacked_value = context.finalize_unpack(unpacked_value)
+            if as_type and not (
+                is_named_tuple_instance(unpacked_value)
+                if as_type is NamedTuple
+                else isinstance(unpacked_value, as_type)
+            ):
+                raise DeserializationError(
+                    f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
+                )
+            unpacked_values.append(unpacked_value)
+
+    return unpacked_values
 
 
 class UnknownSerdesValue:
@@ -1200,9 +1309,10 @@ def _unpack_value(
 
 
 def _check_serdes_tuple_class_invariants(
-    klass: Type[NamedTuple], is_pickleable: bool = True
+    klass: Type[NamedTuple],
+    kwargs_fields: Optional[AbstractSet[str]],
 ) -> None:
-    # can skip validation on @dagster_model generated new
+    # can skip validation on @record generated new
     if has_generated_new(klass):
         return
 
@@ -1212,7 +1322,7 @@ def _check_serdes_tuple_class_invariants(
     cls_param = dunder_new_params[0]
 
     def _with_header(msg: str) -> str:
-        return f"For namedtuple {klass.__name__}: {msg}"
+        return f"For {klass.__name__}: {msg}"
 
     if cls_param.name not in {"cls", "_cls"}:
         raise SerdesUsageError(
@@ -1223,21 +1333,41 @@ def _check_serdes_tuple_class_invariants(
 
     for index, field in enumerate(klass._fields):
         if index >= len(value_params):
-            error_msg = (
-                "Missing parameters to __new__. You have declared fields "
-                "in the named tuple that are not present as parameters to the "
-                "to the __new__ method. In order for "
-                "both serdes serialization and pickling to work, "
-                f"these must match. Missing: {list(klass._fields[index:])!r}"
-            )
+            if value_params[-1].kind is Parameter.VAR_KEYWORD:
+                if kwargs_fields is None:
+                    raise SerdesUsageError(
+                        _with_header(
+                            "kwargs capture used in __new__ but kwargs_fields was not specified. "
+                            "Declare the set of fields processed via kwargs as kwargs_fields "
+                            f"Expecting: {list(klass._fields[index:])!r}"
+                        )
+                    )
+                elif field not in kwargs_fields:
+                    raise SerdesUsageError(
+                        _with_header(
+                            f'Expected field "{field}" in kwargs_fields but it was not specified.'
+                        )
+                    )
 
-            raise SerdesUsageError(_with_header(error_msg))
+            else:
+                error_msg = (
+                    "Missing parameters to __new__. You have declared fields "
+                    "that are not present as parameters to the "
+                    "to the __new__ method. In order for "
+                    "both serdes serialization and pickling to work, "
+                    "these must match or kwargs and kwargs_fields must be used. "
+                    f"Missing: {list(klass._fields[index:])!r}"
+                )
 
-        if is_pickleable:
+                raise SerdesUsageError(_with_header(error_msg))
+
+        if not is_record(klass):
+            # non @record NamedTuples get pickled via ordinal args, so ensure ordering
             value_param = value_params[index]
             if value_param.name != field:
                 error_msg = (
-                    "Params to __new__ must match the order of field declaration in the namedtuple. "
+                    "Params to __new__ must match the order of field declaration for "
+                    "NamedTuples that are not @record based. "
                     f'Declared field number {index + 1} in the namedtuple is "{field}". '
                     f'Parameter {index + 1} in __new__ method is "{value_param.name}".'
                 )

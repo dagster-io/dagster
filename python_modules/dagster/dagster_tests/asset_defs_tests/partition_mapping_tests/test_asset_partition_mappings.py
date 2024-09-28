@@ -597,9 +597,9 @@ def test_partition_mapping_with_asset_deps():
 
     materialize([upstream, downstream], partition_key="2023-08-20")
 
-    assert downstream.partition_mappings == {
-        AssetKey("upstream"): TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
-    }
+    assert downstream.get_partition_mapping(AssetKey("upstream")) == TimeWindowPartitionMapping(
+        start_offset=-1, end_offset=-1
+    )
 
     ### With @multi_asset and AssetSpec
     asset_1 = AssetSpec(key="asset_1")
@@ -656,10 +656,8 @@ def test_partition_mapping_with_asset_deps():
 
     materialize([multi_asset_1, multi_asset_2], partition_key="2023-08-20")
 
-    assert multi_asset_2.partition_mappings == {
-        AssetKey("asset_1"): asset_1_partition_mapping,
-        AssetKey("asset_2"): asset_2_partition_mapping,
-    }
+    assert multi_asset_2.get_partition_mapping(AssetKey("asset_1")) == asset_1_partition_mapping
+    assert multi_asset_2.get_partition_mapping(AssetKey("asset_2")) == asset_2_partition_mapping
 
 
 def test_conflicting_mappings_with_asset_deps():
@@ -756,9 +754,9 @@ def test_self_dependent_partition_mapping_with_asset_deps():
 
     materialize([self_dependent], partition_key="2023-08-20")
 
-    assert self_dependent.partition_mappings == {
-        AssetKey("self_dependent"): TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
-    }
+    assert self_dependent.get_partition_mapping(
+        AssetKey("self_dependent")
+    ) == TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
 
     ### With @multi_asset and AssetSpec
     asset_1 = AssetSpec(

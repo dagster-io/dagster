@@ -1,25 +1,18 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {MemoryRouter} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
+import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
   buildInstigationEvent,
   buildInstigationEventConnection,
   buildPartitionBackfill,
 } from '../../../graphql/types';
+import {REFRESHING_DATA} from '../../../live-data-provider/LiveDataRefreshButton';
 import {buildQueryMock} from '../../../testing/mocking';
 import {BACKFILL_LOGS_PAGE_QUERY, BackfillLogsTab} from '../BackfillLogsTab';
-
-// This file must be mocked because Jest can't handle `import.meta.url`.
-jest.mock('../../../graph/asyncGraphLayout', () => ({}));
-jest.mock('../../../app/QueryRefresh', () => {
-  return {
-    useQueryRefreshAtInterval: jest.fn(),
-    QueryRefreshCountdown: jest.fn(() => <div />),
-  };
-});
 
 const mockBackfillId = 'mockBackfillId';
 
@@ -88,9 +81,15 @@ describe('BackfillLogsTab', () => {
       </RecoilRoot>,
     );
 
+    expect(await screen.findByText(REFRESHING_DATA)).toBeVisible();
+
     waitFor(async () => {
       expect(await screen.findByText('Event 1')).toBeVisible();
       expect(await screen.findByText('Event 4')).toBeVisible();
+    });
+
+    waitFor(async () => {
+      expect(await screen.findByText(REFRESHING_DATA)).not.toBeVisible();
     });
   });
 });

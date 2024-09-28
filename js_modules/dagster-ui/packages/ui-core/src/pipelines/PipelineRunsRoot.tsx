@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -10,7 +9,7 @@ import {
   TokenizingFieldValue,
   tokenToString,
 } from '@dagster-io/ui-components';
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {explorerPathFromString} from './PipelinePathUtils';
@@ -19,6 +18,7 @@ import {
   PipelineRunsRootQueryVariables,
 } from './types/PipelineRunsRoot.types';
 import {useJobTitle} from './useJobTitle';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
@@ -26,9 +26,8 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {usePageLoadTrace} from '../performance';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -42,7 +41,11 @@ import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {AnchorButton} from '../ui/AnchorButton';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {isThisThingAJob, isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext';
+import {
+  isThisThingAJob,
+  isThisThingAnAssetJob,
+  useRepository,
+} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -72,8 +75,6 @@ export const PipelineRunsRoot = (props: Props) => {
   const isJob = isThisThingAJob(repo, pipelineName);
 
   useJobTitle(explorerPath, isJob);
-
-  const trace = usePageLoadTrace('PipelineRunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = useMemo(() => {
@@ -115,8 +116,6 @@ export const PipelineRunsRoot = (props: Props) => {
     },
   });
 
-  useBlockTraceOnQueryResult(queryResult, 'PipelineRunsRootQuery');
-
   const onAddTag = useCallback(
     (token: RunFilterToken) => {
       const tokenAsString = tokenToString(token);
@@ -134,12 +133,6 @@ export const PipelineRunsRoot = (props: Props) => {
     onChange: setFilterTokens,
     loading: queryResult.loading,
   });
-
-  useEffect(() => {
-    if (!queryResult.loading) {
-      trace.endTrace();
-    }
-  }, [queryResult.loading, trace]);
 
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>

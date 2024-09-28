@@ -32,11 +32,10 @@ from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.compute import ExecutionContextTypes
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
-
-from ..context.compute import ExecutionContextTypes
 
 
 def create_op_compute_wrapper(
@@ -184,10 +183,10 @@ def _filter_expected_output_defs(
         return output_defs
 
     check_names_by_asset_key = {}
-    for spec in context.op_execution_context.assets_def.check_specs:
-        if spec.asset_key not in check_names_by_asset_key:
-            check_names_by_asset_key[spec.asset_key] = []
-        check_names_by_asset_key[spec.asset_key].append(spec.name)
+    for check_key in context.op_execution_context.selected_asset_check_keys:
+        if check_key.asset_key not in check_names_by_asset_key:
+            check_names_by_asset_key[check_key.asset_key] = []
+        check_names_by_asset_key[check_key.asset_key].append(check_key.name)
 
     remove_outputs = []
     for asset_result in asset_results:
@@ -351,13 +350,16 @@ def validate_and_coerce_op_result_to_iterator(
                 _check_output_object_name(element, output_def, position)
 
                 with disable_dagster_warnings():
-                    yield Output(
+                    output = Output(
                         output_name=output_def.name,
                         value=element.value,
                         metadata=element.metadata,
                         data_version=element.data_version,
                         tags=element.tags,
                     )
+
+                yield output
+
             else:
                 # If annotation indicates a generic output annotation, and an
                 # output object was not received, throw an error.

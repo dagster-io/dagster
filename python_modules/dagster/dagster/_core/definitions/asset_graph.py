@@ -2,7 +2,7 @@ from collections import defaultdict
 from functools import cached_property
 from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
@@ -12,9 +12,13 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
-    AssetKeyOrCheckKey,
+    AssetCheckNode,
     BaseAssetGraph,
     BaseAssetNode,
+    EntityKey,
+)
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -25,6 +29,7 @@ from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependenc
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 class AssetNode(BaseAssetNode):
@@ -76,6 +81,10 @@ class AssetNode(BaseAssetNode):
         return self._spec.tags
 
     @property
+    def kinds(self) -> AbstractSet[str]:
+        return self._spec.kinds or set()
+
+    @property
     def owners(self) -> Sequence[str]:
         return self._spec.owners
 
@@ -89,7 +98,7 @@ class AssetNode(BaseAssetNode):
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
-        return self.assets_def.partition_mappings
+        return self._spec.partition_mappings
 
     @property
     def freshness_policy(self) -> Optional[FreshnessPolicy]:
@@ -98,6 +107,10 @@ class AssetNode(BaseAssetNode):
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
         return self._spec.auto_materialize_policy
+
+    @property
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        return self._spec.automation_condition
 
     @property
     def auto_observe_interval_minutes(self) -> Optional[float]:
@@ -124,7 +137,7 @@ class AssetNode(BaseAssetNode):
         )
 
     @property
-    def execution_set_asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
+    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
         if self.assets_def.can_subset:
             return {self.key}
         else:
@@ -153,6 +166,14 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
+        self._asset_check_nodes_by_key = {
+            k: AssetCheckNode(
+                k,
+                v.get_spec_for_check_key(k).blocking,
+                v.get_spec_for_check_key(k).automation_condition,
+            )
+            for k, v in assets_defs_by_check_key.items()
+        }
         self._assets_defs_by_check_key = assets_defs_by_check_key
 
     @staticmethod
@@ -169,10 +190,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         - Creating unexecutable external asset definitions for any keys referenced by asset checks
           or as dependencies, but for which no definition was provided.
         """
-        from dagster._core.definitions.external_asset import (
-            create_external_asset_from_source_asset,
-            external_asset_from_spec,
-        )
+        from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
         # Convert any source assets to external assets
         assets_defs = [
@@ -184,14 +202,23 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # Resolve all asset dependencies. An asset dependency is resolved when its key is an
         # AssetKey not subject to any further manipulation.
         resolved_deps = ResolvedAssetDependencies(assets_defs, [])
-        assets_defs = [
-            ad.with_attributes(
-                input_asset_key_replacements={
-                    raw_key: resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
-                    for input_name, raw_key in ad.keys_by_input_name.items()
-                }
-            )
+
+        input_asset_key_replacements = [
+            {
+                raw_key: normalized_key
+                for input_name, raw_key in ad.keys_by_input_name.items()
+                if (
+                    normalized_key := resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
+                )
+                != raw_key
+            }
             for ad in assets_defs
+        ]
+
+        # Only update the assets defs if we're actually replacing input asset keys
+        assets_defs = [
+            ad.with_attributes(input_asset_key_replacements=reps) if reps else ad
+            for ad, reps in zip(assets_defs, input_asset_key_replacements)
         ]
 
         # Create unexecutable external assets definitions for any referenced keys for which no
@@ -199,12 +226,18 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         all_referenced_asset_keys = {
             key for assets_def in assets_defs for key in assets_def.dependency_keys
         }
-        for key in all_referenced_asset_keys.difference(all_keys):
-            assets_defs.append(
-                external_asset_from_spec(
-                    AssetSpec(key=key, metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True})
+        with disable_dagster_warnings():
+            for key in all_referenced_asset_keys.difference(all_keys):
+                assets_defs.append(
+                    AssetsDefinition(
+                        specs=[
+                            AssetSpec(
+                                key=key,
+                                metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True},
+                            )
+                        ]
+                    )
                 )
-            )
         return assets_defs
 
     @classmethod
@@ -243,15 +276,40 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         )
 
     def get_execution_set_asset_and_check_keys(
-        self, asset_or_check_key: AssetKeyOrCheckKey
-    ) -> AbstractSet[AssetKeyOrCheckKey]:
-        if isinstance(asset_or_check_key, AssetKey):
-            return self.get(asset_or_check_key).execution_set_asset_and_check_keys
+        self, entity_key: EntityKey
+    ) -> AbstractSet[EntityKey]:
+        if isinstance(entity_key, AssetKey):
+            return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
-            assets_def = self._assets_defs_by_check_key[asset_or_check_key]
+            assets_def = self._assets_defs_by_check_key[entity_key]
+            return {entity_key} if assets_def.can_subset else assets_def.asset_and_check_keys
+
+    def get_execution_set_identifier(self, entity_key: EntityKey) -> Optional[str]:
+        """All assets and asset checks with the same execution_set_identifier must be executed
+        together - i.e. you can't execute just a subset of them.
+
+        Returns None if the asset or asset check can be executed individually.
+        """
+        from dagster._core.definitions.graph_definition import GraphDefinition
+
+        if isinstance(entity_key, AssetKey):
+            assets_def = self.get(entity_key).assets_def
             return (
-                {asset_or_check_key} if assets_def.can_subset else assets_def.asset_and_check_keys
+                assets_def.unique_id
+                if (
+                    not assets_def.can_subset
+                    and (len(assets_def.keys) > 1 or assets_def.check_keys)
+                )
+                else None
             )
+
+        else:  # AssetCheckKey
+            assets_def = self._assets_defs_by_check_key[entity_key]
+            # Executing individual checks isn't supported in graph assets
+            if isinstance(assets_def.node_def, GraphDefinition):
+                return assets_def.unique_id
+            else:
+                return assets_def.unique_id if not assets_def.can_subset else None
 
     @cached_property
     def assets_defs(self) -> Sequence[AssetsDefinition]:
@@ -262,27 +320,32 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             }
         )
 
-    def assets_defs_for_keys(
-        self, keys: Iterable[AssetKeyOrCheckKey]
-    ) -> Sequence[AssetsDefinition]:
-        return list(
-            {
-                *[self.get(key).assets_def for key in keys if isinstance(key, AssetKey)],
-                *[
-                    self._assets_defs_by_check_key[key]
-                    for key in keys
-                    if isinstance(key, AssetCheckKey)
-                ],
-            }
-        )
+    def assets_defs_for_keys(self, keys: Iterable[EntityKey]) -> Sequence[AssetsDefinition]:
+        return list({self.assets_def_for_key(key) for key in keys})
+
+    def assets_def_for_key(self, key: EntityKey) -> AssetsDefinition:
+        if isinstance(key, AssetKey):
+            return self.get(key).assets_def
+        else:
+            return self._assets_defs_by_check_key[key]
 
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for ad in self.assets_defs for key in ad.check_keys}
 
+    @cached_property
+    def unpartitioned_assets_def_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        """Asset check keys that correspond to unpartitioned AssetsDefinitions."""
+        return {
+            k for k in self.asset_check_keys if self.assets_def_for_key(k).partitions_def is None
+        }
 
-def materializable_in_same_run(
-    asset_graph: BaseAssetGraph, child_key: AssetKey, parent_key: AssetKey
+    def get_check_spec(self, key: AssetCheckKey) -> AssetCheckSpec:
+        return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
+
+
+def executable_in_same_run(
+    asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
 ):
     """Returns whether a child asset can be materialized in the same run as a parent asset."""
     from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
@@ -291,24 +354,23 @@ def materializable_in_same_run(
 
     child_node = asset_graph.get(child_key)
     parent_node = asset_graph.get(parent_key)
-    return (
-        # both assets must be materializable
-        child_node.is_materializable
-        and parent_node.is_materializable
-        # the parent must have the same partitioning
-        and child_node.partitions_def == parent_node.partitions_def
-        # the parent must have a simple partition mapping to the child
-        and (
-            not parent_node.is_partitioned
-            or isinstance(
-                asset_graph.get_partition_mapping(child_node.key, parent_node.key),
-                (TimeWindowPartitionMapping, IdentityPartitionMapping),
-            )
-        )
-        # the parent must be in the same repository to be materialized alongside the candidate
-        and (
-            not isinstance(asset_graph, RemoteAssetGraph)
-            or asset_graph.get_repository_handle(child_key)
-            == asset_graph.get_repository_handle(parent_key)
-        )
+
+    # if operating on a RemoteAssetGraph, must share a repository handle
+    if isinstance(asset_graph, RemoteAssetGraph):
+        child_handle = asset_graph.get_repository_handle(child_key)
+        parent_handle = asset_graph.get_repository_handle(parent_key)
+        if child_handle != parent_handle:
+            return False
+
+    # partitions definitions must match
+    if child_node.partitions_def != parent_node.partitions_def:
+        return False
+
+    # unpartitioned assets can always execute together
+    if child_node.partitions_def is None:
+        return True
+
+    return isinstance(
+        asset_graph.get_partition_mapping(child_node.key, parent_node.key),
+        (TimeWindowPartitionMapping, IdentityPartitionMapping),
     )

@@ -25,7 +25,11 @@ from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
+    WorkspaceSnapshot,
+)
 
 
 @asset
@@ -150,15 +154,18 @@ def _make_location_entry(defs_attr: str, instance: DagsterInstance):
         load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},
         update_timestamp=time.time(),
+        version_key="test",
     )
 
 
 def _make_context(instance: DagsterInstance, defs_attrs):
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
-        workspace_snapshot={
-            defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
-        },
+        workspace_snapshot=WorkspaceSnapshot(
+            code_location_entries={
+                defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
+            }
+        ),
         process_context=mock.MagicMock(),
         version=None,
         source=None,
@@ -230,86 +237,6 @@ def test_partitioned_source_asset(instance):
 
     assert asset_graph.get(AssetKey("partitioned_source")).is_partitioned
     assert asset_graph.get(AssetKey("downstream_of_partitioned_source")).is_partitioned
-
-
-def test_get_implicit_job_name_for_assets(instance):
-    asset_graph = _make_context(instance, ["defs1", "defs2"]).asset_graph
-    assert (
-        asset_graph.get_implicit_job_name_for_assets([asset1.key], external_repo=None)
-        == "__ASSET_JOB"
-    )
-    assert (
-        asset_graph.get_implicit_job_name_for_assets([asset2.key], external_repo=None)
-        == "__ASSET_JOB"
-    )
-    assert (
-        asset_graph.get_implicit_job_name_for_assets([asset1.key, asset2.key], external_repo=None)
-        == "__ASSET_JOB"
-    )
-
-    partitioned_defs_workspace = _make_context(instance, ["partitioned_defs"])
-    asset_graph = partitioned_defs_workspace.asset_graph
-    external_repo = next(
-        iter(partitioned_defs_workspace.code_locations[0].get_repositories().values())
-    )
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [downstream_of_partitioned_source.key], external_repo=external_repo
-        )
-        == "__ASSET_JOB_1"
-    )
-    # shares a partitions_def with the above
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [partitioned_observable_source2.key], external_repo=external_repo
-        )
-        == "__ASSET_JOB_1"
-    )
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [partitioned_observable_source1.key], external_repo=external_repo
-        )
-        == "__ASSET_JOB_0"
-    )
-
-    asset_graph = _make_context(instance, ["different_partitions_defs"]).asset_graph
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [static_partitioned_asset.key], external_repo=None
-        )
-        == "__ASSET_JOB_0"
-    )
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [other_static_partitioned_asset.key], external_repo=None
-        )
-        == "__ASSET_JOB_0"
-    )
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [static_partitioned_asset.key, other_static_partitioned_asset.key], external_repo=None
-        )
-        == "__ASSET_JOB_0"
-    )
-
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [downstream_of_partitioned_source.key], external_repo=None
-        )
-        == "__ASSET_JOB_1"
-    )
-
-    assert (
-        asset_graph.get_implicit_job_name_for_assets(
-            [
-                static_partitioned_asset.key,
-                other_static_partitioned_asset.key,
-                downstream_of_partitioned_source.key,
-            ],
-            external_repo=None,
-        )
-        is None
-    )
 
 
 def test_auto_materialize_policy(instance):
@@ -416,10 +343,11 @@ cycle_defs_a = Definitions(assets=[a])
 cycle_defs_b = Definitions(assets=[b])
 
 
-def test_cycle_status(instance):
-    asset_graph = _make_context(instance, ["cycle_defs_a", "cycle_defs_b"]).asset_graph
+def test_cycle_status(instance) -> None:
+    context = _make_context(instance, ["cycle_defs_a", "cycle_defs_b"])
+    asset_graph = context.asset_graph
 
-    resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph)
+    resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph, context)
     for key in asset_graph.all_asset_keys:
         resolver.get_status(key)
 

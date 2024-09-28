@@ -49,13 +49,16 @@ const showNetworkError = async (statusCode: number) => {
 
 export const createErrorLink = (toastOnErrors?: boolean) =>
   onError((response) => {
+    let didLogError = false;
+    // Wrap the operation name in curly braces so that our datadog RUM handler can parse the operation name out easily to add as an attribute.
+    const operationName = `{${response.operation.operationName}}`;
     if (response.graphQLErrors) {
-      const {graphQLErrors, operation} = response;
-      const {operationName} = operation;
+      const {graphQLErrors} = response;
       graphQLErrors.forEach((error) => {
         if (toastOnErrors) {
           showGraphQLError(error, operationName);
         }
+        didLogError = true;
         console.error('[Graphql error]', operationName, error);
       });
     }
@@ -67,6 +70,10 @@ export const createErrorLink = (toastOnErrors?: boolean) =>
       'data' in response.response &&
       response.response.data
     ) {
+      if (!didLogError) {
+        didLogError = true;
+        console.error('[Graphql error]', operationName, response.response.errors);
+      }
       // This is a bit hacky but if you try forwarding response.response directly it seems
       // the errors property prevents it from making it to the react code so instead we grab just the data property.
       return Observable.from([{data: response.response.data}]);
@@ -74,6 +81,10 @@ export const createErrorLink = (toastOnErrors?: boolean) =>
 
     const serverError = response.networkError;
     if (serverError && 'result' in serverError && typeof serverError.result === 'object') {
+      if (!didLogError) {
+        console.error('[Graphql error]', operationName, serverError.message);
+        didLogError = true;
+      }
       // we can return an observable here (normally used to perform retries)
       // to flow the error payload to the product
       return Observable.from([serverError.result]);
@@ -82,7 +93,13 @@ export const createErrorLink = (toastOnErrors?: boolean) =>
       if (toastOnErrors && 'statusCode' in response.networkError) {
         showNetworkError(response.networkError.statusCode);
       }
-      console.error('[Network error]', response.networkError);
+      if (!didLogError) {
+        didLogError = true;
+        console.error('[Network error]', operationName, response.networkError);
+      }
+    }
+    if (!didLogError) {
+      console.error('[Graphql error]', operationName, response.response?.errors);
     }
     return;
   });
@@ -157,6 +174,7 @@ export const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps
           color: Colors.textDefault(),
           fontFamily: FontFamily.monospace,
           whiteSpace: 'pre',
+          fontVariantLigatures: 'none',
           overflowX: 'auto',
         }}
       >

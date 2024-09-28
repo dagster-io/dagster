@@ -4,14 +4,13 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
+from dagster._config.config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
+from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._serdes import serialize_value
 from dagster._seven import is_subclass
 from dagster._utils import is_enum_value
 from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
-
-from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
-from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
 
 def _is_config_type_class(obj) -> bool:
@@ -48,7 +47,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
 
 def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
-    from .field_utils import convert_fields_to_dict_type
+    from dagster._config.field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type
     if isinstance(obj, ConfigType):
@@ -95,7 +94,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
     if BuiltinEnum.contains(obj):
         return ConfigType.from_builtin_enum(obj)
 
-    from .primitive_mapping import (
+    from dagster._config.primitive_mapping import (
         is_supported_config_python_builtin,
         remap_python_builtin_for_config,
     )
@@ -268,8 +267,8 @@ class Field:
         is_required: Optional[bool] = None,
         description: Optional[str] = None,
     ):
-        from .post_process import resolve_defaults
-        from .validate import validate_config
+        from dagster._config.post_process import resolve_defaults
+        from dagster._config.validate import validate_config
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 

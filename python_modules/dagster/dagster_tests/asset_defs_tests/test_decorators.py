@@ -36,7 +36,10 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import AssetIn, AssetsDefinition, asset, multi_asset
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
@@ -681,6 +684,37 @@ def test_multi_asset_resource_defs():
     )
 
 
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+def test_multi_asset_resource_defs_specs() -> None:
+    @resource
+    def baz_resource():
+        pass
+
+    @io_manager(required_resource_keys={"baz"})
+    def foo_manager():
+        pass
+
+    @io_manager
+    def bar_manager():
+        pass
+
+    @multi_asset(
+        specs=[
+            AssetSpec("key1", metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo"}),
+            AssetSpec("key2", metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
+        ],
+        resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.required_resource_keys == {"foo", "bar", "baz"}
+
+    ensure_requirements_satisfied(
+        my_asset.resource_defs, list(my_asset.get_resource_requirements())
+    )
+
+
 def test_multi_asset_code_versions():
     @multi_asset(
         outs={
@@ -876,10 +910,19 @@ def test_graph_asset_decorator_no_args():
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
 @ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
+@ignore_warning("Static method `AutomationCondition.eager` is experimental")
+@ignore_warning("Parameter `auto_materialize_policy` is deprecated")
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 @ignore_warning("Parameter `tags` .* is experimental")
 @ignore_warning("Parameter `owners` .* is experimental")
-def test_graph_asset_with_args():
+@pytest.mark.parametrize(
+    "automation_condition_arg",
+    [
+        {"auto_materialize_policy": AutomationCondition.eager().as_auto_materialize_policy()},
+        {"automation_condition": AutomationCondition.eager()},
+    ],
+)
+def test_graph_asset_with_args(automation_condition_arg):
     @resource
     def foo_resource():
         pass
@@ -896,10 +939,10 @@ def test_graph_asset_with_args():
         group_name="group1",
         metadata={"my_metadata": "some_metadata"},
         freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
-        auto_materialize_policy=AutoMaterializePolicy.lazy(),
         resource_defs={"foo": foo_resource},
         tags={"foo": "bar"},
         owners=["team:team1", "claire@dagsterlabs.com"],
+        **automation_condition_arg,
     )
     def my_asset(x):
         return my_op2(my_op1(x))
@@ -915,8 +958,7 @@ def test_graph_asset_with_args():
         "claire@dagsterlabs.com",
     ]
     assert (
-        my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
-        == AutoMaterializePolicy.lazy()
+        my_asset.automation_conditions_by_key[AssetKey("my_asset")] == AutomationCondition.eager()
     )
     assert my_asset.resource_defs["foo"] == foo_resource
 
@@ -1050,10 +1092,19 @@ def test_graph_asset_w_config_mapping():
 
 @ignore_warning("Class `FreshnessPolicy` is deprecated")
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
+@ignore_warning("Static method `AutomationCondition.eager` is experimental")
 @ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
+@ignore_warning("Parameter `auto_materialize_policy` is deprecated")
 @ignore_warning("Parameter `resource_defs`")
-def test_graph_multi_asset_decorator():
+@pytest.mark.parametrize(
+    "automation_condition_arg",
+    [
+        {"auto_materialize_policy": AutomationCondition.eager().as_auto_materialize_policy()},
+        {"automation_condition": AutomationCondition.eager()},
+    ],
+)
+def test_graph_multi_asset_decorator(automation_condition_arg):
     @resource
     def foo_resource():
         pass
@@ -1068,9 +1119,7 @@ def test_graph_multi_asset_decorator():
 
     @graph_multi_asset(
         outs={
-            "first_asset": AssetOut(
-                auto_materialize_policy=AutoMaterializePolicy.eager(), code_version="abc"
-            ),
+            "first_asset": AssetOut(code_version="abc", **automation_condition_arg),
             "second_asset": AssetOut(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5)),
         },
         group_name="grp",
@@ -1095,10 +1144,10 @@ def test_graph_multi_asset_decorator():
     )
 
     assert (
-        two_assets.auto_materialize_policies_by_key[AssetKey("first_asset")]
-        == AutoMaterializePolicy.eager()
+        two_assets.automation_conditions_by_key[AssetKey("first_asset")]
+        == AutomationCondition.eager()
     )
-    assert two_assets.auto_materialize_policies_by_key.get(AssetKey("second_asset")) is None
+    assert two_assets.automation_conditions_by_key.get(AssetKey("second_asset")) is None
 
     assert two_assets.resource_defs["foo"] == foo_resource
 
@@ -1271,21 +1320,24 @@ def test_multi_asset_with_bare_resource():
 
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
 @ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
+@ignore_warning("Static method `AutomationCondition.on_cron` is experimental")
+@ignore_warning("Static method `AutomationCondition.eager` is experimental")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
-def test_multi_asset_with_auto_materialize_policy():
+@ignore_warning("Parameter `auto_materialize_policy` is deprecated")
+def test_multi_asset_with_automation_conditions():
+    ac2 = AutomationCondition.on_cron("@daily")
+    ac3 = AutomationCondition.eager()
+
     @multi_asset(
         outs={
             "o1": AssetOut(),
-            "o2": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
-            "o3": AssetOut(auto_materialize_policy=AutoMaterializePolicy.lazy()),
+            "o2": AssetOut(automation_condition=ac2),
+            "o3": AssetOut(auto_materialize_policy=ac3.as_auto_materialize_policy()),
         }
     )
     def my_asset(): ...
 
-    assert my_asset.auto_materialize_policies_by_key == {
-        AssetKey("o2"): AutoMaterializePolicy.eager(),
-        AssetKey("o3"): AutoMaterializePolicy.lazy(),
-    }
+    assert my_asset.automation_conditions_by_key == {AssetKey("o2"): ac2, AssetKey("o3"): ac3}
 
 
 @pytest.mark.parametrize(

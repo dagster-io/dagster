@@ -1,22 +1,21 @@
 import inspect
-from typing import Any, Callable, NamedTuple, Optional, Sequence, Set
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.resource_annotation import get_resource_args
-
-from .events import AssetKey
-from .run_request import RunRequest, SkipReason
-from .sensor_definition import (
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     RawSensorEvaluationFunctionReturn,
     SensorDefinition,
     SensorType,
     validate_and_get_resource_dict,
 )
-from .target import ExecutableDefinition
-from .utils import check_valid_name
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.utils import check_valid_name
 
 
 class AssetSensorParamNames(NamedTuple):
@@ -66,6 +65,8 @@ class AssetSensorDefinition(SensorDefinition):
             object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             (experimental) A list of jobs to be executed when the sensor fires.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
     """
@@ -85,6 +86,7 @@ class AssetSensorDefinition(SensorDefinition):
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -164,6 +166,7 @@ class AssetSensorDefinition(SensorDefinition):
             jobs=jobs,
             default_status=default_status,
             required_resource_keys=combined_required_resource_keys,
+            tags=tags,
         )
 
     @public

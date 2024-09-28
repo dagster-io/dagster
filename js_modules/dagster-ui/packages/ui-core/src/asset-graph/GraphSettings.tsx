@@ -77,7 +77,7 @@ export const ToggleDirectionButton = ({
         }
       >
         <Button
-          icon={<Icon name="graph_vertical" />}
+          icon={<Icon name="graph_horizontal" />}
           onClick={() => setDirection('vertical')}
           style={{background: Colors.backgroundDefault()}}
         />
@@ -91,7 +91,7 @@ export const ToggleDirectionButton = ({
         }
       >
         <Button
-          icon={<Icon name="graph_horizontal" />}
+          icon={<Icon name="graph_vertical" />}
           onClick={() => setDirection('horizontal')}
           style={{background: Colors.backgroundDefault()}}
         />

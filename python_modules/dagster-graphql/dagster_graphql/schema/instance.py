@@ -6,7 +6,6 @@ import graphene
 import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher.base import RunLauncher
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._daemon.asset_daemon import get_auto_materialize_paused
 from dagster._daemon.types import DaemonStatus
@@ -16,8 +15,8 @@ from dagster._utils.concurrency import (
     get_max_concurrency_limit_value,
 )
 
-from .errors import GraphenePythonError
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.errors import GraphenePythonError
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
@@ -234,7 +233,6 @@ class GrapheneInstance(graphene.ObjectType):
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
     hasInfo = graphene.NonNull(graphene.Boolean)
-    hasCapturedLogManager = graphene.NonNull(graphene.Boolean)
     autoMaterializePaused = graphene.NonNull(graphene.Boolean)
     supportsConcurrencyLimits = graphene.NonNull(graphene.Boolean)
     minConcurrencyLimitValue = graphene.NonNull(graphene.Int)
@@ -293,9 +291,6 @@ class GrapheneInstance(graphene.ObjectType):
 
     def resolve_daemonHealth(self, _graphene_info: ResolveInfo):
         return GrapheneDaemonHealth(instance=self._instance)
-
-    def resolve_hasCapturedLogManager(self, _graphene_info: ResolveInfo):
-        return isinstance(self._instance.compute_log_manager, CapturedLogManager)
 
     def resolve_autoMaterializePaused(self, _graphene_info: ResolveInfo):
         return get_auto_materialize_paused(self._instance)

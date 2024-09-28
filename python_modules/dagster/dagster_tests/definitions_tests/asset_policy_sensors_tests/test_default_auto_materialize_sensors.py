@@ -11,8 +11,8 @@ from dagster import (
     sensor,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import ExternalRepository
@@ -55,7 +55,7 @@ def boring_observable_asset():
     pass
 
 
-@sensor()
+@sensor(asset_selection=[auto_materialize_asset])
 def normal_sensor():
     yield SkipReason("OOPS")
 
@@ -83,13 +83,13 @@ defs_without_observables = Definitions(
 
 @pytest.fixture
 def instance_with_auto_materialize_sensors():
-    with instance_for_test({"auto_materialize": {"use_sensors": True}}) as the_instance:
+    with instance_for_test() as the_instance:
         yield the_instance
 
 
 @pytest.fixture
 def instance_without_auto_materialize_sensors():
-    with instance_for_test() as the_instance:
+    with instance_for_test({"auto_materialize": {"use_sensors": False}}) as the_instance:
         yield the_instance
 
 
@@ -97,7 +97,7 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
     instance = instance_with_auto_materialize_sensors
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -123,7 +123,7 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
 
     auto_materialize_sensor = auto_materialize_sensors[0]
 
-    assert auto_materialize_sensor.name == "default_auto_materialize_sensor"
+    assert auto_materialize_sensor.name == "default_automation_condition_sensor"
     assert external_repo.has_external_sensor(auto_materialize_sensor.name)
 
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=True)
@@ -135,7 +135,7 @@ def test_default_auto_materialize_sensors_without_observable(
     instance = instance_with_auto_materialize_sensors
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -154,7 +154,7 @@ def test_default_auto_materialize_sensors_without_observable(
 
     auto_materialize_sensor = sensors[0]
 
-    assert auto_materialize_sensor.name == "default_auto_materialize_sensor"
+    assert auto_materialize_sensor.name == "default_automation_condition_sensor"
     assert external_repo.has_external_sensor(auto_materialize_sensor.name)
 
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=False)
@@ -162,7 +162,7 @@ def test_default_auto_materialize_sensors_without_observable(
 
 def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -181,7 +181,7 @@ def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_s
 
 
 def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_materialize_sensors):
-    auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         asset_selection=[auto_materialize_asset, auto_observe_asset],
     )
@@ -199,7 +199,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
     )
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -217,14 +217,14 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
     assert len(sensors) == 3
 
     assert external_repo.has_external_sensor("normal_sensor")
-    assert external_repo.has_external_sensor("default_auto_materialize_sensor")
+    assert external_repo.has_external_sensor("default_automation_condition_sensor")
     assert external_repo.has_external_sensor("my_custom_policy_sensor")
 
     asset_graph = external_repo.asset_graph
 
     # default sensor includes all assets that weren't covered by the custom one
 
-    default_sensor = external_repo.get_external_sensor("default_auto_materialize_sensor")
+    default_sensor = external_repo.get_external_sensor("default_automation_condition_sensor")
 
     assert (
         str(default_sensor.asset_selection)
@@ -247,7 +247,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
 
 
 def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
-    auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         asset_selection=[
             auto_materialize_asset,
@@ -270,7 +270,7 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
     )
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )

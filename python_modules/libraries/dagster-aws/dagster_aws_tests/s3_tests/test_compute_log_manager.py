@@ -15,10 +15,11 @@ from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster._time import get_current_datetime
+
 from dagster_aws.s3 import S3ComputeLogManager
 
 ensure_dagster_tests_import()
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -181,11 +182,10 @@ def test_blank_compute_logs(mock_s3_bucket):
         )
 
         # simulate subscription to an in-progress run, where there is no key in the bucket
-        stdout = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDOUT)
-        stderr = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDERR)
+        log_data = manager.get_log_data(["my_run_id", "compute_logs", "my_step_key"])
 
-        assert not stdout.data
-        assert not stderr.data
+        assert not log_data.stdout
+        assert not log_data.stderr
 
 
 def test_prefix_filter(mock_s3_bucket):
@@ -245,11 +245,11 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
     ]
 
 
-class TestS3ComputeLogManager(TestCapturedLogManager):
+class TestS3ComputeLogManager(TestComputeLogManager):
     __test__ = True
 
-    @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(self, mock_s3_bucket):
+    @pytest.fixture(name="compute_log_manager")
+    def compute_log_manager(self, mock_s3_bucket):
         with tempfile.TemporaryDirectory() as temp_dir:
             yield S3ComputeLogManager(
                 bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir

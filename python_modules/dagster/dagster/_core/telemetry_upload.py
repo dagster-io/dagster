@@ -5,7 +5,7 @@ import zlib
 from contextlib import contextmanager
 from typing import Iterator
 
-from .telemetry import MAX_BYTES, get_or_create_dir_from_dagster_home
+from dagster._core.telemetry import MAX_BYTES, get_or_create_dir_from_dagster_home
 
 
 def get_dagster_telemetry_url() -> str:

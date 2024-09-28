@@ -2,6 +2,7 @@ import re
 
 import pandas as pd
 import pandera as pa
+import pandera.typing as pa_typing
 import pytest
 from dagster import DagsterType, TypeCheck, check_dagster_type
 from dagster._core.definitions.metadata import TableSchemaMetadataValue
@@ -69,13 +70,13 @@ def make_schema_model_config(**config_attrs):
 
 
 def sample_schema_model(**config_attrs):
-    class SampleSchemaModel(pa.SchemaModel):
-        a: pa.typing.Series[int] = pa.Field(le=10, description="a desc")
-        b: pa.typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
-        c: pa.typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")
+    class SampleDataframeModel(pa.DataFrameModel):
+        a: pa_typing.Series[int] = pa.Field(le=10, description="a desc")
+        b: pa_typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
+        c: pa_typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")
 
         @pa.check("c")
-        def c_check(cls, series: pa.typing.Series[str]) -> pa.typing.Series[bool]:
+        def c_check(cls, series: pa_typing.Series[str]) -> pa_typing.Series[bool]:
             """Two words separated by underscore."""
             return series.str.split("_", expand=True).shape[1] == 2  # type: ignore  # (bad stubs)
 
@@ -86,7 +87,7 @@ def sample_schema_model(**config_attrs):
 
         Config = make_schema_model_config(**config_attrs)
 
-    return SampleSchemaModel
+    return SampleDataframeModel
 
 
 @pytest.fixture(

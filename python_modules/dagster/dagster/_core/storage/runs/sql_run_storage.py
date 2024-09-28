@@ -21,7 +21,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
@@ -39,7 +38,7 @@ from dagster._core.events import (
     DagsterEventType,
     RunFailureReason,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
@@ -47,27 +46,7 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery
-from dagster._core.storage.sqlalchemy_compat import (
-    db_fetch_mappings,
-    db_scalar_subquery,
-    db_select,
-    db_subquery,
-)
-from dagster._core.storage.tags import (
-    PARTITION_NAME_TAG,
-    PARTITION_SET_TAG,
-    REPOSITORY_LABEL_TAG,
-    ROOT_RUN_ID_TAG,
-    RUN_FAILURE_REASON_TAG,
-)
-from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven import JSONDecodeError
-from dagster._utils import PrintFn, utc_datetime_from_timestamp
-from dagster._utils.merger import merge_dicts
-
-from ..dagster_run import (
+from dagster._core.storage.dagster_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
@@ -76,14 +55,14 @@ from ..dagster_run import (
     RunsFilter,
     TagBucket,
 )
-from .base import RunStorage
-from .migration import (
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.runs.migration import (
     OPTIONAL_DATA_MIGRATIONS,
     REQUIRED_DATA_MIGRATIONS,
     RUN_PARTITIONS,
     MigrationFn,
 )
-from .schema import (
+from dagster._core.storage.runs.schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
     InstanceInfo,
@@ -93,6 +72,28 @@ from .schema import (
     SecondaryIndexMigrationTable,
     SnapshotsTable,
 )
+from dagster._core.storage.sql import SqlAlchemyQuery
+from dagster._core.storage.sqlalchemy_compat import (
+    db_fetch_mappings,
+    db_scalar_subquery,
+    db_select,
+    db_subquery,
+)
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
+    ROOT_RUN_ID_TAG,
+    RUN_FAILURE_REASON_TAG,
+)
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes.serdes import deserialize_values
+from dagster._seven import JSONDecodeError
+from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
+from dagster._utils import PrintFn
+from dagster._utils.merger import merge_dicts
 
 
 class SnapshotType(Enum):
@@ -185,7 +186,7 @@ class SqlRunStorage(RunStorage):
 
         # consider changing the `handle_run_event` signature to get timestamp off of the
         # EventLogEntry instead of the DagsterEvent, for consistency
-        now = pendulum.now("UTC")
+        now = get_current_datetime()
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
             kwargs["start_time"] = now.timestamp()
@@ -253,6 +254,12 @@ class SqlRunStorage(RunStorage):
 
         return query
 
+    def _add_filters_to_table(self, table: db.Table, filters: RunsFilter) -> db.Table:
+        if filters.tags:
+            table = self._apply_tags_table_filters(table, filters.tags)
+
+        return table
+
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
 
@@ -271,19 +278,30 @@ class SqlRunStorage(RunStorage):
             query = query.where(RunsTable.c.snapshot_id == filters.snapshot_id)
 
         if filters.updated_after:
-            query = query.where(RunsTable.c.update_timestamp > filters.updated_after)
+            query = query.where(
+                RunsTable.c.update_timestamp > filters.updated_after.replace(tzinfo=None)
+            )
 
         if filters.updated_before:
-            query = query.where(RunsTable.c.update_timestamp < filters.updated_before)
+            query = query.where(
+                RunsTable.c.update_timestamp < filters.updated_before.replace(tzinfo=None)
+            )
 
         if filters.created_after:
-            query = query.where(RunsTable.c.create_timestamp > filters.created_after)
+            query = query.where(
+                RunsTable.c.create_timestamp > filters.created_after.replace(tzinfo=None)
+            )
 
         if filters.created_before:
-            query = query.where(RunsTable.c.create_timestamp < filters.created_before)
+            query = query.where(
+                RunsTable.c.create_timestamp < filters.created_before.replace(tzinfo=None)
+            )
 
-        if filters.tags:
-            query = self._apply_tags_table_filters(query, filters.tags)
+        if filters.exclude_subruns:
+            runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
+            query = query.where(RunsTable.c.run_id.notin_(db_subquery(runs_in_backfills)))
 
         return query
 
@@ -307,7 +325,7 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        table = RunsTable
+        table = self._add_filters_to_table(RunsTable, filters)
         base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
             table
         )
@@ -315,43 +333,24 @@ class SqlRunStorage(RunStorage):
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
     def _apply_tags_table_filters(
-        self, query: SqlAlchemyQuery, tags: Mapping[str, Union[str, Sequence[str]]]
+        self, table: db.Table, tags: Mapping[str, Union[str, Sequence[str]]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
-        expected_count = len(tags)
-        if expected_count == 1:
-            key, value = next(iter(tags.items()))
-            # since run tags should be much larger than runs, select where exists
-            # should be more efficient than joining
-            subquery = db.exists().where(
-                (RunsTable.c.run_id == RunTagsTable.c.run_id)
-                & (RunTagsTable.c.key == key)
-                & (
-                    (RunTagsTable.c.value == value)
+        for i, (key, value) in enumerate(tags.items()):
+            run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+
+            table = table.join(
+                run_tags_alias,
+                db.and_(
+                    RunsTable.c.run_id == run_tags_alias.c.run_id,
+                    run_tags_alias.c.key == key,
+                    (run_tags_alias.c.value == value)
                     if isinstance(value, str)
-                    else RunTagsTable.c.value.in_(value)
-                )
+                    else run_tags_alias.c.value.in_(value),
+                ),
             )
-            query = query.where(subquery)
-        elif expected_count > 1:
-            # efficient query for filtering by multiple tags. first find all run_ids that match
-            # all tags, then select from runs table where run_id in that set
-            subquery = db_select([RunTagsTable.c.run_id])
-            expressions = []
-            for key, value in tags.items():
-                expression = RunTagsTable.c.key == key
-                if isinstance(value, str):
-                    expression &= RunTagsTable.c.value == value
-                else:
-                    expression &= RunTagsTable.c.value.in_(value)
-                expressions.append(expression)
-            subquery = subquery.where(db.or_(*expressions))
-            subquery = subquery.group_by(RunTagsTable.c.run_id)
-            subquery = subquery.having(
-                db.func.count(db.distinct(RunTagsTable.c.key)) == expected_count
-            )
-            query = query.where(RunsTable.c.run_id.in_(subquery))
-        return query
+
+        return table
 
     def get_runs(
         self,
@@ -423,8 +422,12 @@ class SqlRunStorage(RunStorage):
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
                 dagster_run=self._row_to_run(row),
-                create_timestamp=check.inst(row["create_timestamp"], datetime),
-                update_timestamp=check.inst(row["update_timestamp"], datetime),
+                create_timestamp=utc_datetime_from_naive(
+                    check.inst(row["create_timestamp"], datetime)
+                ),
+                update_timestamp=utc_datetime_from_naive(
+                    check.inst(row["update_timestamp"], datetime)
+                ),
                 start_time=(
                     check.opt_inst(row["start_time"], float) if "start_time" in row else None
                 ),
@@ -483,7 +486,7 @@ class SqlRunStorage(RunStorage):
                     run_body=serialize_value(run.with_tags(merge_dicts(current_tags, new_tags))),
                     partition=partition,
                     partition_set=partition_set,
-                    update_timestamp=pendulum.now("UTC"),
+                    update_timestamp=get_current_datetime(),
                 )
             )
 
@@ -796,7 +799,7 @@ class SqlRunStorage(RunStorage):
             try:
                 conn.execute(
                     DaemonHeartbeatsTable.insert().values(
-                        timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                        timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_type=daemon_heartbeat.daemon_type,
                         daemon_id=daemon_heartbeat.daemon_id,
                         body=serialize_value(daemon_heartbeat),
@@ -807,7 +810,7 @@ class SqlRunStorage(RunStorage):
                     DaemonHeartbeatsTable.update()
                     .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
                     .values(
-                        timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                        timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
                         body=serialize_value(daemon_heartbeat),
                     )
@@ -835,26 +838,122 @@ class SqlRunStorage(RunStorage):
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())
 
-    def get_backfills(
-        self,
-        status: Optional[BulkActionStatus] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-    ) -> Sequence[PartitionBackfill]:
-        check.opt_inst_param(status, "status", BulkActionStatus)
-        query = db_select([BulkActionsTable.c.body])
-        if status:
-            query = query.where(BulkActionsTable.c.status == status.value)
+    def _backfills_query(self, filters: Optional[BulkActionsFilter] = None):
+        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
+        if filters and filters.tags:
+            # Backfills do not have a corresponding tags table. However, all tags that are on a backfill are
+            # applied to the runs the backfill launches. So we can query for runs that match the tags and
+            # are also part of a backfill to find the backfills that match the tags.
+
+            backfills_with_tags_query = db_select([RunTagsTable.c.value]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
+
+            for i, (key, value) in enumerate(filters.tags.items()):
+                run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+                backfills_with_tags_query = backfills_with_tags_query.where(
+                    db.and_(
+                        RunTagsTable.c.run_id == run_tags_alias.c.run_id,
+                        run_tags_alias.c.key == key,
+                        (run_tags_alias.c.value == value)
+                        if isinstance(value, str)
+                        else run_tags_alias.c.value.in_(value),
+                    ),
+                )
+
+            query = query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_tags_query)))
+
+        if filters and filters.job_name:
+            run_tags_table = RunTagsTable
+
+            runs_in_backfill_with_job_name = run_tags_table.join(
+                RunsTable,
+                db.and_(
+                    RunTagsTable.c.run_id == RunsTable.c.run_id,
+                    RunTagsTable.c.key == BACKFILL_ID_TAG,
+                    RunsTable.c.pipeline_name == filters.job_name,
+                ),
+            )
+
+            backfills_with_job_name_query = db_select([RunTagsTable.c.value]).select_from(
+                runs_in_backfill_with_job_name
+            )
+            query = query.where(
+                BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query))
+            )
+        if filters and filters.statuses:
+            query = query.where(
+                BulkActionsTable.c.status.in_([status.value for status in filters.statuses])
+            )
+        if filters and filters.created_after:
+            query = query.where(BulkActionsTable.c.timestamp > filters.created_after)
+        if filters and filters.created_before:
+            query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
+        return query
+
+    def _add_cursor_limit_to_backfills_query(
+        self, query, cursor: Optional[str] = None, limit: Optional[int] = None
+    ):
+        if limit:
+            query = query.limit(limit)
         if cursor:
             cursor_query = db_select([BulkActionsTable.c.id]).where(
                 BulkActionsTable.c.key == cursor
             )
             query = query.where(BulkActionsTable.c.id < cursor_query)
-        if limit:
-            query = query.limit(limit)
+
+        return query
+
+    def _apply_backfill_tags_filter_to_results(
+        self, backfills: Sequence[PartitionBackfill], tags: Mapping[str, Union[str, Sequence[str]]]
+    ) -> Sequence[PartitionBackfill]:
+        if not tags:
+            return backfills
+
+        def _matches_backfill(
+            backfill: PartitionBackfill, tags: Mapping[str, Union[str, Sequence[str]]]
+        ) -> bool:
+            for key, value in tags.items():
+                if isinstance(value, str):
+                    if backfill.tags.get(key) != value:
+                        return False
+                elif backfill.tags.get(key) not in value:
+                    return False
+            return True
+
+        return [backfill for backfill in backfills if _matches_backfill(backfill, tags)]
+
+    def get_backfills(
+        self,
+        filters: Optional[BulkActionsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        status: Optional[BulkActionStatus] = None,
+    ) -> Sequence[PartitionBackfill]:
+        check.opt_inst_param(status, "status", BulkActionStatus)
+        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
+        if status and filters:
+            raise DagsterInvariantViolationError(
+                "Cannot provide status and filters to get_backfills. Please use filters rather than status."
+            )
+
+        if status is not None:
+            filters = BulkActionsFilter(statuses=[status])
+
+        query = self._backfills_query(filters=filters)
+        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return [deserialize_value(row["body"], PartitionBackfill) for row in rows]
+        backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
+
+        if filters and filters.tags:
+            # runs can have more tags than the backfill that launched them. Since we filtered tags by
+            # querying for runs with those tags, we need to do an additional check that the backfills
+            # also have the requested tags
+            backfill_candidates = self._apply_backfill_tags_filter_to_results(
+                backfill_candidates, filters.tags
+            )
+        return backfill_candidates
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")
@@ -867,7 +966,7 @@ class SqlRunStorage(RunStorage):
         values: Dict[str, Any] = dict(
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
-            timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
+            timestamp=datetime_from_timestamp(partition_backfill.backfill_timestamp),
             body=serialize_value(cast(NamedTuple, partition_backfill)),
         )
 

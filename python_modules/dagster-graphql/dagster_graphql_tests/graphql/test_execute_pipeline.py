@@ -3,7 +3,7 @@ import time
 import uuid
 from typing import Any, Optional
 
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -21,13 +21,12 @@ from dagster_graphql.test.utils import (
 )
 from typing_extensions import Dict
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from .repo import csv_hello_world_ops_config
-from .utils import (
-    get_all_logs_for_finished_run_via_subscription,
+from dagster_graphql_tests.graphql.repo import csv_hello_world_ops_config
+from dagster_graphql_tests.graphql.utils import (
     step_did_not_run,
     step_did_succeed,
     sync_execute_get_run_log_data,
@@ -719,58 +718,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "subgraph.op_1")
         assert step_did_not_run(logs, "plus_one")
         assert step_did_not_run(logs, "subgraph.op_2")
-
-    def test_memoization_job(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_job_selector(graphql_context, "memoization_job")
-        run_config = {}
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "runConfigData": run_config,
-                }
-            },
-        )
-        run = result.data["launchPipelineExecution"]["run"]
-        run_id = run["runId"]
-
-        wait_for_runs_to_finish(graphql_context.instance)
-
-        run = graphql_context.instance.get_run_by_id(run_id)
-        assert run and run.status == DagsterRunStatus.SUCCESS
-
-        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
-            "pipelineRunLogs"
-        ]["messages"]
-        assert isinstance(logs, list)
-        assert step_did_succeed(logs, "my_op")
-
-        # run it again
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "runConfigData": run_config,
-                }
-            },
-        )
-        run = result.data["launchPipelineExecution"]["run"]
-        run_id = run["runId"]
-
-        wait_for_runs_to_finish(graphql_context.instance)
-
-        run = graphql_context.instance.get_run_by_id(run_id)
-        assert run and run.status == DagsterRunStatus.SUCCESS
-
-        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
-            "pipelineRunLogs"
-        ]["messages"]
-
-        assert step_did_not_run(logs, "my_op")
 
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):

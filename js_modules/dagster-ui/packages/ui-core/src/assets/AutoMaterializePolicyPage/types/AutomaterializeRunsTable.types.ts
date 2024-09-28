@@ -27,6 +27,7 @@ export type AutomaterializeRunsQuery = {
           id: string;
           runId: string;
           status: Types.RunStatus;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -39,7 +40,10 @@ export type AutomaterializeRunFragment = {
   id: string;
   runId: string;
   status: Types.RunStatus;
+  creationTime: number;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;
 };
+
+export const AutomaterializeRunsQueryVersion = '213e0a8e4d88de599b4740ba7d0d4bfac14defebcc8f3813eecc13696b9f17d9';

@@ -13,6 +13,7 @@ import {
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -56,6 +57,7 @@ import {AppContext} from '../app/AppContext';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
+import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {CancelRunButton} from '../runs/RunActionButtons';
 import {
   EMPTY_RUN_METADATA,
@@ -128,7 +130,7 @@ export const GanttChart = (props: GanttChartProps) => {
     [graph, graphFiltered.all, state.hideUnselectedSteps, state.mode],
   );
 
-  const layout = React.useMemo(() => {
+  const layout = useThrottledMemo(() => {
     const names = (ns: GraphQueryItem[]) => ns.map((n) => n.name).join(',');
     if (
       !cachedLayoutParams.current ||
@@ -222,7 +224,7 @@ type GanttChartInnerProps = GanttChartProps &
     onChange: () => void;
   };
 
-const GanttChartInner = (props: GanttChartInnerProps) => {
+const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
   const {viewport, containerProps, onMoveToViewport} = useViewport();
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
@@ -289,17 +291,24 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   // The `layout` we receive has been laid out and the rows / "waterfall" are final,
   // but it doesn't incorporate the display scale or run metadata. We stretch and
   // shift the layout boxes using this data to create the final layout for display.
-  const layout = adjustLayoutWithRunMetadata(
-    props.layout,
-    options,
-    metadata || EMPTY_RUN_METADATA,
-    scale,
-    nowMs,
+  const layout = useThrottledMemo(
+    () =>
+      adjustLayoutWithRunMetadata(
+        props.layout,
+        options,
+        metadata || EMPTY_RUN_METADATA,
+        scale,
+        nowMs,
+      ),
+    [metadata, nowMs, options, props.layout, scale],
   );
-  const layoutSize = {
-    width: Math.max(0, ...layout.boxes.map((b) => b.x + b.width + BOX_SPACING_X)),
-    height: Math.max(0, ...layout.boxes.map((b) => TOP_INSET + b.y * BOX_HEIGHT + BOTTOM_INSET)),
-  };
+  const layoutSize = useMemo(
+    () => ({
+      width: Math.max(0, ...layout.boxes.map((b) => b.x + b.width + BOX_SPACING_X)),
+      height: Math.max(0, ...layout.boxes.map((b) => TOP_INSET + b.y * BOX_HEIGHT + BOTTOM_INSET)),
+    }),
+    [layout.boxes],
+  );
 
   React.useEffect(() => {
     const node = layout.boxes.find((b) => selection.keys.includes(b.node.name));
@@ -337,6 +346,11 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   }
 
   const measurementComplete = viewport.width > 0;
+
+  const presets = useMemo(
+    () => (metadata ? interestingQueriesFor(metadata, layout) : undefined),
+    [layout, metadata],
+  );
 
   const content = (
     <>
@@ -396,7 +410,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             value={props.selection.query}
             placeholder="Type a step subset"
             onChange={props.onUpdateQuery}
-            presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
+            presets={presets}
             className={selection.keys.length > 0 ? 'has-step' : ''}
           />
           <Checkbox
@@ -420,14 +434,14 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
           {...props}
           nowMs={nowMs}
           metadata={metadata}
-          onHighlightStep={(name) => setHoveredNodeName(name)}
+          onHighlightStep={setHoveredNodeName}
         />
       }
     />
   ) : (
     content
   );
-};
+});
 
 interface GanttChartViewportContentsProps {
   options: GanttChartLayoutOptions;
@@ -441,118 +455,121 @@ interface GanttChartViewportContentsProps {
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
-const GanttChartViewportContents = (props: GanttChartViewportContentsProps) => {
+const GanttChartViewportContents = React.memo((props: GanttChartViewportContentsProps) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
-  const items: React.ReactChild[] = [];
 
-  // To avoid drawing zillions of DOM nodes, we render only the boxes + lines that
-  // intersect with the current viewport.
-  const intersectsViewport = (bounds: Bounds) =>
-    bounds.minX < viewport.left + viewport.width &&
-    bounds.maxX > viewport.left &&
-    bounds.minY < viewport.top + viewport.height &&
-    bounds.maxY > viewport.top;
+  return useThrottledMemo(() => {
+    const items: React.ReactNode[] = [];
 
-  // We track the number of lines that end at each X value (they go over and then down,
-  // so this tracks where the vertical lines are). We shift lines by {count}px if there
-  // are others at the same X so wide "tracks" show you where data is being collected.
-  const verticalLinesAtXCoord: {[x: string]: number} = {};
+    // To avoid drawing zillions of DOM nodes, we render only the boxes + lines that
+    // intersect with the current viewport.
+    const intersectsViewport = (bounds: Bounds) =>
+      bounds.minX < viewport.left + viewport.width &&
+      bounds.maxX > viewport.left &&
+      bounds.minY < viewport.top + viewport.height &&
+      bounds.maxY > viewport.top;
 
-  if (options.mode !== GanttChartMode.FLAT) {
-    layout.boxes.forEach((box) => {
-      box.children.forEach((child, childIdx) => {
-        const bounds = boundsForLine(box, child);
-        if (!intersectsViewport(bounds)) {
-          return;
-        }
-        const childNotDrawn = !layout.boxes.includes(child);
-        const childWaiting = metadata ? !metadata.steps[child.node.name]?.state : false;
+    // We track the number of lines that end at each X value (they go over and then down,
+    // so this tracks where the vertical lines are). We shift lines by {count}px if there
+    // are others at the same X so wide "tracks" show you where data is being collected.
+    const verticalLinesAtXCoord: {[x: string]: number} = {};
 
-        const overlapAtXCoord = verticalLinesAtXCoord[bounds.maxX] || 0;
-        verticalLinesAtXCoord[bounds.maxX] = overlapAtXCoord + 1;
+    if (options.mode !== GanttChartMode.FLAT) {
+      layout.boxes.forEach((box) => {
+        box.children.forEach((child, childIdx) => {
+          const bounds = boundsForLine(box, child);
+          if (!intersectsViewport(bounds)) {
+            return;
+          }
+          const childNotDrawn = !layout.boxes.includes(child);
+          const childWaiting = metadata ? !metadata.steps[child.node.name]?.state : false;
 
-        items.push(
-          <GanttLine
-            darkened={
-              (focusedSteps?.includes(box.node.name) || hoveredStep) === box.node.name ||
-              (focusedSteps?.includes(child.node.name) || hoveredStep) === child.node.name
-            }
-            dotted={childNotDrawn || childWaiting}
-            key={`${box.key}-${child.key}-${childIdx}`}
-            depNotDrawn={childNotDrawn}
-            depIdx={overlapAtXCoord}
-            {...bounds}
-          />,
-        );
+          const overlapAtXCoord = verticalLinesAtXCoord[bounds.maxX] || 0;
+          verticalLinesAtXCoord[bounds.maxX] = overlapAtXCoord + 1;
+
+          items.push(
+            <GanttLine
+              darkened={
+                (focusedSteps?.includes(box.node.name) || hoveredStep) === box.node.name ||
+                (focusedSteps?.includes(child.node.name) || hoveredStep) === child.node.name
+              }
+              dotted={childNotDrawn || childWaiting}
+              key={`${box.key}-${child.key}-${childIdx}`}
+              depNotDrawn={childNotDrawn}
+              depIdx={overlapAtXCoord}
+              {...bounds}
+            />,
+          );
+        });
       });
-    });
-  }
-
-  layout.boxes.forEach((box) => {
-    const bounds = boundsForBox(box);
-    const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
-    if (!intersectsViewport(bounds)) {
-      return;
     }
 
-    items.push(
-      <div
-        key={box.key}
-        data-tooltip={box.node.name}
-        onClick={(evt: React.MouseEvent<any>) => props.onClickStep(box.node.name, evt)}
-        onDoubleClick={() => props.onDoubleClickStep(box.node.name)}
-        onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
-        onMouseLeave={() => props.setHoveredNodeName(null)}
-        className={`
+    layout.boxes.forEach((box) => {
+      const bounds = boundsForBox(box);
+      const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
+      if (!intersectsViewport(bounds)) {
+        return;
+      }
+
+      items.push(
+        <div
+          key={box.key}
+          data-tooltip={box.node.name}
+          onClick={(evt: React.MouseEvent<any>) => props.onClickStep(box.node.name, evt)}
+          onDoubleClick={() => props.onDoubleClickStep(box.node.name)}
+          onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
+          onMouseLeave={() => props.setHoveredNodeName(null)}
+          className={`
             chart-element
             ${useDot ? 'dot' : 'box'}
             ${focusedSteps.includes(box.node.name) && 'focused'}
             ${hoveredStep === box.node.name && 'hovered'}
             ${isDynamicStep(box.node.name) && 'dynamic'}`}
-        style={{
-          left: bounds.minX,
-          top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
-          width: useDot ? BOX_DOT_SIZE : box.width,
-          ...boxStyleFor(box.state, {metadata, options}),
-        }}
-      >
-        {box.state === IStepState.RUNNING ? <Spinner purpose="body-text" /> : undefined}
-        {truncatedBoxLabel(box)}
-      </div>,
-    );
-  });
+          style={{
+            left: bounds.minX,
+            top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
+            width: useDot ? BOX_DOT_SIZE : box.width,
+            ...boxStyleFor(box.state, {metadata, options}),
+          }}
+        >
+          {box.state === IStepState.RUNNING ? <Spinner purpose="body-text" /> : undefined}
+          {truncatedBoxLabel(box)}
+        </div>,
+      );
+    });
 
-  if (options.mode === GanttChartMode.WATERFALL_TIMED) {
-    // Note: We sort the markers from left to right so that they're added to the DOM in that
-    // order and a long one doesn't make ones "behind it" unclickable.
-    layout.markers
-      .map((marker, idx) => ({marker, idx, bounds: boundsForBox(marker)}))
-      .filter(({bounds}) => intersectsViewport(bounds))
-      .sort((a, b) => a.bounds.minX - b.bounds.minX)
-      .forEach(({marker, bounds, idx}) => {
-        const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
+    if (options.mode === GanttChartMode.WATERFALL_TIMED) {
+      // Note: We sort the markers from left to right so that they're added to the DOM in that
+      // order and a long one doesn't make ones "behind it" unclickable.
+      layout.markers
+        .map((marker, idx) => ({marker, idx, bounds: boundsForBox(marker)}))
+        .filter(({bounds}) => intersectsViewport(bounds))
+        .sort((a, b) => a.bounds.minX - b.bounds.minX)
+        .forEach(({marker, bounds, idx}) => {
+          const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
 
-        items.push(
-          <div
-            key={idx}
-            data-tooltip={marker.key}
-            className={`
+          items.push(
+            <div
+              key={idx}
+              data-tooltip={marker.key}
+              className={`
             chart-element
             ${useDot ? 'marker-dot' : 'marker-whiskers'}`}
-            style={{
-              left: bounds.minX,
-              top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
-              width: useDot ? BOX_DOT_SIZE : marker.width,
-            }}
-          >
-            <div />
-          </div>,
-        );
-      });
-  }
+              style={{
+                left: bounds.minX,
+                top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
+                width: useDot ? BOX_DOT_SIZE : marker.width,
+              }}
+            >
+              <div />
+            </div>,
+          );
+        });
+    }
 
-  return <>{items}</>;
-};
+    return <>{items}</>;
+  }, [focusedSteps, hoveredStep, layout, metadata, options, props, viewport]);
+});
 
 interface Bounds {
   minX: number;
@@ -855,6 +872,9 @@ const FilterInputsBackgroundBox = styled(Box)`
   padding: 8px 12px 8px 8px;
 `;
 
+const EMPTY_GRAPH: GraphQueryItem[] = [];
+const EMPTY_SELECTION = {keys: [], query: '*'};
+
 export const GanttChartLoadingState = ({runId}: {runId: string}) => (
   <GanttChartContainer>
     <OptionsContainer />
@@ -869,9 +889,9 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
-          graph={[]}
+          graph={EMPTY_GRAPH}
           metadata={EMPTY_RUN_METADATA}
-          selection={{keys: [], query: '*'}}
+          selection={EMPTY_SELECTION}
           runId={runId}
           nowMs={0}
         />
@@ -903,9 +923,9 @@ export const QueuedState = ({run}: {run: RunFragment}) => (
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
-          graph={[]}
+          graph={EMPTY_GRAPH}
           metadata={EMPTY_RUN_METADATA}
-          selection={{keys: [], query: '*'}}
+          selection={EMPTY_SELECTION}
           runId={run.id}
           nowMs={0}
         />

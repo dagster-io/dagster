@@ -18,7 +18,8 @@ import {
   SearchResultType,
   isAssetFilterSearchResultType,
 } from './types';
-import {isCanonicalComputeKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
+import {assertUnreachable} from '../app/Util';
+import {isCanonicalComputeKindTag} from '../graph/KindTags';
 import {KNOWN_TAGS, TagIcon} from '../graph/OpTags';
 
 const iconForType = (type: SearchResultType | AssetFilterSearchResultType): IconName => {
@@ -48,14 +49,16 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'account_circle';
     case AssetFilterSearchResultType.AssetGroup:
       return 'asset_group';
-    case AssetFilterSearchResultType.ComputeKind:
+    case AssetFilterSearchResultType.Kind:
       return 'compute_kind';
     case AssetFilterSearchResultType.Tag:
       return 'tag';
-    case AssetFilterSearchResultType.StorageKind:
-      return 'storage_kind';
-    default:
+    case SearchResultType.Page:
       return 'source';
+    case AssetFilterSearchResultType.Column:
+      return 'view_column';
+    default:
+      assertUnreachable(type);
   }
 };
 
@@ -63,26 +66,27 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
   switch (type) {
     case AssetFilterSearchResultType.CodeLocation:
       return 'Code location';
-    case AssetFilterSearchResultType.ComputeKind:
-      return 'Compute kind';
+    case AssetFilterSearchResultType.Kind:
+      return 'Kind';
     case AssetFilterSearchResultType.Tag:
       return 'Tag';
     case AssetFilterSearchResultType.Owner:
       return 'Owner';
     case AssetFilterSearchResultType.AssetGroup:
       return 'Group';
-    case AssetFilterSearchResultType.StorageKind:
-      return 'Storage kind';
+    case AssetFilterSearchResultType.Column:
+      return 'Column';
     default:
-      return '';
+      assertUnreachable(type);
   }
 };
 
-interface ItemProps {
+type ResultType = Fuse.FuseResult<SearchResult> | Pick<Fuse.FuseResult<SearchResult>, 'item'>;
+type ItemProps<T extends ResultType> = {
   isHighlight: boolean;
-  onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
-  result: Fuse.FuseResult<SearchResult>;
-}
+  onClickResult: (result: T) => void;
+  result: T;
+};
 
 function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] {
   // Fuse provides indices of the label that match the query string.
@@ -128,25 +132,18 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
 
   if (item.type === SearchResultType.Asset) {
     const computeKindTag = item.tags?.find(isCanonicalComputeKindTag);
-    if (computeKindTag && KNOWN_TAGS[computeKindTag.value]) {
+    if (computeKindTag && KNOWN_TAGS.hasOwnProperty(computeKindTag.value)) {
       const computeKindSearchIcon = <TagIcon label={computeKindTag.value} />;
 
       icons.push(computeKindSearchIcon);
     }
-
-    const storageKindTag = item.tags?.find(isCanonicalStorageKindTag);
-    if (storageKindTag && KNOWN_TAGS[storageKindTag.value]) {
-      const storageKindSearchIcon = <TagIcon label={storageKindTag.value} />;
-
-      icons.push(storageKindSearchIcon);
-    }
   }
 
-  if (item.type === AssetFilterSearchResultType.ComputeKind) {
-    if (KNOWN_TAGS[item.label]) {
-      const computeKindSearchIcon = <TagIcon label={item.label} />;
+  if (item.type === AssetFilterSearchResultType.Kind) {
+    if (KNOWN_TAGS.hasOwnProperty(item.label)) {
+      const kindSearchIcon = <TagIcon label={item.label} />;
 
-      icons.push(computeKindSearchIcon);
+      icons.push(kindSearchIcon);
     }
   }
 
@@ -164,7 +161,11 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
   return icons;
 }
 
-export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
+export const SearchResultItem = <T extends ResultType>({
+  isHighlight,
+  onClickResult,
+  result,
+}: ItemProps<T>) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
 
@@ -184,48 +185,67 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
     [onClickResult, result],
   );
 
-  const labelComponents = buildSearchLabel(result);
+  const labelComponents = 'refIndex' in result ? buildSearchLabel(result) : [<>{item.label}</>];
 
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>
-          <StyledTag
-            $fillColor={Colors.backgroundGray()}
-            $interactive={false}
-            $textColor={Colors.textDefault()}
-          >
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              {buildSearchIcons(item, isHighlight)}
-              {isAssetFilterSearchResultType(item.type) && (
-                <Caption>{assetFilterPrefixString(item.type)}:</Caption>
-              )}
-              <div>{labelComponents.map((component) => component)}</div>
-              {item.repoPath && <Caption>in {item.repoPath}</Caption>}
-            </Box>
-          </StyledTag>
-          <div style={{marginLeft: '8px'}}>
-            <Description isHighlight={isHighlight}>
-              {item.numResults ? `${item.numResults} assets` : item.description}
-            </Description>
-          </div>
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12}}
+          style={{width: '100%'}}
+        >
+          <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>
+            <StyledTag
+              $fillColor={Colors.backgroundGray()}
+              $interactive={false}
+              $textColor={Colors.textDefault()}
+            >
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                {buildSearchIcons(item, isHighlight)}
+                {isAssetFilterSearchResultType(item.type) && (
+                  <Caption>{assetFilterPrefixString(item.type)}:</Caption>
+                )}
+                <div>{labelComponents}</div>
+                {item.repoPath && <Caption>in {item.repoPath}</Caption>}
+              </Box>
+            </StyledTag>
+            <div style={{marginLeft: '8px'}}>
+              <Description isHighlight={isHighlight}>
+                {item.numResults ? `${item.numResults} assets` : item.description}
+              </Description>
+            </div>
+          </Box>
+          <ResultEnterWrapper flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <div>Enter</div>
+            <Icon name="key_return" color={Colors.accentGray()} />
+          </ResultEnterWrapper>
         </Box>
       </ResultLink>
     </Item>
   );
-});
+};
 
-export interface SearchResultsProps {
+export type SearchResultsProps<T extends ResultType> = {
   highlight: number;
-  onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
+  onClickResult: (result: T) => void;
   queryString: string;
-  results: Fuse.FuseResult<SearchResult>[];
-}
+  results: T[];
+  searching: boolean;
+};
 
-export const SearchResults = (props: SearchResultsProps) => {
-  const {highlight, onClickResult, queryString, results} = props;
+export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>) => {
+  const {highlight, onClickResult, queryString, results: _results, searching} = props;
+
+  // Our fuse worker returns all results if we put in an empty string.
+  // This is to support AssetSearch in Cloud which allows showing all results for a particular filter.
+  // For OSS we don't want any results if the queryString is null so lets make the results an empty list in that
+  // case here
+  const results = queryString ? _results : [];
 
   if (!results.length && queryString) {
+    if (searching) {
+      return;
+    }
     return <NoResults>No results</NoResults>;
   }
 
@@ -281,6 +301,14 @@ const Item = styled.li<HighlightableTextProps>`
   margin: 0;
   user-select: none;
 
+  ${({isHighlight}) =>
+    isHighlight
+      ? ``
+      : `
+  ${ResultEnterWrapper} {
+    display: none;
+  }
+  `}
   &:hover {
     background-color: ${Colors.backgroundLighter()};
   }
@@ -307,4 +335,12 @@ const Description = styled.div<HighlightableTextProps>`
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+`;
+
+const ResultEnterWrapper = styled(Box)`
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  color: ${Colors.textLight()};
 `;

@@ -228,7 +228,7 @@ def get_task_definition_dict_from_current_task(
         taskDefinition=current_task_definition_arn
     )["taskDefinition"]
 
-    container_definition = next(
+    current_container_definition = next(
         iter(
             [
                 container
@@ -239,8 +239,8 @@ def get_task_definition_dict_from_current_task(
     )
 
     # Don't automatically include health check - may be specific to the current task
-    container_definition = {
-        key: val for key, val in container_definition.items() if key != "healthCheck"
+    current_container_definition = {
+        key: val for key, val in current_container_definition.items() if key != "healthCheck"
     }
 
     # Start with the current process's task's definition but remove
@@ -264,7 +264,7 @@ def get_task_definition_dict_from_current_task(
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
     new_container_definition = {
-        **container_definition,
+        **current_container_definition,
         "name": container_name,
         "image": image,
         "entryPoint": [],
@@ -289,8 +289,13 @@ def get_task_definition_dict_from_current_task(
         )
 
     if include_sidecars:
-        container_definitions = current_task_definition_dict.get("containerDefinitions")
-        container_definitions.remove(container_definition)
+        # Start with all the sidecars
+        container_definitions = [
+            container_definition
+            for container_definition in current_task_definition_dict.get("containerDefinitions", [])
+            if container_definition["name"] != current_container_name
+        ]
+        # add the adjusted container based on the current container
         container_definitions.append(new_container_definition)
     else:
         container_definitions = [new_container_definition]

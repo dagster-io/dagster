@@ -12,7 +12,7 @@ Before we jump in, here's a quick refresher:
 - An **asset** is a persistent object in storage, such as a table, machine learning (ML) model, or file.
 - An [**op**](/concepts/ops-jobs-graphs/ops) is the core unit of computation in Dagster. For example, an op might accept tabular data as its input and produce transformed tabular data as its output.
 - A [**graph**](/concepts/ops-jobs-graphs/graphs) is a directed acyclic graph of ops or other graphs, which execute in order and pass data to each other.
-- Am [**asset definition**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
+- An [**asset definition**](/concepts/assets/software-defined-assets) is a declaration of an asset that should exist and a description of how to compute it: the op or graph that needs to run and the upstream assets that it should run on.
 
 **Asset definitions aren't a replacement for Dagster's core computational concepts** - ops are, in fact, the core unit of computation that occurs **within an asset**. Think of them as a top layer that links ops, graphs, and jobs to the long-lived objects they interact with.
 
@@ -219,11 +219,11 @@ Here's what an equivalent job looks like using asset definitions:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_io_manager.py
 from pandas import DataFrame
 
-from dagster import Definitions, SourceAsset, asset, define_asset_job
+from dagster import AssetSpec, Definitions, asset, define_asset_job
 
 from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
-raw_users = SourceAsset(key="raw_users", io_manager_key="warehouse")
+raw_users = AssetSpec(key="raw_users", metadata={"dagster/io_manager_key": "warehouse"})
 
 
 @asset(io_manager_key="warehouse")
@@ -301,14 +301,12 @@ Here's an example of an equivalent job that uses asset definitions:
 ```python file=/guides/dagster/enriching_with_software_defined_assets/sda_nothing.py
 from pandas import read_sql
 
-from dagster import Definitions, SourceAsset, asset, define_asset_job
+from dagster import Definitions, asset, define_asset_job
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
-raw_users = SourceAsset(key="raw_users")
 
-
-@asset(deps=[raw_users])
+@asset(deps=["raw_users"])
 def users() -> None:
     raw_users_df = read_sql("select * from raw_users", con=create_db_connection())
     users_df = raw_users_df.dropna()

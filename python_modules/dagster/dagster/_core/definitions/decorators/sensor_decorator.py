@@ -1,31 +1,38 @@
 import collections.abc
 import inspect
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import experimental, experimental_param
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
-
-from ...errors import DagsterInvariantViolationError
-from ..asset_sensor_definition import AssetSensorDefinition
-from ..events import AssetKey
-from ..multi_asset_sensor_definition import (
+from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.multi_asset_sensor_definition import (
     AssetMaterializationFunction,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
 )
-from ..run_request import SensorResult
-from ..sensor_definition import (
+from dagster._core.definitions.run_request import SensorResult
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
     SkipReason,
 )
-from ..target import ExecutableDefinition
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.errors import DagsterInvariantViolationError
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.unresolved_asset_job_definition import (
+        UnresolvedAssetJobDefinition,
+    )
 
 
+@experimental_param(param="target")
 def sensor(
     job_name: Optional[str] = None,
     *,
@@ -37,6 +44,15 @@ def sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     asset_selection: Optional[CoercibleToAssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    target: Optional[
+        Union[
+            "CoercibleToAssetSelection",
+            "AssetsDefinition",
+            "JobDefinition",
+            "UnresolvedAssetJobDefinition",
+        ]
+    ] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """Creates a sensor where the decorated function is used as the sensor's evaluation function.
 
@@ -65,6 +81,13 @@ def sensor(
         asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
             (Experimental) an asset selection to launch a run for if the sensor condition is met.
             This can be provided instead of specifying a job.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
+        target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
+            The target that the sensor will execute.
+            It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
+            It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
+            This is an experimental parameter that will replace `job`, `jobs`, and `asset_selection`.
     """
     check.opt_str_param(name, "name")
 
@@ -72,7 +95,7 @@ def sensor(
         check.callable_param(fn, "fn")
 
         sensor_def = SensorDefinition.dagster_internal_init(
-            name=name,
+            name=name or fn.__name__,
             job_name=job_name,
             evaluation_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,
@@ -82,6 +105,8 @@ def sensor(
             default_status=default_status,
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
+            tags=tags,
+            target=target,
         )
 
         update_wrapper(sensor_def, wrapped=fn)
@@ -102,6 +127,7 @@ def asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     required_resource_keys: Optional[Set[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> Callable[
     [
         AssetMaterializationFunction,
@@ -138,6 +164,8 @@ def asset_sensor(
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI. Values that are not already strings will be serialized as JSON.
 
 
     Example:
@@ -207,6 +235,7 @@ def asset_sensor(
             jobs=jobs,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            tags=tags,
         )
 
     return inner
@@ -225,6 +254,7 @@ def multi_asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    tags: Optional[Mapping[str, str]] = None,
 ) -> Callable[
     [
         MultiAssetMaterializationFunction,
@@ -261,6 +291,8 @@ def multi_asset_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
     """
     check.opt_str_param(name, "name")
 
@@ -289,6 +321,7 @@ def multi_asset_sensor(
             default_status=default_status,
             request_assets=request_assets,
             required_resource_keys=required_resource_keys,
+            tags=tags,
         )
         update_wrapper(sensor_def, wrapped=fn)
         return sensor_def

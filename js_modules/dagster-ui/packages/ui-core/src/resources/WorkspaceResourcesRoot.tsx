@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -7,12 +6,12 @@ import {
   WorkspaceResourcesQuery,
   WorkspaceResourcesQueryVariables,
 } from './types/WorkspaceResourcesRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {WorkspaceHeader} from '../workspace/WorkspaceHeader';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -39,7 +38,6 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceResourcesQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -103,12 +101,7 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="resources"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="resources" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
@@ -141,9 +134,7 @@ export const RESOURCE_ENTRY_FRAGMENT = gql`
       path
     }
     jobsOpsUsing {
-      job {
-        id
-      }
+      jobName
     }
     schedulesUsing
     sensorsUsing

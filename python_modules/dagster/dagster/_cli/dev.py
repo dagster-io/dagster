@@ -10,13 +10,9 @@ import click
 
 import dagster._check as check
 from dagster._annotations import deprecated
-from dagster._serdes import serialize_value
-from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster._utils.log import configure_loggers
-
-from .job import apply_click_params
-from .utils import get_possibly_temporary_instance_for_cli
-from .workspace.cli_target import (
+from dagster._cli.job import apply_click_params
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import (
     ClickArgValue,
     get_workspace_load_target,
     grpc_server_target_click_options,
@@ -25,6 +21,9 @@ from .workspace.cli_target import (
     working_directory_option,
     workspace_option,
 )
+from dagster._serdes import serialize_value
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._utils.log import configure_loggers
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
 _CHECK_SUBPROCESS_INTERVAL = 5

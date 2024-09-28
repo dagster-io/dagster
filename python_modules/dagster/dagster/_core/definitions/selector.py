@@ -1,4 +1,4 @@
-from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -142,6 +142,29 @@ class RepositorySelector(
     @staticmethod
     def from_graphql_input(graphql_data):
         return RepositorySelector(
+            location_name=graphql_data["repositoryLocationName"],
+            repository_name=graphql_data["repositoryName"],
+        )
+
+
+class AssetGroupSelector(
+    NamedTuple(
+        "_AssetGroupSelector",
+        [("group_name", str), ("location_name", str), ("repository_name", str)],
+    )
+):
+    def __new__(cls, group_name: str, location_name: str, repository_name: str):
+        return super(AssetGroupSelector, cls).__new__(
+            cls,
+            group_name=check.str_param(group_name, "group_name"),
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+        )
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return AssetGroupSelector(
+            group_name=graphql_data["groupName"],
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
         )
@@ -350,31 +373,35 @@ class PartitionRangeSelector(
         )
 
 
-class PartitionsSelector(
-    NamedTuple(
-        "_PartitionsSelector",
-        [("partition_range", PartitionRangeSelector)],
-    )
-):
-    """The information needed to define selection partitions.
-    Using partition_range as property name to avoid shadowing Python 'range' builtin .
-    """
+class PartitionsSelector(NamedTuple):
+    """The information needed to define selection partitions."""
 
-    def __new__(cls, partition_range: PartitionRangeSelector):
-        return super(PartitionsSelector, cls).__new__(
-            cls,
-            partition_range=check.inst_param(partition_range, "range", PartitionRangeSelector),
-        )
+    ranges: Sequence[PartitionRangeSelector]
 
     def to_graphql_input(self):
-        return {
-            "range": self.partition_range.to_graphql_input(),
-        }
+        return {"ranges": [partition_range.to_graphql_input() for partition_range in self.ranges]}
 
     @staticmethod
-    def from_graphql_input(graphql_data):
-        return PartitionsSelector(
-            partition_range=PartitionRangeSelector.from_graphql_input(graphql_data["range"])
+    def from_graphql_input(graphql_data: Mapping[str, Any]) -> "PartitionsSelector":
+        if "ranges" in graphql_data:
+            check.invariant(
+                "range" not in graphql_data,
+                "Received partitionsSelector with values for both 'range' and 'ranges'. Only one should be provided.",
+            )
+            return PartitionsSelector(
+                ranges=[
+                    PartitionRangeSelector.from_graphql_input(range_data)
+                    for range_data in graphql_data["ranges"]
+                ]
+            )
+
+        if "range" in graphql_data:
+            return PartitionsSelector(
+                ranges=[PartitionRangeSelector.from_graphql_input(graphql_data["range"])]
+            )
+
+        check.failed(
+            "Received partitionsSelector without values for either 'range' or 'ranges'. One should be provided.",
         )
 
 

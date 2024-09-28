@@ -6,6 +6,9 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -14,11 +17,13 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.definitions.utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    resolve_automation_condition,
+    validate_tags_strict,
+)
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster._utils.warnings import disable_dagster_warnings
-
-from .utils import validate_tags_strict
 
 
 @experimental_param(param="owners")
@@ -37,7 +42,7 @@ class AssetOut(
             ("group_name", PublicAttr[Optional[str]]),
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
             ("owners", PublicAttr[Optional[Sequence[str]]]),
             ("tags", PublicAttr[Optional[Mapping[str, str]]]),
@@ -69,8 +74,8 @@ class AssetOut(
         code_version (Optional[str]): The version of the code that generates this asset.
         freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
             to date this asset is intended to be.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
-            the specified asset.
+        automation_condition (Optional[AutomationCondition]): AutomationCondition to apply to the
+            specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
@@ -91,10 +96,12 @@ class AssetOut(
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        automation_condition: Optional[AutomationCondition] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        # TODO: FOU-243
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -119,8 +126,10 @@ class AssetOut(
             freshness_policy=check.opt_inst_param(
                 freshness_policy, "freshness_policy", FreshnessPolicy
             ),
-            auto_materialize_policy=check.opt_inst_param(
-                auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
+            automation_condition=check.opt_inst_param(
+                resolve_automation_condition(automation_condition, auto_materialize_policy),
+                "automation_condition",
+                AutomationCondition,
             ),
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
@@ -139,7 +148,9 @@ class AssetOut(
             code_version=self.code_version,
         )
 
-    def to_spec(self, key: AssetKey, deps: Sequence[AssetDep]) -> AssetSpec:
+    def to_spec(
+        self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
+    ) -> AssetSpec:
         with disable_dagster_warnings():
             return AssetSpec.dagster_internal_init(
                 key=key,
@@ -149,8 +160,18 @@ class AssetOut(
                 group_name=self.group_name,
                 code_version=self.code_version,
                 freshness_policy=self.freshness_policy,
-                auto_materialize_policy=self.auto_materialize_policy,
+                automation_condition=self.automation_condition,
                 owners=self.owners,
-                tags=self.tags,
+                tags={**additional_tags, **self.tags} if self.tags else additional_tags,
                 deps=deps,
+                auto_materialize_policy=None,
+                partitions_def=None,
             )
+
+    @property
+    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+        return (
+            self.automation_condition.as_auto_materialize_policy()
+            if self.automation_condition
+            else None
+        )

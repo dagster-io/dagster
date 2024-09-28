@@ -94,5 +94,6 @@ def raise_interrupts_as(error_cls: Type[BaseException]) -> Iterator[None]:
 
         yield
     finally:
-        if signal_replaced:
+        # during process cleanup, the original signal handler may no longer exist
+        if signal_replaced and original_signal_handler:
             _replace_interrupt_signal(original_signal_handler)

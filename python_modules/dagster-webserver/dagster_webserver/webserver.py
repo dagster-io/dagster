@@ -34,20 +34,23 @@ from starlette.responses import (
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
 
-from .external_assets import (
+from dagster_webserver.external_assets import (
     handle_report_asset_check_request,
     handle_report_asset_materialization_request,
     handle_report_asset_observation_request,
 )
-from .graphql import GraphQLServer
-from .version import __version__
+from dagster_webserver.graphql import GraphQLServer
+from dagster_webserver.version import __version__
 
 mimetypes.init()
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
-class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
+class DagsterWebserver(
+    GraphQLServer[BaseWorkspaceRequestContext],
+    Generic[T_IWorkspaceProcessContext],
+):
     _process_context: T_IWorkspaceProcessContext
     _uses_app_path_prefix: bool
 
@@ -153,30 +156,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         html_exporter = HTMLExporter()
         (body, resources) = html_exporter.from_notebook_node(notebook)
         return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
-
-    async def download_compute_logs_endpoint(self, request: Request):
-        run_id = request.path_params["run_id"]
-        step_key = request.path_params["step_key"]
-        file_type = request.path_params["file_type"]
-        context = self.make_request_context(request)
-
-        file = context.instance.compute_log_manager.get_local_path(
-            run_id,
-            step_key,
-            ComputeIOType(file_type),
-        )
-
-        if not path.exists(file):
-            raise HTTPException(404, detail="No log files available for download")
-
-        return FileResponse(
-            context.instance.compute_log_manager.get_local_path(
-                run_id,
-                step_key,
-                ComputeIOType(file_type),
-            ),
-            filename=f"{run_id}_{step_key}.{file_type}",
-        )
 
     async def download_captured_logs_endpoint(self, request: Request):
         [*log_key, file_extension] = request.path_params["path"].split("/")
@@ -293,8 +272,8 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             return [
                 Route("/favicon.png", lambda _: FileResponse(path="/favicon")),
                 Route(
-                    "/vendor/graphql-playground/index.css",
-                    lambda _: FileResponse(path="/vendor/graphql-playground/index.css"),
+                    "/vendor/graphiql/graphiql.min.css",
+                    lambda _: FileResponse(path="/vendor/graphiql/graphiql.min.css"),
                 ),
             ]
 
@@ -325,10 +304,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             + self.build_static_routes()
             + [
                 # download file endpoints
-                Route(
-                    "/download/{run_id:str}/{step_key:str}/{file_type:str}",
-                    self.download_compute_logs_endpoint,
-                ),
                 Route(
                     "/logs/{path:path}",
                     self.download_captured_logs_endpoint,

@@ -2,10 +2,9 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import AssetsOverviewRoot from '../../assets/AssetsOverviewRoot';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {AppTopNav} from '../AppTopNav/AppTopNav';
-import {AppTopNavRightOfLogo} from '../AppTopNav/AppTopNavRightOfLogo.oss';
-import {InjectedComponentContext} from '../InjectedComponentContext';
+import {workspaceWithNoJobs} from '../__fixtures__/useJobStateForNav.fixtures';
 
 // We don't need to render the search input here.
 jest.mock('../../search/SearchDialog', () => ({
@@ -15,15 +14,13 @@ jest.mock('../../search/SearchDialog', () => ({
 describe('AppTopNav', () => {
   it('renders links and controls', async () => {
     render(
-      <InjectedComponentContext.Provider
-        value={{AppTopNavRightOfLogo, AssetsOverview: AssetsOverviewRoot}}
-      >
-        <MockedProvider>
-          <MemoryRouter>
+      <MockedProvider mocks={[...workspaceWithNoJobs]}>
+        <MemoryRouter>
+          <WorkspaceProvider>
             <AppTopNav />
-          </MemoryRouter>
-        </MockedProvider>
-      </InjectedComponentContext.Provider>,
+          </WorkspaceProvider>
+        </MemoryRouter>
+      </MockedProvider>,
     );
 
     await screen.findByRole('link', {name: /runs/i});

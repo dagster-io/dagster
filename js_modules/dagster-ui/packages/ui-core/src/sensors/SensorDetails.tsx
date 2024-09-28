@@ -1,4 +1,3 @@
-import {QueryResult} from '@apollo/client';
 import {
   Box,
   Button,
@@ -8,20 +7,21 @@ import {
   MetadataTableWIP,
   PageHeader,
   Tag,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
-import {SensorTargetList} from './SensorTargetList';
 import {SensorFragment} from './types/SensorFragment.types';
-import {
-  SensorAssetSelectionQuery,
-  SensorAssetSelectionQueryVariables,
-} from './types/SensorRoot.types';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {AutomationTargetList} from '../automation/AutomationTargetList';
+import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -58,19 +58,26 @@ export const SensorDetails = ({
   repoAddress,
   daemonHealth,
   refreshState,
-  selectionQueryResult,
+  assetSelection,
 }: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
   refreshState: QueryRefreshState;
-  selectionQueryResult: QueryResult<SensorAssetSelectionQuery, SensorAssetSelectionQueryVariables>;
+  assetSelection: AutomationAssetSelectionFragment | null;
 }) => {
   const {
     name,
     sensorState: {status, ticks},
     metadata,
   } = sensor;
+
+  const {
+    permissions,
+    disabledReasons,
+    loading: loadingPermissions,
+  } = usePermissionsForLocation(repoAddress.location);
+  const {canUpdateSensorCursor} = permissions;
 
   const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
@@ -88,16 +95,16 @@ export const SensorDetails = ({
   const [showTestTickDialog, setShowTestTickDialog] = useState(false);
   const running = status === InstigationStatus.RUNNING;
 
-  const assetSelectionResult = selectionQueryResult.data?.sensorOrError;
-
-  const assetSelectionData =
-    assetSelectionResult?.__typename === 'Sensor' ? assetSelectionResult : null;
-  const selectedAssets = assetSelectionData?.assetSelection;
-
   return (
     <>
       <PageHeader
-        title={<Heading>{name}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <Link to="/automation">Automation</Link>
+            <span>/</span>
+            {name}
+          </Heading>
+        }
         icon="sensors"
         tags={
           <Tag icon="sensors">
@@ -107,15 +114,20 @@ export const SensorDetails = ({
         right={
           <Box margin={{top: 4}} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             <QueryRefreshCountdown refreshState={refreshState} />
-            {sensor.sensorType === SensorType.STANDARD ? (
+            <Tooltip
+              canShow={sensor.sensorType !== SensorType.STANDARD}
+              content="Testing not available for this sensor type"
+              placement="top-end"
+            >
               <Button
+                disabled={sensor.sensorType !== SensorType.STANDARD}
                 onClick={() => {
                   setShowTestTickDialog(true);
                 }}
               >
-                Test Sensor
+                Test sensor
               </Button>
-            ) : null}
+            </Tooltip>
           </Box>
         }
       />
@@ -163,17 +175,17 @@ export const SensorDetails = ({
               </td>
             </tr>
           )}
-          {(sensor.targets && sensor.targets.length) || selectedAssets ? (
+          {(sensor.targets && sensor.targets.length) || assetSelection ? (
             <tr>
               <td>Target</td>
-              <td>
-                <SensorTargetList
+              <TargetCell>
+                <AutomationTargetList
                   targets={sensor.targets}
                   repoAddress={repoAddress}
-                  selectionQueryResult={selectionQueryResult}
-                  sensorType={sensor.sensorType}
+                  assetSelection={assetSelection || null}
+                  automationType={sensor.sensorType}
                 />
-              </td>
+              </TargetCell>
             </tr>
           ) : null}
           <tr>
@@ -217,9 +229,18 @@ export const SensorDetails = ({
                   <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
                     {cursor ? cursor : 'None'}
                   </span>
-                  <Button icon={<Icon name="edit" />} onClick={() => setCursorEditing(true)}>
-                    Edit
-                  </Button>
+                  <Tooltip
+                    canShow={!canUpdateSensorCursor}
+                    content={disabledReasons.canUpdateSensorCursor}
+                  >
+                    <Button
+                      icon={<Icon name="edit" />}
+                      disabled={!canUpdateSensorCursor || loadingPermissions}
+                      onClick={() => setCursorEditing(true)}
+                    >
+                      Edit
+                    </Button>
+                  </Tooltip>
                 </Box>
                 <EditCursorDialog
                   isOpen={isCursorEditing}
@@ -235,3 +256,9 @@ export const SensorDetails = ({
     </>
   );
 };
+
+const TargetCell = styled.td`
+  button {
+    line-height: 20px;
+  }
+`;

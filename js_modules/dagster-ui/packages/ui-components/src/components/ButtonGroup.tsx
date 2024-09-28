@@ -33,6 +33,7 @@ export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
         const buttonElement = (
           <BaseButton
             key={id}
+            aria-selected={isActive}
             fillColor={isActive ? Colors.backgroundLighterHover() : fillColor}
             fillColorHover={isActive ? Colors.backgroundLighterHover() : fillColorHover}
             textColor={isActive ? Colors.textDefault() : Colors.textLight()}

@@ -33,6 +33,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
+from dagster._annotations import deprecated
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -160,7 +161,7 @@ def _build_airbyte_assets_from_metadata(
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
 
     @multi_asset(
-        name=f"airbyte_sync_{connection_id[:5]}",
+        name=f"airbyte_sync_{connection_id.replace('-', '_')}",
         deps=list((assets_defn_meta.keys_by_input_name or {}).values()),
         outs={
             k: AssetOut(
@@ -300,7 +301,7 @@ def build_airbyte_assets(
         internal_deps[table] = set(upstream_deps) if upstream_deps else set()
 
     @multi_asset(
-        name=f"airbyte_sync_{connection_id[:5]}",
+        name=f"airbyte_sync_{connection_id.replace('-', '_')}",
         deps=upstream_deps,
         outs=outputs,
         internal_asset_deps=internal_deps,
@@ -926,6 +927,10 @@ def load_assets_from_airbyte_instance(
     )
 
 
+@deprecated(
+    breaking_version="1.9",
+    additional_warn_text="The Airbyte Octavia CLI has been deprecated. Consider using load_assets_from_airbyte_instance instead.",
+)
 def load_assets_from_airbyte_project(
     project_dir: str,
     workspace_id: Optional[str] = None,

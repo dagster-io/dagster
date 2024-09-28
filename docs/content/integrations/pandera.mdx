@@ -9,7 +9,7 @@ The `dagster-pandera` integration library provides an API for generating [Dagste
 
 Using Pandera with Dagster allows you to:
 
-- Visualize the shape of the data by displaying datafram structure information in [the Dagster UI](/concepts/webserver/ui)
+- Visualize the shape of the data by displaying dataframe structure information in [the Dagster UI](/concepts/webserver/ui)
 - Implement runtime type-checking with rich error reporting
 
 ---
@@ -56,7 +56,7 @@ APPLE_STOCK_PRICES = {
 }
 
 
-class StockPrices(pa.SchemaModel):
+class StockPrices(pa.DataFrameModel):
     """Open/close prices for one or more stocks by day."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")

@@ -6,6 +6,7 @@ import sys
 from abc import ABC, abstractmethod
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
+from multiprocessing.process import BaseProcess
 from typing import TYPE_CHECKING, Iterator, NamedTuple, Optional, Union
 
 from typing_extensions import Literal
@@ -59,7 +60,8 @@ class ChildProcessCommand(ABC):
 class ChildProcessCrashException(Exception):
     """Thrown when the child process crashes."""
 
-    def __init__(self, exit_code=None):
+    def __init__(self, pid, exit_code=None):
+        self.pid = pid
         self.exit_code = exit_code
         super().__init__()
 
@@ -119,7 +121,7 @@ def _poll_for_event(
 
 def execute_child_process_command(
     multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
-) -> Iterator[Optional["DagsterEvent"]]:
+) -> Iterator[Optional[Union["DagsterEvent", ChildProcessEvent, BaseProcess]]]:
     """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by
@@ -130,12 +132,9 @@ def execute_child_process_command(
     executions in flight:
         * None - nothing has happened, yielded to enable cooperative multitasking other iterators
 
-        * ChildProcessEvent - Family of objects that communicates state changes in the child process
+        * multiprocessing.BaseProcess - the child process object.
 
-        * KeyboardInterrupt - Yielded in the case that an interrupt was recieved while
-            polling the child process. Yielded instead of raised to allow forwarding of the
-            interrupt to the child and completion of the iterator for this child and
-            any others that may be executing
+        * ChildProcessEvent - Family of objects that communicates state changes in the child process
 
         * The actual values yielded by the child process command
 
@@ -154,6 +153,7 @@ def execute_child_process_command(
             target=_execute_command_in_child_process, args=(event_queue, command)
         )
         process.start()
+        yield process
 
         completed_properly = False
 
@@ -170,7 +170,7 @@ def execute_child_process_command(
 
         if not completed_properly:
             # TODO Figure out what to do about stderr/stdout
-            raise ChildProcessCrashException(exit_code=process.exitcode)
+            raise ChildProcessCrashException(pid=process.pid, exit_code=process.exitcode)
 
         process.join()
     finally:

@@ -2280,6 +2280,7 @@
     "external_schedule_datas": [
       {
         "__class__": "ExternalScheduleData",
+        "asset_selection": null,
         "cron_schedule": "@daily",
         "description": null,
         "environment_vars": {},
@@ -2288,7 +2289,8 @@
         "name": "foo_schedule",
         "partition_set_name": null,
         "pipeline_name": "foo_job",
-        "solid_selection": null
+        "solid_selection": null,
+        "tags": {}
       }
     ],
     "external_sensor_datas": [],

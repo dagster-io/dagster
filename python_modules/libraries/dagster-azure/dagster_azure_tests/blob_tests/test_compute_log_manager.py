@@ -18,7 +18,7 @@ from dagster._time import get_current_datetime
 from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 ensure_dagster_tests_import()
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -89,14 +89,6 @@ def test_compute_log_manager(
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check ADLS2 directly
             adls2_object = fake_client.get_blob_client(
                 container=container,
@@ -118,14 +110,6 @@ def test_compute_log_manager(
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config(storage_account, container, credential):
@@ -242,11 +226,11 @@ def test_get_log_keys_for_log_key_prefix(
     ]
 
 
-class TestAzureComputeLogManager(TestCapturedLogManager):
+class TestAzureComputeLogManager(TestComputeLogManager):
     __test__ = True
 
-    @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(
+    @pytest.fixture(name="compute_log_manager")
+    def compute_log_manager(
         self,
         blob_client,
         storage_account,
@@ -296,8 +280,8 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, captured_log_manager):
-        yield captured_log_manager
+    def read_manager(self, compute_log_manager):
+        yield compute_log_manager
 
 
 @mock.patch("dagster_azure.blob.compute_log_manager.DefaultAzureCredential")
@@ -366,14 +350,6 @@ def test_compute_log_manager_default_azure_credential(
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check ADLS2 directly
             adls2_object = fake_client.get_blob_client(
                 container=container,
@@ -395,14 +371,6 @@ def test_compute_log_manager_default_azure_credential(
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config_default_azure_credential(storage_account, container):

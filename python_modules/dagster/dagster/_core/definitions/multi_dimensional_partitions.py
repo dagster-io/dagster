@@ -16,11 +16,20 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
+    PartitionsDefinition,
+    PartitionsSubset,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -31,15 +40,7 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
-
-from .partition import (
-    DefaultPartitionsSubset,
-    DynamicPartitionsDefinition,
-    PartitionsDefinition,
-    PartitionsSubset,
-    StaticPartitionsDefinition,
-)
-from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
+from dagster._time import get_current_datetime
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
@@ -341,7 +342,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             Sequence[MultiPartitionKey]
         """
         return self._get_partition_keys(
-            current_time or pendulum.now("UTC"), dynamic_partitions_store
+            current_time or get_current_datetime(), dynamic_partitions_store
         )
 
     def filter_valid_partition_keys(

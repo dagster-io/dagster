@@ -1,15 +1,15 @@
 from enum import Enum
-from typing import Mapping, NamedTuple, Sequence, Union
+from typing import Mapping, Sequence, Union
 
 import dagster._check as check
+from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import EnvVar, IntEnvVar
+from dagster._config.snap import ConfigFieldSnap, ConfigTypeSnap, minimal_config_for_type_snap
+from dagster._config.stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
+from dagster._config.traversal_context import ContextData
+from dagster._config.type_printer import print_config_type_key_to_string
+from dagster._record import IHaveNew, record, record_custom
 from dagster._utils.error import SerializableErrorInfo
-
-from .config_type import ConfigTypeKind
-from .snap import ConfigFieldSnap, ConfigTypeSnap, minimal_config_for_type_snap
-from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
-from .traversal_context import ContextData
-from .type_printer import print_config_type_key_to_string
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -23,79 +23,57 @@ class DagsterEvaluationErrorReason(Enum):
     FIELD_ALIAS_COLLISION = "FIELD_ALIAS_COLLISION"
 
 
-class FieldsNotDefinedErrorData(
-    NamedTuple("_FieldsNotDefinedErrorData", [("field_names", Sequence[str])])
-):
-    def __new__(cls, field_names: Sequence[str]):
-        return super(FieldsNotDefinedErrorData, cls).__new__(
-            cls, check.sequence_param(field_names, "field_names", of_type=str)
-        )
+@record
+class FieldsNotDefinedErrorData:
+    field_names: Sequence[str]
 
 
-class FieldAliasCollisionErrorData(NamedTuple):
+@record
+class FieldAliasCollisionErrorData:
     field_name: str
     aliased_field_name: str
 
 
-class FieldNotDefinedErrorData(NamedTuple("_FieldNotDefinedErrorData", [("field_name", str)])):
-    def __new__(cls, field_name: str):
-        return super(FieldNotDefinedErrorData, cls).__new__(
-            cls, check.str_param(field_name, "field_name")
-        )
+@record
+class FieldNotDefinedErrorData:
+    field_name: str
 
 
-class MissingFieldErrorData(
-    NamedTuple("_MissingFieldErrorData", [("field_name", str), ("field_snap", ConfigFieldSnap)])
-):
-    def __new__(cls, field_name, field_snap):
-        return super(MissingFieldErrorData, cls).__new__(
-            cls,
-            check.str_param(field_name, "field_name"),
-            check.inst_param(field_snap, "field_snap", ConfigFieldSnap),
-        )
+@record
+class MissingFieldErrorData:
+    field_name: str
+    field_snap: ConfigFieldSnap
 
 
-class MissingFieldsErrorData(
-    NamedTuple(
-        "_MissingFieldErrorData",
-        [("field_names", Sequence[str]), ("field_snaps", Sequence[ConfigFieldSnap])],
-    )
-):
-    def __new__(cls, field_names, field_snaps):
-        return super(MissingFieldsErrorData, cls).__new__(
-            cls,
-            check.list_param(field_names, "field_names", of_type=str),
-            check.list_param(field_snaps, "field_snaps", of_type=ConfigFieldSnap),
-        )
+@record
+class MissingFieldsErrorData:
+    field_names: Sequence[str]
+    field_snaps: Sequence[ConfigFieldSnap]
 
 
-class RuntimeMismatchErrorData(
-    NamedTuple(
-        "_RuntimeMismatchErrorData", [("config_type_snap", ConfigTypeSnap), ("value_rep", str)]
-    )
-):
-    def __new__(cls, config_type_snap, value_rep):
-        check.inst_param(config_type_snap, "config_type", ConfigTypeSnap)
-        return super(RuntimeMismatchErrorData, cls).__new__(
-            cls,
-            config_type_snap,
-            check.str_param(value_rep, "value_rep"),
-        )
+@record
+class RuntimeMismatchErrorData:
+    config_type_snap: ConfigTypeSnap
+    value_rep: str
 
 
-class SelectorTypeErrorData(
-    NamedTuple(
-        "_SelectorTypeErrorData",
-        [("config_type_snap", ConfigTypeSnap), ("incoming_fields", Sequence[str])],
-    )
-):
-    def __new__(cls, config_type_snap, incoming_fields):
+@record_custom
+class SelectorTypeErrorData(IHaveNew):
+    config_type_snap: ConfigTypeSnap
+    incoming_fields: Sequence[str]
+
+    def __new__(
+        cls,
+        *,
+        config_type_snap: ConfigTypeSnap,
+        incoming_fields: Sequence[str],
+    ):
         check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
         check.param_invariant(config_type_snap.kind == ConfigTypeKind.SELECTOR, "config_type")
-        return super(SelectorTypeErrorData, cls).__new__(
+        return super().__new__(
             cls,
-            config_type_snap,
-            check.list_param(incoming_fields, "incoming_fields", of_type=str),
+            config_type_snap=config_type_snap,
+            incoming_fields=incoming_fields,
         )
 
 
@@ -113,31 +91,12 @@ ERROR_DATA_UNION = Union[
 ERROR_DATA_TYPES = ERROR_DATA_UNION.__args__  # type: ignore
 
 
-class EvaluationError(
-    NamedTuple(
-        "_EvaluationError",
-        [
-            ("stack", EvaluationStack),
-            ("reason", DagsterEvaluationErrorReason),
-            ("message", str),
-            ("error_data", ERROR_DATA_UNION),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        stack: EvaluationStack,
-        reason: DagsterEvaluationErrorReason,
-        message: str,
-        error_data: ERROR_DATA_UNION,
-    ):
-        return super(EvaluationError, cls).__new__(
-            cls,
-            check.inst_param(stack, "stack", EvaluationStack),
-            check.inst_param(reason, "reason", DagsterEvaluationErrorReason),
-            check.str_param(message, "message"),
-            check.inst_param(error_data, "error_data", ERROR_DATA_TYPES),
-        )
+@record
+class EvaluationError:
+    stack: EvaluationStack
+    reason: DagsterEvaluationErrorReason
+    message: str
+    error_data: ERROR_DATA_UNION
 
 
 def _get_type_msg(type_in_context):
@@ -211,7 +170,10 @@ def create_enum_type_mismatch_error(context: ContextData, config_value: object) 
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message=f"Value {get_friendly_path_msg(context.stack)} for enum type {context.config_type_snap.given_name} must be a string",
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(
+            config_type_snap=context.config_type_snap,
+            value_rep=repr(config_value),
+        ),
     )
 
 
@@ -222,7 +184,10 @@ def create_enum_value_missing_error(context: ContextData, config_value: object) 
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message=f"Value {get_friendly_path_msg(context.stack)} not in enum type {context.config_type_snap.given_name} got {config_value}",
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(
+            config_type_snap=context.config_type_snap,
+            value_rep=repr(config_value),
+        ),
     )
 
 
@@ -264,7 +229,10 @@ def create_array_error(context: ContextData, config_value: object) -> Evaluation
                 context.config_schema_snapshot, context.config_type_key, with_lines=False
             ),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(
+            config_type_snap=context.config_type_snap,
+            value_rep=repr(config_value),
+        ),
     )
 
 
@@ -281,7 +249,10 @@ def create_map_error(context: ContextData, config_value: object) -> EvaluationEr
                 context.config_schema_snapshot, context.config_type_key, with_lines=False
             ),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(
+            config_type_snap=context.config_type_snap,
+            value_rep=repr(config_value),
+        ),
     )
 
 
@@ -358,7 +329,10 @@ def create_scalar_error(context: ContextData, config_value: object) -> Evaluatio
             f'Invalid scalar {get_friendly_path_msg(context.stack)}. Value "{config_value}" of type '
             f'"{type(config_value)}" is not valid for expected type "{context.config_type_snap.given_name}".'
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(
+            config_type_snap=context.config_type_snap,
+            value_rep=repr(config_value),
+        ),
     )
 
 
@@ -378,7 +352,10 @@ def create_pydantic_env_var_error(
             f' EnvVar("{env_var_name}") with {correct_env_var}, or pass a structured RunConfig'
             " object."
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(env_var_name)),
+        error_data=RuntimeMismatchErrorData(
+            config_type_snap=context.config_type_snap,
+            value_rep=repr(env_var_name),
+        ),
     )
 
 
@@ -465,7 +442,10 @@ def create_none_not_allowed_error(context: ContextData) -> EvaluationError:
                 context.config_schema_snapshot, context.config_type_key, with_lines=False
             ),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(None)),
+        error_data=RuntimeMismatchErrorData(
+            config_type_snap=context.config_type_snap,
+            value_rep=repr(None),
+        ),
     )
 
 

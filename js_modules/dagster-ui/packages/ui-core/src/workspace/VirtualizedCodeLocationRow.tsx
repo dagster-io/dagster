@@ -6,36 +6,47 @@ import styled from 'styled-components';
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
 import {RepositoryCountTags} from './RepositoryCountTags';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {
+  LocationStatusEntryFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
-} from './types/WorkspaceQueries.types';
+} from './WorkspaceContext/types/WorkspaceQueries.types';
+import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
+export type CodeLocationRowStatusType = 'Failed' | 'Updating' | 'Loaded' | 'Loading';
+
 export type CodeLocationRowType =
   | {
       type: 'repository';
-      codeLocation: WorkspaceLocationNodeFragment;
+      locationStatus: LocationStatusEntryFragment;
+      locationEntry: WorkspaceLocationNodeFragment;
       repository: WorkspaceRepositoryFragment;
+      status: CodeLocationRowStatusType;
     }
-  | {type: 'error'; node: WorkspaceLocationNodeFragment};
+  | {
+      type: 'location';
+      locationStatus: LocationStatusEntryFragment;
+      locationEntry: WorkspaceLocationNodeFragment | null;
+      status: CodeLocationRowStatusType;
+    };
 
-const TEMPLATE_COLUMNS = '3fr 1fr 1fr 240px 160px';
+const TEMPLATE_COLUMNS = '3fr 1fr 1fr 160px';
 
-interface ErrorRowProps {
-  locationNode: WorkspaceRepositoryLocationNode;
+interface LocationRowProps {
+  locationEntry: WorkspaceRepositoryLocationNode | null;
+  locationStatus: LocationStatusEntryFragment;
   index: number;
 }
 
-export const VirtualizedCodeLocationErrorRow = React.forwardRef(
-  (props: ErrorRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
-    const {locationNode, index} = props;
-    const {name} = locationNode;
+export const VirtualizedCodeLocationRow = React.forwardRef(
+  (props: LocationRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
+    const {locationEntry, locationStatus, index} = props;
+    const {name} = locationStatus;
     return (
       <div ref={ref} data-index={index}>
         <RowGrid border="bottom">
@@ -44,19 +55,18 @@ export const VirtualizedCodeLocationErrorRow = React.forwardRef(
           </RowCell>
           <RowCell>
             <div>
-              <LocationStatus location={name} locationOrError={locationNode} />
+              <LocationStatus locationStatus={locationStatus} locationOrError={locationEntry} />
             </div>
           </RowCell>
           <RowCell>
             <div style={{whiteSpace: 'nowrap'}}>
-              <TimeFromNow unixTimestamp={locationNode.updatedTimestamp} />
+              <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell>{'\u2013'}</RowCell>
           <RowCell>
             <JoinedButtons>
               <ReloadButton location={name} />
-              <CodeLocationMenu locationNode={locationNode} />
+              {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
             </JoinedButtons>
           </RowCell>
         </RowGrid>
@@ -65,19 +75,20 @@ export const VirtualizedCodeLocationErrorRow = React.forwardRef(
   },
 );
 
-interface Props {
-  codeLocation: WorkspaceRepositoryLocationNode;
+interface RepoRowProps {
+  locationEntry: WorkspaceRepositoryLocationNode;
+  locationStatus: LocationStatusEntryFragment;
   repository: WorkspaceRepositoryFragment;
   index: number;
   // measure: (node: Element | null) => void;
 }
 
-export const VirtualizedCodeLocationRow = React.forwardRef(
-  (props: Props, ref: React.ForwardedRef<HTMLDivElement>) => {
-    const {codeLocation, repository, index} = props;
+export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
+  (props: RepoRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
+    const {locationEntry, locationStatus, repository, index} = props;
     const repoAddress = buildRepoAddress(repository.name, repository.location.name);
 
-    const allMetadata = [...codeLocation.displayMetadata, ...repository.displayMetadata];
+    const allMetadata = [...locationEntry.displayMetadata, ...repository.displayMetadata];
 
     return (
       <div ref={ref} data-index={index}>
@@ -91,25 +102,23 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
               </div>
               <ImageName metadata={allMetadata} />
               <ModuleOrPackageOrFile metadata={allMetadata} />
+              <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
             </Box>
           </RowCell>
           <RowCell>
             <div>
-              <LocationStatus location={repository.name} locationOrError={codeLocation} />
+              <LocationStatus locationStatus={locationStatus} locationOrError={locationEntry} />
             </div>
           </RowCell>
           <RowCell>
             <div style={{whiteSpace: 'nowrap'}}>
-              <TimeFromNow unixTimestamp={codeLocation.updatedTimestamp} />
+              <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
-          </RowCell>
-          <RowCell>
-            <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
           </RowCell>
           <RowCell style={{alignItems: 'flex-end'}}>
             <JoinedButtons>
-              <ReloadButton location={codeLocation.name} />
-              <CodeLocationMenu locationNode={codeLocation} />
+              <ReloadButton location={locationStatus.name} />
+              <CodeLocationMenu locationNode={locationEntry} />
             </JoinedButtons>
           </RowCell>
         </RowGrid>
@@ -124,7 +133,6 @@ export const VirtualizedCodeLocationHeader = () => {
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Updated</HeaderCell>
-      <HeaderCell>Definitions</HeaderCell>
       <HeaderCell style={{textAlign: 'right'}}>Actions</HeaderCell>
     </HeaderRow>
   );

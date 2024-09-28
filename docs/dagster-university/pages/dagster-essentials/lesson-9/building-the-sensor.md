@@ -157,6 +157,7 @@ Putting everything together, you should have the following code in `sensors/__in
 ```python
 from dagster import (
     RunRequest,
+    SensorEvaluationContext,
     SensorResult,
     sensor,
 )

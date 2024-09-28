@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Optional
 
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._utils.error import SerializableErrorInfo
 
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneError(graphene.Interface):
@@ -192,7 +192,7 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
     repository_location_name = graphene.NonNull(graphene.String)
 
     def __init__(self, selector):
-        from ..implementation.utils import JobSubsetSelector
+        from dagster_graphql.implementation.utils import JobSubsetSelector
 
         super().__init__()
         check.inst_param(selector, "selector", JobSubsetSelector)
@@ -215,7 +215,7 @@ class GrapheneGraphNotFoundError(graphene.ObjectType):
     repository_location_name = graphene.NonNull(graphene.String)
 
     def __init__(self, selector):
-        from ..implementation.utils import GraphSelector
+        from dagster_graphql.implementation.utils import GraphSelector
 
         super().__init__()
         check.inst_param(selector, "selector", GraphSelector)
@@ -507,6 +507,16 @@ class GrapheneDuplicateDynamicPartitionError(graphene.ObjectType):
         )
 
 
+class GrapheneUnsupportedOperationError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "UnsupportedOperationError"
+
+    def __init__(self, message: Optional[str] = None):
+        super().__init__()
+        self.message = check.str_param(message, "message") or "Unsupported operation."
+
+
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -537,5 +547,6 @@ types = [
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,
+    GrapheneUnsupportedOperationError,
     GrapheneDuplicateDynamicPartitionError,
 ]

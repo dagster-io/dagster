@@ -1,23 +1,15 @@
 ---
 title: "Airflow & Dagster | Dagster Docs"
-description: The dagster-airflow package allows you to import Airflow DAGs into Dagster jobs and assets, as well as trigger job runs from Airflow.
+description: Explore the options for migrating from Airflow to Dagster.
 ---
 
 # Airflow & Dagster
 
-<CodeReferenceLink filePath="examples/with_airflow" />
+Migrating from Airflow to Dagster, or integrating Dagster into your existing workflow orchestration stack, can be accomplished in many ways. The [Pick your own journey](/guides/migrations/migrating-airflow-to-dagster) guide provides a variety suggestions in how one can migrate their Airflow pipelines to Dagster, or build a platform where both tools co-exist.
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) library provides interoperability between Dagster and Airflow. This integration is designed to help support users who have existing Airflow usage and are interested in exploring Dagster.
-
-Using `dagster-airflow`, you can incorporate all or some of your existing Airflow Directed Acyclic Graphs (DAGs) or orchestrate Dagster jobs from Airflow. Refer to the [Airflow reference](/integrations/airflow/reference) for examples or the following sections for info on migrating from Airflow.
-
----
-
-## Migrating to Dagster
-
-Interested in migrating from Airflow to Dagster? Check out the [migration guide](/integrations/airflow/migrating-to-dagster) for a step-by-step walkthrough.
-
-If you're not sure how to map Airflow concepts to Dagster, check out the cheatsheet in the next section before you begin.
+- [Learning Dagster from Airflow](/integrations/airflow/from-airflow-to-dagster) - a step-by-step tutorial of mapping concepts from Airflow to Dagster
+- [Migrating from Airflow](/guides/migrations/migrating-airflow-to-dagster) - migration patterns for translating Airflow code to Dagster
+- [Observe your Airflow pipelines with Dagster](/guides/migrations/observe-your-airflow-pipelines-with-dagster) - See how Dagster can act as the observation layer over all pipelines in your organization
 
 ---
 
@@ -136,8 +128,8 @@ While Airflow and Dagster have some significant differences, there are many conc
             </a>
           </li>
           <li>
-            <a href="/concepts/assets/asset-auto-execution">
-              Auto-materialization
+            <a href="/concepts/automation/declarative-automation">
+              Declarative Automation
             </a>
           </li>
         </ul>
@@ -152,8 +144,8 @@ While Airflow and Dagster have some significant differences, there are many conc
         </a>
         . When this is the case, <a href="/concepts/partitions-schedules-sensors/backfills">
           backfills
-        </a> and <a href="/concepts/assets/asset-auto-execution">
-          auto-materialize
+        </a> and <a href="/concepts/automation/declarative-automation">
+          Declarative Automation
         </a> will only materialize later partitions after earlier partitions have
         completed.
       </td>
@@ -281,18 +273,3 @@ While Airflow and Dagster have some significant differences, there are many conc
     </tr>
   </tbody>
 </table>
-
----
-
-## Related
-
-<ArticleList>
-  <ArticleListItem
-    title="Migrating from Airflow to Dagster"
-    href="/integrations/airflow/migrating-to-dagster"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Airflow integration reference"
-    href="/integrations/airflow/reference"
-  ></ArticleListItem>
-</ArticleList>

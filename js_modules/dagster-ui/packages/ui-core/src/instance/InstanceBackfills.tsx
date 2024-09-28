@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -7,14 +6,12 @@ import {
   Spinner,
 } from '@dagster-io/ui-components';
 
-import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './backfill/BackfillTable';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
-  InstanceHealthForBackfillsQuery,
-  InstanceHealthForBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
@@ -26,11 +23,10 @@ import {useTrackPageView} from '../app/analytics';
 import {BulkActionStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {useFilters} from '../ui/Filters';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {useFilters} from '../ui/BaseFilters';
+import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 const PAGE_SIZE = 10;
 
@@ -46,6 +42,10 @@ const labelForBackfillStatus = (key: BulkActionStatus) => {
       return 'Failed';
     case BulkActionStatus.REQUESTED:
       return 'In progress';
+    case BulkActionStatus.COMPLETED_SUCCESS:
+      return 'Success';
+    case BulkActionStatus.COMPLETED_FAILED:
+      return 'Failed';
   }
 };
 
@@ -62,12 +62,6 @@ const backfillStatusValues = Object.keys(BulkActionStatus).map((key) => {
 export const InstanceBackfills = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Backfills');
-
-  const queryData = useQuery<
-    InstanceHealthForBackfillsQuery,
-    InstanceHealthForBackfillsQueryVariables
-  >(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
-  useBlockTraceOnQueryResult(queryData, 'InstanceHealthForBackfillsQuery');
 
   const [statusState, setStatusState] = useQueryPersistedState<Set<BulkActionStatus>>({
     encode: (vals) => ({status: vals.size ? Array.from(vals).join(',') : undefined}),
@@ -106,6 +100,7 @@ export const InstanceBackfills = () => {
         : [],
   });
 
+  const isDaemonHealthy = useIsBackfillDaemonHealthy();
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {loading, data} = queryResult;
 
@@ -150,17 +145,11 @@ export const InstanceBackfills = () => {
       );
     }
 
-    const daemonHealths = queryData.data?.instance.daemonHealth.allDaemonStatuses || [];
-    const backfillHealths = daemonHealths
-      .filter((daemon) => daemon.daemonType === 'BACKFILL')
-      .map((daemon) => daemon.required && daemon.healthy);
-    const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
-
     return (
       <div>
-        {isBackfillHealthy ? null : (
-          <Box padding={{horizontal: 24, vertical: 16}}>
-            <DaemonNotRunningAlertBody />
+        {isDaemonHealthy ? null : (
+          <Box padding={{horizontal: 24, bottom: 16}}>
+            <DaemonNotRunningAlert />
           </Box>
         )}
         <BackfillTable
@@ -192,17 +181,6 @@ export const InstanceBackfills = () => {
     </>
   );
 };
-
-const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
-  query InstanceHealthForBackfillsQuery {
-    instance {
-      id
-      ...InstanceHealthFragment
-    }
-  }
-
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
 
 const BACKFILLS_QUERY = gql`
   query InstanceBackfillsQuery($status: BulkActionStatus, $cursor: String, $limit: Int) {

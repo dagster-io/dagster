@@ -17,7 +17,9 @@ interface Props {
 
 export const PartitionHealthSummary = memo((props: Props) => {
   const {showAssetKey, assetKey, data, selections} = props;
-  const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
+  const assetData = data.find(
+    (d) => JSON.stringify(d.assetKey.path) === JSON.stringify(assetKey.path),
+  );
 
   if (!assetData) {
     return (

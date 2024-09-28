@@ -3,17 +3,12 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
-from typing import Any, Mapping, Optional
+from typing import Mapping, Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.selector import InstigatorSelector
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.build_resources import build_resources
-from dagster._core.execution.context.output import build_output_context
-from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
@@ -36,34 +31,6 @@ from dagster._serdes import create_snapshot_id
 from dagster._utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-
-def cleanup_memoized_results(
-    job_def: JobDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
-) -> None:
-    # Clean up any memoized outputs from the s3 bucket
-    from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-    execution_plan = create_execution_plan(
-        job_def,
-        run_config=run_config,
-        instance_ref=instance.get_ref(),
-    )
-
-    with build_resources(
-        {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        resource_config=run_config["resources"],
-    ) as resources:
-        io_manager = resources.io_manager
-        for step_output_handle, version in execution_plan.step_output_versions.items():
-            output_context = build_output_context(
-                step_key=step_output_handle.step_key,
-                name=step_output_handle.output_name,
-                version=version,
-            )
-
-            key = io_manager._get_path(output_context)  # noqa: SLF001
-            io_manager.unlink(key)
 
 
 def get_test_repo_path():
@@ -125,7 +92,7 @@ def get_test_project_recon_job(
     filename: Optional[str] = None,
 ) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructableJobForTest(
+    return ReOriginatedReconstructableJobForTest(  # type: ignore # ignored for update, fix me!
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",
@@ -200,7 +167,7 @@ class ReOriginatedExternalJobForTest(ExternalJob):
             ),
         )
 
-    def get_external_origin(self) -> RemoteJobOrigin:
+    def get_remote_origin(self) -> RemoteJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
@@ -235,7 +202,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
             external_schedule.handle.repository_handle,
         )
 
-    def get_external_origin(self):
+    def get_remote_origin(self):
         """Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.

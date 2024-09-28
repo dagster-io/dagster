@@ -11,7 +11,11 @@ from dagster_gcp.bigquery.io_manager import (
     build_bigquery_io_manager,
 )
 
-from .conftest import IS_BUILDKITE, SHARED_BUILDKITE_BQ_CONFIG, temporary_bigquery_table
+from dagster_gcp_tests.bigquery_tests.conftest import (
+    IS_BUILDKITE,
+    SHARED_BUILDKITE_BQ_CONFIG,
+    temporary_bigquery_table,
+)
 
 
 def test_get_select_statement():

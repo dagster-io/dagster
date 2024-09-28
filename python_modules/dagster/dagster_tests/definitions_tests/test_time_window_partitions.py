@@ -28,8 +28,8 @@ from dagster._core.definitions.time_window_partitions import (
     dst_safe_strptime,
 )
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import freeze_time
+from dagster._record import copy
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, parse_time_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -58,6 +58,8 @@ def test_daily_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
+    assert copy(partitions_def) == DailyPartitionsDefinition(start_date="2021-05-05")
+
     assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
     assert partitions_def.get_last_partition_key(parse_time_string("2021-05-06")) == "2021-05-05"
     assert (
@@ -148,6 +150,7 @@ def test_monthly_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == MonthlyPartitionsDefinition(start_date="2021-05-01")
+    assert copy(partitions_def) == MonthlyPartitionsDefinition(start_date="2021-05-01")
 
     assert [
         partitions_def.time_window_for_partition_key(key)
@@ -217,6 +220,7 @@ def test_hourly_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
+    assert copy(partitions_def) == HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
 
     partition_keys = partitions_def.get_partition_keys(
         datetime.strptime("2021-05-05-03:00", DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE)
@@ -271,6 +275,7 @@ def test_weekly_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == WeeklyPartitionsDefinition(start_date="2021-05-01")
+    assert copy(partitions_def) == WeeklyPartitionsDefinition(start_date="2021-05-01")
 
     partitions_def = my_partitioned_config.partitions_def
     assert [
@@ -1523,15 +1528,14 @@ def test_time_window_partitions_def_serialization(partitions_def):
     assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo
 
 
-def test_cannot_pickle_time_window_partitions_def():
+def test_pickle_time_window_partitions_def():
     import datetime
 
     partitions_def = TimeWindowPartitionsDefinition(
         datetime.datetime(2021, 1, 1), "America/Los_Angeles", cron_schedule="0 0 * * *"
     )
 
-    with pytest.raises(DagsterInvariantViolationError, match="not pickleable"):
-        pickle.loads(pickle.dumps(partitions_def))
+    assert pickle.loads(pickle.dumps(partitions_def)) == partitions_def
 
 
 def test_time_window_partitions_subset_add_partition_to_front():

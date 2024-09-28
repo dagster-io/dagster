@@ -79,9 +79,7 @@ export interface JobTabConfig {
 }
 
 /**
- * Define the default set of job tabs. These can then be ordered by the `tabBuilder` supplied
- * via context. We provide a map here instead of an array so that the overriding context can easily
- * define a new tab order without splicing or reordering a prebuilt array.
+ * Define the default set of job tabs.
  */
 export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabConfig> => {
   const {hasLaunchpad, hasPartitionSet} = input;
@@ -111,11 +109,4 @@ export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabC
       isHidden: !hasPartitionSet,
     },
   };
-};
-
-export const buildJobTabs = (input: JobTabConfigInput): JobTabConfig[] => {
-  const tabConfigs = buildJobTabMap(input);
-  return DEFAULT_JOB_TAB_ORDER.map((tabId) => tabConfigs[tabId]).filter(
-    (tab): tab is JobTabConfig => !!tab && !tab.isHidden,
-  );
 };

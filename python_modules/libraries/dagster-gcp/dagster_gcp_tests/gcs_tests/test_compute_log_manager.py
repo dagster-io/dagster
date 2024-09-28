@@ -20,7 +20,7 @@ from dagster_gcp.gcs import GCSComputeLogManager
 from google.cloud import storage
 
 ensure_dagster_tests_import()
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -80,14 +80,6 @@ def test_compute_log_manager(gcs_bucket):
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check GCS directly
             stderr_gcs = (
                 storage.Client()
@@ -112,14 +104,6 @@ def test_compute_log_manager(gcs_bucket):
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 @pytest.mark.integration
@@ -172,14 +156,6 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 stdout = log_data.stdout.decode("utf-8")
                 assert stdout == HELLO_WORLD + SEPARATOR
 
-                # legacy API
-                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-                assert stdout.data == HELLO_WORLD + SEPARATOR
-
-                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-                for expected in EXPECTED_LOGS:
-                    assert expected in stderr.data
-
                 # Check GCS directly
                 stderr_gcs = (
                     storage.Client()
@@ -201,14 +177,6 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 log_data = manager.get_log_data(log_key)
                 stdout = log_data.stdout.decode("utf-8")
                 assert stdout == HELLO_WORLD + SEPARATOR
-
-                # legacy API
-                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-                assert stdout.data == HELLO_WORLD + SEPARATOR
-
-                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-                for expected in EXPECTED_LOGS:
-                    assert expected in stderr.data
 
 
 @pytest.mark.integration
@@ -369,11 +337,11 @@ def test_storage_download_url_fallback(gcs_bucket):
 
 
 @pytest.mark.integration
-class TestGCSComputeLogManager(TestCapturedLogManager):
+class TestGCSComputeLogManager(TestComputeLogManager):
     __test__ = True
 
-    @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(self, gcs_bucket):
+    @pytest.fixture(name="compute_log_manager")
+    def compute_log_manager(self, gcs_bucket):
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
 

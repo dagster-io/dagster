@@ -16,6 +16,10 @@ from typing import (
 )
 
 from dagster import _check as check
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
@@ -24,10 +28,6 @@ from dagster._serdes.serdes import (
     SerializableNonScalarKeyMapping,
     whitelist_for_serdes,
 )
-
-from .asset_subset import AssetSubset
-from .base_asset_graph import BaseAssetGraph
-from .events import AssetKey, AssetKeyPartitionKey
 
 
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
@@ -74,18 +74,20 @@ class AssetGraphSubset(NamedTuple):
             len(subset) for subset in self.partitions_subsets_by_asset_key.values()
         )
 
-    def get_asset_subset(self, asset_key: AssetKey, asset_graph: BaseAssetGraph) -> AssetSubset:
+    def get_asset_subset(
+        self, asset_key: AssetKey, asset_graph: BaseAssetGraph
+    ) -> SerializableEntitySubset[AssetKey]:
         """Returns an AssetSubset representing the subset of a specific asset that this
         AssetGraphSubset contains.
         """
         partitions_def = asset_graph.get(asset_key).partitions_def
         if partitions_def is None:
-            return AssetSubset(
-                asset_key=asset_key, value=asset_key in self.non_partitioned_asset_keys
+            return SerializableEntitySubset(
+                key=asset_key, value=asset_key in self.non_partitioned_asset_keys
             )
         else:
-            return AssetSubset(
-                asset_key=asset_key,
+            return SerializableEntitySubset(
+                key=asset_key,
                 value=self.partitions_subsets_by_asset_key.get(
                     asset_key, partitions_def.empty_subset()
                 ),
@@ -115,6 +117,15 @@ class AssetGraphSubset(NamedTuple):
 
         for asset_key in self.non_partitioned_asset_keys:
             yield AssetKeyPartitionKey(asset_key, None)
+
+    def iterate_asset_subsets(
+        self, asset_graph: BaseAssetGraph
+    ) -> Iterable[SerializableEntitySubset[AssetKey]]:
+        """Returns an Iterable of AssetSubsets representing the subset of each asset that this
+        AssetGraphSubset contains.
+        """
+        for asset_key in self.asset_keys:
+            yield self.get_asset_subset(asset_key, asset_graph)
 
     def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         """If asset is an AssetKeyPartitionKey, check if the given AssetKeyPartitionKey is in the
@@ -257,6 +268,23 @@ class AssetGraphSubset(NamedTuple):
                 for asset_key, partition_keys in partitions_by_asset_key.items()
             },
             non_partitioned_asset_keys=non_partitioned_asset_keys,
+        )
+
+    @classmethod
+    def from_entity_subsets(
+        cls, entity_subsets: Iterable[EntitySubset[AssetKey]]
+    ) -> "AssetGraphSubset":
+        return AssetGraphSubset(
+            partitions_subsets_by_asset_key={
+                subset.key: subset.get_internal_subset_value()
+                for subset in entity_subsets
+                if subset.is_partitioned and not subset.is_empty
+            },
+            non_partitioned_asset_keys={
+                subset.key
+                for subset in entity_subsets
+                if not subset.is_partitioned and not subset.is_empty
+            },
         )
 
     @classmethod

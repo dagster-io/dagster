@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
@@ -7,6 +6,7 @@ import {
   ConfigForRunQuery,
   ConfigForRunQueryVariables,
 } from './types/LaunchpadSetupFromRunRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {
   IExecutionSession,
   applyCreateSession,
@@ -14,10 +14,10 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useBlockTraceOnQueryResult, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -113,7 +113,6 @@ const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
       },
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'ConfigForRunQuery');
   const {data, loading} = queryResult;
 
   const runOrError = data?.runOrError;

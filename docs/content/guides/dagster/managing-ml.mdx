@@ -28,7 +28,7 @@ You might have thought about your data sources, feature sets, and the best model
 
 Whether you have a large or small model, Dagster can help automate data refreshes and model training based on your business needs.
 
-[Auto-materializing assets](/concepts/assets/asset-auto-execution) can be used to update a machine learning model when the upstream data is updated. This can be done by setting the `AutoMaterializePolicy` to `eager`, which means that our machine learning model asset will be refreshed anytime our data asset is updated.
+Auto-materializing assets can be used to update a machine learning model when the upstream data is updated. This can be done by setting the `AutoMaterializePolicy` to `eager`, which means that our machine learning model asset will be refreshed anytime our data asset is updated.
 
 ```python file=/guides/dagster/managing_ml/managing_ml_code.py startafter=eager_materilization_start endbefore=eager_materilization_end
 from dagster import AutoMaterializePolicy, asset

@@ -36,7 +36,7 @@ class RepositoryHandle(
     def location_name(self) -> str:
         return self.code_location_origin.location_name
 
-    def get_external_origin(self):
+    def get_remote_origin(self):
         return RemoteRepositoryOrigin(
             self.code_location_origin,
             self.repository_name,
@@ -67,8 +67,8 @@ class JobHandle(
     def location_name(self):
         return self.repository_handle.location_name
 
-    def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_job_origin(self.job_name)
+    def get_remote_origin(self):
+        return self.repository_handle.get_remote_origin().get_job_origin(self.job_name)
 
     def get_python_origin(self):
         return self.repository_handle.get_python_origin().get_job_origin(self.job_name)
@@ -97,8 +97,8 @@ class InstigatorHandle(
     def location_name(self):
         return self.repository_handle.location_name
 
-    def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_instigator_origin(
+    def get_remote_origin(self):
+        return self.repository_handle.get_remote_origin().get_instigator_origin(
             self.instigator_name
         )
 
@@ -124,7 +124,7 @@ class PartitionSetHandle(
     def location_name(self):
         return self.repository_handle.location_name
 
-    def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_partition_set_origin(
+    def get_remote_origin(self):
+        return self.repository_handle.get_remote_origin().get_partition_set_origin(
             self.partition_set_name
         )

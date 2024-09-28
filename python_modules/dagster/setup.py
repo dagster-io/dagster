@@ -88,12 +88,8 @@ setup(
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
-        "pendulum>=3,<4; python_version>='3.12'",
-        "pendulum>=0.7.0,<4; python_version>='3.9' and python_version<'3.12'",
-        "pendulum>=0.7.0,<3; python_version<'3.9'",  # https://github.com/dagster-io/dagster/issues/19500
         "protobuf>=3.20.0,<5; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and 4
         "protobuf>=4,<5; python_version>='3.11'",
-        "python-dateutil",
         "python-dotenv",
         "pytz",
         "requests",
@@ -102,10 +98,11 @@ setup(
         "tomli<3",
         "tqdm<5",
         "typing_extensions>=4.4.0,<5",
+        'tzdata; platform_system=="Windows"',
         "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
-        "watchdog>=0.8.3",
+        "watchdog>=0.8.3,<6",
         'psutil>=1.0; platform_system=="Windows"',
         # https://github.com/mhammond/pywin32/issues/1439
         'pywin32!=226; platform_system=="Windows"',
@@ -113,7 +110,7 @@ setup(
         "universal_pathlib; python_version<'3.12'",
         "universal_pathlib>=0.2.0; python_version>='3.12'",
         # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic>1.10.0,!= 1.10.7,<3",
+        "pydantic>1.10.0,!=1.10.7,<2.10",
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
@@ -127,21 +124,22 @@ setup(
             "mock==3.0.5",
             "mypy-protobuf",
             "objgraph",
-            "pytest-cov==2.10.1",
-            "pytest-mock==3.3.1",
-            "pytest-rerunfailures==10.0",
-            "pytest-xdist==3.5.0",
-            "pytest>=7.0.1",
+            "pytest-cov==5.0.0",
+            "pytest-mock==3.14.0",
+            "pytest-rerunfailures==14.0",
+            "pytest-xdist==3.6.1",
+            "pytest>=8",
+            "pytest-asyncio",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
-            "tox==3.25.0",
+            "tox>=4",
             "morefs[asynclocal]",
             "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
-            "pyright==1.1.356",
+            "pyright==1.1.379",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -151,9 +149,8 @@ setup(
             "types-cryptography",  # version will be resolved against cryptography
             "types-mock",  # version will be resolved against mock
             "types-paramiko",  # version will be resolved against paramiko
-            "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
             "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
-            "types-python-dateutil",  # version will be resolved against python-dateutil
+            "types-python-dateutil~=2.9.0.20240316",  # vendored python-dateutil version is 2.9.0
             "types-PyYAML",  # version will be resolved against PyYAML
             "types-pytz",  # version will be resolved against pytz
             "types-requests",  # version will be resolved against requests
@@ -165,7 +162,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.4.5",
+            "ruff==0.5.5",
         ],
     },
     entry_points={

@@ -1,13 +1,18 @@
 import logging
+import time
 from collections import defaultdict
 from typing import Callable, Mapping, Sequence
 
-from dagster import DagsterEvent, job, op
+from dagster import DagsterEvent, execute_job, job, op
+from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.output import DynamicOut
+from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
+from dagster._core.test_utils import instance_for_test
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_value
 
@@ -213,3 +218,36 @@ def test_event_forward_compat_without_event_specific_data():
         "'EVENT_TYPE_FROM_THE_FUTURE' is not a valid DagsterEventType"
         in result.event_specific_data.error.message
     )
+
+
+def failing_job_concurrent_events():
+    """This job fails, with a specific step consistently failing last."""
+
+    @op(out=DynamicOut())
+    def dynamic_op(context):
+        for i in range(3):
+            yield DynamicOutput(value=i, mapping_key=str(i))
+
+    @op
+    def mapped_op(context, i: int):
+        time.sleep(i)
+        raise Exception("oof")
+
+    @job
+    def failing_job():
+        dynamic_op().map(mapped_op)
+
+    return failing_job
+
+
+def test_earliest_step_failure_on_failed_job():
+    """Test that the earliest step failure is the one that is logged on the job failure event."""
+    with instance_for_test() as instance:
+        result = execute_job(
+            job=reconstructable(failing_job_concurrent_events),
+            instance=instance,
+        )
+        failure_event = result.get_job_failure_event()
+        step_failure = failure_event.job_failure_data.first_step_failure_event
+        assert step_failure
+        assert step_failure.step_key == "mapped_op[0]"

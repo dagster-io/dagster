@@ -29,10 +29,10 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .conftest import create_workspace_load_target
-from .test_sensor_run import (
+from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
+from dagster_tests.daemon_sensor_tests.test_sensor_run import (
     daily_partitioned_job,
     evaluate_sensors,
     failure_job,
@@ -68,7 +68,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
                     next(
                         iter(
                             workspace_context.create_request_context()
-                            .get_workspace_snapshot()
+                            .get_code_location_entries()
                             .values()
                         )
                     ).code_location
@@ -113,7 +113,7 @@ def instance_with_multiple_code_locations(
             location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
             for code_location_entry in (
-                workspace_context.create_request_context().get_workspace_snapshot().values()
+                workspace_context.create_request_context().get_code_location_entries().values()
             ):
                 code_location: CodeLocation = check.not_none(code_location_entry.code_location)
                 location_infos[code_location.name] = CodeLocationInfoForSensorTest(
@@ -142,7 +142,7 @@ def test_run_status_sensor(
         instance.start_sensor(started_sensor)
 
         state = instance.get_instigator_state(
-            started_sensor.get_external_origin_id(), started_sensor.selector_id
+            started_sensor.get_remote_origin_id(), started_sensor.selector_id
         )
         assert (
             cast(SensorInstigatorData, check.not_none(state).instigator_data).sensor_type
@@ -152,7 +152,7 @@ def test_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -169,7 +169,7 @@ def test_run_status_sensor(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -183,7 +183,7 @@ def test_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -194,7 +194,7 @@ def test_run_status_sensor(
         )
 
         ticks = instance.get_ticks(
-            started_sensor.get_external_origin_id(), started_sensor.selector_id
+            started_sensor.get_remote_origin_id(), started_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -208,7 +208,7 @@ def test_run_status_sensor(
         external_job = external_repo.get_full_external_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -224,7 +224,7 @@ def test_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -235,7 +235,7 @@ def test_run_status_sensor(
         )
 
         ticks = instance.get_ticks(
-            started_sensor.get_external_origin_id(), started_sensor.selector_id
+            started_sensor.get_remote_origin_id(), started_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -263,7 +263,7 @@ def test_run_failure_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -280,7 +280,7 @@ def test_run_failure_sensor(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -294,7 +294,7 @@ def test_run_failure_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -321,7 +321,7 @@ def test_run_failure_sensor_that_fails(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -338,7 +338,7 @@ def test_run_failure_sensor_that_fails(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -352,7 +352,7 @@ def test_run_failure_sensor_that_fails(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -370,7 +370,7 @@ def test_run_failure_sensor_that_fails(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -395,7 +395,7 @@ def test_run_failure_sensor_filtered(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -412,7 +412,7 @@ def test_run_failure_sensor_filtered(
         external_job = external_repo.get_full_external_job("failure_job_2")
         run = instance.create_run_for_job(
             failure_job_2,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -426,7 +426,7 @@ def test_run_failure_sensor_filtered(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -443,7 +443,7 @@ def test_run_failure_sensor_filtered(
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -458,7 +458,7 @@ def test_run_failure_sensor_filtered(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+            failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
         )
         assert len(ticks) == 3
         validate_tick(
@@ -491,7 +491,7 @@ def test_run_failure_sensor_overfetch(
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 1
                 validate_tick(
@@ -515,7 +515,7 @@ def test_run_failure_sensor_overfetch(
 
                     run = instance.create_run_for_job(
                         failure_job_2,
-                        external_job_origin=external_job_2.get_external_origin(),
+                        external_job_origin=external_job_2.get_remote_origin(),
                         job_code_origin=external_job_2.get_python_origin(),
                     )
                     instance.report_run_failed(run)
@@ -524,7 +524,7 @@ def test_run_failure_sensor_overfetch(
 
                     run = instance.create_run_for_job(
                         failure_job,
-                        external_job_origin=external_job.get_external_origin(),
+                        external_job_origin=external_job.get_remote_origin(),
                         job_code_origin=external_job.get_python_origin(),
                     )
                     instance.report_run_failed(run)
@@ -538,7 +538,7 @@ def test_run_failure_sensor_overfetch(
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 2
                 validate_tick(
@@ -579,7 +579,7 @@ def test_run_failure_sensor_overfetch(
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 3
                 validate_tick(
@@ -660,7 +660,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 1
                 validate_tick(
@@ -678,7 +678,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 # start run 1
                 run1 = instance.create_run_for_job(
                     hanging_job,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run1.run_id, workspace_context.create_request_context())
@@ -686,7 +686,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 # start run 2
                 run2 = instance.create_run_for_job(
                     hanging_job,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run2.run_id, workspace_context.create_request_context())
@@ -704,7 +704,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 2
                 validate_tick(
@@ -729,7 +729,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 3
                 validate_tick(
@@ -760,7 +760,7 @@ def test_run_failure_sensor_empty_run_records(
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 1
                 validate_tick(
@@ -801,7 +801,7 @@ def test_run_failure_sensor_empty_run_records(
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    failure_sensor.get_external_origin_id(), failure_sensor.selector_id
+                    failure_sensor.get_remote_origin_id(), failure_sensor.selector_id
                 )
                 assert len(ticks) == 2
                 validate_tick(
@@ -852,7 +852,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -870,11 +870,13 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import another_success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                another_success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_job_origin=external_another_job.get_external_origin(),
+                external_job_origin=external_another_job.get_remote_origin(),
                 job_code_origin=external_another_job.get_python_origin(),
             )
 
@@ -887,7 +889,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
         with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],
@@ -937,7 +939,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -955,11 +957,13 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import another_failure_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                another_failure_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 another_failure_job,
-                external_job_origin=external_another_job.get_external_origin(),
+                external_job_origin=external_another_job.get_remote_origin(),
                 job_code_origin=external_another_job.get_python_origin(),
             )
 
@@ -972,7 +976,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
         with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
-            ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
+            ticks = [*instance.get_ticks(my_sensor.get_remote_origin_id(), my_sensor.selector_id)]
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],
@@ -1026,7 +1030,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 1
@@ -1046,11 +1050,13 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1065,7 +1071,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 2
@@ -1123,7 +1129,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 1
@@ -1143,11 +1149,13 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1162,7 +1170,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
 
@@ -1190,11 +1198,13 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import another_success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                another_success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_job_origin=external_another_success_job.get_external_origin(),
+                external_job_origin=external_another_success_job.get_remote_origin(),
                 job_code_origin=external_another_success_job.get_python_origin(),
             )
 
@@ -1209,7 +1219,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
 
@@ -1266,7 +1276,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 1
@@ -1286,11 +1296,13 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1305,7 +1317,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 2
@@ -1322,11 +1334,13 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_external_origin(),
+                external_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1341,7 +1355,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             ticks = [
                 *instance.get_ticks(
-                    success_sensor.get_external_origin_id(), success_sensor.selector_id
+                    success_sensor.get_remote_origin_id(), success_sensor.selector_id
                 )
             ]
             assert len(ticks) == 3
@@ -1370,7 +1384,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -1387,7 +1401,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1400,7 +1414,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 2
             validate_tick(
@@ -1432,7 +1446,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             assert instance.get_runs_count() == 0
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -1449,7 +1463,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1464,7 +1478,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             wait_for_all_runs_to_finish(instance)
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 2
             validate_tick(
@@ -1487,7 +1501,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             assert len(run_request_runs) == 1
 
             ticks = instance.get_ticks(
-                cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
             )
             assert len(ticks) == 3
             validate_tick(
@@ -1515,7 +1529,7 @@ def test_partitioned_job_run_status_sensor(
         assert instance.get_runs_count() == 0
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1532,7 +1546,7 @@ def test_partitioned_job_run_status_sensor(
         external_job = external_repo.get_full_external_job("daily_partitioned_job")
         run = instance.create_run_for_job(
             daily_partitioned_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
             tags={"dagster/partition": "2022-08-01"},
         )
@@ -1550,7 +1564,7 @@ def test_partitioned_job_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -1584,7 +1598,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                    cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
                 )
                 assert len(ticks) == 1
                 validate_tick(
@@ -1601,7 +1615,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 external_job = the_other_repo.get_full_external_job("the_job")
                 run = the_other_instance.create_run_for_job(
                     the_job,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 the_other_instance.submit_run(
@@ -1616,7 +1630,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
-                    cross_repo_sensor.get_external_origin_id(), cross_repo_sensor.selector_id
+                    cross_repo_sensor.get_remote_origin_id(), cross_repo_sensor.selector_id
                 )
                 assert len(ticks) == 2
                 # the_pipeline was run in another instance, so the cross_repo_sensor should not trigger
@@ -1645,7 +1659,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                instance_sensor.get_external_origin_id(), instance_sensor.selector_id
+                instance_sensor.get_remote_origin_id(), instance_sensor.selector_id
             )
             assert len(ticks) == 1
             validate_tick(
@@ -1662,7 +1676,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1675,7 +1689,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
-                instance_sensor.get_external_origin_id(), instance_sensor.selector_id
+                instance_sensor.get_remote_origin_id(), instance_sensor.selector_id
             )
             assert len(ticks) == 2
             validate_tick(
@@ -1700,7 +1714,7 @@ def test_logging_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 1
         validate_tick(
@@ -1716,7 +1730,7 @@ def test_logging_run_status_sensor(
         external_job = external_repo.get_full_external_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1730,7 +1744,7 @@ def test_logging_run_status_sensor(
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(
-            success_sensor.get_external_origin_id(), success_sensor.selector_id
+            success_sensor.get_remote_origin_id(), success_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -1746,4 +1760,4 @@ def test_logging_run_status_sensor(
         assert records
         record = records[0]
         assert record[LOG_RECORD_METADATA_ATTR]["orig_message"] == f"run succeeded: {run.run_id}"
-        instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore
+        instance.compute_log_manager.delete_logs(log_key=tick.log_key)

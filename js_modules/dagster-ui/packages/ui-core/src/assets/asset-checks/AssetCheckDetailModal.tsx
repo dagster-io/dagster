@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Body2,
   Box,
@@ -12,6 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
+import {gql} from '../../apollo-client';
 import {MetadataEntries} from '../../metadata/MetadataEntry';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';

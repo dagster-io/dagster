@@ -93,15 +93,18 @@ export const Code = styled(Text)`
   border-radius: 2px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
+  font-variant-ligatures: none;
   padding: 2px 4px;
 `;
 
 export const Mono = styled(Text)`
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   font-size: 14px;
 `;
 
 export const CaptionMono = styled(Text)`
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   font-size: 12px;
 `;

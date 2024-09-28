@@ -13,7 +13,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param, public
+from dagster._annotations import PublicAttr, deprecated, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
@@ -34,6 +34,7 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
     ResourceAddable,
+    ResourceKeyRequirement,
     ResourceRequirement,
     SourceAssetIOManagerRequirement,
     ensure_requirements_satisfied,
@@ -44,14 +45,15 @@ from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
     normalize_group_name,
+    validate_tags_strict,
 )
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidObservationError,
+    DagsterInvariantViolationError,
 )
-
-from .utils import validate_tags_strict
+from dagster._utils.internal_init import IHasInternalInit
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -106,16 +108,29 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             if isinstance(observe_fn_return_value, ObserveResult):
                 data_version = observe_fn_return_value.data_version
                 metadata = observe_fn_return_value.metadata
+                extra_tags = observe_fn_return_value.tags or {}
+
+                if (
+                    observe_fn_return_value.asset_key is not None
+                    and observe_fn_return_value.asset_key != source_asset.key
+                ):
+                    raise DagsterInvariantViolationError(
+                        f"Asset key {observe_fn_return_value.asset_key.to_user_string()} not found in AssetsDefinition"
+                    )
             else:  # DataVersion
                 data_version = observe_fn_return_value
                 metadata = {}
+                extra_tags = {}
+
+            tags = {
+                **({DATA_VERSION_TAG: data_version.value} if data_version is not None else {}),
+                **extra_tags,
+            }
 
             context.log_event(
                 AssetObservation(
                     asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: data_version.value}
-                    if data_version is not None
-                    else None,
+                    tags=tags,
                     metadata=metadata,
                 )
             )
@@ -153,7 +168,12 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 @experimental_param(param="io_manager_def")
 @experimental_param(param="freshness_policy")
 @experimental_param(param="tags")
-class SourceAsset(ResourceAddable):
+@deprecated(
+    breaking_version="2.0.0",
+    additional_warn_text="Use AssetSpec instead. If using the SourceAsset io_manager_key property, "
+    "use AssetSpec(...).with_io_manager_key(...).",
+)
+class SourceAsset(ResourceAddable, IHasInternalInit):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
     Attributes:
@@ -266,6 +286,41 @@ class SourceAsset(ResourceAddable):
             freshness_policy, "freshness_policy", FreshnessPolicy
         )
 
+    @staticmethod
+    def dagster_internal_init(
+        *,
+        key: CoercibleToAssetKey,
+        metadata: Optional[ArbitraryMetadataMapping],
+        io_manager_key: Optional[str],
+        io_manager_def: Optional[object],
+        description: Optional[str],
+        partitions_def: Optional[PartitionsDefinition],
+        group_name: Optional[str],
+        resource_defs: Optional[Mapping[str, object]],
+        observe_fn: Optional[SourceAssetObserveFunction],
+        op_tags: Optional[Mapping[str, Any]],
+        auto_observe_interval_minutes: Optional[float],
+        freshness_policy: Optional[FreshnessPolicy],
+        tags: Optional[Mapping[str, str]],
+        _required_resource_keys: Optional[AbstractSet[str]],
+    ) -> "SourceAsset":
+        return SourceAsset(
+            key=key,
+            metadata=metadata,
+            io_manager_key=io_manager_key,
+            io_manager_def=io_manager_def,
+            description=description,
+            partitions_def=partitions_def,
+            group_name=group_name,
+            resource_defs=resource_defs,
+            observe_fn=observe_fn,
+            op_tags=op_tags,
+            auto_observe_interval_minutes=auto_observe_interval_minutes,
+            freshness_policy=freshness_policy,
+            tags=tags,
+            _required_resource_keys=_required_resource_keys,
+        )
+
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY
 
@@ -312,7 +367,11 @@ class SourceAsset(ResourceAddable):
 
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
-        return {requirement.key for requirement in self.get_resource_requirements()}
+        return {
+            requirement.key
+            for requirement in self.get_resource_requirements()
+            if isinstance(requirement, ResourceKeyRequirement)
+        }
 
     @property
     def node_def(self) -> Optional[OpDefinition]:
@@ -371,18 +430,20 @@ class SourceAsset(ResourceAddable):
             else None
         )
         with disable_dagster_warnings():
-            return SourceAsset(
+            return SourceAsset.dagster_internal_init(
                 key=self.key,
                 io_manager_key=io_manager_key,
                 description=self.description,
                 partitions_def=self.partitions_def,
                 metadata=self.raw_metadata,
+                io_manager_def=None,
                 resource_defs=relevant_resource_defs,
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
                 freshness_policy=self.freshness_policy,
                 tags=self.tags,
+                op_tags=self.op_tags,
                 _required_resource_keys=self._required_resource_keys,
             )
 
@@ -396,7 +457,7 @@ class SourceAsset(ResourceAddable):
             )
 
         with disable_dagster_warnings():
-            return SourceAsset(
+            return SourceAsset.dagster_internal_init(
                 key=key or self.key,
                 metadata=self.raw_metadata,
                 io_manager_key=self.io_manager_key,
@@ -408,17 +469,22 @@ class SourceAsset(ResourceAddable):
                 observe_fn=self.observe_fn,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
                 tags=self.tags,
+                freshness_policy=self.freshness_policy,
+                op_tags=self.op_tags,
                 _required_resource_keys=self._required_resource_keys,
             )
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         if self.node_def is not None:
-            yield from self.node_def.get_resource_requirements()
+            yield from self.node_def.get_resource_requirements(
+                asset_layer=None,
+                handle=None,
+            )
         yield SourceAssetIOManagerRequirement(
             key=self.get_io_manager_key(), asset_key=self.key.to_string()
         )
         for source_key, resource_def in self.resource_defs.items():
-            yield from resource_def.get_resource_requirements(outer_context=source_key)
+            yield from resource_def.get_resource_requirements(source_key=source_key)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SourceAsset):

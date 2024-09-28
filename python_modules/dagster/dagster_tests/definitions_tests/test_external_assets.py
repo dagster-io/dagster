@@ -304,9 +304,9 @@ def test_external_assets_with_dependencies_manual_construction() -> None:
     defs = Definitions(assets=[_upstream_def, _downstream_asset])
     assert defs
 
-    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_deps[
+    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_graph.get(
         AssetKey("downstream_asset")
-    ] == {AssetKey("upstream_asset")}
+    ).parent_keys == {AssetKey("upstream_asset")}
 
 
 def test_external_asset_multi_asset() -> None:

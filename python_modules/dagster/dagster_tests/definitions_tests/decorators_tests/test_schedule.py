@@ -195,7 +195,7 @@ def test_invalid_tag_keys():
         def my_tag_schedule():
             return {}
 
-        assert len(caught_warnings) == 1
+        assert len(caught_warnings) == 2
         warning = caught_warnings[0]
         assert "Non-compliant tag keys like ['my_tag&', 'my_tag#'] are deprecated" in str(
             warning.message

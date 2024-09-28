@@ -1,18 +1,3 @@
-type ComputeLogFile {
-  path: String!
-  data: String
-  cursor: Int!
-  size: Int!
-  downloadUrl: String
-}
-
-type ComputeLogs {
-  runId: String!
-  stepKey: String!
-  stdout: ComputeLogFile
-  stderr: ComputeLogFile
-}
-
 interface DisplayableEvent {
   label: String
   description: String
@@ -326,7 +311,7 @@ enum ObjectStoreOperationType {
   CP_OBJECT
 }
 
-type RunCanceledEvent implements MessageEvent & RunEvent {
+type RunCanceledEvent implements MessageEvent & RunEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -335,6 +320,7 @@ type RunCanceledEvent implements MessageEvent & RunEvent {
   solidHandleID: String
   eventType: DagsterEventType
   pipelineName: String!
+  error: PythonError
 }
 
 type RunCancelingEvent implements MessageEvent & RunEvent {
@@ -659,14 +645,15 @@ type AssetNode {
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
+  automationCondition: AutomationCondition
   graphName: String
   groupName: String!
   owners: [AssetOwner!]!
   id: ID!
   isExecutable: Boolean!
   isObservable: Boolean!
+  isMaterializable: Boolean!
   isPartitioned: Boolean!
-  isSource: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
@@ -675,6 +662,7 @@ type AssetNode {
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   tags: [DefinitionTag!]!
+  kinds: [String!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
@@ -690,6 +678,7 @@ type AssetNode {
   staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
   type: DagsterType
   hasMaterializePermission: Boolean!
+  hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: Int
@@ -720,6 +709,7 @@ enum ChangeReason {
   PARTITIONS_DEFINITION
   TAGS
   METADATA
+  REMOVED
 }
 
 type AssetDependency {
@@ -767,6 +757,11 @@ enum AutoMaterializeDecisionType {
   MATERIALIZE
   SKIP
   DISCARD
+}
+
+type AutomationCondition {
+  label: String
+  expandedLabel: [String!]!
 }
 
 union AssetOwner = UserAssetOwner | TeamAssetOwner
@@ -1085,10 +1080,29 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+  runTags: [PipelineTag!]!
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
+  partitionKeysOrError(
+    cursor: String
+    limit: Int
+    reverse: Boolean
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeys!
+  partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+}
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionTagsAndConfig {
+  name: String!
+  jobName: String!
+  runConfigOrError: PartitionRunConfigOrError!
+  tagsOrError: PartitionTagsOrError!
 }
 
 interface PipelineConfigValidationError {
@@ -1144,7 +1158,6 @@ interface PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
-  computeLogs(stepKey: String!): ComputeLogs!
   capturedLogs(fileKey: String!): CapturedLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -1156,7 +1169,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): EventConnection!
+  eventConnection(afterCursor: String, limit: Int): EventConnection!
 }
 
 type CapturedLogs {
@@ -1363,6 +1376,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   parentSnapshotId: String
   graphName: String!
   solidSelection: [String!]
+  runTags: [PipelineTag!]!
 }
 
 union PipelineSnapshotOrError =
@@ -1385,7 +1399,7 @@ type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   valueRep: String
 }
 
-type Run implements PipelineRun {
+type Run implements PipelineRun & RunsFeedEntry {
   id: ID!
   runId: String!
   pipelineSnapshotId: String
@@ -1397,7 +1411,6 @@ type Run implements PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
-  computeLogs(stepKey: String!): ComputeLogs!
   capturedLogs(fileKey: String!): CapturedLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -1409,14 +1422,16 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): EventConnection!
-  parentPipelineSnapshotId: String
-  assetSelection: [AssetKey!]
-  assetCheckSelection: [AssetCheckhandle!]
-  resolvedOpSelection: [String!]
-  assetMaterializations: [MaterializationEvent!]!
+  eventConnection(afterCursor: String, limit: Int): EventConnection!
+  runStatus: RunStatus!
+  creationTime: Float!
   startTime: Float
   endTime: Float
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
+  parentPipelineSnapshotId: String
+  resolvedOpSelection: [String!]
+  assetMaterializations: [MaterializationEvent!]!
   updateTime: Float
   hasReExecutePermission: Boolean!
   hasTerminatePermission: Boolean!
@@ -1424,6 +1439,18 @@ type Run implements PipelineRun {
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
   hasUnconstrainedRootNodes: Boolean!
+}
+
+interface RunsFeedEntry {
+  id: ID!
+  runStatus: RunStatus
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
 }
 
 type AssetCheckhandle {
@@ -1446,6 +1473,7 @@ type UnknownPipeline implements PipelineReference {
 
 type AssetConnection {
   nodes: [Asset!]!
+  cursor: String
 }
 
 union AssetOrError = Asset | AssetNotFoundError
@@ -1505,6 +1533,7 @@ type WorkspaceLocationEntry {
   loadStatus: RepositoryLocationLoadStatus!
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
 }
@@ -1609,11 +1638,20 @@ type Schedule {
   futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
+  assetSelection: AssetSelection
+  tags: [DefinitionTag!]!
 }
 
 enum InstigationStatus {
   RUNNING
   STOPPED
+}
+
+type AssetSelection {
+  assetSelectionString: String
+  assetKeys: [AssetKey!]!
+  assets: [Asset!]!
+  assetsOrError: AssetsOrError!
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
@@ -2018,6 +2056,10 @@ type SensorNotFoundError implements Error {
   sensorName: String!
 }
 
+type UnsupportedOperationError implements Error {
+  message: String!
+}
+
 type DuplicateDynamicPartitionError implements Error {
   message: String!
   partitionsDefName: String!
@@ -2109,10 +2151,18 @@ type Job implements SolidContainer & IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+  runTags: [PipelineTag!]!
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
+  partitionKeysOrError(
+    cursor: String
+    limit: Int
+    reverse: Boolean
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeys!
+  partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
 }
 
 enum SensorType {
@@ -2171,8 +2221,8 @@ enum NestedResourceType {
 }
 
 type JobWithOps {
-  job: Job!
-  opsUsing: [SolidHandle!]!
+  jobName: String!
+  opHandleIDs: [String!]!
 }
 
 type RepositoryConnection {
@@ -2278,7 +2328,8 @@ input PartitionsByAssetSelector {
 }
 
 input PartitionsSelector {
-  range: PartitionRangeSelector!
+  range: PartitionRangeSelector
+  ranges: [PartitionRangeSelector!]
 }
 
 input PartitionRangeSelector {
@@ -2297,6 +2348,7 @@ input RunsFilter {
   createdBefore: Float
   createdAfter: Float
   mode: String
+  excludeSubruns: Boolean
 }
 
 input PipelineSelector {
@@ -2342,8 +2394,8 @@ input StepOutputHandle {
   outputName: String!
 }
 
-input InputTag {
-  name: String!
+input TagInput {
+  key: String!
   value: String!
 }
 
@@ -2357,6 +2409,22 @@ input ReportRunlessAssetEventsParams {
 enum AssetEventType {
   ASSET_MATERIALIZATION
   ASSET_OBSERVATION
+}
+
+input BulkActionsFilter {
+  statuses: [BulkActionStatus!]
+  createdBefore: Float
+  createdAfter: Float
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
+  CANCELING
+  COMPLETED_SUCCESS
+  COMPLETED_FAILED
 }
 
 type DaemonHealth {
@@ -2383,7 +2451,6 @@ type Instance {
   executablePath: String!
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
-  hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
   supportsConcurrencyLimits: Boolean!
   minConcurrencyLimitValue: Int!
@@ -2758,8 +2825,16 @@ type PartitionRun {
   run: Run
 }
 
-type PartitionBackfill {
-  id: String!
+type PartitionBackfill implements RunsFeedEntry {
+  id: ID!
+  runStatus: RunStatus!
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
   status: BulkActionStatus!
   partitionNames: [String!]
   isValidSerialization: Boolean!
@@ -2767,13 +2842,13 @@ type PartitionBackfill {
   numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]
-  assetSelection: [AssetKey!]
   partitionSetName: String
   timestamp: Float!
   endTimestamp: Float
   partitionSet: PartitionSet
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
+  cancelableRuns(limit: Int): [Run!]!
   error: PythonError
   partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
@@ -2783,18 +2858,9 @@ type PartitionBackfill {
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
   user: String
-  tags: [PipelineTag!]!
   title: String
   description: String
   logEvents(cursor: String): InstigationEventConnection!
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-  CANCELED
-  CANCELING
 }
 
 type AssetBackfillTargetPartitions {
@@ -2965,6 +3031,7 @@ type Sensor {
   metadata: SensorMetadata!
   sensorType: SensorType!
   assetSelection: AssetSelection
+  tags: [DefinitionTag!]!
 }
 
 type Target {
@@ -2975,13 +3042,6 @@ type Target {
 
 type SensorMetadata {
   assetKeys: [AssetKey!]
-}
-
-type AssetSelection {
-  assetSelectionString: String
-  assetKeys: [AssetKey!]!
-  assets: [Asset!]!
-  assetsOrError: AssetsOrError!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
@@ -3207,7 +3267,11 @@ type Query {
     repositorySelector: RepositorySelector!
     sensorStatus: InstigationStatus
   ): SensorsOrError!
-  instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
+  instigationStateOrError(
+    instigationSelector: InstigationSelector!
+    id: String
+  ): InstigationStateOrError!
+  instigationStatesOrError(repositoryID: String!): InstigationStatesOrError!
   partitionSetsOrError(
     repositorySelector: RepositorySelector!
     pipelineName: String!
@@ -3220,6 +3284,7 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
+  runsFeedOrError(limit: Int!, cursor: String, filter: RunsFilter): RunsFeedConnectionOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3253,6 +3318,7 @@ type Query {
     status: BulkActionStatus
     cursor: String
     limit: Int
+    filters: BulkActionsFilter
   ): PartitionBackfillsOrError!
   permissions: [Permission!]!
   canBulkTerminate: Boolean!
@@ -3267,6 +3333,11 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
+  truePartitionsForAutomationConditionEvaluationNode(
+    assetKey: AssetKeyInput!
+    evaluationId: Int!
+    nodeUniqueId: String
+  ): [String!]!
   autoMaterializeEvaluationsForEvaluationId(
     evaluationId: Int!
   ): AutoMaterializeAssetEvaluationRecordsOrError
@@ -3313,6 +3384,7 @@ type WorkspaceLocationStatusEntry {
   name: String!
   loadStatus: RepositoryLocationLoadStatus!
   updateTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
 }
 
@@ -3367,6 +3439,14 @@ type EnvVarConsumer {
 
 enum EnvVarConsumerType {
   RESOURCE
+}
+
+union RunsFeedConnectionOrError = RunsFeedConnection | PythonError
+
+type RunsFeedConnection {
+  results: [RunsFeedEntry!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 union RunTagKeysOrError = PythonError | RunTagKeys
@@ -3479,10 +3559,6 @@ type AutoMaterializeRuleEvaluation {
 
 union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
 
-type PartitionKeys {
-  partitionKeys: [String!]!
-}
-
 type PartitionSubsetDeserializationError implements Error {
   message: String!
 }
@@ -3540,24 +3616,9 @@ type PartitionedAssetConditionEvaluationNode {
   description: String!
   startTimestamp: Float
   endTimestamp: Float
-  trueSubset: AssetSubset!
-  candidateSubset: AssetSubset
   numTrue: Int!
-  numFalse: Int
-  numSkipped: Int
+  numCandidates: Int
   childUniqueIds: [String!]!
-}
-
-type AssetSubset {
-  assetKey: AssetKey!
-  subsetValue: AssetSubsetValue!
-}
-
-type AssetSubsetValue {
-  boolValue: Boolean
-  partitionKeys: [String!]
-  partitionKeyRanges: [PartitionKeyRange!]
-  isPartitioned: Boolean!
 }
 
 type SpecificPartitionAssetConditionEvaluationNode {
@@ -3585,7 +3646,22 @@ type AssetConditionEvaluationRecord {
   numRequested: Int!
   startTimestamp: Float
   endTimestamp: Float
+  isLegacy: Boolean!
   evaluation: AssetConditionEvaluation!
+  rootUniqueId: String!
+  evaluationNodes: [AutomationConditionEvaluationNode!]!
+}
+
+type AutomationConditionEvaluationNode {
+  uniqueId: String!
+  userLabel: String
+  expandedLabel: [String!]!
+  startTimestamp: Float
+  endTimestamp: Float
+  numTrue: Int!
+  numCandidates: Int
+  isPartitioned: Boolean!
+  childUniqueIds: [String!]!
 }
 
 type Mutation {
@@ -3601,13 +3677,18 @@ type Mutation {
   ): LaunchRunReexecutionResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(
-    scheduleOriginId: String!
-    scheduleSelectorId: String!
+    id: String
+    scheduleOriginId: String
+    scheduleSelectorId: String
   ): ScheduleMutationResult!
   resetSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
-  stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+  stopSensor(
+    id: String
+    jobOriginId: String
+    jobSelectorId: String
+  ): StopSensorMutationResultOrError!
   resetSensor(sensorSelector: SensorSelector!): SensorOrError!
   sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
   scheduleDryRun(selectorData: ScheduleSelector!, timestamp: Float): ScheduleDryRunResult!
@@ -3627,7 +3708,7 @@ type Mutation {
   shutdownRepositoryLocation(
     repositoryLocationName: String!
   ): ShutdownRepositoryLocationMutationResult!
-  wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
+  wipeAssets(assetPartitionRanges: [PartitionsByAssetSelector!]!): AssetWipeMutationResult!
   reportRunlessAssetEvents(
     eventParams: ReportRunlessAssetEventsParams!
   ): ReportRunlessAssetEventsResult!
@@ -3682,10 +3763,21 @@ union AssetWipeMutationResult =
     AssetNotFoundError
   | UnauthorizedError
   | PythonError
+  | UnsupportedOperationError
   | AssetWipeSuccess
 
 type AssetWipeSuccess {
-  assetKeys: [AssetKey!]!
+  assetPartitionRanges: [AssetPartitionRange!]!
+}
+
+type AssetPartitionRange {
+  assetKey: AssetKey!
+  partitionRange: PartitionRange
+}
+
+type PartitionRange {
+  start: String!
+  end: String!
 }
 
 union ReportRunlessAssetEventsResult =
@@ -3737,12 +3829,6 @@ type DeleteDynamicPartitionsSuccess {
 
 type Subscription {
   pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
-  computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   capturedLogs(logKey: [String!]!, cursor: String): CapturedLogs!
   locationStateChangeEvents: LocationStateChangeSubscription!
-}
-
-enum ComputeIOType {
-  STDOUT
-  STDERR
 }

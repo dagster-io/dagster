@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -17,23 +19,21 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .base_asset_graph import BaseAssetGraph
-
 if TYPE_CHECKING:
-    from .declarative_automation.serialized_objects import (
-        AssetConditionEvaluationState,
-        AssetConditionSnapshot,
+    from dagster._core.definitions.declarative_automation.serialized_objects import (
         AutomationConditionCursor,
+        AutomationConditionEvaluationState,
+        AutomationConditionNodeSnapshot,
     )
 
 
-@whitelist_for_serdes
-class AssetConditionCursorExtras(NamedTuple):
-    """Represents additional state that may be optionally saved by an AssetCondition between
+@whitelist_for_serdes(storage_name="AssetConditionCursorExtras")
+class AutomationConditionCursorExtras(NamedTuple):
+    """Represents additional state that may be optionally saved by an AutomationCondition between
     evaluations.
     """
 
-    condition_snapshot: "AssetConditionSnapshot"
+    condition_snapshot: "AutomationConditionNodeSnapshot"
     extras: Mapping[str, PackableValue]
 
 
@@ -68,7 +68,7 @@ class AssetDaemonCursor:
 
     Attributes:
         evaluation_id (int): The ID of the evaluation that produced this cursor.
-        previous_evaluation_state (Sequence[AssetConditionEvaluationState]): (DEPRECATED) The
+        previous_evaluation_state (Sequence[AutomationConditionEvaluationState]): (DEPRECATED) The
             evaluation info recorded for each asset on the previous tick.
         previous_cursors (Sequence[AutomationConditionCursor]): The cursor objects for each asset
             recorded on the previous tick.
@@ -77,7 +77,7 @@ class AssetDaemonCursor:
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
-    previous_evaluation_state: Optional[Sequence["AssetConditionEvaluationState"]]
+    previous_evaluation_state: Optional[Sequence["AutomationConditionEvaluationState"]]
     previous_condition_cursors: Optional[Sequence["AutomationConditionCursor"]] = None
 
     @staticmethod
@@ -90,14 +90,16 @@ class AssetDaemonCursor:
         )
 
     @cached_property
-    def previous_condition_cursors_by_key(self) -> Mapping[AssetKey, "AutomationConditionCursor"]:
+    def previous_condition_cursors_by_key(
+        self,
+    ) -> Mapping[EntityKey, "AutomationConditionCursor"]:
         """Efficient lookup of previous cursor by asset key."""
         from dagster._core.definitions.declarative_automation.serialized_objects import (
             AutomationConditionCursor,
         )
 
         if self.previous_condition_cursors is None:
-            # automatically convert AssetConditionEvaluationState objects to AutomationConditionCursor
+            # automatically convert AutomationConditionEvaluationState objects to AutomationConditionCursor
             return {
                 evaluation_state.asset_key: AutomationConditionCursor.backcompat_from_evaluation_state(
                     evaluation_state
@@ -105,15 +107,15 @@ class AssetDaemonCursor:
                 for evaluation_state in self.previous_evaluation_state or []
             }
         else:
-            return {cursor.asset_key: cursor for cursor in self.previous_condition_cursors}
+            return {cursor.key: cursor for cursor in self.previous_condition_cursors}
 
     def get_previous_condition_cursor(
-        self, asset_key: AssetKey
-    ) -> Optional["AutomationConditionCursor"]:
+        self, key: T_EntityKey
+    ) -> Optional["AutomationConditionCursor[T_EntityKey]"]:
         """Returns the AutomationConditionCursor associated with the given asset key. If no stored
         cursor exists, returns an empty cursor.
         """
-        return self.previous_condition_cursors_by_key.get(asset_key)
+        return self.previous_condition_cursors_by_key.get(key)
 
     def with_updates(
         self,
@@ -125,11 +127,12 @@ class AssetDaemonCursor:
         # do not "forget" about values for non-evaluated assets
         new_condition_cursors = dict(self.previous_condition_cursors_by_key)
         for cursor in condition_cursors:
-            new_condition_cursors[cursor.asset_key] = cursor
+            new_condition_cursors[cursor.key] = cursor
 
         return dataclasses.replace(
             self,
             evaluation_id=evaluation_id,
+            previous_evaluation_state=[],
             previous_condition_cursors=list(new_condition_cursors.values()),
             last_observe_request_timestamp_by_asset_key={
                 **self.last_observe_request_timestamp_by_asset_key,

@@ -18,6 +18,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     install_requires=[
         "PyYAML",
+        "tomli",
         "packaging>=20.9",
         "requests",
         "typing_extensions>=4.2",
@@ -30,6 +31,7 @@ setup(
         "console_scripts": [
             "dagster-buildkite = dagster_buildkite.cli:dagster",
             "dagster-buildkite-nightly = dagster_buildkite.cli:dagster_nightly",
+            "dagster-buildkite-prerelease-package = dagster_buildkite.cli:prerelease_package",
         ]
     },
 )

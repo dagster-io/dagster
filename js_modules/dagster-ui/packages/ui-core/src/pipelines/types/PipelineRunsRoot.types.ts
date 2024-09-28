@@ -39,8 +39,7 @@ export type PipelineRunsRootQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
-          rootConcurrencyKeys: Array<string> | null;
-          hasUnconstrainedRootNodes: boolean;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -60,3 +59,5 @@ export type PipelineRunsRootQuery = {
         }>;
       };
 };
+
+export const PipelineRunsRootQueryVersion = '1bd4f2bf438e93ad548322f890922479027e7636517b360fd8910a12600c5f95';

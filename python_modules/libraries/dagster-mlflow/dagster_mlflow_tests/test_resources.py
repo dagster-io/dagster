@@ -14,6 +14,7 @@ import pytest
 from dagster import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
+from mlflow.exceptions import MlflowException
 
 
 @pytest.fixture
@@ -251,6 +252,32 @@ def test_get_current_run_id(context, experiment, run_df):
         assert run_id is None
 
 
+def test_get_current_run_id_with_one_mlflow_error(context):
+    experiment = MagicMock(experiment_id="1")
+    run_df = pd.DataFrame(data={"run_id": ["100"]})
+
+    with patch.object(MlFlow, "_setup"):
+        # Given: an initialization of the mlflow object
+        mlf = MlFlow(context)
+
+    # Simulate MlflowException being raised once, then return the run_df
+    with patch(
+        "mlflow.search_runs",
+        side_effect=[
+            MlflowException(
+                "Max retries exceeded with url: /api/2.0/mlflow/runs/search (Caused by ResponseError('too many 429 error "
+                "responses')"
+            ),
+            run_df,
+        ],
+    ):
+        # when: _get_current_run_id is called
+        run_id = mlf._get_current_run_id(experiment=experiment)  # noqa: SLF001
+
+    # Then: the run_id id provided is the same as what was provided
+    assert run_id == run_df.run_id.values[0]
+
+
 @patch("atexit.unregister")
 def test_setup(mock_atexit, context):
     with patch.object(MlFlow, "_setup"):
@@ -269,6 +296,33 @@ def test_setup(mock_atexit, context):
         mock_get_current_run_id.assert_called()
         # - _set_active_run is called once with the run_id returned from _get_current_run_id
         mock_set_active_run.assert_called_once_with(run_id="run_id_mock")
+        # - _set_all_tags is called once
+        mock_set_all_tags.assert_called_once()
+    # - atexit.unregister is called with mlf.end_run as an argument
+    mock_atexit.assert_called_once_with(mlf.end_run)
+
+
+@patch("atexit.unregister")
+def test_setup_with_passed_run_id(mock_atexit, context):
+    # Given: a mlflow_run_id of zero
+    context.resource_config["mlflow_run_id"] = 0
+
+    with patch.object(MlFlow, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlow
+        mlf = MlFlow(context)
+
+    with patch.object(
+        MlFlow, "_get_current_run_id", return_value="run_id_mock"
+    ) as mock_get_current_run_id, patch.object(
+        MlFlow, "_set_active_run"
+    ) as mock_set_active_run, patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags:
+        # When _setup is called
+        mlf._setup()  # noqa: SLF001
+        # Then
+        # - _get_current_run_id is called once with the experiment object
+        mock_get_current_run_id.assert_not_called()
+        # - _set_active_run is called once with the run_id returned from _get_current_run_id
+        mock_set_active_run.assert_called_once_with(run_id=0)
         # - _set_all_tags is called once
         mock_set_all_tags.assert_called_once()
     # - atexit.unregister is called with mlf.end_run as an argument

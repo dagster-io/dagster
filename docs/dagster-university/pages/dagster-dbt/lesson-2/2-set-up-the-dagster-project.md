@@ -22,7 +22,7 @@ setup(
     name="dagster_university",
     packages=find_packages(exclude=["dagster_university_tests"]),
     install_requires=[
-        "dagster==1.6.*",
+        "dagster==1.7.*",
         "dagster-cloud",
         "dagster-duckdb",
         "dagster-dbt",
@@ -37,7 +37,6 @@ setup(
         "smart_open",
         "boto3",
         "pyarrow",
-        "fastparquet",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

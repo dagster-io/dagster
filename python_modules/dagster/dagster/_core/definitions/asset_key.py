@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union
 
 import dagster._check as check
 import dagster._seven as seven
@@ -64,6 +64,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_string(self) -> str:
         """E.g. '["first_component", "second_component"]'."""
+        return self.to_db_string()
+
+    def to_db_string(self) -> str:
         return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
@@ -170,3 +173,54 @@ def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence
         return key_prefix
     else:
         check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
+
+
+@whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
+class AssetCheckKey(NamedTuple):
+    """Check names are expected to be unique per-asset. Thus, this combination of asset key and
+    check name uniquely identifies an asset check within a deployment.
+    """
+
+    asset_key: PublicAttr[AssetKey]
+    name: PublicAttr[str]
+
+    @staticmethod
+    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
+        return AssetCheckKey(
+            asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
+            name=graphql_input["name"],
+        )
+
+    def to_user_string(self) -> str:
+        return f"{self.asset_key.to_user_string()}:{self.name}"
+
+    @staticmethod
+    def from_user_string(user_string: str) -> "AssetCheckKey":
+        asset_key_str, name = user_string.split(":")
+        return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
+
+    @staticmethod
+    def from_db_string(db_string: str) -> Optional["AssetCheckKey"]:
+        try:
+            values = seven.json.loads(db_string)
+            if isinstance(values, dict) and values.keys() == {"asset_key", "check_name"}:
+                return AssetCheckKey(
+                    asset_key=check.not_none(AssetKey.from_db_string(values["asset_key"])),
+                    name=check.inst(values["check_name"], str),
+                )
+            else:
+                return None
+        except seven.JSONDecodeError:
+            return None
+
+    def to_db_string(self) -> str:
+        return seven.json.dumps({"asset_key": self.asset_key.to_string(), "check_name": self.name})
+
+
+EntityKey = Union[AssetKey, AssetCheckKey]
+T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
+
+
+def entity_key_from_db_string(db_string: str) -> EntityKey:
+    check_key = AssetCheckKey.from_db_string(db_string)
+    return check_key if check_key else check.not_none(AssetKey.from_db_string(db_string))

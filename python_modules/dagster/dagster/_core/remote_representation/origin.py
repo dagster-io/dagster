@@ -260,14 +260,12 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         self,
         instance: "DagsterInstance",
     ) -> Iterator["GrpcServerCodeLocation"]:
+        from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
+        from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
         from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
-
-        from .code_location import GrpcServerCodeLocation
-        from .grpc_server_registry import GrpcServerRegistry
 
         with GrpcServerRegistry(
             instance_ref=instance.get_ref(),
-            reload_interval=0,
             heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=(
                 instance.code_server_process_startup_timeout

@@ -10,7 +10,7 @@ export type BackfillLogsPageQueryVariables = Types.Exact<{
 export type BackfillLogsPageQuery = {
   __typename: 'Query';
   partitionBackfillOrError:
-    | {__typename: 'BackfillNotFoundError'}
+    | {__typename: 'BackfillNotFoundError'; message: string}
     | {
         __typename: 'PartitionBackfill';
         id: string;
@@ -26,5 +26,7 @@ export type BackfillLogsPageQuery = {
           }>;
         };
       }
-    | {__typename: 'PythonError'};
+    | {__typename: 'PythonError'; message: string};
 };
+
+export const BackfillLogsPageQueryVersion = 'f09a06b9d26011fa0d65199eb0dfc799216e28541f1c9c32bba6c93d2d856c91';

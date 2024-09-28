@@ -593,6 +593,11 @@ pre[class="noop"] {
   font-weight: 700;
 }
 
+.prose img {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
 .prose strong {
   font-weight: 700;
 }

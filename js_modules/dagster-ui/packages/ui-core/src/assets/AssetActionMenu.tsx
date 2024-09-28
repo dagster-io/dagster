@@ -8,10 +8,11 @@ import {
 import {useObserveAction} from './LaunchAssetObservationButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
+import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
+import {useReportEventsModal} from './useReportEventsModal';
+import {useWipeModal} from './useWipeModal';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {usePermissionsForLocation} from '../app/Permissions';
-import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -20,24 +21,43 @@ interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
   repoAddress: RepoAddress | null;
-  onWipe?: (assets: AssetKeyInput[]) => void;
+  onRefresh?: () => void;
 }
 
 export const AssetActionMenu = (props: Props) => {
-  const {repoAddress, path, definition, onWipe} = props;
+  const {repoAddress, path, definition, onRefresh} = props;
   const {
-    permissions: {canWipeAssets},
-  } = usePermissionsForLocation(repoAddress?.location);
-
-  const {
-    featureContext: {canSeeWipeMaterializationAction},
+    featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
 
   const {executeItem, launchpadElement} = useExecuteAssetMenuItem(path, definition);
 
+  const deletePartitions = useDeleteDynamicPartitionsDialog(
+    repoAddress && definition ? {repoAddress, assetKey: {path}, definition} : null,
+    onRefresh,
+  );
+
+  const wipe = useWipeModal(
+    repoAddress && definition ? {repository: definition.repository, assetKey: {path}} : null,
+    onRefresh,
+  );
+
+  const reportEvents = useReportEventsModal(
+    repoAddress
+      ? {
+          assetKey: {path},
+          isPartitioned: !!definition?.partitionDefinition,
+          repoAddress,
+          hasReportRunlessAssetEventPermission: !!definition?.hasReportRunlessAssetEventPermission,
+        }
+      : null,
+  );
   return (
     <>
       {launchpadElement}
+      {wipe.element}
+      {reportEvents.element}
+      {deletePartitions.element}
       <Popover
         position="bottom-right"
         content={
@@ -55,7 +75,13 @@ export const AssetActionMenu = (props: Props) => {
               icon="asset_group"
             />
             <MenuLink
-              text="View neighbors"
+              text="View checks"
+              to={assetDetailsPathForKey({path}, {view: 'checks'})}
+              disabled={!definition}
+              icon="asset_check"
+            />
+            <MenuLink
+              text="View lineage"
               to={assetDetailsPathForKey({path}, {view: 'lineage', lineageScope: 'neighbors'})}
               disabled={!definition}
               icon="graph_neighbors"
@@ -72,15 +98,18 @@ export const AssetActionMenu = (props: Props) => {
               disabled={!definition}
               icon="graph_downstream"
             />
-            {canSeeWipeMaterializationAction ? (
-              <MenuItem
-                text="Wipe materializations"
-                icon="delete"
-                disabled={!onWipe || !canWipeAssets}
-                intent="danger"
-                onClick={() => canWipeAssets && onWipe && onWipe([{path}])}
-              />
-            ) : null}
+            {canSeeMaterializeAction && definition?.hasMaterializePermission
+              ? reportEvents.dropdownOptions.map((option) => (
+                  <MenuItem
+                    key={option.label}
+                    text={option.label}
+                    icon={option.icon}
+                    onClick={option.onClick}
+                  />
+                ))
+              : undefined}
+            {wipe.dropdownOptions}
+            {deletePartitions.dropdownOptions}
           </Menu>
         }
       >

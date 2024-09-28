@@ -2,112 +2,70 @@ import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpTags} from './OpTags';
-import {DefinitionTag, buildDefinitionTag} from '../graphql/types';
-import {
-  linkToAssetTableWithComputeKindFilter,
-  linkToAssetTableWithStorageKindFilter,
-} from '../search/useGlobalSearch';
+import {DefinitionTag} from '../graphql/types';
+import {linkToAssetTableWithKindFilter} from '../search/useGlobalSearch';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
 export const STORAGE_KIND_TAG = 'dagster/storage_kind';
 
+export const KIND_TAG_PREFIX = `dagster/kind/`;
+
 // Older code servers may be using the legacy compute kind tag, so we need to check for both
 export const isCanonicalComputeKindTag = (tag: DefinitionTag) =>
   tag.key === COMPUTE_KIND_TAG || tag.key === LEGACY_COMPUTE_KIND_TAG;
 export const isCanonicalStorageKindTag = (tag: DefinitionTag) => tag.key === STORAGE_KIND_TAG;
-export const buildStorageKindTag = (storageKind: string): DefinitionTag =>
-  buildDefinitionTag({key: 'dagster/storage_kind', value: storageKind});
 
-export const AssetComputeKindTag = ({
-  definition,
-  linkToFilter: shouldLink,
+export const isKindTag = (tag: DefinitionTag) => tag.key.startsWith(KIND_TAG_PREFIX);
+export const isSystemTag = isKindTag;
+export const getKindFromTag = (tag: DefinitionTag) => tag.key.slice(KIND_TAG_PREFIX.length);
+
+export const AssetKind = ({
+  kind,
   style,
+  linkToFilteredAssetsTable: shouldLink,
+  currentPageFilter,
   ...rest
 }: {
-  definition: {computeKind: string | null};
+  kind: string;
   style: React.CSSProperties;
   reduceColor?: boolean;
   reduceText?: boolean;
   reversed?: boolean;
-  linkToFilter?: boolean;
+  linkToFilteredAssetsTable?: boolean;
+  currentPageFilter?: StaticSetFilter<string>;
 }) => {
-  if (!definition.computeKind) {
-    return null;
-  }
   return (
     <Tooltip
       content={
-        shouldLink ? (
+        currentPageFilter ? (
           <>
-            View all <CaptionMono>{definition.computeKind}</CaptionMono> assets
+            Filter to <CaptionMono>{kind}</CaptionMono> assets
+          </>
+        ) : shouldLink ? (
+          <>
+            View all <CaptionMono>{kind}</CaptionMono> assets
           </>
         ) : (
           <>
-            Compute kind <CaptionMono>{definition.computeKind}</CaptionMono>
+            Asset kind <CaptionMono>{kind}</CaptionMono>
           </>
         )
       }
       placement="bottom"
     >
       <OpTags
-        {...rest}
-        style={{...style, cursor: shouldLink ? 'pointer' : 'default'}}
-        tags={[
-          {
-            label: definition.computeKind,
-            onClick:
-              shouldLink && definition.computeKind
-                ? () => {
-                    window.location.href = linkToAssetTableWithComputeKindFilter(
-                      definition.computeKind || '',
-                    );
-                  }
-                : () => {},
-          },
-        ]}
-      />
-    </Tooltip>
-  );
-};
-
-export const AssetStorageKindTag = ({
-  storageKind,
-  style,
-  linkToFilter: shouldLink,
-  ...rest
-}: {
-  storageKind: string;
-  style: React.CSSProperties;
-  reduceColor?: boolean;
-  reduceText?: boolean;
-  reversed?: boolean;
-  linkToFilter?: boolean;
-}) => {
-  return (
-    <Tooltip
-      content={
-        shouldLink ? (
-          <>
-            View all <CaptionMono>{storageKind}</CaptionMono> assets
-          </>
-        ) : (
-          <>
-            Storage kind <CaptionMono>{storageKind}</CaptionMono>
-          </>
-        )
-      }
-      placement="bottom"
-    >
-      <OpTags
-        style={{...style, cursor: shouldLink ? 'pointer' : 'default'}}
+        style={{...style, cursor: shouldLink || currentPageFilter ? 'pointer' : 'default'}}
         {...rest}
         tags={[
           {
-            label: storageKind,
-            onClick: shouldLink
+            label: kind,
+            onClick: currentPageFilter
+              ? () => currentPageFilter.setState(new Set([kind, ...currentPageFilter.state]))
+              : shouldLink
               ? () => {
-                  window.location.href = linkToAssetTableWithStorageKindFilter(storageKind);
+                  window.location.href = linkToAssetTableWithKindFilter(kind);
                 }
               : () => {},
           },

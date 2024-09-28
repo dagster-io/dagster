@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import docker
+import docker.errors
 from dagster import (
     OpExecutionContext,
     _check as check,

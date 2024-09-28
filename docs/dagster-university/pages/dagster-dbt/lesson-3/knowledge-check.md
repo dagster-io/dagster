@@ -12,7 +12,7 @@ lesson: '3'
 
    ```python
    @dbt_assets(
-       manifest=dbt_manifest_path
+       manifest=dbt_project.manifest_path
    )
    def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
        yield from dbt.cli(["build"], context=context).stream()

@@ -30,7 +30,7 @@ export type LaunchAssetExecutionAssetNodeFragment = {
   hasMaterializePermission: boolean;
   isObservable: boolean;
   isExecutable: boolean;
-  isSource: boolean;
+  isMaterializable: boolean;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -639,7 +639,7 @@ export type LaunchAssetLoaderQuery = {
     hasMaterializePermission: boolean;
     isObservable: boolean;
     isExecutable: boolean;
-    isSource: boolean;
+    isMaterializable: boolean;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -1264,7 +1264,7 @@ export type LaunchAssetLoaderJobQuery = {
     hasMaterializePermission: boolean;
     isObservable: boolean;
     isExecutable: boolean;
-    isSource: boolean;
+    isMaterializable: boolean;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -1871,13 +1871,6 @@ export type LaunchAssetLoaderResourceQueryVariables = Types.Exact<{
 
 export type LaunchAssetLoaderResourceQuery = {
   __typename: 'Query';
-  partitionSetsOrError:
-    | {
-        __typename: 'PartitionSets';
-        results: Array<{__typename: 'PartitionSet'; id: string; name: string}>;
-      }
-    | {__typename: 'PipelineNotFoundError'; message: string}
-    | {__typename: 'PythonError'; message: string};
   pipelineOrError:
     | {__typename: 'InvalidSubsetError'; message: string}
     | {
@@ -2462,10 +2455,18 @@ export type LaunchAssetCheckUpstreamQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    isSource: boolean;
+    isMaterializable: boolean;
     opNames: Array<string>;
     graphName: string | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     assetMaterializations: Array<{__typename: 'MaterializationEvent'; runId: string}>;
   }>;
 };
+
+export const LaunchAssetLoaderQueryVersion = 'ae6a5d5eaf00ec9eeefaf3e7dc85a7710eb3647608aa00e3ded59877a289d645';
+
+export const LaunchAssetLoaderJobQueryVersion = '112371f3f0c11b7467940b71e83cba8abf678aed019820af94fdee4f99531841';
+
+export const LaunchAssetLoaderResourceQueryVersion = '8576f24034a63da1480b19a7c66dc2af2f5d532aa2ba294ffe7bef5ca92e1366';
+
+export const LaunchAssetCheckUpstreamQueryVersion = 'afb78499f0bf86942fc7f1ff7261c34caec2bd1e4aabb05c95a2db6acc811aaa';

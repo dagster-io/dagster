@@ -7,6 +7,7 @@ from typing_extensions import TypeAlias, TypeGuard
 import dagster._check as check
 from dagster._annotations import public
 from dagster._config import UserConfigSchema
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
@@ -16,8 +17,6 @@ from dagster._core.definitions.definition_config_schema import (
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.storage.input_manager import IInputManagerDefinition, InputManager
 from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
-
-from ..decorator_utils import get_function_params
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.init import InitResourceContext

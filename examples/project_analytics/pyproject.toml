@@ -3,7 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "dagster_pypi"
+module_name = "dagster_pypi.definitions"
+code_location_name = "dagster_pypi"
 
 [tool.ruff]
 
@@ -17,4 +18,8 @@ extend = "../../pyproject.toml"
 extend-ignore = [
   # (print found): Allow prints for demo purposes.
   "T201",
+
+  # (relative imports): relative imports are acceptable in examples & docs
+  "TID252"
+
 ]

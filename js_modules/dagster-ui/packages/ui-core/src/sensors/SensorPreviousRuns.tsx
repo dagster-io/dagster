@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {CursorHistoryControls} from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -7,9 +6,10 @@ import {
   PreviousRunsForSensorQuery,
   PreviousRunsForSensorQueryVariables,
 } from './types/SensorPreviousRuns.types';
+import {gql} from '../apollo-client';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
@@ -55,7 +55,6 @@ export const SensorPreviousRuns = ({
     },
     pageSize: RUNS_LIMIT,
   });
-  useBlockTraceOnQueryResult(queryResult, 'PreviousRunsForSensorQuery');
   // Only refresh if we're on the first page
   useQueryRefreshAtInterval(queryResult, !paginationProps.hasPrevCursor ? 10000 : 60 * 60 * 1000);
 

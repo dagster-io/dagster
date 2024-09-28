@@ -231,17 +231,14 @@ You may want to have different assets stored in different Delta Lake schemas. Th
 
 If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, as we did in [Step 1](/integrations/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/deltalake/using-deltalake-with-dagster).
 
-If you want to store assets in different schemas, you can specify the schema as part of the asset's asset key:
-
-- **For `SourceAsset`**, use the `key` parameter. The schema should be the second-to-last value in the parameter. In the following example, this would be `daffodil`.
-- **For asset definitions**, use the `key_prefix` parameter. This value will be prepended to the asset name to create the full asset key. In the following example, this would be `iris`.
+If you want to store assets in different schemas, you can specify the schema as part of the asset's key:
 
 ```python file=/integrations/deltalake/schema.py startafter=start_asset_key endbefore=end_asset_key
 import pandas as pd
 
-from dagster import SourceAsset, asset
+from dagster import AssetSpec, asset
 
-daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
+daffodil_dataset = AssetSpec(key=["daffodil", "daffodil_dataset"])
 
 
 @asset(key_prefix=["iris"])
@@ -396,9 +393,9 @@ aws dynamodb create-table --table-name delta_rs_lock_table \
 ```
 
 <Note>
-  The delta-rs community is actively working on extending the awailable options
+  The delta-rs community is actively working on extending the available options
   for locking backends. This includes locking backends compatible with
-  Databricks to allow concurrent writes from Databrticks and external
+  Databricks to allow concurrent writes from Databricks and external
   environments.
 </Note>
 
@@ -418,7 +415,7 @@ config = S3Config(copy_if_not_exists="header: cf-copy-destination-if-none-match:
 
 </TabGroup>
 
-In caeses where now-AWS S3 implementations are used, the endpoint URL or the S§ service needs to be provided.
+In cases where non-AWS S3 implementations are used, the endpoint URL or the S§ service needs to be provided.
 
 ```py
 config = S3Config(endpoint="https://<my-s3-endpoint-url>")

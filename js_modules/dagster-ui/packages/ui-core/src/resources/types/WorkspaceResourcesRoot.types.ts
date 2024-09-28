@@ -11,7 +11,7 @@ export type ResourceEntryFragment = {
   sensorsUsing: Array<string>;
   parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
   assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-  jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+  jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
 };
 
 export type WorkspaceResourcesQueryVariables = Types.Exact<{
@@ -45,8 +45,10 @@ export type WorkspaceResourcesQuery = {
           sensorsUsing: Array<string>;
           parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
           assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-          jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+          jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
         }>;
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceResourcesQueryVersion = 'c5f1870a354eb3cf1a94291c56f4477d3462fcece7145bd372b07ef1563f7bd6';

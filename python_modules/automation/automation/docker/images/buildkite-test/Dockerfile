@@ -129,12 +129,7 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
     docker-ce docker-ce-cli containerd.io docker-compose-plugin \
     # Install docker-compose
     && curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
-    && chmod +x /usr/local/bin/docker-compose \
-    # Install docker compose Cloud Integrations (for ecs). Note that the `compose-cli` name is old.
-    # The compose-cli is actually handled by `docker-compose-plugin` above, but we still have to
-    # install this for the cloud integrations.
-    # https://github.com/docker/compose-cli/blob/main/INSTALL.md
-    && curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
+    && chmod +x /usr/local/bin/docker-compose
 
 # Install Python build deps
 RUN pip install -U pip setuptools wheel
@@ -163,7 +158,7 @@ WORKDIR dagster
 
 ENV VIRTUAL_ENV=/usr/local
 ENV UV_HTTP_TIMEOUT=300
-RUN python scripts/install_dev_python_modules.py awscli || exit 1
+RUN python scripts/install_dev_python_modules.py --system awscli || exit 1
 RUN pip freeze --exclude-editable > /snapshot-reqs.txt
 
 # Final image includes both system deps and preinstalled non-Dagster python deps

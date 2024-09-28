@@ -31,7 +31,8 @@ from dagster._core.execution.stats import (
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance import DagsterInstance, MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.loader import InstanceLoadableBy
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
@@ -124,14 +125,24 @@ class AssetEntry(
         return self.last_materialization_record.storage_id
 
 
-class AssetRecord(NamedTuple):
+class AssetRecord(
+    NamedTuple("_NamedTuple", [("storage_id", int), ("asset_entry", AssetEntry)]),
+    InstanceLoadableBy[AssetKey],
+):
     """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
 
     Users should not invoke this class directly.
     """
 
-    storage_id: int
-    asset_entry: AssetEntry
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], instance: DagsterInstance
+    ) -> Iterable[Optional["AssetRecord"]]:
+        records_by_key = {
+            record.asset_entry.asset_key: record
+            for record in instance.get_asset_records(list(keys))
+        }
+        return [records_by_key.get(key) for key in keys]
 
 
 class AssetCheckSummaryRecord(NamedTuple):
@@ -306,8 +317,13 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def can_cache_asset_status_data(self) -> bool:
+    def can_read_asset_status_cache(self) -> bool:
+        """Whether the storage can access cached status information for each asset."""
         pass
+
+    @abstractmethod
+    def can_write_asset_status_cache(self) -> bool:
+        """Whether the storage is able to write to that cache."""
 
     @abstractmethod
     def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
@@ -414,6 +430,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey) -> None:
         """Remove asset index history from event log for given asset_key."""
+
+    @abstractmethod
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
 
     @abstractmethod
     def get_materialized_partitions(
@@ -601,3 +621,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         partition: Optional[str] = None,
     ) -> Optional[PlannedMaterializationInfo]:
         raise NotImplementedError()
+
+    @abstractmethod
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        raise NotImplementedError()
+
+    @property
+    def handles_run_events_in_store_event(self) -> bool:
+        return False
+
+    def default_run_scoped_event_tailer_offset(self) -> int:
+        return 0

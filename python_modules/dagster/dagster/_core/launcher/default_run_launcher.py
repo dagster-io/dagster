@@ -11,13 +11,12 @@ from dagster._core.errors import (
     DagsterLaunchFailedError,
     DagsterUserCodeProcessError,
 )
+from dagster._core.launcher.base import LaunchRunContext, RunLauncher
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
-
-from .base import LaunchRunContext, RunLauncher
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -157,7 +156,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             return False
 
         run = self._instance.get_run_by_id(run_id)
-        if not run:
+        if not run or run.is_finished:
             return False
 
         self._instance.report_run_canceling(run)

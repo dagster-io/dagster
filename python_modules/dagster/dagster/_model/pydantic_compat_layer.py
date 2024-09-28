@@ -144,7 +144,7 @@ def build_validation_error(
     input_type: Literal["python", "json"],
 ) -> ValidationError:
     if USING_PYDANTIC_1:
-        return ValidationError(errors=line_errors, model=base_error.model)  # type: ignore
+        return ValidationError(errors=line_errors, model=base_error.model)
     else:
         return ValidationError.from_exception_data(  # type: ignore
             title=base_error.title,  # type: ignore

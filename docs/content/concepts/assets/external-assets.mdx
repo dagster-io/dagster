@@ -3,18 +3,11 @@ title: External Assets | Dagster
 description: External assets model assets in Dagster that are not scheduled or materialized in Dagster.
 ---
 
-# External Assets (Experimental)
+# External Assets
 
 An **external asset** is an asset that is visible in Dagster but executed by an external process. For example, you have a process that loads data from Kafka into Amazon S3 every day. You want the S3 asset to be visible alongside your other data assets, but not triggered by Dagster.
 
 In this case, you could use an external asset to leverage Dagster's event log and tooling without using the orchestrator. This allows you to maintain data lineage, observability, and data quality without unnecessary migrations.
-
-### What about Source Assets?
-
-<PyObject object="SourceAsset" pluralize /> can be used to model data that's produced
-by a process Dagster doesn't control, such as a daily file drop into Amazon S3.
-
-External assets can accomplish this, and more. As a result, Source Assets will be replaced with external assets in the near future.
 
 ---
 
@@ -38,16 +31,15 @@ The following aren't currently supported when using external assets:
 
 ## Relevant APIs
 
-| Name                                             | Description                                                                                    |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| <PyObject object="external_assets_from_specs" /> | Creates a list of <PyObject object="AssetsDefinition"/> objects that represent external assets |
-| <PyObject object="AssetSpec" />                  | An object that represents the metadata of a particular asset                                   |
+| Name                            | Description                                                                                          |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| <PyObject object="AssetSpec" /> | An object that represents the metadata of a particular asset without representing how it's computed. |
 
 ---
 
 ## Defining external assets
 
-The following code declares a single external asset that represents a file in S3 and passes it to a <PyObject object="Definitions"/> object:
+External assets are defined using the <PyObject object="AssetSpec" /> class. An <PyObject object="AssetSpec" /> represents metadata about an asset without describing how it's computed. The following code declares a single external asset that represents a file in S3 and passes it to a <PyObject object="Definitions"/> object:
 
 <TabGroup>
 <TabItem name="Asset definition">
@@ -55,9 +47,9 @@ The following code declares a single external asset that represents a file in S3
 Click the **Asset in the Dagster UI** tab to see how this asset would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/single_declaration.py
-from dagster import AssetSpec, Definitions, external_asset_from_spec
+from dagster import AssetSpec, Definitions
 
-defs = Definitions(assets=[external_asset_from_spec(AssetSpec("file_in_s3"))])
+defs = Definitions(assets=[AssetSpec("file_in_s3")])
 ```
 
 ---
@@ -95,12 +87,12 @@ In the following example, we have two assets: `raw_logs` and `processed_logs`. T
 Click the **Assets in the Dagster UI** tab to see how these assets would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/external_asset_deps.py
-from dagster import AssetSpec, Definitions, external_assets_from_specs
+from dagster import AssetSpec, Definitions
 
 raw_logs = AssetSpec("raw_logs")
 processed_logs = AssetSpec("processed_logs", deps=[raw_logs])
 
-defs = Definitions(assets=external_assets_from_specs([raw_logs, processed_logs]))
+defs = Definitions(assets=[raw_logs, processed_logs])
 ```
 
 ---
@@ -134,7 +126,7 @@ Fully-managed assets can depend on external assets. In this example, the `aggreg
 Click the **Assets in the Dagster UI** tab to see how these assets would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/normal_asset_depending_on_external.py
-from dagster import AssetSpec, Definitions, asset, external_assets_from_specs
+from dagster import AssetSpec, Definitions, asset
 
 raw_logs = AssetSpec("raw_logs")
 processed_logs = AssetSpec("processed_logs", deps=[raw_logs])
@@ -146,9 +138,7 @@ def aggregated_logs() -> None:
     ...
 
 
-defs = Definitions(
-    assets=[aggregated_logs, *external_assets_from_specs([raw_logs, processed_logs])]
-)
+defs = Definitions(assets=[aggregated_logs, raw_logs, processed_logs])
 ```
 
 </TabItem>
@@ -196,7 +186,6 @@ from dagster import (
     Definitions,
     SensorEvaluationContext,
     SensorResult,
-    external_asset_from_spec,
     sensor,
 )
 
@@ -221,7 +210,7 @@ def keep_external_asset_a_up_to_date(context: SensorEvaluationContext) -> Sensor
 
 
 defs = Definitions(
-    assets=[external_asset_from_spec(AssetSpec("external_asset_a"))],
+    assets=[AssetSpec("external_asset_a")],
     sensors=[keep_external_asset_a_up_to_date],
 )
 ```
@@ -253,7 +242,6 @@ from dagster import (
     AssetSpec,
     Definitions,
     OpExecutionContext,
-    external_asset_from_spec,
     job,
     op,
 )
@@ -269,9 +257,7 @@ def a_job() -> None:
     an_op()
 
 
-defs = Definitions(
-    assets=[external_asset_from_spec(AssetSpec("external_asset"))], jobs=[a_job]
-)
+defs = Definitions(assets=[AssetSpec("external_asset")], jobs=[a_job])
 ```
 
 ---

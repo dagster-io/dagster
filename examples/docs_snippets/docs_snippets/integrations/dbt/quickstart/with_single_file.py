@@ -19,6 +19,7 @@ my_project = DbtProject(
     .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
     .resolve(),
 )
+my_project.prepare_if_dev()
 
 
 @dbt_assets(manifest=my_project.manifest_path)

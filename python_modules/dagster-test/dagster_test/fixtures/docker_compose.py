@@ -6,17 +6,29 @@ from contextlib import contextmanager
 
 import pytest
 
-from .utils import BUILDKITE
+from dagster_test.fixtures.utils import BUILDKITE
 
 
 @contextmanager
 def docker_compose_cm(
-    docker_compose_yml, network_name=None, docker_context=None, service=None, env_file=None
+    docker_compose_yml,
+    network_name=None,
+    docker_context=None,
+    service=None,
+    env_file=None,
+    no_build: bool = False,
 ):
     if not network_name:
         network_name = network_name_from_yml(docker_compose_yml)
     try:
-        docker_compose_up(docker_compose_yml, docker_context, service, env_file)
+        try:
+            docker_compose_up(
+                docker_compose_yml, docker_context, service, env_file, no_build=no_build
+            )
+        except:
+            dump_docker_compose_logs(docker_context, docker_compose_yml)
+            raise
+
         if BUILDKITE:
             # When running in a container on Buildkite, we need to first connect our container
             # and our network and then yield a dict of container name to the container's
@@ -31,6 +43,21 @@ def docker_compose_cm(
         docker_compose_down(docker_compose_yml, docker_context, service, env_file)
 
 
+def dump_docker_compose_logs(context, docker_compose_yml):
+    if context:
+        compose_command = ["docker", "--context", context, "compose"]
+    else:
+        compose_command = ["docker", "compose"]
+
+    compose_command += [
+        "--file",
+        str(docker_compose_yml),
+        "logs",
+    ]
+
+    subprocess.run(compose_command, check=False)
+
+
 @pytest.fixture(scope="module", name="docker_compose_cm")
 def docker_compose_cm_fixture(test_directory):
     @contextmanager
@@ -40,11 +67,12 @@ def docker_compose_cm_fixture(test_directory):
         docker_context=None,
         service=None,
         env_file=None,
+        no_build: bool = False,
     ):
         if not docker_compose_yml:
             docker_compose_yml = default_docker_compose_yml(test_directory)
         with docker_compose_cm(
-            docker_compose_yml, network_name, docker_context, service, env_file
+            docker_compose_yml, network_name, docker_context, service, env_file, no_build
         ) as hostnames:
             yield hostnames
 
@@ -57,11 +85,11 @@ def docker_compose(docker_compose_cm):
         yield docker_compose
 
 
-def docker_compose_up(docker_compose_yml, context, service, env_file):
+def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: bool = False):
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
-        compose_command = ["docker-compose"]
+        compose_command = ["docker", "compose"]
 
     if env_file:
         compose_command += ["--env-file", env_file]
@@ -73,6 +101,9 @@ def docker_compose_up(docker_compose_yml, context, service, env_file):
         "--detach",
     ]
 
+    if no_build:
+        compose_command += ["--no-build"]
+
     if service:
         compose_command.append(service)
 
@@ -83,7 +114,7 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
-        compose_command = ["docker-compose"]
+        compose_command = ["docker", "compose"]
 
     if env_file:
         compose_command += ["--env-file", env_file]

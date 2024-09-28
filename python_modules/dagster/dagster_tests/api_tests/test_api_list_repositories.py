@@ -1,14 +1,19 @@
+import asyncio
 import sys
 
 import pytest
-from dagster._api.list_repositories import sync_list_repositories_ephemeral_grpc
+from dagster._api.list_repositories import (
+    gen_list_repositories_ephemeral_grpc,
+    sync_list_repositories_ephemeral_grpc,
+)
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._grpc.types import LoadableRepositorySymbol
 from dagster._utils import file_relative_path
 
 
-def test_sync_list_python_file_grpc():
+@pytest.mark.asyncio
+async def test_list_repositories_python_file_grpc():
     python_file = file_relative_path(__file__, "api_tests_repo.py")
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
@@ -38,6 +43,16 @@ def test_sync_list_python_file_grpc():
     assert isinstance(repository_code_pointer_dict["bar_repo"], FileCodePointer)
     assert repository_code_pointer_dict["bar_repo"].python_file.endswith("api_tests_repo.py")
     assert repository_code_pointer_dict["bar_repo"].fn_name == "bar_repo"
+
+    async_response = await gen_list_repositories_ephemeral_grpc(
+        sys.executable,
+        python_file=python_file,
+        module_name=None,
+        working_directory=None,
+        attribute="bar_repo",
+        package_name=None,
+    )
+    assert async_response == response
 
 
 def test_sync_list_python_file_multi_repo_grpc():
@@ -226,6 +241,20 @@ def test_sync_list_python_file_grpc_with_error():
             working_directory=None,
             attribute=None,
             package_name=None,
+        )
+
+    assert 'raise ValueError("User did something bad")' in str(e)
+
+    with pytest.raises(DagsterUserCodeProcessError) as e:
+        asyncio.run(
+            gen_list_repositories_ephemeral_grpc(
+                sys.executable,
+                python_file=python_file,
+                module_name=None,
+                working_directory=None,
+                attribute=None,
+                package_name=None,
+            )
         )
 
     assert 'raise ValueError("User did something bad")' in str(e)

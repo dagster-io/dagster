@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors, FontFamily, Group, Icon} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
@@ -9,10 +8,10 @@ import {
   RunGroupPanelQueryVariables,
   RunGroupPanelRunFragment,
 } from './types/RunGroupPanel.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
@@ -39,7 +38,6 @@ export const RunGroupPanel = ({
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'RunGroupPanelQuery');
 
   const {data, refetch} = queryResult;
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);

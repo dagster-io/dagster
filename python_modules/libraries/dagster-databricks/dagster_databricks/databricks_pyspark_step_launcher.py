@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 import zlib
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
 
 from dagster import (
     Bool,
@@ -35,12 +35,10 @@ from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
 from databricks.sdk.core import DatabricksError
-from databricks.sdk.service import jobs
+from databricks.sdk.service import iam, jobs
 
 from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
-
-from .configs import (
+from dagster_databricks.configs import (
     define_azure_credentials,
     define_databricks_env_variables,
     define_databricks_permissions,
@@ -49,6 +47,7 @@ from .configs import (
     define_databricks_submit_run_config,
     define_oauth_credentials,
 )
+from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
 
 CODE_ZIP_NAME = "code.zip"
 PICKLED_CONFIG_FILE_NAME = "config.pkl"
@@ -426,6 +425,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         cluster_id = None
         for i in range(1, request_retries + 1):
             run_info = client.jobs.get_run(databricks_run_id)
+            if run_info.cluster_instance is None:
+                check.failed("Databricks run {databricks_run_id} has null cluster_instance")
             # if a new job cluster is created, the cluster_instance key may not be immediately present in the run response
             try:
                 cluster_id = run_info.cluster_instance.cluster_id
@@ -446,9 +447,11 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         # Update job permissions
         if "job_permissions" in self.permissions:
             job_permissions = self._format_permissions(self.permissions["job_permissions"])
-            job_id = run_info.job_id
+            job_id = check.not_none(
+                run_info.job_id, f"Databricks run {databricks_run_id} has null job_id"
+            )
             log.debug(f"Updating job permissions with following json: {job_permissions}")
-            client.permissions.update("jobs", job_id, access_control_list=job_permissions)
+            client.permissions.update("jobs", str(job_id), access_control_list=job_permissions)
             log.info("Successfully updated cluster permissions")
 
         # Update cluster permissions
@@ -467,7 +470,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
     def _format_permissions(
         self, input_permissions: Mapping[str, Sequence[Mapping[str, str]]]
-    ) -> Sequence[Mapping[str, str]]:
+    ) -> List[iam.AccessControlRequest]:
         access_control_list = []
         for permission, accessors in input_permissions.items():
             access_control_list.extend(

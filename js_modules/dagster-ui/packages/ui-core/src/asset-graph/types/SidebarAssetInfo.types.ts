@@ -160,15 +160,6 @@ export type SidebarAssetFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
-  autoMaterializePolicy: {
-    __typename: 'AutoMaterializePolicy';
-    rules: Array<{
-      __typename: 'AutoMaterializeRule';
-      className: string;
-      decisionType: Types.AutoMaterializeDecisionType;
-      description: string;
-    }>;
-  } | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -16284,15 +16275,6 @@ export type SidebarAssetQuery = {
           cronSchedule: string | null;
           cronScheduleTimezone: string | null;
         } | null;
-        autoMaterializePolicy: {
-          __typename: 'AutoMaterializePolicy';
-          rules: Array<{
-            __typename: 'AutoMaterializeRule';
-            className: string;
-            decisionType: Types.AutoMaterializeDecisionType;
-            description: string;
-          }>;
-        } | null;
         backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -32302,3 +32284,5 @@ export type SidebarAssetQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const SidebarAssetQueryVersion = '6bc1debc744cdb40a889e99ef429b8cf95307aa027b1566cfab952fdc95ea5ea';

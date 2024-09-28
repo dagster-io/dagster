@@ -1,9 +1,15 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {ChangeReason} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+
+export const ALL_VALUES = Object.values(ChangeReason).map((reason) => ({
+  key: reason,
+  value: reason,
+  match: [reason],
+}));
 
 export const useChangedFilter = ({
   changedInBranch,
@@ -13,29 +19,10 @@ export const useChangedFilter = ({
   setChangedInBranch?: null | ((s: ChangeReason[]) => void);
 }) => {
   return useStaticSetFilter<ChangeReason>({
-    name: 'Changed in branch',
-    icon: 'new_in_branch',
-    allValues: Object.values(ChangeReason).map((reason) => ({
-      key: reason,
-      value: reason,
-      match: [reason],
-    })),
+    allValues: ALL_VALUES,
     allowMultipleSelections: true,
     menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="new_in_branch" />
-        <TruncatedTextWithFullTextOnHover
-          tooltipText={value}
-          text={
-            <span style={{textTransform: 'capitalize'}}>
-              {value.toLocaleLowerCase().replace('_', ' ')}
-            </span>
-          }
-        />
-      </Box>
-    ),
-    getStringValue: (value) => value[0] + value.slice(1).toLowerCase(),
+    ...BaseConfig,
 
     state: useMemo(() => new Set(changedInBranch ?? []), [changedInBranch]),
     onStateChanged: (values) => {
@@ -44,4 +31,23 @@ export const useChangedFilter = ({
       }
     },
   });
+};
+
+export const BaseConfig: StaticBaseConfig<ChangeReason> = {
+  name: 'Changed in branch',
+  icon: 'new_in_branch',
+  renderLabel: ({value}: {value: ChangeReason}) => (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Icon name="new_in_branch" />
+      <TruncatedTextWithFullTextOnHover
+        tooltipText={value}
+        text={
+          <span style={{textTransform: 'capitalize'}}>
+            {value.toLocaleLowerCase().replace('_', ' ')}
+          </span>
+        }
+      />
+    </Box>
+  ),
+  getStringValue: (value: ChangeReason) => value[0] + value.slice(1).toLowerCase(),
 };

@@ -1,6 +1,6 @@
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {InstigationStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 export const useInstigationStatusFilter = () => {
   const [state, onStateChanged] = useQueryPersistedState<Set<InstigationStatus>>({

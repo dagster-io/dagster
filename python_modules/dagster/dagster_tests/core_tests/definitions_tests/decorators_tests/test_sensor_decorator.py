@@ -22,3 +22,23 @@ def test_coerce_to_asset_selection():
     def sensor2(): ...
 
     assert sensor2.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}
+
+
+def test_jobless_sensor_uses_eval_fn_name():
+    @asset
+    def asset1(): ...
+
+    @sensor(target=asset1)
+    def my_sensor():
+        pass
+
+    assert my_sensor.name == "my_sensor"
+
+
+def test_sensor_tags():
+    @sensor(tags={"foo": "bar"})
+    def my_sensor():
+        pass
+
+    # auto-serialized to JSON
+    assert my_sensor.tags == {"foo": "bar"}

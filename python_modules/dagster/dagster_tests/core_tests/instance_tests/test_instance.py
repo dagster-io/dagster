@@ -304,7 +304,7 @@ def test_submit_run():
             run = create_run_for_test(
                 instance=instance,
                 job_name=external_job.name,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
@@ -335,7 +335,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
-                asset_job_partitions_def=noop_asset_job.partitions_def,
+                asset_graph=noop_asset_job.asset_layer.asset_graph,
             )
 
         with pytest.raises(
@@ -351,7 +351,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
-                asset_job_partitions_def=noop_asset_job.partitions_def,
+                asset_graph=noop_asset_job.asset_layer.asset_graph,
             )
 
         create_run_for_test(
@@ -360,7 +360,7 @@ def test_create_run_with_asset_partitions():
             execution_plan_snapshot=ep_snapshot,
             job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
-            asset_job_partitions_def=noop_asset_job.partitions_def,
+            asset_graph=noop_asset_job.asset_layer.asset_graph,
         )
 
 
@@ -399,7 +399,7 @@ def test_get_required_daemon_types():
 
     with instance_for_test(
         overrides={
-            "auto_materialize": {"enabled": False},
+            "auto_materialize": {"enabled": False, "use_sensors": False},
         }
     ) as instance:
         assert instance.get_required_daemon_types() == [

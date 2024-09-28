@@ -184,6 +184,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
     case 'AlertFailureEvent':
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
     case 'ResourceInitFailureEvent':
+    case 'RunCanceledEvent':
     case 'RunFailureEvent':
       if (node.error) {
         return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
@@ -201,11 +202,16 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
     case 'StepWorkerStartedEvent':
     case 'StepWorkerStartingEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
-    case 'RunCanceledEvent':
-      return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
       if (node.error) {
-        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
+        return (
+          <FailureContent
+            message={node.message}
+            error={node.error}
+            metadataEntries={node.metadataEntries}
+            eventType={eventType}
+          />
+        );
       }
       return (
         <DefaultContent

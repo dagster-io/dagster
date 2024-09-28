@@ -9,6 +9,9 @@
 pyright:
 	python scripts/run-pyright.py --all
 
+install_prettier:
+	npm install -g prettier
+
 install_pyright:
 	pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
 
@@ -31,18 +34,18 @@ ruff:
 	ruff format .
 
 check_ruff:
-	ruff .
+	ruff check .
 	ruff format --check .
 
 check_prettier:
 #NOTE:  excludes README.md because it's a symlink
-	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files \
+	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
 	':!:README.md'` --check
 
 prettier:
-	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files \
+	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
 	':!:README.md'` --write

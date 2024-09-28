@@ -21,6 +21,14 @@ run_monitoring:
   poll_interval_seconds: 120
 ```
 
+<Note>
+  In Dagster+ Run Monitoring is always enabled and can be configured in{" "}
+  <a href="https://docs.dagster.io/dagster-plus/managing-deployments/deployment-settings-reference">
+    deployment settings
+  </a>
+  .
+</Note>
+
 ## Run start timeouts
 
 When Dagster launches a run, the run stays in STARTING status until the run worker spins up and marks the run as STARTED. In the event that some failure causes the run worker to not spin up, the run might be stuck in STARTING status. The `start_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as failed.
@@ -31,7 +39,22 @@ When Dagster terminates a run, the run moves into CANCELING status and sends a t
 
 ## General run timeouts
 
-After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). The `dagster/max_runtime` tag can be used to set a timeout in seconds on a per-run basis. If the run exceeds this timeout, and run monitoring is enabled, it will be marked as failed.
+After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). You can configure a maximum runtime for every run in a deployment by setting the `run_monitoring.max_runtime_seconds` field in your dagster.yaml or (Dagster+ deployment settings)\[dagster-plus/managing-deployments/deployment-settings-reference] to the maximum runtime in seconds. If a run exceeds this timeout and run monitoring is enabled, it will be marked as failed. The `dagster/max_runtime` tag can also be used to set a timeout in seconds on a per-run basis.
+
+For example, to configure a maximum of 2 hours for every run in your deployment:
+
+```yaml
+run_monitoring:
+  enabled: true
+  max_runtime_seconds: 7200
+```
+
+or in Dagster+, add the following to your [deployment settings](/dagster-plus/managing-deployments/deployment-settings-reference):
+
+```yaml
+run_monitoring:
+  max_runtime_seconds: 7200
+```
 
 The below code example shows how to set a run timeout of 10 seconds on a per-job basis:
 

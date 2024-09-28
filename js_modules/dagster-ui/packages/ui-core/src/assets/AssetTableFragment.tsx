@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
@@ -6,13 +6,18 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     changedReasons
     groupName
     opNames
-    isSource
+    isMaterializable
     isObservable
     isExecutable
     computeKind
     hasMaterializePermission
+    hasReportRunlessAssetEventPermission
     partitionDefinition {
       description
+      dimensionTypes {
+        type
+        dynamicPartitionsDefinitionName
+      }
     }
     description
     owners {
@@ -27,6 +32,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    kinds
     repository {
       id
       name

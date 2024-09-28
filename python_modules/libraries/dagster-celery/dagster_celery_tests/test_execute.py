@@ -10,7 +10,7 @@ from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._utils import send_interrupt
 
-from .utils import (  # ruff: isort:skip
+from dagster_celery_tests.utils import (
     REPO_FILE,
     events_of_type,
     execute_eagerly_on_celery,
@@ -235,19 +235,3 @@ def test_engine_error(instance: DagsterInstance, tempdir: str):
                 },
                 instance=instance,
             )
-
-
-def test_memoization_celery_executor(instance, dagster_celery_worker):
-    with execute_job_on_celery(
-        "bar_job",
-        instance=instance,
-    ) as result:
-        assert result.success
-        assert result.output_for_node("bar_solid") == "bar"
-
-    with execute_job_on_celery(
-        "bar_job",
-        instance=instance,
-    ) as result:
-        assert result.success
-        assert len(result.all_node_events) == 0

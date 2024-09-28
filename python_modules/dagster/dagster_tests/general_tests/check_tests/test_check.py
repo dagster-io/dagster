@@ -3,7 +3,24 @@ import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import dagster._check as check
 import pytest
@@ -12,10 +29,15 @@ from dagster._check import (
     CheckError,
     ElementCheckError,
     EvalContext,
+    ImportFrom,
     NotImplementedCheckError,
     ParameterCheckError,
     build_check_call_str,
 )
+from typing_extensions import Annotated
+
+if TYPE_CHECKING:
+    from dagster._core.test_utils import TestType  # used in lazy import ForwardRef test case
 
 
 @contextmanager
@@ -1557,11 +1579,15 @@ def test_is_iterable_typing() -> None:
 
 def build_check_call(ttype, name, eval_ctx: EvalContext):
     body = build_check_call_str(ttype, name, eval_ctx)
+    lazy_import_str = "\n    ".join(
+        f"from {module} import {t}" for t, module in eval_ctx.lazy_imports.items()
+    )
+
     fn = f"""
 def _check({name}):
+    {lazy_import_str}
     return {body}
 """
-    # print(fn) # debug output
     return eval_ctx.compile_fn(fn, "_check")
 
 
@@ -1574,45 +1600,95 @@ class SubFoo(Foo): ...
 class Bar: ...
 
 
+T = TypeVar("T")
+
+
+class Gen(Generic[T]): ...
+
+
+class SubGen(Gen[str]): ...
+
+
 BUILD_CASES = [
-    (int, 4, "4"),
-    (float, 4.2, "4.1"),
-    (str, "hi", Foo()),
-    (Bar, Bar(), Foo()),
-    (Optional[Bar], Bar(), Foo()),
-    (List[str], ["a", "b"], [1, 2]),
-    (Sequence[str], ["a", "b"], [1, 2]),
-    (Iterable[str], ["a", "b"], [1, 2]),
-    (Set[str], {"a", "b"}, {1, 2}),
-    (Dict[str, int], {"a": 1}, {1: "a"}),
-    (Mapping[str, int], {"a": 1}, {1: "a"}),
-    (Optional[int], None, "4"),
-    (Optional[Bar], None, Foo()),
-    (Optional[List[str]], ["a", "b"], [1, 2]),
-    (Optional[Sequence[str]], ["a", "b"], [1, 2]),
-    (Optional[Iterable[str]], ["a", "b"], [1, 2]),
-    (Optional[Set[str]], {"a", "b"}, {1, 2}),
-    (Optional[Dict[str, int]], {"a": 1}, {1: "a"}),
-    (Optional[Mapping[str, int]], {"a": 1}, {1: "a"}),
-    (PublicAttr[Optional[Mapping[str, int]]], {"a": 1}, {1: "a"}),
-    (PublicAttr[Bar], Bar(), Foo()),
-    (Union[bool, Foo], True, None),
+    (int, [4], ["4"]),
+    (float, [4.2], ["4.1"]),
+    (str, ["hi"], [Foo()]),
+    (Bar, [Bar()], [Foo()]),
+    (Optional[Bar], [Bar()], [Foo()]),
+    (List[str], [["a", "b"]], [[1, 2]]),
+    (Sequence[str], [["a", "b"]], [[1, 2]]),
+    (Iterable[str], [["a", "b"]], [[1, 2]]),
+    (Set[str], [{"a", "b"}], [{1, 2}]),
+    (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
+    (Optional[AbstractSet[str]], [{"a", "b"}, None], [{1, 2}]),
+    (
+        Mapping[str, AbstractSet[str]],
+        [
+            {"letters": {"a", "b"}},
+            # should fail, but we do not yet handle inner collection types,
+            # check.mapping_param(..., key_type=str, value_type=AbstractSet)
+            {"numbers": {1, 2}},
+        ],
+        [
+            {"letters": ["a", "b"]},
+        ],
+    ),
+    (Dict[str, int], [{"a": 1}], [{1: "a"}]),
+    (Mapping[str, int], [{"a": 1}], [{1: "a"}]),
+    (Optional[int], [None], ["4"]),
+    (Optional[Bar], [None], [Foo()]),
+    (Optional[List[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Sequence[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Iterable[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Set[str]], [{"a", "b"}], [{1, 2}]),
+    (Optional[Dict[str, int]], [{"a": 1}], [{1: "a"}]),
+    (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
+    (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),  # type: ignore  # ignored for update, fix me!
+    (PublicAttr[Bar], [Bar()], [Foo()]),  # type: ignore  # ignored for update, fix me!
+    (Annotated[Bar, None], [Bar()], [Foo()]),
+    (Annotated["Bar", None], [Bar()], [Foo()]),
+    (List[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
+    (
+        List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]],
+        [[]],  # avoid importing TestType
+        [[Foo()]],
+    ),
+    (Union[bool, Foo], [True], [None]),
+    (Union[Foo, "Bar"], [Bar()], [None]),
+    (TypeVar("T", bound=Foo), [Foo(), SubFoo()], [Bar()]),
+    (TypeVar("T", bound=Optional[Foo]), [None], [Bar()]),
+    (TypeVar("T"), [Foo(), None], []),
+    (Literal["apple"], ["apple"], ["banana"]),
+    (Literal["apple", "manzana"], ["apple", "manzana"], ["banana"]),
+    (Callable, [lambda x: x, int], [4]),
+    (Callable[[], int], [lambda x: x, int], [4]),
     # fwd refs
-    ("Foo", Foo(), Bar()),
-    (Optional["Foo"], Foo(), Bar()),
-    (PublicAttr[Optional["Foo"]], None, Bar()),
-    (Mapping[str, Optional["Foo"]], {"foo": Foo()}, {"bar": Bar()}),
+    ("Foo", [Foo()], [Bar()]),
+    (Optional["Foo"], [Foo()], [Bar()]),
+    (PublicAttr[Optional["Foo"]], [None], [Bar()]),  # type: ignore  # ignored for update, fix me!
+    (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
+    (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
+    (Gen, [Gen()], [Bar()]),
+    (Gen[str], [Gen()], [Bar()]),
+    (SubGen, [SubGen()], [Bar()]),
+    (Sequence[SubGen], [[SubGen()]], [[Bar()]]),
+    (Sequence[Gen[str]], [[Gen()]], [[Bar()]]),
 ]
 
 
 @pytest.mark.parametrize("ttype, should_succeed, should_fail", BUILD_CASES)
-def test_build_check_call(ttype, should_succeed, should_fail) -> None:
-    eval_ctx = EvalContext(globals(), locals())
+def test_build_check_call(
+    ttype: Type, should_succeed: Sequence[object], should_fail: Sequence[object]
+) -> None:
+    eval_ctx = EvalContext(globals(), locals(), {})
     check_call = build_check_call(ttype, "test_param", eval_ctx)
 
-    check_call(should_succeed)
-    with pytest.raises(CheckError):
-        check_call(should_fail)
+    for obj in should_succeed:
+        check_call(obj)
+
+    for obj in should_fail:
+        with pytest.raises(CheckError):
+            check_call(obj)
 
 
 def test_build_check_errors() -> None:
@@ -1620,13 +1696,13 @@ def test_build_check_errors() -> None:
         build_check_call(
             List["NoExist"],  # type: ignore # noqa
             "bad",
-            EvalContext(globals(), locals()),
+            EvalContext(globals(), locals(), {}),
         )
 
 
 def test_forward_ref_flow() -> None:
     # original context captured at decl
-    eval_ctx = EvalContext(globals(), locals())
+    eval_ctx = EvalContext(globals(), locals(), {})
     ttype = List["Late"]  # class not yet defined
 
     class Late: ...

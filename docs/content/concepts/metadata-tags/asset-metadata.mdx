@@ -29,15 +29,16 @@ Dagster supports attaching a few different types of definition metadata:
 - [**Arbitrary metadata**](#arbitrary-metadata-using-the-metadata-parameter), such as the storage location of the table produced by the asset
 - [**Asset owners**](#asset-owners), which are the people and/or teams who own the asset
 - [**Table and column metadata**](#table-and-column-metadata), which provides additional context about a tabular asset, such as its schema or row count
+- [**Code references**](#code-references), which link to the source code of the asset locally or in your source control repository
 
 ### Arbitrary metadata using the metadata parameter
 
-Attaching arbitrary metadata to an asset is done using the `metadata` argument and a dictionary of key/value pairs. Keys must be a string, but values can:
+Attaching arbitrary metadata to an asset definition is done using the `metadata` argument and a dictionary of key/value pairs. Keys must be a string, but values can:
 
 - Be any of the <PyObject object="MetadataValue" /> classes provided by Dagster
 - Primitive Python types, which Dagster will convert to the appropriate <PyObject object="MetadataValue" />
 
-In the following example, we attached the storage location of the table produced by the asset:
+For example, to attach the name of the table we expect to store the asset in, we'll add a `"dataset_name"` entry to the `metadata` argument:
 
 ```python file=/concepts/assets/asset_definition_metadata.py startafter=start endbefore=end
 from dagster_duckdb import DuckDBResource
@@ -58,6 +59,8 @@ def small_petals(duckdb: DuckDBResource) -> None:
             " 'petal_length_cm' < 1 AND 'petal_width_cm' < 1"
         )
 ```
+
+Dagster provides a [standard set of metadata keys](#standard-asset-metadata-entries) that can be used for common types of metadata, such as an asset's URI or column schema. **Note:** These entries are intended to be a starting point, and we encourage you to create your own metadata keys that make sense within the context of your data platform.
 
 ### Asset owners
 
@@ -82,6 +85,10 @@ from dagster import asset
 @asset(owners=["richard.hendricks@hooli.com", "team:data-eng"])
 def leads(): ...
 ```
+
+### Code references
+
+Attaching code references to an asset definition allows you to easily navigate to the asset's source code, either locally in your editor or in your source control repository. For more information, refer to the [Code references guide](/guides/dagster/code-references).
 
 ---
 
@@ -128,6 +135,8 @@ def topstories(context: AssetExecutionContext) -> MaterializeResult:
         }
     )
 ```
+
+Dagster provides a [standard set of metadata keys](#standard-asset-metadata-entries) that can be used for common types of metadata, such as an asset's URI or column schema. **Note:** These entries are intended to be a starting point, and we encourage you to create your own metadata keys that make sense within the context of your data platform.
 
 ### Table and column metadata
 
@@ -294,13 +303,232 @@ Refer to the [Integrating asset metadata into Dagster+ Insights](/dagster-plus/i
 
 ---
 
-## APIs in this guide
+## References
+
+### APIs in this guide
 
 | Name                                    | Description                                                                                                                              |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="asset" decorator />   | A decorator used to define assets.                                                                                                       |
 | <PyObject object="MaterializeResult" /> | An object representing a successful materialization of an asset.                                                                         |
 | <PyObject object="MetadataValue" />     | Utility class to wrap metadata values passed into Dagster events, which allows them to be displayed in the Dagster UI and other tooling. |
+
+### Standard asset metadata entries
+
+The following is a set of standard asset metadata entries that can be included in the dictionaries passed to `metadata` attributes of <PyObject object="asset" decorator />, <PyObject object="MaterializeResult" />, etc. Many of these receive special treatment in Dagster's UI, such as `dagster/column_schema` resulting in a **Columns** section on the **Overview** tab of the **Asset details** page.
+
+The `dagster` prefix indicates that the Dagster package takes responsibility for defining the meaning of these metadata entries.
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        Key
+      </th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <code>dagster/uri</code>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            <strong>Value:</strong> <code>str</code>
+          </li>
+          <li>
+            <strong>Description:</strong> The URI for the asset, e.g.{" "}
+            <code>"s3://my_bucket/my_object"</code>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>dagster/column_schema</code>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            <strong>Value:</strong> <PyObject object="TableSchema" />
+          </li>
+          <li>
+            <strong>Description:</strong> For an asset that's a table, the
+            schema of the columns in the table. Refer to the the{" "}
+            <a href="/concepts/metadata-tags/asset-metadata/table-metadata#attaching-column-schema">
+              Table metadata documentation
+            </a>{" "}
+            for details.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>dagster/column_lineage</code>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            <strong>Value:</strong> <PyObject object="TableColumnLineage" />
+          </li>
+          <li>
+            <strong>Description:</strong> For an asset that's a table, the
+            lineage of column inputs to column outputs for the table. Refer to
+            the{" "}
+            <a href="/concepts/metadata-tags/asset-metadata/column-level-lineage">
+              Column lineage documentation
+            </a>{" "}
+            for details.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>dagster/row_count</code>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            <strong>Value:</strong> <code>int</code>
+          </li>
+          <li>
+            <strong>Description:</strong> For an asset that's a table, the
+            number of rows in the table. Refer to the{" "}
+            <a href="/concepts/metadata-tags/asset-metadata/table-metadata#attaching-row-count">
+              Table metadata documentation
+            </a>{" "}
+            for details.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>dagster/partition_row_count</code>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            <strong>Value:</strong> <code>int</code>
+          </li>
+          <li>
+            <strong>Description:</strong> For a partition of an asset that's a
+            table, the number of rows in the partition.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>dagster/relation_identifier</code>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            <strong>Value:</strong> <code>str</code>
+          </li>
+          <li>
+            <strong>Description:</strong> A unique identifier for the
+            table/view, typically fully qualified. For example,{" "}
+            <code>my_database.my_schema.my_table</code>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>dagster/code_references</code>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            <strong>Value:</strong>{" "}
+            <PyObject object="CodeReferencesMetadataValue" />
+          </li>
+          <li>
+            <strong>Description:</strong> A list of code references for the
+            asset, such as file locations or references to Github URLs. Refer to
+            the{" "}
+            <a href="/guides/dagster/code-references">
+              Code references documentation
+            </a>{" "}
+            for details. Should only be provided in definition-level metadata,
+            not materialization metadata.
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 

@@ -49,12 +49,12 @@ Open the `assets/dbt.py` file and do the following:
     
 4. Now, let’s fill in the `get_asset_key` method with our own logic for defining asset keys.
     
-   1. There are two properties that we’ll want from `dbt_resource_props`: the `type` (ex., model, source, seed, snapshot) and the `name`, such as `trips` or `stg_trips`. Access both of those properties from the `dbt_resource_props` argument and store them in their own respective variables (`type` and `name`):
+   1. There are two properties that we’ll want from `dbt_resource_props`: the `resource_type` (ex., model, source, seed, snapshot) and the `name`, such as `trips` or `stg_trips`. Access both of those properties from the `dbt_resource_props` argument and store them in their own respective variables (`type` and `name`):
        
       ```python
-          def get_asset_key(self, dbt_resource_props):
-              type = dbt_resource_props["resource_type"]
-              name = dbt_resource_props["name"]
+      def get_asset_key(self, dbt_resource_props):
+          resource_type = dbt_resource_props["resource_type"]
+          name = dbt_resource_props["name"]
       ```
         
    2. As mentioned above, the asset keys of our existing Dagster assets used by our dbt project are named `taxi_trips` and `taxi_zones`. If you were to print out the `name`, you’d see that the dbt sources are named `trips` and `zones`. Therefore, to match our asset keys up, we can prefix our keys with the string `taxi_` . 
@@ -62,11 +62,11 @@ Open the `assets/dbt.py` file and do the following:
       Copy and paste the following code to return an `AssetKey` of `AssetKey(f"taxi_{name}")`:
        
       ```python
-          def get_asset_key(self, dbt_resource_props):
-              type = dbt_resource_props["resource_type"]
-              name = dbt_resource_props["name"]
+      def get_asset_key(self, dbt_resource_props):
+          resource_type = dbt_resource_props["resource_type"]
+          name = dbt_resource_props["name"]
       
-              return AssetKey(f"taxi_{name}")
+          return AssetKey(f"taxi_{name}")
       ```
         
    3. You have full control over how each asset can be named, as you can define how asset keys are created. In our case we only want to rename the dbt sources, but we can keep the asset keys of the models the same. 
@@ -74,13 +74,13 @@ Open the `assets/dbt.py` file and do the following:
       The object-oriented pattern of the `DagsterDbtTranslator` means that we can leverage the existing implementations of the parent class by using the `super` method. We’ll use this pattern to customize how the sources are defined but default to the original logic for deciding the model asset keys. Copy and paste the code below to complete the `get_asset_key` function:
        
       ```python
-          def get_asset_key(self, dbt_resource_props):
-              resource_type = dbt_resource_props["resource_type"]
-              name = dbt_resource_props["name"]
-              if resource_type == "source":
-                  return AssetKey(f"taxi_{name}")
-              else:
-                  return super().get_asset_key(dbt_resource_props)
+      def get_asset_key(self, dbt_resource_props):
+          resource_type = dbt_resource_props["resource_type"]
+          name = dbt_resource_props["name"]
+          if resource_type == "source":
+              return AssetKey(f"taxi_{name}")
+          else:
+              return super().get_asset_key(dbt_resource_props)
       ```
       
       You’ve successfully written your first translator! 
@@ -95,7 +95,7 @@ Open the `assets/dbt.py` file and do the following:
 
    ```python
    @dbt_assets(
-       manifest=dbt_manifest_path,
+       manifest=dbt_project.manifest_path,
        dagster_dbt_translator=CustomizedDagsterDbtTranslator()
    )
    def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -105,12 +105,10 @@ Open the `assets/dbt.py` file and do the following:
 At this point, your `dbt.py` file should match the following:
 
 ```python
-import os
 from dagster import AssetExecutionContext, AssetKey
-from dagster_dbt import dbt_assets, DbtCliResource, DagsterDbtTranslator
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
-from .constants import DBT_DIRECTORY
-from ..resources import dbt_resource
+from ..project import dbt_project
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
@@ -122,21 +120,10 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
         else:
             return super().get_asset_key(dbt_resource_props)
 
-
-dbt_resource.cli(["--quiet", "parse"]).wait()
-
-if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-    dbt_manifest_path = (
-        dbt_resource.cli(["--quiet", "parse"])
-        .wait()
-        .target_path.joinpath("manifest.json")
-    )
-else:
-    dbt_manifest_path = os.path.join(DBT_DIRECTORY, "target", "manifest.json")
-
-
+        
 @dbt_assets(
-    manifest=dbt_manifest_path, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+    manifest=dbt_project.manifest_path, 
+    dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
 )
 def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()

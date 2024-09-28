@@ -4,18 +4,15 @@ from typing import Any, Mapping, Optional, Sequence
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
+    AutomationCondition,
     FreshnessPolicy,
     PartitionMapping,
     _check as check,
 )
-from dagster._annotations import public
-from dagster._core.definitions.asset_key import (
-    CoercibleToAssetKeyPrefix,
-    check_opt_coercible_to_asset_key_prefix_param,
-)
+from dagster._annotations import experimental, public
 from dagster._core.definitions.utils import is_valid_definition_tag_key
 
-from .asset_utils import (
+from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_description_fn,
@@ -125,6 +122,7 @@ class DagsterDbtTranslator:
         return default_asset_key_fn(dbt_resource_props)
 
     @public
+    @experimental(emit_runtime_warning=False)
     def get_partition_mapping(
         self,
         dbt_resource_props: Mapping[str, Any],
@@ -323,6 +321,7 @@ class DagsterDbtTranslator:
         return default_owners_from_dbt_resource_props(dbt_resource_props)
 
     @public
+    @experimental(emit_runtime_warning=False)
     def get_freshness_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[FreshnessPolicy]:
@@ -376,6 +375,7 @@ class DagsterDbtTranslator:
         return default_freshness_policy_fn(dbt_resource_props)
 
     @public
+    @experimental(emit_runtime_warning=False)
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
@@ -429,44 +429,63 @@ class DagsterDbtTranslator:
         """
         return default_auto_materialize_policy_fn(dbt_resource_props)
 
-
-class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
-    """A DagsterDbtTranslator that applies prefixes to the asset keys generated from dbt resources.
-
-    Attributes:
-        asset_key_prefix (Optional[Union[str, Sequence[str]]]): A prefix to apply to all dbt models,
-            seeds, snapshots, etc. This will *not* apply to dbt sources.
-        source_asset_key_prefix (Optional[Union[str, Sequence[str]]]): A prefix to apply to all dbt
-            sources.
-    """
-
-    def __init__(
-        self,
-        asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        source_asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        *args,
-        **kwargs,
-    ):
-        self._asset_key_prefix = (
-            check_opt_coercible_to_asset_key_prefix_param(asset_key_prefix, "asset_key_prefix")
-            or []
-        )
-        self._source_asset_key_prefix = (
-            check_opt_coercible_to_asset_key_prefix_param(
-                source_asset_key_prefix, "source_asset_key_prefix"
-            )
-            or []
-        )
-
-        super().__init__(*args, **kwargs)
-
     @public
-    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        base_key = default_asset_key_fn(dbt_resource_props)
-        if dbt_resource_props["resource_type"] == "source":
-            return base_key.with_prefix(self._source_asset_key_prefix)
-        else:
-            return base_key.with_prefix(self._asset_key_prefix)
+    @experimental(emit_runtime_warning=False)
+    def get_automation_condition(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[AutomationCondition]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster :py:class:`dagster.AutoMaterializePolicy` for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        This method can be overridden to provide a custom AutomationCondition for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[AutoMaterializePolicy]: A Dagster auto-materialize policy.
+
+        Examples:
+            Set a custom AutomationCondition for all dbt resources:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutomationCondition]:
+                        return AutomationCondition.eager()
+
+            Set a custom AutomationCondition for dbt resources with a specific tag:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutomationCondition]:
+                        automation_condition = None
+                        if "my_custom_tag" in dbt_resource_props.get("tags", []):
+                            automation_condition = AutomationCondition.eager()
+
+                        return automation_condition
+
+        """
+        auto_materialize_policy = self.get_auto_materialize_policy(dbt_resource_props)
+        return (
+            auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
+        )
 
 
 @dataclass

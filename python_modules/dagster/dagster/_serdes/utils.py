@@ -1,19 +1,20 @@
 import hashlib
 from typing import NamedTuple, Optional
 
-from .serdes import WhitelistMap, serialize_value
+from dagster._serdes.serdes import PackableValue, WhitelistMap, serialize_value
 
 
-def create_snapshot_id(snapshot: NamedTuple, whitelist_map: Optional[WhitelistMap] = None) -> str:
+def create_snapshot_id(
+    snapshot: PackableValue, whitelist_map: Optional[WhitelistMap] = None
+) -> str:
     kwargs = dict(whitelist_map=whitelist_map) if whitelist_map else {}
     json_rep = serialize_value(snapshot, **kwargs)
     return hash_str(json_rep)
 
 
 def hash_str(in_str: str) -> str:
-    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
-    m.update(in_str.encode("utf-8"))
-    return m.hexdigest()
+    # so that hexdigest is 40, not 64 bytes
+    return hashlib.sha1(in_str.encode("utf-8")).hexdigest()
 
 
 def serialize_pp(value: NamedTuple) -> str:

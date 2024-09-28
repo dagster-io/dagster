@@ -2,31 +2,38 @@ import datetime
 import logging
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Mapping, Optional, Sequence, Union
+from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.instance import DagsterInstance
-from dagster._time import get_current_datetime
 
 
 class EvaluateAutomationConditionsResult:
     def __init__(
         self,
-        requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         cursor: AssetDaemonCursor,
+        results: Iterable[AutomationResult],
+        requested_subsets: Iterable[EntitySubset],
     ):
-        self._requested_asset_partitions = requested_asset_partitions
+        self._requested_subsets = requested_subsets
+        self._requested_asset_partitions = set().union(
+            *(
+                subset.expensively_compute_asset_partitions()
+                for subset in requested_subsets
+                if isinstance(subset.key, AssetKey)
+            )
+        )
         self.cursor = cursor
+        self.results = list(results)
 
     @cached_property
     def _requested_partitions_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[Optional[str]]]:
@@ -52,7 +59,7 @@ class EvaluateAutomationConditionsResult:
 def evaluate_automation_conditions(
     defs: Union[Definitions, Sequence[AssetsDefinition]],
     instance: DagsterInstance,
-    asset_selection: AssetSelection = AssetSelection.all(),
+    asset_selection: Optional[AssetSelection] = None,
     evaluation_time: Optional[datetime.datetime] = None,
     cursor: Optional[AssetDaemonCursor] = None,
 ) -> EvaluateAutomationConditionsResult:
@@ -65,12 +72,13 @@ def evaluate_automation_conditions(
         instance (DagsterInstance):
             The instance to evaluate against.
         asset_selection (AssetSelection):
-            The selection of assets within defs to evaluate against. Defaults to AssetSelection.all()
+            The selection of assets within defs to evaluate against. Defaults to all assets.
         evaluation_time (Optional[datetime.datetime]):
             The time to use for the evaluation. Defaults to the true current time.
         cursor (Optional[AssetDaemonCursor]):
             The cursor for the computation. If you are evaluating multiple ticks within a test, this
             value should be supplied from the `cursor` property of the returned `result` object.
+        request_backfills (bool): Whether to evaluate the automation conditions under the condition of DA requesting backfills. Defaults to False.
 
     Examples:
          .. code-block:: python
@@ -103,27 +111,23 @@ def evaluate_automation_conditions(
     if not isinstance(defs, Definitions):
         defs = Definitions(assets=defs)
 
-    asset_graph_view = AssetGraphView.for_test(
-        defs=defs,
-        instance=instance,
-        effective_dt=evaluation_time or get_current_datetime(),
-        last_event_id=instance.event_log_storage.get_maximum_record_id(),
-    )
+    if asset_selection is None:
+        asset_selection = AssetSelection.all(include_sources=True)
+
     asset_graph = defs.get_asset_graph()
-    data_time_resolver = CachingDataTimeResolver(
-        asset_graph_view.get_inner_queryer_for_back_compat()
-    )
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
-        asset_keys=asset_selection.resolve(asset_graph),
-        asset_graph_view=asset_graph_view,
+        instance=instance,
+        entity_keys={
+            key
+            for key in asset_selection.resolve(asset_graph)
+            if asset_graph.get(key).automation_condition is not None
+        },
+        evaluation_time=evaluation_time,
         logger=logging.getLogger("dagster.automation_condition_tester"),
         cursor=cursor or AssetDaemonCursor.empty(),
-        data_time_resolver=data_time_resolver,
-        respect_materialization_data_versions=False,
-        auto_materialize_run_tags={},
     )
-    results, requested_asset_partitions = evaluator.evaluate()
+    results, requested_subsets = evaluator.evaluate()
     cursor = AssetDaemonCursor(
         evaluation_id=0,
         last_observe_request_timestamp_by_asset_key={},
@@ -132,6 +136,5 @@ def evaluate_automation_conditions(
     )
 
     return EvaluateAutomationConditionsResult(
-        cursor=cursor,
-        requested_asset_partitions=requested_asset_partitions,
+        cursor=cursor, requested_subsets=requested_subsets, results=results
     )

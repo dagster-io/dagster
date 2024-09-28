@@ -1,7 +1,7 @@
 from dagster import Field, StringSource
 
-from .configs_dataproc_cluster import define_dataproc_cluster_config
-from .configs_dataproc_job import define_dataproc_job_config
+from dagster_gcp.dataproc.configs_dataproc_cluster import define_dataproc_cluster_config
+from dagster_gcp.dataproc.configs_dataproc_job import define_dataproc_job_config
 
 
 def define_dataproc_create_cluster_config():

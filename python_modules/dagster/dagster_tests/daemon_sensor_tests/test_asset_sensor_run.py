@@ -2,10 +2,16 @@ from dagster import materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, get_timezone
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_run_status_sensors import instance_with_single_code_location_multiple_repos_with_sensors
-from .test_sensor_run import a_source_asset, evaluate_sensors, validate_tick
+from dagster_tests.daemon_sensor_tests.test_run_status_sensors import (
+    instance_with_single_code_location_multiple_repos_with_sensors,
+)
+from dagster_tests.daemon_sensor_tests.test_sensor_run import (
+    a_source_asset,
+    evaluate_sensors,
+    validate_tick,
+)
 
 
 def test_monitor_source_asset_sensor(executor):
@@ -25,7 +31,7 @@ def test_monitor_source_asset_sensor(executor):
 
             evaluate_sensors(workspace_ctx, executor)
 
-            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            ticks = instance.get_ticks(the_sensor.get_remote_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
@@ -40,7 +46,7 @@ def test_monitor_source_asset_sensor(executor):
 
             evaluate_sensors(workspace_ctx, executor)
 
-            ticks = instance.get_ticks(the_sensor.get_external_origin_id(), the_sensor.selector_id)
+            ticks = instance.get_ticks(the_sensor.get_remote_origin_id(), the_sensor.selector_id)
             assert len(ticks) == 2
             validate_tick(
                 ticks[0],

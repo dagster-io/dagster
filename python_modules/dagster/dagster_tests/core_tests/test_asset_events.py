@@ -1,8 +1,11 @@
+from typing import Set
+
 from dagster import (
     AssetKey,
     AssetOut,
     DagsterEventType,
     Output,
+    _check as check,
     asset,
     job,
     materialize_to_memory,
@@ -65,8 +68,16 @@ def _get_planned_events(instance, run_id):
     return planned_events
 
 
-def _get_planned_asset_keys(instance, run_id):
+def _get_planned_asset_keys_from_event_log(instance, run_id):
     return set(event.asset_key for event in _get_planned_events(instance, run_id))
+
+
+def _get_planned_asset_keys_from_execution_plan_snapshot(instance, run_id) -> Set[AssetKey]:
+    run = check.not_none(instance.get_run_by_id(run_id))
+
+    execution_plan_snapshot = instance.get_execution_plan_snapshot(run.execution_plan_snapshot_id)
+
+    return execution_plan_snapshot.asset_selection
 
 
 def test_asset_materialization_planned_event_yielded():
@@ -89,14 +100,21 @@ def test_asset_materialization_planned_event_yielded():
         )
         run_id = result.run_id
 
-        assert _get_planned_asset_keys(instance, run_id) == {AssetKey("asset_one")}
+        assert _get_planned_asset_keys_from_event_log(instance, run_id) == {AssetKey("asset_one")}
+        assert _get_planned_asset_keys_from_execution_plan_snapshot(instance, run_id) == {
+            AssetKey("asset_one")
+        }
 
     with instance_for_test() as instance:  # fresh event log storage
         # test with both assets selected
         result = asset_job.execute_in_process(instance=instance, raise_on_error=False)
         run_id = result.run_id
 
-        assert _get_planned_asset_keys(instance, run_id) == {
+        assert _get_planned_asset_keys_from_event_log(instance, run_id) == {
+            AssetKey("asset_one"),
+            AssetKey("never_runs_asset"),
+        }
+        assert _get_planned_asset_keys_from_execution_plan_snapshot(instance, run_id) == {
             AssetKey("asset_one"),
             AssetKey("never_runs_asset"),
         }
@@ -129,7 +147,11 @@ def test_multi_asset_asset_materialization_planned_events():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        assert _get_planned_asset_keys(instance, result.run_id) == {
+        assert _get_planned_asset_keys_from_event_log(instance, result.run_id) == {
+            AssetKey("my_asset_name"),
+            AssetKey("my_other_asset"),
+        }
+        assert _get_planned_asset_keys_from_execution_plan_snapshot(instance, result.run_id) == {
             AssetKey("my_asset_name"),
             AssetKey("my_other_asset"),
         }

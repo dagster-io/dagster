@@ -25,7 +25,7 @@ from dagster._core.instance_for_test import environ
 from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
-from .utils import (
+from dagster_airbyte_tests.utils import (
     get_instance_connections_json,
     get_instance_operations_json,
     get_instance_workspaces_json,
@@ -276,7 +276,7 @@ def test_load_from_instance(
 
     materializations = [
         event.event_specific_data.materialization  # type: ignore[attr-defined]
-        for event in res.events_for_node("airbyte_sync_87b7f")
+        for event in res.events_for_node("airbyte_sync_87b7fe85_a22c_420e_8d74_b30e7ede77df")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == len(tables)
@@ -288,7 +288,9 @@ def test_load_from_instance(
 
 
 def test_load_from_instance_cloud() -> None:
-    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo", poll_interval=0)
+    airbyte_cloud_instance = AirbyteCloudResource(
+        client_id="some_client_id", client_secret="some_client_secret", poll_interval=0
+    )
 
     with pytest.raises(
         DagsterInvalidInvocationError,

@@ -25,8 +25,8 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 
 - **Organization Admin** permissions in Dagster+
 - To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-plus-cli)
-- The ability to run a new agent in your infrastructure
 - The ability to configure your CI platform
+- The ability to run a new agent in your infrastructure. This isn't required if you're using [Serverless deployment](/dagster-plus/deployment/serverless).
 
 ---
 
@@ -37,6 +37,14 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 ---
 
 ## Step 2: Create and configure an agent
+
+<Note>
+  If you're using Serverless deployment, this step isn't required.{" "}
+  <a href="#step-3-create-a-branch-deployment-using-the-dagster-cloud-cli">
+    Skip to Step 3
+  </a>
+  .
+</Note>
 
 <BDCreateConfigureAgent />
 
@@ -86,6 +94,7 @@ After the above has occurred:
            --author-name $NAME \ # A display name for the latest commit's author
            --author-email $EMAIL \ # An email for the latest commit's author
            --author-avatar-url $AVATAR_URL # An avatar URL for the latest commit's author
+           --base-deployment-name $BASE_DEPLOYMENT_NAME # The main deployment that will be compared against. Default is 'prod'
    )
    ```
 
@@ -106,7 +115,7 @@ After the above has occurred:
 2. Deploy the code to the branch deployment:
 
    ```shell
-   dagster-cloud workspace add-location \
+   dagster-cloud deployment add-location \
        --organization $ORGANIZATION_NAME \
        --deployment $BRANCH_DEPLOYMENT_NAME \
        --api-token $DAGSTER_CLOUD_API_TOKEN \

@@ -6,14 +6,12 @@ setup(
     install_requires=[
         "dagster",
         "dagster-aws",
-        # Commented to avoid version conflicts with Pyright in the Dagster repo, uncomment when using Dagster+
-        # "dagster-cloud",
         "dagster-openai",
         "faiss-cpu==1.8.0",
         "filelock",
-        "langchain==0.1.11",
-        "langchain-community==0.0.34",
-        "langchain-openai==0.1.3",
+        "langchain==0.2.9",
+        "langchain-community==0.2.9",
+        "langchain-openai==0.1.14",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

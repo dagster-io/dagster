@@ -1,4 +1,4 @@
-import {Box, useViewport} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner, useViewport} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,11 +8,10 @@ import {
   CONSTANTS,
   RunChunk,
   RunChunks,
-  RunsEmptyOrLoading,
   TimeDividers,
   TimelineRowContainer,
-  TimelineRun,
 } from '../../runs/RunTimeline';
+import {TimelineRun} from '../../runs/RunTimelineTypes';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from '../../runs/batchRunsForTimeline';
 import {mergeStatusToBackground} from '../../runs/mergeStatusToBackground';
@@ -89,10 +88,42 @@ export const ExecutionTimeline = (props: Props) => {
         </div>
       ) : (
         <div ref={measureRef}>
-          <RunsEmptyOrLoading loading={loading} includesTicks={false} />
+          <ExecutionTimelineEmptyOrLoading loading={loading} />
         </div>
       )}
     </>
+  );
+};
+
+const ExecutionTimelineEmptyOrLoading = (props: {loading: boolean}) => {
+  const {loading} = props;
+
+  const content = () => {
+    if (loading) {
+      return (
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Spinner purpose="body-text" />
+          Loading runs
+        </Box>
+      );
+    }
+
+    return (
+      <Box flex={{direction: 'column', gap: 12, alignItems: 'center'}}>
+        <div>No runs were executing in this time period.</div>
+      </Box>
+    );
+  };
+
+  return (
+    <Box
+      background={Colors.backgroundDefault()}
+      padding={{vertical: 24}}
+      flex={{direction: 'row', justifyContent: 'center'}}
+      border="top-and-bottom"
+    >
+      {content()}
+    </Box>
   );
 };
 

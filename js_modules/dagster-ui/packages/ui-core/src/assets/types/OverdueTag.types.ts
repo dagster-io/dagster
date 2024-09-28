@@ -34,3 +34,5 @@ export type OverduePopoverQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const OverduePopoverQueryVersion = '3c8359e1adfab8237e4b26508489f07c09b24069373064c6c94d645312ae9296';

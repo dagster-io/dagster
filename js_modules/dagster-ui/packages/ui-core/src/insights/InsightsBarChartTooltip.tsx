@@ -5,6 +5,7 @@ import {InsightsIdentifierDot} from './InsightsIdentifierDot';
 import {TOTAL_COST_FORMATTER} from './costFormatters';
 import {formatMetric, stripFormattingFromNumber} from './formatMetric';
 import {DatapointType, ReportingUnitType} from './types';
+import {HourCycle} from '../app/time/HourCycle';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
   type: DatapointType;
   label: string;
   date: Date;
+  timezone: string;
+  hourCycle: HourCycle;
   formattedValue: string;
   unitType: ReportingUnitType;
   costMultiplier: number | null;
@@ -19,7 +22,19 @@ interface Props {
 }
 
 export const InsightsBarChartTooltip = (props: Props) => {
-  const {color, type, label, date, formattedValue, unitType, metricLabel, costMultiplier} = props;
+  const {
+    color,
+    type,
+    label,
+    date,
+    timezone,
+    hourCycle,
+    formattedValue,
+    unitType,
+    metricLabel,
+    costMultiplier,
+  } = props;
+
   return (
     <TooltipCard>
       <Box
@@ -35,7 +50,11 @@ export const InsightsBarChartTooltip = (props: Props) => {
       </Box>
       <Box padding={{vertical: 8, horizontal: 12}} flex={{direction: 'column', gap: 4}}>
         <div style={{fontWeight: 600, fontSize: '12px', color: Colors.textLight()}}>
-          <TimestampDisplay timestamp={date.getTime() / 1000} />
+          <TimestampDisplay
+            timestamp={date.getTime() / 1000}
+            timezone={timezone}
+            hourCycle={hourCycle}
+          />
         </div>
         <div style={{fontSize: '12px', color: Colors.textLight()}}>
           {metricLabel}:{' '}

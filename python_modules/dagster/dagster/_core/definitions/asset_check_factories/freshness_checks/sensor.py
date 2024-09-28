@@ -1,19 +1,25 @@
 import datetime
 from typing import Iterator, Optional, Sequence, Tuple, Union, cast
 
-import pendulum
-
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_check_factories.utils import (
+    FRESH_UNTIL_METADATA_KEY,
+    ensure_no_duplicate_asset_checks,
+    seconds_in_words,
+)
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.decorators import sensor
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorDefinition,
+    SensorEvaluationContext,
+)
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-
-from ...asset_check_spec import AssetCheckKey
-from ...asset_checks import AssetChecksDefinition
-from ...asset_selection import AssetSelection
-from ...decorators import sensor
-from ...run_request import RunRequest, SkipReason
-from ...sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
-from ..utils import FRESH_UNTIL_METADATA_KEY, ensure_no_duplicate_asset_checks, seconds_in_words
+from dagster._time import get_current_datetime, get_current_timestamp
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
 MAXIMUM_RUNTIME_SECONDS = 35  # Due to GRPC communications, only allow this sensor to run for 40 seconds before pausing iteration and resuming in the next run. Leave a bit of time for run requests to be processed.
@@ -21,8 +27,8 @@ FRESHNESS_SENSOR_DESCRIPTION = """
     This sensor launches execution of freshness checks for the provided assets. The sensor will
     only launch a new execution of a freshness check if the check previously passed, but enough
     time has passed that the check could be overdue again. Once a check has failed, the sensor
-    will not launch a new execution until the asset has been updated (which should automatically 
-    execute the check). 
+    will not launch a new execution until the asset has been updated (which should automatically
+    execute the check).
     """
 
 
@@ -84,7 +90,7 @@ def build_sensor_for_freshness_checks(
         left_off_asset_check_key = (
             AssetCheckKey.from_user_string(context.cursor) if context.cursor else None
         )
-        start_time = pendulum.now("UTC")
+        start_time = get_current_datetime()
         checks_to_evaluate = []
         checks_iter = freshness_checks_get_evaluations_iter(
             context=context,
@@ -96,8 +102,7 @@ def build_sensor_for_freshness_checks(
         # iteration; this allows us to pause the sensor if it runs into the maximum runtime.
         check_key, should_evaluate = next(checks_iter, (None, False))
         while (
-            pendulum.now("UTC").timestamp() - start_time.timestamp() < MAXIMUM_RUNTIME_SECONDS
-            and check_key
+            get_current_timestamp() - start_time.timestamp() < MAXIMUM_RUNTIME_SECONDS and check_key
         ):
             if should_evaluate:
                 checks_to_evaluate.append(check_key)

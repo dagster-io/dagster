@@ -1,4 +1,11 @@
 import {
+  AssetFilterBaseType,
+  AssetFilterType,
+  FilterableAssetDefinition,
+  filterAssetDefinition,
+} from 'shared/assets/useAssetDefinitionFilterState.oss';
+
+import {
   ChangeReason,
   buildAssetGroupSelector,
   buildDefinitionTag,
@@ -6,23 +13,18 @@ import {
   buildRepositoryLocation,
   buildTeamAssetOwner,
 } from '../../graphql/types';
-import {
-  AssetFilterBaseType,
-  AssetFilterType,
-  filterAssetDefinition,
-} from '../useAssetDefinitionFilterState';
 
 describe('filterAssetDefinition', () => {
   it('returns false when no definition is provided', () => {
     const filters = {
-      repos: [{location: 'location1', name: 'repo1'}],
+      codeLocations: [{location: 'location1', name: 'repo1'}],
     };
     expect(filterAssetDefinition(filters, null)).toBe(false);
   });
 
   it('returns false when repo filters do not match and definition exists', () => {
     const filters = {
-      repos: [{location: 'location2', name: 'repo2'}],
+      codeLocations: [{location: 'location2', name: 'repo2'}],
     };
     const definition = {
       repository: {location: {name: 'location1'}, name: 'repo1'},
@@ -57,12 +59,12 @@ describe('filterAssetDefinition', () => {
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });
 
-  it('returns false when computeKindTags filter does not match the definition', () => {
+  it('returns false when kinds filter does not match the definition', () => {
     const filters = {
-      computeKindTags: ['computeKind2'],
+      kinds: ['computeKind2'],
     };
     const definition = {
-      computeKind: 'computeKind1',
+      kinds: ['computeKind1'],
     };
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });
@@ -141,9 +143,9 @@ describe('filterAssetDefinition', () => {
       team: 'team1',
     });
     const filters = {
-      repos: [repo],
+      codeLocations: [repo],
       groups: [group],
-      computeKindTags: ['computeKind1'],
+      kinds: ['computeKind1'],
       changedInBranch: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
       owners: [owner],
       tags: [tag],
@@ -156,7 +158,7 @@ describe('filterAssetDefinition', () => {
         }),
       }),
       groupName: group.groupName,
-      computeKind: 'computeKind1',
+      kinds: ['computeKind1'],
       changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
       owners: [owner],
       tags: [tag],
@@ -166,7 +168,7 @@ describe('filterAssetDefinition', () => {
   });
 
   (
-    ['changedInBranch', 'computeKindTags', 'groups', 'owners', 'repos', 'tags'] as Array<
+    ['changedInBranch', 'kinds', 'groups', 'owners', 'codeLocations', 'tags'] as Array<
       keyof AssetFilterBaseType
     >
   ).forEach((filter) => {
@@ -186,7 +188,7 @@ describe('filterAssetDefinition', () => {
       const filters: Partial<AssetFilterType> = {
         selectAllFilters: [filter],
       };
-      const definition = {
+      const definition: FilterableAssetDefinition = {
         repository: buildRepository({
           name: group.repositoryName,
           location: buildRepositoryLocation({
@@ -194,7 +196,7 @@ describe('filterAssetDefinition', () => {
           }),
         }),
         groupName: group.groupName,
-        computeKind: 'computeKind1',
+        kinds: ['computeKind1'],
         changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
         owners: [owner],
         tags: [tag],

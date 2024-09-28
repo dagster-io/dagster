@@ -4,23 +4,22 @@ from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, deprecated_param
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import resolve_backfill_policy
+from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
-
-from .config import ConfigMapping
-from .metadata import RawMetadataValue
-from .partition import PartitionedConfig
-from .policy import RetryPolicy
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition
@@ -40,7 +39,8 @@ class UnresolvedAssetJobDefinition(
                 Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
             ),
             ("description", Optional[str]),
-            ("tags", Optional[Mapping[str, Any]]),
+            ("tags", Optional[Mapping[str, str]]),
+            ("run_tags", Optional[Mapping[str, str]]),
             ("metadata", Optional[Mapping[str, RawMetadataValue]]),
             ("partitions_def", Optional[PartitionsDefinition]),
             ("executor_def", Optional[ExecutorDefinition]),
@@ -57,7 +57,8 @@ class UnresolvedAssetJobDefinition(
             Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
         ] = None,
         description: Optional[str] = None,
-        tags: Optional[Mapping[str, Any]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        run_tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         executor_def: Optional[ExecutorDefinition] = None,
@@ -67,13 +68,19 @@ class UnresolvedAssetJobDefinition(
         from dagster._core.definitions import ExecutorDefinition
         from dagster._core.definitions.run_config import convert_config_input
 
+        tags = check.opt_mapping_param(tags, "tags")
+        # If `run_tags` is set, then we use it, otherwise `tags` acts as both definition tags and
+        # run tags. This is for backcompat with old behavior prior to the introduction of
+        # `run_tags`.
+        run_tags = check.mapping_param(run_tags, "run_tags") if run_tags else tags
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             selection=check.inst_param(selection, "selection", AssetSelection),
             config=convert_config_input(config),
             description=check.opt_str_param(description, "description"),
-            tags=check.opt_mapping_param(tags, "tags"),
+            tags=tags,
+            run_tags=run_tags,
             metadata=check.opt_mapping_param(metadata, "metadata"),
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
@@ -220,15 +227,22 @@ class UnresolvedAssetJobDefinition(
             config=self.config,
             description=self.description,
             tags=self.tags,
+            run_tags=self.run_tags,
             metadata=self.metadata,
             partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,
             resource_defs=resource_defs,
+            allow_different_partitions_defs=False,
         )
 
 
+@deprecated_param(
+    param="partitions_def",
+    breaking_version="2.0.0",
+    additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",
+)
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
@@ -236,7 +250,8 @@ def define_asset_job(
         Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
     ] = None,
     description: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, object]] = None,
+    run_tags: Optional[Mapping[str, object]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     executor_def: Optional[ExecutorDefinition] = None,
@@ -280,27 +295,30 @@ def define_asset_job(
             If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
             determined by the config mapping, and the ConfigMapping, which should return
             configuration in the standard format to configure the job.
-        tags (Optional[Mapping[str, Any]]):
-            Arbitrary information that will be attached to the execution of the Job.
-            Values that are not strings will be json encoded and must meet the criteria that
-            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
-            values provided at invocation time.
+        tags (Optional[Mapping[str, object]]): A set of key-value tags that annotate the job and can
+            be used for searching and filtering in the UI. Values that are not already strings will
+            be serialized as JSON. If `run_tags` is not set, then the content of `tags` will also be
+            automatically appended to the tags of any runs of this job.
+        run_tags (Optional[Mapping[str, object]]):
+            A set of key-value tags that will be automatically attached to runs launched by this
+            job. Values that are not already strings will be serialized as JSON. These tag values
+            may be overwritten by tag values provided at invocation time. If `run_tags` is set, then
+            `tags` are not automatically appended to the tags of any runs of this job.
         metadata (Optional[Mapping[str, RawMetadataValue]]): Arbitrary metadata about the job.
             Keys are displayed string labels, and values are one of the following: string, float,
             int, JSON-serializable dict, JSON-serializable list, and one of the data classes
             returned by a MetadataValue static method.
         description (Optional[str]):
             A description for the Job.
-        partitions_def (Optional[PartitionsDefinition]):
-            Defines the set of partitions for this job. All AssetDefinitions selected for this job
-            must have a matching PartitionsDefinition. If no PartitionsDefinition is provided, the
-            PartitionsDefinition will be inferred from the selected AssetDefinitions.
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
             Only used if retry policy is not defined on the asset definition.
+        partitions_def (Optional[PartitionsDefinition]): (Deprecated)
+            Defines the set of partitions for this job. Deprecated because partitioning is inferred
+            from the selected assets, so setting this is redundant.
 
 
     Returns:
@@ -370,7 +388,9 @@ def define_asset_job(
         selection=resolved_selection,
         config=config,
         description=description,
-        tags=tags,
+        tags=normalize_tags(tags).tags,
+        # Need to preserve None value
+        run_tags=normalize_tags(run_tags).tags if run_tags is not None else None,
         metadata=metadata,
         partitions_def=partitions_def,
         executor_def=executor_def,

@@ -19,11 +19,17 @@ jest.mock('../../graph/asyncGraphLayout', () => ({}));
 describe('OpJobPartitionsViewContent', () => {
   it('does not error when partition statuses are in an error state', async () => {
     const fragment = buildOpJobPartitionSetFragmentWithError();
+    const mockResult: any = {
+      refresh: () => {},
+      loading: false,
+    };
+
     render(
       <MockedProvider>
         <OpJobPartitionsViewContent
           partitionNames={['lorem', 'ipsum']}
           partitionSet={fragment}
+          partitionsQueryResult={mockResult}
           repoAddress={buildRepoAddress('foo', 'bar')}
         />
       </MockedProvider>,

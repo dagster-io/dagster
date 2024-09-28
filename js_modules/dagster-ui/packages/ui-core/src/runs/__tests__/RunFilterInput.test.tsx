@@ -11,9 +11,10 @@ import {
   buildRunTagKeys,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
+import {calculateTimeRanges} from '../../ui/BaseFilters/useTimeRangeFilter';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DagsterTag} from '../RunTag';
 import {
   RUN_TAG_KEYS_QUERY,
@@ -65,17 +66,12 @@ const backfillRunTagsValuesMock = buildRunTagValuesQueryMockedResponse(DagsterTa
   'value2',
 ]);
 
-let nativeGBRC: any;
-
 beforeAll(() => {
-  nativeGBRC = window.Element.prototype.getBoundingClientRect;
-  window.Element.prototype.getBoundingClientRect = jest
-    .fn()
-    .mockReturnValue({height: 400, width: 400});
+  mockViewportClientRect();
 });
 
 afterAll(() => {
-  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  restoreViewportClientRect();
 });
 
 describe('useTagDataFilterValues', () => {
@@ -261,7 +257,7 @@ describe('<RunFilterInput  />', () => {
         onChange={onChange}
         mocks={[
           runTagKeysMock,
-          buildRunTagValuesQueryMockedResponse(DagsterTag.Partition, ['partition1', 'partition2']),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.PartitionSet, ['set1', 'set2']),
         ]}
       />,
     );
@@ -272,15 +268,15 @@ describe('<RunFilterInput  />', () => {
     await userEvent.click(getByText('Tag'));
 
     await waitFor(async () => {
-      await userEvent.click(getByText(DagsterTag.Partition));
+      await userEvent.click(getByText(DagsterTag.PartitionSet));
     });
 
     await waitFor(async () => {
-      await userEvent.click(getByText('partition1'));
+      await userEvent.click(getByText('set1'));
     });
 
     expect(onChange).toHaveBeenCalledWith([
-      {token: 'tag', value: `${DagsterTag.Partition}=partition1`},
+      {token: 'tag', value: `${DagsterTag.PartitionSet}=set1`},
     ]);
   });
 });

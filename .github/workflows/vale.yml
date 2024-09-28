@@ -1,0 +1,37 @@
+name: Vale Docs
+on: 
+  pull_request:
+    paths:
+      - 'docs/docs-beta/**'
+      - .github/workflows/vale.yml
+  push:
+    branches:
+      - master
+      - docs-prod
+    paths:
+      - 'docs/docs-beta/**'
+      - .github/workflows/vale.yml
+
+concurrency:
+  group: ${{ github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  vale:
+    name: runner / vale
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: errata-ai/vale-action@reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: '["docs/docs-beta/docs"]'
+          vale_flags: "--config=docs/.vale.ini --minAlertLevel=warning"
+          fail_on_error: true
+          reporter: github-pr-review
+
+

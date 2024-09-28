@@ -8,13 +8,23 @@ export type AssetTableDefinitionFragment = {
   changedReasons: Array<Types.ChangeReason>;
   groupName: string;
   opNames: Array<string>;
-  isSource: boolean;
+  isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
-  partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  kinds: Array<string>;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
@@ -37,13 +47,23 @@ export type AssetTableFragment = {
     changedReasons: Array<Types.ChangeReason>;
     groupName: string;
     opNames: Array<string>;
-    isSource: boolean;
+    isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
-    partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+    kinds: Array<string>;
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      description: string;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        type: Types.PartitionDefinitionType;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
+    } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;

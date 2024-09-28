@@ -6,10 +6,9 @@ import string
 import sys
 import time
 from contextlib import ExitStack, contextmanager
-from typing import Iterator, Literal, Mapping, Optional, Sequence, TextIO
+from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO
 
 import dagster._check as check
-from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -19,6 +18,7 @@ from dagster._core.pipes.client import (
     PipesContextInjector,
     PipesMessageReader,
 )
+from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
     PipesChunkedLogReader,
@@ -31,7 +31,6 @@ from databricks.sdk.service import files, jobs
 from pydantic import Field
 
 
-@experimental
 class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     """Pipes client for databricks.
 
@@ -86,13 +85,33 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
     def get_default_message_reader(self, task: jobs.SubmitTask) -> "PipesDbfsMessageReader":
         # include log readers if the user is writing their logs to DBFS
-        if task.as_dict().get("new_cluster", {}).get("cluster_log_conf", {}).get("dbfs", None):
+
+        new_cluster_logging_configured = (
+            task.as_dict().get("new_cluster", {}).get("cluster_log_conf", {}).get("dbfs", None)
+        )
+
+        existing_cluster_has_logging_configured = False
+        if task.existing_cluster_id is not None:
+            cluster = self.client.clusters.get(cluster_id=task.existing_cluster_id).as_dict()
+
+            if cluster.get("cluster_log_conf", {}).get("dbfs", None):
+                existing_cluster_has_logging_configured = True
+
+        logging_configured = (
+            new_cluster_logging_configured or existing_cluster_has_logging_configured
+        )
+
+        if logging_configured:
             log_readers = [
                 PipesDbfsLogReader(
-                    client=self.client, remote_log_name="stdout", target_stream=sys.stdout
+                    client=self.client,
+                    remote_log_name="stdout",
+                    target_stream=sys.stdout,
                 ),
                 PipesDbfsLogReader(
-                    client=self.client, remote_log_name="stderr", target_stream=sys.stderr
+                    client=self.client,
+                    remote_log_name="stderr",
+                    target_stream=sys.stderr,
                 ),
             ]
         else:
@@ -108,20 +127,27 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         context: OpExecutionContext,
         extras: Optional[PipesExtras] = None,
         task: jobs.SubmitTask,
-        submit_args: Optional[Mapping[str, str]] = None,
+        submit_args: Optional[Mapping[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Synchronously execute a Databricks job with the pipes protocol.
 
         Args:
             task (databricks.sdk.service.jobs.SubmitTask): Specification of the databricks
-                task to run. Environment variables used by dagster-pipes will be set under the
-                `spark_env_vars` key of the `new_cluster` field (if there is an existing dictionary
-                here, the Pipes environment variables will be merged in). Everything else will be
-                passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
+                task to run. If `existing_cluster_id` key is set, Pipes bootstrap parameters will be
+                passed via task parameters, which are exposed as CLI arguments for Python scripts.
+                They are going to be merged with any existing parameters in the task.
+                See `Databricks documentation <https://docs.databricks.com/en/jobs/create-run-jobs.html#pass-parameters-to-a-databricks-job-task>`_
+                for more information. In order to initialize Pipes in the task, the task code must have
+                py:class:`dagster_pipes.PipesCliArgsParamsLoader` explicitly passed to
+                py:function:`dagster_pipes.open_pipes_session. If `existing_cluster_id` key is not set,
+                a new cluster will be created, and Pipes bootstrap parameters will be passed via environment
+                variables in `spark_env_vars` (if there is an existing dictionary here, the Pipes environment
+                variables will be merged in). This doesn't require any special setup in the task code.
+                All other fields will be passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
             context (OpExecutionContext): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
                 subprocess.
-            submit_args (Optional[Mapping[str, str]]): Additional keyword arguments that will be
+            submit_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
                 forwarded as-is to `WorkspaceClient.jobs.submit`.
 
         Returns:
@@ -136,11 +162,10 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
             message_reader=message_reader,
         ) as pipes_session:
             submit_task_dict = task.as_dict()
-            submit_task_dict["new_cluster"]["spark_env_vars"] = {
-                **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
-                **(self.env or {}),
-                **pipes_session.get_bootstrap_env_vars(),
-            }
+
+            submit_task_dict = self._enrich_submit_task_dict(
+                context=context, session=pipes_session, submit_task_dict=submit_task_dict
+            )
 
             task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
@@ -158,41 +183,77 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
         return PipesClientCompletedInvocation(pipes_session)
 
-    def _poll_til_success(self, context: OpExecutionContext, run_id: str) -> None:
+    def _enrich_submit_task_dict(
+        self, context: OpExecutionContext, session: PipesSession, submit_task_dict: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        if "existing_cluster_id" in submit_task_dict:
+            # we can't set env vars on an existing cluster
+            # so we must use CLI to pass Pipes params
+            cli_args = session.get_bootstrap_cli_arguments()  # this is a mapping
+
+            for task_type in self.get_task_fields_which_support_cli_parameters():
+                if task_type in submit_task_dict:
+                    existing_params = submit_task_dict[task_type].get("parameters", [])
+
+                    # merge the existing parameters with the CLI arguments
+                    for key, value in cli_args.items():
+                        existing_params.extend([key, value])
+
+                    submit_task_dict[task_type]["parameters"] = existing_params
+                    context.log.debug(
+                        f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'
+                    )
+                    break
+
+        else:
+            pipes_env_vars = session.get_bootstrap_env_vars()
+
+            submit_task_dict["new_cluster"]["spark_env_vars"] = {
+                **submit_task_dict["new_cluster"].get("spark_env_vars", {}),
+                **(self.env or {}),
+                **pipes_env_vars,
+            }
+
+        return submit_task_dict
+
+    def get_task_fields_which_support_cli_parameters(self) -> Set[str]:
+        return {"spark_python_task", "python_wheel_task"}
+
+    def _poll_til_success(self, context: OpExecutionContext, run_id: int) -> None:
         # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
 
         last_observed_state = None
         while True:
-            run = self.client.jobs.get_run(run_id)
-            if run.state.life_cycle_state != last_observed_state:
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state != last_observed_state:
                 context.log.info(
-                    f"[pipes] Databricks run {run_id} observed state transition to {run.state.life_cycle_state}"
+                    f"[pipes] Databricks run {run_id} observed state transition to {run_state.life_cycle_state}"
                 )
-            last_observed_state = run.state.life_cycle_state
+            last_observed_state = run_state.life_cycle_state
 
-            if run.state.life_cycle_state in (
+            if run_state.life_cycle_state in (
                 jobs.RunLifeCycleState.TERMINATED,
                 jobs.RunLifeCycleState.SKIPPED,
             ):
-                if run.state.result_state == jobs.RunResultState.SUCCESS:
+                if run_state.result_state == jobs.RunResultState.SUCCESS:
                     break
                 else:
                     raise DagsterPipesExecutionError(
-                        f"Error running Databricks job: {run.state.state_message}"
+                        f"Error running Databricks job: {run_state.state_message}"
                     )
-            elif run.state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
+            elif run_state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
                 raise DagsterPipesExecutionError(
-                    f"Error running Databricks job: {run.state.state_message}"
+                    f"Error running Databricks job: {run_state.state_message}"
                 )
 
             time.sleep(self.poll_interval_seconds)
 
-    def _poll_til_terminating(self, run_id: str) -> None:
+    def _poll_til_terminating(self, run_id: int) -> None:
         # Wait to see the job enters a state that indicates the underlying task is no longer executing
         # TERMINATING: "The task of this run has completed, and the cluster and execution context are being cleaned up."
         while True:
-            run = self.client.jobs.get_run(run_id)
-            if run.state.life_cycle_state in (
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state in (
                 jobs.RunLifeCycleState.TERMINATING,
                 jobs.RunLifeCycleState.TERMINATED,
                 jobs.RunLifeCycleState.SKIPPED,
@@ -201,6 +262,12 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                 return
 
             time.sleep(self.poll_interval_seconds)
+
+    def _get_run_state(self, run_id: int) -> jobs.RunState:
+        run = self.client.jobs.get_run(run_id)
+        if run.state is None:
+            check.failed("Databricks job run state is None")
+        return run.state
 
 
 _CONTEXT_FILENAME = "context.json"
@@ -217,7 +284,6 @@ def dbfs_tempdir(dbfs_client: files.DbfsAPI) -> Iterator[str]:
         dbfs_client.delete(tempdir, recursive=True)
 
 
-@experimental
 class PipesDbfsContextInjector(PipesContextInjector):
     """A context injector that injects context into a Databricks job by writing a JSON file to DBFS.
 
@@ -255,7 +321,6 @@ class PipesDbfsContextInjector(PipesContextInjector):
         )
 
 
-@experimental
 class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from an
     automatically-generated temporary directory on DBFS.
@@ -295,9 +360,10 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
             raw_message = self.dbfs_client.read(message_path)
+            message_data = check.not_none(raw_message.data, "Read message with null data.")
             # Files written to dbfs using the Python IO interface used in PipesDbfsMessageWriter are
             # base64-encoded.
-            return base64.b64decode(raw_message.data).decode("utf-8")
+            return base64.b64decode(message_data).decode("utf-8")
         # An error here is an expected result, since an IOError will be thrown if the next message
         # chunk doesn't yet exist. Swallowing the error here is equivalent to doing a no-op on a
         # status check showing a non-existent file.
@@ -312,14 +378,13 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         )
 
 
-@experimental
 class PipesDbfsLogReader(PipesChunkedLogReader):
     """Reader that reads a log file from DBFS.
 
     Args:
         interval (float): interval in seconds between attempts to download a log chunk
         remote_log_name (Literal["stdout", "stderr"]): The name of the log file to read.
-        target_stream (TextIO): The stream to which to forward log chunk that have been read.
+        target_stream (TextIO): The stream to which to forward log chunks that have been read.
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
     """
 

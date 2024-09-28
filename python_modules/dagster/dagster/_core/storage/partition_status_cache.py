@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, NamedTuple, Optional, Sequence, Set, Tuple
 
-import pendulum
-
 from dagster import (
     AssetKey,
     DagsterInstance,
@@ -21,6 +19,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.loader import LoadingContext
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
@@ -29,9 +28,9 @@ from dagster._core.storage.tags import (
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
+from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
-    from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
     from dagster._core.storage.event_log.base import AssetRecord
 
 
@@ -215,7 +214,7 @@ def get_validated_partition_keys(
     else:
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Unexpected partitions definition type {partitions_def}")
-        current_time = pendulum.now("UTC")
+        current_time = get_current_datetime()
         validated_partitions = {
             pk
             for pk in partition_keys
@@ -434,10 +433,12 @@ def get_and_update_asset_status_cache_value(
     asset_key: AssetKey,
     partitions_def: Optional[PartitionsDefinition],
     dynamic_partitions_loader: Optional[DynamicPartitionsStore] = None,
-    batch_asset_record_loader: Optional["BatchAssetRecordLoader"] = None,
+    loading_context: Optional[LoadingContext] = None,
 ) -> Optional[AssetStatusCacheValue]:
-    if batch_asset_record_loader:
-        asset_record = batch_asset_record_loader.get_asset_record(asset_key)
+    from dagster._core.storage.event_log.base import AssetRecord
+
+    if loading_context:
+        asset_record = AssetRecord.blocking_get(loading_context, asset_key)
     else:
         asset_record = next(iter(instance.get_asset_records(asset_keys=[asset_key])), None)
 
@@ -463,7 +464,11 @@ def get_and_update_asset_status_cache_value(
         stored_cache_value=stored_cache_value if use_cached_value else None,
         asset_record=asset_record,
     )
-    if updated_cache_value is not None and updated_cache_value != stored_cache_value:
+    if (
+        updated_cache_value is not None
+        and instance.event_log_storage.can_write_asset_status_cache()
+        and updated_cache_value != stored_cache_value
+    ):
         instance.update_asset_cached_status_data(asset_key, updated_cache_value)
 
     return updated_cache_value

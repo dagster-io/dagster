@@ -1,16 +1,17 @@
-from typing import AbstractSet, Any, Mapping, Optional, Sequence, Set, Union, overload
+from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import (
-    multi_asset,
     resolve_asset_key_and_name_for_decorator,
+)
+from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
+    DecoratorAssetsDefinitionBuilder,
+    DecoratorAssetsDefinitionBuilderArgs,
+    create_check_specs_by_output_name,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -20,6 +21,7 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
 from dagster._core.definitions.utils import validate_tags_strict
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 @overload
@@ -187,22 +189,23 @@ class _ObservableSourceAsset:
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
-        return SourceAsset(
-            key=source_asset_key,
-            metadata=self.metadata,
-            io_manager_key=self.io_manager_key,
-            io_manager_def=self.io_manager_def,
-            description=self.description,
-            group_name=self.group_name,
-            _required_resource_keys=resolved_resource_keys,
-            resource_defs=self.resource_defs,
-            observe_fn=observe_fn,
-            op_tags=self.op_tags,
-            partitions_def=self.partitions_def,
-            auto_observe_interval_minutes=self.auto_observe_interval_minutes,
-            freshness_policy=self.freshness_policy,
-            tags=self.tags,
-        )
+        with disable_dagster_warnings():
+            return SourceAsset.dagster_internal_init(
+                key=source_asset_key,
+                metadata=self.metadata,
+                io_manager_key=self.io_manager_key,
+                io_manager_def=self.io_manager_def,
+                description=self.description,
+                group_name=self.group_name,
+                _required_resource_keys=resolved_resource_keys,
+                resource_defs=self.resource_defs,
+                observe_fn=observe_fn,
+                op_tags=self.op_tags,
+                partitions_def=self.partitions_def,
+                auto_observe_interval_minutes=self.auto_observe_interval_minutes,
+                freshness_policy=self.freshness_policy,
+                tags=self.tags,
+            )
 
 
 @experimental
@@ -250,22 +253,50 @@ def multi_observable_source_asset(
                 yield ObserveResult(asset_key="asset2", metadata={"baz": "qux"})
 
     """
-    return multi_asset(
-        specs=[
-            spec._replace(
-                metadata={
-                    **(spec.metadata or {}),
-                    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value,
-                }
-            )
-            for spec in specs
-        ],
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+    args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
-        description=description,
-        partitions_def=partitions_def,
+        op_description=description,
+        specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
+        check_specs_by_output_name=create_check_specs_by_output_name(check_specs),
+        asset_out_map={},
+        upstream_asset_deps=None,
+        asset_deps={},
+        asset_in_map={},
         can_subset=can_subset,
-        required_resource_keys=required_resource_keys,
-        resource_defs=resource_defs,
         group_name=group_name,
-        check_specs=check_specs,
+        partitions_def=partitions_def,
+        retry_policy=None,
+        code_version=None,
+        op_tags=None,
+        config_schema={},
+        compute_kind=None,
+        required_resource_keys=check.opt_set_param(
+            required_resource_keys, "required_resource_keys", of_type=str
+        ),
+        op_def_resource_defs=wrap_resources_for_execution(
+            check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
+        ),
+        assets_def_resource_defs=wrap_resources_for_execution(
+            check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
+        ),
+        backfill_policy=None,
+        decorator_name="@multi_observable_source_asset",
+        execution_type=AssetExecutionType.OBSERVATION,
     )
+
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        builder = DecoratorAssetsDefinitionBuilder.from_multi_asset_specs(
+            can_subset=can_subset,
+            asset_specs=specs,
+            op_name=name or fn.__name__,
+            asset_in_map={},
+            passed_args=args,
+            fn=fn,
+        )
+
+        with disable_dagster_warnings():
+            return builder.create_assets_definition()
+
+    return inner

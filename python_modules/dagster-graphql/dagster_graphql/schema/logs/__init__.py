@@ -1,6 +1,5 @@
 def types():
-    from .compute_logs import GrapheneComputeLogFile, GrapheneComputeLogs
-    from .events import (
+    from dagster_graphql.schema.logs.events import (
         GrapheneAssetMaterializationPlannedEvent,
         GrapheneDisplayableEvent,
         GrapheneEngineEvent,
@@ -47,11 +46,9 @@ def types():
         GrapheneStepWorkerStartingEvent,
         GrapheneTypeCheck,
     )
-    from .log_level import GrapheneLogLevel
+    from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 
     return [
-        GrapheneComputeLogFile,
-        GrapheneComputeLogs,
         GrapheneDisplayableEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,

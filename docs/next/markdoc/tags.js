@@ -4,6 +4,7 @@ import {Button, ButtonContainer} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
 import {Check, Cross} from '../components/markdoc/CheckCross';
 import {CodeReferenceLink} from '../components/markdoc/CodeReferenceLink';
+import {CodeSnippet} from '../components/markdoc/CodeSnippet';
 import {MyImage} from '../components/markdoc/Image';
 import {ReferenceTable, ReferenceTableItem} from '../components/markdoc/ReferenceTable';
 
@@ -130,5 +131,19 @@ export const articleListItem = {
     href: {
       type: String,
     },
+  },
+};
+
+export const codeSnippet = {
+  render: CodeSnippet,
+  selfClosing: true,
+  attributes: {
+    file: {type: String, required: true},
+    lang: {type: String, required: true},
+    lines: {type: String},
+    startafter: {type: String},
+    endbefore: {type: String},
+    dedent: {type: Number},
+    trim: {type: Boolean, default: true},
   },
 };

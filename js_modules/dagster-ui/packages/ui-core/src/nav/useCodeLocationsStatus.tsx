@@ -1,5 +1,5 @@
 import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
-import {useCallback, useContext, useLayoutEffect, useRef, useState} from 'react';
+import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import {atom, useRecoilValue} from 'recoil';
 import styled from 'styled-components';
@@ -7,8 +7,9 @@ import styled from 'styled-components';
 import {showSharedToaster} from '../app/DomUtils';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {CodeLocationStatusQuery} from '../workspace/types/WorkspaceQueries.types';
+import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {CodeLocationStatusQuery} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -24,7 +25,7 @@ export const codeLocationStatusAtom = atom<CodeLocationStatusQuery | undefined>(
 });
 
 export const useCodeLocationsStatus = (): StatusAndMessage | null => {
-  const {locationEntries, data} = useContext(WorkspaceContext);
+  const {locationEntries, loading, data} = useContext(WorkspaceContext);
   const [previousEntriesById, setPreviousEntriesById] = useState<EntriesById | null>(null);
 
   const history = useHistory();
@@ -33,42 +34,88 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 
   const [showSpinner, setShowSpinner] = useState(false);
 
-  const onClickViewButton = useCallback(() => {
-    historyRef.current.push('/locations');
+  const onClickViewButton = useCallback((statuses: CodeLocationRowStatusType[]) => {
+    historyRef.current.push(`/locations?status=${JSON.stringify(statuses)}`);
   }, []);
 
   // Reload the workspace, but don't toast about it.
 
+  const previousErroredLocationEntries = useRef<typeof erroredLocationEntries | null>(null);
+  let erroredLocationEntries = useMemo(
+    () =>
+      Object.values(data)
+        .map((entry) => {
+          if (entry.__typename === 'PythonError') {
+            return entry.__typename;
+          }
+          if (
+            entry.locationOrLoadError?.__typename === 'PythonError' &&
+            entry.loadStatus !== RepositoryLocationLoadStatus.LOADING
+          ) {
+            return entry.updatedTimestamp;
+          }
+          return null;
+        })
+        .filter(Boolean),
+    [data],
+  );
+  if (
+    !previousErroredLocationEntries.current ||
+    previousErroredLocationEntries.current.length !== erroredLocationEntries.length ||
+    previousErroredLocationEntries.current?.some(
+      (entry, index) => entry !== erroredLocationEntries[index],
+    )
+  ) {
+    previousErroredLocationEntries.current = erroredLocationEntries;
+  } else {
+    // We need preserve the previous reference to avoid firing the error layout effect more than necessary.
+    // This is due to their being multiple updates to `data` due to locations being fetched individually
+    // and each updating `data` as they come in.
+    erroredLocationEntries = previousErroredLocationEntries.current;
+  }
+
   // Reload the workspace, and show a success or error toast upon completion.
   useLayoutEffect(() => {
-    const anyErrors = Object.values(data).some(
-      (entry) =>
-        entry.__typename === 'PythonError' ||
-        entry.locationOrLoadError?.__typename === 'PythonError',
-    );
+    if (loading) {
+      return;
+    }
 
-    const showViewButton = !alreadyViewingCodeLocations();
-
-    if (anyErrors) {
+    if (erroredLocationEntries.length) {
       showSharedToaster({
         intent: 'warning',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Definitions loaded with errors</div>
-            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
+            <ViewCodeLocationsButton
+              onClick={() => {
+                onClickViewButton(['Failed']);
+              }}
+            />
           </Box>
         ),
         icon: 'check_circle',
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, onClickViewButton]);
+  }, [erroredLocationEntries, loading, onClickViewButton]);
+
+  useLayoutEffect(() => {
+    if (loading) {
+      return;
+    }
+    const anyLoading = Object.values(data).some(
+      (entry) =>
+        entry.__typename === 'WorkspaceLocationEntry' &&
+        entry.loadStatus === RepositoryLocationLoadStatus.LOADING,
+    );
+    if (!anyLoading) {
+      setShowSpinner(false);
+    }
+  }, [loading, data]);
 
   const codeLocationStatusQueryData = useRecoilValue(codeLocationStatusAtom);
 
   useLayoutEffect(() => {
     const isFreshPageload = previousEntriesById === null;
-    const showViewButton = !alreadyViewingCodeLocations();
 
     // Given the previous and current code locations, determine whether to show a) a loading spinner
     // and/or b) a toast indicating that a code location is being reloaded.
@@ -86,7 +133,11 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Definitions reloaded</div>
-            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
+            <ViewCodeLocationsButton
+              onClick={() => {
+                onClickViewButton([]);
+              }}
+            />
           </Box>
         ),
         icon: 'check_circle',
@@ -172,7 +223,11 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {toastContent()}
-            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
+            <ViewCodeLocationsButton
+              onClick={() => {
+                onClickViewButton([]);
+              }}
+            />
           </Box>
         ),
         icon: 'add_circle',
@@ -201,7 +256,11 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
             )}
-            {showViewButton ? <ViewCodeLocationsButton onClick={onClickViewButton} /> : null}
+            <ViewCodeLocationsButton
+              onClick={() => {
+                onClickViewButton([]);
+              }}
+            />
           </Box>
         ),
         icon: 'refresh',
@@ -236,8 +295,6 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 
   return null;
 };
-
-const alreadyViewingCodeLocations = () => document.location.pathname.endsWith('/locations');
 
 const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
   return (

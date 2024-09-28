@@ -114,7 +114,7 @@
             ]
           },
           {
-            "title": "External assets (Experimental)",
+            "title": "External assets",
             "path": "/concepts/assets/external-assets"
           }
         ]
@@ -170,8 +170,17 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
-            "title": "Auto-materialization policies",
-            "path": "/concepts/assets/asset-auto-execution"
+            "title": "Declarative Automation (Experimental)",
+            "children": [
+              {
+                "title": "Overview",
+                "path": "/concepts/automation/declarative-automation"
+              },
+              {
+                "title": "Customizing automation conditions",
+                "path": "/concepts/automation/declarative-automation/customizing-automation-conditions"
+              }
+            ]
           },
           {
             "title": "Asset Sensors",
@@ -334,6 +343,10 @@
                 "path": "/concepts/metadata-tags/asset-metadata/column-level-lineage"
               },
               {
+                "title": "Kind tags",
+                "path": "/concepts/metadata-tags/kind-tags"
+              },
+              {
                 "title": "Op job metadata",
                 "path": "/concepts/metadata-tags/op-job-metadata"
               },
@@ -344,7 +357,7 @@
             ]
           },
           {
-            "title": "Dagster Pipes (Experimental)",
+            "title": "Dagster Pipes",
             "path": "/concepts/dagster-pipes",
             "children": [
               {
@@ -364,6 +377,14 @@
                     "path": "/concepts/dagster-pipes/subprocess/reference"
                   }
                 ]
+              },
+              {
+                "title": "Dagster Pipes + AWS ECS",
+                "path": "/concepts/dagster-pipes/aws-ecs"
+              },
+              {
+                "title": "Dagster Pipes + AWS Glue",
+                "path": "/concepts/dagster-pipes/aws-glue"
               },
               {
                 "title": "Dagster Pipes + AWS Lambda",
@@ -637,6 +658,10 @@
               {
                 "title": "Setup for Hybrid agents",
                 "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
+              },
+              {
+                "title": "Reserved environment variables",
+                "path": "/dagster-plus/managing-deployments/reserved-environment-variables"
               }
             ]
           },
@@ -733,8 +758,21 @@
         ]
       },
       {
-        "title": "dagster-plus CLI",
+        "title": "dagster-cloud CLI",
         "path": "/dagster-plus/managing-deployments/dagster-plus-cli"
+      },
+      {
+        "title": "References",
+        "children": [
+          {
+            "title": "CI/CD files",
+            "path": "/dagster-plus/references/ci-cd-file-reference"
+          },
+          {
+            "title": "dagster_cloud.yaml",
+            "path": "/dagster-plus/managing-deployments/dagster-cloud-yaml"
+          }
+        ]
       }
     ]
   },
@@ -855,34 +893,16 @@
           {
             "title": "Airbyte Cloud & Dagster",
             "path": "/integrations/airbyte-cloud"
-          },
-          {
-            "title": "Ingestion as code",
-            "path": "/guides/dagster/airbyte-ingestion-as-code"
           }
         ]
       },
       {
         "title": "Airflow",
-        "path": "/integrations/airflow",
-        "children": [
-          {
-            "title": "Learning Dagster from Airflow",
-            "path": "/integrations/airflow/from-airflow-to-dagster"
-          },
-          {
-            "title": "Migrating from Airflow",
-            "path": "/integrations/airflow/migrating-to-dagster"
-          },
-          {
-            "title": "Reference",
-            "path": "/integrations/airflow/reference"
-          }
-        ]
+        "path": "/integrations/airflow"
       },
       {
         "title": "Databricks",
-        "path": "/integrations/databricks"
+        "path": "/concepts/dagster-pipes/databricks"
       },
       {
         "title": "dbt",
@@ -916,7 +936,17 @@
           },
           {
             "title": "Using dbt with Dagster+",
-            "path": "/integrations/dbt/using-dbt-with-dagster-plus"
+            "path": "/integrations/dbt/using-dbt-with-dagster-plus",
+            "children": [
+              {
+                "title": "Using dbt with Serverless deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/serverless"
+              },
+              {
+                "title": "Using dbt with Hybrid deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/hybrid"
+              }
+            ]
           },
           {
             "title": "Reference",
@@ -973,10 +1003,6 @@
       {
         "title": "Fivetran",
         "path": "/integrations/fivetran"
-      },
-      {
-        "title": "Great Expectations",
-        "path": "/integrations/great-expectations"
       },
       {
         "title": "Google BigQuery",
@@ -1082,6 +1108,19 @@
         ]
       },
       {
+        "title": "Integrations",
+        "children": [
+          {
+            "title": "Approaches to writing integrations",
+            "path": "/guides/integrations/approaches-to-writing-integrations"
+          },
+          {
+            "title": "Writing a multi-asset decorator integration",
+            "path": "/guides/integrations/writing-a-multi-asset-decorator-integration"
+          }
+        ]
+      },
+      {
         "title": "Working with data assets",
         "children": [
           {
@@ -1145,10 +1184,19 @@
       },
       {
         "title": "Migrating to Dagster",
+        "path": "/guides/migrations",
         "children": [
           {
+            "title": "Learning Dagster from Airflow",
+            "path": "/integrations/airflow/from-airflow-to-dagster"
+          },
+          {
             "title": "Migrating from Airflow",
-            "path": "/integrations/airflow/migrating-to-dagster"
+            "path": "/guides/migrations/migrating-airflow-to-dagster"
+          },
+          {
+            "title": "Observe your Airflow pipelines with Dagster",
+            "path": "/guides/migrations/observe-your-airflow-pipelines-with-dagster"
           }
         ]
       },
@@ -1197,12 +1245,12 @@
             "title": "Experimental features",
             "children": [
               {
-                "title": "Airbyte ingestion as code",
-                "path": "/guides/dagster/airbyte-ingestion-as-code"
-              },
-              {
                 "title": "Asset versioning and caching",
                 "path": "/guides/dagster/asset-versioning-and-caching"
+              },
+              {
+                "title": "Linking to code in Dagster with code references",
+                "path": "/guides/dagster/code-references"
               }
             ]
           }
@@ -1308,10 +1356,6 @@
             ]
           },
           {
-            "title": "Job versioning & memoization (Deprecated)",
-            "path": "/_apidocs/memoization"
-          },
-          {
             "title": "Repositories",
             "path": "/_apidocs/repositories"
           },
@@ -1339,10 +1383,6 @@
           {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"
-          },
-          {
-            "title": "Airflow (dagster-airflow)",
-            "path": "/_apidocs/libraries/dagster-airflow"
           },
           {
             "title": "Amazon Web Services (AWS) (dagster-aws)",

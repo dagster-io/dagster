@@ -5,11 +5,10 @@ from tqdm import tqdm
 
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import deserialize_value
 from dagster._utils import PrintFn
-
-from ..schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
 SCHEDULE_JOBS_SELECTOR_ID = "schedule_jobs_selector_id"
 SCHEDULE_TICKS_SELECTOR_ID = "schedule_ticks_selector_id"

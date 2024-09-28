@@ -5,8 +5,10 @@ from dagster_graphql.client.query import (
 )
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .repo import csv_hello_world_ops_config
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
+from dagster_graphql_tests.graphql.repo import csv_hello_world_ops_config
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {

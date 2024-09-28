@@ -31,6 +31,7 @@ export const SingleDimensionStaticAsset = () => {
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['default']}
           dataRefreshHint={undefined}
+          isLoadingDefinition={false}
         />
       </MockedProvider>
     </StorybookProvider>
@@ -50,6 +51,7 @@ export const SingleDimensionTimeAsset = () => {
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['default']}
           dataRefreshHint={undefined}
+          isLoadingDefinition={false}
         />
       </MockedProvider>
     </StorybookProvider>
@@ -69,6 +71,7 @@ export const MultiDimensionStaticAsset = () => {
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['month', 'state']}
           dataRefreshHint={undefined}
+          isLoadingDefinition={false}
         />
       </MockedProvider>
     </StorybookProvider>
@@ -88,6 +91,7 @@ export const MultiDimensionTimeFirstAsset = () => {
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['date', 'zstate']}
           dataRefreshHint={undefined}
+          isLoadingDefinition={false}
         />
       </MockedProvider>
     </StorybookProvider>
@@ -107,6 +111,7 @@ export const MultiDimensionTimeSecondAsset = () => {
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['astate', 'date']}
           dataRefreshHint={undefined}
+          isLoadingDefinition={false}
         />
       </MockedProvider>
     </StorybookProvider>

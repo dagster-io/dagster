@@ -14,7 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.asset_layer import AssetOutputInfo
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -84,7 +84,7 @@ class OutputContext:
     _version: Optional[str]
     _resource_config: Optional[Mapping[str, object]]
     _step_context: Optional["StepExecutionContext"]
-    _asset_info: Optional[AssetOutputInfo]
+    _asset_key: Optional[AssetKey]
     _warn_on_step_context_use: bool
     _resources: Optional["Resources"]
     _resources_cm: Optional[ContextManager["Resources"]]
@@ -109,7 +109,7 @@ class OutputContext:
         resources: Optional[Union["Resources", Mapping[str, object]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
-        asset_info: Optional[AssetOutputInfo] = None,
+        asset_key: Optional[AssetKey] = None,
         warn_on_step_context_use: bool = False,
         partition_key: Optional[str] = None,
         output_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -136,7 +136,7 @@ class OutputContext:
         self._version = version
         self._resource_config = resource_config
         self._step_context = step_context
-        self._asset_info = asset_info
+        self._asset_key = asset_key
         self._warn_on_step_context_use = warn_on_step_context_use
         if self._step_context and self._step_context.has_partition_key:
             self._partition_key: Optional[str] = self._step_context.partition_key
@@ -334,30 +334,25 @@ class OutputContext:
             )
         return self._resources
 
-    @property
-    def asset_info(self) -> Optional[AssetOutputInfo]:
-        """(Experimental) Asset info corresponding to the output."""
-        return self._asset_info
-
     @public
     @property
     def has_asset_key(self) -> bool:
         """Returns True if an asset is being stored, otherwise returns False. A return value of False
         indicates that an output from an op is being stored.
         """
-        return self._asset_info is not None
+        return self._asset_key is not None
 
     @public
     @property
     def asset_key(self) -> AssetKey:
         """The ``AssetKey`` of the asset that is being stored as an output."""
-        if self._asset_info is None:
+        if self._asset_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return self._asset_info.key
+        return self._asset_key
 
     @public
     @property
@@ -372,6 +367,13 @@ class OutputContext:
             )
 
         return result
+
+    @public
+    @property
+    def asset_spec(self) -> AssetSpec:
+        """The ``AssetSpec`` that is being stored as an output."""
+        asset_key = self.asset_key
+        return self.step_context.job_def.asset_layer.get(asset_key).to_asset_spec()
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -769,7 +771,7 @@ def get_output_context(
     """
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
-    op_config = resolved_run_config.ops[step.node_handle.to_string()]
+    op_config = resolved_run_config.ops[str(step.node_handle)]
     outputs_config = op_config.outputs
 
     if outputs_config:
@@ -784,13 +786,11 @@ def get_output_context(
     resource_config = resolved_run_config.resources[io_manager_key].config
 
     node_handle = execution_plan.get_step_by_key(step.key).node_handle
-    asset_info = job_def.asset_layer.asset_info_for_output(
+    asset_key = job_def.asset_layer.asset_key_for_output(
         node_handle=node_handle, output_name=step_output.name
     )
-    if asset_info is not None:
-        definition_metadata = (
-            job_def.asset_layer.get(asset_info.key).metadata or output_def.metadata
-        )
+    if asset_key is not None:
+        definition_metadata = job_def.asset_layer.get(asset_key).metadata or output_def.metadata
     else:
         definition_metadata = output_def.metadata
 
@@ -818,27 +818,9 @@ def get_output_context(
         step_context=step_context,
         resource_config=resource_config,
         resources=resources,
-        asset_info=asset_info,
+        asset_key=asset_key,
         warn_on_step_context_use=warn_on_step_context_use,
         output_metadata=output_metadata,
-    )
-
-
-def step_output_version(
-    job_def: "JobDefinition",
-    execution_plan: "ExecutionPlan",
-    resolved_run_config: "ResolvedRunConfig",
-    step_output_handle: "StepOutputHandle",
-) -> Optional[str]:
-    from dagster._core.execution.resolve_versions import resolve_step_output_versions
-
-    step_output_versions = resolve_step_output_versions(
-        job_def, execution_plan, resolved_run_config
-    )
-    return (
-        step_output_versions[step_output_handle]
-        if step_output_handle in step_output_versions
-        else None
     )
 
 
@@ -939,6 +921,6 @@ def build_output_context(
         resources=resources,
         step_context=None,
         op_def=op_def,
-        asset_info=AssetOutputInfo(key=asset_key) if asset_key else None,
+        asset_key=asset_key,
         partition_key=partition_key,
     )

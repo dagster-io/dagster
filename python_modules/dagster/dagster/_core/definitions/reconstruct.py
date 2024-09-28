@@ -34,6 +34,8 @@ from dagster._core.code_pointer import (
     get_python_file_from_target,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.job_base import IJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -44,20 +46,17 @@ from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
-from .events import AssetKey
-from .job_base import IJob
-
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
+    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         PendingRepositoryDefinition,
+        RepositoryDefinition,
         RepositoryLoadData,
     )
     from dagster._core.definitions.source_asset import SourceAsset
-
-    from .graph_definition import GraphDefinition
-    from .repository_definition import RepositoryDefinition
 
 
 def get_ephemeral_repository_name(job_name: str) -> str:
@@ -116,7 +115,11 @@ class ReconstructableRepository(
         return self._replace(repository_load_data=metadata)
 
     def get_definition(self) -> "RepositoryDefinition":
-        return repository_def_from_pointer(self.pointer, self.repository_load_data)
+        from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
+
+        return repository_def_from_pointer(
+            self.pointer, DefinitionsLoadType.RECONSTRUCTION, self.repository_load_data
+        )
 
     def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
@@ -588,10 +591,14 @@ def _is_list_of_assets(
 
 
 def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
+        PendingRepositoryDefinition,
+        RepositoryDefinition,
+    )
+    from dagster._utils.test.definitions import LazyDefinitions
 
     if not (
         isinstance(
@@ -602,12 +609,13 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
                 PendingRepositoryDefinition,
                 GraphDefinition,
                 Definitions,
+                LazyDefinitions,
             ),
         )
         or _is_list_of_assets(definition)
     ):
         raise DagsterInvariantViolationError(
-            "Loadable attributes must be either a JobDefinition, GraphDefinition, "
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, "
             f"or RepositoryDefinition. Got {definition!r}."
         )
     return definition
@@ -638,9 +646,13 @@ def def_from_pointer(
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
+        PendingRepositoryDefinition,
+        RepositoryDefinition,
+    )
+    from dagster._utils.test.definitions import LazyDefinitions
 
     if isinstance(
         target,
@@ -649,6 +661,7 @@ def def_from_pointer(
             JobDefinition,
             PendingRepositoryDefinition,
             RepositoryDefinition,
+            LazyDefinitions,
         ),
     ) or not callable(target):
         return _check_is_loadable(target)  # type: ignore
@@ -666,7 +679,7 @@ def def_from_pointer(
 
 
 def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
-    from .job_definition import JobDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
 
     target = def_from_pointer(pointer)
 
@@ -682,34 +695,49 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 @overload
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
+    load_type: "DefinitionsLoadType",
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition": ...
 
 
 @overload
 def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+    target: object,
+    load_type: "DefinitionsLoadType",
+    repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> None: ...
 
 
 def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+    target: object,
+    load_type: "DefinitionsLoadType",
+    repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> Optional["RepositoryDefinition"]:
-    from .assets import AssetsDefinition
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import (
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
-    from .source_asset import SourceAsset
+    from dagster._core.definitions.source_asset import SourceAsset
+    from dagster._utils.test.definitions import LazyDefinitions
+
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+    )
+
+    # LazyDefinitions is a private test utility
+    if isinstance(target, LazyDefinitions):
+        target = target()
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
-        target = target.get_inner_repository_for_loading_process()
+        target = target.get_inner_repository()
 
     # special case - we can wrap a single job in a repository
     if isinstance(target, (JobDefinition, GraphDefinition)):
@@ -738,10 +766,17 @@ def repository_def_from_target_def(
 
 
 def repository_def_from_pointer(
-    pointer: CodePointer, repository_load_data: Optional["RepositoryLoadData"] = None
+    pointer: CodePointer,
+    load_type: "DefinitionsLoadType",
+    repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+    )
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, repository_load_data)
+    repo_def = repository_def_from_target_def(target, load_type, repository_load_data)
     if not repo_def:
         raise DagsterInvariantViolationError(
             f"CodePointer ({pointer.describe()}) must resolve to a "

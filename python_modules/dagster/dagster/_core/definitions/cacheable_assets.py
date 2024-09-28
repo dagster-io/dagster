@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -16,6 +15,8 @@ from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.errors import SerializationError
+from dagster._serdes.serdes import serialize_value
 from dagster._utils import hash_collection
 
 
@@ -63,9 +64,9 @@ class AssetsDefinitionCacheableData(
     ):
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
-            # check that the value is JSON serializable
-            seven.dumps(extra_metadata)
-        except TypeError:
+            # check that the value can pass through the serdes layer
+            serialize_value(extra_metadata)
+        except SerializationError:
             check.failed("Value for `extra_metadata` is not JSON serializable.")
 
         return super().__new__(
@@ -357,12 +358,20 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             if self._prefix_for_all_assets
             else self._input_asset_key_replacements
         )
+        if isinstance(self._auto_materialize_policy, dict):
+            automation_condition = {
+                k: v.to_automation_condition() for k, v in self._auto_materialize_policy.items()
+            }
+        elif isinstance(self._auto_materialize_policy, AutoMaterializePolicy):
+            automation_condition = self._auto_materialize_policy.to_automation_condition()
+        else:
+            automation_condition = None
         return assets_def.with_attributes(
             output_asset_key_replacements=output_asset_key_replacements,
             input_asset_key_replacements=input_asset_key_replacements,
             group_names_by_key=group_names_by_key,
             freshness_policy=self._freshness_policy,
-            auto_materialize_policy=self._auto_materialize_policy,
+            automation_condition=automation_condition,
             backfill_policy=self._backfill_policy,
         )
 

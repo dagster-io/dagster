@@ -5,9 +5,8 @@ from typing import Any, Dict, List, Mapping, Sequence, Type, cast
 import yaml
 
 import dagster._check as check
-
-from .merger import deep_merge_dicts
-from .source_position import (
+from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.source_position import (
     KeyPathSegment,
     LineCol,
     SourcePosition,

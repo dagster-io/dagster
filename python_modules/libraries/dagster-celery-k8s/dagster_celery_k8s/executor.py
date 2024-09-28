@@ -35,14 +35,15 @@ from dagster_k8s.client import (
     DagsterK8sUnrecoverableAPIError,
     DagsterKubernetesClient,
 )
+from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
     UserDefinedDagsterK8sConfig,
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
 
-from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
-from .launcher import CeleryK8sRunLauncher
+from dagster_celery_k8s.config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
+from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 
 
 @executor(
@@ -128,6 +129,7 @@ def celery_k8s_job_executor(init_context):
         kubeconfig_file=exc_cfg.get("kubeconfig_file"),
         repo_location_name=exc_cfg.get("repo_location_name"),
         job_wait_timeout=exc_cfg.get("job_wait_timeout"),
+        per_step_k8s_config=exc_cfg.get("per_step_k8s_config", {}),
     )
 
 
@@ -145,6 +147,7 @@ class CeleryK8sJobExecutor(Executor):
         kubeconfig_file=None,
         repo_location_name=None,
         job_wait_timeout=None,
+        per_step_k8s_config=None,
     ):
         if load_incluster_config:
             check.invariant(
@@ -158,6 +161,9 @@ class CeleryK8sJobExecutor(Executor):
         self.broker = check.opt_str_param(broker, "broker", default=broker_url)
         self.backend = check.opt_str_param(backend, "backend", default=result_backend)
         self.include = check.opt_list_param(include, "include", of_type=str)
+        self.per_step_k8s_config = check.opt_dict_param(
+            per_step_k8s_config, "per_step_k8s_config", key_type=str, value_type=dict
+        )
         self.config_source = dict_wrapper(
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, "config_source"))
         )
@@ -222,6 +228,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         job_config_dict=job_config.to_dict(),
         job_namespace=plan_context.executor.job_namespace,
         user_defined_k8s_config_dict=user_defined_k8s_config.to_dict(),
+        per_step_k8s_config=plan_context.executor.per_step_k8s_config,
         load_incluster_config=plan_context.executor.load_incluster_config,
         job_wait_timeout=plan_context.executor.job_wait_timeout,
         kubeconfig_file=plan_context.executor.kubeconfig_file,
@@ -267,6 +274,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_namespace,
         load_incluster_config,
         job_wait_timeout,
+        per_step_k8s_config=None,
         user_defined_k8s_config_dict=None,
         kubeconfig_file=None,
     ):
@@ -368,6 +376,17 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             labels["dagster/code-location"] = (
                 dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
             )
+        per_op_override = per_step_k8s_config.get(step_key, {})
+
+        tag_container_context = K8sContainerContext(run_k8s_config=user_defined_k8s_config)
+        executor_config_container_context = K8sContainerContext(
+            run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(per_op_override)
+        )
+        merged_user_defined_k8s_config = tag_container_context.merge(
+            executor_config_container_context
+        ).run_k8s_config
+        user_defined_k8s_config = merged_user_defined_k8s_config
+
         job = construct_dagster_k8s_job(
             job_config,
             args,

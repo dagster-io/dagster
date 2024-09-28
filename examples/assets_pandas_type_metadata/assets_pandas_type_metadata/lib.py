@@ -13,7 +13,7 @@ from pandera.typing import Series
 # ***** TYPES ****************************************************************
 
 
-class StockPrices(pa.SchemaModel):
+class StockPrices(pa.DataFrameModel):
     """Open/high/low/close prices for a set of stocks by day."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -28,7 +28,7 @@ class StockPrices(pa.SchemaModel):
 StockPricesDgType = pandera_schema_to_dagster_type(StockPrices)
 
 
-class BollingerBands(pa.SchemaModel):
+class BollingerBands(pa.DataFrameModel):
     """Bollinger bands for a set of stock prices."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -40,7 +40,7 @@ class BollingerBands(pa.SchemaModel):
 BollingerBandsDgType = pandera_schema_to_dagster_type(BollingerBands)
 
 
-class AnomalousEvents(pa.SchemaModel):
+class AnomalousEvents(pa.DataFrameModel):
     """Anomalous price events, defined by a day on which a stock's closing price strayed above or
     below its Bollinger bands.
     """

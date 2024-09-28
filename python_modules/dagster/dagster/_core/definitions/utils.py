@@ -7,12 +7,14 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -24,6 +26,7 @@ import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
 from dagster._core.utils import is_valid_email
+from dagster._utils.warnings import deprecation_warning
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -61,6 +64,10 @@ MAX_TITLE_LENGTH = 100
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import AssetKey
+    from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
 
 
 class NoValueSentinel:
@@ -219,7 +226,14 @@ def normalize_tags(
 
 # Inspired by allowed Kubernetes labels:
 # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-VALID_DEFINITION_TAG_KEY_REGEX_STR = r"^([A-Za-z0-9_.-]{1,63}/)?[A-Za-z0-9_.-]{1,63}$"
+
+# We allow in some cases for users to specify multi-level namespaces for tags,
+# right now we only allow this for the `dagster/kind` namespace, which is how asset kinds are
+# encoded under the hood.
+VALID_NESTED_NAMESPACES_TAG_KEYS = r"dagster/kind/"
+VALID_DEFINITION_TAG_KEY_REGEX_STR = (
+    r"^([A-Za-z0-9_.-]{1,63}/|" + VALID_NESTED_NAMESPACES_TAG_KEYS + r")?[A-Za-z0-9_.-]{1,63}$"
+)
 VALID_DEFINITION_TAG_KEY_REGEX = re.compile(VALID_DEFINITION_TAG_KEY_REGEX_STR)
 VALID_DEFINITION_TAG_KEY_EXPLANATION = (
     "Allowed characters: alpha-numeric, '_', '-', '.'. "
@@ -276,17 +290,21 @@ def validate_asset_owner(owner: str, key: "AssetKey") -> None:
         )
 
 
-def normalize_group_name(group_name: Optional[str]) -> str:
+def validate_group_name(group_name: Optional[str]) -> None:
     """Ensures a string name is valid and returns a default if no name provided."""
     if group_name:
         check_valid_chars(group_name)
-        return group_name
     elif group_name == "":
         raise DagsterInvalidDefinitionError(
-            "Empty asset group name was provided, which is not permitted."
+            "Empty asset group name was provided, which is not permitted. "
             "Set group_name=None to use the default group_name or set non-empty string"
         )
-    return DEFAULT_GROUP_NAME
+
+
+def normalize_group_name(group_name: Optional[str]) -> str:
+    """Ensures a string name is valid and returns a default if no name provided."""
+    validate_group_name(group_name)
+    return group_name or DEFAULT_GROUP_NAME
 
 
 def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
@@ -393,3 +411,30 @@ def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> M
         ) from err
 
     return config_from_yaml_strings(yaml_strings=yaml_strings)
+
+
+def resolve_automation_condition(
+    automation_condition: Optional["AutomationCondition"],
+    auto_materialize_policy: Optional["AutoMaterializePolicy"],
+) -> Optional["AutomationCondition"]:
+    if auto_materialize_policy is not None:
+        deprecation_warning(
+            "Parameter `auto_materialize_policy`",
+            "1.9",
+            additional_warn_text="Use `automation_condition` instead.",
+        )
+        if automation_condition is not None:
+            raise DagsterInvariantViolationError(
+                "Cannot supply both `automation_condition` and `auto_materialize_policy`"
+            )
+        return auto_materialize_policy.to_automation_condition()
+    else:
+        return automation_condition
+
+
+T = TypeVar("T")
+
+
+def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
+    """Dedupe definitions by reference equality."""
+    return list({id(obj): obj for obj in objects}.values()) if objects is not None else []

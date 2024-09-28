@@ -49,9 +49,13 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
 from dagster._time import create_datetime, get_timezone
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
+from dagster_tests.daemon_sensor_tests.test_sensor_run import (
+    evaluate_sensors,
+    validate_tick,
+    wait_for_all_runs_to_start,
+)
 
 
 @op(out={})
@@ -360,7 +364,7 @@ def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessCo
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
-            .get_workspace_snapshot()
+            .get_code_location_entries()
             .values()
         )
     ).code_location
@@ -433,14 +437,14 @@ def test_resources(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == base_run_count
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -450,7 +454,7 @@ def test_resources(
         assert instance.get_runs_count() == base_run_count + 1
         run = instance.get_runs()[0]
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         assert ticks[0].run_keys == ["foo"]
@@ -493,13 +497,13 @@ def test_resources_freshness_policy_sensor(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -515,7 +519,7 @@ def test_resources_freshness_policy_sensor(
 
     with freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
         validate_tick(
@@ -565,13 +569,13 @@ def test_resources_run_status_sensor(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -588,7 +592,7 @@ def test_resources_run_status_sensor(
 
     with freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 
@@ -643,13 +647,13 @@ def test_resources_run_failure_sensor(
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 0
 
@@ -666,7 +670,7 @@ def test_resources_run_failure_sensor(
 
     with freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
 

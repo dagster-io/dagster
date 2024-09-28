@@ -18,8 +18,6 @@ In this guide, we’ll show you how to use [Dagster Pipes](/concepts/dagster-pip
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
-**Note**: Dagster Pipes is currently **experimental**.
-
 ---
 
 ## Prerequisites
@@ -36,7 +34,7 @@ To use Dagster Pipes with AWS Lambda, you’ll need:
 
     Refer to the [Dagster installation guide](/getting-started/install) for more info.
 
-  - **An existing boto3 client that can authenticate to AWS.** If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+  - **AWS authentication credentials configured.** If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 
 - **In AWS**:
 

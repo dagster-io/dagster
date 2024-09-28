@@ -8,8 +8,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context_creation_job import scoped_job_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import resolve_dagster_type
-
-from .typing_api import is_typing_type
+from dagster._utils.typing_api import is_typing_type
 
 
 def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:

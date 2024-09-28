@@ -1,3 +1,4 @@
+import os
 import threading
 from typing import Callable, List, MutableMapping, NamedTuple, Optional
 
@@ -161,8 +162,15 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
         """
         cursor = None
         wait_time = INIT_POLL_PERIOD
+
+        chunk_limit = int(os.getenv("DAGSTER_POLLING_EVENT_WATCHER_BATCH_SIZE", "1000"))
+
         while not self._should_thread_exit.wait(wait_time):
-            conn = self._event_log_storage.get_records_for_run(self._run_id, cursor=cursor)
+            conn = self._event_log_storage.get_records_for_run(
+                self._run_id,
+                cursor=cursor,
+                limit=chunk_limit,
+            )
             cursor = conn.cursor
             for event_record in conn.records:
                 with self._callback_fn_list_lock:

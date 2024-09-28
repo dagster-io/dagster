@@ -17,11 +17,10 @@ from dagster._core.execution.context.output import build_output_context
 from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
+from dagster._core.storage.io_manager import IOManager
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
-
-from .io_manager import IOManager
 
 
 class AssetValueLoader:
@@ -113,7 +112,11 @@ class AssetValueLoader:
             )
             io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
             io_manager_def = resource_defs[io_manager_key]
-            name = assets_def.get_output_name_for_asset_key(asset_key)
+            name = (
+                assets_def.get_output_name_for_asset_key(asset_key)
+                if assets_def.is_executable
+                else None
+            )
             output_definition_metadata = assets_def.specs_by_key[asset_key].metadata
             op_def = assets_def.get_op_def_for_asset_key(asset_key)
             asset_partitions_def = assets_def.partitions_def

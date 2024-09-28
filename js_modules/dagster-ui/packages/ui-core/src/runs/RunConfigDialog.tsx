@@ -9,7 +9,7 @@ import {
 import styled from 'styled-components';
 
 import {RunTags} from './RunTags';
-import {RunTagsFragment} from './types/RunTable.types';
+import {RunTagsFragment} from './types/RunTagsFragment.types';
 
 interface Props {
   isOpen: boolean;

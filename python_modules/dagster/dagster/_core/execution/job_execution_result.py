@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Dict, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -6,10 +6,12 @@ from dagster._core.definitions import JobDefinition, NodeHandle
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.execution_result import ExecutionResult
+from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.execution.plan.utils import build_resources_for_manager
 from dagster._core.storage.dagster_run import DagsterRun
-
-from .execution_result import ExecutionResult
+from dagster._core.types.dagster_type import DagsterType
 
 
 class JobExecutionResult(ExecutionResult):
@@ -126,7 +128,7 @@ class JobExecutionResult(ExecutionResult):
                     if result is None:
                         result = {mapping_key: value}
                     else:
-                        result[mapping_key] = value  # pylint:disable=unsupported-assignment-operation
+                        cast(Dict, result)[mapping_key] = value
                 else:
                     result = value
 
@@ -138,13 +140,18 @@ class JobExecutionResult(ExecutionResult):
             f"Did not find result {output_name} in {node.describe_node()}"
         )
 
-    def _get_value(self, context, step_output_data, dagster_type):
+    def _get_value(
+        self,
+        context: StepExecutionContext,
+        step_output_data: StepOutputData,
+        dagster_type: DagsterType,
+    ) -> object:
         step_output_handle = step_output_data.step_output_handle
         manager = context.get_io_manager(step_output_handle)
         manager_key = context.execution_plan.get_manager_key(step_output_handle, self.job_def)
         res = manager.load_input(
             context.for_input_manager(
-                name=None,
+                name="dummy_input_name",
                 config=None,
                 definition_metadata=None,
                 dagster_type=dagster_type,

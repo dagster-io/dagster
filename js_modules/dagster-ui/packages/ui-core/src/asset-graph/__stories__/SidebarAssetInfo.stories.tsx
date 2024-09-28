@@ -8,11 +8,8 @@ import {AssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
 import {ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
-  AutoMaterializeDecisionType,
   RunStatus,
   buildAssetNode,
-  buildAutoMaterializePolicy,
-  buildAutoMaterializeRule,
   buildCompositeConfigType,
   buildFreshnessPolicy,
   buildRegularDagsterType,
@@ -21,7 +18,7 @@ import {
   buildSolidDefinition,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {SIDEBAR_ASSET_QUERY, SidebarAssetInfo} from '../SidebarAssetInfo';
 import {GraphNode} from '../Utils';
 import {SidebarAssetQuery} from '../types/SidebarAssetInfo.types';
@@ -53,7 +50,7 @@ const buildGraphNodeMock = (definitionOverrides: Partial<AssetNode>): GraphNode 
     graphName: null,
     isPartitioned: false,
     isObservable: false,
-    isSource: false,
+    isMaterializable: true,
     ...definitionOverrides,
   }),
 });
@@ -278,18 +275,6 @@ export const AssetWithPolicies = () => {
         buildEventsMock({reported: false}),
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock({
-          autoMaterializePolicy: buildAutoMaterializePolicy({
-            rules: [
-              buildAutoMaterializeRule({
-                decisionType: AutoMaterializeDecisionType.MATERIALIZE,
-                description: 'Rule 1',
-              }),
-              buildAutoMaterializeRule({
-                decisionType: AutoMaterializeDecisionType.SKIP,
-                description: 'Skip Rule 1',
-              }),
-            ],
-          }),
           freshnessPolicy: buildFreshnessPolicy({
             maximumLagMinutes: 60,
             cronSchedule: '* 1 1 1 1',
@@ -329,7 +314,9 @@ export const AssetWithDifferentOpName = () => {
 export const ObservableSourceAsset = () => {
   return (
     <TestContainer>
-      <SidebarAssetInfo graphNode={buildGraphNodeMock({isObservable: true, isSource: true})} />
+      <SidebarAssetInfo
+        graphNode={buildGraphNodeMock({isObservable: true, isMaterializable: false})}
+      />
     </TestContainer>
   );
 };

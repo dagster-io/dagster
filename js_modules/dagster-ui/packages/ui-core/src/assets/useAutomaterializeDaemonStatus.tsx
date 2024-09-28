@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {useCallback} from 'react';
 
 import {
@@ -7,14 +6,15 @@ import {
   SetAutoMaterializePausedMutation,
   SetAutoMaterializePausedMutationVariables,
 } from './types/useAutomaterializeDaemonStatus.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {gql, useMutation, useQuery} from '../apollo-client';
 
 export function useAutomaterializeDaemonStatus() {
   const queryResult = useQuery<
     GetAutoMaterializePausedQuery,
     GetAutoMaterializePausedQueryVariables
-  >(AUTOMATERIALIZE_PAUSED_QUERY);
-  useBlockTraceOnQueryResult(queryResult, 'GetAutoMaterializePausedQuery');
+  >(AUTOMATERIALIZE_PAUSED_QUERY, {
+    blocking: false,
+  });
   const {data, loading, refetch} = queryResult;
 
   const [setAutoMaterializePaused] = useMutation<

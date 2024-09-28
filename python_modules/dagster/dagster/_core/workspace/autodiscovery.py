@@ -49,6 +49,17 @@ def loadable_targets_from_python_package(
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
     from dagster._core.definitions import JobDefinition
+    from dagster._utils.test.definitions import LazyDefinitions
+
+    loadable_def_loaders = _loadable_targets_of_type(module, LazyDefinitions)
+
+    if loadable_def_loaders:
+        if len(loadable_def_loaders) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot have more than one function decorated with @lazy_definitions defined in module scope"
+            )
+
+        return loadable_def_loaders
 
     loadable_defs = _loadable_targets_of_type(module, Definitions)
 
@@ -103,7 +114,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         return [LoadableTarget(LOAD_ALL_ASSETS, [*module_assets, *module_source_assets])]
 
     raise DagsterInvariantViolationError(
-        "No repositories, jobs, pipelines, graphs, or asset definitions found in "
+        "No Definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "
         f'"{module.__name__}".'
     )
 

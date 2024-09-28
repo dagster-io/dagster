@@ -8,13 +8,12 @@ import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.schema import SqlEventLogStorageMetadata
+from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.storage.sqlite import create_in_memory_conn_string
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-
-from .schema import SqlEventLogStorageMetadata
-from .sql_event_log import SqlEventLogStorage
 
 
 class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):

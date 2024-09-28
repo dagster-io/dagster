@@ -1,6 +1,5 @@
 import inspect
-import warnings
-from typing import AbstractSet, Any, Dict, Iterator, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -52,20 +51,17 @@ from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, genera
 from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
-from dagster._core.execution.plan.compute import execute_core_compute
+from dagster._core.execution.plan.compute import OpOutputUnion, execute_core_compute
+from dagster._core.execution.plan.compute_generator import create_op_compute_wrapper
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster._core.execution.resolve_versions import resolve_step_output_versions
-from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
+from dagster._core.execution.plan.utils import op_execution_error_boundary
+from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
 from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
-
-from .compute import OpOutputUnion
-from .compute_generator import create_op_compute_wrapper
-from .utils import op_execution_error_boundary
 
 
 class AssetResultOutput(Output):
@@ -114,8 +110,8 @@ def _process_user_event(
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
         spec = check.not_none(
-            step_context.job_def.asset_layer.get_spec_for_asset_check(
-                step_context.node_handle.root, asset_check_evaluation.asset_check_key
+            step_context.job_def.asset_layer.asset_graph.get_check_spec(
+                asset_check_evaluation.asset_check_key
             ),
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",
@@ -182,6 +178,7 @@ def _step_output_error_checked_user_event_sequence(
     step = step_context.step
     op_label = step_context.describe_op()
     output_names = list([output_def.name for output_def in step.step_outputs])
+    selected_output_names = step_context.selected_output_names
 
     for user_event in user_event_sequence:
         if not isinstance(user_event, (Output, DynamicOutput)):
@@ -194,6 +191,12 @@ def _step_output_error_checked_user_event_sequence(
             raise DagsterInvariantViolationError(
                 f'Core compute for {op_label} returned an output "{output.output_name}" that does '
                 f"not exist. The available outputs are {output_names}"
+            )
+
+        if output.output_name not in selected_output_names:
+            raise DagsterInvariantViolationError(
+                f'Core compute for {op_label} returned an output "{output.output_name}" that is '
+                f"not selected. The selected outputs are {selected_output_names}"
             )
 
         step_output = step.step_output_named(cast(str, output.output_name))
@@ -225,28 +228,24 @@ def _step_output_error_checked_user_event_sequence(
             # contrast, if both A and B are yielded, A should never precede B.
             asset_layer = step_context.job_def.asset_layer
             node_handle = step_context.node_handle
-            asset_info = asset_layer.asset_info_for_output(node_handle, output_def.name)
-            if (
-                asset_info is not None
-                and asset_info.is_required
-                and asset_layer.has(asset_info.key)
-            ):
-                if asset_layer.has(asset_info.key):
-                    assets_def = asset_layer.get(asset_info.key).assets_def
-                    all_dependent_keys = asset_layer.get(asset_info.key).child_keys
-                    step_local_asset_keys = step_context.get_output_asset_keys()
-                    step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
-                    for dependent_key in step_local_dependent_keys:
-                        output_name = assets_def.get_output_name_for_asset_key(dependent_key)
-                        # Need to skip self-dependent assets (possible with partitions)
-                        self_dep = dependent_key in asset_layer.get(asset_info.key).parent_keys
-                        if not self_dep and step_context.has_seen_output(output_name):
-                            raise DagsterInvariantViolationError(
-                                f'Asset "{dependent_key.to_user_string()}" was yielded before its'
-                                f' dependency "{asset_info.key.to_user_string()}".Multiassets'
-                                " yielding multiple asset outputs must yield them in topological"
-                                " order."
-                            )
+            asset_key = asset_layer.asset_key_for_output(node_handle, output_def.name)
+            if asset_key is not None and asset_key in asset_layer.asset_keys_for_node(node_handle):
+                asset_node = asset_layer.get(asset_key)
+                assets_def = asset_node.assets_def
+                all_dependent_keys = asset_node.child_keys
+                step_local_asset_keys = step_context.get_output_asset_keys()
+                step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
+                for dependent_key in step_local_dependent_keys:
+                    output_name = assets_def.get_output_name_for_asset_key(dependent_key)
+                    # Need to skip self-dependent assets (possible with partitions)
+                    self_dep = dependent_key in asset_node.parent_keys
+                    if not self_dep and step_context.has_seen_output(output_name):
+                        raise DagsterInvariantViolationError(
+                            f'Asset "{dependent_key.to_user_string()}" was yielded before its'
+                            f' dependency "{asset_key.to_user_string()}".Multiassets'
+                            " yielding multiple asset outputs must yield them in topological"
+                            " order."
+                        )
 
             step_context.observe_output(output.output_name)
 
@@ -290,10 +289,11 @@ def _step_output_error_checked_user_event_sequence(
             is_observable_asset = asset_key is not None and asset_layer.get(asset_key).is_observable
 
             if step_output_def.dagster_type.is_nothing and not is_observable_asset:
-                step_context.log.info(
-                    f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
-                )
-                yield Output(output_name=step_output_def.name, value=None)
+                if step_output.name in selected_output_names:
+                    step_context.log.info(
+                        f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
+                    )
+                    yield Output(output_name=step_output_def.name, value=None)
             elif not step_output_def.is_dynamic:
                 raise DagsterStepOutputNotFoundError(
                     f"Core compute for {op_label} did not return an output for non-optional "
@@ -384,7 +384,6 @@ def _type_check_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Any,
-    version: Optional[str],
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
@@ -417,7 +416,6 @@ def _type_check_output(
                 description=type_check.description if type_check else None,
                 metadata=type_check.metadata if type_check else {},
             ),
-            version=version,
             metadata=output.metadata,
         ),
     )
@@ -549,42 +547,16 @@ def _type_check_and_store_output(
         step_context.step_output_capture[step_output_handle] = output.value
         step_context.step_output_metadata_capture[step_output_handle] = output.metadata
 
-    version = (
-        resolve_step_output_versions(
-            step_context.job_def, step_context.execution_plan, step_context.resolved_run_config
-        ).get(step_output_handle)
-        if MEMOIZED_RUN_TAG in step_context.job.get_definition().tags
-        else None
-    )
-
-    for output_event in _type_check_output(step_context, step_output_handle, output, version):
+    for output_event in _type_check_output(step_context, step_output_handle, output):
         yield output_event
 
     for evt in _store_output(step_context, step_output_handle, output):
         yield evt
 
 
-def _asset_key_and_partitions_for_output(
-    output_context: OutputContext,
-) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
-    output_asset_info = output_context.asset_info
-
-    if output_asset_info:
-        if not output_asset_info.is_required:
-            output_context.log.warning(
-                f"Materializing or observing unexpected asset key: {output_asset_info.key}."
-            )
-        return (
-            output_asset_info.key,
-            output_asset_info.partitions_fn(output_context) or set(),
-        )
-
-    return None, set()
-
-
 def _get_output_asset_events(
     asset_key: AssetKey,
-    asset_partitions: AbstractSet[str],
+    asset_partitions: Iterable[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata: Mapping[str, MetadataValue],
@@ -729,9 +701,7 @@ def _build_data_version_tags(
     return tags
 
 
-def _build_data_version_observation_tags(
-    data_version: DataVersion,
-) -> Dict[str, str]:
+def _build_data_version_observation_tags(data_version: DataVersion) -> Dict[str, str]:
     return {
         DATA_VERSION_TAG: data_version.value,
         DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
@@ -860,8 +830,12 @@ def _store_output(
 
 
 def _log_materialization_or_observation_events_for_asset(
-    step_context, output_context, output, output_def, manager_metadata
-):
+    step_context: StepExecutionContext,
+    output_context: OutputContext,
+    output: Union[Output, DynamicOutput],
+    output_def: OutputDefinition,
+    manager_metadata: Mapping[str, MetadataValue],
+) -> Iterable[DagsterEvent]:
     # This is a temporary workaround to prevent duplicate observation events from external
     # observable assets that were auto-converted from source assets. These assets yield
     # observation events through the context in their body, and will continue to do so until we
@@ -874,24 +848,13 @@ def _log_materialization_or_observation_events_for_asset(
     if SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in output.metadata:
         return
 
-    asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
+    asset_key = output_context.asset_key if output_context.has_asset_key else None
+    partitions = output_context.asset_partition_keys if output_context.has_asset_partitions else []
+
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
-        if assets_def is not None:
-            execution_type = assets_def.execution_type
-        else:
-            # This is a situation that shouldn't really ever occur, but appears to be able to happen
-            # when multiple output names point to the same asset key, which also shouldn't occur,
-            # but we don't validate against. If we start validating that each output should
-            # correspond to only one asset, then we can start raising an error here instead of a
-            # warning.
-            warnings.warn(
-                f"Asset key '{asset_key.to_user_string()}' does not correspond to either an "
-                "AssetsDefinition or a SourceAsset in the asset layer. Defaulting to treating it "
-                "as a materializable asset for the purposes or logging events."
-            )
-            execution_type = AssetExecutionType.MATERIALIZATION
+        execution_type = check.not_none(assets_def).execution_type
 
         check.invariant(
             execution_type != AssetExecutionType.UNEXECUTABLE,
@@ -928,7 +891,7 @@ def _dagster_event_for_asset_event(
     step_context: StepExecutionContext,
     asset_event: Union[AssetMaterialization, AssetObservation],
     batch_metadata: Optional[DagsterEventBatchMetadata],
-):
+) -> DagsterEvent:
     if isinstance(asset_event, AssetMaterialization):
         return DagsterEvent.asset_materialization(step_context, asset_event, batch_metadata)
     else:  # observation

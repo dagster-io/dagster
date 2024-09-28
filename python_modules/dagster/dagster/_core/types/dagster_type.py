@@ -7,7 +7,6 @@ from typing import (
     AnyStr,
     Iterator as TypingIterator,
     Mapping,
-    Optional as TypingOptional,
     Sequence,
     Type as TypingType,
     cast,
@@ -25,17 +24,15 @@ from dagster._config import (
 )
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, normalize_metadata
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._serdes import whitelist_for_serdes
-from dagster._seven import is_subclass
-
-from ..definitions.resource_requirement import (
-    RequiresResources,
+from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     TypeResourceRequirement,
 )
-from .builtin_config_schemas import BuiltinSchemas
-from .config_schema import DagsterTypeLoader
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.types.builtin_config_schemas import BuiltinSchemas
+from dagster._core.types.config_schema import DagsterTypeLoader
+from dagster._serdes import whitelist_for_serdes
+from dagster._seven import is_subclass
 
 if t.TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition
@@ -54,7 +51,7 @@ class DagsterTypeKind(PythonEnum):
     REGULAR = "REGULAR"
 
 
-class DagsterType(RequiresResources):
+class DagsterType:
     """Define a type in dagster. These can be used in the inputs and outputs of ops.
 
     Args:
@@ -266,13 +263,11 @@ class DagsterType(RequiresResources):
             " calling getter."
         )
 
-    def get_resource_requirements(
-        self, _outer_context: TypingOptional[object] = None
-    ) -> TypingIterator[ResourceRequirement]:
+    def get_resource_requirements(self) -> TypingIterator[ResourceRequirement]:
         for resource_key in sorted(list(self.required_resource_keys)):
             yield TypeResourceRequirement(key=resource_key, type_display_name=self.display_name)
         if self.loader:
-            yield from self.loader.get_resource_requirements(outer_context=self.display_name)
+            yield from self.loader.get_resource_requirements(type_display_name=self.display_name)
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
@@ -834,20 +829,19 @@ class TypeHintInferredDagsterType(DagsterType):
 
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
-    from dagster._utils.typing_api import is_typing_type
-
-    from ..definitions.result import MaterializeResult, ObserveResult
-    from .primitive_mapping import (
+    from dagster._core.definitions.result import MaterializeResult, ObserveResult
+    from dagster._core.types.primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from .python_dict import (
+    from dagster._core.types.python_dict import (
         Dict as DDict,
         PythonDict,
     )
-    from .python_set import DagsterSetApi, PythonSet
-    from .python_tuple import DagsterTupleApi, PythonTuple
-    from .transform_typing import transform_typing_type
+    from dagster._core.types.python_set import DagsterSetApi, PythonSet
+    from dagster._core.types.python_tuple import DagsterTupleApi, PythonTuple
+    from dagster._core.types.transform_typing import transform_typing_type
+    from dagster._utils.typing_api import is_typing_type
 
     check.invariant(
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),

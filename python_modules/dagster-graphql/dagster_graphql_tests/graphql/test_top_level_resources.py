@@ -162,14 +162,8 @@ query ResourceDetailsQuery($selector: ResourceSelector!) {
             sensorsUsing
 
             jobsOpsUsing {
-                job {
-                    name
-                }
-                opsUsing {
-                    solid {
-                        name
-                    }
-                }
+                jobName
+                opHandleIDs
             }
 
             assetKeysUsing {
@@ -201,9 +195,10 @@ def test_fetch_top_level_resource_uses(definitions_graphql_context, snapshot) ->
 
     jobs = my_resource["jobsOpsUsing"]
     assert len(jobs) == 1
-    assert jobs[0]["job"]["name"] == "my_asset_job"
-    assert len(jobs[0]["opsUsing"]) == 1
-    assert jobs[0]["opsUsing"][0]["solid"]["name"] == "my_asset"
+
+    assert jobs[0]["jobName"] == "my_asset_job"
+    assert len(jobs[0]["opHandleIDs"]) == 1
+    assert jobs[0]["opHandleIDs"][0] == "my_asset"
 
     assets = my_resource["assetKeysUsing"]
     assert len(assets) == 2

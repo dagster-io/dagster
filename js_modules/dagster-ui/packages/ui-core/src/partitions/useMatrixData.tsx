@@ -1,16 +1,14 @@
-import {gql} from '@apollo/client';
-import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
-import {useRef} from 'react';
-
 import {
   PartitionMatrixSolidHandleFragment,
   PartitionMatrixStepRunFragment,
 } from './types/useMatrixData.types';
+import {gql} from '../apollo-client';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {StepEventStatus} from '../graphql/types';
+import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 
@@ -63,17 +61,9 @@ function isStepKeyForNode(nodeName: string, stepKey: string) {
 function buildMatrixData(
   layout: GanttChartLayout,
   partitionNames: string[],
-  partitions: PartitionRuns[],
+  partitionsByName: Record<string, PartitionRuns>,
   options?: DisplayOptions,
 ) {
-  const partitionsByName = {};
-  partitions.forEach((p) => {
-    // Note this is sorting partition runs in place, I don't think it matters and
-    // seems better than cloning all the arrays.
-    p.runs.sort(byStartTimeAsc);
-    (partitionsByName as any)[p.name] = p;
-  });
-
   const partitionColumns = partitionNames.map((name, idx) => {
     const partition: PartitionRuns = (partitionsByName as any)[name] || {
       name,
@@ -170,7 +160,7 @@ function buildMatrixData(
     }
   }
 
-  return {stepRows, partitions, partitionColumns};
+  return {stepRows, partitionColumns};
 }
 
 interface MatrixDataInputs {
@@ -194,29 +184,33 @@ export type MatrixData = ReturnType<typeof buildMatrixData>;
  *
  * @param inputs
  */
-export const useMatrixData = (inputs: MatrixDataInputs) => {
-  const cachedMatrixData = useRef<{
-    result: MatrixData;
-    inputs: MatrixDataInputs;
-  }>();
-  if (!inputs.solidHandles) {
-    return null;
-  }
-  if (cachedMatrixData.current && shallowCompareKeys(inputs, cachedMatrixData.current.inputs)) {
-    return cachedMatrixData.current.result;
-  }
-
-  const nodes = explodeCompositesInHandleGraph(inputs.solidHandles).map((h) => h.solid);
-
-  // Filter the pipeline's structure and build the flat gantt layout for the left hand side
-  const solidsFiltered = filterByQuery(nodes, inputs.stepQuery);
-
-  const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
-
-  // Build the matrix of step + partition squares - presorted to match the gantt layout
-  const result = buildMatrixData(layout, inputs.partitionNames, inputs.partitions, inputs.options);
-  cachedMatrixData.current = {result, inputs};
-  return result;
+export const useMatrixData = ({
+  solidHandles,
+  stepQuery,
+  partitionNames,
+  partitions,
+  options,
+}: MatrixDataInputs) => {
+  return useThrottledMemo(
+    () => {
+      const nodes = solidHandles
+        ? explodeCompositesInHandleGraph(solidHandles).map((h) => h.solid)
+        : [];
+      // Filter the pipeline's structure and build the flat gantt layout for the left hand side
+      const solidsFiltered = filterByQuery(nodes, stepQuery);
+      const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
+      const partitionsByName: Record<string, PartitionRuns> = {};
+      partitions.forEach((p) => {
+        // sort partition runs in place
+        p.runs.sort(byStartTimeAsc);
+        partitionsByName[p.name] = p;
+      });
+      // Build the matrix of step + partition squares - presorted to match the gantt layout
+      return buildMatrixData(layout, partitionNames, partitionsByName, options);
+    },
+    [solidHandles, stepQuery, partitions, partitionNames, options],
+    1000,
+  );
 };
 
 export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = gql`

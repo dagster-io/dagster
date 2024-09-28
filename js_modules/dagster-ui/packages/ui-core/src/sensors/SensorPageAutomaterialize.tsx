@@ -1,5 +1,4 @@
-import {useLazyQuery} from '@apollo/client';
-import {Alert, Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
+import {Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
@@ -9,16 +8,17 @@ import {
   AssetSensorTicksQueryVariables,
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
+import {useLazyQuery} from '../apollo-client';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
+import {DeclarativeAutomationBanner} from '../assets/auto-materialization/DeclarativeAutomationBanner';
 import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../instigation/util';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -71,7 +71,6 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
     ASSET_SENSOR_TICKS_QUERY,
   );
-  useBlockTraceOnQueryResult(queryResult, 'AssetSensorTicksQuery');
 
   const refresh = useCallback(
     async () => await fetch({variables: getVariables()}),
@@ -151,26 +150,8 @@ export const SensorPageAutomaterialize = (props: Props) => {
 
   return (
     <>
-      <Box padding={{vertical: 12, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
-        <Alert
-          intent="info"
-          title="[Experimental] Dagster can automatically materialize assets when criteria are met."
-          description={
-            <>
-              Auto-materialization enables a declarative approach to asset scheduling – instead of
-              defining imperative workflows to materialize your assets, you just describe the
-              conditions under which they should be materialized.{' '}
-              <a
-                href="https://docs.dagster.io/concepts/assets/asset-auto-execution"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Learn more about auto-materialization here
-              </a>
-              .
-            </>
-          }
-        />
+      <Box padding={{vertical: 12, horizontal: 24}}>
+        <DeclarativeAutomationBanner />
       </Box>
       <SensorInfo assetDaemonHealth={daemonStatus} padding={{vertical: 16, horizontal: 24}} />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">

@@ -96,6 +96,7 @@ const Body = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
+  font-variant-ligatures: none;
 `;
 
 export const GlobalCustomAlertPortalStyle = createGlobalStyle`

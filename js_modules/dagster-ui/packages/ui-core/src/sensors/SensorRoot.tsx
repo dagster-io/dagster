@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
@@ -14,16 +13,17 @@ import {
   SensorRootQuery,
   SensorRootQueryVariables,
 } from './types/SensorRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {AUTOMATION_ASSET_SELECTION_FRAGMENT} from '../automation/AutomationAssetSelectionFragment';
 import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -68,7 +68,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(queryResult, 'SensorRootQuery');
+
   const selectionQueryResult = useQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
@@ -76,7 +76,6 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(selectionQueryResult, 'SensorAssetSelectionQuery');
 
   const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);
@@ -130,6 +129,10 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   }
 
   const {instance} = data;
+  const assetSelection =
+    selectionQueryResult.data?.sensorOrError.__typename === 'Sensor'
+      ? selectionQueryResult.data.sensorOrError.assetSelection
+      : null;
 
   if (
     sensorOrError.sensorType === SensorType.AUTO_MATERIALIZE ||
@@ -143,7 +146,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           sensor={sensorOrError}
           daemonHealth={assetDaemonStatus.healthy}
           refreshState={refreshState}
-          selectionQueryResult={selectionQueryResult}
+          assetSelection={assetSelection || null}
         />
         <SensorPageAutomaterialize
           repoAddress={repoAddress}
@@ -164,7 +167,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         sensor={sensorOrError}
         daemonHealth={sensorDaemonStatus.healthy}
         refreshState={refreshState}
-        selectionQueryResult={selectionQueryResult}
+        assetSelection={assetSelection || null}
       />
       <SensorInfo
         sensorDaemonStatus={sensorDaemonStatus}
@@ -227,34 +230,13 @@ export const SENSOR_ASSET_SELECTIONS_QUERY = gql`
       ... on Sensor {
         id
         assetSelection {
-          ...SensorAssetSelectionFragment
+          ...AutomationAssetSelectionFragment
         }
       }
       ...PythonErrorFragment
     }
   }
 
-  fragment SensorAssetSelectionFragment on AssetSelection {
-    assetSelectionString
-    assetsOrError {
-      ... on AssetConnection {
-        nodes {
-          id
-          key {
-            path
-          }
-          definition {
-            id
-            autoMaterializePolicy {
-              __typename
-            }
-          }
-        }
-      }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
-    }
-  }
+  ${AUTOMATION_ASSET_SELECTION_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

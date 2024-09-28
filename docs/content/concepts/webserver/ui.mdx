@@ -59,9 +59,9 @@ height={1010}
 
 ### Asset catalog
 
-- **Description**: The **Asset catalog** page lists all [assets](/concepts/assets/software-defined-assets) in your Dagster deployment, which can be filtered by asset key and/or [asset group](/concepts/assets/software-defined-assets#grouping-assets). Clicking an asset opens the [**Asset details** page](#asset-details) for that asset. You can also navigate to the [Global asset lineage](#global-asset-lineage) page, reload definitions, and materialize assets.
+- **Description**: The **Asset catalog** page lists all [assets](/concepts/assets/software-defined-assets) in your Dagster deployment, which can be filtered by asset key, compute kind, [asset group](/concepts/assets/software-defined-assets#grouping-assets), [code location](/concepts/code-locations), and [tags](/concepts/metadata-tags/tags). Clicking an asset opens the [**Asset details** page](#asset-details) for that asset. You can also navigate to the [Global asset lineage](#global-asset-lineage) page, reload definitions, and materialize assets.
 
-  **If using Dagster+ Pro**, you have the option to use a new version of this page. Click the **Asset catalog (Cloud Pro)** tab for more information.
+  **If using Dagster+ Pro**, you have the option to use a new version of this page. Click the **Asset catalog (Dagster+ Pro)** tab for more information.
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
@@ -75,23 +75,21 @@ height={1514}
 />
 
 </TabItem>
-<TabItem name="Asset catalog (Cloud Pro)">
+<TabItem name="Asset catalog (Dagster+ Pro)">
 
 ### Asset catalog (Dagster+ Pro)
 
 <Note>A Dagster+ Pro plan is required to use this feature.</Note>
 
-- **Description**: This **experimental** version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, code location, etc. On this page, you can:
+- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, [asset group](/concepts/assets/software-defined-assets#grouping-assets), [code location](/concepts/code-locations), [tags](/concepts/metadata-tags/tags), and [owners](/concepts/metadata-tags/asset-metadata#asset-owners), etc. On this page, you can:
 
   - View all [assets](/concepts/assets/software-defined-assets) in your Dagster deployment
   - View [details](#asset-details) about a specific asset by clicking on it
-  - Search assets by asset key, group, compute kind, code location, etc.
+  - Search assets by asset key, compute kind, asset group, code location, tags, owners, etc.
   - Access the [Global asset lineage](#global-asset-lineage)
   - Reload definitions
 
-- **Accessed by:**
-  1. Enabling the **Use new asset overview page** setting in your [user settings](/concepts/webserver/ui-user-settings)
-  2. Clicking **Assets** in the top navigation
+- **Accessed by:** Clicking **Catalog** in the top navigation
 
 <!-- ![The Asset Catalog page in the Dagster UI](/images/concepts/webserver/asset-catalog-cloud-pro.png) -->
 
@@ -100,6 +98,30 @@ alt="The Asset Catalog page in the Dagster UI"
 src="/images/concepts/webserver/asset-catalog-cloud-pro.png"
 width={1911}
 height={1049}
+/>
+
+</TabItem>
+<TabItem name="Catalog views (Dagster+)">
+
+### Catalog views (Dagster+)
+
+- **Description**: **Catalog views** save a set of filters against the **Asset catalog** to show only the assets you want to see. You can share these views for easy access and faster team collaboration. With **Catalog views**, you can:
+
+  - Filter for a scoped set of [assets](/concepts/assets/software-defined-assets) in your Dagster deployment
+  - Create shared views of assets for easier team collaboration
+
+- **Accessed by:**
+
+  - Clicking **Catalog** in the top navigation
+  - **From the [Global asset lineage](#global-asset-lineage)**: Clicking **View global asset lineage**, located near the top right corner of the **Catalog** page
+
+<!-- ![The Catalog views dropdown in the Dagster+ Pro Catalog UI](/images/concepts/webserver/catalog-views.png) -->
+
+<Image
+alt="The Catalog views dropdown in the Dagster+ Pro Catalog UI"
+src="/images/concepts/webserver/catalog-views.png"
+width={3429}
+height={1990}
 />
 
 </TabItem>
@@ -136,14 +158,12 @@ height={1514}
 
 - **Description**: The **Asset details** page contains details about a single asset. Use the tabs on this page to view detailed information about the asset:
 
-  - **Overview** - Information about the asset such as its description, resources, config, type, etc. If you have the **Use new asset overview page** [user setting](/concepts/webserver/ui-user-settings) enabled, this tab will display instead of **Definition**.
+  - **Overview** - Information about the asset such as its description, resources, config, type, etc.
   - **Partitions** - The asset's partitions, including their materialization status, metadata, and run information
   - **Events** - The asset's materialization history
   - **Checks** - The [Asset checks](/concepts/assets/asset-checks) defined for the asset
-  - **Plots** - Any plots associated with the asset
-  - **Definition** - The same information as the **Overview** tab. This tab will display if the **Use new asset overview page** user setting isn't enabled.
   - **Lineage** - The asset's lineage in the [**Global asset lineage** page](#global-asset-lineage)
-  - **Automation** - The [Auto-materialize policies](/concepts/assets/asset-auto-execution) associated with the asset
+  - **Automation** - The [Declarative Automation conditions](/concepts/automation/declarative-automation) associated with the asset
   - **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/dagster-plus/insights) documentation for more information.
 
 - **Accessed by**: Clicking an asset in the [**Asset catalog**](#asset-catalog)
@@ -153,8 +173,8 @@ height={1514}
 <Image
 alt="The Asset Details page in the Dagster UI"
 src="/images/concepts/webserver/asset-details.png"
-width={2640}
-height={1514}
+width={2992}
+height={1678}
 />
 
 </TabItem>

@@ -23,10 +23,13 @@ next-dev-install:  ## Install Next.js dependencies
 next-watch-build:  ## Run Next.js docs website in development mode
 	cd next; yarn dev
 
-next-check-broken-links:  ## Run broken link crawler on localhost docs
-	cd next; yarn broken-link-checker
-
 mdx-format:  ## Format mdx files
 	cd next; yarn mdx-format
 
 mdx-full-format: docs_ruff mdx-format
+
+mdx:
+	tox -e sphinx-mdx
+
+mdx_copy:
+	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs-beta/docs/api/

@@ -35,9 +35,15 @@ setup(
     packages=find_packages(exclude=["dagster_pandera_tests*"]),
     include_package_data=True,
     python_requires=">=3.8,<3.13",
-    install_requires=[f"dagster{pin}", "pandas", "pandera>=0.14.2"],
+    install_requires=[
+        f"dagster{pin}",
+        "pandas",
+        "pandera>=0.15.0",
+    ],
     extras_require={
+        "polars": ["polars>=1"],
         "test": [
+            "polars>=1",
             "pytest",
         ],
     },

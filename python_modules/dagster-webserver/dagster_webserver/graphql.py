@@ -6,10 +6,12 @@ from typing import (
     Any,
     AsyncGenerator,
     Dict,
+    Generic,
     List,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -31,7 +33,7 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-from dagster_webserver.templates.playground import TEMPLATE
+from dagster_webserver.templates.graphiql import TEMPLATE
 
 if TYPE_CHECKING:
     from starlette.datastructures import QueryParams
@@ -53,7 +55,10 @@ class GraphQLWS(str, Enum):
     STOP = "stop"
 
 
-class GraphQLServer(ABC):
+TRequestContext = TypeVar("TRequestContext")
+
+
+class GraphQLServer(ABC, Generic[TRequestContext]):
     def __init__(self, app_path_prefix: str = ""):
         self._app_path_prefix = app_path_prefix
 
@@ -73,7 +78,7 @@ class GraphQLServer(ABC):
     def build_routes(self) -> List[BaseRoute]: ...
 
     @abstractmethod
-    def make_request_context(self, conn: HTTPConnection): ...
+    def make_request_context(self, conn: HTTPConnection) -> TRequestContext: ...
 
     def handle_graphql_errors(self, errors: Sequence[GraphQLError]):
         results = []
@@ -155,7 +160,12 @@ class GraphQLServer(ABC):
 
         captured_errors: List[Exception] = []
         with ErrorCapture.watch(captured_errors.append):
-            result = await self.execute_graphql_request(request, query, variables, operation_name)
+            result = await self.execute_graphql_request(
+                request=request,
+                query=query,
+                variables=variables,
+                operation_name=operation_name,
+            )
 
         response_data: Dict[str, Any] = {"data": result.data}
 
@@ -194,6 +204,10 @@ class GraphQLServer(ABC):
                 elif message_type == GraphQLWS.CONNECTION_TERMINATE:
                     await websocket.close()
                 elif message_type == GraphQLWS.START:
+                    # Ignore if same operation id attempts to get restarted
+                    if operation_id in tasks:
+                        continue
+
                     data = message["payload"]
 
                     task, error_payload = await self.execute_graphql_subscription(
@@ -213,7 +227,7 @@ class GraphQLServer(ABC):
 
                 elif message_type == GraphQLWS.STOP:
                     if operation_id not in tasks:
-                        return
+                        continue
 
                     tasks[operation_id].cancel()
                     del tasks[operation_id]
@@ -233,21 +247,45 @@ class GraphQLServer(ABC):
     ) -> ExecutionResult:
         # run each query in a separate thread, as much of the schema is sync/blocking
         # use execute_async to allow async resolvers to facilitate dataloader pattern
+        return await run_in_threadpool(
+            self.graphql_execution_thread,
+            request=request,
+            query=query,
+            variables=variables,
+            operation_name=operation_name,
+        )
 
+    def graphql_execution_thread(
+        self,
+        request: Request,
+        query: str,
+        variables: Optional[Dict[str, Any]],
+        operation_name: Optional[str],
+    ) -> ExecutionResult:
         request_context = self.make_request_context(request)
-
-        def _graphql_request():
-            return run(
-                self._graphql_schema.execute_async(
-                    query,
-                    variables=variables,
-                    operation_name=operation_name,
-                    context=request_context,
-                    middleware=self._graphql_middleware,
-                )
+        return run(
+            self.gen_graphql_response(
+                request_context=request_context,
+                query=query,
+                variables=variables,
+                operation_name=operation_name,
             )
+        )
 
-        return await run_in_threadpool(_graphql_request)
+    async def gen_graphql_response(
+        self,
+        request_context: TRequestContext,
+        query: str,
+        variables: Optional[Dict[str, Any]],
+        operation_name: Optional[str],
+    ) -> ExecutionResult:
+        return await self._graphql_schema.execute_async(
+            query,
+            variables=variables,
+            operation_name=operation_name,
+            context=request_context,
+            middleware=self._graphql_middleware,
+        )
 
     async def execute_graphql_subscription(
         self,

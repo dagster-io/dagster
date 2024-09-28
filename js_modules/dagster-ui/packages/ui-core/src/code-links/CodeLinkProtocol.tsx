@@ -27,8 +27,8 @@ export type ProtocolData = {
 };
 
 export const CodeLinkProtocolContext = React.createContext<
-  [ProtocolData, React.Dispatch<React.SetStateAction<ProtocolData | undefined>>]
->([DEFAULT_PROTOCOL, () => '']);
+  ReturnType<typeof useStateWithStorage<ProtocolData>>
+>([DEFAULT_PROTOCOL, () => '', () => {}]);
 
 export const CodeLinkProtocolProvider = ({children}: {children: React.ReactNode}) => {
   const state = useStateWithStorage<ProtocolData>(
@@ -53,7 +53,7 @@ export const CodeLinkProtocolSelect = ({}) => {
       <Select<string>
         popoverProps={{
           position: 'bottom-left',
-          modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
+          modifiers: {offset: {enabled: true, options: {offset: [-12, 8]}}},
         }}
         activeItem={isCustom ? '' : codeLinkProtocol.protocol}
         inputProps={{style: {width: '300px'}}}

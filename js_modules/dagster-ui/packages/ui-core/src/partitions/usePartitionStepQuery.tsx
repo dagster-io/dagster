@@ -1,5 +1,4 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
 import {
@@ -7,6 +6,7 @@ import {
   PartitionStepLoaderQueryVariables,
 } from './types/usePartitionStepQuery.types';
 import {PARTITION_MATRIX_STEP_RUN_FRAGMENT, PartitionRuns} from './useMatrixData';
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
@@ -60,16 +60,22 @@ export function usePartitionStepQuery({
   const version = useRef(0);
   const [dataState, setDataState] = useState<DataState>(InitialDataState);
 
-  const _serializedRunTags = JSON.stringify([
-    ...runsFilter.map((token) => {
-      const [key, value] = token.value.split('=');
-      return {key, value};
-    }),
-    {
-      key: DagsterTag.RepositoryLabelTag,
-      value: `${repositorySelector.repositoryName}@${repositorySelector.repositoryLocationName}`,
-    },
-  ]);
+  const _serializedRunTags = useMemo(
+    () =>
+      JSON.stringify([
+        ...runsFilter.map((token) => {
+          const [key, value] = token.value.split('=');
+          return {key, value};
+        }),
+        {
+          key: DagsterTag.RepositoryLabelTag,
+          value: `${repositorySelector.repositoryName}@${repositorySelector.repositoryLocationName}`,
+        },
+      ]),
+    [repositorySelector.repositoryLocationName, repositorySelector.repositoryName, runsFilter],
+  );
+
+  const partitionNamesSet = useMemo(() => new Set(partitionNames), [partitionNames]);
 
   useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
@@ -160,7 +166,7 @@ export function usePartitionStepQuery({
         // Filter detected changes to just runs in our visible range of partitions, and then update
         // local state if changes have been found.
         const relevant = [...pending, ...recent].filter((run) =>
-          run.tags.find((t) => t.key === partitionTagName && partitionNames.includes(t.value)),
+          run.tags.find((t) => t.key === partitionTagName && partitionNamesSet.has(t.value)),
         );
         setDataState((state) => {
           const updated = state.runs
@@ -188,9 +194,13 @@ export function usePartitionStepQuery({
     offset,
     partitionNames,
     skipQuery,
+    partitionNamesSet,
   ]);
 
-  return assemblePartitions(dataState, partitionTagName);
+  return useMemo(
+    () => assemblePartitions(dataState, partitionTagName),
+    [dataState, partitionTagName],
+  );
 }
 
 async function fetchRunsForFilter(
@@ -198,7 +208,7 @@ async function fetchRunsForFilter(
   variables: PartitionStepLoaderQueryVariables,
 ) {
   const result = await client.query<PartitionStepLoaderQuery, PartitionStepLoaderQueryVariables>({
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'no-cache',
     query: PARTITION_STEP_LOADER_QUERY,
     variables,
   });

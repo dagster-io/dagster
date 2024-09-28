@@ -20,10 +20,10 @@ export const assetsPathMatcher: MatcherFn = (_, currentLocation) => {
   );
 };
 
-export const settingsPathMatcher: MatcherFn = (_, currentLocation) => {
+export const deploymentPathMatcher: MatcherFn = (_, currentLocation) => {
   const {pathname} = currentLocation;
   return (
-    pathname.startsWith('/settings') ||
+    pathname.startsWith('/deployment') ||
     (pathname.startsWith('/locations') &&
       !pathname.includes('/asset-groups/') &&
       !automationPathMatcher(_, currentLocation) &&
@@ -36,6 +36,7 @@ export const locationPathMatcher: MatcherFn = (_, currentLocation) => {
   return (
     (pathname.startsWith('/locations') && !pathname.includes('/asset-groups/')) ||
     pathname.startsWith('/health') ||
+    pathname.startsWith('/concurrency') ||
     pathname.startsWith('/config')
   );
 };

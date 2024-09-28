@@ -32,18 +32,18 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
 )
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
-
-from .metadata import (
+from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataMapping,
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
 )
-from .utils import DEFAULT_OUTPUT, check_valid_name
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.utils import DEFAULT_OUTPUT, check_valid_name
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.output import OutputContext
@@ -56,6 +56,15 @@ class AssetKeyPartitionKey(NamedTuple):
 
     asset_key: AssetKey
     partition_key: Optional[str] = None
+
+
+# This is currently used only for the asset partition wipe codepath. In the future, we can rename
+# to AssetPartitionRange or similar for more general use.
+class AssetPartitionWipeRange(NamedTuple):
+    """An AssetKey with a partition range."""
+
+    asset_key: AssetKey
+    partition_range: Optional[PartitionKeyRange]
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
@@ -96,8 +105,7 @@ class Output(Generic[T], EventWithMetadata):
 
     Args:
         value (Any): The value returned by the compute function.
-        output_name (Optional[str]): Name of the corresponding out. (default:
-            "result")
+        output_name (str): Name of the corresponding Out. (default: "result")
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -111,7 +119,7 @@ class Output(Generic[T], EventWithMetadata):
     def __init__(
         self,
         value: T,
-        output_name: Optional[str] = DEFAULT_OUTPUT,
+        output_name: str = DEFAULT_OUTPUT,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         data_version: Optional[DataVersion] = None,
         *,
@@ -758,7 +766,7 @@ def validate_asset_event_tags(tags: Optional[Mapping[str, str]]) -> Optional[Map
 
 
 def is_system_asset_event_tag(key: str) -> bool:
-    from .data_version import (
+    from dagster._core.definitions.data_version import (
         CODE_VERSION_TAG,
         DATA_VERSION_TAG,
         INPUT_DATA_VERSION_TAG_PREFIX,

@@ -9,11 +9,11 @@ import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -29,7 +29,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Self
 
 from dagster import (
@@ -53,7 +52,15 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
+
+# test utils from separate light weight file since are exported top level
+from dagster._core.instance_for_test import (
+    cleanup_test_instance as cleanup_test_instance,
+    environ as environ,
+    instance_for_test as instance_for_test,
+)
 from dagster._core.launcher import RunLauncher
+from dagster._core.remote_representation import ExternalRepository
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
@@ -63,20 +70,9 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._time import create_datetime, get_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
-
-# test utils from separate light weight file since are exported top level
-from .instance_for_test import (
-    cleanup_test_instance as cleanup_test_instance,
-    environ as environ,
-    instance_for_test as instance_for_test,
-)
-
-if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
 
 T = TypeVar("T")
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
@@ -160,7 +156,7 @@ def create_run_for_test(
     asset_selection=None,
     asset_check_selection=None,
     op_selection=None,
-    asset_job_partitions_def=None,
+    asset_graph=None,
 ):
     return instance.create_run(
         job_name=job_name,
@@ -180,7 +176,7 @@ def create_run_for_test(
         asset_selection=asset_selection,
         asset_check_selection=asset_check_selection,
         op_selection=op_selection,
-        asset_job_partitions_def=asset_job_partitions_def,
+        asset_graph=asset_graph,
     )
 
 
@@ -264,8 +260,8 @@ def poll_for_finished_run(
                 raise Exception("Timed out")
 
 
-def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30):
-    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
+def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30, message=None):
+    poll_for_event(instance, run_id, event_type="STEP_START", message=message, timeout=timeout)
 
 
 def poll_for_event(
@@ -310,7 +306,7 @@ def new_cwd(path: str) -> Iterator[None]:
         os.chdir(old)
 
 
-def today_at_midnight(timezone_name="UTC") -> "DateTime":
+def today_at_midnight(timezone_name="UTC") -> datetime.datetime:
     check.str_param(timezone_name, "timezone_name")
     tzinfo = get_timezone(timezone_name)
     now = datetime.datetime.now(tz=tzinfo)
@@ -529,6 +525,16 @@ def create_test_daemon_workspace_context(
             yield workspace_process_context
 
 
+def load_external_repo(
+    workspace_context: WorkspaceProcessContext, repo_name: str
+) -> ExternalRepository:
+    code_location_entry = next(
+        iter(workspace_context.create_request_context().get_code_location_entries().values())
+    )
+    assert code_location_entry.code_location, code_location_entry.load_error
+    return code_location_entry.code_location.get_repository(repo_name)
+
+
 def remove_none_recursively(obj: T) -> T:
     """Remove none values from a dict. This can be used to support comparing provided config vs.
     config we retrive from kubernetes, which returns all fields, even those which have no value
@@ -696,6 +702,7 @@ def ignore_warning(message_substr: str):
             warnings.filterwarnings("ignore", message=message_substr)
             return func(*args, **kwargs)
 
+        update_wrapper(wrapper, func)
         return wrapper
 
     return decorator
@@ -713,10 +720,6 @@ def raise_exception_on_warnings():
     warnings.filterwarnings(
         "ignore", category=ResourceWarning, message=r".*Implicitly cleaning up.*"
     )
-
-    if sys.version_info >= (3, 12):
-        # pendulum sometimes raises DeprecationWarning on python3.12
-        warnings.filterwarnings("ignore", category=DeprecationWarning, module="pendulum")
 
 
 def ensure_dagster_tests_import() -> None:
@@ -751,14 +754,12 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
     )
 
-    new_timestamp = new_dt.timestamp()
-
-    # Remove once pendulum is out of the picture
-    new_pendulum_dt = pendulum.from_timestamp(new_timestamp, "UTC")
-
     with unittest.mock.patch(
         "dagster._time._mockable_get_current_datetime", return_value=new_dt
     ), unittest.mock.patch(
         "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
-    ), pendulum_freeze_time(new_pendulum_dt):
+    ):
         yield
+
+
+class TestType: ...

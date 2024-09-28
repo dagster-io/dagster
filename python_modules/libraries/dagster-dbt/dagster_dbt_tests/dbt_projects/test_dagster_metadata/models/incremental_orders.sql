@@ -1,9 +1,22 @@
 {{
   config(
-    materialized='incremental',
-    unique_key='order_id',
-    incremental_strategy='append',
+    materialized='incremental'
   )
 }}
 
-select order_id from {{ ref('orders') }}
+with max_order_date as (
+    select
+      max(order_date) as max_order_date
+    from {{ this }}
+)
+
+select
+    order_id,
+    order_date
+from {{ ref('orders') }}
+
+{% if is_incremental() %}
+
+where order_date >= (select max_order_date from max_order_date)
+
+{% endif %}

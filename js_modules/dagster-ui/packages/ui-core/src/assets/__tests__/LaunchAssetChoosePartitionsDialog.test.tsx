@@ -9,6 +9,7 @@ import {
   buildAddDynamicPartitionSuccess,
   buildAssetKey,
   buildAssetNode,
+  buildDimensionDefinitionType,
   buildDimensionPartitionKeys,
   buildMultiPartitionStatuses,
   buildPartitionDefinition,
@@ -19,8 +20,8 @@ import {
   AddDynamicPartitionMutationVariables,
 } from '../../partitions/types/CreatePartitionDialog.types';
 import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
 import {
@@ -101,8 +102,8 @@ describe('launchAssetChoosePartitionsDialog', () => {
               setOpen={(_open: boolean) => {}}
               repoAddress={buildRepoAddress('test', 'test')}
               target={{
-                jobName: '__ASSET_JOB_0',
-                partitionSetName: '__ASSET_JOB_0_partition_set',
+                jobName: '__ASSET_JOB',
+                assetKeys: [assetA.assetKey, assetB.assetKey],
                 type: 'job',
               }}
               assets={[assetA, assetB]}
@@ -127,6 +128,7 @@ describe('launchAssetChoosePartitionsDialog', () => {
     const savePartitionButton = screen.getByTestId('save-partition-button');
     userEvent.click(savePartitionButton);
 
+    // Verify that it refreshes asset health after partition is added
     await waitFor(() => {
       expect(assetASecondQueryMockResult).toHaveBeenCalled();
     });
@@ -150,7 +152,18 @@ function buildAsset(name: string, dynamicPartitionKeys: string[]) {
       }),
     ],
     partitionDefinition: buildPartitionDefinition({
-      name: 'foo',
+      name: 'not-foo',
+      dimensionTypes: [
+        buildDimensionDefinitionType({
+          name: 'a',
+          type: PartitionDefinitionType.DYNAMIC,
+          dynamicPartitionsDefinitionName: 'foo',
+        }),
+        buildDimensionDefinitionType({
+          name: 'b',
+          type: PartitionDefinitionType.TIME_WINDOW,
+        }),
+      ],
     }),
     assetPartitionStatuses: buildMultiPartitionStatuses({
       primaryDimensionName: 'b',

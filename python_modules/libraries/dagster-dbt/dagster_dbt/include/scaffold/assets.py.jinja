@@ -1,17 +1,10 @@
 from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, dbt_assets
 
-{% if use_experimental_dbt_project -%}
 from .project import {{ dbt_project_name }}
-{% else -%}
-from .constants import dbt_manifest_path
-{% endif %}
 
-{% if use_experimental_dbt_project -%}
+
 @dbt_assets(manifest={{ dbt_project_name }}.manifest_path)
-{% else -%}
-@dbt_assets(manifest=dbt_manifest_path)
-{% endif -%}
 def {{ dbt_assets_name }}(context: AssetExecutionContext, dbt: DbtCliResource):
     {% if use_experimental_dbt_state -%}
     # When dbt state is available, pass it to the dbt invocation.

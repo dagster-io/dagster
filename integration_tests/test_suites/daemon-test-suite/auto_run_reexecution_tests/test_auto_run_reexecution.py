@@ -21,7 +21,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 
-from .utils import foo, get_foo_job_handle
+from auto_run_reexecution_tests.utils import foo, get_foo_job_handle
 
 
 def create_run(instance, **kwargs):
@@ -31,7 +31,7 @@ def create_run(instance, **kwargs):
         )
         return create_run_for_test(
             instance,
-            external_job_origin=handle.get_external_origin(),
+            external_job_origin=handle.get_remote_origin(),
             job_code_origin=handle.get_python_origin(),
             job_name=handle.job_name,
             job_snapshot=foo.get_job_snapshot(),
@@ -120,6 +120,37 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
     run = create_run(
         instance,
         status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_ASSET_OR_OP_FAILURE_TAG: False},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.STEP_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does not retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being false
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
         tags={MAX_RETRIES_TAG: "2", RETRY_ON_ASSET_OR_OP_FAILURE_TAG: True},
     )
 
@@ -133,7 +164,7 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
     )
     instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
 
-    # does retry because due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag
+    # does retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being true
 
     assert (
         len(

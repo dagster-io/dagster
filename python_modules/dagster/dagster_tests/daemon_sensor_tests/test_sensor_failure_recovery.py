@@ -18,9 +18,11 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._seven import IS_WINDOWS
 from dagster._time import create_datetime, get_timezone
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
+from mock import patch
 
-from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
+from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
+from dagster_tests.daemon_sensor_tests.test_sensor_run import wait_for_all_runs_to_start
 
 spawn_ctx = multiprocessing.get_context("spawn")
 
@@ -63,7 +65,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         external_sensor = external_repo.get_external_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -77,7 +79,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         launch_process.start()
         launch_process.join(timeout=60)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SKIPPED
@@ -98,7 +100,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         assert launch_process.exitcode != 0
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 2
         assert ticks[0].status == TickStatus.STARTED
@@ -120,7 +122,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         assert instance.get_runs_count() == 1
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 3
         assert ticks[0].status == TickStatus.SUCCESS
@@ -141,7 +143,7 @@ def test_failure_after_run_created_before_run_launched(
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -159,7 +161,7 @@ def test_failure_after_run_created_before_run_launched(
         assert launch_process.exitcode != 0
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         assert len(ticks) == 1
@@ -186,10 +188,24 @@ def test_failure_after_run_created_before_run_launched(
         run = instance.get_runs()[0]
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
-        assert len(ticks) == 2
+        assert len(ticks) == 1  # we resumed the original tick, so still a single tick
         assert ticks[0].status == TickStatus.SUCCESS
+
+        launch_process = spawn_ctx.Process(
+            target=_test_launch_sensor_runs_in_subprocess,
+            args=[instance.get_ref(), frozen_datetime + relativedelta(seconds=62), None],
+        )
+        launch_process.start()
+        launch_process.join(timeout=60)
+
+        assert launch_process.exitcode == 0
+        ticks = instance.get_ticks(
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2  # did another tick, no new runs launched
+        assert ticks[0].status == TickStatus.SKIPPED
 
 
 @pytest.mark.skipif(
@@ -210,7 +226,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -228,7 +244,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         assert launch_process.exitcode != 0
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         assert len(ticks) == 1
@@ -254,7 +270,104 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         run = instance.get_runs()[0]
 
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
-        assert len(ticks) == 2
+        assert len(ticks) == 1  # we resumed the original tick, so still a single tick
+        assert ticks[0].status == TickStatus.SUCCESS
+
+        launch_process = spawn_ctx.Process(
+            target=_test_launch_sensor_runs_in_subprocess,
+            args=[instance.get_ref(), frozen_datetime + relativedelta(seconds=62), None],
+        )
+        launch_process.start()
+        launch_process.join(timeout=60)
+
+        assert launch_process.exitcode == 0
+        ticks = instance.get_ticks(
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2  # did another tick, no new runs launched
+        assert ticks[0].status == TickStatus.SKIPPED
+
+
+@pytest.mark.skipif(
+    IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
+)
+@pytest.mark.parametrize("crash_location", ["RUN_IDS_RESERVED"])
+@pytest.mark.parametrize("crash_signal", get_crash_signals())
+def test_failure_after_run_ids_reserved(
+    crash_location, crash_signal, instance, external_repo
+) -> None:
+    frozen_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=28,
+        hour=0,
+        minute=0,
+        second=0,
+    ).astimezone(get_timezone("US/Central"))
+    with freeze_time(frozen_datetime), patch.object(
+        DagsterInstance, "get_ticks", wraps=instance.get_ticks
+    ) as mock_get_ticks:
+        external_sensor = external_repo.get_external_sensor("only_once_cursor_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                external_sensor.get_remote_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+
+        # create a run, launch but crash before submitting reserved runs
+        debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
+        launch_process = spawn_ctx.Process(
+            target=_test_launch_sensor_runs_in_subprocess,
+            args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
+        )
+        launch_process.start()
+        launch_process.join(timeout=60)
+
+        assert launch_process.exitcode != 0
+
+        ticks = instance.get_ticks(
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
+        )
+
+        assert len(ticks) == 1
+        assert ticks[0].status == TickStatus.STARTED
+        assert instance.get_runs_count() == 0
+
+        launch_process = spawn_ctx.Process(
+            target=_test_launch_sensor_runs_in_subprocess,
+            args=[instance.get_ref(), frozen_datetime + relativedelta(seconds=31), None],
+        )
+        launch_process.start()
+        launch_process.join(timeout=60)
+
+        assert launch_process.exitcode == 0
+
+        ticks = instance.get_ticks(
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
+        )
+
+        assert len(ticks) == 1  # we resumed the original tick, so still a single tick
+        assert ticks[0].status == TickStatus.SUCCESS
+        wait_for_all_runs_to_start(instance)
+
+        assert instance.get_runs_count() == 1
+
+        mock_get_ticks.reset_mock()
+        launch_process = spawn_ctx.Process(
+            target=_test_launch_sensor_runs_in_subprocess,
+            args=[instance.get_ref(), frozen_datetime + relativedelta(seconds=62), None],
+        )
+        launch_process.start()
+        launch_process.join(timeout=60)
+        # the previous tick completed successfully, so don't need to get ticks on the next tick
+        assert mock_get_ticks.call_count == 0
+
+        ticks = instance.get_ticks(
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
+        )
+        assert len(ticks) == 2  # new tick, nothing happened
         assert ticks[0].status == TickStatus.SKIPPED

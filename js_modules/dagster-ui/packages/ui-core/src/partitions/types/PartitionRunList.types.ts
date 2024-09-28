@@ -37,8 +37,7 @@ export type PartitionRunListQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
-          rootConcurrencyKeys: Array<string> | null;
-          hasUnconstrainedRootNodes: boolean;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -58,3 +57,5 @@ export type PartitionRunListQuery = {
         }>;
       };
 };
+
+export const PartitionRunListQueryVersion = 'a767fc2c778f8dc83fe1c265924cd6e5944e3e0daf6a94b14eda6f45a409f4ec';

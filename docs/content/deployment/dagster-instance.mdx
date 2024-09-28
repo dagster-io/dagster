@@ -791,13 +791,3 @@ schedules:
 ```
 
 You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same schedule tick in parallel, which can help decrease latency when a single schedule tick returns many run requests.
-
-### Auto-materialize
-
-The `auto_materialize` key allows you to adjust configuration related to [auto-materializing assets](/concepts/assets/asset-auto-execution).
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_auto_materialize endbefore=end_marker_auto_materialize
-auto_materialize:
-  run_tags:
-    key: value
-```

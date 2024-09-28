@@ -1,15 +1,25 @@
 from typing import Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    RawSensorEvaluationFunctionReturn,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SensorType,
+    SkipReason,
+    get_context_param_name,
+    get_sensor_context_from_args_or_kwargs,
+    validate_and_get_resource_dict,
+)
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -21,18 +31,7 @@ from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
-
-from .sensor_definition import (
-    DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SensorType,
-    SkipReason,
-    get_context_param_name,
-    get_sensor_context_from_args_or_kwargs,
-    validate_and_get_resource_dict,
-)
+from dagster._time import get_current_datetime
 
 
 @whitelist_for_serdes
@@ -240,10 +239,15 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                 yield SkipReason(f"Initializing {name}.")
                 return
 
-            evaluation_time = pendulum.now("UTC")
+            evaluation_time = get_current_datetime()
             asset_graph = context.repository_def.asset_graph
+            asset_graph_view = AssetGraphView(
+                temporal_context=TemporalContext(effective_dt=evaluation_time, last_event_id=None),
+                instance=context.instance,
+                asset_graph=asset_graph,
+            )
             instance_queryer = CachingInstanceQueryer(
-                context.instance, asset_graph, evaluation_time
+                context.instance, asset_graph, asset_graph_view, evaluation_time
             )
             data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
             monitored_keys = asset_selection.resolve(asset_graph)

@@ -11,11 +11,13 @@ jest.mock('idb-lru-cache', () => {
   };
 });
 
+const VERSION = 1;
+
 describe('HourlyDataCache', () => {
   let cache: HourlyDataCache<number>;
 
   beforeEach(() => {
-    cache = new HourlyDataCache<number>('test');
+    cache = new HourlyDataCache<number>({id: 'test', version: VERSION});
   });
 
   describe('addData', () => {
@@ -123,7 +125,7 @@ describe('HourlyDataCache Subscriptions', () => {
   let cache: HourlyDataCache<number>;
 
   beforeEach(() => {
-    cache = new HourlyDataCache<number>();
+    cache = new HourlyDataCache<number>({version: VERSION});
   });
 
   it('should notify subscriber immediately with existing data', () => {
@@ -200,10 +202,13 @@ describe('HourlyDataCache with IndexedDB', () => {
     const sec = Date.now() / 1000;
     const nowHour = Math.floor(sec / ONE_HOUR_S);
     mockedCache.get.mockResolvedValue({
-      value: new Map([[nowHour, [{start: nowHour, end: nowHour + ONE_HOUR_S, data: [1, 2, 3]}]]]),
+      value: {
+        version: VERSION,
+        cache: new Map([[nowHour, [{start: nowHour, end: nowHour + ONE_HOUR_S, data: [1, 2, 3]}]]]),
+      },
     });
 
-    const cache = new HourlyDataCache<number>('test');
+    const cache = new HourlyDataCache<number>({id: 'test', version: VERSION});
 
     await cache.loadCacheFromIndexedDB();
 
@@ -213,13 +218,13 @@ describe('HourlyDataCache with IndexedDB', () => {
   });
 
   it('should save cache to IndexedDB when data is added', async () => {
-    const cache = new HourlyDataCache<number>('test');
+    const cache = new HourlyDataCache<number>({id: 'test', version: VERSION});
 
     cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
     const mockCallArgs = mockedCache.set.mock.calls[0];
     const map = mockCallArgs[1];
-    expect(map).toEqual(
+    expect(map.cache).toEqual(
       new Map<number, {data: number[]; end: number; start: number}[]>([
         [0, [{data: [1, 2, 3], end: 3600, start: 0}]],
       ]),
@@ -232,19 +237,22 @@ describe('HourlyDataCache with IndexedDB', () => {
 
     mockedCache.has.mockResolvedValue(true);
     mockedCache.get.mockResolvedValue({
-      value: new Map([
-        [
-          Math.floor(eightDaysAgo / ONE_HOUR_S),
-          [{start: eightDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
-        ],
-        [
-          Math.floor(sixDaysAgo / ONE_HOUR_S),
-          [{start: sixDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
-        ],
-      ]),
+      value: {
+        version: VERSION,
+        cache: new Map([
+          [
+            Math.floor(eightDaysAgo / ONE_HOUR_S),
+            [{start: eightDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
+          ],
+          [
+            Math.floor(sixDaysAgo / ONE_HOUR_S),
+            [{start: sixDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
+          ],
+        ]),
+      },
     });
 
-    const cache = new HourlyDataCache<number>('test');
+    const cache = new HourlyDataCache<number>({id: 'test', version: VERSION});
 
     await cache.loadCacheFromIndexedDB();
 

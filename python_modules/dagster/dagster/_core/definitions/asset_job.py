@@ -21,19 +21,11 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import has_only_asset_checks
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
-from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._core.utils import toposort
-from dagster._utils.merger import merge_dicts
-
-from .asset_layer import AssetLayer
-from .assets import AssetsDefinition
-from .config import ConfigMapping
-from .dependency import (
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.dependency import (
     BlockingAssetChecksDependencyDefinition,
     DependencyDefinition,
     DependencyMapping,
@@ -42,74 +34,48 @@ from .dependency import (
     NodeInvocation,
     NodeOutputHandle,
 )
-from .events import AssetKey
-from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition, default_job_io_manager
-from .metadata import RawMetadataValue
-from .partition import PartitionedConfig, PartitionsDefinition
-from .resource_definition import ResourceDefinition
-from .resource_requirement import ensure_requirements_satisfied
-from .utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster._core.selector.subset_selector import AssetSelectionData
+from dagster._core.utils import toposort
+from dagster._utils.merger import merge_dicts
 
-# Prefix for auto created jobs that are used to materialize assets
-ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
+# Name for auto-created job that's used to materialize assets
+IMPLICIT_ASSET_JOB_NAME = "__ASSET_JOB"
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_check_spec import AssetCheckSpec
     from dagster._core.definitions.run_config import RunConfig
-
-    from .asset_check_spec import AssetCheckSpec
 
 
 def is_base_asset_job_name(name: str) -> bool:
-    return name.startswith(ASSET_BASE_JOB_PREFIX)
+    return name == IMPLICIT_ASSET_JOB_NAME
 
 
-def _build_partitioned_asset_job_lambda(
-    job_name: str,
+def get_base_asset_job_lambda(
     asset_graph: AssetGraph,
-    partitions_def: PartitionsDefinition,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
     logger_defs: Optional[Mapping[str, LoggerDefinition]],
 ) -> Callable[[], JobDefinition]:
     def build_asset_job_lambda() -> JobDefinition:
-        executable_asset_keys = asset_graph.executable_asset_keys & {
-            *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
-            *asset_graph.unpartitioned_asset_keys,
-        }
-        # For now, to preserve behavior keep all orphaned asset checks (where the target check
-        # has no corresponding executable definition) in all base jobs. When checks support
-        # partitions, they should only go in the corresponding partitioned job.
-        selection = AssetSelection.assets(*executable_asset_keys) | AssetSelection.checks(
-            *asset_graph.orphan_asset_check_keys
-        )
         job_def = build_asset_job(
-            job_name,
-            asset_graph=get_asset_graph_for_job(asset_graph, selection),
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-            partitions_def=partitions_def,
-        )
-        job_def.validate_resource_requirements_satisfied()
-
-        if logger_defs and not job_def.has_specified_loggers:
-            job_def = job_def.with_logger_defs(logger_defs)
-
-        return job_def
-
-    return build_asset_job_lambda
-
-
-def _build_global_asset_job_lambda(
-    asset_graph, executor_def, resource_defs, logger_defs
-) -> Callable[[], JobDefinition]:
-    def build_asset_job_lambda() -> JobDefinition:
-        job_def = build_asset_job(
-            name=ASSET_BASE_JOB_PREFIX,
+            name=IMPLICIT_ASSET_JOB_NAME,
             asset_graph=asset_graph,
             executor_def=executor_def,
             resource_defs=resource_defs,
+            allow_different_partitions_defs=True,
         )
         job_def.validate_resource_requirements_satisfied()
         if logger_defs and not job_def.has_specified_loggers:
@@ -117,44 +83,19 @@ def _build_global_asset_job_lambda(
         return job_def
 
     return build_asset_job_lambda
-
-
-def get_base_asset_jobs(
-    asset_graph: AssetGraph,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]],
-    executor_def: Optional[ExecutorDefinition],
-    logger_defs: Optional[Mapping[str, LoggerDefinition]],
-) -> Mapping[str, Callable[[], JobDefinition]]:
-    if len(asset_graph.all_partitions_defs) == 0:
-        return {
-            ASSET_BASE_JOB_PREFIX: _build_global_asset_job_lambda(
-                asset_graph, executor_def, resource_defs, logger_defs
-            )
-        }
-    else:
-        jobs = {}
-        for i, partitions_def in enumerate(asset_graph.all_partitions_defs):
-            job_name = f"{ASSET_BASE_JOB_PREFIX}_{i}"
-            jobs[job_name] = _build_partitioned_asset_job_lambda(
-                f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                asset_graph,
-                partitions_def,
-                resource_defs,
-                executor_def,
-                logger_defs,
-            )
-        return jobs
 
 
 def build_asset_job(
     name: str,
     asset_graph: AssetGraph,
+    allow_different_partitions_defs: bool,
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[
         Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
     ] = None,
     tags: Optional[Mapping[str, str]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -202,7 +143,10 @@ def build_asset_job(
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
     partitions_def = _infer_and_validate_common_partitions_def(
-        asset_graph, asset_graph.executable_asset_keys, partitions_def
+        asset_graph,
+        asset_graph.executable_asset_keys,
+        required_partitions_def=partitions_def,
+        allow_different_partitions_defs=allow_different_partitions_defs,
     )
 
     deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
@@ -246,6 +190,7 @@ def build_asset_job(
             resource_defs=all_resource_defs,
             config=config,
             tags=tags,
+            run_tags=run_tags,
             executor_def=executor_def,
             partitions_def=partitions_def,
             asset_layer=asset_layer,
@@ -253,14 +198,13 @@ def build_asset_job(
             metadata=original_job.metadata,
             logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
-            op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
-            version_strategy=original_job.version_strategy,
+            op_retry_policy=original_job.op_retry_policy,
         )
-
     return graph.to_job(
         resource_defs=all_resource_defs,
         config=config,
         tags=tags,
+        run_tags=run_tags,
         metadata=metadata,
         executor_def=executor_def,
         partitions_def=partitions_def,
@@ -272,7 +216,9 @@ def build_asset_job(
 
 
 def get_asset_graph_for_job(
-    parent_asset_graph: AssetGraph, selection: AssetSelection
+    parent_asset_graph: AssetGraph,
+    selection: AssetSelection,
+    allow_different_partitions_defs: bool = False,
 ) -> AssetGraph:
     """Subset an AssetGraph to create an AssetGraph representing an asset job.
 
@@ -296,7 +242,11 @@ def get_asset_graph_for_job(
             f" Invalid selected keys: {invalid_keys}",
         )
 
-    _infer_and_validate_common_partitions_def(parent_asset_graph, selected_keys)
+    _infer_and_validate_common_partitions_def(
+        parent_asset_graph,
+        selected_keys,
+        allow_different_partitions_defs=allow_different_partitions_defs,
+    )
 
     selected_check_keys = selection.resolve_checks(parent_asset_graph)
 
@@ -405,6 +355,7 @@ def _subset_assets_defs(
 def _infer_and_validate_common_partitions_def(
     asset_graph: AssetGraph,
     asset_keys: Iterable[AssetKey],
+    allow_different_partitions_defs: bool,
     required_partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Optional[PartitionsDefinition]:
     keys_by_partitions_def = defaultdict(set)
@@ -419,18 +370,19 @@ def _infer_and_validate_common_partitions_def(
                 )
             keys_by_partitions_def[partitions_def].add(key)
 
-    if len(keys_by_partitions_def) > 1:
-        keys_by_partitions_def_str = "\n".join(
-            f"{partitions_def}: {asset_keys}"
-            for partitions_def, asset_keys in keys_by_partitions_def.items()
-        )
-        raise DagsterInvalidDefinitionError(
-            f"Selected assets must have the same partitions definitions, but the"
-            f" selected assets have different partitions definitions: \n{keys_by_partitions_def_str}"
-        )
-    elif len(keys_by_partitions_def) == 1:
+    if len(keys_by_partitions_def) == 1:
         return next(iter(keys_by_partitions_def.keys()))
     else:
+        if len(keys_by_partitions_def) > 1 and not allow_different_partitions_defs:
+            keys_by_partitions_def_str = "\n".join(
+                f"{partitions_def}: {asset_keys}"
+                for partitions_def, asset_keys in keys_by_partitions_def.items()
+            )
+            raise DagsterInvalidDefinitionError(
+                f"Selected assets must have the same partitions definitions, but the"
+                f" selected assets have different partitions definitions: \n{keys_by_partitions_def_str}"
+            )
+
         return None
 
 
@@ -445,7 +397,7 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         for output_name, check_spec in assets_def.check_specs_by_output_name.items():
             check_specs_by_node_output_handle[
-                NodeOutputHandle(node_handle, output_name=output_name)
+                NodeOutputHandle(node_handle=node_handle, output_name=output_name)
             ] = check_spec
 
     blocking_asset_check_output_handles_by_asset_key: Dict[AssetKey, Set[NodeOutputHandle]] = (
@@ -527,7 +479,8 @@ def build_node_deps(
                 )
                 asset_check_deps = [
                     DependencyDefinition(
-                        node_output_handle.node_handle.name, node_output_handle.output_name
+                        node_output_handle.node_handle.name,
+                        node_output_handle.output_name,
                     )
                     for node_output_handle in blocking_asset_check_output_handles or []
                 ]

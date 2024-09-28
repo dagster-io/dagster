@@ -1,6 +1,6 @@
 # Backcompatability Integration Tests
 
-This test suite ensures that the branch Dagster code can successfully communicate cross-process with older Dagster code.
+This test suite ensures that the branch Dagster code can successfully communicate cross-process with older Dagster code. It only tests older user code (i.e. code server), because our backcompat policy is that the host process (e.g. webserver) version must be >= user code version.
 
 ## Looking at test artifacts in BuildKite
 
@@ -38,19 +38,13 @@ If you are on MacOS, ensure you have docker running
 
 From `integration_tests/test_suites/backcompat-test-suite` run any of the following commands
 
-- `pytest -m webserver-latest-release -xvv -ff tests/test_backcompat.py`
-- `pytest -m webserver-earliest-release -xvv -ff tests/test_backcompat.py`
 - `pytest -m user-code-latest-release -xvv -ff tests/test_backcompat.py`
 - `pytest -m user-code-earliest-release -xvv -ff tests/test_backcompat.py`
-- `tox webserver-latest-release`
-- `tox webserver-earliest-release`
 - `tox user-code-latest-release`
 - `tox user-code-earliest-release`
 
 where:
 
-- webserver-latest-release: webserver on most recent release (`dagster-webserver`) and user code on current branch
-- webserver-earliest-release: webserver on earliest release (this will run the deprecated `dagit` package if `EARLIEST_TESTED_RELEASE` is less than 1.3.14) to maintain backcompat for, and user code on current branch
 - user-code-latest-release: webserver on current branch and user code on latest minor release
 - user-code-earliest-release: webserver on current branch and user code on earliest release to maintain backcompat for
 

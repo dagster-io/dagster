@@ -1,4 +1,4 @@
-import {Body, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
+import {Body, Box, Colors, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -65,20 +65,6 @@ export const AssetSidebarActivitySummary = ({
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
             <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
             <OverdueTag policy={asset.freshnessPolicy} assetKey={asset.assetKey} />
-          </Box>
-        </SidebarSection>
-      )}
-
-      {asset.autoMaterializePolicy && (
-        <SidebarSection title="Auto-materialize policy">
-          <Box
-            padding={{horizontal: 24, vertical: 12}}
-            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-          >
-            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'automation'})}>
-              View automation history
-            </Link>
-            <Icon name="open_in_new" color={Colors.linkDefault()} />
           </Box>
         </SidebarSection>
       )}

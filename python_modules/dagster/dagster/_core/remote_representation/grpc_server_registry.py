@@ -4,7 +4,6 @@ import uuid
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union, cast
 
-import pendulum
 from typing_extensions import TypeGuard
 
 import dagster._check as check
@@ -16,6 +15,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
+from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
@@ -67,15 +67,10 @@ class GrpcServerRegistry(AbstractContextManager):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
-        # How long each process should run before a new process should be created the next
-        # time a given origin is requested (which will pick up any changes that have been
-        # made to the code)
-        reload_interval: int,
         # How long the process can live without a heartbeat before it dies. You should ensure
-        # that either heartbeat_ttl is greater than reload_interval (so that the process will reload
-        # before it ends due to heartbeat failure), or if reload_interval is 0, that any processes
-        # returned by this registry have at least one GrpcServerCodeLocation hitting the
-        # server with a heartbeat while you want the process to stay running.
+        # that any processes returned by this registry have at least one
+        # GrpcServerCodeLocation hitting the server with a heartbeat while you want the
+        # process to stay running.
         heartbeat_ttl: int,
         # How long to wait for the server to start up and receive connections before timing out
         startup_timeout: int,
@@ -92,13 +87,6 @@ class GrpcServerRegistry(AbstractContextManager):
 
         self._waited_for_processes = False
 
-        check.invariant(
-            heartbeat_ttl > reload_interval,
-            "Heartbeat TTL must be larger than reload interval, or processes could die due to"
-            " TTL failure before they are reloaded",
-        )
-
-        self._reload_interval = check.int_param(reload_interval, "reload_interval")
         self._heartbeat_ttl = check.int_param(heartbeat_ttl, "heartbeat_ttl")
         self._startup_timeout = check.int_param(startup_timeout, "startup_timeout")
 
@@ -121,7 +109,7 @@ class GrpcServerRegistry(AbstractContextManager):
         self._cleanup_thread = threading.Thread(
             target=self._clear_old_processes,
             name="grpc-server-registry-cleanup",
-            args=(self._cleanup_thread_shutdown_event, self._reload_interval),
+            args=(self._cleanup_thread_shutdown_event,),
             daemon=True,
         )
         self._cleanup_thread.start()
@@ -210,14 +198,14 @@ class GrpcServerRegistry(AbstractContextManager):
                 self._active_entries[origin_id] = ServerRegistryEntry(
                     process=server_process,
                     loadable_target_origin=loadable_target_origin,
-                    creation_timestamp=pendulum.now("UTC").timestamp(),
+                    creation_timestamp=get_current_timestamp(),
                     server_id=new_server_id,
                 )
             except Exception:
                 self._active_entries[origin_id] = ErrorRegistryEntry(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                     loadable_target_origin=loadable_target_origin,
-                    creation_timestamp=pendulum.now("UTC").timestamp(),
+                    creation_timestamp=get_current_timestamp(),
                 )
 
         active_entry = self._active_entries[origin_id]
@@ -238,26 +226,13 @@ class GrpcServerRegistry(AbstractContextManager):
     # Clear out processes from the map periodically so that they'll be re-created the next
     # time the origins are requested. Lack of any heartbeats will ensure that the server will
     # eventually die once they're no longer being held by any threads.
-    def _clear_old_processes(self, shutdown_event: threading.Event, reload_interval: int) -> None:
+    def _clear_old_processes(self, shutdown_event: threading.Event) -> None:
         while True:
             shutdown_event.wait(5)
             if shutdown_event.is_set():
                 break
 
-            current_time = pendulum.now("UTC").timestamp()
             with self._lock:
-                origin_ids_to_clear: List[str] = []
-
-                for origin_id, entry in self._active_entries.items():
-                    if (
-                        reload_interval > 0
-                        and current_time - entry.creation_timestamp > reload_interval
-                    ):  # Use a different threshold for errors so they aren't cached as long?
-                        origin_ids_to_clear.append(origin_id)
-
-                for origin_id in origin_ids_to_clear:
-                    del self._active_entries[origin_id]
-
                 # Remove any dead processes from the all_processes map
                 dead_process_indexes: List[int] = []
                 for index in range(len(self._all_processes)):

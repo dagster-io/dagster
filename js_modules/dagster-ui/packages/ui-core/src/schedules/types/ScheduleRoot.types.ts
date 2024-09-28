@@ -52,6 +52,7 @@ export type ScheduleRootQuery = {
             __typename: 'Run';
             id: string;
             status: Types.RunStatus;
+            creationTime: number;
             startTime: number | null;
             endTime: number | null;
             updateTime: number | null;
@@ -140,8 +141,7 @@ export type PreviousRunsForScheduleQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
-          rootConcurrencyKeys: Array<string> | null;
-          hasUnconstrainedRootNodes: boolean;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -161,3 +161,7 @@ export type PreviousRunsForScheduleQuery = {
         }>;
       };
 };
+
+export const ScheduleRootQueryVersion = 'b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc';
+
+export const PreviousRunsForScheduleQueryVersion = '7955ced58f846514ce4272707e9682b6bd66f53a26b4f6ff3754f1581f5ef92f';

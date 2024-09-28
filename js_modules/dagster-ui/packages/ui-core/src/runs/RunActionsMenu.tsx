@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -17,6 +16,7 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';
@@ -31,31 +31,30 @@ import {TerminationDialog} from './TerminationDialog';
 import {
   PipelineEnvironmentQuery,
   PipelineEnvironmentQueryVariables,
+  RunActionsMenuRunFragment,
 } from './types/RunActionsMenu.types';
-import {RunTableRunFragment} from './types/RunTable.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
+import {gql, useLazyQuery} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {InjectedComponentContext} from '../app/InjectedComponentContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
 import {MenuLink} from '../ui/MenuLink';
-import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
 
 interface Props {
-  run: RunTableRunFragment;
-  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
+  run: RunActionsMenuRunFragment;
   onAddTag?: (token: RunFilterToken) => void;
+  anchorLabel?: React.ReactNode;
 }
 
-export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRun}: Props) => {
-  const {RunMetricsDialog} = React.useContext(InjectedComponentContext);
+export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics'
@@ -129,7 +128,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
   return (
     <>
       <JoinedButtons>
-        <AnchorButton to={`/runs/${run.id}`}>View run</AnchorButton>
+        <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
         <Popover
           content={
             <Menu>
@@ -168,7 +167,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                 >
                   <MenuItem
                     tagName="button"
-                    icon="job"
+                    icon="history"
                     text="View snapshot"
                     onClick={() => setVisibleDialog('tags')}
                   />
@@ -213,7 +212,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                     onClick={() => setVisibleDialog('terminate')}
                   />
                 )}
-                {additionalActionsForRun?.(run)}
                 <MenuDivider />
               </>
               <MenuExternalLink
@@ -309,12 +307,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
 });
 
 interface RunBulkActionsMenuProps {
-  selected: RunTableRunFragment[];
+  selected: RunActionsMenuRunFragment[];
   clearSelection: () => void;
+  notice?: React.ReactNode;
 }
 
 export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) => {
-  const {selected, clearSelection} = props;
+  const {selected, clearSelection, notice} = props;
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -393,6 +392,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
         disabled={disabled || selected.length === 0}
         content={
           <Menu>
+            {notice}
             {canTerminateAny ? (
               <MenuItem
                 icon="cancel"
@@ -487,6 +487,39 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
 
 const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
+
+export const RUN_ACTIONS_MENU_RUN_FRAGMENT = gql`
+  fragment RunActionsMenuRunFragment on Run {
+    id
+    assetSelection {
+      ... on AssetKey {
+        path
+      }
+    }
+    assetCheckSelection {
+      name
+      assetKey {
+        path
+      }
+    }
+    tags {
+      key
+      value
+    }
+    hasReExecutePermission
+    hasTerminatePermission
+    hasDeletePermission
+    canTerminate
+    mode
+    status
+    pipelineName
+    pipelineSnapshotId
+    repositoryOrigin {
+      repositoryName
+      repositoryLocationName
+    }
+  }
+`;
 
 // Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
 export const PIPELINE_ENVIRONMENT_QUERY = gql`

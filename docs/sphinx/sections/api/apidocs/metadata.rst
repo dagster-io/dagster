@@ -6,7 +6,7 @@ Metadata
 Dagster uses metadata to communicate arbitrary user-specified metadata about structured
 events.
 
-Refer to the `Metadata </concepts/metadata-tags>`_ documentation for more information.
+Refer to the `Metadata <https://docs.dagster.io/concepts/metadata-tags>`_ documentation for more information.
 
 .. autoclass:: MetadataValue
 
@@ -47,6 +47,8 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 
 .. autoclass:: UrlMetadataValue
 
+.. autoclass:: CodeReferencesMetadataValue
+
 Tables
 ^^^^^^
 
@@ -65,3 +67,18 @@ These APIs provide the ability to express column schemas (`TableSchema`), rows/r
 .. autoclass:: TableColumnLineage
 
 .. autoclass:: TableColumnDep
+
+Code references
+^^^^^^^^^^^^^^^
+
+The following functions are used to attach source code references to your assets.
+For more information, refer to the `Linking to asset definition code with code references <https://docs.dagster.io/guides/dagster/code-references>`_ guide.
+
+
+.. autofunction:: with_source_code_references
+
+.. autofunction:: link_code_references_to_git
+
+.. autoclass:: FilePathMapping
+
+.. autoclass:: AnchorBasedFilePathMapping

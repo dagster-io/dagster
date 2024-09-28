@@ -1,6 +1,6 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
-import {isCanonicalStorageKindTag} from '../graph/KindTags';
+import {isKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -13,13 +13,8 @@ type CountByOwner = {
   assetCount: number;
 };
 
-type CountByComputeKind = {
-  computeKind: string;
-  assetCount: number;
-};
-
-type CountByStorageKind = {
-  storageKind: string;
+type CountByKind = {
+  kind: string;
   assetCount: number;
 };
 
@@ -40,11 +35,10 @@ type CountPerCodeLocation = {
 
 type AssetCountsResult = {
   countsByOwner: CountByOwner[];
-  countsByComputeKind: CountByComputeKind[];
+  countsByKind: CountByKind[];
   countPerTag: CountPerTag[];
   countPerAssetGroup: CountPerGroupName[];
   countPerCodeLocation: CountPerCodeLocation[];
-  countsByStorageKind: CountByStorageKind[];
 };
 
 export type GroupMetadata = {
@@ -56,17 +50,35 @@ export type GroupMetadata = {
 type AssetDefinitionMetadata = {
   definition: Pick<
     AssetTableDefinitionFragment,
-    'owners' | 'computeKind' | 'groupName' | 'repository' | 'tags'
+    'owners' | 'groupName' | 'repository' | 'tags' | 'kinds'
   > | null;
 };
 
+class CaseInsensitiveCounters {
+  private _labels: {[key: string]: string} = {};
+  private _entries: {[key: string]: number} = {};
+
+  increment(label: string) {
+    const labelLower = label.toLowerCase();
+
+    // Allow label containing uppercase letters to overwrite existing label
+    if (!this._labels[labelLower] || label !== labelLower) {
+      this._labels[labelLower] = label;
+    }
+    this._entries[labelLower] = (this._entries[labelLower] || 0) + 1;
+  }
+
+  entries() {
+    return Object.entries(this._entries).map(([k, v]) => [this._labels[k], v] as [string, number]);
+  }
+}
+
 export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): AssetCountsResult {
-  const assetCountByOwner: Record<string, number> = {};
-  const assetCountByComputeKind: Record<string, number> = {};
-  const assetCountByStorageKind: Record<string, number> = {};
-  const assetCountByGroup: Record<string, number> = {};
-  const assetCountByCodeLocation: Record<string, number> = {};
-  const assetCountByTag: Record<string, number> = {};
+  const assetCountByOwner = new CaseInsensitiveCounters();
+  const assetCountByKind = new CaseInsensitiveCounters();
+  const assetCountByGroup = new CaseInsensitiveCounters();
+  const assetCountByCodeLocation = new CaseInsensitiveCounters();
+  const assetCountByTag = new CaseInsensitiveCounters();
 
   assets
     .filter((asset) => asset.definition)
@@ -74,21 +86,23 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
       const assetDefinition = asset.definition!;
       assetDefinition.owners.forEach((owner) => {
         const ownerKey = owner.__typename === 'UserAssetOwner' ? owner.email : owner.team;
-        assetCountByOwner[ownerKey] = (assetCountByOwner[ownerKey] || 0) + 1;
+        assetCountByOwner.increment(ownerKey);
       });
 
-      const computeKind = assetDefinition.computeKind;
-      if (computeKind) {
-        assetCountByComputeKind[computeKind] = (assetCountByComputeKind[computeKind] || 0) + 1;
+      const kinds = assetDefinition.kinds;
+      if (kinds) {
+        kinds.forEach((kind) => {
+          assetCountByKind.increment(kind);
+        });
       }
 
       assetDefinition.tags.forEach((tag) => {
-        if (isCanonicalStorageKindTag(tag)) {
-          assetCountByStorageKind[tag.value] = (assetCountByStorageKind[tag.value] || 0) + 1;
-        } else {
-          const stringifiedTag = JSON.stringify(tag);
-          assetCountByTag[stringifiedTag] = (assetCountByTag[stringifiedTag] || 0) + 1;
+        // Skip kind tags
+        if (isKindTag(tag)) {
+          return;
         }
+        const stringifiedTag = JSON.stringify(tag);
+        assetCountByTag.increment(stringifiedTag);
       });
 
       const groupName = assetDefinition.groupName;
@@ -102,38 +116,31 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
           repositoryName,
         };
         const groupIdentifier = JSON.stringify(metadata);
-        assetCountByGroup[groupIdentifier] = (assetCountByGroup[groupIdentifier] || 0) + 1;
+        assetCountByGroup.increment(groupIdentifier);
       }
 
       const stringifiedCodeLocation = buildRepoPathForHuman(repositoryName, locationName);
-      assetCountByCodeLocation[stringifiedCodeLocation] =
-        (assetCountByCodeLocation[stringifiedCodeLocation] || 0) + 1;
+      assetCountByCodeLocation.increment(stringifiedCodeLocation);
     });
 
-  const countsByOwner = Object.entries(assetCountByOwner)
+  const countsByOwner = assetCountByOwner
+    .entries()
     .map(([owner, count]) => ({
       owner,
       assetCount: count,
     }))
     .sort(({owner: ownerA}, {owner: ownerB}) => COMMON_COLLATOR.compare(ownerA, ownerB));
-  const countsByComputeKind = Object.entries(assetCountByComputeKind)
-    .map(([computeKind, count]) => ({
-      computeKind,
-      assetCount: count,
-    }))
-    .sort(({computeKind: computeKindA}, {computeKind: computeKindB}) =>
-      COMMON_COLLATOR.compare(computeKindA, computeKindB),
-    );
-  const countsByStorageKind = Object.entries(assetCountByStorageKind)
-    .map(([storageKind, count]) => ({
-      storageKind,
-      assetCount: count,
-    }))
-    .sort(({storageKind: storageKindA}, {storageKind: storageKindB}) =>
-      COMMON_COLLATOR.compare(storageKindA, storageKindB),
-    );
 
-  const countPerTag = Object.entries(assetCountByTag)
+  const countsByKind = assetCountByKind
+    .entries()
+    .map(([kind, count]) => ({
+      kind,
+      assetCount: count,
+    }))
+    .sort(({kind: kindA}, {kind: kindB}) => COMMON_COLLATOR.compare(kindA, kindB));
+
+  const countPerTag = assetCountByTag
+    .entries()
     .map(([tagIdentifier, count]) => ({
       assetCount: count,
       tag: JSON.parse(tagIdentifier),
@@ -151,7 +158,8 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
       ),
     );
 
-  const countPerAssetGroup = Object.entries(assetCountByGroup)
+  const countPerAssetGroup = assetCountByGroup
+    .entries()
     .map(([groupIdentifier, count]) => ({
       assetCount: count,
       groupMetadata: JSON.parse(groupIdentifier),
@@ -169,7 +177,8 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
           }),
         ) || COMMON_COLLATOR.compare(groupMetadataA.groupName, groupMetadataB.groupName),
     );
-  const countPerCodeLocation = Object.entries(assetCountByCodeLocation)
+  const countPerCodeLocation = assetCountByCodeLocation
+    .entries()
     .map(([key, count]) => ({
       repoAddress: repoAddressFromPath(key)!,
       assetCount: count,
@@ -183,10 +192,9 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
 
   return {
     countsByOwner,
-    countsByComputeKind,
+    countsByKind,
     countPerTag,
     countPerAssetGroup,
     countPerCodeLocation,
-    countsByStorageKind,
   };
 }

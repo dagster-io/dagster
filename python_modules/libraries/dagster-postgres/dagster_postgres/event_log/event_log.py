@@ -30,15 +30,16 @@ from dagster._core.storage.sql import (
 )
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
+from sqlalchemy import event
 from sqlalchemy.engine import Connection
 
-from ..utils import (
+from dagster_postgres.utils import (
     create_pg_connection,
     pg_alembic_config,
-    pg_statement_timeout,
     pg_url_from_config,
     retry_pg_connection_fn,
     retry_pg_creation_fn,
+    set_pg_statement_timeout,
 )
 
 CHANNEL_NAME = "run_events"
@@ -112,18 +113,19 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
+        kwargs = {
+            "isolation_level": "AUTOCOMMIT",
+            "pool_size": 1,
+            "pool_recycle": pool_recycle,
+        }
         existing_options = self._engine.url.query.get("options")
-        timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:
-            options = f"{timeout_option} {existing_options}"
-        else:
-            options = timeout_option
-        self._engine = create_engine(
-            self.postgres_url,
-            isolation_level="AUTOCOMMIT",
-            pool_size=1,
-            connect_args={"options": options},
-            pool_recycle=pool_recycle,
+            kwargs["connect_args"] = {"options": existing_options}
+        self._engine = create_engine(self.postgres_url, **kwargs)
+        event.listen(
+            self._engine,
+            "connect",
+            lambda connection, _: set_pg_statement_timeout(connection, statement_timeout),
         )
 
     def upgrade(self) -> None:

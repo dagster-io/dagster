@@ -11,8 +11,7 @@ from dagster_managed_elements.types import ManagedElementReconciler, is_key_secr
 from dagster_managed_elements.utils import diff_dicts
 
 from dagster_fivetran import FivetranResource
-
-from .types import (
+from dagster_fivetran.managed.types import (
     MANAGED_ELEMENTS_DEPRECATION_MSG,
     FivetranConnector,
     FivetranDestination,

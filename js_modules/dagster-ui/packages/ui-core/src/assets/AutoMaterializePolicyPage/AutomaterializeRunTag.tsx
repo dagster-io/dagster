@@ -1,9 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
 import {Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {RunStatusOnlyQuery, RunStatusOnlyQueryVariables} from './types/AutomaterializeRunTag.types';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
+import {gql, useQuery} from '../../apollo-client';
 import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 
 interface Props {
@@ -15,7 +14,6 @@ export const AutomaterializeRunTag = ({runId}: Props) => {
     variables: {runId},
   });
   const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'RunStatusOnlyQuery');
 
   if (loading && !data) {
     return <Tag icon="spinner">Loading</Tag>;

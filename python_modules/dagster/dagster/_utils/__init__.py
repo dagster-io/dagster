@@ -18,6 +18,7 @@ import time
 import uuid
 from datetime import timezone
 from enum import Enum
+from pathlib import Path
 from signal import Signals
 from typing import (
     TYPE_CHECKING,
@@ -51,8 +52,7 @@ from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
 import dagster._seven as seven
-
-from .internal_init import IHasInternalInit as IHasInternalInit
+from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if sys.version_info > (3,):
     from pathlib import Path
@@ -166,7 +166,7 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
-    return os.path.join(os.path.dirname(dunderfile), relative_path)
+    return os.fspath(Path(dunderfile, "..", relative_path).resolve())
 
 
 def script_relative_path(file_path: str) -> str:
@@ -284,8 +284,12 @@ def make_hashable(value: Any) -> Any: ...
 
 
 def make_hashable(value: Any) -> Any:
+    from dagster._record import as_dict, is_record
+
     if isinstance(value, dict):
         return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
+    elif is_record(value):
+        return tuple(make_hashable(value) for value in as_dict(value).values())
     elif isinstance(value, (list, tuple, set)):
         return tuple([make_hashable(x) for x in value])
     elif isinstance(value, BaseModel):
@@ -421,9 +425,14 @@ def touch_file(path):
         os.utime(path, None)
 
 
-def _kill_on_event(termination_event):
-    termination_event.wait()
-    send_interrupt()
+def _termination_handler(
+    should_stop_event,  # multiprocessing.Event
+    is_done_event: threading.Event,
+):
+    should_stop_event.wait()
+    if not is_done_event.is_set():
+        # if we should stop but are not yet done, interrupt the MainThread
+        send_interrupt()
 
 
 def send_interrupt():
@@ -444,13 +453,13 @@ def send_interrupt():
 # Reading for the curious:
 #  * https://stackoverflow.com/questions/35772001/how-to-handle-the-signal-in-python-on-windows-machine
 #  * https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
-def start_termination_thread(termination_event):
-    check.inst_param(termination_event, "termination_event", ttype=type(multiprocessing.Event()))
+def start_termination_thread(should_stop_event, is_done_event: threading.Event):
+    check.inst_param(should_stop_event, "should_stop_event", ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
-        target=_kill_on_event,
-        args=(termination_event,),
-        name="kill-on-event",
+        target=_termination_handler,
+        args=(should_stop_event, is_done_event),
+        name="termination-handler",
         daemon=True,
     )
     int_thread.start()
@@ -470,11 +479,6 @@ def iterate_with_context(
                 return
 
         yield next_output
-
-
-def datetime_as_float(dt: datetime.datetime) -> float:
-    check.inst_param(dt, "dt", datetime.datetime)
-    return float((dt - EPOCH).total_seconds())
 
 
 T_GeneratedContext = TypeVar("T_GeneratedContext")
@@ -534,16 +538,6 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
         self.did_teardown = True
         if self.object:
             yield from self.generator
-
-
-def utc_datetime_from_timestamp(timestamp: float) -> datetime.datetime:
-    tz = timezone.utc
-    return datetime.datetime.fromtimestamp(timestamp, tz=tz)
-
-
-def utc_datetime_from_naive(dt: datetime.datetime) -> datetime.datetime:
-    tz = timezone.utc
-    return dt.replace(tzinfo=tz)
 
 
 def is_enum_value(value: object) -> bool:

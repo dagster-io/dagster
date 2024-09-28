@@ -74,7 +74,7 @@ export const ProductTour = ({
 
   return (
     <Popover
-      popoverClassName="bp4-dark"
+      popoverClassName="bp5-dark"
       isOpen={canShow}
       placement={position as Placement}
       modifiers={{
@@ -84,7 +84,11 @@ export const ProductTour = ({
       }}
       minimal={false}
       content={
-        <>
+        <div
+          onClick={(ev) => {
+            ev.stopPropagation();
+          }}
+        >
           <div />
           <ProductTourContainer flex={{direction: 'column', gap: 4}} padding={16} style={{width}}>
             <Box flex={{direction: 'column', gap: 8}}>
@@ -95,7 +99,7 @@ export const ProductTour = ({
             {actionsJsx}
           </ProductTourContainer>
           <div />
-        </>
+        </div>
       }
     >
       {children}

@@ -28,14 +28,12 @@ run_queue:
 run_monitoring:
   start_timeout_seconds: 1200
   cancel_timeout_seconds: 1200
+  max_runtime_seconds: 7200
 
 run_retries:
   max_retries: 0
 
 sso_default_role: EDITOR
-
-auto_materialize:
-  run_tags: {}
 ```
 
 ---
@@ -49,7 +47,6 @@ For each deployment, you can configure settings for:
 - [Run retries](#run-retries-run_retries)
 - [SSO default role](#sso-default-role)
 - [Non-isolated runs](#non-isolated-runs)
-- [Auto-materialize](#auto-materialize)
 
 ### Run queue (run_queue)
 
@@ -126,6 +123,7 @@ The `run_monitoring` settings allow you to define how long Dagster+ should wait 
 run_monitoring:
   start_timeout_seconds: 1200
   cancel_timeout_seconds: 1200
+  max_runtime_seconds: 7200
 ```
 
 <ReferenceTable>
@@ -137,6 +135,29 @@ run_monitoring:
     <ul>
       <li>
         <strong>Default</strong> - <code>1200</code> (20 minutes)
+      </li>
+    </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="run_monitoring.cancel_timeout_seconds">
+    The number of seconds that Dagster+ will wait after a run termination is
+    initiated for the process or container to terminate. After the timeout, the
+    run will move into a CANCELED state. This prevents runs from hanging in{" "}
+    <code>CANCELING</code> indefinitely when the process or container doesn't
+    terminate cleanly.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>1200</code> (20 minutes)
+      </li>
+    </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="run_monitoring.max_runtime_seconds">
+    The number of seconds that Dagster+ will wait after a run is moved into a
+    STARTED state for the run to complete. After the timeout, the run will be
+    terminated and moved into a FAILURE state. This prevents runs from hanging
+    in <code>STARTED</code> indefinitely if the process is hanging.
+    <ul>
+      <li>
+        <strong>Default</strong> - <code>No limit</code>
       </li>
     </ul>
   </ReferenceTableItem>
@@ -224,28 +245,6 @@ non_isolated_runs:
     <ul>
       <li>
         <strong>Default</strong> - <code>1</code>
-      </li>
-    </ul>
-  </ReferenceTableItem>
-</ReferenceTable>
-
-### Auto-materialize
-
-Configure [auto-materializing assets](/concepts/assets/asset-auto-execution) for your deployment.
-
-```yaml
-auto_materialize:
-  run_tags:
-    foo: bar
-  use_sensors: False
-```
-
-<ReferenceTable>
-  <ReferenceTableItem propertyName="run_tags">
-    Tags to apply to all runs created for an auto-materialize policy.
-    <ul>
-      <li>
-        <strong>Default</strong> - <code>None</code>
       </li>
     </ul>
   </ReferenceTableItem>

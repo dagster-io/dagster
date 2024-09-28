@@ -25,7 +25,6 @@ from dagster._core.execution.plan.objects import (
     step_failure_event_from_exc_info,
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
@@ -43,17 +42,14 @@ def inner_plan_execution_iterator(
         instance_concurrency_context=instance_concurrency_context,
     ) as active_execution:
         with ExitStack() as capture_stack:
-            # begin capturing logs for the whole process if this is a captured log manager
-            if isinstance(compute_log_manager, CapturedLogManager):
-                file_key = create_compute_log_file_key()
-                log_key = compute_log_manager.build_log_key_for_run(job_context.run_id, file_key)
-                try:
-                    log_context = capture_stack.enter_context(
-                        compute_log_manager.capture_logs(log_key)
-                    )
-                    yield DagsterEvent.capture_logs(job_context, step_keys, log_key, log_context)
-                except Exception:
-                    yield from _handle_compute_log_setup_error(job_context, sys.exc_info())
+            # begin capturing logs for the whole process
+            file_key = create_compute_log_file_key()
+            log_key = compute_log_manager.build_log_key_for_run(job_context.run_id, file_key)
+            try:
+                log_context = capture_stack.enter_context(compute_log_manager.capture_logs(log_key))
+                yield DagsterEvent.capture_logs(job_context, step_keys, log_key, log_context)
+            except Exception:
+                yield from _handle_compute_log_setup_error(job_context, sys.exc_info())
 
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps
@@ -86,47 +82,14 @@ def inner_plan_execution_iterator(
                     ),
                 )
 
-                with ExitStack() as step_stack:
-                    if not isinstance(compute_log_manager, CapturedLogManager):
-                        # capture all of the logs for individual steps
-                        try:
-                            step_stack.enter_context(
-                                job_context.instance.compute_log_manager.watch(
-                                    step_context.dagster_run, step_context.step.key
-                                )
-                            )
-                            yield DagsterEvent.legacy_compute_log_step_event(step_context)
-                        except Exception:
-                            yield from _handle_compute_log_setup_error(step_context, sys.exc_info())
+                # we have already set up the log capture at the process level, just handle the step events
+                for step_event in check.generator(dagster_event_sequence_for_step(step_context)):
+                    dagster_event = check.inst(step_event, DagsterEvent)
+                    step_event_list.append(dagster_event)
+                    yield dagster_event
+                    active_execution.handle_event(dagster_event)
 
-                        for step_event in check.generator(
-                            dagster_event_sequence_for_step(step_context)
-                        ):
-                            dagster_event = check.inst(step_event, DagsterEvent)
-                            step_event_list.append(dagster_event)
-                            yield dagster_event
-                            active_execution.handle_event(dagster_event)
-
-                        active_execution.verify_complete(job_context, step.key)
-
-                        try:
-                            step_stack.close()
-                        except Exception:
-                            yield from _handle_compute_log_teardown_error(
-                                step_context, sys.exc_info()
-                            )
-                    else:
-                        # we have already set up the log capture at the process level, just handle the
-                        # step events
-                        for step_event in check.generator(
-                            dagster_event_sequence_for_step(step_context)
-                        ):
-                            dagster_event = check.inst(step_event, DagsterEvent)
-                            step_event_list.append(dagster_event)
-                            yield dagster_event
-                            active_execution.handle_event(dagster_event)
-
-                        active_execution.verify_complete(job_context, step.key)
+                active_execution.verify_complete(job_context, step.key)
 
                 # process skips from failures or uncovered inputs
                 for event in active_execution.plan_events_iterator(job_context):

@@ -1,0 +1,14 @@
+extend = "../../../pyproject.toml"
+
+[lint]
+extend-select = [
+  # ban specific top-level imports
+  "TID253",
+]
+
+[lint.flake8-tidy-imports]
+banned-module-level-imports = [
+    "mypy_boto3_ecs",
+    "mypy_boto3_glue",
+    "mypy_boto3_emr_serverless"
+]

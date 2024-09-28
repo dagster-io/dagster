@@ -15,7 +15,7 @@ When defined, asset descriptions will be displayed in the Dagster UI alongside t
 
 ## Using docstrings
 
-As you went through this course, you might have noticed that the asests all contain **docstrings.** A [Python docstring, or documentation string](https://www.datacamp.com/tutorial/docstrings-python), embeds documentation about a class, module, function, or method definition in the code itself. While code comments serve a similar purpose, docstrings support built-in Python functionality, like [`help`](https://docs.python.org/3/library/functions.html#help).
+As you went through this course, you might have noticed that the assets all contain **docstrings.** A [Python docstring, or documentation string](https://www.datacamp.com/tutorial/docstrings-python), embeds documentation about a class, module, function, or method definition in the code itself. While code comments serve a similar purpose, docstrings support built-in Python functionality, like [`help`](https://docs.python.org/3/library/functions.html#help).
 
 Docstrings are defined by including a string, surrounded by triple quotes (`”””`) as the first statement in an object’s definition. For example:
 

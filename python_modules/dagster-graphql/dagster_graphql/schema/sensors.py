@@ -1,44 +1,45 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 import dagster._check as check
 import graphene
 from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.remote_representation import ExternalSensor, TargetSnap
+from dagster._core.remote_representation.external import CompoundID, ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-from dagster_graphql.implementation.utils import (
-    assert_permission_for_location,
-    capture_error,
-    require_permission_check,
-)
-
-from ..implementation.fetch_sensors import (
+from dagster_graphql.implementation.fetch_sensors import (
     get_sensor_next_tick,
     reset_sensor,
     set_sensor_cursor,
     start_sensor,
     stop_sensor,
 )
-from .asset_key import GrapheneAssetKey
-from .asset_selections import GrapheneAssetSelection
-from .errors import (
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.implementation.utils import (
+    assert_permission_for_location,
+    capture_error,
+    require_permission_check,
+)
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
+from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
     GrapheneSensorNotFoundError,
     GrapheneUnauthorizedError,
 )
-from .inputs import GrapheneSensorSelector
-from .instigation import (
+from dagster_graphql.schema.inputs import GrapheneSensorSelector
+from dagster_graphql.schema.instigation import (
     GrapheneDryRunInstigationTick,
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneTarget(graphene.ObjectType):
@@ -49,10 +50,8 @@ class GrapheneTarget(graphene.ObjectType):
     class Meta:
         name = "Target"
 
-    def __init__(self, external_target: ExternalTargetData):
-        self._external_target = check.inst_param(
-            external_target, "external_target", ExternalTargetData
-        )
+    def __init__(self, external_target: TargetSnap):
+        self._external_target = check.inst_param(external_target, "external_target", TargetSnap)
         super().__init__(
             pipelineName=external_target.job_name,
             mode=external_target.mode,
@@ -84,6 +83,7 @@ class GrapheneSensor(graphene.ObjectType):
     metadata = graphene.NonNull(GrapheneSensorMetadata)
     sensorType = graphene.NonNull(GrapheneSensorType)
     assetSelection = graphene.Field(GrapheneAssetSelection)
+    tags = non_null_list(GrapheneDefinitionTag)
 
     class Meta:
         name = "Sensor"
@@ -109,10 +109,10 @@ class GrapheneSensor(graphene.ObjectType):
 
         super().__init__(
             name=external_sensor.name,
-            jobOriginId=external_sensor.get_external_origin_id(),
+            jobOriginId=external_sensor.get_remote_origin_id(),
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
-            targets=[GrapheneTarget(target) for target in external_sensor.get_external_targets()],
+            targets=[GrapheneTarget(target) for target in external_sensor.get_targets()],
             metadata=GrapheneSensorMetadata(
                 assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
             ),
@@ -125,8 +125,8 @@ class GrapheneSensor(graphene.ObjectType):
             else None,
         )
 
-    def resolve_id(self, _):
-        return self._external_sensor.get_external_origin_id()
+    def resolve_id(self, _) -> str:
+        return self._external_sensor.get_compound_id().to_string()
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
         default_sensor_status = self._external_sensor.default_status
@@ -147,6 +147,12 @@ class GrapheneSensor(graphene.ObjectType):
 
     def resolve_nextTick(self, graphene_info: ResolveInfo):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
+
+    def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        return [
+            GrapheneDefinitionTag(key, value)
+            for key, value in (self._external_sensor.tags or {}).items()
+        ]
 
 
 class GrapheneSensorOrError(graphene.Union):
@@ -222,16 +228,40 @@ class GrapheneStopSensorMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneStopSensorMutationResultOrError)
 
     class Arguments:
-        job_origin_id = graphene.NonNull(graphene.String)
-        job_selector_id = graphene.NonNull(graphene.String)
+        id = graphene.Argument(graphene.String)  # Sensor / InstigationState id
+
+        # "job" legacy name for instigators, predates current Job
+        job_origin_id = graphene.Argument(graphene.String)
+        job_selector_id = graphene.Argument(graphene.String)
 
     class Meta:
         name = "StopSensorMutation"
 
     @capture_error
     @require_permission_check(Permissions.EDIT_SENSOR)
-    def mutate(self, graphene_info: ResolveInfo, job_origin_id, job_selector_id):
-        return stop_sensor(graphene_info, job_origin_id, job_selector_id)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        id: Optional[str] = None,
+        job_origin_id: Optional[str] = None,
+        job_selector_id: Optional[str] = None,
+    ):
+        if id:
+            cid = CompoundID.from_string(id)
+            sensor_origin_id = cid.remote_origin_id
+            sensor_selector_id = cid.selector_id
+        elif job_origin_id and CompoundID.is_valid_string(job_origin_id):
+            # cross-push handle if InstigationState.id being passed through as origin id
+            cid = CompoundID.from_string(job_origin_id)
+            sensor_origin_id = cid.remote_origin_id
+            sensor_selector_id = cid.selector_id
+        elif job_origin_id is None or job_selector_id is None:
+            raise DagsterInvariantViolationError("Must specify id or jobOriginId and jobSelectorId")
+        else:
+            sensor_origin_id = job_origin_id
+            sensor_selector_id = job_selector_id
+
+        return stop_sensor(graphene_info, sensor_origin_id, sensor_selector_id)
 
 
 class GrapheneResetSensorMutation(graphene.Mutation):

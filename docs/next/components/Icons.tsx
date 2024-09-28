@@ -422,7 +422,7 @@ const PlusIcon = (
 
 const Icons = {
   // This should be an append only list. Do not remove an icon here, since
-  // an older version of the site coul dbe depending on it.
+  // an older version of the site could be depending on it.
   BookOpen: BookOpenIcon,
   Menu: MenuIcon,
   AcademicCap: AcademicCapIcon,

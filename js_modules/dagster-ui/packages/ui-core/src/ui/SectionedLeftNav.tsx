@@ -25,7 +25,7 @@ import {
   getTopLevelResourceDetailsItemsForOption,
 } from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
@@ -49,7 +49,7 @@ type RowType =
     };
 
 export const SectionedLeftNav = () => {
-  const {loading, visibleRepos} = React.useContext(WorkspaceContext);
+  const {visibleRepos} = React.useContext(WorkspaceContext);
   const {basePath} = React.useContext(AppContext);
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -222,17 +222,13 @@ export const SectionedLeftNav = () => {
         }
       }
     },
-    overscan: 40,
+    overscan: 10,
   });
 
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
   const collapsible = sortedRepos.length > 1;
-
-  if (loading) {
-    return <div style={{flex: 1}} />;
-  }
 
   return (
     <Container ref={parentRef}>
@@ -508,7 +504,7 @@ const SectionHeader = styled.button<{
 
   width: 100%;
   margin: 0;
-  
+
   box-shadow: inset 0px 1px 0 ${Colors.keylineDefault()}, inset 0px -1px 0 ${Colors.keylineDefault()};
 
   :disabled {

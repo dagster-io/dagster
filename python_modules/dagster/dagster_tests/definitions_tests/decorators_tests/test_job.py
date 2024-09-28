@@ -78,14 +78,30 @@ def test_job_tags():
         pass
 
     @job(tags={"my_tag": "yes"})
-    def basic_job():
+    def job_with_tags():
         basic()
 
+    assert job_with_tags.tags == {"my_tag": "yes"}
+    assert job_with_tags.run_tags == {"my_tag": "yes"}
+
+    @job(tags={"my_tag": "yes"}, run_tags={"my_run_tag": "yes"})
+    def job_with_tags_and_run_tags():
+        basic()
+
+    assert job_with_tags_and_run_tags.tags == {"my_tag": "yes"}
+    assert job_with_tags_and_run_tags.run_tags == {"my_run_tag": "yes"}
+
     with DagsterInstance.ephemeral() as instance:
-        result = basic_job.execute_in_process(instance=instance)
+        result = job_with_tags.execute_in_process(instance=instance)
         assert result.success
         run = instance.get_runs()[0]
         assert run.tags.get("my_tag") == "yes"
+
+        result = job_with_tags_and_run_tags.execute_in_process(instance=instance)
+        assert result.success
+        run = instance.get_runs()[0]
+        assert "my_tag" not in run.tags
+        assert run.tags.get("my_run_tag") == "yes"
 
 
 def test_job_system_tags():

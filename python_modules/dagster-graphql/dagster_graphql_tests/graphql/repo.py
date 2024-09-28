@@ -52,7 +52,6 @@ from dagster import (
     ScheduleDefinition,
     SensorResult,
     SourceAsset,
-    SourceHashVersionStrategy,
     StaticPartitionsDefinition,
     String,
     TableColumn,
@@ -85,8 +84,11 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    AutomationConditionSensorDefinition,
+)
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
@@ -863,7 +865,7 @@ def retry_multi_output_job():
     no_output.alias("grandchild_fail")(passthrough.alias("child_fail")(fail))
 
 
-@job(tags={"foo": "bar"})
+@job(tags={"foo": "bar"}, run_tags={"baz": "quux"})
 def tagged_job():
     @op
     def simple_op():
@@ -1056,8 +1058,9 @@ def define_schedules():
         cron_schedule="@daily",
         job_name="no_config_job",
         execution_timezone="US/Central",
+        tags={"foo": "bar"},
     )
-    def timezone_schedule(_context):
+    def timezone_schedule_with_tags(_context):
         return {}
 
     tagged_job_schedule = ScheduleDefinition(
@@ -1101,6 +1104,10 @@ def define_schedules():
     def always_error():
         raise Exception("darnit")
 
+    @schedule(cron_schedule="* * * * *", target=[asset_one])
+    def jobless_schedule(_):
+        pass
+
     return [
         asset_job_schedule,
         run_config_error_schedule,
@@ -1112,19 +1119,20 @@ def define_schedules():
         tagged_job_schedule,
         tagged_job_override_schedule,
         tags_error_schedule,
-        timezone_schedule,
+        timezone_schedule_with_tags,
         invalid_config_schedule,
         running_in_code_schedule,
         composite_cron_schedule,
         past_tick_schedule,
         provide_config_schedule,
         always_error,
+        jobless_schedule,
     ]
 
 
 def define_sensors():
-    @sensor(job_name="no_config_job")
-    def always_no_config_sensor(_):
+    @sensor(job_name="no_config_job", tags={"foo": "bar"})
+    def always_no_config_sensor_with_tags(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
@@ -1187,6 +1195,13 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(job_name="no_config_job", default_status=DefaultSensorStatus.STOPPED)
+    def stopped_in_code_sensor(_):
+        return RunRequest(
+            run_key=None,
+            tags={"test": "1234"},
+        )
+
     @sensor(job_name="no_config_job")
     def logging_sensor(context):
         context.log.info("hello hello")
@@ -1226,13 +1241,19 @@ def define_sensors():
     def the_failure_sensor():
         pass
 
-    auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    @sensor(target=[asset_one])
+    def jobless_sensor(_):
+        pass
+
+    auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
-        asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
+        asset_selection=AssetSelection.assets(
+            "fresh_diamond_bottom", "asset_with_automation_condition"
+        ),
     )
 
     return [
-        always_no_config_sensor,
+        always_no_config_sensor_with_tags,
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
@@ -1240,6 +1261,7 @@ def define_sensors():
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
+        stopped_in_code_sensor,
         logging_sensor,
         update_cursor_sensor,
         run_status,
@@ -1250,6 +1272,7 @@ def define_sensors():
         auto_materialize_sensor,
         every_asset_sensor,
         invalid_asset_selection_error,
+        jobless_sensor,
     ]
 
 
@@ -1385,11 +1408,6 @@ def hanging_graph():
 
 
 hanging_graph_asset = AssetsDefinition.from_graph(hanging_graph)
-
-
-@job(version_strategy=SourceHashVersionStrategy())
-def memoization_job():
-    my_op()
 
 
 @asset(io_manager_key="dummy_io_manager")
@@ -1754,6 +1772,35 @@ def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
     return fresh_diamond_left + fresh_diamond_right
 
 
+@multi_asset(
+    specs=[
+        AssetSpec(
+            key="first_kinds_key", tags={"dagster/kind/python": "", "dagster/kind/airflow": ""}
+        ),
+        AssetSpec(key="second_kinds_key", tags={"dagster/kind/python": ""}),
+    ],
+)
+def multi_asset_with_kinds():
+    return 1
+
+
+@multi_asset(
+    specs=[
+        AssetSpec(key="third_kinds_key", tags={"dagster/storage_kind": "snowflake"}),
+        AssetSpec(
+            key="fourth_kinds_key",
+        ),
+    ],
+    compute_kind="python",
+)
+def asset_with_compute_storage_kinds():
+    return 1
+
+
+@asset(automation_condition=AutomationCondition.eager())
+def asset_with_automation_condition() -> None: ...
+
+
 fresh_diamond_assets_job = define_asset_job(
     "fresh_diamond_assets_job", AssetSelection.assets(fresh_diamond_bottom).upstream()
 )
@@ -1784,9 +1831,7 @@ def multipartitions_fail(context):
 
 
 multi_partitions_job = define_asset_job(
-    "multipartitions_job",
-    AssetSelection.assets(multipartitions_1, multipartitions_2),
-    partitions_def=multipartitions_def,
+    "multipartitions_job", AssetSelection.assets(multipartitions_1, multipartitions_2)
 )
 
 
@@ -1811,15 +1856,11 @@ dynamic_in_multipartitions_def = MultiPartitionsDefinition(
 )
 
 no_multi_partitions_job = define_asset_job(
-    "no_multipartitions_job",
-    AssetSelection.assets(no_multipartitions_1),
-    partitions_def=no_partitions_multipartitions_def,
+    "no_multipartitions_job", AssetSelection.assets(no_multipartitions_1)
 )
 
 multi_partitions_fail_job = define_asset_job(
-    "multipartitions_fail_job",
-    AssetSelection.assets(multipartitions_fail),
-    partitions_def=multipartitions_def,
+    "multipartitions_fail_job", AssetSelection.assets(multipartitions_fail)
 )
 
 
@@ -1836,7 +1877,6 @@ def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success)
 dynamic_in_multipartitions_success_job = define_asset_job(
     "dynamic_in_multipartitions_success_job",
     AssetSelection.assets(dynamic_in_multipartitions_success, dynamic_in_multipartitions_fail),
-    partitions_def=dynamic_in_multipartitions_def,
 )
 
 
@@ -1988,7 +2028,6 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         job_with_list,
         loggers_job,
         materialization_job,
-        memoization_job,
         more_complicated_config,
         more_complicated_nested_config,
         multi_asset_job,
@@ -2075,6 +2114,9 @@ def define_assets():
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
+        multi_asset_with_kinds,
+        asset_with_compute_storage_kinds,
+        asset_with_automation_condition,
     ]
 
 
@@ -2112,7 +2154,7 @@ test_repo._name = "test_repo"  # noqa: SLF001
 
 def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
     try:
-        return instigator.job_name in asset_job_names
+        return instigator.job_name in asset_job_names or instigator.has_anonymous_job
     except DagsterInvalidDefinitionError:  # thrown when `job_name` is invalid
         return False
 

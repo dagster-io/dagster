@@ -15,7 +15,7 @@ import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 import {withThemeByClassName} from '@storybook/addon-themes';
 
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
 import '../src/app/blueprint.css';
 
@@ -55,7 +55,8 @@ const GlobalStyle = createGlobalStyle`
 
   code, pre {
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
+    font-variant-ligatures: none;
   }
 `;
 
@@ -86,8 +87,4 @@ export const decorators = [
   }),
 ];
 
-export const parameters = {
-  parameters: {
-    actions: {argTypesRegex: '^on[A-Z].*'},
-  },
-};
+export const parameters = {};

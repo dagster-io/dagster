@@ -44,6 +44,21 @@ While technically the 0.y.z phase of Semantic Versioning is "anything goes", we 
 
 ---
 
+## Version compatibility within a Dagster deployment
+
+Dagster deployments can have multiple versions of Dagster running simultaneously.
+
+A Dagster deployment consists of a set of [code locations](https://docs.dagster.io/concepts/code-locations), as well as _host processes_: the web server and [daemon](https://docs.dagster.io/deployment/dagster-daemon).
+
+- **Code locations** within a deployment can each depend on a different Dagster version.
+- **Host processes** within a deployment are expected to have the same Dagster version. That Dagster version is expected to be greater than or equal to the greatest Dagster version used by any code location within the deployment.
+
+  - **In Dagster+ deployments**, Dagster+ automatically keeps host processes up-to-date so no user action is required.
+
+  - **In OSS deployments**, users are expected to upgrade their host processes before upgrading the version of Dagster used in their code locations.
+
+---
+
 ## Python version support
 
 Each Dagster release strives to support the currently active versions of Python.

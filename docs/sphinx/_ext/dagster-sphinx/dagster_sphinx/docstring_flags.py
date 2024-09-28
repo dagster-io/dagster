@@ -4,6 +4,7 @@ from typing import List, Union
 import dagster._check as check
 import docutils.nodes as nodes
 from dagster._annotations import DeprecatedInfo, ExperimentalInfo
+
 from sphinx.util.docutils import SphinxDirective
 
 # ########################

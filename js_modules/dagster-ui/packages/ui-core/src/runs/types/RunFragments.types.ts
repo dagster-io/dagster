@@ -2496,6 +2496,16 @@ export type RunDagsterRunEventFragment_RunCanceledEvent = {
   level: Types.LogLevel;
   stepKey: string | null;
   eventType: Types.DagsterEventType | null;
+  error: {
+    __typename: 'PythonError';
+    message: string;
+    stack: Array<string>;
+    errorChain: Array<{
+      __typename: 'ErrorChainLink';
+      isExplicitLink: boolean;
+      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+    }>;
+  } | null;
 };
 
 export type RunDagsterRunEventFragment_RunCancelingEvent = {

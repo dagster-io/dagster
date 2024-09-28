@@ -34,6 +34,11 @@ from dagster._core.events import (
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
+from dagster._core.storage.event_log.schema import (
+    SqlEventLogStorageMetadata,
+    SqlEventLogStorageTable,
+)
+from dagster._core.storage.event_log.sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -48,9 +53,6 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p
-
-from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
-from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
 
 if TYPE_CHECKING:
     from dagster._core.storage.sqlite_storage import SqliteStorageConfig
@@ -469,7 +471,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, cursor)
         self._watchers[run_id][callback] = (
             watchdog,
-            self._obs.schedule(watchdog, self._base_dir, True),
+            self._obs.schedule(watchdog, self._base_dir, recursive=True),
         )
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:

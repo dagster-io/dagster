@@ -1,5 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -10,6 +9,7 @@ import {
   SingleNonSdaAssetQueryVariables,
 } from './types/VirtualizedAssetRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useQuery} from '../apollo-client';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
@@ -21,16 +21,12 @@ import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {
-  AssetComputeKindTag,
-  AssetStorageKindTag,
-  isCanonicalStorageKindTag,
-} from '../graph/KindTags';
+import {AssetKind} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
@@ -49,7 +45,8 @@ interface AssetRowProps {
   repoAddress: RepoAddress | null;
   height: number;
   start: number;
-  onWipe: (assets: AssetKeyInput[]) => void;
+  onRefresh: () => void;
+  kindFilter?: StaticSetFilter<string>;
 }
 
 export const VirtualizedAssetRow = (props: AssetRowProps) => {
@@ -62,14 +59,20 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     height,
     checked,
     onToggleChecked,
-    onWipe,
+    onRefresh,
     showCheckboxColumn = false,
     showRepoColumn,
     view = 'flat',
+    kindFilter,
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
-  const linkUrl = assetDetailsPathForKey({path});
+  const linkUrl = assetDetailsPathForKey(
+    {path},
+    {
+      view: type === 'folder' ? 'folder' : undefined,
+    },
+  );
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (onToggleChecked && e.target instanceof HTMLInputElement) {
@@ -79,8 +82,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
       onToggleChecked({checked, shiftKey});
     }
   };
-
-  const storageKindTag = definition?.tags.find(isCanonicalStorageKindTag);
+  const kinds = definition?.kinds;
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
@@ -101,21 +103,19 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 textStyle="middle-truncate"
               />
             </div>
-            {definition && (
-              <AssetComputeKindTag
-                reduceColor
-                reduceText
-                definition={definition}
-                style={{position: 'relative'}}
-              />
-            )}
-            {storageKindTag && (
-              <AssetStorageKindTag
-                reduceColor
-                reduceText
-                storageKind={storageKindTag.value}
-                style={{position: 'relative'}}
-              />
+            {kinds && (
+              <>
+                {kinds?.map((kind) => (
+                  <AssetKind
+                    key={kind}
+                    reduceColor
+                    reduceText
+                    kind={kind}
+                    style={{position: 'relative'}}
+                    currentPageFilter={kindFilter}
+                  />
+                ))}
+              </>
             )}
           </Box>
           <div
@@ -158,7 +158,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          {definition?.partitionDefinition && !definition?.isSource ? (
+          {definition?.partitionDefinition && definition?.isMaterializable ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               <PartitionCountLabels partitionStats={liveData?.partitionStats} />
               <Caption>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Caption>
@@ -208,7 +208,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               path={path}
               definition={definition}
               repoAddress={repoAddress}
-              onWipe={onWipe}
+              onRefresh={onRefresh}
             />
           ) : null}
         </RowCell>
@@ -234,6 +234,32 @@ export const VirtualizedAssetCatalogHeader = ({
     </HeaderRow>
   );
 };
+
+export const ShimmerRow = (props: {$height: number; $start: number; $showRepoColumn: boolean}) => (
+  <Row {...props}>
+    <RowGrid border="bottom" $showRepoColumn={props.$showRepoColumn}>
+      <RowCell>
+        <Skeleton $height={21} $width="45%" />
+      </RowCell>
+      <RowCell>
+        <Skeleton $height={21} $width="45%" />
+      </RowCell>
+      <RowCell>
+        <Skeleton $height={21} $width="45%" />
+      </RowCell>
+      {props.$showRepoColumn ? (
+        <>
+          <RowCell>
+            <Skeleton $height={21} $width="45%" />
+          </RowCell>
+          <RowCell>
+            <Skeleton $height={21} $width="45%" />
+          </RowCell>
+        </>
+      ) : null}
+    </RowGrid>
+  </Row>
+);
 
 export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}) => {
   return (
@@ -280,7 +306,6 @@ export function useLiveDataOrLatestMaterializationDebounced(
     },
   );
   const {data: nonSDAData} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'SingleNonSdaAssetQuery', {skip});
 
   React.useEffect(() => {
     if (type === 'folder') {

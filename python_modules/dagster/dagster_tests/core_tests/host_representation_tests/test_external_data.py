@@ -20,11 +20,7 @@ from dagster import (
 from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
@@ -38,9 +34,9 @@ from dagster._core.remote_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
-    ExternalTargetData,
     ExternalTimeWindowPartitionsDefinitionData,
     SensorSnap,
+    TargetSnap,
     external_asset_nodes_from_defs,
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
@@ -81,7 +77,7 @@ def test_single_asset_job():
             op_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description="hullo",
+            description="hullo",
             node_definition_name="asset1",
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
@@ -111,7 +107,7 @@ def test_asset_with_default_backfill_policy():
             op_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description="hullo",
+            description="hullo",
             node_definition_name="asset1",
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
@@ -142,7 +138,7 @@ def test_asset_with_single_run_backfill_policy():
             op_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description="hullo_single_run",
+            description="hullo_single_run",
             node_definition_name="asset1",
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
@@ -191,9 +187,9 @@ def test_asset_with_multi_run_backfill_policy():
             op_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description="hullo_ten_partitions_per_run",
+            description="hullo_ten_partitions_per_run",
             node_definition_name="asset1",
-            job_names=["__ASSET_JOB_0", "assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
             partitions_def_data=partitions_def_data,
@@ -272,7 +268,7 @@ def test_two_asset_job():
             node_definition_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -286,7 +282,7 @@ def test_two_asset_job():
             node_definition_name="asset2",
             graph_name=None,
             op_names=["asset2"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -316,9 +312,6 @@ def test_input_name_matches_output_name():
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
         ExternalAssetNode(
             asset_key=AssetKey("something"),
@@ -435,7 +428,7 @@ def test_two_downstream_assets_job():
             node_definition_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -449,7 +442,7 @@ def test_two_downstream_assets_job():
             node_definition_name="asset2_a",
             graph_name=None,
             op_names=["asset2_a"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -463,7 +456,7 @@ def test_two_downstream_assets_job():
             node_definition_name="asset2_b",
             graph_name=None,
             op_names=["asset2_b"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -496,7 +489,7 @@ def test_cross_job_asset_dependency():
             node_definition_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job1"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -510,7 +503,7 @@ def test_cross_job_asset_dependency():
             node_definition_name="asset2",
             graph_name=None,
             op_names=["asset2"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job2"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -543,7 +536,7 @@ def test_same_asset_in_multiple_jobs():
             node_definition_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "job1", "job2"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -580,7 +573,7 @@ def test_basic_multi_asset():
             node_definition_name="assets",
             graph_name=None,
             op_names=["assets"],
-            op_description=f"foo: {i}",
+            description=f"foo: {i}",
             job_names=["__ASSET_JOB", "assets_job"],
             output_name=f"out{i}",
             group_name=DEFAULT_GROUP_NAME,
@@ -643,7 +636,7 @@ def test_inter_op_dependency():
             node_definition_name="downstream",
             graph_name=None,
             op_names=["downstream"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
@@ -661,7 +654,7 @@ def test_inter_op_dependency():
             node_definition_name="in1",
             graph_name=None,
             op_names=["in1"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
@@ -676,7 +669,7 @@ def test_inter_op_dependency():
             node_definition_name="in2",
             graph_name=None,
             op_names=["in2"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
@@ -697,7 +690,7 @@ def test_inter_op_dependency():
             node_definition_name="assets",
             graph_name=None,
             op_names=["assets"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job", "subset_job"],
             output_name="mixed",
             group_name=DEFAULT_GROUP_NAME,
@@ -718,7 +711,7 @@ def test_inter_op_dependency():
             node_definition_name="assets",
             graph_name=None,
             op_names=["assets"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="only_in",
             metadata={},
@@ -738,7 +731,7 @@ def test_inter_op_dependency():
             node_definition_name="assets",
             graph_name=None,
             op_names=["assets"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="only_out",
             group_name=DEFAULT_GROUP_NAME,
@@ -746,7 +739,7 @@ def test_inter_op_dependency():
     ]
 
 
-def test_source_asset_with_op():
+def test_source_asset_with_op() -> None:
     foo = SourceAsset(key=AssetKey("foo"), description=None)
 
     @asset
@@ -766,8 +759,8 @@ def test_source_asset_with_op():
             node_definition_name="bar",
             graph_name=None,
             op_names=["bar"],
-            op_description=None,
-            dependencies=[ExternalAssetDependency(AssetKey("foo"))],
+            description=None,
+            dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey("foo"))],
             depended_by=[],
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
@@ -776,14 +769,11 @@ def test_source_asset_with_op():
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
             execution_type=AssetExecutionType.UNEXECUTABLE,
-            op_description=None,
+            description=None,
             dependencies=[],
-            depended_by=[ExternalAssetDependedBy(AssetKey("bar"))],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("bar"))],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
     ]
 
@@ -798,29 +788,23 @@ def test_unused_source_asset():
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
-            op_description="def",
+            description="def",
             dependencies=[],
             depended_by=[],
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
-            op_description="abc",
+            description="abc",
             dependencies=[],
             depended_by=[],
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
     ]
 
@@ -843,16 +827,13 @@ def test_used_source_asset():
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey("bar"),
-            op_description="def",
+            description="def",
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["foo"]))],
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
             tags={"biz": "baz"},
         ),
         ExternalAssetNode(
@@ -861,7 +842,7 @@ def test_used_source_asset():
             node_definition_name="foo",
             graph_name=None,
             op_names=["foo"],
-            op_description=None,
+            description=None,
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["bar"]))],
             depended_by=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -872,7 +853,7 @@ def test_used_source_asset():
     ]
 
 
-def test_graph_output_metadata_and_description():
+def test_graph_output_metadata_and_description() -> None:
     asset_metadata = {
         "int": 1,
         "string": "baz",
@@ -913,14 +894,14 @@ def test_graph_output_metadata_and_description():
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey(["three"]),
-            dependencies=[ExternalAssetDependency(AssetKey(["zero"]))],
+            dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["zero"]))],
             depended_by=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="three",
             node_definition_name="add_one",
             graph_name="three",
             op_names=["three.add_one", "three.add_one_2", "three.add_one_3"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata=(normalize_metadata({**asset_metadata, **out_metadata}, allow_invalid=True)),
@@ -929,13 +910,13 @@ def test_graph_output_metadata_and_description():
         ExternalAssetNode(
             asset_key=AssetKey(["zero"]),
             dependencies=[],
-            depended_by=[ExternalAssetDependedBy(AssetKey(["three"]))],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["three"]))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="zero",
             node_definition_name="zero",
             graph_name=None,
             op_names=["zero"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
@@ -944,7 +925,7 @@ def test_graph_output_metadata_and_description():
     ]
 
 
-def test_nasty_nested_graph_asset():
+def test_nasty_nested_graph_asset() -> None:
     @op
     def add_one(i):
         return i + 1
@@ -1016,11 +997,11 @@ def test_nasty_nested_graph_asset():
         ExternalAssetNode(
             asset_key=AssetKey(["thirteen"]),
             dependencies=[
-                ExternalAssetDependency(AssetKey(["eight"])),
-                ExternalAssetDependency(AssetKey(["five"])),
-                ExternalAssetDependency(AssetKey(["zero"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["eight"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["five"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["zero"])),
             ],
-            depended_by=[ExternalAssetDependedBy(AssetKey(["twenty"]))],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["twenty"]))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="create_thirteen_and_six",
             node_definition_name="add_one",
@@ -1032,7 +1013,7 @@ def test_nasty_nested_graph_asset():
                 "create_thirteen_and_six.add_five.add_three.add_one_2",
                 "create_thirteen_and_six.add_five.add_three.add_one_3",
             ],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
@@ -1041,8 +1022,8 @@ def test_nasty_nested_graph_asset():
         ExternalAssetNode(
             asset_key=AssetKey(["twenty"]),
             dependencies=[
-                ExternalAssetDependency(AssetKey(["six"])),
-                ExternalAssetDependency(AssetKey(["thirteen"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["six"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["thirteen"])),
             ],
             depended_by=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -1050,7 +1031,7 @@ def test_nasty_nested_graph_asset():
             node_definition_name="add_one",
             graph_name="create_twenty",
             op_names=["create_twenty.sum_plus_one.add_one", "create_twenty.sum_plus_one.get_sum"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
@@ -1060,17 +1041,17 @@ def test_nasty_nested_graph_asset():
             asset_key=AssetKey(["zero"]),
             dependencies=[],
             depended_by=[
-                ExternalAssetDependedBy(AssetKey(["eight"])),
-                ExternalAssetDependedBy(AssetKey(["five"])),
-                ExternalAssetDependedBy(AssetKey(["six"])),
-                ExternalAssetDependedBy(AssetKey(["thirteen"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["eight"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["five"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["six"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["thirteen"])),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="zero",
             node_definition_name="zero",
             graph_name=None,
             op_names=["zero"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             metadata={},
@@ -1102,7 +1083,7 @@ def test_deps_resolve_group():
             node_definition_name="abc__asset1",
             graph_name=None,
             op_names=["abc__asset1"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -1116,7 +1097,7 @@ def test_deps_resolve_group():
             node_definition_name="asset2",
             graph_name=None,
             op_names=["asset2"],
-            op_description=None,
+            description=None,
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
@@ -1134,7 +1115,7 @@ def test_back_compat_external_sensor():
     assert len(external_sensor_data.target_dict) == 1
     assert "my_pipeline" in external_sensor_data.target_dict
     target = external_sensor_data.target_dict["my_pipeline"]
-    assert isinstance(target, ExternalTargetData)
+    assert isinstance(target, TargetSnap)
     assert target.job_name == "my_pipeline"
 
 
@@ -1221,7 +1202,7 @@ def test_graph_asset_description():
     external_asset_nodes = _get_external_asset_nodes_from_definitions(
         Definitions(assets=[foo], jobs=[assets_job])
     )
-    assert external_asset_nodes[0].op_description == "bar"
+    assert external_asset_nodes[0].description == "bar"
 
 
 def test_graph_multi_asset_description():
@@ -1248,8 +1229,8 @@ def test_graph_multi_asset_description():
             Definitions(assets=[foo], jobs=[assets_job])
         )
     }
-    assert external_asset_nodes[AssetKey("asset1")].op_description == "bar"
-    assert external_asset_nodes[AssetKey("asset2")].op_description == "baz"
+    assert external_asset_nodes[AssetKey("asset1")].description == "bar"
+    assert external_asset_nodes[AssetKey("asset2")].description == "baz"
 
 
 def test_external_time_window_valid_partition_key():
@@ -1283,9 +1264,6 @@ def test_external_assets_def_to_external_asset_graph():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("asset2"))],
             execution_type=AssetExecutionType.UNEXECUTABLE,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -1293,9 +1271,6 @@ def test_external_assets_def_to_external_asset_graph():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["asset1"]))],
             depended_by=[],
             execution_type=AssetExecutionType.UNEXECUTABLE,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]

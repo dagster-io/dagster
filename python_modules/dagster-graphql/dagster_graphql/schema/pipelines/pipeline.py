@@ -1,11 +1,17 @@
-from typing import List, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, List, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
+from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
-from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
+from dagster._core.remote_representation.external_data import (
+    DEFAULT_MODE_NAME,
+    ExternalPartitionExecutionErrorData,
+    ExternalPresetData,
+)
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.storage.dagster_run import (
     DagsterRunStatsSnapshot,
@@ -15,53 +21,65 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
-from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
-from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-
-from ...implementation.events import from_event_record
-from ...implementation.fetch_assets import get_assets_for_run_id, get_unique_asset_id
-from ...implementation.fetch_pipelines import get_job_reference_or_raise
-from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
-from ...implementation.fetch_schedules import get_schedules_for_pipeline
-from ...implementation.fetch_sensors import get_sensors_for_pipeline
-from ...implementation.utils import UserFacingGraphQLError, capture_error
-from ..asset_checks import GrapheneAssetCheckHandle
-from ..asset_key import GrapheneAssetKey
-from ..dagster_types import (
+from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
+from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id, get_unique_asset_id
+from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
+from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
+from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline
+from dagster_graphql.implementation.fetch_sensors import get_sensors_for_pipeline
+from dagster_graphql.implementation.utils import (
+    UserFacingGraphQLError,
+    apply_cursor_limit_reverse,
+    capture_error,
+)
+from dagster_graphql.schema.asset_checks import GrapheneAssetCheckHandle
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.dagster_types import (
     GrapheneDagsterType,
     GrapheneDagsterTypeOrError,
     GrapheneDagsterTypeUnion,
     to_dagster_type,
 )
-from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
-from ..execution import GrapheneExecutionPlan
-from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeLogs, from_captured_log_data
-from ..logs.events import (
+from dagster_graphql.schema.errors import (
+    GrapheneDagsterTypeNotFoundError,
+    GraphenePythonError,
+    GrapheneRunNotFoundError,
+)
+from dagster_graphql.schema.execution import GrapheneExecutionPlan
+from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
+from dagster_graphql.schema.logs.compute_logs import GrapheneCapturedLogs, from_captured_log_data
+from dagster_graphql.schema.logs.events import (
     GrapheneDagsterRunEvent,
     GrapheneMaterializationEvent,
     GrapheneObservationEvent,
     GrapheneRunStepStats,
 )
-from ..repository_origin import GrapheneRepositoryOrigin
-from ..runs import GrapheneRunConfigData
-from ..schedules.schedules import GrapheneSchedule
-from ..sensors import GrapheneSensor
-from ..solids import (
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.partition_keys import GraphenePartitionKeys
+from dagster_graphql.schema.pipelines.mode import GrapheneMode
+from dagster_graphql.schema.pipelines.pipeline_ref import GraphenePipelineReference
+from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshotOrError
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.repository_origin import GrapheneRepositoryOrigin
+from dagster_graphql.schema.runs import GrapheneRunConfigData
+from dagster_graphql.schema.runs_feed import GrapheneRunsFeedEntry
+from dagster_graphql.schema.schedules.schedules import GrapheneSchedule
+from dagster_graphql.schema.sensors import GrapheneSensor
+from dagster_graphql.schema.solids import (
     GrapheneSolid,
     GrapheneSolidContainer,
     GrapheneSolidHandle,
     build_solid_handles,
     build_solids,
 )
-from ..tags import GraphenePipelineTag
-from ..util import ResolveInfo, get_compute_log_manager, non_null_list
-from .mode import GrapheneMode
-from .pipeline_ref import GraphenePipelineReference
-from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
-from .status import GrapheneRunStatus
+from dagster_graphql.schema.tags import GraphenePipelineTag
+from dagster_graphql.schema.util import ResolveInfo, get_compute_log_manager, non_null_list
+
+if TYPE_CHECKING:
+    from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
+
 
 STARTED_STATUSES = {
     DagsterRunStatus.STARTED,
@@ -219,7 +237,7 @@ class GrapheneAsset(graphene.ObjectType):
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[GrapheneMaterializationEvent]:
-        from ...implementation.fetch_assets import get_asset_materializations
+        from dagster_graphql.implementation.fetch_assets import get_asset_materializations
 
         before_timestamp = parse_timestamp(beforeTimestampMillis)
         after_timestamp = parse_timestamp(afterTimestampMillis)
@@ -245,7 +263,7 @@ class GrapheneAsset(graphene.ObjectType):
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[GrapheneObservationEvent]:
-        from ...implementation.fetch_assets import get_asset_observations
+        from dagster_graphql.implementation.fetch_assets import get_asset_observations
 
         before_timestamp = parse_timestamp(beforeTimestampMillis)
         after_timestamp = parse_timestamp(afterTimestampMillis)
@@ -293,13 +311,6 @@ class GraphenePipelineRun(graphene.Interface):
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
-    computeLogs = graphene.Field(
-        graphene.NonNull(GrapheneComputeLogs),
-        stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
-        description="""
-        Compute logs are the stdout/stderr logs for a given solid step computation
-        """,
-    )
     capturedLogs = graphene.Field(
         graphene.NonNull(GrapheneCapturedLogs),
         fileKey=graphene.Argument(graphene.NonNull(graphene.String)),
@@ -320,6 +331,7 @@ class GraphenePipelineRun(graphene.Interface):
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
     )
 
     class Meta:
@@ -334,6 +346,10 @@ class GrapheneRun(graphene.ObjectType):
     parentPipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
     status = graphene.NonNull(GrapheneRunStatus)
+    runStatus = graphene.Field(
+        graphene.NonNull(GrapheneRunStatus),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of status.",
+    )
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
@@ -343,13 +359,6 @@ class GrapheneRun(graphene.ObjectType):
     resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
-    computeLogs = graphene.Field(
-        graphene.NonNull(GrapheneComputeLogs),
-        stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
-        description="""
-        Compute logs are the stdout/stderr logs for a given solid step computation
-        """,
-    )
     executionPlan = graphene.Field(GrapheneExecutionPlan)
     stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
     runConfigYaml = graphene.NonNull(graphene.String)
@@ -364,7 +373,9 @@ class GrapheneRun(graphene.ObjectType):
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
     )
+    creationTime = graphene.NonNull(graphene.Float)
     startTime = graphene.Float()
     endTime = graphene.Float()
     updateTime = graphene.Float()
@@ -376,7 +387,7 @@ class GrapheneRun(graphene.ObjectType):
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
 
     class Meta:
-        interfaces = (GraphenePipelineRun,)
+        interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
         name = "Run"
 
     def __init__(self, record: RunRecord):
@@ -385,6 +396,7 @@ class GrapheneRun(graphene.ObjectType):
         super().__init__(
             runId=dagster_run.run_id,
             status=dagster_run.status.value,
+            runStatus=dagster_run.status.value,
             mode=DEFAULT_MODE_NAME,
         )
         self.dagster_run = dagster_run
@@ -403,6 +415,10 @@ class GrapheneRun(graphene.ObjectType):
             if location_name
             else graphene_info.context.has_permission(permission)
         )
+
+    @property
+    def creation_timestamp(self) -> float:
+        return self._run_record.create_timestamp.timestamp()
 
     def resolve_hasReExecutePermission(self, graphene_info: ResolveInfo):
         return self._get_permission_value(Permissions.LAUNCH_PIPELINE_REEXECUTION, graphene_info)
@@ -467,9 +483,6 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_stepStats(self, graphene_info: ResolveInfo):
         return get_step_stats(graphene_info, self.run_id)
-
-    def resolve_computeLogs(self, _graphene_info: ResolveInfo, stepKey):
-        return GrapheneComputeLogs(runId=self.run_id, stepKey=stepKey)
 
     def resolve_capturedLogs(self, graphene_info: ResolveInfo, fileKey):
         compute_log_manager = get_compute_log_manager(graphene_info)
@@ -541,8 +554,10 @@ class GrapheneRun(graphene.ObjectType):
             )
         ]
 
-    def resolve_eventConnection(self, graphene_info: ResolveInfo, afterCursor=None):
-        conn = graphene_info.context.instance.get_records_for_run(self.run_id, cursor=afterCursor)
+    def resolve_eventConnection(self, graphene_info: ResolveInfo, afterCursor=None, limit=None):
+        conn = graphene_info.context.instance.get_records_for_run(
+            self.run_id, cursor=afterCursor, limit=limit
+        )
         return GrapheneEventConnection(
             events=[
                 from_event_record(record.event_log_entry, self.dagster_run.job_name)
@@ -552,18 +567,12 @@ class GrapheneRun(graphene.ObjectType):
             hasMore=conn.has_more,
         )
 
-    def _get_run_record(self, instance):
-        if not self._run_record:
-            self._run_record = instance.get_run_records(RunsFilter(run_ids=[self.run_id]))[0]
-        return self._run_record
-
     def resolve_startTime(self, graphene_info: ResolveInfo):
-        run_record = self._get_run_record(graphene_info.context.instance)
         # If a user has not migrated in 0.13.15, then run_record will not have start_time and end_time. So it will be necessary to fill this data using the run_stats. Since we potentially make this call multiple times, we cache the result.
-        if run_record.start_time is None and self.dagster_run.status in STARTED_STATUSES:
+        if self._run_record.start_time is None and self.dagster_run.status in STARTED_STATUSES:
             # Short-circuit if pipeline failed to start, so it has an end time but no start time
-            if run_record.end_time is not None:
-                return run_record.end_time
+            if self._run_record.end_time is not None:
+                return self._run_record.end_time
 
             if self._run_stats is None or self._run_stats.start_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
@@ -572,19 +581,20 @@ class GrapheneRun(graphene.ObjectType):
                 return self._run_stats.end_time
 
             return self._run_stats.start_time
-        return run_record.start_time
+        return self._run_record.start_time
 
     def resolve_endTime(self, graphene_info: ResolveInfo):
-        run_record = self._get_run_record(graphene_info.context.instance)
-        if run_record.end_time is None and self.dagster_run.status in COMPLETED_STATUSES:
+        if self._run_record.end_time is None and self.dagster_run.status in COMPLETED_STATUSES:
             if self._run_stats is None or self._run_stats.end_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.end_time
-        return run_record.end_time
+        return self._run_record.end_time
 
     def resolve_updateTime(self, graphene_info: ResolveInfo):
-        run_record = self._get_run_record(graphene_info.context.instance)
-        return datetime_as_float(run_record.update_timestamp)
+        return self._run_record.update_timestamp.timestamp()
+
+    def resolve_creationTime(self, graphene_info: ResolveInfo):
+        return self.creation_timestamp
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance
@@ -640,6 +650,7 @@ class GrapheneIPipelineSnapshotMixin:
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    run_tags = non_null_list(GraphenePipelineTag)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
@@ -733,7 +744,7 @@ class GrapheneIPipelineSnapshotMixin:
             handles = {
                 key: handle
                 for key, handle in handles.items()
-                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+                if handle.parent and str(handle.parent.handleID) == parentHandleID
             }
 
         return [handles[key] for key in sorted(handles)]
@@ -743,6 +754,13 @@ class GrapheneIPipelineSnapshotMixin:
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.job_snapshot.tags.items()
+        ]
+
+    def resolve_run_tags(self, _graphene_info: ResolveInfo):
+        represented_pipeline = self.get_represented_job()
+        return [
+            GraphenePipelineTag(key=key, value=value)
+            for key, value in (represented_pipeline.job_snapshot.run_tags or {}).items()
         ]
 
     def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
@@ -761,7 +779,7 @@ class GrapheneIPipelineSnapshotMixin:
                 job_name=pipeline.name,
                 tags={
                     REPOSITORY_LABEL_TAG: (
-                        pipeline.get_external_origin().repository_origin.get_label()
+                        pipeline.get_remote_origin().repository_origin.get_label()
                     )
                 },
             )
@@ -879,6 +897,22 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
     repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
+    partitionKeysOrError = graphene.Field(
+        graphene.NonNull(GraphenePartitionKeys),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        reverse=graphene.Boolean(),
+        selected_asset_keys=graphene.Argument(
+            graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+        ),
+    )
+    partition = graphene.Field(
+        "dagster_graphql.schema.partition_sets.GrapheneJobSelectionPartition",
+        partition_name=graphene.NonNull(graphene.String),
+        selected_asset_keys=graphene.Argument(
+            graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+        ),
+    )
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -889,7 +923,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_job.get_external_origin_id()
+        return self._external_job.get_remote_origin_id()
 
     def get_represented_job(self) -> RepresentedJob:
         return self._external_job
@@ -910,7 +944,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         return bool(repository.get_external_asset_nodes(self._external_job.name))
 
     def resolve_repository(self, graphene_info: ResolveInfo):
-        from ..external import GrapheneRepository
+        from dagster_graphql.schema.external import GrapheneRepository
 
         handle = self._external_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
@@ -918,6 +952,47 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             graphene_info.context,
             location.get_repository(handle.repository_name),
             location,
+        )
+
+    @capture_error
+    def resolve_partitionKeysOrError(
+        self,
+        graphene_info: ResolveInfo,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        reverse: Optional[bool] = None,
+        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+    ) -> GraphenePartitionKeys:
+        result = graphene_info.context.get_external_partition_names(
+            repository_handle=self._external_job.repository_handle,
+            job_name=self._external_job.name,
+            selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
+            instance=graphene_info.context.instance,
+        )
+
+        if isinstance(result, ExternalPartitionExecutionErrorData):
+            raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+        all_partition_keys = result.partition_names
+
+        return GraphenePartitionKeys(
+            partitionKeys=apply_cursor_limit_reverse(
+                all_partition_keys, cursor=cursor, limit=limit, reverse=reverse or False
+            )
+        )
+
+    def resolve_partition(
+        self,
+        graphene_info: ResolveInfo,
+        partition_name: str,
+        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+    ) -> "GrapheneJobSelectionPartition":
+        from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
+
+        return GrapheneJobSelectionPartition(
+            external_job=self._external_job,
+            partition_name=partition_name,
+            selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
         )
 
 
@@ -949,35 +1024,31 @@ class GrapheneGraph(graphene.ObjectType):
     )
     modes = non_null_list(GrapheneMode)
 
-    def __init__(self, external_pipeline, solid_handle_id=None):
-        self._external_pipeline = check.inst_param(
-            external_pipeline, "external_pipeline", ExternalJob
-        )
+    def __init__(self, external_job: ExternalJob, solid_handle_id=None):
+        self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
         self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
         super().__init__()
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         if self._solid_handle_id:
-            return (
-                f"{self._external_pipeline.get_external_origin_id()}:solid:{self._solid_handle_id}"
-            )
-        return f"graph:{self._external_pipeline.get_external_origin_id()}"
+            return f"{self._external_job.get_remote_origin_id()}:solid:{self._solid_handle_id}"
+        return f"graph:{self._external_job.get_remote_origin_id()}"
 
     def resolve_name(self, _graphene_info: ResolveInfo):
-        return self._external_pipeline.get_graph_name()
+        return self._external_job.get_graph_name()
 
     def resolve_description(self, _graphene_info: ResolveInfo):
-        return self._external_pipeline.description
+        return self._external_job.description
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
     ) -> Optional[GrapheneSolidHandle]:
-        return build_solid_handles(self._external_pipeline).get(handleID)
+        return build_solid_handles(self._external_job).get(handleID)
 
     def resolve_solid_handles(
         self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
     ) -> Sequence[GrapheneSolidHandle]:
-        handles = build_solid_handles(self._external_pipeline)
+        handles = build_solid_handles(self._external_job)
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}
@@ -985,7 +1056,7 @@ class GrapheneGraph(graphene.ObjectType):
             handles = {
                 key: handle
                 for key, handle in handles.items()
-                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+                if handle.parent and str(handle.parent.handleID) == parentHandleID
             }
 
         return [handles[key] for key in sorted(handles)]
@@ -1000,3 +1071,11 @@ class GrapheneRunOrError(graphene.Union):
     class Meta:
         types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
         name = "RunOrError"
+
+
+def _asset_key_input_list_to_asset_key_set(
+    asset_keys: Optional[List[GrapheneAssetKeyInput]],
+) -> Optional[AbstractSet[AssetKey]]:
+    return (
+        {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None
+    )

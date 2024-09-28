@@ -1,4 +1,3 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import {
   Box,
   Button,
@@ -13,6 +12,8 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
+import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
+import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {
@@ -36,10 +37,12 @@ import {
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
@@ -47,7 +50,6 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {PipelineSelector} from '../graphql/types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
@@ -57,7 +59,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 export type LaunchAssetsChoosePartitionsTarget =
-  | {type: 'job'; jobName: string; partitionSetName: string}
+  | {type: 'job'; jobName: string; assetKeys: AssetKey[]}
   | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey}
   | {type: 'pureAll'};
 
@@ -181,16 +183,18 @@ export const LaunchAssetExecutionButton = ({
   showChangedAndMissingOption?: boolean;
   primary?: boolean;
   preferredJobName?: string;
-  additionalDropdownOptions?: {
-    label: string;
-    icon?: JSX.Element;
-    onClick: () => void;
-  }[];
+  additionalDropdownOptions?: (
+    | JSX.Element
+    | {
+        label: string;
+        icon?: JSX.Element;
+        onClick: () => void;
+        disabled?: boolean;
+      }
+  )[];
 }) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
-
-  const {MaterializeButton} = useLaunchPadHooks();
 
   const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
     React.useState<boolean>(false);
@@ -290,14 +294,29 @@ export const LaunchAssetExecutionButton = ({
                   onClick(firstOption.assetKeys, e, true);
                 }}
               />
-              {additionalDropdownOptions?.map((option) => (
-                <MenuItem
-                  key={option.label}
-                  text={option.label}
-                  icon={option.icon}
-                  onClick={option.onClick}
-                />
-              ))}
+              {additionalDropdownOptions?.map((option) => {
+                if (!('label' in option)) {
+                  return option;
+                }
+
+                const item = (
+                  <MenuItem
+                    key={option.label}
+                    text={option.label}
+                    icon={option.icon}
+                    onClick={option.onClick}
+                    disabled={option.disabled}
+                  />
+                );
+
+                return option.disabled ? (
+                  <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
+                    {item}
+                  </Tooltip>
+                ) : (
+                  item
+                );
+              })}
             </Menu>
           }
         >
@@ -316,7 +335,6 @@ export const LaunchAssetExecutionButton = ({
 };
 
 export const useMaterializationAction = (preferredJobName?: string) => {
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const client = useApolloClient();
@@ -518,12 +536,6 @@ async function stateForLaunchingAssets(
   if (pipeline.__typename !== 'Pipeline') {
     return {type: 'error', error: pipeline.message};
   }
-  const partitionSets = resourceResult.data.partitionSetsOrError;
-  if (partitionSets.__typename !== 'PartitionSets') {
-    return {type: 'error', error: partitionSets.message};
-  }
-
-  const partitionSetName = partitionSets.results[0]?.name;
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
   const resources = pipeline.modes[0]!.resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
@@ -558,17 +570,17 @@ async function stateForLaunchingAssets(
         ),
         includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
-        base: partitionSetName
-          ? {partitionsSetName: partitionSetName, partitionName: null, tags: []}
+        base: partitionDefinition
+          ? {type: 'asset-job-partition', partitionName: null, tags: []}
           : undefined,
       },
     };
   }
-  if (partitionDefinition && partitionSetName) {
+  if (partitionDefinition) {
     return {
       type: 'partitions',
       assets,
-      target: {type: 'job', jobName, partitionSetName},
+      target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };
@@ -648,7 +660,7 @@ async function upstreamAssetsWithNoMaterializations(
   });
 
   return result.data.assetNodes
-    .filter((a) => !a.isSource && a.assetMaterializations.length === 0)
+    .filter((a) => a.isMaterializable && a.assetMaterializations.length === 0)
     .map((a) => a.assetKey);
 }
 
@@ -782,7 +794,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     }
     isObservable
     isExecutable
-    isSource
+    isMaterializable
     assetKey {
       path
     }
@@ -859,27 +871,6 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
     $repositoryLocationName: String!
     $repositoryName: String!
   ) {
-    partitionSetsOrError(
-      pipelineName: $pipelineName
-      repositorySelector: {
-        repositoryName: $repositoryName
-        repositoryLocationName: $repositoryLocationName
-      }
-    ) {
-      ... on PythonError {
-        message
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PartitionSets {
-        results {
-          id
-          name
-        }
-      }
-    }
-
     pipelineOrError(
       params: {
         pipelineName: $pipelineName
@@ -929,7 +920,7 @@ export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
       assetKey {
         path
       }
-      isSource
+      isMaterializable
       opNames
       graphName
       assetMaterializations(limit: 1) {

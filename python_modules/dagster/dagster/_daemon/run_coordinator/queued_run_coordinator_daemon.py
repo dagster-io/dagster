@@ -29,14 +29,12 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.utils import InheritContextThreadPoolExecutor
-from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 PAGE_SIZE = 100
-CONCURRENCY_BLOCKED_MESSAGE_INTERVAL = 300
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
@@ -50,6 +48,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self._location_timeouts_lock = threading.Lock()
         self._location_timeouts: Dict[str, float] = {}
         self._page_size = page_size
+        self._global_concurrency_blocked_runs_lock = threading.Lock()
+        self._global_concurrency_blocked_runs = set()
         super().__init__(interval_seconds)
 
     def _get_executor(self, max_workers) -> ThreadPoolExecutor:
@@ -290,13 +290,16 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     global_concurrency_limits_counter
                     and global_concurrency_limits_counter.is_blocked(run)
                 ):
-                    concurrency_blocked_info = json.dumps(
-                        global_concurrency_limits_counter.get_blocked_run_debug_info(run)
-                    )
-                    self._logger.info(
-                        f"Run {run.run_id} is blocked by global concurrency limits: {concurrency_blocked_info}"
-                    )
                     to_remove.append(run)
+                    if run.run_id not in self._global_concurrency_blocked_runs:
+                        with self._global_concurrency_blocked_runs_lock:
+                            self._global_concurrency_blocked_runs.add(run.run_id)
+                        concurrency_blocked_info = json.dumps(
+                            global_concurrency_limits_counter.get_blocked_run_debug_info(run)
+                        )
+                        self._logger.info(
+                            f"Run {run.run_id} is blocked by global concurrency limits: {concurrency_blocked_info}"
+                        )
                     continue
                 elif global_concurrency_limits_counter:
                     global_concurrency_limits_counter.update_counters_with_launched_item(run)
@@ -340,13 +343,16 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _dequeue_run(
         self,
         instance: DagsterInstance,
-        workspace: IWorkspace,
+        workspace: BaseWorkspaceRequestContext,
         run: DagsterRun,
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
     ) -> bool:
         # double check that the run is still queued before dequeing
         run = check.not_none(instance.get_run_by_id(run.run_id))
+        with self._global_concurrency_blocked_runs_lock:
+            if run.run_id in self._global_concurrency_blocked_runs:
+                self._global_concurrency_blocked_runs.remove(run.run_id)
 
         now = fixed_iteration_time or time.time()
 

@@ -1,23 +1,22 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
+import {VirtualizedGraphTable} from './VirtualizedGraphTable';
+import {WORSKPACE_GRAPHS_QUERY} from './WorkspaceGraphsQuery';
 import {WorkspaceHeader} from './WorkspaceHeader';
+import {extractGraphsForRepo} from './extractGraphsForRepo';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
   WorkspaceGraphsQuery,
   WorkspaceGraphsQueryVariables,
-} from './types/WorkspaceGraphsRoot.types';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+} from './types/WorkspaceGraphsQuery.types';
+import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -39,7 +38,6 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceGraphsQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -52,32 +50,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       return [];
     }
 
-    const jobGraphNames = new Set<string>(
-      repo.pipelines
-        .filter((p) => p.isJob && !isHiddenAssetGroupJob(p.name))
-        .map((p) => p.graphName),
-    );
-
-    const items: Graph[] = Array.from(jobGraphNames).map((graphName) => ({
-      name: graphName,
-      path: `/graphs/${graphName}`,
-      description: null,
-    }));
-
-    repo.usedSolids.forEach((s) => {
-      if (s.definition.__typename === 'CompositeSolidDefinition') {
-        const invocation = s.invocations[0];
-        if (invocation) {
-          items.push({
-            name: s.definition.name,
-            path: `/graphs/${invocation.pipeline.name}/${invocation.solidHandle.handleID}/`,
-            description: s.definition.description,
-          });
-        }
-      }
-    });
-
-    return items.sort((a, b) => a.name.localeCompare(b.name));
+    return extractGraphsForRepo(repo);
   }, [data]);
 
   const filteredBySearch = useMemo(() => {
@@ -130,12 +103,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="graphs"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="graphs" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
@@ -155,40 +123,3 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     </Box>
   );
 };
-
-const WORSKPACE_GRAPHS_QUERY = gql`
-  query WorkspaceGraphsQuery($selector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $selector) {
-      ... on Repository {
-        id
-        usedSolids {
-          definition {
-            ... on CompositeSolidDefinition {
-              id
-              name
-              description
-            }
-          }
-          invocations {
-            pipeline {
-              id
-              name
-            }
-            solidHandle {
-              handleID
-            }
-          }
-        }
-        pipelines {
-          id
-          name
-          isJob
-          graphName
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;

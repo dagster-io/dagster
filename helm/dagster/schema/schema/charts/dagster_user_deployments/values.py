@@ -2,9 +2,9 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from ..dagster.subschema import Global, ServiceAccount
-from ..utils import kubernetes
-from .subschema.user_deployments import UserDeployment
+from schema.charts.dagster.subschema import Global, ServiceAccount
+from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployment
+from schema.charts.utils import kubernetes
 
 
 class DagsterUserDeploymentsHelmValues(BaseModel):

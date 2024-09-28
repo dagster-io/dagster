@@ -8,7 +8,7 @@ import {
   buildResourceRequirement,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {ASSET_VIEW_DEFINITION_QUERY} from '../AssetView';
 import {buildQueryMock} from '../AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {
@@ -84,7 +84,7 @@ export const AssetViewDefinitionSourceAsset = buildQueryMock<
         isPartitioned: false,
         isObservable: true,
         isExecutable: true,
-        isSource: true,
+        isMaterializable: false,
         metadataEntries: [],
         type: null,
         requiredResources: [buildResourceRequirement({resourceKey: 'foo'})],
@@ -137,7 +137,7 @@ export const AssetViewDefinitionSDA = buildQueryMock<
         isPartitioned: false,
         isObservable: false,
         isExecutable: true,
-        isSource: false,
+        isMaterializable: true,
         metadataEntries: [],
         type: null,
         requiredResources: [buildResourceRequirement({resourceKey: 'foo'})],

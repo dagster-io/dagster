@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
 import {createContext, memo, useEffect} from 'react';
@@ -7,9 +6,10 @@ import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
 import {RunFragment} from './types/RunFragments.types';
-import {RunTableRunFragment} from './types/RunTable.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
 import {Mono} from '../../../ui-components/src';
+import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -290,15 +290,11 @@ interface RunTimeProps {
 }
 
 export const RunTime = memo(({run}: RunTimeProps) => {
-  const {startTime, updateTime} = run;
+  const {creationTime} = run;
 
   return (
     <div>
-      {startTime ? (
-        <Timestamp timestamp={{unix: startTime}} />
-      ) : updateTime ? (
-        <Timestamp timestamp={{unix: updateTime}} />
-      ) : null}
+      <Timestamp timestamp={{unix: creationTime}} />
     </div>
   );
 });
@@ -328,6 +324,7 @@ export const RUN_TIME_FRAGMENT = gql`
   fragment RunTimeFragment on Run {
     id
     status
+    creationTime
     startTime
     endTime
     updateTime

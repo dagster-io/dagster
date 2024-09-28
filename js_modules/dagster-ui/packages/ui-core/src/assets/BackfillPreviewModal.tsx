@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Button, Colors, Dialog, DialogFooter, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
@@ -15,9 +14,9 @@ import {
   BackfillPolicyForLaunchAssetFragment,
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
+import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {testId} from '../testing/testId';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
@@ -58,7 +57,6 @@ export const BackfillPreviewModal = ({
       skip: !isOpen,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'BackfillPreviewQuery', {skip: !isOpen});
   const {data} = queryResult;
 
   const partitionsByAssetToken = useMemo(() => {

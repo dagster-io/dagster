@@ -63,7 +63,7 @@ def test_repository_snap_all_props():
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
-    repo_or_caching_repo = definitions.get_inner_repository_for_loading_process()
+    repo_or_caching_repo = definitions.get_inner_repository()
     return (
         repo_or_caching_repo.compute_repository_definition()
         if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
@@ -475,8 +475,7 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
 
 def _to_dict(entries: List[ResourceJobUsageEntry]) -> Dict[str, List[str]]:
     return {
-        entry.job_name: sorted([handle.to_string() for handle in entry.node_handles])
-        for entry in entries
+        entry.job_name: sorted([str(handle) for handle in entry.node_handles]) for entry in entries
     }
 
 

@@ -1,41 +1,95 @@
-import {CodeLocationRowType} from '../workspace/VirtualizedCodeLocationRow';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
+import {
+  CodeLocationRowStatusType,
+  CodeLocationRowType,
+} from '../workspace/VirtualizedCodeLocationRow';
+import {
+  LocationStatusEntryFragment,
+  WorkspaceLocationNodeFragment,
+} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
-const flatten = (locationEntries: WorkspaceLocationNodeFragment[]) => {
+const flatten = (
+  locationStatuses: LocationStatusEntryFragment[],
+  locationEntries: WorkspaceLocationNodeFragment[],
+) => {
   // Consider each loaded repository to be a "code location".
   const all: CodeLocationRowType[] = [];
-  for (const locationNode of locationEntries) {
-    const {locationOrLoadError} = locationNode;
-    if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
-      all.push({type: 'error' as const, node: locationNode});
+
+  const entryMap = locationEntries.reduce(
+    (acc, entry) => {
+      acc[entry.name] = entry;
+      return acc;
+    },
+    {} as {[name: string]: WorkspaceLocationNodeFragment},
+  );
+
+  for (const locationStatus of locationStatuses) {
+    const locationEntry = entryMap[locationStatus.name];
+    let status: CodeLocationRowStatusType;
+
+    if (locationStatus.loadStatus === 'LOADING') {
+      status = 'Updating';
+    } else if (locationEntry?.versionKey !== locationStatus.versionKey) {
+      status = 'Loading';
+    } else if (locationEntry?.locationOrLoadError?.__typename === 'PythonError') {
+      status = 'Failed';
     } else {
-      locationOrLoadError.repositories.forEach((repo) => {
-        all.push({type: 'repository' as const, codeLocation: locationNode, repository: repo});
+      status = 'Loaded';
+    }
+
+    if (locationEntry?.locationOrLoadError?.__typename === 'RepositoryLocation') {
+      locationEntry.locationOrLoadError.repositories.forEach((repo) => {
+        all.push({
+          type: 'repository' as const,
+          locationStatus,
+          locationEntry,
+          repository: repo,
+          status,
+        });
+      });
+    } else {
+      all.push({
+        type: 'location' as const,
+        locationStatus,
+        locationEntry: locationEntry || null,
+        status,
       });
     }
   }
   return all;
 };
 
-const filterBySearch = (flattened: CodeLocationRowType[], searchValue: string) => {
+const filterRows = (
+  flattened: CodeLocationRowType[],
+  searchValue: string,
+  filters: CodeLocationFilters,
+) => {
   const queryString = searchValue.toLocaleLowerCase();
   return flattened.filter((row) => {
-    if (row.type === 'error') {
-      return row.node.name.toLocaleLowerCase().includes(queryString);
+    if (filters.status?.length) {
+      if (!filters.status.includes(row.status)) {
+        return false;
+      }
+    }
+    if (row.type !== 'repository') {
+      return row.locationStatus.name.toLocaleLowerCase().includes(queryString);
     }
     return (
-      row.codeLocation.name.toLocaleLowerCase().includes(queryString) ||
+      row.locationStatus.name.toLocaleLowerCase().includes(queryString) ||
       row.repository.name.toLocaleLowerCase().includes(queryString)
     );
   });
 };
 
+export type CodeLocationFilters = {status: CodeLocationRowStatusType[]};
+
 export const flattenCodeLocationRows = (
+  locationStatuses: LocationStatusEntryFragment[],
   locationEntries: WorkspaceLocationNodeFragment[],
   searchValue: string = '',
+  filters: CodeLocationFilters = {status: []},
 ) => {
-  const flattened = flatten(locationEntries);
-  const filtered = filterBySearch(flattened, searchValue);
+  const flattened = flatten(locationStatuses, locationEntries);
+  const filtered = filterRows(flattened, searchValue, filters);
 
   return {
     flattened,

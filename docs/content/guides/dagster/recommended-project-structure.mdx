@@ -54,6 +54,7 @@ project_fully_featured
 │   │       ├── recommender_model.py
 │   │       ├── user_story_matrix.py
 │   │       └── user_top_recommended_stories.py
+│   ├── definitions.py
 │   ├── jobs.py
 │   ├── partitions.py
 │   ├── resources
@@ -131,7 +132,7 @@ In this example, we grouped resources (e.g., database connections, Spark session
 
 In complex projects, we find it helpful to make resources reusable and configured with pre-defined values via <PyObject object="configured" />. This approach allows your teammates to use a pre-defined resource set or make changes to shared resources, thus enabling more efficient project development.
 
-This pattern also helps you easily execute jobs in different environments without code changes. In this example, we dynamically defined a code location based on the deployment in [`__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/\__init\_\_.py) and can keep all code the same across testing, local development, staging, and production. Read more about our recommendations in the [Transitioning data pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) guide.
+This pattern also helps you easily execute jobs in different environments without code changes. In this example, we dynamically defined a code location based on the deployment in [`definitions.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/definitions.py) and can keep all code the same across testing, local development, staging, and production. Read more about our recommendations in the [Transitioning data pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) guide.
 
 ---
 
@@ -167,6 +168,8 @@ To include multiple code locations in a single project, you'll need to add a [co
 
 - **If using Dagster+**, add a [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) to the root of your project.
 - **If developing locally or deploying to your infrastructure**, add a `workspace.yaml` file to the root of your project. Refer to the [workspace files documentation](/concepts/code-locations/workspace-files) for more info.
+
+You can see a working example of a Dagster project that has multiple code locations in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).
 
 ---
 
@@ -220,7 +223,7 @@ project_fully_featured
 <ArticleList>
   <ArticleListItem
     title="Dagster project files"
-    href="/getting-started/project-file-reference"
+    href="/guides/understanding-dagster-project-files"
   ></ArticleListItem>
   <ArticleListItem
     title="Dagster instance (dagster.yaml)"

@@ -1,9 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
+import {AssetGlobalLineageLink} from 'shared/assets/AssetPageHeader.oss';
 
-import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
@@ -12,15 +11,14 @@ import {
   AssetGroupMetadataQuery,
   AssetGroupMetadataQueryVariables,
 } from './types/AssetGroupRoot.types';
-import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
+import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
+import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {
   ExplorerPath,
   explorerPathFromString,
@@ -93,16 +91,7 @@ export const AssetGroupRoot = ({
     [history],
   );
 
-  const assetFilterState = useAssetDefinitionFilterState();
-
-  const {filterFn} = assetFilterState;
-  const fetchOptions = React.useMemo(
-    () => ({
-      groupSelector,
-      hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => !filterFn(node),
-    }),
-    [groupSelector, filterFn],
-  );
+  const fetchOptions = React.useMemo(() => ({groupSelector}), [groupSelector]);
 
   const lineageOptions = React.useMemo(
     () => ({preferAssetRendering: true, explodeComposites: true}),
@@ -135,7 +124,7 @@ export const AssetGroupRoot = ({
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
-          assetFilterState={assetFilterState}
+          viewType={AssetGraphViewType.GROUP}
         />
       ) : (
         <AssetsCatalogTable
@@ -173,7 +162,6 @@ export const AssetGroupTags = ({
     ASSET_GROUP_METADATA_QUERY,
     {variables: {selector: groupSelector}},
   );
-  useBlockTraceOnQueryResult(queryResult, 'AssetGroupMetadataQuery');
   const {data} = queryResult;
 
   const sensorTag = () => {

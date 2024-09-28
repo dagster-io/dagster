@@ -5,19 +5,22 @@ from types import ModuleType
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError
-
-from .asset_key import (
+from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from .assets import AssetsDefinition
-from .cacheable_assets import CacheableAssetsDefinition
-from .source_asset import SourceAsset
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.utils import resolve_automation_condition
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def find_objects_in_module_of_types(module: ModuleType, types) -> Iterator:
@@ -99,6 +102,7 @@ def load_assets_from_modules(
     *,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
@@ -114,7 +118,7 @@ def load_assets_from_modules(
             of the loaded objects, with the prefix prepended.
         freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
             assets.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
+        automation_condition (Optional[AutomationCondition]): AutomationCondition to apply
             to all the loaded assets.
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
@@ -127,9 +131,6 @@ def load_assets_from_modules(
     group_name = check.opt_str_param(group_name, "group_name")
     key_prefix = check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix")
     freshness_policy = check.opt_inst_param(freshness_policy, "freshness_policy", FreshnessPolicy)
-    auto_materialize_policy = check.opt_inst_param(
-        auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
-    )
     backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
 
     (
@@ -145,7 +146,9 @@ def load_assets_from_modules(
         key_prefix=key_prefix,
         group_name=group_name,
         freshness_policy=freshness_policy,
-        auto_materialize_policy=auto_materialize_policy,
+        automation_condition=resolve_automation_condition(
+            automation_condition, auto_materialize_policy
+        ),
         backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
     )
@@ -157,6 +160,7 @@ def load_assets_from_current_module(
     *,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
@@ -172,7 +176,7 @@ def load_assets_from_current_module(
             of the loaded objects, with the prefix prepended.
         freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
             assets.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
+        automation_condition (Optional[AutomationCondition]): AutomationCondition to apply
             to all the loaded assets.
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
@@ -192,7 +196,9 @@ def load_assets_from_current_module(
         group_name=group_name,
         key_prefix=key_prefix,
         freshness_policy=freshness_policy,
-        auto_materialize_policy=auto_materialize_policy,
+        automation_condition=resolve_automation_condition(
+            automation_condition, auto_materialize_policy
+        ),
         backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
     )
@@ -227,6 +233,7 @@ def load_assets_from_package_module(
     *,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
@@ -245,7 +252,7 @@ def load_assets_from_package_module(
             of the loaded objects, with the prefix prepended.
         freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
             assets.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
+        automation_condition (Optional[AutomationCondition]): AutomationCondition to apply
             to all the loaded assets.
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
@@ -258,9 +265,6 @@ def load_assets_from_package_module(
     group_name = check.opt_str_param(group_name, "group_name")
     key_prefix = check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix")
     freshness_policy = check.opt_inst_param(freshness_policy, "freshness_policy", FreshnessPolicy)
-    auto_materialize_policy = check.opt_inst_param(
-        auto_materialize_policy, "auto_materialize_policy", AutoMaterializePolicy
-    )
     backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
 
     (
@@ -275,7 +279,9 @@ def load_assets_from_package_module(
         key_prefix=key_prefix,
         group_name=group_name,
         freshness_policy=freshness_policy,
-        auto_materialize_policy=auto_materialize_policy,
+        automation_condition=resolve_automation_condition(
+            automation_condition, auto_materialize_policy
+        ),
         backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,
     )
@@ -394,6 +400,9 @@ def prefix_assets(
         key_prefix = [key_prefix]
     key_prefix = check.is_list(key_prefix, of_type=str)
 
+    if isinstance(source_key_prefix, str):
+        source_key_prefix = [source_key_prefix]
+
     result_assets: List[AssetsDefinition] = []
     for assets_def in assets_defs:
         output_asset_key_replacements = {
@@ -438,7 +447,7 @@ def assets_with_attributes(
     key_prefix: Optional[Sequence[str]],
     group_name: Optional[str],
     freshness_policy: Optional[FreshnessPolicy],
-    auto_materialize_policy: Optional[AutoMaterializePolicy],
+    automation_condition: Optional[AutomationCondition],
     backfill_policy: Optional[BackfillPolicy],
     source_key_prefix: Optional[Sequence[str]],
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
@@ -454,7 +463,7 @@ def assets_with_attributes(
             cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
         ]
 
-    if group_name or freshness_policy or auto_materialize_policy or backfill_policy:
+    if group_name or freshness_policy or automation_condition or backfill_policy:
         assets_defs = [
             asset.with_attributes(
                 group_names_by_key=(
@@ -463,7 +472,7 @@ def assets_with_attributes(
                     else {}
                 ),
                 freshness_policy=freshness_policy,
-                auto_materialize_policy=auto_materialize_policy,
+                automation_condition=automation_condition,
                 backfill_policy=backfill_policy,
             )
             for asset in assets_defs
@@ -477,7 +486,9 @@ def assets_with_attributes(
             cached_asset.with_attributes_for_all(
                 group_name,
                 freshness_policy=freshness_policy,
-                auto_materialize_policy=auto_materialize_policy,
+                auto_materialize_policy=automation_condition.as_auto_materialize_policy()
+                if automation_condition
+                else None,
                 backfill_policy=backfill_policy,
             )
             for cached_asset in cacheable_assets

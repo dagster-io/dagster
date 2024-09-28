@@ -3,12 +3,13 @@ import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union
 
+import dagster._check as check
 import pydantic
 import pytest
-from dagster._check import ParameterCheckError, inst_param, set_param
-from dagster._model import DagsterModel, IHaveNew, dagster_model, dagster_model_custom
+from dagster._model import DagsterModel
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
@@ -41,7 +42,7 @@ def test_deserialize_json_non_namedtuple():
 
 @pytest.mark.parametrize("bad_obj", [1, None, False])
 def test_deserialize_json_invalid_types(bad_obj):
-    with pytest.raises(ParameterCheckError):
+    with pytest.raises(check.ParameterCheckError):
         deserialize_value(bad_obj)
 
 
@@ -295,10 +296,7 @@ def test_wrong_first_arg():
             def __new__(not_cls, field_two, field_one):  # type: ignore
                 return super(NotCls, not_cls).__new__(field_one, field_two)
 
-    assert (
-        str(exc_info.value)
-        == 'For namedtuple NotCls: First parameter must be _cls or cls. Got "not_cls".'
-    )
+    assert str(exc_info.value) == 'For NotCls: First parameter must be _cls or cls. Got "not_cls".'
 
 
 def test_incorrect_order():
@@ -310,9 +308,9 @@ def test_incorrect_order():
                 return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert (
-        str(exc_info.value) == "For namedtuple WrongOrder: "
+        str(exc_info.value) == "For WrongOrder: "
         "Params to __new__ must match the order of field declaration "
-        "in the namedtuple. Declared field number 1 in the namedtuple "
+        "for NamedTuples that are not @record based. Declared field number 1 in the namedtuple "
         'is "field_one". Parameter 1 in __new__ method is "field_two".'
     )
 
@@ -326,11 +324,12 @@ def test_missing_one_parameter():
                 return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert (
-        str(exc_info.value) == "For namedtuple MissingFieldInNew: "
-        "Missing parameters to __new__. You have declared fields in "
-        "the named tuple that are not present as parameters to the "
+        str(exc_info.value) == "For MissingFieldInNew: "
+        "Missing parameters to __new__. You have declared fields "
+        "that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
-        "and pickling to work, these must match. Missing: ['field_three']"
+        "and pickling to work, these must match or kwargs and kwargs_fields must be used. "
+        "Missing: ['field_three']"
     )
 
 
@@ -345,11 +344,12 @@ def test_missing_many_parameters():
                 return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert (
-        str(exc_info.value) == "For namedtuple MissingFieldsInNew: "
-        "Missing parameters to __new__. You have declared fields in "
-        "the named tuple that are not present as parameters to the "
+        str(exc_info.value) == "For MissingFieldsInNew: "
+        "Missing parameters to __new__. You have declared fields "
+        "that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
-        "and pickling to work, these must match. Missing: ['field_three', 'field_four']"
+        "and pickling to work, these must match or kwargs and kwargs_fields must be used. "
+        "Missing: ['field_three', 'field_four']"
     )
 
 
@@ -372,7 +372,7 @@ def test_extra_parameters_must_have_defaults():
                 return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert (
-        str(exc_info.value) == "For namedtuple OldFieldsWithoutDefaults: "
+        str(exc_info.value) == "For OldFieldsWithoutDefaults: "
         'Parameter "field_one" is a parameter to the __new__ '
         "method but is not a field in this namedtuple. "
         "The only reason why this should exist is that "
@@ -407,8 +407,8 @@ def test_set():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class HasSets(namedtuple("_HasSets", "reg_set frozen_set")):
         def __new__(cls, reg_set, frozen_set):
-            set_param(reg_set, "reg_set")
-            inst_param(frozen_set, "frozen_set", frozenset)
+            check.set_param(reg_set, "reg_set")
+            check.inst_param(frozen_set, "frozen_set", frozenset)
             return super(HasSets, cls).__new__(cls, reg_set, frozen_set)
 
     foo = HasSets({1, 2, 3, "3"}, frozenset([4, 5, 6, "6"]))
@@ -570,6 +570,37 @@ def test_set_to_sequence_field_serializer() -> None:
     assert deserialized == val
 
 
+def test_named_tuple_invalid_ignored_values() -> None:
+    def get_serialized_future() -> str:
+        future_map = WhitelistMap.create()
+
+        @_whitelist_for_serdes(whitelist_map=future_map)
+        class A(NamedTuple):
+            x: int
+            future_field: "Future1"
+
+        @_whitelist_for_serdes(whitelist_map=future_map)
+        class Future1(NamedTuple):
+            val: int
+            inner1: Optional["Future1"]
+            inner2: "Future2"
+
+        @_whitelist_for_serdes(whitelist_map=future_map)
+        class Future2(NamedTuple):
+            val: str
+
+        future_object = A(0, Future1(1, Future1(2, None, Future2("b")), Future2("a")))
+        return serialize_value(future_object, whitelist_map=future_map)
+
+    current_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=current_map)
+    class A(NamedTuple):
+        x: int
+
+    assert deserialize_value(get_serialized_future(), as_type=A, whitelist_map=current_map) == A(0)
+
+
 def test_named_tuple_skip_when_empty_fields() -> None:
     test_map = WhitelistMap.create()
 
@@ -625,6 +656,69 @@ def test_named_tuple_skip_when_empty_fields() -> None:
         )
         assert rehydrated_tuple.foo == "A"
         assert rehydrated_tuple.bar is None
+
+    new_tuple_with_bar = SameSnapshotTuple(foo="A", bar="B")
+    assert new_tuple_with_bar.foo == "A"
+    assert new_tuple_with_bar.bar == "B"
+
+
+def test_named_tuple_skip_when_none_fields() -> None:
+    test_map = WhitelistMap.create()
+
+    # Separate scope since we redefine SameSnapshotTuple
+    def get_orig_obj() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class SameSnapshotTuple(namedtuple("_Tuple", "foo")):
+            def __new__(cls, foo):
+                return super(SameSnapshotTuple, cls).__new__(cls, foo)
+
+        return SameSnapshotTuple(foo="A")
+
+    old_tuple = get_orig_obj()
+    old_serialized = serialize_value(old_tuple, whitelist_map=test_map)
+    old_snapshot = hash_str(old_serialized)
+
+    # Separate scope since we redefine SameSnapshotTuple
+    test_map = WhitelistMap.create()
+
+    def get_new_obj_no_skip() -> Any:
+        @_whitelist_for_serdes(whitelist_map=test_map)
+        class SameSnapshotTuple(namedtuple("_SameSnapshotTuple", "foo bar")):
+            def __new__(cls, foo, bar=None):
+                return super(SameSnapshotTuple, cls).__new__(cls, foo, bar)
+
+        return SameSnapshotTuple(foo="A")
+
+    new_tuple_without_serializer = get_new_obj_no_skip()
+    new_snapshot_without_serializer = hash_str(
+        serialize_value(new_tuple_without_serializer, whitelist_map=test_map)
+    )
+
+    # Without setting skip_when_none, the ID changes
+    assert new_snapshot_without_serializer != old_snapshot
+
+    # By setting `skip_when_none_fields`, the ID stays the same as long as the new field is None
+
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map, skip_when_none_fields={"bar"})
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
+        def __new__(cls, foo, bar=None):
+            return super(SameSnapshotTuple, cls).__new__(cls, foo, bar)
+
+    for bar_val in [None, [], {}, set()]:
+        new_tuple = SameSnapshotTuple(foo="A", bar=bar_val)
+        new_snapshot = hash_str(serialize_value(new_tuple, whitelist_map=test_map))
+
+        # Only None is dropped, not empty collections
+        if bar_val is None:
+            assert old_snapshot == new_snapshot
+        else:
+            assert old_snapshot != new_snapshot
+
+    rehydrated_tuple = deserialize_value(old_serialized, SameSnapshotTuple, whitelist_map=test_map)
+    assert rehydrated_tuple.foo == "A"
+    assert rehydrated_tuple.bar is None
 
     new_tuple_with_bar = SameSnapshotTuple(foo="A", bar="B")
     assert new_tuple_with_bar.foo == "A"
@@ -895,11 +989,11 @@ def test_object_migration():
     assert py_dc_ent
 
 
-def test_dagster_model() -> None:
+def test_record() -> None:
     test_env = WhitelistMap.create()
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model
+    @record
     class MyModel:
         nums: List[int]
 
@@ -908,7 +1002,7 @@ def test_dagster_model() -> None:
     assert m == deserialize_value(m_str, whitelist_map=test_env)
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model(checked=False)
+    @record(checked=False)
     class UncheckedModel:
         nums: List[int]
         optional: int = 130
@@ -918,7 +1012,7 @@ def test_dagster_model() -> None:
     assert m == deserialize_value(m_str, whitelist_map=test_env)
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model
+    @record
     class CachedModel:
         nums: List[int]
         optional: int = 42
@@ -936,7 +1030,7 @@ def test_dagster_model() -> None:
     assert m == m_2
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model_custom
+    @record_custom
     class LegacyModel(IHaveNew):
         nums: List[int]
 
@@ -948,6 +1042,151 @@ def test_dagster_model() -> None:
 
     m = LegacyModel(nums=[1, 2, 3])
 
-    m_str = serialize_value(m, whitelist_map=test_env)  # type: ignore # with_new not seen as packable
+    m_str = serialize_value(m, whitelist_map=test_env)
     m2_str = m_str.replace("nums", "old_nums")
     assert m == deserialize_value(m2_str, whitelist_map=test_env)
+
+
+def test_record_fwd_ref():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class MyModel:
+        foos: List["Foo"]
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class Foo:
+        age: int
+
+    def _out_of_scope():
+        # cant find "Foo" in definition or callsite captured scopes
+        # requires serdes to set contextual namespace
+        return deserialize_value(
+            '{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}',
+            MyModel,
+            whitelist_map=test_env,
+        )
+
+    assert _out_of_scope()
+
+
+def test_record_subclass() -> None:
+    test_env = WhitelistMap.create()
+
+    @record
+    class MyRecord:
+        name: str
+
+    @_whitelist_for_serdes(test_env)
+    class Child(MyRecord): ...
+
+    c = Child(name="kiddo")
+    r_str = serialize_value(c, whitelist_map=test_env)
+    assert deserialize_value(r_str, whitelist_map=test_env) == c
+
+
+def test_record_kwargs():
+    test_env = WhitelistMap.create()
+
+    with pytest.raises(
+        SerdesUsageError,
+        match="Params to __new__ must match the order of field declaration for NamedTuples that are not @record based",
+    ):
+
+        @_whitelist_for_serdes(test_env, kwargs_fields={"name", "stuff"})
+        class _(NamedTuple("_", [("name", str), ("stuff", List[Any])])):
+            def __new__(cls, **kwargs): ...
+
+    with pytest.raises(
+        SerdesUsageError,
+        match="kwargs capture used in __new__ but kwargs_fields was not specified",
+    ):
+
+        @_whitelist_for_serdes(test_env)
+        @record_custom
+        class _:
+            name: str
+            stuff: List[Any]
+
+            def __new__(cls, **kwargs): ...
+
+    with pytest.raises(
+        SerdesUsageError,
+        match='Expected field "stuff" in kwargs_fields but it was not specified',
+    ):
+
+        @_whitelist_for_serdes(test_env, kwargs_fields={"name"})
+        @record_custom
+        class _:
+            name: str
+            stuff: List[Any]
+
+            def __new__(cls, **kwargs): ...
+
+    @_whitelist_for_serdes(test_env, kwargs_fields={"name", "stuff"})
+    @record_custom
+    class MyRecord:
+        name: str
+        stuff: List[Any]
+
+        def __new__(cls, **kwargs):
+            return super().__new__(
+                cls,
+                name=kwargs.get("name", ""),
+                stuff=kwargs.get("stuff", []),
+            )
+
+    r = MyRecord()
+    assert r
+    assert (
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+    )
+    r = MyRecord(name="CUSTOM", stuff=[1, 2, 3, 4, 5, 6])
+    assert r
+    assert (
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+    )
+
+
+def test_record_remap() -> None:
+    test_env = WhitelistMap.create()
+
+    # time 1: record object created with non-serializable field
+
+    class Complex:
+        def __init__(self, s: str):
+            self.s = s
+
+    @record
+    class Record_T1:
+        foo: Complex
+
+    assert Record_T1(foo=Complex("old"))
+
+    # time 2: record updated to serdes, to maintain API we use remapping
+
+    @_whitelist_for_serdes(test_env)
+    @record_custom(field_to_new_mapping={"foo_str": "foo"})
+    class Record_T2(IHaveNew):
+        foo_str: str
+
+        def __new__(cls, foo: Union[Complex, str]):
+            if isinstance(foo, Complex):
+                foo = foo.s
+
+            return super().__new__(
+                cls,
+                foo_str=foo,
+            )
+
+        @property
+        def foo(self):
+            return Complex(self.foo_str)
+
+    r = Record_T2(foo=Complex("old"))
+    assert r
+    assert (
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+    )

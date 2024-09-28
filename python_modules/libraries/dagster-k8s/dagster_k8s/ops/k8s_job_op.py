@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Any, Dict, List, Optional
 
@@ -18,16 +19,16 @@ from dagster._annotations import experimental
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
-from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient
-from ..container_context import K8sContainerContext
-from ..job import (
+from dagster_k8s.client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_k8s.job import (
     DagsterK8sJobConfig,
     K8sConfigMergeBehavior,
     UserDefinedDagsterK8sConfig,
     construct_dagster_k8s_job,
     get_k8s_job_name,
 )
-from ..launcher import K8sRunLauncher
+from dagster_k8s.launcher import K8sRunLauncher
 
 K8S_JOB_OP_CONFIG = merge_dicts(
     DagsterK8sJobConfig.config_type_container(),
@@ -377,9 +378,18 @@ def execute_k8s_job(
                 if timeout and time.time() - start_time > timeout:
                     watch.stop()
                     raise Exception("Timed out waiting for pod to finish")
-
                 try:
-                    log_entry = next(log_stream)
+                    log_entry = k8s_api_retry(
+                        lambda: next(log_stream),
+                        max_retries=int(
+                            os.getenv("DAGSTER_EXECUTE_K8S_JOB_STREAM_LOGS_RETRIES", "3")
+                        ),
+                        timeout=int(
+                            os.getenv(
+                                "DAGSTER_EXECUTE_K8S_JOB_STREAM_LOGS_WAIT_BETWEEN_ATTEMPTS", "5"
+                            )
+                        ),
+                    )
                     print(log_entry)  # noqa: T201
                 except StopIteration:
                     break

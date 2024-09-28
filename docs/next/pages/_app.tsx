@@ -17,6 +17,15 @@ import Sidebar from '../components/Sidebar';
 import {VersionedContentLayout} from '../components/mdx/MDXRenderer';
 import * as gtag from '../util/gtag';
 
+import 'prismjs';
+import 'prismjs/components/prism-bash.min';
+import 'prismjs/components/prism-python.min';
+import 'prismjs/components/prism-yaml.min';
+import 'prismjs/components/prism-json.min';
+import 'prismjs/components/prism-toml.min';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.min';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+
 const BASE_URL = 'https://docs.dagster.io';
 const DEFAULT_SEO = {
   title: 'Dagster Docs',

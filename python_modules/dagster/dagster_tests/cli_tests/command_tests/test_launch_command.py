@@ -8,10 +8,9 @@ from dagster._core.test_utils import new_cwd
 from dagster._core.utils import make_new_run_id
 from dagster._utils import file_relative_path
 
-from .test_cli_commands import (
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     default_cli_test_instance,
     launch_command_contexts,
-    memoizable_job,
     non_existant_python_file_workspace_args,
     python_bar_cli_args,
     valid_external_job_target_cli_args,
@@ -214,28 +213,6 @@ def test_default_working_directory():
             assert result.exit_code == 0
             runs = instance.get_runs()
             assert len(runs) == 1
-
-
-def test_launch_using_memoization():
-    runner = CliRunner()
-    run_id_one, run_id_two = [make_new_run_id() for _ in range(2)]
-    with default_cli_test_instance() as instance:
-        with python_bar_cli_args("memoizable") as args:
-            result = runner.invoke(job_launch_command, args + ["--run-id", run_id_one])
-            assert result.exit_code == 0
-            run = instance.get_run_by_id(run_id_one)
-
-            # A None value of step_keys_to_execute indicates executing every step in the plan.
-            assert len(run.step_keys_to_execute) == 1
-
-            # Execute the job to pretend that the launch went through and memoized some result.
-            result = memoizable_job.execute_in_process(instance=instance)
-            assert result.success
-
-            result = runner.invoke(job_launch_command, args + ["--run-id", run_id_two])
-            assert result.exit_code == 0
-            run = instance.get_run_by_id(run_id_two)
-            assert len(run.step_keys_to_execute) == 0
 
 
 def test_launch_command_help():

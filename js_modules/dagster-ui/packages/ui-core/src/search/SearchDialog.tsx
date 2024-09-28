@@ -14,7 +14,6 @@ import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {TooltipShortcutInfo, TopNavButton} from '../app/TopNavButton';
 import {useTrackEvent} from '../app/analytics';
-import {Trace, createTrace} from '../performance';
 
 const MAX_DISPLAYED_RESULTS = 50;
 
@@ -76,7 +75,7 @@ const DEBOUNCE_MSEC = 100;
 export const SearchDialog = () => {
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
-    includeAssetFilters: false,
+    searchContext: 'global',
   });
   const trackEvent = useTrackEvent();
 
@@ -87,29 +86,15 @@ export const SearchDialog = () => {
   const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
   const numRenderedResults = renderedResults.length;
 
-  const isFirstSearch = React.useRef(true);
-  const firstSearchTrace = React.useRef<null | Trace>(null);
-
   const openSearch = React.useCallback(() => {
+    trackEvent('open-global-search');
     trackEvent('searchOpen');
     initialize();
     dispatch({type: 'show-dialog'});
   }, [initialize, trackEvent]);
 
   React.useEffect(() => {
-    if (!loading && primaryResults && secondaryResults) {
-      firstSearchTrace.current?.endTrace();
-    }
-  }, [loading, primaryResults, secondaryResults]);
-
-  React.useEffect(() => {
     __updateSearchVisibility(shown);
-    if (!shown && firstSearchTrace.current) {
-      // When the dialog closes:
-      // Either the trace finished and we logged it, or it didn't and so we throw it away
-      // Either way we don't need the trace object anymore
-      firstSearchTrace.current = null;
-    }
   }, [shown]);
 
   const searchAndHandlePrimary = React.useCallback(
@@ -129,19 +114,10 @@ export const SearchDialog = () => {
   );
 
   const debouncedSearch = React.useMemo(() => {
-    const debouncedSearch = debounce(async (queryString: string) => {
+    return debounce(async (queryString: string) => {
       searchAndHandlePrimary(queryString);
       searchAndHandleSecondary(queryString);
     }, DEBOUNCE_MSEC);
-    return (queryString: string) => {
-      if (!firstSearchTrace.current && isFirstSearch.current) {
-        isFirstSearch.current = false;
-        const trace = createTrace('SearchDialog:FirstSearch');
-        firstSearchTrace.current = trace;
-        trace.startTrace();
-      }
-      return debouncedSearch(queryString);
-    };
   }, [searchAndHandlePrimary, searchAndHandleSecondary]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,6 +223,7 @@ export const SearchDialog = () => {
             queryString={queryString}
             results={renderedResults}
             onClickResult={onClickResult}
+            searching={loading || state.searching}
           />
         </Container>
       </Overlay>

@@ -1,7 +1,6 @@
 import datetime
 import os
 import time
-import uuid
 from typing import Any, Mapping
 
 import dagster._check as check
@@ -10,7 +9,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
@@ -30,11 +29,9 @@ from dagster_k8s_test_infra.integration_utils import (
     terminate_run_over_graphql,
 )
 from dagster_test.test_project import (
-    cleanup_memoized_results,
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
-from dagster_test.test_project.test_jobs.repo import define_memoization_job
 
 
 @pytest.mark.integration
@@ -431,66 +428,3 @@ def test_execute_on_k8s_retry_job(
     assert DagsterEventType.STEP_SUCCESS in [
         event.dagster_event.event_type for event in all_logs if event.is_dagster_event
     ]
-
-
-@pytest.mark.integration
-def test_memoization_k8s_executor(
-    dagster_instance_for_k8s_run_launcher,
-    user_code_namespace_for_k8s_run_launcher,
-    dagster_docker_image,
-    webserver_url_for_k8s_run_launcher,
-):
-    ephemeral_path = str(uuid.uuid4())
-    run_config = deep_merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
-        {
-            "execution": {
-                "config": {
-                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                    "job_image": dagster_docker_image,
-                    "image_pull_policy": image_pull_policy(),
-                }
-            },
-        },
-    )
-
-    run_config = deep_merge_dicts(
-        run_config,
-        {"resources": {"io_manager": {"config": {"s3_prefix": ephemeral_path}}}},
-    )
-
-    # wrap in try-catch to ensure that memoized results are always cleaned from s3 bucket
-    try:
-        job_name = "memoization_job_k8s"
-
-        run_ids = []
-        for _ in range(2):
-            run_id = launch_run_over_graphql(
-                webserver_url_for_k8s_run_launcher,
-                run_config=run_config,
-                job_name=job_name,
-            )
-
-            result = wait_for_job_and_get_raw_logs(
-                job_name="dagster-run-%s" % run_id,
-                namespace=user_code_namespace_for_k8s_run_launcher,
-            )
-
-            assert "RUN_SUCCESS" in result, f"no match, result: {result}"
-
-            run_ids.append(run_id)
-
-        # We expect that first run should have to run the step, since it has not yet been
-        # memoized.
-        unmemoized_run_id = run_ids[0]
-        events = dagster_instance_for_k8s_run_launcher.all_logs(unmemoized_run_id)
-        assert len(_get_step_execution_events(events)) == 1
-
-        # We expect that second run should not have to run the step, since it has been memoized.
-        memoized_run_id = run_ids[1]
-        events = dagster_instance_for_k8s_run_launcher.all_logs(memoized_run_id)
-        assert len(_get_step_execution_events(events)) == 0
-    finally:
-        cleanup_memoized_results(
-            define_memoization_job("k8s")(), dagster_instance_for_k8s_run_launcher, run_config
-        )

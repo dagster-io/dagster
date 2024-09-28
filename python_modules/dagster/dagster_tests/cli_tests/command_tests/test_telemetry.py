@@ -309,6 +309,8 @@ def test_get_stats_from_external_repo_freshness_policies(instance):
     assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
 
 
+# TODO: FOU-243
+@pytest.mark.skip("obsolete EAGER vs. LAZY distinction")
 def test_get_status_from_external_repo_auto_materialize_policy(instance):
     @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
     def asset1(): ...

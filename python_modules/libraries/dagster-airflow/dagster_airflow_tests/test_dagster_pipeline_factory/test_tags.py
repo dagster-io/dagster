@@ -8,6 +8,10 @@ from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.local_compute_log_manager import (
+    IO_TYPE_EXTENSION,
+    LocalComputeLogManager,
+)
 from dagster._core.test_utils import instance_for_test
 from dagster._time import get_current_datetime
 from dagster_airflow import make_dagster_job_from_airflow_dag
@@ -32,6 +36,7 @@ def normalize_file_content(s):
 
 def check_captured_logs(manager, result, execution_date_fmt):
     assert result.success
+    assert isinstance(manager, LocalComputeLogManager)
 
     capture_events = [
         event for event in result.all_events if event.event_type == DagsterEventType.LOGS_CAPTURED
@@ -39,8 +44,10 @@ def check_captured_logs(manager, result, execution_date_fmt):
     assert len(capture_events) == 1
     event = capture_events[0]
     assert event.logs_captured_data.step_keys == ["test_tags_dag__templated"]
-    file_key = event.logs_captured_data.file_key
-    compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
+    log_key = [result.run_id, "compute_logs", event.logs_captured_data.file_key]
+    compute_io_path = manager.get_captured_local_path(
+        log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+    )
     assert os.path.exists(compute_io_path)
     stdout_file = open(compute_io_path, "r", encoding="utf8")
     file_contents = normalize_file_content(stdout_file.read())
@@ -107,6 +114,7 @@ def test_job_auto_tag():
 
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
+        assert isinstance(manager, LocalComputeLogManager)
 
         pre_execute_time = get_current_datetime()
 
@@ -126,10 +134,12 @@ def test_job_auto_tag():
         ]
         event = capture_events[0]
         assert event.logs_captured_data.step_keys == ["test_tags_dag__templated"]
-        file_key = event.logs_captured_data.file_key
         post_execute_time = get_current_datetime()
 
-        compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
+        log_key = [result.run_id, "compute_logs", event.logs_captured_data.file_key]
+        compute_io_path = manager.get_captured_local_path(
+            log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+        )
         assert os.path.exists(compute_io_path)
         stdout_file = open(compute_io_path, "r", encoding="utf8")
         file_contents = normalize_file_content(stdout_file.read())

@@ -1,5 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
 import * as Alerting from '../../../app/CustomAlertProvider';
@@ -15,21 +16,24 @@ jest.mock('../../../graph/asyncGraphLayout', () => ({}));
 describe('BackfillTable', () => {
   it('allows you to click "Failed" backfills for error details', async () => {
     jest.spyOn(Alerting, 'showCustomAlert');
+    const user = userEvent.setup();
 
-    render(
-      <MemoryRouter>
-        <Alerting.CustomAlertProvider />
-        <MockedProvider mocks={[BackfillTableFragmentFailedErrorStatus]}>
-          <BackfillTable backfills={[BackfillTableFragmentFailedError]} refetch={() => {}} />
-        </MockedProvider>
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('table')).toBeVisible();
-    const statusLabel = await screen.findByText('Failed');
-    act(() => {
-      statusLabel.click();
+    await act(async () => {
+      await render(
+        <MemoryRouter>
+          <Alerting.CustomAlertProvider />
+          <MockedProvider mocks={[BackfillTableFragmentFailedErrorStatus]}>
+            <BackfillTable backfills={[BackfillTableFragmentFailedError]} refetch={() => {}} />
+          </MockedProvider>
+        </MemoryRouter>,
+      );
     });
+
+    await waitFor(() => {
+      expect(screen.getByRole('table')).toBeVisible();
+    });
+    const statusLabel = await screen.findByText('Failed');
+    await user.click(statusLabel);
     await waitFor(() => {
       expect(Alerting.showCustomAlert).toHaveBeenCalled();
     });

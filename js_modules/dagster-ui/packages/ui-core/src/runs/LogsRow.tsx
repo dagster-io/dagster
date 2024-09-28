@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo, useState} from 'react';
@@ -14,6 +13,7 @@ import {
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
+import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -25,12 +25,12 @@ import {autolinkTextContent} from '../ui/autolinking';
 interface StructuredProps {
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
-  style: React.CSSProperties;
+  style?: React.CSSProperties;
   highlighted: boolean;
 }
 
 export const Structured = (props: StructuredProps) => {
-  const {node, metadata, style, highlighted} = props;
+  const {node, metadata, style = {}, highlighted} = props;
   const [expanded, setExpanded] = useState(false);
 
   const {title, body} = useMemo(() => {
@@ -256,7 +256,7 @@ StructuredMemoizedContent.displayName = 'StructuredMemoizedContent';
 
 interface UnstructuredProps {
   node: LogsRowUnstructuredFragment;
-  style: React.CSSProperties;
+  style?: React.CSSProperties;
   highlighted: boolean;
   metadata: IRunMetadataDict;
 }
@@ -286,7 +286,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 
   render() {
     return (
-      <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
+      <CellTruncationProvider style={this.props.style || {}} onExpand={this.onExpand}>
         <UnstructuredMemoizedContent
           node={this.props.node}
           highlighted={this.props.highlighted}

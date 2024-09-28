@@ -21,6 +21,11 @@ from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, validator
 
+from dagster_snowflake.constants import (
+    SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
+    SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_SQLALCHEMY,
+)
+
 try:
     import snowflake.connector
 except ImportError:
@@ -333,6 +338,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         ):
             conn_args["private_key"] = self._snowflake_private_key(self._resolved_config_dict)
 
+        conn_args["application"] = SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
         return conn_args
 
     @property
@@ -353,6 +359,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             )
             if self._resolved_config_dict.get(k) is not None
         }
+        conn_args["application"] = SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_SQLALCHEMY
 
         return conn_args
 

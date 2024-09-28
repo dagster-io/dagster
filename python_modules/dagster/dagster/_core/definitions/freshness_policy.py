@@ -3,12 +3,11 @@ from typing import AbstractSet, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import deprecated
+from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import pendulum_create_timezone
+from dagster._time import get_timezone
 from dagster._utils.schedules import is_valid_cron_schedule, reverse_cron_string_iterator
-
-from .events import AssetKey
 
 
 class FreshnessConstraint(NamedTuple):
@@ -23,10 +22,9 @@ class FreshnessMinutes(NamedTuple):
 
 
 @deprecated(
-    breaking_version="1.8",
+    breaking_version="1.9",
     additional_warn_text="For monitoring freshness, use freshness checks instead. If using lazy "
-    "auto-materialize, using FreshnessPolicys is still required, and an alternative system will "
-    "be provided before this class is fully removed.",
+    "auto-materialize, use AutomationCondition.cron() and AutomationCondition.any_downstream_conditions().",
 )
 @whitelist_for_serdes
 class FreshnessPolicy(
@@ -123,7 +121,7 @@ class FreshnessPolicy(
             )
             try:
                 # Verify that the timezone can be loaded
-                pendulum_create_timezone(cron_schedule_timezone)
+                get_timezone(cron_schedule_timezone)
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     "Invalid cron schedule timezone '{cron_schedule_timezone}'.   "

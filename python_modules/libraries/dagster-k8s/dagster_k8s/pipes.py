@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import string
 from contextlib import contextmanager
 from pathlib import Path
@@ -10,7 +11,6 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
@@ -34,15 +34,17 @@ from dagster_pipes import (
     encode_env_var,
 )
 
-from dagster_k8s.client import DEFAULT_WAIT_BETWEEN_ATTEMPTS
+from dagster_k8s.client import (
+    DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    DagsterKubernetesClient,
+    WaitForPodState,
+)
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from dagster_k8s.utils import get_common_labels
-
-from .client import DagsterKubernetesClient, WaitForPodState
-from .models import k8s_model_from_dict, k8s_snake_case_dict
 
 
 def get_pod_name(run_id: str, op_name: str):
-    clean_op_name = op_name.replace("_", "-")
+    clean_op_name = re.sub("[^a-z0-9-]", "", op_name.lower().replace("_", "-"))
     suffix = "".join(random.choice(string.digits) for i in range(10))
     return f"dagster-{run_id[:18]}-{clean_op_name[:20]}-{suffix}"
 
@@ -52,7 +54,6 @@ _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/nam
 _DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
 
 
-@experimental
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
     """Message reader that reads messages from kubernetes pod logs."""
 
@@ -90,7 +91,6 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         return "Attempted to read messages by extracting them from kubernetes pod logs directly."
 
 
-@experimental
 class PipesK8sClient(PipesClient, TreatAsResourceParam):
     """A pipes client for launching kubernetes pods.
 

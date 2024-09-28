@@ -1,9 +1,6 @@
 import {createContext, useCallback, useContext, useLayoutEffect} from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
-import {atom, useRecoilValue, useSetRecoilState} from 'recoil';
-
-import {CloudOSSContext} from './CloudOSSContext';
-import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {atom, useRecoilValue} from 'recoil';
 
 export const currentPageAtom = atom<{path: string; specificPath: string}>({
   key: 'currentPageAtom',
@@ -62,27 +59,16 @@ export const useTrackPageView = () => {
   const {pathname: specificPath} = useLocation();
   const {path} = match;
 
-  const setCurrentPage = useSetRecoilState(currentPageAtom);
-
   useLayoutEffect(() => {
     // Wait briefly to allow redirects.
     const timer = setTimeout(() => {
       analytics.page(path, specificPath);
     }, PAGEVIEW_DELAY);
-    setCurrentPage({path, specificPath});
 
     return () => {
       clearTimeout(timer);
     };
-  }, [analytics, path, setCurrentPage, specificPath]);
-
-  const {onViewChange} = useContext(CloudOSSContext);
-
-  useDangerousRenderEffect(() => {
-    // Update Cloud synchronously that the view is changing in order to
-    // better capture the dependencies of the view
-    onViewChange({path});
-  }, [path]);
+  }, [analytics, path, specificPath]);
 };
 
 export const useTrackEvent = () => {

@@ -1,3 +1,4 @@
+import json
 import os
 from decimal import Decimal
 from typing import Any, Dict, cast
@@ -9,19 +10,17 @@ from dagster import (
     _check as check,
     materialize,
 )
+from dagster._check.functions import CheckError
 from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import (
-    DbtCliInvocation,
-    DbtCliResource,
-    DbtDagsterEventType,
-    _get_dbt_resource_props_from_event,
-)
+from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, DbtDagsterEventType
+from dagster_dbt.core.dbt_event_iterator import _get_dbt_resource_props_from_event
+from dagster_dbt.core.resource import DbtCliResource
 
-from ..conftest import _create_dbt_invocation
-from ..dbt_projects import test_jaffle_shop_path
+from dagster_dbt_tests.conftest import _create_dbt_invocation
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 pytestmark = pytest.mark.derived_metadata
 
@@ -131,6 +130,102 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
         # staging tables are views, so we don't attempt to get row counts for them
         if "stg" in asset_key.path[-1]
     ), str(metadata_by_asset_key)
+    assert all(
+        "dagster/row_count" in metadata
+        for asset_key, metadata in metadata_by_asset_key.items()
+        # staging tables are views, so we don't attempt to get row counts for them
+        if "stg" not in asset_key.path[-1]
+    ), str(metadata_by_asset_key)
+
+
+def test_insights_err_not_snowflake_or_bq(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().with_insights()
+
+    with pytest.raises(CheckError) as exc_info:
+        materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+        )
+
+    assert "is not supported for adapter type `duckdb`" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "target, manifest_fixture_name",
+    [
+        pytest.param(None, "test_jaffle_shop_manifest_standalone_duckdb_dbfile", id="duckdb"),
+        pytest.param(
+            "snowflake",
+            "test_jaffle_shop_manifest_snowflake",
+            marks=pytest.mark.snowflake,
+            id="snowflake",
+        ),
+        pytest.param(
+            "bigquery",
+            "test_jaffle_shop_manifest_bigquery",
+            marks=pytest.mark.bigquery,
+            id="bigquery",
+        ),
+    ],
+)
+def test_row_count_does_not_obscure_errors(
+    request: pytest.FixtureRequest, target: str, manifest_fixture_name: str
+) -> None:
+    manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+
+    # Test that row count fetching does not obscure other errors in the dbt run
+    # First, run dbt without any row count fetching, and ensure that it fails
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(
+                ["build", "--vars", json.dumps({"break_customer_build": "true"})],
+                context=context,
+            ).stream()
+        )
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target=target)
+        },
+        raise_on_error=False,
+    )
+    assert not result.success
+    assert len(result.get_asset_materialization_events()) == 7
+
+    # Next, run the exact same dbt run, but with row count fetching enabled
+    # And ensure it fails in the same way
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets_row_count(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(
+                ["build", "--vars", json.dumps({"break_customer_build": "true"})], context=context
+            )
+            .stream()
+            .fetch_row_counts()
+        )
+
+    result = materialize(
+        [my_dbt_assets_row_count],
+        resources={
+            "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target=target)
+        },
+        raise_on_error=False,
+    )
+
+    assert not result.success
+    assert len(result.get_asset_materialization_events()) == 7
+
+    metadata_by_asset_key = {
+        check.not_none(event.asset_key): event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+    }
     assert all(
         "dagster/row_count" in metadata
         for asset_key, metadata in metadata_by_asset_key.items()

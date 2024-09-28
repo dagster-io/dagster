@@ -1,13 +1,13 @@
-import {gql} from '@apollo/client';
-
 import {
   ResetSensorMutation,
   StartSensorMutation,
   StopRunningSensorMutation,
 } from './types/SensorMutations.types';
+import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 
 export const START_SENSOR_MUTATION = gql`
   mutation StartSensor($sensorSelector: SensorSelector!) {
@@ -15,8 +15,7 @@ export const START_SENSOR_MUTATION = gql`
       ... on Sensor {
         id
         sensorState {
-          id
-          status
+          ...InstigationStateBaseFragment
         }
       }
       ... on SensorNotFoundError {
@@ -29,16 +28,16 @@ export const START_SENSOR_MUTATION = gql`
     }
   }
 
+  ${INSTIGATION_STATE_BASE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const STOP_SENSOR_MUTATION = gql`
-  mutation StopRunningSensor($jobOriginId: String!, $jobSelectorId: String!) {
-    stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
+  mutation StopRunningSensor($id: String!) {
+    stopSensor(id: $id) {
       ... on StopSensorMutationResult {
         instigationState {
-          id
-          status
+          ...InstigationStateBaseFragment
         }
       }
       ... on UnauthorizedError {
@@ -48,6 +47,7 @@ export const STOP_SENSOR_MUTATION = gql`
     }
   }
 
+  ${INSTIGATION_STATE_BASE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

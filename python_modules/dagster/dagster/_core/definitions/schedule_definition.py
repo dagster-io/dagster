@@ -24,39 +24,44 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import deprecated, deprecated_param, experimental_param, public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
+from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
-from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import pendulum_create_timezone
-from dagster._utils import IHasInternalInit, ensure_gen
-from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
-
-from ..decorator_utils import has_at_least_one_parameter
-from ..errors import (
+from dagster._core.definitions.target import (
+    ANONYMOUS_ASSET_JOB_PREFIX,
+    AutomationTarget,
+    ExecutableDefinition,
+)
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from ..instance import DagsterInstance
-from ..instance.ref import InstanceRef
-from ..storage.dagster_run import DagsterRun
-from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
-from .run_request import RunRequest, SkipReason
-from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from .utils import NormalizedTags, check_valid_name, normalize_tags
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._serdes import whitelist_for_serdes
+from dagster._time import get_timezone
+from dagster._utils import IHasInternalInit, ensure_gen
+from dagster._utils.merger import merge_dicts
+from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.definitions.run_config import RunConfig
+
 T = TypeVar("T")
 
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
@@ -480,6 +485,7 @@ def validate_and_get_schedule_resource_dict(
         " the containing environment, and can safely be deleted."
     ),
 )
+@experimental_param(param="target")
 class ScheduleDefinition(IHasInternalInit):
     """Defines a schedule that targets a job.
 
@@ -501,8 +507,9 @@ class ScheduleDefinition(IHasInternalInit):
         run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Mapping]]]): A function that
             takes a :py:class:`~dagster.ScheduleEvaluationContext` object and returns the run configuration that
             parameterizes this execution, as a dict. **Note**: Only one of the following may be set: You may set ``run_config``, ``run_config_fn``, or ``execution_fn``.
-        tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
-            to the scheduled runs.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the schedule
+            and can be used for searching and filtering in the UI. If no `execution_fn` is provided,
+            then these will also be automatically attached to runs launched by the schedule.
         tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]]): A
             function that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
@@ -517,8 +524,13 @@ class ScheduleDefinition(IHasInternalInit):
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
-        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
+        target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
+            The target that the schedule will execute.
+            It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
+            It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
+            This is an experimental parameter that will replace `job` and `job_name`.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
@@ -531,7 +543,7 @@ class ScheduleDefinition(IHasInternalInit):
         return ScheduleDefinition.dagster_internal_init(
             name=self.name,
             cron_schedule=self._cron_schedule,
-            job_name=self.job_name,
+            job_name=None,  # job name will be derived from the passed job
             execution_timezone=self.execution_timezone,
             execution_fn=self._execution_fn,
             description=self.description,
@@ -544,6 +556,7 @@ class ScheduleDefinition(IHasInternalInit):
             tags=None,
             tags_fn=None,
             should_execute=None,
+            target=None,
         )
 
     def __init__(
@@ -554,7 +567,7 @@ class ScheduleDefinition(IHasInternalInit):
         job_name: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Mapping[str, str]] = None,
@@ -564,6 +577,14 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
+        target: Optional[
+            Union[
+                "CoercibleToAssetSelection",
+                "AssetsDefinition",
+                "JobDefinition",
+                "UnresolvedAssetJobDefinition",
+            ]
+        ] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -585,13 +606,36 @@ class ScheduleDefinition(IHasInternalInit):
                 " https://github.com/dagster-io/dagster/issues/15294 for more information."
             )
 
-        if job is not None:
-            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
-        else:
-            self._target = RepoRelativeTarget(
-                job_name=check.str_param(job_name, "job_name"),
-                op_selection=None,
+        if (
+            sum(
+                [
+                    int(target is not None),
+                    int(job_name is not None),
+                    int(job is not None),
+                ]
             )
+            > 1
+        ):
+            raise DagsterInvalidDefinitionError(
+                "Attempted to provide more than one of 'job', 'job_name', and 'target'"
+                "params to ScheduleDefinition. Must provide only one."
+            )
+
+        if target:
+            self._target = AutomationTarget.from_coercible(
+                target,
+                automation_name=check.not_none(
+                    name, "If you specify target you must specify schedule name"
+                ),
+            )
+        elif job:
+            self._target = AutomationTarget.from_coercible(job)
+        elif job_name:
+            self._target = AutomationTarget(
+                resolvable_to_job=check.str_param(job_name, "job_name"),
+            )
+        else:
+            check.failed("Must provide target, job, or job_name")
 
         if name:
             self._name = check_valid_name(name)
@@ -608,9 +652,9 @@ class ScheduleDefinition(IHasInternalInit):
 
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
 
-        if execution_fn and (run_config_fn or tags_fn or should_execute or tags or run_config):
+        if execution_fn and (run_config_fn or tags_fn or should_execute or run_config):
             raise DagsterInvalidDefinitionError(
-                "Attempted to provide both execution_fn and individual run_config/tags arguments "
+                "Attempted to provide both execution_fn and individual run_config/tags_fn arguments "
                 "to ScheduleDefinition. Must provide only one of the two."
             )
         elif execution_fn:
@@ -621,6 +665,8 @@ class ScheduleDefinition(IHasInternalInit):
                 self._execution_fn = execution_fn
             else:
                 self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
+            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            self._tags_fn = None
             self._run_config_fn = None
         else:
             if run_config_fn and run_config:
@@ -645,15 +691,14 @@ class ScheduleDefinition(IHasInternalInit):
                     "Attempted to provide both tags_fn and tags as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            elif tags:
-                tags = normalize_tags(tags, allow_reserved_tags=False).tags
-                tags_fn = lambda _context: tags
-            else:
-                tags_fn = check.opt_callable_param(
+            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            if tags_fn:
+                self._tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
                 )
-            self._tags_fn = tags_fn
-            self._tags = tags
+            else:
+                tags_fn = lambda _context: self._tags or {}
+                self._tags_fn = tags_fn
 
             self._should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
@@ -702,7 +747,7 @@ class ScheduleDefinition(IHasInternalInit):
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum_create_timezone(self._execution_timezone)
+                get_timezone(self._execution_timezone)
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     f"Invalid execution timezone {self._execution_timezone} for {name}"
@@ -747,6 +792,14 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         default_status: DefaultScheduleStatus,
         required_resource_keys: Optional[Set[str]],
+        target: Optional[
+            Union[
+                "CoercibleToAssetSelection",
+                "AssetsDefinition",
+                "JobDefinition",
+                "UnresolvedAssetJobDefinition",
+            ]
+        ],
     ) -> "ScheduleDefinition":
         return ScheduleDefinition(
             name=name,
@@ -764,12 +817,14 @@ class ScheduleDefinition(IHasInternalInit):
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
+        from dagster._core.definitions.decorators.schedule_decorator import (
+            DecoratedScheduleFunction,
+        )
         from dagster._core.definitions.sensor_definition import get_context_param_name
-
-        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         if not isinstance(self._execution_fn, DecoratedScheduleFunction):
             raise DagsterInvalidInvocationError(
@@ -839,12 +894,18 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
-        """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
+    def tags(self) -> Mapping[str, str]:
+        """Mapping[str, str]: The tags for this schedule."""
+        return self._tags
+
+    @public
+    @property
+    def job(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
+        """Union[JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
-        if isinstance(self._target, DirectTarget):
-            return self._target.target
+        if self._target.has_job_def:
+            return self._target.job_def
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
@@ -933,22 +994,9 @@ class ScheduleDefinition(IHasInternalInit):
             log_key=context.log_key if context.has_captured_logs() else None,
         )
 
-    def has_loadable_target(self):
-        return isinstance(self._target, DirectTarget)
-
     @property
-    def targets_unresolved_asset_job(self) -> bool:
-        return self.has_loadable_target() and isinstance(
-            self.load_target(), UnresolvedAssetJobDefinition
-        )
-
-    def load_target(
-        self,
-    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
-        if isinstance(self._target, DirectTarget):
-            return self._target.load()
-
-        check.failed("Target is not loadable")
+    def target(self) -> AutomationTarget:
+        return self._target
 
     @public
     @property
@@ -957,3 +1005,7 @@ class ScheduleDefinition(IHasInternalInit):
         a code location.
         """
         return self._default_status
+
+    @property
+    def has_anonymous_job(self) -> bool:
+        return bool(self._target and self._target.job_name.startswith(ANONYMOUS_ASSET_JOB_PREFIX))

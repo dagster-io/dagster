@@ -3,19 +3,16 @@ from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tu
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluationWithRunIds,
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
-from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import PrintFn
-from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
-
-from .base_storage import DagsterStorage
-from .event_log.base import (
+from dagster._core.storage.base_storage import DagsterStorage
+from dagster._core.storage.event_log.base import (
+    AssetCheckSummaryRecord,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
@@ -24,8 +21,11 @@ from .event_log.base import (
     EventRecordsResult,
     PlannedMaterializationInfo,
 )
-from .runs.base import RunStorage
-from .schedules.base import ScheduleStorage
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -33,7 +33,11 @@ if TYPE_CHECKING:
     from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionsFilter,
+        BulkActionStatus,
+        PartitionBackfill,
+    )
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.instance import DagsterInstance
     from dagster._core.remote_representation.origin import RemoteJobOrigin
@@ -309,11 +313,14 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def get_backfills(
         self,
-        status: Optional["BulkActionStatus"] = None,
+        filters: Optional["BulkActionsFilter"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._storage.run_storage.get_backfills(status, cursor, limit)
+        return self._storage.run_storage.get_backfills(
+            cursor=cursor, limit=limit, filters=filters, status=status
+        )
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)
@@ -489,6 +496,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, partition
         )
 
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_updated_data_version_partitions(
+            asset_key, partitions, since_storage_id
+        )
+
     def get_asset_records(
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
@@ -520,6 +534,12 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def wipe_asset(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset(asset_key)
+
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
+        raise NotImplementedError(
+            "Partitioned asset wipe is not supported yet for this event log storage."
+        )
 
     def get_materialized_partitions(
         self,
@@ -588,8 +608,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, filter_tags, filter_event_id
         )
 
-    def can_cache_asset_status_data(self) -> bool:
-        return self._storage.event_log_storage.can_cache_asset_status_data()
+    def can_read_asset_status_cache(self) -> bool:
+        return self._storage.event_log_storage.can_read_asset_status_cache()
+
+    def can_write_asset_status_cache(self) -> bool:
+        return self._storage.event_log_storage.can_write_asset_status_cache()
 
     def wipe_asset_cached_status(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset_cached_status(asset_key)
@@ -781,17 +804,17 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     ) -> None:
         return self._storage.schedule_storage.add_auto_materialize_asset_evaluations(
             evaluation_id, asset_evaluations
         )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key, limit, cursor
+            key, limit, cursor
         )
 
     def get_auto_materialize_evaluations_for_evaluation_id(

@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -13,10 +12,10 @@ import {
   AssetMaterializationUpstreamTableFragment,
   MaterializationUpstreamDataVersionFragment,
 } from './types/AssetMaterializationUpstreamData.types';
+import {gql, useQuery} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 dayjs.extend(relativeTime);
 
@@ -155,7 +154,6 @@ export const AssetMaterializationUpstreamData = ({
     variables: {assetKey: {path: assetKey.path}, timestamp},
     skip,
   });
-  useBlockTraceOnQueryResult(result, 'AssetMaterializationUpstreamQuery', {skip});
 
   if (!timestamp) {
     return <Caption color={Colors.textLight()}>None</Caption>;

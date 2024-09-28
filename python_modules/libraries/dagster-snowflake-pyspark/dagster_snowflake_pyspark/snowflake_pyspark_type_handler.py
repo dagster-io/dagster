@@ -9,6 +9,8 @@ from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import StructType
 
+from dagster_snowflake_pyspark.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_PYSPARK
+
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 
 
@@ -25,6 +27,7 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
         "sfDatabase": config["database"],
         "sfSchema": table_slice.schema,
         "sfWarehouse": config["warehouse"],
+        "APPLICATION": SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_PYSPARK,
     }
 
     return conf

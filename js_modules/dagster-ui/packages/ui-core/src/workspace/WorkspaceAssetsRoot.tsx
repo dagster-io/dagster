@@ -1,8 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {REPO_ASSET_TABLE_FRAGMENT, VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
+import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
+import {WORKSPACE_ASSETS_QUERY} from './WorkspaceAssetsQuery';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -10,14 +10,13 @@ import {RepoAddress} from './types';
 import {
   WorkspaceAssetsQuery,
   WorkspaceAssetsQueryVariables,
-} from './types/WorkspaceAssetsRoot.types';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+} from './types/WorkspaceAssetsQuery.types';
+import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetSearch} from '../assets/useAssetSearch';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -39,7 +38,6 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceAssetsQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -100,12 +98,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="assets"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="assets" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
@@ -125,22 +118,3 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     </Box>
   );
 };
-
-const WORKSPACE_ASSETS_QUERY = gql`
-  query WorkspaceAssetsQuery($selector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $selector) {
-      ... on Repository {
-        id
-        name
-        assetNodes {
-          id
-          ...RepoAssetTableFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${REPO_ASSET_TABLE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;

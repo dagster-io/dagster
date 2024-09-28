@@ -1,19 +1,12 @@
 import copy
 from functools import update_wrapper
-from typing import Callable, List, Mapping, Optional, Sequence, Set, Union, cast
+from typing import TYPE_CHECKING, Callable, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
+from dagster._annotations import experimental_param
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.sensor_definition import get_context_param_name
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    ScheduleExecutionError,
-    user_code_error_boundary,
-)
-from dagster._utils import ensure_gen
-
-from ..run_request import RunRequest, SkipReason
-from ..schedule_definition import (
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.schedule_definition import (
     DecoratedScheduleFunction,
     DefaultScheduleStatus,
     RawScheduleEvaluationFunction,
@@ -23,10 +16,26 @@ from ..schedule_definition import (
     has_at_least_one_parameter,
     validate_and_get_schedule_resource_dict,
 )
-from ..target import ExecutableDefinition
-from ..utils import normalize_tags
+from dagster._core.definitions.sensor_definition import get_context_param_name
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    ScheduleExecutionError,
+    user_code_error_boundary,
+)
+from dagster._utils import ensure_gen
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.unresolved_asset_job_definition import (
+        UnresolvedAssetJobDefinition,
+    )
 
 
+@experimental_param(param="target")
 def schedule(
     cron_schedule: Union[str, Sequence[str]],
     *,
@@ -41,6 +50,14 @@ def schedule(
     job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     required_resource_keys: Optional[Set[str]] = None,
+    target: Optional[
+        Union[
+            "CoercibleToAssetSelection",
+            "AssetsDefinition",
+            "JobDefinition",
+            "UnresolvedAssetJobDefinition",
+        ]
+    ] = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
@@ -64,8 +81,8 @@ def schedule(
             ``['45 23 * * 6', '30 9 * * 0']`` for a schedule that runs at 11:45 PM every Saturday and
             9:30 AM every Sunday.
         name (Optional[str]): The name of the schedule.
-        tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
-            to the scheduled runs.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the schedule and can
+            be used for searching and filtering in the UI.
         tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]]): A function
             that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
@@ -80,8 +97,13 @@ def schedule(
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             that should execute when the schedule runs.
-        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will immediately be active when starting Dagster. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will immediately be active when starting Dagster. The default status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
+        target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
+            The target that the schedule will execute.
+            It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
+            It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
+            This is an experimental parameter that will replace `job` and `job_name`.
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
@@ -171,9 +193,10 @@ def schedule(
             required_resource_keys=required_resource_keys,
             run_config=None,  # cannot supply run_config or run_config_fn to decorator
             run_config_fn=None,
-            tags=None,  # cannot supply tags or tags_fn to decorator
-            tags_fn=None,
+            tags=tags,
+            tags_fn=None,  # cannot supply tags or tags_fn to decorator
             should_execute=None,  # already encompassed in evaluation_fn
+            target=target,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

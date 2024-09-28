@@ -23,20 +23,32 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.definitions.partition import (
+    DEFAULT_DATE_FORMAT,
+    AllPartitionsSubset,
+    PartitionedConfig,
+    PartitionsDefinition,
+    PartitionsSubset,
+    ScheduleType,
+    cron_schedule_from_schedule_type_and_offsets,
+)
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
+)
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
-from dagster._seven.compat.pendulum import (
-    _IS_PENDULUM_1,
-    PRE_TRANSITION,
-    PendulumDateTime,
-    create_pendulum_time,
-    to_timezone,
+from dagster._time import (
+    create_datetime,
+    datetime_from_timestamp,
+    get_current_timestamp,
+    get_timezone,
 )
 from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -46,19 +58,6 @@ from dagster._utils.schedules import (
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
 )
-
-from ..errors import DagsterInvalidDefinitionError, DagsterInvalidDeserializationVersionError
-from .partition import (
-    DEFAULT_DATE_FORMAT,
-    AllPartitionsSubset,
-    PartitionedConfig,
-    PartitionsDefinition,
-    PartitionsSubset,
-    ScheduleType,
-    cron_schedule_from_schedule_type_and_offsets,
-)
-from .partition_key_range import PartitionKeyRange
-from .timestamp import TimestampWithTimezone
 
 
 def is_second_ambiguous_time(dt: datetime, tz: str):
@@ -116,7 +115,7 @@ def dst_safe_strftime(dt: datetime, tz: str, fmt: str, cron_schedule: str) -> st
     return dt.strftime(fmt)
 
 
-def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
+def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> datetime:
     """A method for parsing a datetime created with the dst_safe_strftime() method."""
     try:
         # first, try to parse the datetime in the normal format
@@ -128,27 +127,20 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
     # the datetime object may have timezone information on it, depending on the format used. If it
     # does, we simply ensure that this timestamp is in the correct timezone.
     if dt.tzinfo:
-        return pendulum.from_timestamp(dt.timestamp(), tz=tz)
+        return datetime.fromtimestamp(dt.timestamp(), tz=get_timezone(tz))
     # otherwise, ensure that we assume the pre-transition timezone
     else:
-        # Pendulum 1.x erroneously believes that there are two instances of the *second* hour after
-        # a datetime transition, so to work around this we calculate the timestamp of the next
-        # microsecond of the given datetime.
-        dt_microsecond = dt.microsecond + 1 if _IS_PENDULUM_1 else dt.microsecond
-        dt = create_pendulum_time(
-            dt.year,
-            dt.month,
-            dt.day,
-            dt.hour,
-            dt.minute,
-            dt.second,
-            dt_microsecond,
-            tz=tz,
-            dst_rule=PRE_TRANSITION,
+        return create_datetime(
+            year=dt.year,
+            month=dt.month,
+            day=dt.day,
+            hour=dt.hour,
+            minute=dt.minute,
+            second=dt.second,
+            microsecond=dt.microsecond,
+            tz=get_timezone(tz),
+            fold=0,
         )
-        if _IS_PENDULUM_1:
-            dt = dt.add(microseconds=-1)
-        return dt
 
 
 class TimeWindow(NamedTuple):
@@ -189,15 +181,17 @@ class PersistedTimeWindow(
     @cached_property
     def start(self) -> datetime:
         start_timestamp_with_timezone = self._asdict()["start"]
-        return pendulum.from_timestamp(
-            start_timestamp_with_timezone.timestamp, start_timestamp_with_timezone.timezone
+        return datetime.fromtimestamp(
+            start_timestamp_with_timezone.timestamp,
+            tz=get_timezone(start_timestamp_with_timezone.timezone),
         )
 
     @cached_property
     def end(self) -> datetime:
         end_timestamp_with_timezone = self._asdict()["end"]
-        return pendulum.from_timestamp(
-            end_timestamp_with_timezone.timestamp, end_timestamp_with_timezone.timezone
+        return datetime.fromtimestamp(
+            end_timestamp_with_timezone.timestamp,
+            tz=get_timezone(end_timestamp_with_timezone.timezone),
         )
 
     @staticmethod
@@ -237,21 +231,14 @@ class PersistedTimeWindow(
         return TimeWindow(start=self.start, end=self.end)
 
 
-@whitelist_for_serdes(is_pickleable=False)
-class TimeWindowPartitionsDefinition(
-    PartitionsDefinition,
-    NamedTuple(
-        "_TimeWindowPartitionsDefinition",
-        [
-            ("start", TimestampWithTimezone),
-            ("timezone", PublicAttr[str]),
-            ("end", Optional[TimestampWithTimezone]),
-            ("fmt", PublicAttr[str]),
-            ("end_offset", PublicAttr[int]),
-            ("cron_schedule", PublicAttr[str]),
-        ],
-    ),
-):
+@whitelist_for_serdes
+@record_custom(
+    field_to_new_mapping={
+        "start_ts": "start",
+        "end_ts": "end",
+    }
+)
+class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     r"""A set of partitions where each partition corresponds to a time window.
 
     The provided cron_schedule determines the bounds of the time windows. E.g. a cron_schedule of
@@ -288,6 +275,13 @@ class TimeWindowPartitionsDefinition(
             and so on.
     """
 
+    start_ts: TimestampWithTimezone
+    timezone: PublicAttr[str]
+    end_ts: Optional[TimestampWithTimezone]
+    fmt: PublicAttr[str]
+    end_offset: PublicAttr[int]
+    cron_schedule: PublicAttr[str]
+
     def __new__(
         cls,
         start: Union[datetime, str, TimestampWithTimezone],
@@ -308,11 +302,7 @@ class TimeWindowPartitionsDefinition(
             start_dt = dst_safe_strptime(start, timezone, fmt)
             start = TimestampWithTimezone(start_dt.timestamp(), timezone)
         elif isinstance(start, datetime):
-            start_dt = pendulum.instance(start, tz=timezone)
-            if start.tzinfo:
-                # Pendulum.instance does not override the timezone of the datetime object,
-                # so we convert it to the provided timezone
-                start_dt = to_timezone(start_dt, timezone)
+            start_dt = start.replace(tzinfo=get_timezone(timezone))
             start = TimestampWithTimezone(start_dt.timestamp(), timezone)
 
         if not end:
@@ -321,11 +311,7 @@ class TimeWindowPartitionsDefinition(
             end_dt = dst_safe_strptime(end, timezone, fmt)
             end = TimestampWithTimezone(end_dt.timestamp(), timezone)
         elif isinstance(end, datetime):
-            end_dt = pendulum.instance(end, tz=timezone)
-            if end.tzinfo:
-                # Pendulum.instance does not override the timezone of the datetime object,
-                # so we convert it to the provided timezone
-                end_dt = to_timezone(end_dt, timezone)
+            end_dt = end.replace(tzinfo=get_timezone(timezone))
             end = TimestampWithTimezone(end_dt.timestamp(), timezone)
 
         if cron_schedule is not None:
@@ -351,36 +337,46 @@ class TimeWindowPartitionsDefinition(
                 " TimeWindowPartitionsDefinition."
             )
 
-        return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start, timezone, end, fmt, end_offset, cron_schedule
+        return super().__new__(
+            cls,
+            start_ts=start,
+            timezone=timezone,
+            end_ts=end,
+            fmt=fmt,
+            end_offset=end_offset,
+            cron_schedule=cron_schedule,
         )
 
     @public
     @cached_property
     def start(self) -> datetime:
-        start_timestamp_with_timezone = self._asdict()["start"]
-        return pendulum.from_timestamp(
+        start_timestamp_with_timezone = self.start_ts
+        return datetime_from_timestamp(
             start_timestamp_with_timezone.timestamp, start_timestamp_with_timezone.timezone
         )
 
     @public
     @cached_property
     def end(self) -> Optional[datetime]:
-        end_timestamp_with_timezone = self._asdict()["end"]
+        end_timestamp_with_timezone = self.end_ts
 
         if not end_timestamp_with_timezone:
             return None
 
-        return pendulum.from_timestamp(
-            end_timestamp_with_timezone.timestamp, end_timestamp_with_timezone.timezone
+        return datetime.fromtimestamp(
+            end_timestamp_with_timezone.timestamp,
+            get_timezone(end_timestamp_with_timezone.timezone),
         )
 
-    def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
-        return (
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone)
-        ).timestamp()
+    def _get_current_timestamp(self, current_time: Optional[datetime]) -> float:
+        if not current_time:
+            return get_current_timestamp()
+
+        # if a naive current time was passed in, assume it was the same timezone as the partition set
+        if not current_time.tzinfo:
+            current_time = current_time.replace(tzinfo=get_timezone(self.timezone))
+
+        return current_time.timestamp()
 
     def get_num_partitions_in_window(self, time_window: TimeWindow) -> int:
         if self.is_basic_daily:
@@ -426,13 +422,13 @@ class TimeWindowPartitionsDefinition(
         # Start index is inclusive, end index is exclusive.
         # Method added for performance reasons, to only string format
         # partition keys included within the indices.
-        current_timestamp = self.get_current_timestamp(current_time=current_time)
+        current_timestamp = self._get_current_timestamp(current_time=current_time)
 
         partitions_past_current_time = 0
         partition_keys = []
         reached_end = False
 
-        for idx, time_window in enumerate(self._iterate_time_windows(self.start)):
+        for idx, time_window in enumerate(self._iterate_time_windows(self.start.timestamp())):
             if time_window.end.timestamp() >= current_timestamp:
                 reached_end = True
             if self.end and time_window.end.timestamp() > self.end.timestamp():
@@ -464,11 +460,11 @@ class TimeWindowPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
-        current_timestamp = self.get_current_timestamp(current_time=current_time)
+        current_timestamp = self._get_current_timestamp(current_time=current_time)
 
         partitions_past_current_time = 0
         partition_keys: List[str] = []
-        for time_window in self._iterate_time_windows(self.start):
+        for time_window in self._iterate_time_windows(self.start.timestamp()):
             if self.end and time_window.end.timestamp() > self.end.timestamp():
                 break
             if (
@@ -517,17 +513,10 @@ class TimeWindowPartitionsDefinition(
     def __hash__(self):
         return hash(tuple(self.__repr__()))
 
-    def __getstate__(self):
-        # Only namedtuples where the ordering of fields matches the ordering of __new__ args
-        # are pickleable. This does not apply for TimeWindowPartitionsDefinition, so we
-        # override __getstate__ to raise an error when attempting to pickle.
-        # https://github.com/dagster-io/dagster/issues/2372
-        raise DagsterInvariantViolationError("TimeWindowPartitionsDefinition is not pickleable")
-
     @functools.lru_cache(maxsize=100)
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
-        return next(iter(self._iterate_time_windows(partition_key_dt)))
+        return next(iter(self._iterate_time_windows(partition_key_dt.timestamp())))
 
     @functools.lru_cache(maxsize=5)
     def time_windows_for_partition_keys(
@@ -543,7 +532,9 @@ class TimeWindowPartitionsDefinition(
             key=lambda pk: dst_safe_strptime(pk, self.timezone, self.fmt).timestamp(),
         )
         cur_windows_iterator = iter(
-            self._iterate_time_windows(dst_safe_strptime(sorted_pks[0], self.timezone, self.fmt))
+            self._iterate_time_windows(
+                dst_safe_strptime(sorted_pks[0], self.timezone, self.fmt).timestamp()
+            )
         )
         partition_key_time_windows: List[TimeWindow] = []
         for partition_key in sorted_pks:
@@ -556,7 +547,7 @@ class TimeWindowPartitionsDefinition(
             else:
                 cur_windows_iterator = iter(
                     self._iterate_time_windows(
-                        dst_safe_strptime(partition_key, self.timezone, self.fmt)
+                        dst_safe_strptime(partition_key, self.timezone, self.fmt).timestamp()
                     )
                 )
                 partition_key_time_windows.append(next(cur_windows_iterator))
@@ -579,15 +570,13 @@ class TimeWindowPartitionsDefinition(
         return partition_key_time_windows
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
-        partition_key_dt = pendulum.instance(
-            dst_safe_strptime(partition_key, self.timezone, self.fmt)
-        )
+        partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
         if self.is_basic_hourly or self.is_basic_daily:
             return partition_key_dt
         # the datetime format might not include granular components, so we need to recover them,
         # e.g. if cron_schedule="0 7 * * *" and fmt="%Y-%m-%d".
         # we make the assumption that the parsed partition key is <= the start datetime.
-        return next(iter(self._iterate_time_windows(partition_key_dt))).start
+        return next(iter(self._iterate_time_windows(partition_key_dt.timestamp()))).start
 
     def get_next_partition_key(
         self, partition_key: str, current_time: Optional[datetime] = None
@@ -596,10 +585,8 @@ class TimeWindowPartitionsDefinition(
         if last_partition_window is None:
             return None
 
-        partition_key_dt = pendulum.instance(
-            dst_safe_strptime(partition_key, self.timezone, self.fmt)
-        )
-        windows_iter = iter(self._iterate_time_windows(partition_key_dt))
+        partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
+        windows_iter = iter(self._iterate_time_windows(partition_key_dt.timestamp()))
         next(windows_iter)
         start_time = next(windows_iter).start
         if start_time.timestamp() >= last_partition_window.end.timestamp():
@@ -610,7 +597,7 @@ class TimeWindowPartitionsDefinition(
     def get_next_partition_window(
         self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
     ) -> Optional[TimeWindow]:
-        windows_iter = iter(self._iterate_time_windows(end_dt))
+        windows_iter = iter(self._iterate_time_windows(end_dt.timestamp()))
         next_window = next(windows_iter)
 
         if respect_bounds:
@@ -626,7 +613,7 @@ class TimeWindowPartitionsDefinition(
     def get_prev_partition_window(
         self, start_dt: datetime, respect_bounds: bool = True
     ) -> Optional[TimeWindow]:
-        windows_iter = iter(self._reverse_iterate_time_windows(start_dt))
+        windows_iter = iter(self._reverse_iterate_time_windows(start_dt.timestamp()))
         prev_window = next(windows_iter)
         if respect_bounds:
             first_partition_window = self.get_first_partition_window()
@@ -639,15 +626,13 @@ class TimeWindowPartitionsDefinition(
         return prev_window
 
     @functools.lru_cache(maxsize=256)
-    def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
-        current_timestamp = current_time.timestamp()
-
-        time_window = next(iter(self._iterate_time_windows(self.start)))
+    def _get_first_partition_window(self, *, current_timestamp: float) -> Optional[TimeWindow]:
+        time_window = next(iter(self._iterate_time_windows(self.start.timestamp())))
 
         if self.end_offset == 0:
             return time_window if time_window.end.timestamp() <= current_timestamp else None
         elif self.end_offset > 0:
-            iterator = iter(self._iterate_time_windows(current_time))
+            iterator = iter(self._iterate_time_windows(current_timestamp))
             # first returned time window is time window of current time
             curr_window_plus_offset = next(iterator)
             for _ in range(self.end_offset):
@@ -660,7 +645,7 @@ class TimeWindowPartitionsDefinition(
         else:
             # end offset < 0
             end_window = None
-            iterator = iter(self._reverse_iterate_time_windows(current_time))
+            iterator = iter(self._reverse_iterate_time_windows(current_timestamp))
             for _ in range(abs(self.end_offset)):
                 end_window = next(iterator)
 
@@ -674,35 +659,24 @@ class TimeWindowPartitionsDefinition(
     def get_first_partition_window(
         self, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
-        current_time = cast(
-            datetime,
-            (
-                pendulum.instance(current_time, tz=self.timezone)
-                if current_time
-                else pendulum.now(self.timezone)
-            ),
-        )
-        return self._get_first_partition_window(current_time=current_time)
+        current_timestamp = self._get_current_timestamp(current_time)
+        return self._get_first_partition_window(current_timestamp=current_timestamp)
 
     @functools.lru_cache(maxsize=256)
-    def _get_last_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
-        if self.get_first_partition_window(current_time) is None:
+    def _get_last_partition_window(self, *, current_timestamp: float) -> Optional[TimeWindow]:
+        if self._get_first_partition_window(current_timestamp=current_timestamp) is None:
             return None
 
-        current_time = (
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone)
-        )
-
-        if self.end and self.end.timestamp() < current_time.timestamp():
-            current_time = self.end
+        if self.end and self.end.timestamp() < current_timestamp:
+            current_timestamp = self.end.timestamp()
 
         if self.end_offset == 0:
-            return next(iter(self._reverse_iterate_time_windows(current_time)))
+            return next(iter(self._reverse_iterate_time_windows(current_timestamp)))
         else:
             # TODO: make this efficient
-            last_partition_key = super().get_last_partition_key(current_time)
+            last_partition_key = super().get_last_partition_key(
+                datetime.fromtimestamp(current_timestamp, tz=get_timezone(self.timezone))
+            )
             return (
                 self.time_window_for_partition_key(last_partition_key)
                 if last_partition_key
@@ -712,15 +686,8 @@ class TimeWindowPartitionsDefinition(
     def get_last_partition_window(
         self, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
-        current_time = cast(
-            datetime,
-            (
-                pendulum.instance(current_time, tz=self.timezone)
-                if current_time
-                else pendulum.now(self.timezone)
-            ),
-        )
-        return self._get_last_partition_window(current_time=current_time)
+        current_timestamp = self._get_current_timestamp(current_time)
+        return self._get_last_partition_window(current_timestamp=current_timestamp)
 
     def get_first_partition_key(
         self,
@@ -751,7 +718,7 @@ class TimeWindowPartitionsDefinition(
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
         result: List[str] = []
         time_window_end_timestamp = time_window.end.timestamp()
-        for partition_time_window in self._iterate_time_windows(time_window.start):
+        for partition_time_window in self._iterate_time_windows(time_window.start.timestamp()):
             if partition_time_window.start.timestamp() < time_window_end_timestamp:
                 result.append(
                     dst_safe_strftime(
@@ -932,9 +899,8 @@ class TimeWindowPartitionsDefinition(
             day_offset=day_offset,
         )
 
-    def _iterate_time_windows(self, start: datetime) -> Iterable[TimeWindow]:
+    def _iterate_time_windows(self, start_timestamp: float) -> Iterable[TimeWindow]:
         """Returns an infinite generator of time windows that start after the given start time."""
-        start_timestamp = pendulum.instance(start, tz=self.timezone).timestamp()
         iterator = cron_string_iterator(
             start_timestamp=start_timestamp,
             cron_string=self.cron_schedule,
@@ -949,9 +915,8 @@ class TimeWindowPartitionsDefinition(
             yield TimeWindow(prev_time, next_time)
             prev_time = next_time
 
-    def _reverse_iterate_time_windows(self, end: datetime) -> Iterable[TimeWindow]:
+    def _reverse_iterate_time_windows(self, end_timestamp: float) -> Iterable[TimeWindow]:
         """Returns an infinite generator of time windows that end before the given end time."""
-        end_timestamp = pendulum.instance(end, tz=self.timezone).timestamp()
         iterator = reverse_cron_string_iterator(
             end_timestamp=end_timestamp,
             cron_string=self.cron_schedule,
@@ -1087,6 +1052,12 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
     """
 
+    # mapping for fields defined on TimeWindowPartitionsDefinition to this subclasses __new__
+    __field_remap__ = {
+        "start_ts": "start_date",
+        "end_ts": "end_date",
+    }
+
     def __new__(
         cls,
         start_date: Union[datetime, str],
@@ -1096,12 +1067,20 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
 
+        schedule_type = ScheduleType.DAILY
+
+        # We accept cron_schedule "hidden" via kwargs to support record copy()
+        cron_schedule = kwargs.get("cron_schedule")
+        if cron_schedule:
+            schedule_type = None
+
         return super(DailyPartitionsDefinition, cls).__new__(
             cls,
-            schedule_type=ScheduleType.DAILY,
+            schedule_type=schedule_type,
             start=start_date,
             end=end_date,
             minute_offset=minute_offset,
@@ -1109,6 +1088,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
             timezone=timezone,
             fmt=_fmt,
             end_offset=end_offset,
+            cron_schedule=cron_schedule,
         )
 
 
@@ -1253,6 +1233,12 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
 
+    # mapping for fields defined on TimeWindowPartitionsDefinition to this subclasses __new__
+    __field_remap__ = {
+        "start_ts": "start_date",
+        "end_ts": "end_date",
+    }
+
     def __new__(
         cls,
         start_date: Union[datetime, str],
@@ -1261,18 +1247,26 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        **kwargs,
     ):
         _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+        schedule_type = ScheduleType.HOURLY
+
+        # We accept cron_schedule "hidden" via kwargs to support record copy()
+        cron_schedule = kwargs.get("cron_schedule")
+        if cron_schedule:
+            schedule_type = None
 
         return super(HourlyPartitionsDefinition, cls).__new__(
             cls,
-            schedule_type=ScheduleType.HOURLY,
+            schedule_type=schedule_type,
             start=start_date,
             end=end_date,
             minute_offset=minute_offset,
             timezone=timezone,
             fmt=_fmt,
             end_offset=end_offset,
+            cron_schedule=cron_schedule,
         )
 
 
@@ -1361,7 +1355,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions will be
-            midnight the sonnest first of the month following start_date. Can provide in either a
+            midnight the soonest first of the month following start_date. Can provide in either a
             datetime or string format.
         end_date (Union[datetime.datetime, str, None]): The last date(excluding) in the set of partitions.
             Default is None. Can provide in either a datetime or string format.
@@ -1387,6 +1381,12 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
     """
 
+    # mapping for fields defined on TimeWindowPartitionsDefinition to this subclasses __new__
+    __field_remap__ = {
+        "start_ts": "start_date",
+        "end_ts": "end_date",
+    }
+
     def __new__(
         cls,
         start_date: Union[datetime, str],
@@ -1397,12 +1397,24 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
+        schedule_type = ScheduleType.MONTHLY
+
+        # We accept cron_schedule "hidden" via kwargs to support record copy()
+        cron_schedule = kwargs.get("cron_schedule")
+        if cron_schedule:
+            schedule_type = None
+            check.invariant(
+                day_offset == 1,
+                f"Reconstruction by cron_schedule got unexpected day_offset {day_offset}, expected 1.",
+            )
+            day_offset = 0
 
         return super(MonthlyPartitionsDefinition, cls).__new__(
             cls,
-            schedule_type=ScheduleType.MONTHLY,
+            schedule_type=schedule_type,
             start=start_date,
             end=end_date,
             minute_offset=minute_offset,
@@ -1411,6 +1423,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             timezone=timezone,
             fmt=_fmt,
             end_offset=end_offset,
+            cron_schedule=cron_schedule,
         )
 
 
@@ -1443,7 +1456,7 @@ def monthly_partitioned_config(
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions will be
-            midnight the sonnest first of the month following start_date. Can provide in either a
+            midnight the soonest first of the month following start_date. Can provide in either a
             datetime or string format.
         minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
             to 0.
@@ -1535,6 +1548,12 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
 
+    # mapping for fields defined on TimeWindowPartitionsDefinition to this subclasses __new__
+    __field_remap__ = {
+        "start_ts": "start_date",
+        "end_ts": "end_date",
+    }
+
     def __new__(
         cls,
         start_date: Union[datetime, str],
@@ -1545,12 +1564,18 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
+        schedule_type = ScheduleType.WEEKLY
+        # We accept cron_schedule "hidden" via kwargs to support record copy()
+        cron_schedule = kwargs.get("cron_schedule")
+        if cron_schedule:
+            schedule_type = None
 
         return super(WeeklyPartitionsDefinition, cls).__new__(
             cls,
-            schedule_type=ScheduleType.WEEKLY,
+            schedule_type=schedule_type,
             start=start_date,
             end=end_date,
             minute_offset=minute_offset,
@@ -1559,6 +1584,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
             timezone=timezone,
             fmt=_fmt,
             end_offset=end_offset,
+            cron_schedule=cron_schedule,
         )
 
 
@@ -2602,7 +2628,7 @@ def fetch_flattened_time_window_ranges(
 def has_one_dimension_time_window_partitioning(
     partitions_def: Optional[PartitionsDefinition],
 ) -> bool:
-    from .multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
     if isinstance(partitions_def, TimeWindowPartitionsDefinition):
         return True
@@ -2624,7 +2650,7 @@ def get_time_partitions_def(
     """For a given PartitionsDefinition, return the associated TimeWindowPartitionsDefinition if it
     exists.
     """
-    from .multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
     if partitions_def is None:
         return None
@@ -2643,7 +2669,7 @@ def get_time_partitions_def(
 def get_time_partition_key(
     partitions_def: Optional[PartitionsDefinition], partition_key: Optional[str]
 ) -> str:
-    from .multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
     if partitions_def is None or partition_key is None:
         check.failed(

@@ -6,11 +6,13 @@ from typing import Any, Callable, List, Optional, Set, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
+import six
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
+from kubernetes.client.api_client import ApiClient
 from kubernetes.client.models import V1Job, V1JobStatus
 
 try:
@@ -89,6 +91,39 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
     # typically not transient, but some k8s clusters raise it transiently: https://github.com/aws/containers-roadmap/issues/1810
     401,  # Authorization Failure
 ]
+
+
+class PatchedApiClient(ApiClient):
+    # Forked from ApiClient implementation to pass configuration object down into created model
+    # objects, avoiding lock contention issues. See https://github.com/kubernetes-client/python/issues/2284
+    def __deserialize_model(self, data, klass):
+        """Deserializes list or dict to model.
+
+        :param data: dict, list.
+        :param klass: class literal.
+        :return: model object.
+        """
+        if not klass.openapi_types and not hasattr(klass, "get_real_child_model"):
+            return data
+
+        # Below is the only change from the base ApiClient implementation - pass through the
+        # Configuration object to each newly created model so that each one does not have to create
+        # one and acquire a lock
+        kwargs = {"local_vars_configuration": self.configuration}
+
+        if data is not None and klass.openapi_types is not None and isinstance(data, (list, dict)):
+            for attr, attr_type in six.iteritems(klass.openapi_types):
+                if klass.attribute_map[attr] in data:
+                    value = data[klass.attribute_map[attr]]
+                    kwargs[attr] = self.__deserialize(value, attr_type)
+
+        instance = klass(**kwargs)
+
+        if hasattr(instance, "get_real_child_model"):
+            klass_name = instance.get_real_child_model(data)
+            if klass_name:
+                instance = self.__deserialize(data, klass_name)
+        return instance
 
 
 def k8s_api_retry(
@@ -209,8 +244,12 @@ class DagsterKubernetesClient:
     @staticmethod
     def production_client(batch_api_override=None, core_api_override=None):
         return DagsterKubernetesClient(
-            batch_api=batch_api_override or kubernetes.client.BatchV1Api(),
-            core_api=core_api_override or kubernetes.client.CoreV1Api(),
+            batch_api=(
+                batch_api_override or kubernetes.client.BatchV1Api(api_client=PatchedApiClient())
+            ),
+            core_api=(
+                core_api_override or kubernetes.client.CoreV1Api(api_client=PatchedApiClient())
+            ),
             logger=logging.info,
             sleeper=time.sleep,
             timer=time.time,
@@ -525,21 +564,25 @@ class DagsterKubernetesClient:
 
     def wait_for_pod(
         self,
-        pod_name,
-        namespace,
-        wait_for_state=WaitForPodState.Ready,
-        wait_timeout=DEFAULT_WAIT_TIMEOUT,
-        wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
-        start_time=None,
+        pod_name: str,
+        namespace: str,
+        wait_for_state: WaitForPodState = WaitForPodState.Ready,
+        pod_launch_timeout: float = DEFAULT_WAIT_TIMEOUT,
+        wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
+        wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+        start_time: Any = None,
         ignore_containers: Optional[Set] = None,
-    ):
+    ) -> None:
         """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
         Args:
+        ----
             pod_name (str): Name of the pod to wait for.
             namespace (str): Namespace in which the pod is located.
             wait_for_state (WaitForPodState, optional): Whether to wait for pod readiness or
                 termination. Defaults to waiting for readiness.
+            pod_launch_timeout (numeric, optional): Timeout after which to give up and raise exception
+                if the pod never appears. Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
                 Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
@@ -549,36 +592,40 @@ class DagsterKubernetesClient:
                 when waiting for the pod to be ready/terminate.
 
         Raises:
+        ------
             DagsterK8sError: Raised when wait_timeout is exceeded or an error is encountered
+
         """
         check.str_param(pod_name, "pod_name")
         check.str_param(namespace, "namespace")
         check.inst_param(wait_for_state, "wait_for_state", WaitForPodState)
         check.numeric_param(wait_timeout, "wait_timeout")
+        check.numeric_param(pod_launch_timeout, "pod_launch_timeout")
         check.numeric_param(wait_time_between_attempts, "wait_time_between_attempts")
 
-        self.logger('Waiting for pod "%s"' % pod_name)
+        self.logger(f'Waiting for pod "{pod_name}"')
 
         start = start_time or self.timer()
 
         # A set of container names that have exited.
         exited_containers = set()
+        ready_containers = set()
         ignore_containers = ignore_containers or set()
         error_logs = []
 
         while True:
             pods = self.core_api.list_namespaced_pod(
-                namespace=namespace, field_selector="metadata.name=%s" % pod_name
+                namespace=namespace, field_selector=f"metadata.name={pod_name}"
             ).items
             pod = pods[0] if pods else None
 
-            if wait_timeout and self.timer() - start > wait_timeout:
+            if pod_launch_timeout and self.timer() - start > pod_launch_timeout:
                 raise DagsterK8sError(
-                    "Timed out while waiting for pod to become ready with pod info: %s" % str(pod)
+                    f"Timed out while waiting for pod to become ready with pod info: {pod!s}"
                 )
 
             if pod is None:
-                self.logger('Waiting for pod "%s" to launch...' % pod_name)
+                self.logger(f'Waiting for pod "{pod_name}" to launch...')
                 self.sleeper(wait_time_between_attempts)
                 continue
 
@@ -588,11 +635,25 @@ class DagsterKubernetesClient:
                 )
                 self.sleeper(wait_time_between_attempts)
                 continue
+            break
 
+        while True:
+            pods = self.core_api.list_namespaced_pod(
+                namespace=namespace, field_selector=f"metadata.name={pod_name}"
+            ).items
+            pod = pods[0] if pods else None
+            if pod is None:
+                raise DagsterK8sError(f'Pod "{pod_name}" was unexpectedly killed')
+
+            if wait_timeout and self.timer() - start > wait_timeout:
+                raise DagsterK8sError(
+                    f"Timed out while waiting for pod to get to status {wait_for_state.value} with pod info: {pod!s}"
+                )
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatus-v1-core
             all_statuses = []
             all_statuses.extend(pod.status.init_container_statuses or [])
             all_statuses.extend(pod.status.container_statuses or [])
+            initcontainers = set(s.name for s in (pod.status.init_container_statuses or []))
 
             # Filter out ignored containers
             all_statuses = [s for s in all_statuses if s.name not in ignore_containers]
@@ -603,7 +664,9 @@ class DagsterKubernetesClient:
             #
             # In case we are waiting for the pod to be ready, we will exit after
             # the first container in this list is ready.
-            container_status = next(s for s in all_statuses if s.name not in exited_containers)
+            container_status = next(
+                s for s in all_statuses if s.name not in exited_containers | ready_containers
+            )
 
             # State checks below, see:
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstate-v1-core
@@ -614,12 +677,15 @@ class DagsterKubernetesClient:
                     # ready is boolean field of container status
                     ready = container_status.ready
                     if not ready:
-                        self.logger('Waiting for pod "%s" to become ready...' % pod_name)
+                        self.logger(f'Waiting for pod "{pod_name}" to become ready...')
                         self.sleeper(wait_time_between_attempts)
                         continue
                     else:
-                        self.logger('Pod "%s" is ready, done waiting' % pod_name)
-                        break
+                        ready_containers.add(container_status.name)
+                        if initcontainers.issubset(exited_containers | ready_containers):
+                            self.logger(f'Pod "{pod_name}" is ready, done waiting')
+                            break
+
                 else:
                     check.invariant(
                         wait_for_state == WaitForPodState.Terminated, "New invalid WaitForPodState"
@@ -630,13 +696,13 @@ class DagsterKubernetesClient:
             elif state.waiting is not None:
                 # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatewaiting-v1-core
                 if state.waiting.reason == KubernetesWaitingReasons.PodInitializing:
-                    self.logger('Waiting for pod "%s" to initialize...' % pod_name)
+                    self.logger(f'Waiting for pod "{pod_name}" to initialize...')
                     self.sleeper(wait_time_between_attempts)
                     continue
                 if state.waiting.reason == KubernetesWaitingReasons.CreateContainerConfigError:
                     self.logger(
-                        'Pod "%s" is waiting due to a CreateContainerConfigError with message "%s"'
-                        " - trying again to see if it recovers" % (pod_name, state.waiting.message)
+                        f'Pod "{pod_name}" is waiting due to a CreateContainerConfigError with message "{state.waiting.message}"'
+                        " - trying again to see if it recovers"
                     )
                     self.sleeper(wait_time_between_attempts)
                     continue
@@ -662,7 +728,7 @@ class DagsterKubernetesClient:
                         f' Message="{state.waiting.message}"\n{debug_info}'
                     )
                 else:
-                    raise DagsterK8sError("Unknown issue: %s" % state.waiting)
+                    raise DagsterK8sError(f"Unknown issue: {state.waiting}")
 
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstateterminated-v1-core
             elif state.terminated is not None:
@@ -679,6 +745,10 @@ class DagsterKubernetesClient:
 
                     self.logger(msg)
                     error_logs.append(msg)
+                elif container_name in initcontainers:
+                    self.logger(
+                        f"Init container {container_name} in {pod_name} has exited successfully"
+                    )
                 else:
                     self.logger(f"Container {container_name} in {pod_name} has exited successfully")
 

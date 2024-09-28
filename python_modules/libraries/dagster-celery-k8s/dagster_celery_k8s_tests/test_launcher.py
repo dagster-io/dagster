@@ -38,6 +38,7 @@ def test_empty_celery_config():
         "volume_mounts": [],
         "volumes": [],
         "load_incluster_config": True,
+        "per_step_k8s_config": {},
         "repo_location_name": "<<in_process>>",
         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
     }
@@ -53,6 +54,7 @@ def test_get_validated_celery_k8s_executor_config():
         "retries": {"enabled": {}},
         "job_image": "foo",
         "load_incluster_config": True,
+        "per_step_k8s_config": {},
         "repo_location_name": "<<in_process>>",
         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
         "volume_mounts": [],
@@ -79,6 +81,7 @@ def test_get_validated_celery_k8s_executor_config():
             "backend": "rpc://",
             "retries": {"enabled": {}},
             "env_config_maps": ["config-pipeline-env"],
+            "per_step_k8s_config": {},
             "load_incluster_config": True,
             "job_namespace": "my-namespace",
             "repo_location_name": "<<in_process>>",
@@ -143,6 +146,7 @@ def test_get_validated_celery_k8s_executor_config():
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
+            "per_step_k8s_config": {},
             "image_pull_policy": "IfNotPresent",
             "image_pull_secrets": [{"name": "super-secret-1"}, {"name": "super-secret-2"}],
             "service_account_name": "my-cool-service-acccount",
@@ -162,6 +166,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
         "retries": {"enabled": {}},
         "job_image": "foo",
         "load_incluster_config": True,
+        "per_step_k8s_config": {},
         "repo_location_name": "<<in_process>>",
         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
         "volume_mounts": [],
@@ -187,6 +192,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "retries": {"enabled": {}},
             "env_config_maps": ["config-pipeline-env"],
             "load_incluster_config": True,
+            "per_step_k8s_config": {},
             "job_namespace": "my-namespace",
             "repo_location_name": "<<in_process>>",
             "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
@@ -253,6 +259,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
             "job_image": "foo",
+            "per_step_k8s_config": {},
             "image_pull_policy": "IfNotPresent",
             "image_pull_secrets": [{"name": "super-secret-1"}, {"name": "super-secret-2"}],
             "service_account_name": "my-cool-service-acccount",
@@ -316,12 +323,13 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     )
 
     # Construct Dagster run tags with user defined k8s config.
+    expected_image = "different_image:tag"
     expected_resources = {
         "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
     }
     user_defined_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"resources": expected_resources},
+        container_config={"image": expected_image, "resources": expected_resources},
     )
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
@@ -354,13 +362,13 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 job_name=job_name,
                 run_config=run_config,
                 tags=tags,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake-image-name"
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == expected_image
 
             # Check that user defined k8s config was passed down to the k8s job.
             mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -432,7 +440,7 @@ def test_raise_on_error(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 run_config=run_config,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -484,7 +492,7 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 run_config={"execution": {"celery-k8s": {}}},
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -499,7 +507,7 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 run_config={
                     "execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}
                 },
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))

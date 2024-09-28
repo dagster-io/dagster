@@ -1,28 +1,9 @@
 import datetime
 from typing import Any, Dict, Iterable, Optional, Sequence, Union, cast
 
-import pendulum
-
 from dagster import _check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import (
-    JsonMetadataValue,
-    MetadataValue,
-    TimestampMetadataValue,
-)
-from dagster._core.execution.context.compute import AssetCheckExecutionContext
-from dagster._utils.schedules import (
-    get_latest_completed_cron_tick,
-    get_next_cron_tick,
-    is_valid_cron_string,
-)
-
-from ..utils import (
+from dagster._core.definitions.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
@@ -37,8 +18,25 @@ from ..utils import (
     ensure_no_duplicate_assets,
     freshness_multi_asset_check,
     get_last_updated_timestamp,
-    retrieve_latest_record,
+    retrieve_last_update_record,
     seconds_in_words,
+)
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.metadata import (
+    JsonMetadataValue,
+    MetadataValue,
+    TimestampMetadataValue,
+)
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._time import get_current_timestamp, get_timezone
+from dagster._utils.schedules import (
+    get_latest_completed_cron_tick,
+    get_next_cron_tick,
+    is_valid_cron_string,
 )
 
 
@@ -168,9 +166,11 @@ def _build_freshness_multi_check(
     def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
         for check_key in context.selected_asset_check_keys:
             asset_key = check_key.asset_key
-            current_timestamp = pendulum.now("UTC").timestamp()
+            current_timestamp = get_current_timestamp()
 
-            current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+            current_time_in_freshness_tz = datetime.datetime.fromtimestamp(
+                current_timestamp, tz=get_timezone(timezone)
+            )
             latest_completed_cron_tick = (
                 get_latest_completed_cron_tick(
                     deadline_cron, current_time_in_freshness_tz, timezone
@@ -186,7 +186,7 @@ def _build_freshness_multi_check(
 
             last_update_time_lower_bound = cast(datetime.datetime, deadline - lower_bound_delta)
 
-            latest_record = retrieve_latest_record(
+            latest_record = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None
             )
             update_timestamp = get_last_updated_timestamp(latest_record, context)

@@ -26,21 +26,21 @@ from dagster_dbt import (
 from dagster_dbt.cloud.asset_defs import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
 from dagster_dbt.cloud.resources import DbtCloudClient
 
-from ..legacy.utils import assert_assets_match_project
-from .utils import DBT_CLOUD_ACCOUNT_ID, DBT_CLOUD_API_TOKEN, sample_get_environment_variables
+from dagster_dbt_tests.cloud.utils import (
+    DBT_CLOUD_ACCOUNT_ID,
+    DBT_CLOUD_API_TOKEN,
+    assert_assets_match_project,
+    sample_get_environment_variables,
+)
 
 DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
 
-with open(
-    file_relative_path(__file__, "../legacy/sample_manifest.json"), "r", encoding="utf8"
-) as f:
+with open(file_relative_path(__file__, "sample_manifest.json"), "r", encoding="utf8") as f:
     MANIFEST_JSON = json.load(f)
 
-with open(
-    file_relative_path(__file__, "../legacy/sample_run_results.json"), "r", encoding="utf8"
-) as f:
+with open(file_relative_path(__file__, "sample_run_results.json"), "r", encoding="utf8") as f:
     RUN_RESULTS_JSON = json.load(f)
 
 
@@ -601,6 +601,11 @@ def test_subsetting(
     # Core command should not be changed by dagster
     core_dbt_materialization_command = f"{dbt_materialization_command} {dbt_materialization_command_non_subsetting_options}".strip()
     full_dbt_materialization_command = f"{core_dbt_materialization_command} {dbt_materialization_command_subsetting_options}".strip()
+
+    expected_dbt_asset_names_list = (
+        expected_dbt_asset_names.split(",") if expected_dbt_asset_names else []
+    )
+
     _add_dbt_cloud_job_responses(
         dbt_cloud_service=dbt_cloud_service,
         dbt_commands=[full_dbt_materialization_command],
@@ -636,16 +641,30 @@ def test_subsetting(
         selection=asset_selection,
     ).resolve(asset_graph=AssetGraph.from_assets([*dbt_cloud_assets, hanger1, hanger2]))
 
+    if expected_dbt_asset_names_list:
+        filtered_results = [
+            result
+            for result in RUN_RESULTS_JSON["results"]
+            if result["unique_id"][len("model.") :] in expected_dbt_asset_names_list
+        ]
+        run_results_json = {**RUN_RESULTS_JSON, "results": filtered_results}
+    else:
+        run_results_json = RUN_RESULTS_JSON
+
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=[full_dbt_materialization_command],
+        run_results_json=run_results_json,
+    )
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
 
     assert result.success
 
-    expected_dbt_asset_names = (
-        expected_dbt_asset_names.split(",") if expected_dbt_asset_names else []
-    )
     dbt_filter_option = (
-        f"--select {' '.join(expected_dbt_asset_names)}" if expected_dbt_asset_names else ""
+        f"--select {' '.join(expected_dbt_asset_names_list)}"
+        if expected_dbt_asset_names_list
+        else ""
     )
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,

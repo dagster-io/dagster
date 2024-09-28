@@ -1,14 +1,16 @@
 import {Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {useVisibleFeatureFlagRows} from 'shared/app/useVisibleFeatureFlagRows.oss';
 
 import {useFeatureFlags} from './Flags';
 import {TopNavButton} from './TopNavButton';
 import {UserSettingsDialog} from './UserSettingsDialog/UserSettingsDialog';
-import {getVisibleFeatureFlagRows} from './getVisibleFeatureFlagRows';
 
 export const UserSettingsButton = () => {
   const {flagSettingsPage} = useFeatureFlags();
   const [isOpen, setIsOpen] = useState(false);
+
+  const visibleFlags = useVisibleFeatureFlagRows();
 
   if (flagSettingsPage) {
     return null;
@@ -22,7 +24,7 @@ export const UserSettingsButton = () => {
       <UserSettingsDialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        visibleFlags={getVisibleFeatureFlagRows()}
+        visibleFlags={visibleFlags}
       />
     </>
   );

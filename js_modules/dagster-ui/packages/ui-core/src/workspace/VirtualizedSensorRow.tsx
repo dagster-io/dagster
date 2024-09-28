@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Caption,
@@ -17,17 +16,17 @@ import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
 import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
-import {SensorTargetList} from '../sensors/SensorTargetList';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
@@ -35,7 +34,7 @@ import {
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
-const TEMPLATE_COLUMNS = '1.5fr 150px 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS = '1.5fr 180px 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
 
 interface SensorRowProps {
@@ -74,8 +73,6 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     },
   });
 
-  useBlockTraceOnQueryResult(sensorQueryResult, 'SingleSensorQuery');
-
   const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
@@ -88,8 +85,6 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
       },
     },
   });
-
-  useBlockTraceOnQueryResult(sensorAssetSelectionQueryResult, 'SensorAssetSelectionQuery');
 
   useDelayedRowQuery(
     React.useCallback(() => {
@@ -135,6 +130,11 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
 
   const sensorType = sensorData?.sensorType;
   const sensorInfo = sensorType ? SENSOR_TYPE_META[sensorType] : null;
+
+  const selectedAssets =
+    sensorAssetSelectionQueryResult.data?.sensorOrError.__typename === 'Sensor'
+      ? sensorAssetSelectionQueryResult.data.sensorOrError.assetSelection
+      : null;
 
   return (
     <Row $height={height} $start={start}>
@@ -189,16 +189,16 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           </div>
         </RowCell>
         <RowCell>
-          <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            {sensorData ? (
-              <SensorTargetList
+          {sensorData ? (
+            <div>
+              <AutomationTargetList
                 targets={sensorData.targets}
                 repoAddress={repoAddress}
-                selectionQueryResult={sensorAssetSelectionQueryResult}
-                sensorType={sensorData.sensorType}
+                assetSelection={selectedAssets}
+                automationType={sensorData.sensorType}
               />
-            ) : null}
-          </Box>
+            </div>
+          ) : null}
         </RowCell>
         <RowCell>
           {sensorData ? (
@@ -278,51 +278,51 @@ export const SENSOR_TYPE_META: Record<
   {name: string; icon: IconName; description: string | null}
 > = {
   [SensorType.ASSET]: {
-    name: 'Asset',
-    icon: 'asset',
+    name: 'Asset sensor',
+    icon: 'sensors',
     description: 'Asset sensors instigate runs when a materialization occurs',
   },
   [SensorType.AUTO_MATERIALIZE]: {
-    name: 'Auto-materialize',
-    icon: 'materialization',
+    name: 'Automation condition sensor',
+    icon: 'auto_materialize_policy',
     description:
       'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
   },
   [SensorType.AUTOMATION]: {
-    name: 'Automation',
-    icon: 'materialization',
+    name: 'Automation condition sensor',
+    icon: 'auto_materialize_policy',
     description: 'Automation sensors trigger runs based on conditions defined on assets.',
   },
   [SensorType.FRESHNESS_POLICY]: {
-    name: 'Freshness policy',
-    icon: 'hourglass',
+    name: 'Freshness policy sensor',
+    icon: 'sensors',
     description:
       'Freshness sensors check the freshness of assets on each tick, then perform an action in response to that status',
   },
   [SensorType.MULTI_ASSET]: {
-    name: 'Multi-asset',
-    icon: 'multi_asset',
+    name: 'Multi-asset sensor',
+    icon: 'sensors',
     description:
       'Multi asset sensors trigger job executions based on multiple asset materialization event streams',
   },
   [SensorType.RUN_STATUS]: {
-    name: 'Run status',
-    icon: 'alternate_email',
+    name: 'Run status sensor',
+    icon: 'sensors',
     description: 'Run status sensors react to run status',
   },
   [SensorType.STANDARD]: {
-    name: 'Standard',
+    name: 'Standard sensor',
     icon: 'sensors',
     description: null,
   },
   [SensorType.UNKNOWN]: {
-    name: 'Standard',
+    name: 'Standard sensor',
     icon: 'sensors',
     description: null,
   },
 };
 
-const SINGLE_SENSOR_QUERY = gql`
+export const SINGLE_SENSOR_QUERY = gql`
   query SingleSensorQuery($selector: SensorSelector!) {
     sensorOrError(sensorSelector: $selector) {
       ... on Sensor {
@@ -342,6 +342,8 @@ const SINGLE_SENSOR_QUERY = gql`
         sensorState {
           id
           runningCount
+          hasStartPermission
+          hasStopPermission
           ticks(limit: 1) {
             id
             ...TickTagFragment

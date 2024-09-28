@@ -37,7 +37,7 @@
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
 -e python_modules/libraries/dagster-airflow[test_airflow_2]
--e python_modules/libraries/dagster-aws[test]
+-e python_modules/libraries/dagster-aws[stubs,test]
 -e python_modules/libraries/dagster-azure/
 -e python_modules/libraries/dagster-celery/
 -e python_modules/libraries/dagster-celery-docker/
@@ -76,15 +76,19 @@
 -e python_modules/libraries/dagster-papertrail/
 -e python_modules/libraries/dagster-polars[deltalake,gcp,test]
 -e python_modules/libraries/dagster-postgres/
+-e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
+-e python_modules/libraries/dagster-sdf/
 -e python_modules/libraries/dagster-shell/
+-e python_modules/libraries/dagster-sigma
 -e python_modules/libraries/dagster-slack/
 -e python_modules/libraries/dagster-snowflake/
 -e python_modules/libraries/dagster-snowflake-pandas/
 -e python_modules/libraries/dagster-snowflake-pyspark/
 -e python_modules/libraries/dagster-spark/
 -e python_modules/libraries/dagster-ssh/
+-e python_modules/libraries/dagster-tableau
 -e python_modules/libraries/dagster-twilio/
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
@@ -126,3 +130,10 @@ pendulum<3
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
+-e examples/experimental/dagster-blueprints
+-e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
+-e examples/experimental/dagster-airlift/examples/dbt-example
+-e examples/experimental/dagster-airlift/examples/kitchen-sink
+-e examples/experimental/dagster-airlift/examples/perf-harness
+-e examples/experimental/dagster-airlift/examples/tutorial-example
+-e examples/use_case_repository[dev]

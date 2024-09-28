@@ -17,6 +17,12 @@ import {
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {RunStatus} from '../graphql/types';
 
+export enum AssetGraphViewType {
+  GLOBAL = 'global',
+  JOB = 'job',
+  GROUP = 'group',
+}
+
 /**
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
@@ -31,9 +37,10 @@ type AssetLiveNode = AssetNodeLiveFragment;
 type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
+export const __ANONYMOUS_ASSET_JOB_PREFIX = '__anonymous_asset_job';
 
 export function isHiddenAssetGroupJob(jobName: string) {
-  return jobName.startsWith(__ASSET_JOB_PREFIX);
+  return jobName.startsWith(__ASSET_JOB_PREFIX) || jobName.startsWith(__ANONYMOUS_ASSET_JOB_PREFIX);
 }
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because

@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  ButtonLink,
   Checkbox,
   Colors,
   Dialog,
@@ -11,13 +12,15 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss';
 
-import {UserPreferences} from './UserPreferences';
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
-import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from '../Flags';
+import {showCustomAlert} from '../CustomAlertProvider';
+import {getFeatureFlags, setFeatureFlags} from '../Flags';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
-type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlagType};
+type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlag};
 
 interface DialogProps {
   isOpen: boolean;
@@ -40,7 +43,7 @@ export const UserSettingsDialog = ({isOpen, onClose, visibleFlags}: DialogProps)
 
 interface DialogContentProps {
   onClose: OnCloseFn;
-  visibleFlags: {key: string; label?: React.ReactNode; flagType: FeatureFlagType}[];
+  visibleFlags: {key: string; label?: React.ReactNode; flagType: FeatureFlag}[];
 }
 
 /**
@@ -48,7 +51,7 @@ interface DialogContentProps {
  * we want to render it.
  */
 const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
-  const [flags, setFlags] = React.useState<FeatureFlagType[]>(() => getFeatureFlags());
+  const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 
   const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
@@ -57,7 +60,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
     setFeatureFlags(flags);
   });
 
-  const toggleFlag = (flag: FeatureFlagType) => {
+  const toggleFlag = (flag: FeatureFlag) => {
     setFlags(flags.includes(flag) ? flags.filter((f) => f !== flag) : [...flags, flag]);
   };
 
@@ -127,11 +130,44 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
         <Box padding={{bottom: 8}} flex={{direction: 'column', gap: 4}}>
           <UserPreferences onChangeRequiresReload={setAreaPreferencesChanged} />
         </Box>
-        <Box padding={{top: 16}} border="top">
+        <Box padding={{vertical: 16}} border="top">
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
           {experimentalSettings}
+        </Box>
+        <Box padding={{top: 16}} border="top">
+          <ButtonLink
+            onClick={() => {
+              indexedDB.databases().then((databases) => {
+                databases.forEach((db) => {
+                  db.name && indexedDB.deleteDatabase(db.name);
+                });
+              });
+              showCustomAlert({
+                title: 'Caches reset',
+                body: (
+                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                    IndexedDB cache has been reset.
+                    <ButtonLink
+                      onClick={() => {
+                        window.location.reload();
+                      }}
+                    >
+                      Click here to reload the page
+                    </ButtonLink>
+                  </Box>
+                ),
+              });
+            }}
+          >
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Reset IndexedDB cache
+              <Tooltip content="If you're seeing stale definitions or experiencing client side bugs then this may fix it">
+                <Icon name="info" />
+              </Tooltip>
+            </Box>
+          </ButtonLink>
         </Box>
       </DialogBody>
       <DialogFooter topBorder>

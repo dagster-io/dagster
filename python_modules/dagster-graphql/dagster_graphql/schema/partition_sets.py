@@ -1,15 +1,19 @@
-from typing import Optional, cast
+from typing import AbstractSet, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
 from dagster import MultiPartitionsDefinition
-from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.remote_representation import ExternalJob, ExternalPartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import (
     ExternalDynamicPartitionsDefinitionData,
     ExternalMultiPartitionsDefinitionData,
+    ExternalPartitionExecutionErrorData,
     ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
+    job_name_for_external_partition_set_name,
 )
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -25,22 +29,21 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.utils import capture_error
-
-from .asset_key import GrapheneAssetKey
-from .backfill import GraphenePartitionBackfill
-from .errors import (
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.backfill import GraphenePartitionBackfill
+from dagster_graphql.schema.errors import (
     GrapheneDuplicateDynamicPartitionError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
     GrapheneUnauthorizedError,
 )
-from .inputs import GrapheneRunsFilter
-from .pipelines.pipeline import GrapheneRun
-from .pipelines.status import GrapheneRunStatus
-from .repository_origin import GrapheneRepositoryOrigin
-from .tags import GraphenePipelineTag
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.inputs import GrapheneRunsFilter
+from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.repository_origin import GrapheneRepositoryOrigin
+from dagster_graphql.schema.tags import GraphenePipelineTag
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):
@@ -181,6 +184,48 @@ class GraphenePartitionTagsOrError(graphene.Union):
         name = "PartitionTagsOrError"
 
 
+class GrapheneJobSelectionPartition(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    job_name = graphene.NonNull(graphene.String)
+    runConfigOrError = graphene.NonNull(GraphenePartitionRunConfigOrError)
+    tagsOrError = graphene.NonNull(GraphenePartitionTagsOrError)
+
+    class Meta:
+        name = "PartitionTagsAndConfig"
+
+    def __init__(
+        self,
+        external_job: ExternalJob,
+        partition_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ):
+        self._external_job = external_job
+        self._partition_name = partition_name
+        self._selected_asset_keys = selected_asset_keys
+
+        super().__init__(name=partition_name, job_name=external_job.name)
+
+    @capture_error
+    def resolve_runConfigOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionRunConfig:
+        return get_partition_config(
+            graphene_info,
+            self._external_job.repository_handle,
+            self._external_job.name,
+            self._partition_name,
+            selected_asset_keys=self._selected_asset_keys,
+        )
+
+    @capture_error
+    def resolve_tagsOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionTags:
+        return get_partition_tags(
+            graphene_info,
+            self._external_job.repository_handle,
+            self._external_job.name,
+            self._partition_name,
+            selected_asset_keys=self._selected_asset_keys,
+        )
+
+
 class GraphenePartition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     partition_set_name = graphene.NonNull(graphene.String)
@@ -225,8 +270,9 @@ class GraphenePartition(graphene.ObjectType):
         return get_partition_config(
             graphene_info,
             self._external_repository_handle,
-            self._external_partition_set.name,
+            job_name_for_external_partition_set_name(self._external_partition_set.name),
             self._partition_name,
+            selected_asset_keys=None,
         )
 
     @capture_error
@@ -234,8 +280,9 @@ class GraphenePartition(graphene.ObjectType):
         return get_partition_tags(
             graphene_info,
             self._external_repository_handle,
-            self._external_partition_set.name,
+            job_name_for_external_partition_set_name(self._external_partition_set.name),
             self._partition_name,
+            selected_asset_keys=None,
         )
 
     def resolve_runs(
@@ -312,6 +359,7 @@ class GraphenePartitionSet(graphene.ObjectType):
         self._external_partition_set = check.inst_param(
             external_partition_set, "external_partition_set", ExternalPartitionSet
         )
+        self._partition_names = None
 
         super().__init__(
             name=external_partition_set.name,
@@ -320,8 +368,23 @@ class GraphenePartitionSet(graphene.ObjectType):
             mode=external_partition_set.mode,
         )
 
+    def _get_partition_names(self, graphene_info: ResolveInfo) -> Sequence[str]:
+        if self._partition_names is None:
+            result = graphene_info.context.get_external_partition_names(
+                repository_handle=self._external_repository_handle,
+                job_name=self._external_partition_set.job_name,
+                instance=graphene_info.context.instance,
+                selected_asset_keys=None,
+            )
+            if isinstance(result, ExternalPartitionExecutionErrorData):
+                raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+            self._partition_names = result.partition_names
+
+        return self._partition_names
+
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_partition_set.get_external_origin_id()
+        return self._external_partition_set.get_remote_origin_id()
 
     @capture_error
     def resolve_partitionsOrError(
@@ -332,9 +395,9 @@ class GraphenePartitionSet(graphene.ObjectType):
         reverse: Optional[bool] = None,
     ):
         return get_partitions(
-            graphene_info,
             self._external_repository_handle,
             self._external_partition_set,
+            self._get_partition_names(graphene_info),
             cursor=cursor,
             limit=limit,
             reverse=reverse or False,
@@ -349,17 +412,22 @@ class GraphenePartitionSet(graphene.ObjectType):
         )
 
     def resolve_partitionRuns(self, graphene_info: ResolveInfo):
-        return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
+        return get_partition_set_partition_runs(
+            graphene_info,
+            self._external_partition_set,
+            self._get_partition_names(graphene_info),
+        )
 
     @capture_error
     def resolve_partitionStatusesOrError(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_statuses(
             graphene_info,
             self._external_partition_set,
+            self._get_partition_names(graphene_info),
         )
 
     def resolve_repositoryOrigin(self, _):
-        origin = self._external_partition_set.get_external_origin().repository_origin
+        origin = self._external_partition_set.get_remote_origin().repository_origin
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_backfills(

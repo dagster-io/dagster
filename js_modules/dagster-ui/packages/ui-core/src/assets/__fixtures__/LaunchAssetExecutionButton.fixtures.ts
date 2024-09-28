@@ -21,8 +21,10 @@ import {
   buildMaterializationEvent,
   buildMode,
   buildPartitionDefinition,
-  buildPartitionSet,
-  buildPartitionSets,
+  buildPartitionRunConfig,
+  buildPartitionTags,
+  buildPartitionTagsAndConfig,
+  buildPipeline,
   buildRegularConfigType,
   buildRepository,
   buildRepositoryLocation,
@@ -32,8 +34,8 @@ import {
 } from '../../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/backfill/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
-import {CONFIG_PARTITION_SELECTION_QUERY} from '../../launchpad/ConfigEditorConfigPicker';
-import {ConfigPartitionSelectionQuery} from '../../launchpad/types/ConfigEditorConfigPicker.types';
+import {CONFIG_PARTITION_FOR_ASSET_JOB_QUERY} from '../../launchpad/ConfigFetch';
+import {ConfigPartitionForAssetJobQuery} from '../../launchpad/types/ConfigFetch.types';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../../runs/RunUtils';
 import {
   LaunchPipelineExecutionMutation,
@@ -94,7 +96,7 @@ export const UNPARTITIONED_ASSET = buildAssetNode({
   dependencyKeys: [],
   dependedByKeys: [],
   graphName: null,
-  jobNames: ['__ASSET_JOB_7', 'my_asset_job'],
+  jobNames: ['__ASSET_JOB', 'my_asset_job'],
   opNames: ['unpartitioned_asset'],
   opVersion: null,
   description: null,
@@ -102,7 +104,7 @@ export const UNPARTITIONED_ASSET = buildAssetNode({
   isPartitioned: false,
   isObservable: false,
   isExecutable: true,
-  isSource: false,
+  isMaterializable: true,
   assetKey: buildAssetKey({path: ['unpartitioned_asset']}),
   requiredResources: [],
   configField: BASE_CONFIG_TYPE_FIELD,
@@ -114,7 +116,7 @@ export const UNPARTITIONED_ASSET = buildAssetNode({
 export const CHECKED_ASSET = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["checked_asset"]',
-  jobNames: ['__ASSET_JOB_7', 'checks_included_job', 'checks_excluded_job'],
+  jobNames: ['__ASSET_JOB', 'checks_included_job', 'checks_excluded_job'],
   assetKey: buildAssetKey({path: ['checked_asset']}),
   configField: BASE_CONFIG_TYPE_FIELD,
   assetChecksOrError: buildAssetChecks({
@@ -131,7 +133,7 @@ export const CHECKED_ASSET = buildAssetNode({
 export const UNPARTITIONED_SOURCE_ASSET = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["unpartitioned_source_asset"]',
-  isSource: true,
+  isMaterializable: false,
   isObservable: true,
   assetKey: buildAssetKey({path: ['unpartitioned_source_asset']}),
 });
@@ -165,14 +167,14 @@ export const UNPARTITIONED_ASSET_WITH_REQUIRED_CONFIG = buildAssetNode({
 export const MULTI_ASSET_OUT_1 = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["multi_asset_out_1"]',
-  jobNames: ['__ASSET_JOB_7'],
+  jobNames: ['__ASSET_JOB'],
   assetKey: buildAssetKey({path: ['multi_asset_out_1']}),
 });
 
 export const MULTI_ASSET_OUT_2 = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["multi_asset_out_2"]',
-  jobNames: ['__ASSET_JOB_7'],
+  jobNames: ['__ASSET_JOB'],
   assetKey: buildAssetKey({path: ['multi_asset_out_2']}),
 });
 
@@ -189,7 +191,7 @@ export const ASSET_DAILY = buildAssetNode({
   dependencyKeys: [],
   dependedByKeys: [{__typename: 'AssetKey', path: ['asset_weekly']}],
   graphName: null,
-  jobNames: ['__ASSET_JOB_7', 'my_asset_job'],
+  jobNames: ['__ASSET_JOB', 'my_asset_job'],
   opNames: ['asset_daily'],
   opVersion: null,
   description: null,
@@ -197,7 +199,7 @@ export const ASSET_DAILY = buildAssetNode({
   isPartitioned: true,
   isObservable: false,
   isExecutable: true,
-  isSource: false,
+  isMaterializable: true,
   assetKey: buildAssetKey({path: ['asset_daily']}),
   requiredResources: [],
   configField: BASE_CONFIG_TYPE_FIELD,
@@ -231,7 +233,7 @@ export const ASSET_WEEKLY = buildAssetNode({
   isPartitioned: true,
   isObservable: false,
   isExecutable: true,
-  isSource: false,
+  isMaterializable: true,
   assetKey: buildAssetKey({path: ['asset_weekly']}),
   requiredResources: [],
   configField: BASE_CONFIG_TYPE_FIELD,
@@ -442,7 +444,6 @@ export const buildLaunchAssetLoaderGenericJobMock = (jobName: string) => {
     result: {
       data: {
         __typename: 'Query',
-        partitionSetsOrError: buildPartitionSets({results: []}),
         pipelineOrError: {
           id: '8e2d3f9597c4a45bb52fe9ab5656419f4329d4fb',
           modes: [
@@ -463,7 +464,7 @@ export const LaunchAssetLoaderResourceJob7Mock: MockedResponse<LaunchAssetLoader
   request: {
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
     variables: {
-      pipelineName: '__ASSET_JOB_7',
+      pipelineName: '__ASSET_JOB',
       repositoryLocationName: 'test.py',
       repositoryName: 'repo',
     },
@@ -471,15 +472,6 @@ export const LaunchAssetLoaderResourceJob7Mock: MockedResponse<LaunchAssetLoader
   result: {
     data: {
       __typename: 'Query',
-      partitionSetsOrError: {
-        results: [
-          buildPartitionSet({
-            id: '5b10aae97b738c48a4262b1eca530f89b13e9afc',
-            name: '__ASSET_JOB_7_partition_set',
-          }),
-        ],
-        __typename: 'PartitionSets',
-      },
       pipelineOrError: {
         id: '8e2d3f9597c4a45bb52fe9ab5656419f4329d4fb',
         modes: [
@@ -575,15 +567,6 @@ export const LaunchAssetLoaderResourceJob8Mock: MockedResponse<LaunchAssetLoader
   result: {
     data: {
       __typename: 'Query',
-      partitionSetsOrError: {
-        results: [
-          buildPartitionSet({
-            id: '129179973a9144278c2429d3ba680bf0f809a59b',
-            name: '__ASSET_JOB_8_partition_set',
-          }),
-        ],
-        __typename: 'PartitionSets',
-      },
       pipelineOrError: {
         id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
         modes: [
@@ -680,15 +663,6 @@ export const LaunchAssetLoaderResourceMyAssetJobMock: MockedResponse<LaunchAsset
     result: {
       data: {
         __typename: 'Query',
-        partitionSetsOrError: {
-          results: [
-            buildPartitionSet({
-              id: '129179973a9144278c2429d3ba680bf0f809a59b',
-              name: 'my_asset_job_partition_set',
-            }),
-          ],
-          __typename: 'PartitionSets',
-        },
         pipelineOrError: {
           id: '8689a9dcd052f769b73d73dfe57e89065dac369d',
           modes: [
@@ -738,35 +712,30 @@ export const LaunchAssetCheckUpstreamWeeklyRootMock: MockedResponse<LaunchAssetC
 
 export function buildConfigPartitionSelectionLatestPartitionMock(
   partitionName: string,
-  partitionSetName: string,
-): MockedResponse<ConfigPartitionSelectionQuery> {
+  jobName: string,
+): MockedResponse<ConfigPartitionForAssetJobQuery> {
   return {
     request: {
-      query: CONFIG_PARTITION_SELECTION_QUERY,
+      query: CONFIG_PARTITION_FOR_ASSET_JOB_QUERY,
       variables: {
+        jobName,
         partitionName,
-        partitionSetName,
-        repositorySelector: {
-          repositoryLocationName: 'test.py',
-          repositoryName: 'repo',
-        },
+        repositoryLocationName: 'test.py',
+        repositoryName: 'repo',
+        assetKeys: [{path: ['asset_daily']}],
       },
     },
     result: {
       data: {
         __typename: 'Query',
-        partitionSetOrError: {
-          __typename: 'PartitionSet',
-          id: '5b10aae97b738c48a4262b1eca530f89b13e9afc',
-          partition: {
+        pipelineOrError: buildPipeline({
+          partition: buildPartitionTagsAndConfig({
             name: '2023-03-14',
-            solidSelection: null,
-            runConfigOrError: {
+            runConfigOrError: buildPartitionRunConfig({
               yaml: '{}\n',
               __typename: 'PartitionRunConfig',
-            },
-            mode: 'default',
-            tagsOrError: {
+            }),
+            tagsOrError: buildPartitionTags({
               results: [
                 {
                   key: 'dagster/partition',
@@ -775,15 +744,13 @@ export function buildConfigPartitionSelectionLatestPartitionMock(
                 },
                 {
                   key: 'dagster/partition_set',
-                  value: partitionSetName,
+                  value: `${jobName}_partition_set`,
                   __typename: 'PipelineTag',
                 },
               ],
-              __typename: 'PartitionTags',
-            },
-            __typename: 'Partition',
-          },
-        },
+            }),
+          }),
+        }),
       },
     },
   };

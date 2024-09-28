@@ -30,8 +30,7 @@ export type PreviousRunsForSensorQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
-          rootConcurrencyKeys: Array<string> | null;
-          hasUnconstrainedRootNodes: boolean;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -51,3 +50,5 @@ export type PreviousRunsForSensorQuery = {
         }>;
       };
 };
+
+export const PreviousRunsForSensorQueryVersion = 'f35e444f6c30827ce07db188568d5e62537b0f47e4b7e75d1b442e42c6353552';

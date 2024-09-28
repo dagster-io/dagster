@@ -2,9 +2,9 @@ import os
 from enum import Enum
 from typing import Dict, List, Optional
 
-from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
-from .python_version import AvailablePythonVersion
-from .utils import CommandStep, safe_getenv
+from dagster_buildkite.images.versions import BUILDKITE_TEST_IMAGE_VERSION
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.utils import CommandStep, safe_getenv
 
 DEFAULT_TIMEOUT_IN_MIN = 25
 

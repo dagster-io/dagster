@@ -3,12 +3,11 @@ import * as React from 'react';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {flattenCodeLocationRows} from './flattenCodeLocationRows';
+import {useCodeLocationPageFilters} from './useCodeLocationPageFilters';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepositoryLocationsList} from '../workspace/RepositoryLocationsList';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 const SEARCH_THRESHOLD = 10;
 
@@ -16,18 +15,8 @@ export const CodeLocationsPageContent = () => {
   useTrackPageView();
   useDocumentTitle('Code locations');
 
-  const {locationEntries, loading} = React.useContext(WorkspaceContext);
-
-  const [searchValue, setSearchValue] = React.useState('');
-
-  const onChangeSearch = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
-  }, []);
-
-  const queryString = searchValue.toLocaleLowerCase();
-  const {flattened, filtered} = React.useMemo(() => {
-    return flattenCodeLocationRows(locationEntries, queryString);
-  }, [locationEntries, queryString]);
+  const {activeFiltersJsx, flattened, button, loading, filtered, onChangeSearch, searchValue} =
+    useCodeLocationPageFilters();
 
   const entryCount = flattened.length;
   const showSearch = entryCount > SEARCH_THRESHOLD;
@@ -47,25 +36,34 @@ export const CodeLocationsPageContent = () => {
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         style={{height: '64px'}}
       >
-        {showSearch ? (
-          <TextInput
-            icon="search"
-            value={searchValue}
-            onChange={onChangeSearch}
-            placeholder="Filter code locations by name…"
-            style={{width: '400px'}}
-          />
-        ) : (
-          <Subheading id="repository-locations">{subheadingText()}</Subheading>
-        )}
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          {button}
+          {showSearch ? (
+            <TextInput
+              icon="search"
+              value={searchValue}
+              onChange={onChangeSearch}
+              placeholder="Filter code locations by name…"
+              style={{width: '400px'}}
+            />
+          ) : (
+            <Subheading id="repository-locations">{subheadingText()}</Subheading>
+          )}
+        </Box>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
           {showSearch ? <div>{`${entryCount} code locations`}</div> : null}
           <ReloadAllButton />
         </Box>
       </Box>
+      {activeFiltersJsx.length ? (
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} padding={{horizontal: 24}}>
+          {activeFiltersJsx}
+        </Box>
+      ) : null}
       <RepositoryLocationsList
         loading={loading}
         codeLocations={filtered}
+        isFilteredView={!!activeFiltersJsx.length}
         searchValue={searchValue}
       />
     </>

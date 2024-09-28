@@ -1,20 +1,20 @@
 import {useCallback, useContext, useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
-import {WorkspaceContext} from '../../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 type Props =
   | {
-      repos: RepoAddress[];
-      setRepos: (repos: RepoAddress[]) => void;
+      codeLocations: RepoAddress[];
+      setCodeLocations: (repos: RepoAddress[]) => void;
     }
   | {
-      repos: undefined;
-      setRepos: undefined;
+      codeLocations: undefined;
+      setCodeLocations: undefined;
     };
 
 /**
@@ -25,7 +25,10 @@ type Props =
  * WorkspaceContext to get the current state.
  */
 export const useCodeLocationFilter = (
-  {repos, setRepos}: Props = {repos: undefined, setRepos: undefined},
+  {codeLocations, setCodeLocations}: Props = {
+    codeLocations: undefined,
+    setCodeLocations: undefined,
+  },
 ) => {
   const {allRepos, visibleRepos, setVisible, setHidden} = useContext(WorkspaceContext);
 
@@ -58,24 +61,34 @@ export const useCodeLocationFilter = (
   );
 
   return useStaticSetFilter<RepoAddress>({
-    name: 'Code location',
-    icon: 'folder',
-    state: repos ? repos : visibleRepoAddresses,
-    allValues: allRepoAddresses.map((repoAddress) => {
-      return {value: repoAddress, match: [repoAddressAsHumanString(repoAddress)]};
-    }),
-    getKey: (repoAddress) => repoAddressAsHumanString(repoAddress),
-    renderLabel: ({value}) => (
-      <TruncatedTextWithFullTextOnHover text={repoAddressAsHumanString(value)} />
+    state: codeLocations ? codeLocations : visibleRepoAddresses,
+    allValues: useMemo(
+      () =>
+        allRepoAddresses.map((repoAddress) => {
+          return {value: repoAddress, match: [repoAddressAsHumanString(repoAddress)]};
+        }),
+      [allRepoAddresses],
     ),
-    getStringValue: (value) => repoAddressAsHumanString(value),
     onStateChanged: (state) => {
-      if (setRepos) {
-        setRepos(Array.from(state));
+      if (setCodeLocations) {
+        setCodeLocations(Array.from(state));
       } else {
         setVisibleRepos(state);
       }
     },
     menuWidth: '500px',
+    ...BaseConfig,
   });
+};
+
+const getStringValue = (value: RepoAddress) => repoAddressAsHumanString(value);
+
+export const BaseConfig: StaticBaseConfig<RepoAddress> = {
+  name: 'Code location',
+  icon: 'folder',
+  renderLabel: ({value}: {value: RepoAddress}) => (
+    <TruncatedTextWithFullTextOnHover text={repoAddressAsHumanString(value)} />
+  ),
+  getStringValue,
+  getKey: getStringValue,
 };

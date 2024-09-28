@@ -35,7 +35,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["dagster_blueprints_tests*"]),
+    packages=find_packages(exclude=["dagster_blueprints_tests*", "examples*"]),
     install_requires=[
         f"dagster{pin}",
         f"dagster-databricks{pin}",

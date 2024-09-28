@@ -3,7 +3,7 @@ import re
 import subprocess
 from typing import Optional
 
-from .utils import check_output
+from automation.utils import check_output
 
 
 def git_check_status() -> None:

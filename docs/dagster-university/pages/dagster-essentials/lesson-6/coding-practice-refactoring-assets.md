@@ -55,10 +55,14 @@ def taxi_zones(database: DuckDBResource) -> None:
 Update the imports in `assets/metrics.py` to the following:
 
 ```python {% obfuscated="true" %}
-import requests
-from dagster_duckdb import DuckDBResource
-from . import constants
+from datetime import datetime, timedelta
+
 from dagster import asset
+from dagster_duckdb import DuckDBResource
+import geopandas as gpd
+import pandas as pd
+
+from . import constants
 ```
 
 Update the `manhattan_stats` asset:

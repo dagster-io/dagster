@@ -1,10 +1,10 @@
-import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
-import {indexedDB} from 'fake-indexeddb';
 import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {AssetCatalogTableBottomActionBar} from 'shared/assets/AssetCatalogTableBottomActionBar.oss';
+import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
@@ -16,9 +16,11 @@ import {
   AssetCatalogGroupTableQueryVariables,
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
+  AssetCatalogTableQueryVersion,
 } from './types/AssetsCatalogTable.types';
-import {useAssetCatalogFiltering} from './useAssetCatalogFiltering';
 import {AssetViewType, useAssetView} from './useAssetView';
+import {useBasicAssetSearchInput} from './useBasicAssetSearchInput';
+import {gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -26,46 +28,116 @@ import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
-import {PageLoadTrace} from '../performance';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
+import {CacheManager} from '../search/useIndexedDBCachedQuery';
 import {LoadingSpinner} from '../ui/Loading';
 
 type Asset = AssetTableFragment;
 
 const groupTableCache = new Map();
+const emptyArray: string[] = [];
 
-export function useAllAssets(groupSelector?: AssetGroupSelector) {
+const DEFAULT_BATCH_LIMIT = 10000;
+
+export function useCachedAssets({
+  onAssetsLoaded,
+}: {
+  onAssetsLoaded: (data: AssetTableFragment[]) => void;
+}) {
+  const {localCacheIdPrefix} = useContext(AppContext);
+  const cacheManager = useMemo(
+    () => new CacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
+    [localCacheIdPrefix],
+  );
+
+  useLayoutEffect(() => {
+    cacheManager.get(AssetCatalogTableQueryVersion).then((data) => {
+      if (data) {
+        onAssetsLoaded(data);
+      }
+    });
+  }, [cacheManager, onAssetsLoaded]);
+
+  return {cacheManager};
+}
+
+export function useAllAssets({
+  batchLimit = DEFAULT_BATCH_LIMIT,
+  groupSelector,
+}: {groupSelector?: AssetGroupSelector; batchLimit?: number} = {}) {
   const client = useApolloClient();
   const [{error, assets}, setErrorAndAssets] = useState<{
     error: PythonErrorFragment | undefined;
     assets: Asset[] | undefined;
   }>({error: undefined, assets: undefined});
 
-  const {localCacheIdPrefix} = useContext(AppContext);
+  const assetsRef = useUpdatingRef(assets);
 
-  const assetsQuery = useIndexedDBCachedQuery<
-    AssetCatalogTableQuery,
-    AssetCatalogTableQueryVariables
-  >({
-    key: `${localCacheIdPrefix}/allAssets`,
-    query: ASSET_CATALOG_TABLE_QUERY,
-    version: 1,
+  const {cacheManager} = useCachedAssets({
+    onAssetsLoaded: useCallback(
+      (data) => {
+        if (!assetsRef.current) {
+          setErrorAndAssets({
+            error: undefined,
+            assets: data,
+          });
+        }
+      },
+      [assetsRef],
+    ),
   });
-  // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('indexdbQueryCache:allAssets');
 
-  const {data, fetch: fetchAssets} = assetsQuery;
-
-  const assetsOrError = data?.assetsOrError;
-  useLayoutEffect(() => {
-    if (assetsOrError) {
-      setErrorAndAssets({
-        error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
-        assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
-      });
+  const allAssetsQuery = useCallback(async () => {
+    if (groupSelector) {
+      return;
     }
-  }, [assetsOrError]);
+    try {
+      const data = await fetchPaginatedData({
+        async fetchData(cursor: string | null | undefined) {
+          const {data} = await client.query<
+            AssetCatalogTableQuery,
+            AssetCatalogTableQueryVariables
+          >({
+            query: ASSET_CATALOG_TABLE_QUERY,
+            fetchPolicy: 'no-cache',
+            variables: {
+              cursor,
+              limit: batchLimit,
+            },
+          });
+
+          if (data.assetsOrError.__typename === 'PythonError') {
+            return {
+              data: [],
+              cursor: undefined,
+              hasMore: false,
+              error: data.assetsOrError,
+            };
+          }
+          const assets = data.assetsOrError.nodes;
+          const hasMoreData = assets.length === batchLimit;
+          const nextCursor = data.assetsOrError.cursor;
+          return {
+            data: assets,
+            cursor: nextCursor,
+            hasMore: hasMoreData,
+            error: undefined,
+          };
+        },
+      });
+      cacheManager.set(data, AssetCatalogTableQueryVersion);
+      setErrorAndAssets({error: undefined, assets: data});
+    } catch (e: any) {
+      if (e.__typename === 'PythonError') {
+        setErrorAndAssets(({assets}) => ({
+          error: e,
+          assets,
+        }));
+      }
+    }
+  }, [batchLimit, cacheManager, client, groupSelector]);
 
   const groupQuery = useCallback(async () => {
     if (!groupSelector) {
@@ -93,28 +165,32 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
     onData(data);
   }, [groupSelector, client]);
 
+  const query = groupSelector ? groupQuery : allAssetsQuery;
+
+  useEffect(() => {
+    query();
+  }, [query]);
+
   return useMemo(() => {
     return {
       assets,
       error,
       loading: !assets && !error,
-      query: groupSelector ? groupQuery : fetchAssets,
+      query,
     };
-  }, [assets, error, fetchAssets, groupQuery, groupSelector]);
+  }, [assets, error, query]);
 }
 
 interface AssetCatalogTableProps {
   prefixPath: string[];
   setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
-  trace?: PageLoadTrace;
 }
 
 export const AssetsCatalogTable = ({
   prefixPath,
   setPrefixPath,
   groupSelector,
-  trace,
 }: AssetCatalogTableProps) => {
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
@@ -124,29 +200,37 @@ export const AssetsCatalogTable = ({
 
   const [view, setView] = useAssetView();
 
-  const {assets, query, error} = useAllAssets(groupSelector);
-  const {searchPath, filtered, isFiltered, filterButton, filterInput, activeFiltersJsx} =
-    useAssetCatalogFiltering(assets, prefixPath);
+  const {assets, query, error} = useAllAssets({groupSelector});
+
+  const {
+    filteredAssets: partiallyFiltered,
+    filteredAssetsLoading,
+    isFiltered,
+    filterButton,
+    activeFiltersJsx,
+    kindFilter,
+  } = useAssetCatalogFiltering({assets});
+
+  const {searchPath, filterInput, filtered} = useBasicAssetSearchInput(
+    partiallyFiltered,
+    prefixPath,
+  );
 
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length);
 
-  const {displayPathForAsset, displayed} =
-    view === 'flat'
-      ? buildFlatProps(filtered, prefixPath)
-      : buildNamespaceProps(filtered, prefixPath);
+  const {displayPathForAsset, displayed} = useMemo(
+    () =>
+      view === 'flat'
+        ? buildFlatProps(filtered as AssetTableFragment[], prefixPath)
+        : buildNamespaceProps(filtered as AssetTableFragment[], prefixPath),
+    [filtered, prefixPath, view],
+  );
 
-  const refreshState = useRefreshAtInterval<any>({
+  const refreshState = useRefreshAtInterval({
     refresh: query,
     intervalMs: FIFTEEN_SECONDS,
     leading: true,
   });
-
-  const loaded = !!assets;
-  useEffect(() => {
-    if (loaded) {
-      trace?.endTrace();
-    }
-  }, [loaded, trace]);
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {
@@ -174,6 +258,7 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
+      isLoading={filteredAssetsLoading}
       isFiltered={isFiltered}
       actionBarComponents={
         <>
@@ -195,33 +280,26 @@ export const AssetsCatalogTable = ({
         </>
       }
       belowActionBarComponents={
-        activeFiltersJsx.length ? (
-          <Box
-            border="top-and-bottom"
-            padding={{vertical: 12, left: 24, right: 12}}
-            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-          >
-            {activeFiltersJsx}
-          </Box>
-        ) : null
+        <AssetCatalogTableBottomActionBar activeFiltersJsx={activeFiltersJsx} />
       }
       refreshState={refreshState}
-      prefixPath={prefixPath || []}
+      prefixPath={prefixPath || emptyArray}
       searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
-      requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY, fetchPolicy: 'no-cache'}]}
+      kindFilter={kindFilter}
     />
   );
 };
 
 export const ASSET_CATALOG_TABLE_QUERY = gql`
-  query AssetCatalogTableQuery {
-    assetsOrError {
+  query AssetCatalogTableQuery($cursor: String, $limit: Int!) {
+    assetsOrError(cursor: $cursor, limit: $limit) {
       ... on AssetConnection {
         nodes {
           id
           ...AssetTableFragment
         }
+        cursor
       }
       ...PythonErrorFragment
     }
@@ -265,35 +343,19 @@ function buildFlatProps(assets: Asset[], _: string[]) {
 }
 
 function buildNamespaceProps(assets: Asset[], prefixPath: string[]) {
-  // Return all assets from the next PAGE_SIZE namespaces - the AssetTable component will later
+  // Return all assets matching prefixPath - the AssetTable component will later
   // group them by namespace
 
   const namespaceForAsset = (asset: Asset) => {
     return asset.key.path.slice(prefixPath.length, prefixPath.length + 1);
   };
 
-  // Only consider assets that start with the prefix path
   const assetsWithPathPrefix = assets.filter((asset) =>
-    asset.key.path.join(',').startsWith(prefixPath.join(',')),
+    prefixPath.every((part, index) => part === asset.key.path[index]),
   );
-
-  const namespaces = Array.from(
-    new Set(assetsWithPathPrefix.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
-  )
-    .map((x) => JSON.parse(x))
-    .sort();
 
   return {
     displayPathForAsset: namespaceForAsset,
-    displayed: filterAssetsByNamespace(
-      assetsWithPathPrefix,
-      namespaces.map((ns) => [...prefixPath, ...ns]),
-    ),
+    displayed: assetsWithPathPrefix,
   };
 }
-
-const filterAssetsByNamespace = (assets: Asset[], paths: string[][]) => {
-  return assets.filter((asset) =>
-    paths.some((path) => path.every((part, i) => part === asset.key.path[i])),
-  );
-};

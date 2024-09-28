@@ -4,12 +4,12 @@ from dagster_snowflake_pandas import (
     SnowflakePandasIOManager,
     snowflake_pandas_io_manager,
 )
-from development_to_production.assets import comments, items, stories
+from development_to_production.assets.hacker_news_assets import comments, items, stories
 
 from dagster import Definitions, EnvVar
 
 # start_new
-# __init__.py
+# definitions.py
 
 resources = {
     "local": {
@@ -42,7 +42,7 @@ defs = Definitions(
 
 
 # start_old
-# __init__.py
+# definitions.py
 
 resources = {
     "local": {

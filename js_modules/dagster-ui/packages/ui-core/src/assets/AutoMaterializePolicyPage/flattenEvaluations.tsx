@@ -1,6 +1,6 @@
 import {ConditionType} from './PolicyEvaluationCondition';
 import {
-  AssetConditionEvaluationRecordFragment,
+  NewEvaluationNodeFragment,
   PartitionedAssetConditionEvaluationNodeFragment,
   SpecificPartitionAssetConditionEvaluationNodeFragment,
   UnpartitionedAssetConditionEvaluationNodeFragment,
@@ -14,26 +14,29 @@ export type FlattenedConditionEvaluation<T> = {
   type: ConditionType;
 };
 
-type Evaluation =
+export type Evaluation =
   | PartitionedAssetConditionEvaluationNodeFragment
   | UnpartitionedAssetConditionEvaluationNodeFragment
-  | SpecificPartitionAssetConditionEvaluationNodeFragment;
+  | SpecificPartitionAssetConditionEvaluationNodeFragment
+  | NewEvaluationNodeFragment;
 
 type FlattenedEvaluation =
   | FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>
   | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>
-  | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>;
+  | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>
+  | FlattenedConditionEvaluation<NewEvaluationNodeFragment>;
 
-export const flattenEvaluations = (
-  evaluationRecord: Pick<AssetConditionEvaluationRecordFragment, 'evaluation'>,
-  collapsedRecords: Set<string>,
-) => {
+type Config = {
+  evaluationNodes: Evaluation[];
+  rootUniqueId: string;
+  expandedRecords: Set<string>;
+};
+
+export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecords}: Config) => {
   const all: FlattenedEvaluation[] = [];
   let counter = 0;
 
-  const recordsById = Object.fromEntries(
-    evaluationRecord.evaluation.evaluationNodes.map((node) => [node.uniqueId, node]),
-  );
+  const recordsById = Object.fromEntries(evaluationNodes.map((node) => [node.uniqueId, node]));
 
   const append = (evaluation: Evaluation, parentId: number | null, depth: number) => {
     const id = counter + 1;
@@ -50,7 +53,7 @@ export const flattenEvaluations = (
     } as FlattenedEvaluation);
     counter = id;
 
-    if (evaluation.childUniqueIds && !collapsedRecords.has(evaluation.uniqueId)) {
+    if (evaluation.childUniqueIds && expandedRecords.has(evaluation.uniqueId)) {
       const parentCounter = counter;
       evaluation.childUniqueIds.forEach((childId) => {
         const child = recordsById[childId]!;
@@ -59,7 +62,7 @@ export const flattenEvaluations = (
     }
   };
 
-  append(recordsById[evaluationRecord.evaluation.rootUniqueId]!, null, 0);
+  append(recordsById[rootUniqueId]!, null, 0);
 
   return all;
 };

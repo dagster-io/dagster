@@ -397,7 +397,6 @@ def test_resources_notebook():
 @pytest.mark.skip
 @pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
-    result = None
     with safe_tempfile_path() as path:
         with exec_for_test(
             "resource_with_exception_job",

@@ -22,19 +22,29 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           groupName: string;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
           opVersion: string | null;
           jobNames: Array<string>;
-          isSource: boolean;
+          isMaterializable: boolean;
           isExecutable: boolean;
           hasMaterializePermission: boolean;
           changedReasons: Array<Types.ChangeReason>;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
-          partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+          kinds: Array<string>;
+          partitionDefinition: {
+            __typename: 'PartitionDefinition';
+            description: string;
+            dimensionTypes: Array<{
+              __typename: 'DimensionDefinitionType';
+              type: Types.PartitionDefinitionType;
+              dynamicPartitionsDefinitionName: string | null;
+            }>;
+          } | null;
           partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
           repository: {
             __typename: 'Repository';
@@ -59,7 +69,6 @@ export type AssetViewDefinitionQuery = {
             | {
                 __typename: 'Sensor';
                 id: string;
-                jobOriginId: string;
                 name: string;
                 sensorType: Types.SensorType;
                 sensorState: {
@@ -87,6 +96,11 @@ export type AssetViewDefinitionQuery = {
               description: string;
               decisionType: Types.AutoMaterializeDecisionType;
             }>;
+          } | null;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
           } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
@@ -16294,19 +16308,29 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
-  isSource: boolean;
+  isMaterializable: boolean;
   isExecutable: boolean;
   hasMaterializePermission: boolean;
   changedReasons: Array<Types.ChangeReason>;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  kinds: Array<string>;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
   partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
   repository: {
     __typename: 'Repository';
@@ -16331,7 +16355,6 @@ export type AssetViewDefinitionNodeFragment = {
     | {
         __typename: 'Sensor';
         id: string;
-        jobOriginId: string;
         name: string;
         sensorType: Types.SensorType;
         sensorState: {
@@ -16358,6 +16381,11 @@ export type AssetViewDefinitionNodeFragment = {
       description: string;
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
@@ -32419,3 +32447,5 @@ export type AssetViewDefinitionNodeFragment = {
       }
     | null;
 };
+
+export const AssetViewDefinitionQueryVersion = '932aa7a5c3d285d2a938c89f24eb6cab960123277a2abaab3027d80f944d0ddd';

@@ -3,7 +3,7 @@ from typing import Union
 import pytest
 from dagster import (
     AssetKey,
-    AssetsDefinition,
+    AssetSpec,
     DagsterInvalidDefinitionError,
     IOManager,
     IOManagerDefinition,
@@ -13,12 +13,9 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
 
-def make_io_manager(
-    asset: Union[AssetsDefinition, SourceAsset], input_value=5, expected_metadata={}
-):
+def make_io_manager(asset: Union[SourceAsset, AssetSpec], input_value=5, expected_metadata={}):
     class MyIOManager(IOManager):
         def handle_output(self, context, obj): ...
 
@@ -49,7 +46,7 @@ def test_source_asset_input_value():
 
 
 def test_external_asset_input_value():
-    asset1 = create_external_asset_from_source_asset(SourceAsset("asset1", metadata={"foo": "bar"}))
+    asset1 = AssetSpec("asset1", metadata={"foo": "bar"})
 
     @op
     def op1(input1):

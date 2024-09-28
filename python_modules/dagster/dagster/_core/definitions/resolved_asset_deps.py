@@ -3,12 +3,11 @@ from collections import defaultdict
 from typing import AbstractSet, Dict, Iterable, List, Mapping, Sequence, Tuple, cast
 
 from dagster import _check as check
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import experimental_warning
-
-from .assets import AssetsDefinition
-from .source_asset import SourceAsset
 
 
 class ResolvedAssetDependencies:
@@ -27,10 +26,9 @@ class ResolvedAssetDependencies:
         self, assets_def: AssetsDefinition, asset_key: AssetKey
     ) -> AbstractSet[AssetKey]:
         resolved_keys_by_unresolved_key = self._deps_by_assets_def_id.get(id(assets_def), {})
-        unresolved_upstream_keys = assets_def.asset_deps[asset_key]
         return {
-            resolved_keys_by_unresolved_key.get(unresolved_key, unresolved_key)
-            for unresolved_key in unresolved_upstream_keys
+            resolved_keys_by_unresolved_key.get(unresolved_dep.asset_key, unresolved_dep.asset_key)
+            for unresolved_dep in assets_def.specs_by_key[asset_key].deps
         }
 
     def get_resolved_asset_key_for_input(

@@ -26,6 +26,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
 )
 from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
@@ -190,10 +191,19 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        upstream_subset = upstream_partitions_def.subset_with_all_partitions(
-            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        if dynamic_partitions_store is not None and current_time is not None:
+            partitions_subset = AllPartitionsSubset(
+                partitions_def=upstream_partitions_def,
+                dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
+            )
+        else:
+            partitions_subset = upstream_partitions_def.subset_with_all_partitions(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+        return UpstreamPartitionsResult(
+            partitions_subset=partitions_subset, required_but_nonexistent_partition_keys=[]
         )
-        return UpstreamPartitionsResult(upstream_subset, [])
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -516,7 +526,7 @@ class BaseMultiPartitionMapping(ABC):
                         }
                     )
                     if len(b_key_values) > 1
-                    else b_key_values[0]
+                    else b_key_values[0]  # type: ignore
                 )
 
         mapped_subset = b_partitions_def.empty_subset().with_partition_keys(b_partition_keys)
@@ -1109,7 +1119,7 @@ def infer_partition_mapping(
     downstream_partitions_def: Optional[PartitionsDefinition],
     upstream_partitions_def: Optional[PartitionsDefinition],
 ) -> PartitionMapping:
-    from .time_window_partition_mapping import TimeWindowPartitionMapping
+    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     if partition_mapping is not None:
         return partition_mapping

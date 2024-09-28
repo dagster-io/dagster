@@ -26,6 +26,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._record import record
 from dagster._utils import check
 
 if TYPE_CHECKING:
@@ -78,16 +79,8 @@ class OpSelectionData(
         )
 
 
-class AssetSelectionData(
-    NamedTuple(
-        "_AssetSelectionData",
-        [
-            ("asset_selection", AbstractSet[AssetKey]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
-            ("parent_job_def", "JobDefinition"),
-        ],
-    )
-):
+@record
+class AssetSelectionData:
     """The data about asset selection.
 
     Attributes:
@@ -96,20 +89,9 @@ class AssetSelectionData(
             pipeline snapshot lineage.
     """
 
-    def __new__(
-        cls,
-        asset_selection: Optional[AbstractSet[AssetKey]],
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
-        parent_job_def: "JobDefinition",
-    ):
-        from dagster._core.definitions.job_definition import JobDefinition
-
-        return super(AssetSelectionData, cls).__new__(
-            cls,
-            asset_selection=check.opt_set_param(asset_selection, "asset_selection", AssetKey),
-            asset_check_selection=asset_check_selection,
-            parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
-        )
+    asset_selection: AbstractSet[AssetKey]
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]]
+    parent_job_def: "JobDefinition"
 
 
 def generate_asset_dep_graph(
@@ -122,9 +104,9 @@ def generate_asset_dep_graph(
             upstream[asset_key] = set()
             downstream[asset_key] = downstream.get(asset_key, set())
             # for each asset upstream of this one, set that as upstream, and this downstream of it
-            for upstream_key in assets_def.asset_deps[asset_key]:
-                upstream[asset_key].add(upstream_key)
-                downstream[upstream_key] = downstream.get(upstream_key, set()) | {asset_key}
+            for dep in assets_def.specs_by_key[asset_key].deps:
+                upstream[asset_key].add(dep.asset_key)
+                downstream[dep.asset_key] = downstream.get(dep.asset_key, set()) | {asset_key}
     return {"upstream": upstream, "downstream": downstream}
 
 

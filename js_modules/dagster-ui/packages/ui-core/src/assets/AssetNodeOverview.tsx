@@ -17,14 +17,17 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
+import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
+import {useCachedAssets} from './AssetsCatalogTable';
+import {EvaluationUserLabel} from './AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {LargeCollapsibleSection} from './LargeCollapsibleSection';
 import {MaterializationTag} from './MaterializationTag';
@@ -38,12 +41,14 @@ import {buildConsolidatedColumnSchema} from './buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPathToString';
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useLatestPartitionEvents} from './useLatestPartitionEvents';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useCopyToClipboard} from '../app/browser';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
   LiveDataForNode,
   displayNameForAssetKey,
@@ -55,13 +60,9 @@ import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {
-  AssetComputeKindTag,
-  AssetStorageKindTag,
-  isCanonicalStorageKindTag,
-} from '../graph/KindTags';
+import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../graph/KindTags';
 import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
 import {
   TableSchema,
@@ -80,51 +81,117 @@ import {buildTagString} from '../ui/tagAsString';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) => {
+  const [shown, setShown] = useStateWithStorage('show-asset-definition-system-tags', Boolean);
+
+  if (!shown) {
+    return (
+      <Caption>
+        <ButtonLink onClick={() => setShown(true)}>
+          <Box flex={{alignItems: 'center'}}>
+            <span>Show system tags ({tags.length || 0})</span>
+            <Icon name="arrow_drop_down" style={{transform: 'rotate(0deg)'}} />
+          </Box>
+        </ButtonLink>
+      </Caption>
+    );
+  } else {
+    return (
+      <Box flex={{direction: 'column', gap: 8}}>
+        <Box>
+          {tags.map((tag, idx) => (
+            <Tag key={idx}>{buildTagString(tag)}</Tag>
+          ))}
+        </Box>
+        <Caption>
+          <ButtonLink onClick={() => setShown(false)}>
+            <Box flex={{alignItems: 'center'}}>
+              <span>Hide system tags</span>
+              <Icon name="arrow_drop_down" style={{transform: 'rotate(180deg)'}} />
+            </Box>
+          </ButtonLink>
+        </Caption>
+      </Box>
+    );
+  }
+};
+
 export const AssetNodeOverview = ({
+  assetKey,
   assetNode,
   upstream,
   downstream,
   liveData,
   dependsOnSelf,
 }: {
-  assetNode: AssetNodeDefinitionFragment;
+  assetKey: AssetKey;
+  assetNode: AssetNodeDefinitionFragment | undefined | null;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
 }) => {
-  const repoAddress = buildRepoAddress(
-    assetNode.repository.name,
-    assetNode.repository.location.name,
-  );
+  const repoAddress = assetNode
+    ? buildRepoAddress(assetNode.repository.name, assetNode.repository.location.name)
+    : null;
   const location = useRepositoryLocationForAddress(repoAddress);
 
   const {assetType, assetMetadata} = metadataForAssetNode(assetNode);
   const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
-  const configType = assetNode.configField?.configType;
+  const configType = assetNode?.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
-  const visibleJobNames = assetNode.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName));
+  const visibleJobNames =
+    assetNode?.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName)) || [];
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
 
+  const [cachedAsset, setCachedAsset] = useState<AssetTableFragment | undefined>();
+  useCachedAssets({
+    onAssetsLoaded: useCallback(
+      (data) => {
+        for (const asset of data) {
+          if (JSON.stringify(asset.key.path) === JSON.stringify(assetKey.path)) {
+            setCachedAsset(asset);
+            return;
+          }
+        }
+      },
+      [assetKey.path],
+    ),
+  });
+
   const {materialization, observation, loading} = useLatestPartitionEvents(
-    assetNode,
+    assetKey,
     assetNodeLoadTimestamp,
     liveData,
   );
-  const {UserDisplay} = useLaunchPadHooks();
 
   const {
     materializations,
     observations,
     loading: materializationsLoading,
   } = useRecentAssetEvents(
-    assetNode.isPartitioned ? undefined : assetNode.assetKey,
+    (!cachedAsset && !assetNode) ||
+      cachedAsset?.definition?.partitionDefinition ||
+      assetNode?.isPartitioned
+      ? undefined
+      : assetNode?.assetKey,
     {},
     {assetHasDefinedPartitions: false},
   );
 
-  if (loading) {
+  // Start loading neighboring assets data immediately to avoid waterfall.
+  useAssetsLiveData(
+    useMemo(
+      () => [
+        ...(downstream || []).map((node) => node.assetKey),
+        ...(upstream || []).map((node) => node.assetKey),
+      ],
+      [downstream, upstream],
+    ),
+  );
+
+  if (loading || !assetNode) {
     return <AssetNodeOverviewLoading />;
   }
 
@@ -232,6 +299,10 @@ export const AssetNodeOverview = ({
 
   const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+
+  const nonSystemTags = filteredTags?.filter((tag) => !isSystemTag(tag));
+  const systemTags = filteredTags?.filter(isSystemTag);
+
   const relationIdentifierMetadata = assetNode.metadataEntries?.find(
     isCanonicalRelationIdentifierEntry,
   );
@@ -245,7 +316,7 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Group">
         <Tag icon="asset_group">
-          <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${assetNode.groupName}`)}>
+          <Link to={workspacePathFromAddress(repoAddress!, `/asset-groups/${assetNode.groupName}`)}>
             {assetNode.groupName}
           </Link>
         </Tag>
@@ -255,9 +326,9 @@ export const AssetNodeOverview = ({
         <Box flex={{direction: 'column'}}>
           <AssetDefinedInMultipleReposNotice
             assetKey={assetNode.assetKey}
-            loadedFromRepo={repoAddress}
+            loadedFromRepo={repoAddress!}
           />
-          <RepositoryLink repoAddress={repoAddress} />
+          <RepositoryLink repoAddress={repoAddress!} />
           {location && (
             <Caption color={Colors.textLighter()}>
               Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
@@ -282,13 +353,25 @@ export const AssetNodeOverview = ({
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
-          <AssetComputeKindTag
+          <AssetKind
             style={{position: 'relative'}}
-            definition={assetNode}
+            kind={assetNode.computeKind}
             reduceColor
-            linkToFilter
+            linkToFilteredAssetsTable
           />
         )}
+      </AttributeAndValue>
+      <AttributeAndValue label="Kinds">
+        {(assetNode.kinds.length > 1 || !assetNode.computeKind) &&
+          assetNode.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              style={{position: 'relative'}}
+              kind={kind}
+              reduceColor
+              linkToFilteredAssetsTable
+            />
+          ))}
       </AttributeAndValue>
       <AttributeAndValue label="Storage">
         {(relationIdentifierMetadata || uriMetadata || storageKindTag) && (
@@ -318,20 +401,27 @@ export const AssetNodeOverview = ({
               </Box>
             )}
             {storageKindTag && (
-              <AssetStorageKindTag
+              <AssetKind
                 style={{position: 'relative'}}
-                storageKind={storageKindTag.value}
+                kind={storageKindTag.value}
                 reduceColor
-                linkToFilter
+                linkToFilteredAssetsTable
               />
             )}
           </Box>
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Tags">
-        {filteredTags &&
-          filteredTags.length > 0 &&
-          filteredTags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
+        {filteredTags && filteredTags.length > 0 && (
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box>
+              {nonSystemTags.map((tag, idx) => (
+                <Tag key={idx}>{buildTagString(tag)}</Tag>
+              ))}
+            </Box>
+            {systemTags.length > 0 && <SystemTagsToggle tags={systemTags} />}
+          </Box>
+        )}
       </AttributeAndValue>
       <AttributeAndValue label="Source code">
         {codeSource &&
@@ -353,20 +443,24 @@ export const AssetNodeOverview = ({
             isJob
             showIcon
             pipelineName={jobName}
-            pipelineHrefContext={repoAddress}
+            pipelineHrefContext={repoAddress!}
           />
         )),
       },
       {
         label: 'Sensors',
         children: sensors.length > 0 && (
-          <ScheduleOrSensorTag repoAddress={repoAddress} sensors={sensors} showSwitch={false} />
+          <ScheduleOrSensorTag repoAddress={repoAddress!} sensors={sensors} showSwitch={false} />
         ),
       },
       {
         label: 'Schedules',
         children: schedules.length > 0 && (
-          <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
+          <ScheduleOrSensorTag
+            repoAddress={repoAddress!}
+            schedules={schedules}
+            showSwitch={false}
+          />
         ),
       },
       {
@@ -388,6 +482,15 @@ export const AssetNodeOverview = ({
           learnMoreLink="https://docs.dagster.io/concepts/automation#automation"
         />
       );
+    } else {
+      if (assetNode.automationCondition && assetNode.automationCondition.label) {
+        return (
+          <EvaluationUserLabel
+            userLabel={assetNode.automationCondition.label}
+            expandedLabel={assetNode.automationCondition.expandedLabel}
+          />
+        );
+      }
     }
 
     return (
@@ -405,7 +508,7 @@ export const AssetNodeOverview = ({
         <Tag>
           <UnderlyingOpsOrGraph
             assetNode={assetNode}
-            repoAddress={repoAddress}
+            repoAddress={repoAddress!}
             hideIfRedundant={false}
           />
         </Tag>
@@ -546,9 +649,11 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection header="Automation details" icon="auto_materialize_policy">
             {renderAutomationDetailsSection()}
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
-            {renderComputeDetailsSection()}
-          </LargeCollapsibleSection>
+          {assetNode.isExecutable ? (
+            <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
+              {renderComputeDetailsSection()}
+            </LargeCollapsibleSection>
+          ) : null}
         </>
       }
     />

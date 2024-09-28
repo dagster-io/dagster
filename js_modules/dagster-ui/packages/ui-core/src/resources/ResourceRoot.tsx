@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -28,13 +27,13 @@ import {
   ResourceRootQuery,
   ResourceRootQueryVariables,
 } from './types/ResourceRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetLink} from '../assets/AssetLink';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 import {Markdown} from '../ui/Markdown';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -103,7 +102,6 @@ export const ResourceRoot = (props: Props) => {
       resourceSelector,
     },
   });
-  useBlockTraceOnQueryResult(queryResult, 'ResourceRootQuery');
 
   const displayName =
     (queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails' &&
@@ -388,15 +386,18 @@ const ResourceUses = (props: {
               </tr>
             </thead>
             <tbody>
-              {parentResources.map((resource) => {
+              {parentResources.map((ref) => {
                 return (
-                  resource.resource && (
-                    <tr key={resource.name}>
+                  ref.resource && (
+                    <tr key={ref.resource.name}>
                       <td>
                         <ResourceEntry
-                          url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
-                          name={resourceDisplayName(resource.resource) || ''}
-                          description={resource.resource.description || undefined}
+                          url={workspacePathFromAddress(
+                            repoAddress,
+                            `/resources/${ref.resource.name}`,
+                          )}
+                          name={resourceDisplayName(ref.resource) || ''}
+                          description={ref.resource.description || undefined}
                         />
                       </td>
                     </tr>
@@ -447,7 +448,7 @@ const ResourceUses = (props: {
             <tbody>
               {resourceDetails.jobsOpsUsing.map((jobOps) => {
                 return (
-                  <tr key={jobOps.job.name}>
+                  <tr key={jobOps.jobName}>
                     <td>
                       <Box
                         flex={{
@@ -460,10 +461,8 @@ const ResourceUses = (props: {
                       >
                         <Icon name="job" color={Colors.accentGray()} />
 
-                        <Link
-                          to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.job.name}`)}
-                        >
-                          <MiddleTruncate text={jobOps.job.name} />
+                        <Link to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.jobName}`)}>
+                          <MiddleTruncate text={jobOps.jobName} />
                         </Link>
                       </Box>
                     </td>
@@ -477,7 +476,7 @@ const ResourceUses = (props: {
                         }}
                         style={{maxWidth: '100%'}}
                       >
-                        {jobOps.opsUsing.map((op) => (
+                        {jobOps.opHandleIDs.map((opHandleID) => (
                           <Box
                             flex={{
                               direction: 'row',
@@ -486,17 +485,17 @@ const ResourceUses = (props: {
                               gap: 8,
                             }}
                             style={{maxWidth: '100%'}}
-                            key={op.handleID}
+                            key={opHandleID}
                           >
                             <Icon name="op" color={Colors.accentGray()} />
 
                             <Link
                               to={workspacePathFromAddress(
                                 repoAddress,
-                                `/jobs/${jobOps.job.name}/${op.handleID.split('.').join('/')}`,
+                                `/jobs/${jobOps.jobName}/${opHandleID.split('.').join('/')}`,
                               )}
                             >
-                              <MiddleTruncate text={op.solid.name} />
+                              <MiddleTruncate text={opHandleID} />
                             </Link>
                           </Box>
                         ))}
@@ -631,16 +630,8 @@ const RESOURCE_DETAILS_FRAGMENT = gql`
     schedulesUsing
     sensorsUsing
     jobsOpsUsing {
-      job {
-        id
-        name
-      }
-      opsUsing {
-        handleID
-        solid {
-          name
-        }
-      }
+      jobName
+      opHandleIDs
     }
     resourceType
   }

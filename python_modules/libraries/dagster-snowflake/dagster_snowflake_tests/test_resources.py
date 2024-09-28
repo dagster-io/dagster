@@ -5,6 +5,7 @@ from typing import Iterator
 from unittest import mock
 
 import pytest
+import sqlalchemy  # noqa: F401
 from dagster import (
     DagsterInstance,
     DagsterResourceFunctionError,
@@ -22,8 +23,9 @@ from dagster._core.definitions.observe import observe
 from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
+from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 
-from .utils import create_mock_connector
+from dagster_snowflake_tests.utils import create_mock_connector
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -85,6 +87,7 @@ def test_snowflake_resource(snowflake_connect):
         database="TESTDB",
         schema="TESTSCHEMA",
         warehouse="TINY_WAREHOUSE",
+        application=SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
     )
 
 
@@ -118,6 +121,7 @@ def test_pydantic_snowflake_resource(snowflake_connect):
         database="TESTDB",
         schema="TESTSCHEMA",
         warehouse="TINY_WAREHOUSE",
+        application=SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
     )
 
 
@@ -162,6 +166,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
             database="TESTDB",
             schema="TESTSCHEMA",
             warehouse="TINY_WAREHOUSE",
+            application=SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
         )
 
 
@@ -204,6 +209,7 @@ def test_pydantic_snowflake_resource_from_envvars(snowflake_connect):
             database="TESTDB",
             schema="TESTSCHEMA",
             warehouse="TINY_WAREHOUSE",
+            application=SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
         )
 
 
@@ -297,7 +303,6 @@ def test_fetch_last_updated_timestamps_empty():
 @pytest.mark.parametrize("db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"])
 def test_fetch_last_updated_timestamps(db_str: str):
     start_time = get_current_timestamp()
-    table_name = "the_table"
     with temporary_snowflake_table() as table_name:
 
         @observable_source_asset
@@ -340,3 +345,41 @@ def test_fetch_last_updated_timestamps(db_str: str):
         assert isinstance(freshness_val, FloatMetadataValue)
         assert freshness_val.value
         assert freshness_val.value > start_time
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.importorskip(
+    "snowflake.sqlalchemy", reason="sqlalchemy is not available in the test environment"
+)
+@pytest.mark.integration
+def test_resources_snowflake_sqlalchemy_connection():
+    with SnowflakeResource(
+        connector="sqlalchemy",
+        account=os.getenv("SNOWFLAKE_ACCOUNT"),
+        user=os.environ["SNOWFLAKE_USER"],
+        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        database="TESTDB",
+        schema="TESTSCHEMA",
+    ).get_connection() as conn:
+        # Snowflake table names are expected to be capitalized.
+        table_name = f"test_table_{str(uuid.uuid4()).replace('-', '_')}".lower()
+        try:
+            start_time = get_current_timestamp()
+            conn.cursor().execute(f"create table {table_name} (foo string)")
+            # Insert one row
+            conn.cursor().execute(f"insert into {table_name} values ('bar')")
+
+            freshness_for_table = fetch_last_updated_timestamps(
+                snowflake_connection=conn,
+                database="TESTDB",
+                tables=[
+                    table_name
+                ],  # Snowflake table names are expected uppercase. Test that lowercase also works.
+                schema="TESTSCHEMA",
+            )[table_name].timestamp()
+
+            end_time = get_current_timestamp()
+
+            assert end_time > freshness_for_table > start_time
+        finally:
+            conn.cursor().execute(f"drop table if exists {table_name}")
