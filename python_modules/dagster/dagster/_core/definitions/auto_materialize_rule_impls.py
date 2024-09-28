@@ -296,6 +296,7 @@ class AutoMaterializeAssetPartitionsFilter(
             run_ids_to_fetch = list(asset_partitions_by_latest_run_id.keys())
             for i in range(0, len(run_ids_to_fetch), run_step):
                 run_ids = run_ids_to_fetch[i : i + run_step]
+                run_ids = [run_id for run_id in run_ids if run_id]
                 runs = context.legacy_context.instance_queryer.instance.get_runs(
                     filters=RunsFilter(run_ids=run_ids)
                 )
