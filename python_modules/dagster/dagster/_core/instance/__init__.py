@@ -1060,6 +1060,8 @@ class DagsterInstance(DynamicPartitionsStore):
             Optional[RunRecord]: The run record corresponding to the given id. If no run matching
                 the id is found, return `None`.
         """
+        if not run_id:
+            return None
         records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
         if not records:
             return None
