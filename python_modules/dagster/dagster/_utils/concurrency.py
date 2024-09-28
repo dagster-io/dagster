@@ -115,7 +115,7 @@ class ClaimedSlotInfo(
         ],
     )
 ):
-    def __new__(cls, run_id: int, step_key: str):
+    def __new__(cls, run_id: str, step_key: str):
         return super(ClaimedSlotInfo, cls).__new__(
             cls,
             check.str_param(run_id, "run_id"),
