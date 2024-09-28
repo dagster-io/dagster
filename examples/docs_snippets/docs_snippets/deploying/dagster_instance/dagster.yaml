@@ -18,7 +18,7 @@ storage:
 # start_marker_storage_postgres
 
 # Postgres storage can be set using either credentials or a connection string.  This requires that
-# the `dagster-postgres` library be installed.
+# the `dagster-postgres` library be installed and a database configured with UTC timezone.
 
 # this config manually sets the Postgres credentials
 storage:
