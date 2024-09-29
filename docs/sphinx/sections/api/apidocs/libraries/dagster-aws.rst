@@ -49,6 +49,9 @@ ECS
 .. autoconfigurable:: dagster_aws.ecs.EcsRunLauncher
   :annotation: RunLauncher
 
+.. autoconfigurable:: dagster_aws.ecs.ecs_executor
+  :annotation: ExecutorDefinition
+
 
 Redshift
 --------
