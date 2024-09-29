@@ -476,7 +476,7 @@ class IWorkspaceProcessContext(ABC):
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         pass
 
 
@@ -799,10 +799,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # is referencing it
             self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         self._update_workspace({})  # update to empty to close all current locations
         self._stack.close()
 
