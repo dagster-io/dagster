@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, cast
+from typing import List, Optional, cast
 
 import dagster._check as check
 import docker
@@ -222,7 +222,7 @@ class DockerStepHandler(StepHandler):
             **container_kwargs,
         )
 
-    def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+    def launch_step(self, step_handler_context: StepHandlerContext) -> None:
         container_context = self._get_docker_container_context(step_handler_context)
 
         client = self._get_client(container_context)
@@ -251,7 +251,7 @@ class DockerStepHandler(StepHandler):
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
-        yield DagsterEvent.step_worker_starting(
+        DagsterEvent.step_worker_starting(
             step_handler_context.get_step_context(step_key),
             message="Launching step in Docker container.",
             metadata={
@@ -294,7 +294,7 @@ class DockerStepHandler(StepHandler):
             reason=f"Container status is {container.status}. Return code is {ret_code}."
         )
 
-    def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+    def terminate_step(self, step_handler_context: StepHandlerContext) -> None:
         container_context = self._get_docker_container_context(step_handler_context)
 
         step_keys_to_execute = check.not_none(
@@ -307,7 +307,7 @@ class DockerStepHandler(StepHandler):
 
         container_name = self._get_container_name(step_handler_context)
 
-        yield DagsterEvent.engine_event(
+        DagsterEvent.engine_event(
             step_handler_context.get_step_context(step_key),
             message=f"Stopping Docker container {container_name} for step.",
             event_specific_data=EngineEventData(),

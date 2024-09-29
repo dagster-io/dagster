@@ -47,7 +47,13 @@ from dagster_aws.ecs.tasks import (
     get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
 )
-from dagster_aws.ecs.utils import get_task_definition_family, get_task_logs, task_definitions_match
+from dagster_aws.ecs.utils import (
+    RetryableEcsException,
+    get_task_definition_family,
+    get_task_logs,
+    run_ecs_task,
+    task_definitions_match,
+)
 from dagster_aws.secretsmanager import get_secrets_from_arns
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
@@ -71,9 +77,6 @@ TAGS_TO_EXCLUDE_FROM_PROPAGATION = {"dagster/op_selection", "dagster/solid_selec
 
 DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
 DEFAULT_RUN_TASK_RETRIES = 5
-
-
-class RetryableEcsException(Exception): ...
 
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
@@ -433,34 +436,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return job_origin.repository_origin.container_image
 
     def _run_task(self, **run_task_kwargs):
-        response = self.ecs.run_task(**run_task_kwargs)
-
-        tasks = response["tasks"]
-
-        if not tasks:
-            failures = response["failures"]
-            failure_messages = []
-            for failure in failures:
-                arn = failure.get("arn")
-                reason = failure.get("reason")
-                detail = failure.get("detail")
-
-                failure_message = (
-                    "Task"
-                    + (f" {arn}" if arn else "")
-                    + " failed."
-                    + (f" Failure reason: {reason}" if reason else "")
-                    + (f" Failure details: {detail}" if detail else "")
-                )
-                failure_messages.append(failure_message)
-
-            failure_message = "\n".join(failure_messages) if failure_messages else "Task failed."
-
-            if "Capacity is unavailable at this time" in failure_message:
-                raise RetryableEcsException(failure_message)
-
-            raise Exception(failure_message)
-        return tasks[0]
+        return run_ecs_task(self.ecs, run_task_kwargs)
 
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
@@ -500,7 +476,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         container_overrides: List[Dict[str, Any]] = [
             {
-                "name": self._get_container_name(container_context),
+                "name": self.get_container_name(container_context),
                 "command": command,
                 # containerOverrides expects cpu/memory as integers
                 **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
@@ -645,7 +621,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
         return get_task_definition_family("run", check.not_none(run.remote_job_origin))
 
-    def _get_container_name(self, container_context: EcsContainerContext) -> str:
+    def get_container_name(self, container_context: EcsContainerContext) -> str:
         return container_context.container_name or self.container_name
 
     def _run_task_kwargs(
@@ -676,7 +652,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 task_definition_config = DagsterEcsTaskDefinitionConfig(
                     family,
                     image,
-                    self._get_container_name(container_context),
+                    self.get_container_name(container_context),
                     command=None,
                     log_configuration=(
                         {
@@ -716,7 +692,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     family,
                     self._get_current_task(),
                     image,
-                    self._get_container_name(container_context),
+                    self.get_container_name(container_context),
                     environment=environment,
                     secrets=secrets if secrets else {},
                     include_sidecars=self.include_sidecars,
@@ -734,10 +710,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
                     task_definition_dict,
-                    self._get_container_name(container_context),
+                    self.get_container_name(container_context),
                 )
 
-            container_name = self._get_container_name(container_context)
+            container_name = self.get_container_name(container_context)
 
             backoff(
                 self._reuse_or_register_task_definition,
@@ -893,7 +869,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         logs_client=self.logs,
                         cluster=tags.cluster,
                         task_arn=tags.arn,
-                        container_name=self._get_container_name(container_context),
+                        container_name=self.get_container_name(container_context),
                     )
                 except:
                     logging.exception(f"Error trying to get logs for failed task {tags.arn}")
