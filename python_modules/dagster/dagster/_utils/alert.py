@@ -4,6 +4,7 @@ import ssl
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 from dagster._annotations import deprecated_param
+from dagster._core.definitions.run_request import SkipReason
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -30,7 +31,7 @@ def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
     )
 
 
-def _default_failure_email_subject(context) -> str:
+def _default_failure_email_subject(context: RunFailureSensorContext) -> str:
     return f"Dagster Run Failed: {context.dagster_run.job_name}"
 
 
@@ -245,5 +246,6 @@ def make_email_on_run_failure_sensor(
             )
         else:
             raise DagsterInvalidDefinitionError(f'smtp_type "{smtp_type}" is not supported.')
+        return SkipReason()
 
     return email_on_run_failure
