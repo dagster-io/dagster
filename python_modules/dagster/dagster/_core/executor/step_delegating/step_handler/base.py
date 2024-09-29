@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Mapping, NamedTuple, Optional, Sequence
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.storage.dagster_run import DagsterRun
@@ -83,13 +82,17 @@ class StepHandler(ABC):
         pass
 
     @abstractmethod
-    def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+    def launch_step(self, step_handler_context: StepHandlerContext) -> Optional[str]:
         pass
 
     @abstractmethod
-    def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
+    def check_step_health(
+        self, step_handler_context: StepHandlerContext, step_worker_handle: Optional[str]
+    ) -> CheckStepHealthResult:
         pass
 
     @abstractmethod
-    def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+    def terminate_step(
+        self, step_handler_context: StepHandlerContext, step_worker_handle: Optional[str]
+    ) -> None:
         pass
