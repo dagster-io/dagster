@@ -8,9 +8,7 @@ from dagster._core.remote_representation import (
     external_job_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.remote_representation.external_data import (
-    ExternalTimeWindowPartitionsDefinitionData,
-)
+from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
 from dagster._core.snap.job_snapshot import create_job_snapshot_id
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -60,18 +58,13 @@ def test_external_repository_data(snapshot):
         "foo_job_partition_set"
     )
     assert job_partition_set_data
-    assert isinstance(
-        job_partition_set_data.external_partitions_data, ExternalTimeWindowPartitionsDefinitionData
-    )
+    assert isinstance(job_partition_set_data.partitions, TimeWindowPartitionsSnap)
 
     now = get_current_datetime()
 
-    assert (
-        job_partition_set_data.external_partitions_data.get_partitions_definition().get_partition_keys(
-            now
-        )
-        == my_partitioned_config.partitions_def.get_partition_keys(now)
-    )
+    assert job_partition_set_data.partitions.get_partitions_definition().get_partition_keys(
+        now
+    ) == my_partitioned_config.partitions_def.get_partition_keys(now)
 
     snapshot.assert_match(serialize_pp(external_repo_data))
 

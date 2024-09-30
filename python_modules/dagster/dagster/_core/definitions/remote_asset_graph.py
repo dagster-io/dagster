@@ -103,12 +103,12 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def is_partitioned(self) -> bool:
-        return self.priority_node_snap.partitions_def_data is not None
+        return self.priority_node_snap.partitions is not None
 
     @cached_property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        external_def = self.priority_node_snap.partitions_def_data
-        return external_def.get_partitions_definition() if external_def else None
+        partitions_snap = self.priority_node_snap.partitions
+        return partitions_snap.get_partitions_definition() if partitions_snap else None
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:

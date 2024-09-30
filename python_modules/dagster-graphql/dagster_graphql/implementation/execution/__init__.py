@@ -346,7 +346,7 @@ def wipe_assets(
             whole_assets_to_wipe.append(apr.asset_key)
         else:
             node = graphene_info.context.asset_graph.asset_node_snaps_by_key[apr.asset_key]
-            partitions_def = check.not_none(node.partitions_def_data).get_partitions_definition()
+            partitions_def = check.not_none(node.partitions).get_partitions_definition()
             partition_keys = partitions_def.get_partition_keys_in_range(apr.partition_range)
             try:
                 instance.wipe_asset_partitions(apr.asset_key, partition_keys)

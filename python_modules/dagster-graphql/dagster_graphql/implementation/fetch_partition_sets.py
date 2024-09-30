@@ -6,7 +6,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
-from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
@@ -126,7 +126,7 @@ def get_partition_config(
         repository_handle, job_name, partition_name, graphene_info.context.instance
     )
 
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
@@ -154,7 +154,7 @@ def get_partition_tags(
         selected_asset_keys=selected_asset_keys,
     )
 
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return GraphenePartitionTags(

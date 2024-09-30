@@ -12,7 +12,7 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import CodeLocation, ExternalJob, ExternalPartitionSet
-from dagster._core.remote_representation.external_data import ExternalPartitionSetExecutionParamData
+from dagster._core.remote_representation.external_data import PartitionSetExecutionParamSnap
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
     NOT_FINISHED_STATUSES,
@@ -333,7 +333,7 @@ def submit_backfill_runs(
         partition_data_target,
         instance,
     )
-    assert isinstance(partition_set_execution_data, ExternalPartitionSetExecutionParamData)
+    assert isinstance(partition_set_execution_data, PartitionSetExecutionParamSnap)
 
     # Partition-scoped run config is prohibited at the definitions level for a jobs that materialize
     # ranges, so we can assume that all partition data will have the same run config and tags as the
