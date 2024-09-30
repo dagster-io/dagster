@@ -1,12 +1,13 @@
-from typing import List, TypedDict, Union
+from typing import List, TypedDict
 
-from dagster import AssetsDefinition, AssetSpec
+from dagster._core.definitions.definitions_class import Definitions
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
 from dagster_airlift.core.dag_defs import spec_with_metadata
+from dagster_airlift.core.load_defs import assets_def_of_defs, replace_assets_in_defs
 
 
 class TaskHandleDict(TypedDict):
@@ -15,8 +16,8 @@ class TaskHandleDict(TypedDict):
 
 
 def targeted_by_multiple_tasks(
-    asset: Union[AssetSpec, AssetsDefinition], task_handles: List[TaskHandleDict]
-) -> Union[AssetSpec, AssetsDefinition]:
+    defs: Definitions, task_handles: List[TaskHandleDict]
+) -> Definitions:
     """Given an asset or assets definition, return a new asset or assets definition with metadata
     that indicates that it is targeted by multiple airflow tasks. An example of this would
     be a separate weekly and daily dag that contains a task that targets a single asset.
@@ -42,7 +43,7 @@ def targeted_by_multiple_tasks(
             Definitions(
                 assets=[
                     targeted_by_multiple_tasks(
-                        scheduled_twice,
+                        Definitions([scheduled_twice]),
                         task_handles=[
                             {"dag_id": "weekly_dag", "task_id": "task1"},
                             {"dag_id": "daily_dag", "task_id": "task1"},
@@ -53,9 +54,12 @@ def targeted_by_multiple_tasks(
         ),
     )
     """
-    if isinstance(asset, AssetSpec):
-        return spec_with_metadata(asset, {TASK_MAPPING_METADATA_KEY: task_handles})
-
-    return asset.map_asset_specs(
-        lambda spec: spec_with_metadata(spec, {TASK_MAPPING_METADATA_KEY: task_handles})
+    return replace_assets_in_defs(
+        defs,
+        [
+            assets_def.map_asset_specs(
+                lambda spec: spec_with_metadata(spec, {TASK_MAPPING_METADATA_KEY: task_handles})
+            )
+            for assets_def in assets_def_of_defs(defs)
+        ],
     )

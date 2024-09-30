@@ -24,16 +24,12 @@ def build_mapped_defs() -> Definitions:
                 "print_dag",
                 task_defs("print_task", Definitions(assets=[print_asset])),
             ),
-            Definitions(
-                assets=[
-                    targeted_by_multiple_tasks(
-                        asset_one,
-                        task_handles=[
-                            {"dag_id": "weekly_dag", "task_id": "asset_one_weekly"},
-                            {"dag_id": "daily_dag", "task_id": "asset_one_daily"},
-                        ],
-                    )
-                ]
+            targeted_by_multiple_tasks(
+                Definitions([asset_one]),
+                task_handles=[
+                    {"dag_id": "weekly_dag", "task_id": "asset_one_weekly"},
+                    {"dag_id": "daily_dag", "task_id": "asset_one_daily"},
+                ],
             ),
         ),
     )

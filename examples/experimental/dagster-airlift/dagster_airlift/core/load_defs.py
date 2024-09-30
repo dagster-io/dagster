@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterator, Optional
+from typing import Iterable, Iterator, Optional
 
 from dagster import (
     AssetsDefinition,
@@ -115,30 +115,33 @@ def build_full_automapped_dags_from_airflow_instance(
 def enrich_explicit_defs_with_airflow_metadata(
     explicit_defs: Definitions, airflow_data: AirflowDefinitionsData
 ) -> Definitions:
-    return Definitions(
-        assets=list(_apply_airflow_data_to_specs(explicit_defs, airflow_data)),
-        asset_checks=explicit_defs.asset_checks,
-        sensors=explicit_defs.sensors,
-        schedules=explicit_defs.schedules,
-        jobs=explicit_defs.jobs,
-        executor=explicit_defs.executor,
-        loggers=explicit_defs.loggers,
-        resources=explicit_defs.resources,
+    return replace_assets_in_defs(
+        explicit_defs,
+        (
+            assets_def.map_asset_specs(airflow_data.map_airflow_data_to_spec)
+            for assets_def in assets_def_of_defs(explicit_defs)
+        ),
     )
 
 
-def _apply_airflow_data_to_specs(
-    explicit_defs: Definitions,
-    airflow_data: AirflowDefinitionsData,
-) -> Iterator[AssetsDefinition]:
-    """Apply asset spec transformations to the asset definitions."""
-    for asset in explicit_defs.assets or []:
+def replace_assets_in_defs(defs: Definitions, assets: Iterable[AssetsDefinition]) -> Definitions:
+    return Definitions(
+        assets=list(assets),
+        asset_checks=defs.asset_checks,
+        sensors=defs.sensors,
+        schedules=defs.schedules,
+        jobs=defs.jobs,
+        executor=defs.executor,
+        loggers=defs.loggers,
+        resources=defs.resources,
+    )
+
+
+def assets_def_of_defs(defs: Definitions) -> Iterator[AssetsDefinition]:
+    for asset in defs.assets or []:
         asset = check.inst(  # noqa: PLW2901
             asset,
             (AssetSpec, AssetsDefinition),
-            "Expected orchestrated defs to all be AssetsDefinitions or AssetSpecs.",
+            "Expected passed assets to all be AssetsDefinitions or AssetSpecs.",
         )
-        assets_def = (
-            asset if isinstance(asset, AssetsDefinition) else external_asset_from_spec(asset)
-        )
-        yield assets_def.map_asset_specs(airflow_data.map_airflow_data_to_spec)
+        yield asset if isinstance(asset, AssetsDefinition) else external_asset_from_spec(asset)

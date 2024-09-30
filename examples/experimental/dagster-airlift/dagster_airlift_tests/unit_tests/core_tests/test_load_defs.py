@@ -496,16 +496,12 @@ def test_multiple_tasks_dag_defs() -> None:
                     Definitions(assets=[other_asset]),
                 ),
             ),
-            Definitions(
-                assets=[
-                    targeted_by_multiple_tasks(
-                        scheduled_twice,
-                        task_handles=[
-                            {"dag_id": "weekly_dag", "task_id": "task1"},
-                            {"dag_id": "daily_dag", "task_id": "task1"},
-                        ],
-                    )
-                ]
+            targeted_by_multiple_tasks(
+                Definitions([scheduled_twice]),
+                task_handles=[
+                    {"dag_id": "weekly_dag", "task_id": "task1"},
+                    {"dag_id": "daily_dag", "task_id": "task1"},
+                ],
             ),
         ),
     )
@@ -532,16 +528,12 @@ def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
                     Definitions(assets=[single_targeted_asset]),
                 ),
             ),
-            Definitions(
-                assets=[
-                    targeted_by_multiple_tasks(
-                        double_targeted_asset,
-                        task_handles=[
-                            {"dag_id": "weekly_dag", "task_id": "task1"},
-                            {"dag_id": "daily_dag", "task_id": "task1"},
-                        ],
-                    )
-                ]
+            targeted_by_multiple_tasks(
+                Definitions([double_targeted_asset]),
+                task_handles=[
+                    {"dag_id": "weekly_dag", "task_id": "task1"},
+                    {"dag_id": "daily_dag", "task_id": "task1"},
+                ],
             ),
         ),
     )
@@ -577,16 +569,12 @@ def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
             }
         ),
         defs=Definitions.merge(
-            Definitions(
-                assets=[
-                    targeted_by_multiple_tasks(
-                        double_targeted_asset,
-                        task_handles=[
-                            {"dag_id": "weekly_dag", "task_id": "task1"},
-                            {"dag_id": "daily_dag", "task_id": "task1"},
-                        ],
-                    )
-                ]
+            targeted_by_multiple_tasks(
+                Definitions([double_targeted_asset]),
+                task_handles=[
+                    {"dag_id": "weekly_dag", "task_id": "task1"},
+                    {"dag_id": "daily_dag", "task_id": "task1"},
+                ],
             ),
             dag_defs(
                 "weekly_dag",
@@ -631,16 +619,12 @@ def test_mixed_multiple_task_single_task_mapping_same_task() -> None:
             }
         ),
         defs=Definitions.merge(
-            Definitions(
-                assets=[
-                    targeted_by_multiple_tasks(
-                        double_targeted_asset,
-                        task_handles=[
-                            {"dag_id": "weekly_dag", "task_id": "task1"},
-                            {"dag_id": "daily_dag", "task_id": "task1"},
-                        ],
-                    )
-                ]
+            targeted_by_multiple_tasks(
+                Definitions([double_targeted_asset]),
+                task_handles=[
+                    {"dag_id": "weekly_dag", "task_id": "task1"},
+                    {"dag_id": "daily_dag", "task_id": "task1"},
+                ],
             ),
             dag_defs(
                 "weekly_dag",
