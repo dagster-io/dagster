@@ -49,8 +49,7 @@ def validate_command_options(f):
 @definitions_cli.command(
     name="validate",
     help="""
-    The `dagster definitions validate` command loads and validate your Dagster definitions 
-    using a [Dagster instance](https://docs.dagster.io/deployment/dagster-instance).
+    The `dagster definitions validate` command loads and validate your Dagster definitions using a Dagster instance.
 
     This command indicates which code locations contain errors, and which ones can be successfully loaded. 
     Code locations containing errors are considered invalid, otherwise valid.
