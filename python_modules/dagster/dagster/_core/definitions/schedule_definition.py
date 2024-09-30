@@ -534,9 +534,7 @@ class ScheduleDefinition(IHasInternalInit):
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This is an experimental parameter that will replace `job` and `job_name`.
         metadata (Optional[Mapping[str, Any]]): A set of metadata entries that annotate the
-            schedule. Values will be normalized to typed `MetadataValue` objects. Not currently
-            shown in the UI but available at runtime via
-            `ScheduleEvaluationContext.repository_def.get_schedule_def(<name>).metadata`.
+            schedule. Values will be normalized to typed `MetadataValue` objects.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
