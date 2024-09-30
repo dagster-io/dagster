@@ -194,8 +194,10 @@ a.pyobject {
   h4,
   h5,
   h6 {
-    --ifm-h1-font-size: 2rem;
+    --ifm-h1-font-size: 1.8rem;
+    --ifm-h1-vertical-rhythm-bottom: 0.5;
     --ifm-h2-font-size: 1.5rem;
+    --ifm-heading-vertical-rhythm-bottom: 1;
     --ifm-h3-font-size: 1.3rem;
     --ifm-h4-font-size: 1rem;
     --ifm-h5-font-size: 0.8rem;
@@ -663,14 +665,48 @@ span {
 /* Announcement bar */
 div[class^='announcementBar_'] {
   color: var(--theme-color-text);
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  background-color: var(--theme-color-background-yellow);
+  padding-top: 8px;
+  padding-bottom: 8px;
+  height: auto;
+  background-color: var(--theme-color-background-blue);
+  border-bottom: 1px solid var(--theme-color-keyline);
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+  }
+  a {
+    color: var(--theme-color-accent-blue);
+    font-weight: 500;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 /* Feedback navigation item */
 .feedback-nav-link {
-  color: var(--theme-color-text-yellow);
-  text-decoration: underline;
+  color: var(--theme-color-text-light);
+  display: block;
+  font-weight: 500;
+  padding: 0.5rem .5rem;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid var(--theme-color-border-default);
+  border-radius: 8px;
+  text-decoration: none;
+  &:hover {
+    background-color: var(--theme-color-background-light);
+    color:  var(--theme-color-text-light);
+    border-color: var(--theme-color-border-hover);
+  }
+
 }
 
