@@ -203,6 +203,10 @@ a.pyobject {
     --ifm-h5-font-size: 0.8rem;
   }
 
+  h1 {
+    margin-top: 8px;
+  }
+
 
   // We want this to only apply to inline code
   :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
