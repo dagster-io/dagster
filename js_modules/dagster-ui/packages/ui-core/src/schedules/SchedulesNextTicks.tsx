@@ -433,7 +433,7 @@ const NextTickDialog = ({
                             <MenuLink
                               text="Open in Launchpad..."
                               icon="edit"
-                              target="_blank"
+
                               to={workspacePathFromAddress(
                                 repoAddress,
                                 `/${isJob ? 'jobs' : 'pipelines'}/${

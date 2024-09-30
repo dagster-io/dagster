@@ -1,11 +1,11 @@
 import {Redirect, Switch} from 'react-router-dom';
+import {FeatureFlag} from 'shared/settings/FeatureFlags.cloud';
 
 import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewJobsRoot} from './OverviewJobsRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
-import {FeatureFlag} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/src/settings/FeatureFlags.cloud';
 import {featureEnabled, useFeatureFlags} from '../app/Flags';
 import {Route} from '../app/Route';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
