@@ -1,7 +1,18 @@
 import pickle
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 import pytest
 from dagster._check.functions import CheckError
@@ -9,11 +20,13 @@ from dagster._record import (
     _INJECTED_DEFAULT_VALS_LOCAL_VAR,
     IHaveNew,
     ImportFrom,
+    LegacyNamedTupleMixin,
     build_args_and_assignment_strs,
     check,
     copy,
     record,
     record_custom,
+    replace,
 )
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils import hash_collection
@@ -759,3 +772,55 @@ def test_custom_subclass() -> None:
         @record
         class SubThing(Thing):
             other_val: int
+
+
+def test_replace() -> None:
+    class NTExample(NamedTuple("_NT", [("name", str)])):
+        def __new__(cls, name: str):
+            check.invariant(name != "bad")
+            return super().__new__(
+                cls,
+                name=name,
+            )
+
+    obj = NTExample("good")
+    assert obj._asdict() == {"name": "good"}
+    # namedtuple._replace bypasses NTExample.__new__
+    assert obj._replace(name="bad")
+    assert obj._replace(name="good") == obj
+    assert obj._replace(name="foo").__class__ is obj.__class__
+
+    @record_custom
+    class Legacy(IHaveNew, LegacyNamedTupleMixin):
+        name: str
+
+        def __new__(cls, name: str):
+            check.invariant(name != "bad")
+            return super().__new__(
+                cls,
+                name=name,
+            )
+
+    obj = Legacy("good")
+    assert obj._asdict() == {"name": "good"}
+    # legacy _replace avoids __new__
+    assert obj._replace(name="bad")
+    assert obj._replace(name="good") == obj
+    assert obj._replace(name="foo").__class__ is obj.__class__
+
+    @record
+    class Parent:
+        one: int
+
+    @record
+    class Child(Parent):
+        two: int
+
+        def boop(self):
+            return "boop"
+
+    obj = Child(one=1, two=2)
+    replaced = replace(obj, two=2)
+    assert replaced == obj
+    replaced.boop()
+    assert replaced.__class__ is obj.__class__
