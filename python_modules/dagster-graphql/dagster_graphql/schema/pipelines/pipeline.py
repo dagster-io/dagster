@@ -9,8 +9,8 @@ from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
-    ExternalPartitionExecutionErrorData,
-    ExternalPresetData,
+    PartitionExecutionErrorSnap,
+    PresetSnap,
 )
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.storage.dagster_run import (
@@ -867,7 +867,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
     def __init__(self, active_preset_data, pipeline_name):
         super().__init__()
         self._active_preset_data = check.inst_param(
-            active_preset_data, "active_preset_data", ExternalPresetData
+            active_preset_data, "active_preset_data", PresetSnap
         )
         self._job_name = check.str_param(pipeline_name, "pipeline_name")
 
@@ -941,7 +941,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         handle = self._external_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
-        return bool(repository.get_external_asset_nodes(self._external_job.name))
+        return bool(repository.get_asset_node_snaps(self._external_job.name))
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.external import GrapheneRepository
@@ -970,7 +970,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             instance=graphene_info.context.instance,
         )
 
-        if isinstance(result, ExternalPartitionExecutionErrorData):
+        if isinstance(result, PartitionExecutionErrorSnap):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
 
         all_partition_keys = result.partition_names

@@ -45,6 +45,7 @@ def sensor(
     asset_selection: Optional[CoercibleToAssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, object]] = None,
     target: Optional[
         Union[
             "CoercibleToAssetSelection",
@@ -83,6 +84,8 @@ def sensor(
             This can be provided instead of specifying a job.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the sensor will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
@@ -106,6 +109,7 @@ def sensor(
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
             tags=tags,
+            metadata=metadata,
             target=target,
         )
 
@@ -128,6 +132,7 @@ def asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[
     [
         AssetMaterializationFunction,
@@ -166,6 +171,8 @@ def asset_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI. Values that are not already strings will be serialized as JSON.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
 
 
     Example:
@@ -236,6 +243,7 @@ def asset_sensor(
             default_status=default_status,
             required_resource_keys=required_resource_keys,
             tags=tags,
+            metadata=metadata,
         )
 
     return inner
@@ -255,6 +263,7 @@ def multi_asset_sensor(
     request_assets: Optional[AssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
+    metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[
     [
         MultiAssetMaterializationFunction,
@@ -293,6 +302,9 @@ def multi_asset_sensor(
             for if the sensor condition is met. This can be provided instead of specifying a job.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
+
     """
     check.opt_str_param(name, "name")
 
@@ -322,6 +334,7 @@ def multi_asset_sensor(
             request_assets=request_assets,
             required_resource_keys=required_resource_keys,
             tags=tags,
+            metadata=metadata,
         )
         update_wrapper(sensor_def, wrapped=fn)
         return sensor_def

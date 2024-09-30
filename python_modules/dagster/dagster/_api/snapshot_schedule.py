@@ -5,7 +5,7 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
+from dagster._core.remote_representation.external_data import ScheduleExecutionErrorSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._serdes import deserialize_value
@@ -71,9 +71,9 @@ def sync_get_external_schedule_execution_data_grpc(
                 timeout=timeout,
             )
         ),
-        (ScheduleExecutionData, ExternalScheduleExecutionErrorData),
+        (ScheduleExecutionData, ScheduleExecutionErrorSnap),
     )
-    if isinstance(result, ExternalScheduleExecutionErrorData):
+    if isinstance(result, ScheduleExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result

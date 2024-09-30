@@ -35,7 +35,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
+from dagster._core.remote_representation.external_data import StaticPartitionsSnap
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster._core.snap.job_snapshot import JobSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -1265,7 +1265,7 @@ def test_metadata_serialization():
 # duplicates. We need to de-dup them at the serdes/"External" layer before reconstructing the
 # partitions definition in the host process to avoid an error.
 def test_static_partitions_definition_dup_keys_backcompat():
-    received_from_user = ExternalStaticPartitionsDefinitionData(partition_keys=["a", "b", "a"])
+    received_from_user = StaticPartitionsSnap(partition_keys=["a", "b", "a"])
     assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
         partition_keys=["a", "b"]
     )

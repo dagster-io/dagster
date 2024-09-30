@@ -11,7 +11,7 @@ from dagster._api.snapshot_schedule import (
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
+from dagster._core.remote_representation.external_data import ScheduleExecutionErrorSnap
 from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs
@@ -113,7 +113,7 @@ def test_external_schedule_execution_deserialize_error():
                         )._replace(repository_origin="INVALID")
                     )
                 )
-                assert isinstance(result, ExternalScheduleExecutionErrorData)
+                assert isinstance(result, ScheduleExecutionErrorSnap)
 
 
 def test_include_execution_time_grpc():

@@ -66,11 +66,11 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteAssetNode
     from dagster._core.remote_representation import (
-        ExternalPartitionConfigData,
-        ExternalPartitionExecutionErrorData,
-        ExternalPartitionNamesData,
-        ExternalPartitionSetExecutionParamData,
-        ExternalPartitionTagsData,
+        PartitionConfigSnap,
+        PartitionExecutionErrorSnap,
+        PartitionNamesSnap,
+        PartitionSetExecutionParamSnap,
+        PartitionTagsSnap,
     )
 
 T = TypeVar("T")
@@ -270,7 +270,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         job_name: str,
         partition_name: str,
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(
             repository_handle.location_name
         ).get_external_partition_config(
@@ -287,7 +287,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         partition_name: str,
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(repository_handle.location_name).get_external_partition_tags(
             repository_handle=repository_handle,
             job_name=job_name,
@@ -302,7 +302,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         job_name: str,
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionNamesSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(repository_handle.location_name).get_external_partition_names(
             repository_handle=repository_handle,
             job_name=job_name,
@@ -316,7 +316,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         partition_set_name: str,
         partition_names: Sequence[str],
         instance: DagsterInstance,
-    ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
+    ) -> Union["PartitionSetExecutionParamSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(
             repository_handle.location_name
         ).get_external_partition_set_execution_param_data(
@@ -476,7 +476,7 @@ class IWorkspaceProcessContext(ABC):
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         pass
 
 
@@ -799,10 +799,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # is referencing it
             self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         self._update_workspace({})  # update to empty to close all current locations
         self._stack.close()
 

@@ -16,7 +16,7 @@ from dagster._core.remote_representation import ExternalExecutionPlan, ExternalJ
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, hash_collection
+from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 EXECUTION_PLAN_CREATION_RETRIES = 1
 
@@ -58,7 +58,7 @@ def _get_job_execution_data_from_run_request(
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
+    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
 ) -> RunRequestExecutionData:
     check.invariant(
         len(run_request.entity_keys) > 0,
@@ -88,9 +88,7 @@ def _get_job_execution_data_from_run_request(
         op_selection=None,
     )
 
-    selector_id = hash_collection(pipeline_selector)
-
-    if selector_id not in run_request_execution_data_cache:
+    if pipeline_selector not in run_request_execution_data_cache:
         code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
         external_job = code_location.get_external_job(pipeline_selector)
 
@@ -102,12 +100,12 @@ def _get_job_execution_data_from_run_request(
             instance=instance,
         )
 
-        run_request_execution_data_cache[selector_id] = RunRequestExecutionData(
+        run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
             external_job,
             external_execution_plan,
         )
 
-    return run_request_execution_data_cache[selector_id]
+    return run_request_execution_data_cache[pipeline_selector]
 
 
 def _create_asset_run(
@@ -115,7 +113,7 @@ def _create_asset_run(
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
+    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -245,7 +243,7 @@ def submit_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
+    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
 ) -> DagsterRun:

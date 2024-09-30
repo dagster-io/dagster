@@ -43,20 +43,20 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
+    AssetCheckNodeSnap,
+    AssetNodeSnap,
     EnvVarConsumer,
-    ExternalAssetCheck,
-    ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
-    ExternalPresetData,
     ExternalRepositoryData,
-    ExternalResourceData,
-    ExternalResourceValue,
-    ExternalSensorMetadata,
     NestedResource,
     PartitionSetSnap,
+    PresetSnap,
     ResourceJobUsageEntry,
+    ResourceSnap,
+    ResourceValueSnap,
     ScheduleSnap,
+    SensorMetadataSnap,
     SensorSnap,
     TargetSnap,
 )
@@ -158,15 +158,15 @@ class ExternalRepository:
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        self._asset_jobs: Dict[str, List[ExternalAssetNode]] = {}
+        self._asset_jobs: Dict[str, List[AssetNodeSnap]] = {}
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
                 self._asset_jobs.setdefault(job_name, []).append(asset_node)
 
-        self._asset_check_jobs: Dict[str, List[ExternalAssetCheck]] = {}
-        for asset_check in external_repository_data.external_asset_checks or []:
-            for job_name in asset_check.job_names:
-                self._asset_check_jobs.setdefault(job_name, []).append(asset_check)
+        self._asset_check_jobs: Dict[str, List[AssetCheckNodeSnap]] = {}
+        for asset_check_node_snap in external_repository_data.external_asset_checks or []:
+            for job_name in asset_check_node_snap.job_names:
+                self._asset_check_jobs.setdefault(job_name, []).append(asset_check_node_snap)
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
@@ -377,7 +377,10 @@ class ExternalRepository:
     @property
     def selector_id(self) -> str:
         return create_snapshot_id(
-            RepositorySelector(self._handle.location_name, self._handle.repository_name)
+            RepositorySelector(
+                location_name=self._handle.location_name,
+                repository_name=self._handle.repository_name,
+            ),
         )
 
     def get_compound_id(self) -> CompoundID:
@@ -398,16 +401,14 @@ class ExternalRepository:
         """
         return self.get_remote_origin().get_id()
 
-    def get_external_asset_nodes(
-        self, job_name: Optional[str] = None
-    ) -> Sequence[ExternalAssetNode]:
+    def get_asset_node_snaps(self, job_name: Optional[str] = None) -> Sequence[AssetNodeSnap]:
         return (
             self.external_repository_data.external_asset_graph_data
             if job_name is None
             else self._asset_jobs.get(job_name, [])
         )
 
-    def get_external_asset_node(self, asset_key: AssetKey) -> Optional[ExternalAssetNode]:
+    def get_asset_node_snap(self, asset_key: AssetKey) -> Optional[AssetNodeSnap]:
         matching = [
             asset_node
             for asset_node in self.external_repository_data.external_asset_graph_data
@@ -415,9 +416,9 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
-    def get_external_asset_checks(
+    def get_asset_check_node_snaps(
         self, job_name: Optional[str] = None
-    ) -> Sequence[ExternalAssetCheck]:
+    ) -> Sequence[AssetCheckNodeSnap]:
         if job_name:
             return self._asset_check_jobs.get(job_name, [])
         else:
@@ -431,13 +432,13 @@ class ExternalRepository:
         """Returns a repository scoped RemoteAssetGraph."""
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
-        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
+        return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
             repo_handle_assets=[
-                (self.handle, asset_node) for asset_node in self.get_external_asset_nodes()
+                (self.handle, node_snap) for node_snap in self.get_asset_node_snaps()
             ],
             repo_handle_asset_checks=[
                 (self.handle, asset_check_node)
-                for asset_check_node in self.get_external_asset_checks()
+                for asset_check_node in self.get_asset_check_node_snaps()
             ],
         )
 
@@ -467,16 +468,14 @@ class ExternalRepository:
         job_name: str,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> PartitionsDefinition:
-        asset_nodes = self.get_external_asset_nodes(job_name)
+        asset_nodes = self.get_asset_node_snaps(job_name)
         unique_partitions_defs: Set[PartitionsDefinition] = set()
         for asset_node in asset_nodes:
             if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
                 continue
 
-            if asset_node.partitions_def_data is not None:
-                unique_partitions_defs.add(
-                    asset_node.partitions_def_data.get_partitions_definition()
-                )
+            if asset_node.partitions is not None:
+                unique_partitions_defs.add(asset_node.partitions.get_partitions_definition())
 
         if len(unique_partitions_defs) == 1:
             return next(iter(unique_partitions_defs))
@@ -597,7 +596,7 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
-    def active_presets(self) -> Sequence[ExternalPresetData]:
+    def active_presets(self) -> Sequence[PresetSnap]:
         return list(self._active_preset_dict.values())
 
     @property
@@ -612,7 +611,7 @@ class ExternalJob(RepresentedJob):
         check.str_param(preset_name, "preset_name")
         return preset_name in self._active_preset_dict
 
-    def get_preset(self, preset_name: str) -> ExternalPresetData:
+    def get_preset(self, preset_name: str) -> PresetSnap:
         check.str_param(preset_name, "preset_name")
         return self._active_preset_dict[preset_name]
 
@@ -753,9 +752,9 @@ class ExternalExecutionPlan:
 class ExternalResource:
     """Represents a top-level resource in a repository, e.g. one passed through the Definitions API."""
 
-    def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
+    def __init__(self, external_resource_data: ResourceSnap, handle: RepositoryHandle):
         self._external_resource_data = check.inst_param(
-            external_resource_data, "external_resource_data", ExternalResourceData
+            external_resource_data, "external_resource_data", ResourceSnap
         )
         self._handle = InstigatorHandle(
             self._external_resource_data.name, check.inst_param(handle, "handle", RepositoryHandle)
@@ -774,7 +773,7 @@ class ExternalResource:
         return self._external_resource_data.config_field_snaps
 
     @property
-    def configured_values(self) -> Dict[str, ExternalResourceValue]:
+    def configured_values(self) -> Dict[str, ResourceValueSnap]:
         return self._external_resource_data.configured_values
 
     @property
@@ -875,6 +874,10 @@ class ExternalSchedule:
     def tags(self) -> Mapping[str, str]:
         return self._external_schedule_data.tags
 
+    @property
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        return self._external_schedule_data.metadata
+
     def get_remote_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_remote_origin()
 
@@ -884,17 +887,17 @@ class ExternalSchedule:
     @property
     def selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_schedule_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            name=self._external_schedule_data.name,
         )
 
     @property
     def schedule_selector(self) -> ScheduleSelector:
         return ScheduleSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_schedule_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            schedule_name=self._external_schedule_data.name,
         )
 
     @cached_property
@@ -1034,17 +1037,17 @@ class ExternalSensor:
     @property
     def selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_sensor_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            name=self._external_sensor_data.name,
         )
 
     @property
     def sensor_selector(self) -> SensorSelector:
         return SensorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_sensor_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            sensor_name=self._external_sensor_data.name,
         )
 
     @cached_property
@@ -1106,7 +1109,7 @@ class ExternalSensor:
             )
 
     @property
-    def metadata(self) -> Optional[ExternalSensorMetadata]:
+    def metadata(self) -> Optional[SensorMetadataSnap]:
         return self._external_sensor_data.metadata
 
     @property
@@ -1161,16 +1164,16 @@ class ExternalPartitionSet:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
-        return self._external_partition_set_data.external_partitions_data is not None
+        return self._external_partition_set_data.partitions is not None
 
     def has_partitions_definition(self) -> bool:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to get the
         # partitions definition
-        return self._external_partition_set_data.external_partitions_data is not None
+        return self._external_partition_set_data.partitions is not None
 
     def get_partitions_definition(self) -> PartitionsDefinition:
-        partitions_data = self._external_partition_set_data.external_partitions_data
+        partitions_data = self._external_partition_set_data.partitions
         if partitions_data is None:
             check.failed(
                 "Partition set does not have partition data, cannot get partitions definition"
@@ -1178,8 +1181,8 @@ class ExternalPartitionSet:
         return partitions_data.get_partitions_definition()
 
     def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
-        partitions_data = self._external_partition_set_data.external_partitions_data
-        if partitions_data is None:
+        partitions = self._external_partition_set_data.partitions
+        if partitions is None:
             check.failed(
                 "Partition set does not have partition data, cannot get partitions definition"
             )

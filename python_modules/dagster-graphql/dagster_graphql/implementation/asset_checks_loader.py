@@ -5,7 +5,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
+from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
@@ -39,14 +39,14 @@ class AssetChecksLoader:
 
     def _get_external_checks(
         self, pipeline: Optional[GraphenePipelineSelector]
-    ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
+    ) -> Iterator[Tuple[CodeLocation, ExternalRepository, AssetCheckNodeSnap]]:
         if pipeline is None:
             entries = self._context.get_code_location_entries().values()
             for entry in entries:
                 code_loc = entry.code_location
                 if code_loc:
                     for repo in code_loc.get_repositories().values():
-                        for check in repo.get_external_asset_checks():
+                        for check in repo.get_asset_check_node_snaps():
                             yield (code_loc, repo, check)
 
         else:
@@ -54,9 +54,9 @@ class AssetChecksLoader:
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
             location = self._context.get_code_location(repo_sel.location_name)
             repo = location.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_checks(job_name=job_name)
-            for external_asset_node in external_asset_nodes:
-                yield (location, repo, external_asset_node)
+            asset_check_node_snaps = repo.get_asset_check_node_snaps(job_name=job_name)
+            for snap in asset_check_node_snaps:
+                yield (location, repo, snap)
 
     def _fetch_checks(
         self, limit_per_asset: Optional[int], pipeline: Optional[GraphenePipelineSelector]
@@ -83,7 +83,7 @@ class AssetChecksLoader:
                 f"Unexpected asset check support status {asset_check_support}",
             )
 
-        external_checks_by_asset_key: Mapping[AssetKey, List[ExternalAssetCheck]] = {}
+        external_checks_by_asset_key: Mapping[AssetKey, List[AssetCheckNodeSnap]] = {}
         errors: Mapping[AssetKey, GrapheneAssetCheckNeedsUserCodeUpgrade] = {}
 
         for location, _, external_check in self._get_external_checks(pipeline=pipeline):

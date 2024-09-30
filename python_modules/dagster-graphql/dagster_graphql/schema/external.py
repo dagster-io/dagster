@@ -43,7 +43,7 @@ from dagster_graphql.schema.used_solid import GrapheneUsedSolid
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.external_data import ExternalAssetNode
+    from dagster._core.remote_representation.external_data import AssetNodeSnap
 
 GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 
@@ -384,31 +384,31 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
     def resolve_assetNodes(self, graphene_info: ResolveInfo):
-        external_asset_nodes = self._repository.get_external_asset_nodes()
+        asset_node_snaps = self._repository.get_asset_node_snaps()
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[node.asset_key for node in external_asset_nodes],
+            asset_keys=[node.asset_key for node in asset_node_snaps],
         )
         return [
             GrapheneAssetNode(
                 self._repository_location,
                 self._repository,
-                external_asset_node,
+                asset_node_snap,
                 asset_checks_loader=asset_checks_loader,
                 stale_status_loader=self._stale_status_loader,
                 dynamic_partitions_loader=self._dynamic_partitions_loader,
                 asset_graph_differ=self._asset_graph_differ,
             )
-            for external_asset_node in self._repository.get_external_asset_nodes()
+            for asset_node_snap in self._repository.get_asset_node_snaps()
         ]
 
     def resolve_assetGroups(self, _graphene_info: ResolveInfo):
-        groups: Dict[str, List[ExternalAssetNode]] = {}
-        for external_asset_node in self._repository.get_external_asset_nodes():
-            if not external_asset_node.group_name:
+        groups: Dict[str, List[AssetNodeSnap]] = {}
+        for asset_node_snap in self._repository.get_asset_node_snaps():
+            if not asset_node_snap.group_name:
                 continue
-            external_assets = groups.setdefault(external_asset_node.group_name, [])
-            external_assets.append(external_asset_node)
+            external_assets = groups.setdefault(asset_node_snap.group_name, [])
+            external_assets.append(asset_node_snap)
 
         return [
             GrapheneAssetGroup(

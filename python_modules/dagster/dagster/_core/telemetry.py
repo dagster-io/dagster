@@ -460,15 +460,15 @@ def hash_name(name: str) -> str:
 
 def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
     from dagster._core.remote_representation.external_data import (
-        ExternalDynamicPartitionsDefinitionData,
-        ExternalMultiPartitionsDefinitionData,
+        DynamicPartitionsSnap,
+        MultiPartitionsSnap,
     )
 
     num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
     num_schedules_in_repo = len(external_repo.get_external_schedules())
     num_sensors_in_repo = len(external_repo.get_external_sensors())
-    external_asset_nodes = external_repo.get_external_asset_nodes()
-    num_assets_in_repo = len(external_asset_nodes)
+    asset_node_snaps = external_repo.get_asset_node_snaps()
+    num_assets_in_repo = len(asset_node_snaps)
     external_resources = external_repo.get_external_resources()
 
     num_checks = len(external_repo.external_repository_data.external_asset_checks or [])
@@ -489,14 +489,14 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_dbt_assets_in_repo = 0
     num_assets_with_code_versions_in_repo = 0
 
-    for asset in external_asset_nodes:
-        if asset.partitions_def_data:
+    for asset in asset_node_snaps:
+        if asset.partitions:
             num_partitioned_assets_in_repo += 1
 
-            if isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+            if isinstance(asset.partitions, DynamicPartitionsSnap):
                 num_dynamic_partitioned_assets_in_repo += 1
 
-            if isinstance(asset.partitions_def_data, ExternalMultiPartitionsDefinitionData):
+            if isinstance(asset.partitions, MultiPartitionsSnap):
                 num_multi_partitioned_assets_in_repo += 1
 
         if asset.freshness_policy is not None:

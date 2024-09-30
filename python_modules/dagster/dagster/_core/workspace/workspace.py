@@ -10,10 +10,7 @@ from dagster._utils.error import SerializableErrorInfo
 if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
-    from dagster._core.remote_representation.external_data import (
-        ExternalAssetCheck,
-        ExternalAssetNode,
-    )
+    from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
     from dagster._core.remote_representation.handle import RepositoryHandle
 
 
@@ -66,16 +63,16 @@ class WorkspaceSnapshot:
             for code_location in code_locations
             for repo in code_location.get_repositories().values()
         )
-        repo_handle_assets: Sequence[Tuple["RepositoryHandle", "ExternalAssetNode"]] = []
-        repo_handle_asset_checks: Sequence[Tuple["RepositoryHandle", "ExternalAssetCheck"]] = []
+        repo_handle_assets: Sequence[Tuple["RepositoryHandle", "AssetNodeSnap"]] = []
+        repo_handle_asset_checks: Sequence[Tuple["RepositoryHandle", "AssetCheckNodeSnap"]] = []
 
         for repo in repos:
-            for external_asset_node in repo.get_external_asset_nodes():
-                repo_handle_assets.append((repo.handle, external_asset_node))
-            for external_asset_check in repo.get_external_asset_checks():
-                repo_handle_asset_checks.append((repo.handle, external_asset_check))
+            for asset_node_snap in repo.get_asset_node_snaps():
+                repo_handle_assets.append((repo.handle, asset_node_snap))
+            for asset_check_node_snap in repo.get_asset_check_node_snaps():
+                repo_handle_asset_checks.append((repo.handle, asset_check_node_snap))
 
-        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
+        return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
             repo_handle_assets=repo_handle_assets,
             repo_handle_asset_checks=repo_handle_asset_checks,
         )

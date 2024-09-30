@@ -410,7 +410,10 @@ class RemoteRepositoryOrigin(
 
     def get_selector_id(self) -> str:
         return create_snapshot_id(
-            RepositorySelector(self.code_location_origin.location_name, self.repository_name)
+            RepositorySelector(
+                location_name=self.code_location_origin.location_name,
+                repository_name=self.repository_name,
+            )
         )
 
     def get_label(self) -> str:
@@ -497,9 +500,9 @@ class RemoteInstigatorOrigin(
 
     def get_selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.repository_origin.code_location_origin.location_name,
-            self.repository_origin.repository_name,
-            self.instigator_name,
+            location_name=self.repository_origin.code_location_origin.location_name,
+            repository_name=self.repository_origin.repository_name,
+            name=self.instigator_name,
         )
 
     def get_id(self) -> str:
@@ -541,9 +544,9 @@ class RemotePartitionSetOrigin(
     @property
     def selector(self) -> PartitionSetSelector:
         return PartitionSetSelector(
-            self.repository_origin.code_location_origin.location_name,
-            self.repository_origin.repository_name,
-            self.partition_set_name,
+            location_name=self.repository_origin.code_location_origin.location_name,
+            repository_name=self.repository_origin.repository_name,
+            partition_set_name=self.partition_set_name,
         )
 
     def get_selector_id(self) -> str:

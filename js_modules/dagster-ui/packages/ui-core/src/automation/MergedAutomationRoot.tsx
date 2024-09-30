@@ -1,6 +1,9 @@
 import {
+  Body2,
   Box,
+  Colors,
   Heading,
+  Icon,
   NonIdealState,
   PageHeader,
   SpinnerWithText,
@@ -261,9 +264,23 @@ export const MergedAutomationRoot = () => {
             icon="search"
             title="No automations"
             description={
-              anyReposHidden
-                ? 'No automations were found in the selected code locations'
-                : 'No matching automations'
+              anyReposHidden ? (
+                'No automations were found in the selected code locations'
+              ) : (
+                <Body2>
+                  There are no automations in this deployment.{' '}
+                  <a
+                    href="https://docs.dagster.io/concepts/automation"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                      Learn more about automations
+                      <Icon name="open_in_new" color={Colors.linkDefault()} />
+                    </Box>
+                  </a>
+                </Body2>
+              )
             }
           />
         </Box>
@@ -353,7 +370,7 @@ const buildBuckets = (
       const {name, schedules, sensors} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
 
-      if (sensors.length > 0) {
+      if (sensors.length > 0 || schedules.length > 0) {
         buckets.push({
           repoAddress,
           schedules,

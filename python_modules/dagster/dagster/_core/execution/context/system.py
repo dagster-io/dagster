@@ -333,7 +333,7 @@ class PlanExecutionContext(IPlanContext):
         self,
         step: ExecutionStep,
         known_state: Optional["KnownExecutionState"] = None,
-    ) -> IStepContext:
+    ) -> "StepExecutionContext":
         # TODO: refactoring to build up reasonable layer of prefetching -- 2024-04-27 schrockn
         # if is_step_in_asset_graph_layer(step, self.job_def):
         # ... prefetch input asset version info

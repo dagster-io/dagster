@@ -173,6 +173,12 @@ query SensorQuery($sensorSelector: SensorSelector!) {
         key
         value
       }
+      metadataEntries {
+        label
+        ... on TextMetadataEntry {
+          text
+        }
+      }
       assetSelection {
         assetSelectionString
         assetKeys {
@@ -553,7 +559,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
     @pytest.mark.parametrize(
         "sensor_name, expected_type",
         [
-            ("always_no_config_sensor_with_tags", "STANDARD"),
+            ("always_no_config_sensor_with_tags_and_metadata", "STANDARD"),
             ("run_status", "RUN_STATUS"),
             ("single_asset_sensor", "ASSET"),
             ("many_asset_sensor", "MULTI_ASSET"),
@@ -579,7 +585,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
 
     def test_dry_run(self, graphql_context: WorkspaceRequestContext):
         instigator_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
         result = execute_dagster_graphql(
             graphql_context,
@@ -768,7 +774,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
 
     def test_get_sensor(self, graphql_context: WorkspaceRequestContext, snapshot):
         sensor_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
         result = execute_dagster_graphql(
             graphql_context,
@@ -783,12 +789,13 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         snapshot.assert_match(sensor)
         assert sensor["sensorType"] == "STANDARD"
         assert sensor["tags"] == [{"key": "foo", "value": "bar"}]
+        assert sensor["metadataEntries"] == [{"label": "foo", "text": "bar"}]
 
 
 class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
     def test_start_sensor_failure(self, graphql_context: WorkspaceRequestContext):
         sensor_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
         result = execute_dagster_graphql(
             graphql_context,
@@ -801,7 +808,7 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
 
     def test_stop_sensor_failure(self, graphql_context: WorkspaceRequestContext):
         sensor_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
 
         result = execute_dagster_graphql(
@@ -826,7 +833,9 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
         assert stop_result.data["stopSensor"]["__typename"] == "UnauthorizedError"
 
     def test_set_cursor_failure(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_sensor_selector(graphql_context, "always_no_config_sensor_with_tags")
+        selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -840,7 +849,7 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
 class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
     def test_start_sensor(self, graphql_context: WorkspaceRequestContext):
         sensor_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
         result = execute_dagster_graphql(
             graphql_context,
@@ -853,7 +862,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
     def test_stop_sensor(self, graphql_context: WorkspaceRequestContext):
         sensor_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
 
         # start sensor
@@ -904,7 +913,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             return sensor["sensorState"]["typeSpecificData"]["lastCursor"]
 
         sensor_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
         assert get_cursor(sensor_selector) is None
         set_cursor(sensor_selector, "new cursor value")
@@ -971,7 +980,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
     def test_reset_sensor(self, graphql_context: WorkspaceRequestContext):
         sensor_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor_with_tags"
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
         )
         result = execute_dagster_graphql(
             graphql_context,
@@ -1167,7 +1176,7 @@ def test_sensor_next_ticks(graphql_context: WorkspaceRequestContext):
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
-    sensor_name = "always_no_config_sensor_with_tags"
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
@@ -1252,7 +1261,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
-    sensor_name = "always_no_config_sensor_with_tags"
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
@@ -1392,7 +1401,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         "repositoryLocationName": main_repo_location_name(),
         "repositoryName": main_repo_name(),
     }
-    sensor_name = "always_no_config_sensor_with_tags"
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
