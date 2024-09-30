@@ -175,8 +175,8 @@ def materializations_and_requests_from_batch_iter(
             # We need to make sure to ignore tasks that have already been proxied.
             task_ids=[
                 task_id
-                for task_id in airflow_data.task_ids_in_dag(dag_run.dag_id)
-                if not airflow_data.proxied_state_for_task(dag_run.dag_id, task_id)
+                for task_id in airflow_data.serialized_data.task_ids_in_dag(dag_run.dag_id)
+                if not airflow_data.serialized_data.proxied_state_for_task(dag_run.dag_id, task_id)
             ],
             states=["success"],
         )
