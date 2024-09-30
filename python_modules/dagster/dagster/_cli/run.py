@@ -1,3 +1,5 @@
+from typing import Any
+
 import click
 from tqdm import tqdm
 
@@ -13,7 +15,7 @@ def run_cli():
 
 @run_cli.command(name="list", help="List the runs in the current Dagster instance.")
 @click.option("--limit", help="Only list a specified number of runs", default=None, type=int)
-def run_list_command(limit):
+def run_list_command(limit: int) -> None:
     with get_instance_for_cli() as instance:
         for run in instance.get_runs(limit=limit):
             click.echo(f"Run: {run.run_id}")
@@ -26,7 +28,7 @@ def run_list_command(limit):
 )
 @click.option("--force", "-f", is_flag=True, default=False, help="Skip prompt to delete run.")
 @click.argument("run_id")
-def run_delete_command(run_id, force):
+def run_delete_command(run_id: str, force: bool) -> None:
     with get_instance_for_cli() as instance:
         if not instance.has_run(run_id):
             raise click.ClickException(f"No run found with id {run_id}.")
@@ -56,7 +58,7 @@ def run_delete_command(run_id, force):
     default=False,
     help="Skip prompt to delete run history and event logs.",
 )
-def run_wipe_command(force):
+def run_wipe_command(force: bool) -> None:
     if force:
         should_delete_run = True
     else:
@@ -84,7 +86,7 @@ def run_wipe_command(force):
     help="The repository from which to migrate (format: <repository_name>@<location_name>)",
 )
 @job_target_argument
-def run_migrate_command(from_label, **kwargs):
+def run_migrate_command(from_label: str, **kwargs: Any) -> None:
     from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
@@ -138,6 +140,6 @@ def run_migrate_command(from_label, **kwargs):
             raise click.ClickException("Exiting without migrating.")
 
 
-def is_valid_repo_label(label):
+def is_valid_repo_label(label: str) -> bool:
     parts = label.split("@")
     return len(parts) == 2 and len(parts[0]) > 0 and len(parts[1]) > 0
