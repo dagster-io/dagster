@@ -1,5 +1,5 @@
 import {Redirect, Switch} from 'react-router-dom';
-import {FeatureFlag} from 'shared/settings/FeatureFlags.cloud';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewJobsRoot} from './OverviewJobsRoot';
