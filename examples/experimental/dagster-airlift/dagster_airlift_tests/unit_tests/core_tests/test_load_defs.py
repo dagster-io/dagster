@@ -460,3 +460,8 @@ def test_automapped_build() -> None:
 
     assert "dagster/kind/airflow" in specs[dag1_task1].tags
     assert "dagster/kind/task" in specs[dag1_task1].tags
+
+    assert set(specs[make_default_dag_asset_key("dag1")].deps) == {
+        AssetDep(dag1_standalone),
+        AssetDep(dag1_task2),
+    }
