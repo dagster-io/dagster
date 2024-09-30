@@ -45,9 +45,9 @@ export const OverviewRoot = () => {
           )
         }
       />
-      {featureEnabled(FeatureFlag.flagRunsFeed) ? (
+      {featureEnabled(FeatureFlag.flagRunsFeed) ? null : (
         <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
-      ) : null}
+      )}
       <Route path="/overview/backfills" exact render={() => <InstanceBackfillsRoot />} />
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
