@@ -38,8 +38,8 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external_data import (
+    asset_check_node_snaps_from_repo,
     asset_node_snaps_from_repo,
-    external_asset_checks_from_defs,
 )
 from dagster._core.test_utils import freeze_time, instance_for_test
 from dagster._time import create_datetime, get_current_datetime
@@ -53,12 +53,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
     asset_node_snaps = asset_node_snaps_from_repo(repo)
     return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
         [(MagicMock(), asset_node) for asset_node in asset_node_snaps],
-        [
-            (MagicMock(), asset_check)
-            for asset_check in external_asset_checks_from_defs(
-                repo.get_all_jobs(), repo.asset_graph
-            )
-        ],
+        [(MagicMock(), asset_check) for asset_check in asset_check_node_snaps_from_repo(repo)],
     )
 
 
