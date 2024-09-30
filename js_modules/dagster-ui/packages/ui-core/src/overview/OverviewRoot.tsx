@@ -5,7 +5,8 @@ import {OverviewJobsRoot} from './OverviewJobsRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
-import {useFeatureFlags} from '../app/Flags';
+import {FeatureFlag} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/src/settings/FeatureFlags.cloud';
+import {featureEnabled, useFeatureFlags} from '../app/Flags';
 import {Route} from '../app/Route';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
@@ -44,7 +45,9 @@ export const OverviewRoot = () => {
           )
         }
       />
-      <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
+      {featureEnabled(FeatureFlag.flagRunsFeed) ? (
+        <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
+      ) : null}
       <Route path="/overview/backfills" exact render={() => <InstanceBackfillsRoot />} />
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
