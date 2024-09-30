@@ -4420,6 +4420,7 @@ export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename: 'Run';
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+    assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
     assetSelection: Maybe<Array<AssetKey>>;
     assets: Array<Asset>;
@@ -12936,6 +12937,7 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!
         : [],
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!

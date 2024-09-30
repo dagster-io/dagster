@@ -10,15 +10,14 @@ import {
 import {useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
-import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
+import {RunAssetCheckTags} from './RunAssetCheckTags';
 import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
-import {assetKeysForRun} from './RunUtils';
 import {getBackfillPath} from './RunsFeedUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
@@ -159,12 +158,8 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <AssetKeyTagCollection useTags assetKeys={assetKeysForRun(run)} />
-                ) : (
-                  <RunAssetTags run={run} />
-                )}
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
+                <RunAssetTags run={run} />
+                <RunAssetCheckTags run={run} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation
