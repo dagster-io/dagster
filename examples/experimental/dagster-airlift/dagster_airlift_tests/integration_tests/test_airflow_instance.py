@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from dagster._core.errors import DagsterError
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend
@@ -64,6 +66,8 @@ def test_airflow_instance(airflow_instance: None) -> None:
 
     assert run.finished
     assert run.success
+    assert isinstance(run.start_date, datetime.datetime)
+    assert isinstance(run.end_date, datetime.datetime)
 
     # Fetch task instance
     task_instance = instance.get_task_instance(
@@ -72,6 +76,6 @@ def test_airflow_instance(airflow_instance: None) -> None:
     assert_link_exists("Task instance", task_instance.details_url)
     assert_link_exists("Task logs", task_instance.log_url)
 
-    assert isinstance(task_instance.start_date, float)
-    assert isinstance(task_instance.end_date, float)
+    assert isinstance(task_instance.start_date, datetime.datetime)
+    assert isinstance(task_instance.end_date, datetime.datetime)
     assert isinstance(task_instance.note, str)
