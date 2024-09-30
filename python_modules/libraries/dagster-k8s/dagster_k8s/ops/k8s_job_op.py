@@ -16,7 +16,6 @@ from dagster import (
     op,
 )
 from dagster._annotations import experimental
-from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
@@ -408,9 +407,14 @@ def execute_k8s_job(
             start_time=start_time,
             num_pods_to_wait_for=num_pods_to_wait_for,
         )
-    except (DagsterExecutionInterruptedError, Exception) as e:
+    except (BaseException, Exception) as e:
+        pods = api_client.get_pod_names_in_job(job_name=job_name, namespace=namespace)
+        for pod in pods:
+            pod_debug_info = api_client.get_pod_debug_info(pod_name=pod, namespace=namespace)
+            context.log.error(f"Pod debug info for pod {pod}: {pod_debug_info}")
+
         context.log.info(
-            f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception"
+            f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception: {e}"
         )
         api_client.delete_job(job_name=job_name, namespace=namespace)
         raise e
