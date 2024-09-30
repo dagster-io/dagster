@@ -27,6 +27,7 @@ from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.sensor.event_translation import (
     AirflowEventTranslationFn,
+    get_asset_events,
     get_timestamp_from_materialization,
 )
 
@@ -57,9 +58,11 @@ def check_keys_for_asset_keys(
 def build_airflow_polling_sensor_defs(
     airflow_instance: AirflowInstance,
     airflow_data: AirflowDefinitionsData,
-    event_translation_fn: AirflowEventTranslationFn,
-    minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    event_translation_fn: AirflowEventTranslationFn = get_asset_events,
+    minimum_interval_seconds: Optional[int] = None,
 ) -> Definitions:
+    minimum_interval_seconds = minimum_interval_seconds or DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
+
     @sensor(
         name=f"{airflow_instance.name}__airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
