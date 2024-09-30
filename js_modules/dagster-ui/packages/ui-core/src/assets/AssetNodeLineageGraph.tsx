@@ -115,7 +115,7 @@ export const AssetNodeLineageGraph = ({
                     e.stopPropagation();
                   }}
                 >
-                  <GroupOutline $minimal={scale < MINIMAL_SCALE} />
+                  <GroupOutline minimal={scale < MINIMAL_SCALE} />
                 </foreignObject>
               ))}
 
