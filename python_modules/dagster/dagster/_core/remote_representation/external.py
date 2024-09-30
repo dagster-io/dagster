@@ -229,17 +229,30 @@ class ExternalRepository:
             external_sensor_data.name: ExternalSensor(external_sensor_data, self._handle)
             for external_sensor_data in self.external_repository_data.external_sensor_datas
         }
+        existing_automation_condition_sensors = {
+            sensor_name: sensor
+            for sensor_name, sensor in sensor_datas.items()
+            if sensor.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
+        }
 
-        if self._instance.auto_materialize_use_sensors:
+        if not self._instance.auto_materialize_use_sensors:
+            invalid_sensors_str = "\n".join(
+                [
+                    f"- {sensor_name}:{sensor.get_remote_origin().location_name}"
+                    for sensor_name, sensor in existing_automation_condition_sensors.items()
+                ]
+            )
+            check.invariant(
+                len(existing_automation_condition_sensors) == 0,
+                "DagsterInstance configuration value `auto_materialize: use_sensors` is set to False, "
+                "but the following AutomationConditionSensorDefinitions were found:\n"
+                f"{invalid_sensors_str}\n"
+                "In order to enable this behavior, update your instance configuration.",
+            )
+        else:
             asset_graph = self.asset_graph
 
             has_any_auto_observe_source_assets = False
-
-            existing_automation_condition_sensors = {
-                sensor_name: sensor
-                for sensor_name, sensor in sensor_datas.items()
-                if sensor.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
-            }
 
             covered_entity_keys: Set[EntityKey] = set()
             for sensor in existing_automation_condition_sensors.values():

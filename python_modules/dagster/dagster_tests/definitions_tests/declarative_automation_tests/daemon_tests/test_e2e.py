@@ -2,10 +2,12 @@ import datetime
 import os
 import sys
 from contextlib import contextmanager
-from typing import AbstractSet, Mapping, Sequence, cast
+from typing import AbstractSet, Any, Mapping, Sequence, cast
 
 import dagster._check as check
+import pytest
 from dagster import AssetMaterialization, RunsFilter, instance_for_test
+from dagster._check.functions import CheckError
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.sensor_definition import SensorType
@@ -73,13 +75,14 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 
 
 @contextmanager
-def get_workspace_request_context(filenames: Sequence[str]):
+def get_workspace_request_context(filenames: Sequence[str], overrides: Mapping[str, Any] = {}):
     with instance_for_test(
         overrides={
             "run_launcher": {
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
             },
+            **overrides,
         }
     ) as instance:
         target = InProcessTestWorkspaceLoadTarget(
@@ -177,6 +180,37 @@ def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[Dag
         )
     else:
         return []
+
+
+def test_error_on_invalid_workspace() -> None:
+    with get_workspace_request_context(
+        # no explicit sensor defined, so it's ok
+        ["check_after_parent_updated"],
+        overrides={"auto_materialize": {"use_sensors": False}},
+    ) as context:
+        assert context.get_workspace_snapshot()
+
+    with pytest.raises(
+        CheckError,
+        match="all_assets_non_user_space:simple_non_user_space",
+    ):
+        with get_workspace_request_context(
+            # using non-user-space sensor, explicitly defined, not ok
+            ["simple_non_user_space"],
+            overrides={"auto_materialize": {"use_sensors": False}},
+        ):
+            pass
+
+    with pytest.raises(
+        CheckError,
+        match="all_assets:default_condition",
+    ):
+        with get_workspace_request_context(
+            # using user-space sensor, explicitly defined, not ok
+            ["default_condition"],
+            overrides={"auto_materialize": {"use_sensors": False}},
+        ):
+            pass
 
 
 def test_checks_and_assets_in_same_run() -> None:
