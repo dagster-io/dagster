@@ -67,9 +67,8 @@ def build_defs_from_airflow_instance(
     return Definitions.merge(
         resolved_defs,
         build_airflow_polling_sensor_defs(
-            airflow_instance=airflow_instance,
             airflow_data=AirflowDefinitionsData(
-                instance_name=airflow_instance.name, resolved_airflow_defs=resolved_defs
+                airflow_instance=airflow_instance, resolved_airflow_defs=resolved_defs
             ),
             event_translation_fn=get_asset_events,
             minimum_interval_seconds=sensor_minimum_interval_seconds,
@@ -111,10 +110,9 @@ def build_full_automapped_dags_from_airflow_instance(
     return Definitions.merge(
         defs,
         build_airflow_polling_sensor_defs(
-            airflow_instance=airflow_instance,
             minimum_interval_seconds=sensor_minimum_interval_seconds,
             airflow_data=AirflowDefinitionsData(
-                resolved_airflow_defs=defs, instance_name=airflow_instance.name
+                resolved_airflow_defs=defs, airflow_instance=airflow_instance
             ),
             event_translation_fn=get_asset_events,
         ),
