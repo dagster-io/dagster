@@ -35,7 +35,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     get_python_environment_entry_point,
 )
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
@@ -461,6 +461,16 @@ def _execute_step_command_body(
             metadata={"pid": MetadataValue.text(str(os.getpid()))},
             step_key=single_step_key,
         )
+
+        if dagster_run.is_finished or dagster_run.status == DagsterRunStatus.CANCELING:
+            # This can happen if a run was terminated while a step was still starting up, and the
+            # termination signal wasn't propagated to the step process
+            yield instance.report_engine_event(
+                f"Skipping step execution for {single_step_key} since the run is in status {dagster_run.status}",
+                dagster_run,
+                step_key=single_step_key,
+            )
+            return
 
         if args.should_verify_step:
             success = verify_step(
