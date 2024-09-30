@@ -173,6 +173,7 @@ class StepDelegatingExecutor(Executor):
             with ActiveExecution(
                 execution_plan,
                 retry_mode=self.retries,
+                plan_context=plan_context,
                 max_concurrent=self._max_concurrent,
                 tag_concurrency_limits=self._tag_concurrency_limits,
                 instance_concurrency_context=instance_concurrency_context,

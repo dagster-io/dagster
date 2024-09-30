@@ -55,6 +55,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
 
     with execution_plan.start(
         retry_mode=job_context.executor.retries,
+        plan_context=job_context,
         sort_key_fn=priority_for_step,
     ) as active_execution:
         stopping = False
