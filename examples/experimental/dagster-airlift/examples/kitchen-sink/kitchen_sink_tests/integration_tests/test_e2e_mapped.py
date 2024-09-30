@@ -84,7 +84,10 @@ def test_dagster_weekly_daily_materializes(
     dagster_dev: None,
     dagster_home: str,
 ) -> None:
-    """Test that assets can load properly, and that materializations register."""
+    """Test that asset orchestrated by two dags loads property. Then
+    it triggers both dags that target it, and ensure that two materializations
+    register.
+    """
     from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
 
     af_instance = local_airflow_instance()
