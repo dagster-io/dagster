@@ -162,7 +162,12 @@ def make_task_info(
 
 
 def make_task_instance(
-    dag_id: str, task_id: str, run_id: str, start_date: datetime, end_date: datetime
+    dag_id: str,
+    task_id: str,
+    run_id: str,
+    start_date: datetime,
+    end_date: datetime,
+    logical_date: Optional[datetime] = None,
 ) -> TaskInstance:
     return TaskInstance(
         webserver_url="http://dummy.domain",
@@ -173,11 +178,18 @@ def make_task_instance(
             "state": "success",
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat(),
+            "logical_date": logical_date.isoformat() if logical_date else start_date.isoformat(),
         },
     )
 
 
-def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datetime) -> DagRun:
+def make_dag_run(
+    dag_id: str,
+    run_id: str,
+    start_date: datetime,
+    end_date: datetime,
+    logical_date: Optional[datetime] = None,
+) -> DagRun:
     return DagRun(
         webserver_url="http://dummy.domain",
         dag_id=dag_id,
@@ -186,6 +198,7 @@ def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datet
             "state": "success",
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat(),
+            "logical_date": logical_date.isoformat() if logical_date else start_date.isoformat(),
             "run_type": "manual",
             "note": "dummy note",
             "conf": {},

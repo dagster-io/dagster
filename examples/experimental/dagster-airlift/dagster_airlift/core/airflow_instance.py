@@ -5,6 +5,7 @@ from abc import ABC
 from typing import Any, Dict, List, Sequence
 
 import requests
+from dagster import _check as check
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
 from dagster._record import record
@@ -338,6 +339,20 @@ class TaskInstance:
         return f"{self.details_url}&tab=logs"
 
     @property
+    def logical_date(self) -> datetime.datetime:
+        """Returns the airflow-coined "logical date" from the task instance metadata.
+        The logical date refers to the starting time of the "data interval" that the overall dag run is processing.
+        In airflow < 2.2, this was set as the execution_date parameter in the task instance metadata.
+        """
+        # In airflow < 2.2, execution_date is set instead of logical_date.
+        logical_date_str = check.not_none(
+            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
+            "Expected one of execution_date or logical_date to be returned from the airflow rest API when querying for task information.",
+        )
+
+        return datetime.datetime.fromisoformat(logical_date_str)
+
+    @property
     def start_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["start_date"])
 
@@ -380,6 +395,20 @@ class DagRun:
     @property
     def config(self) -> Dict[str, Any]:
         return self.metadata["conf"]
+
+    @property
+    def logical_date(self) -> datetime.datetime:
+        """Returns the airflow-coined "logical date" from the dag run metadata.
+        The logical date refers to the starting time of the "data interval" that the dag run is processing.
+        In airflow < 2.2, this was set as the execution_date parameter in the dag run metadata.
+        """
+        # In airflow < 2.2, execution_date is set instead of logical_date.
+        logical_date_str = check.not_none(
+            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
+            "Expected one of execution_date or logical_date to be returned from the airflow rest API when querying for dag information.",
+        )
+
+        return datetime.datetime.fromisoformat(logical_date_str)
 
     @property
     def start_date(self) -> datetime.datetime:
