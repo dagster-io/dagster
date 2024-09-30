@@ -1,10 +1,9 @@
+from typing import Optional
 import boto3
 import dagster._check as check
 
-MAX_KEYS = 1000
 
-
-def get_s3_keys(bucket, prefix="", since_key=None, s3_session=None):
+def get_s3_keys(bucket: str, prefix: str = "", since_key: Optional[str] = None, s3_session: boto3.Session = None):
     check.str_param(bucket, "bucket")
     check.str_param(prefix, "prefix")
     check.opt_str_param(since_key, "since_key")
@@ -12,22 +11,24 @@ def get_s3_keys(bucket, prefix="", since_key=None, s3_session=None):
     if not s3_session:
         s3_session = boto3.resource("s3", use_ssl=True, verify=True).meta.client
 
-    cursor = ""
     contents = []
+    continuation_token = None
 
     while True:
-        response = s3_session.list_objects_v2(
-            Bucket=bucket,
-            Delimiter="",
-            MaxKeys=MAX_KEYS,
-            Prefix=prefix,
-            StartAfter=cursor,
-        )
+        params = {
+            "Bucket": bucket,
+            "Prefix": prefix,
+        }
+        if continuation_token:
+            params["ContinuationToken"] = continuation_token
+
+        response = s3_session.list_objects_v2(**params)
         contents.extend(response.get("Contents", []))
-        if response["KeyCount"] < MAX_KEYS:
+
+        if not response.get("IsTruncated"):
             break
 
-        cursor = response["Contents"][-1]["Key"]
+        continuation_token = response.get("NextContinuationToken")
 
     sorted_keys = [obj["Key"] for obj in sorted(contents, key=lambda x: x["LastModified"])]
 
