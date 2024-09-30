@@ -812,23 +812,40 @@ def map_asset_specs(defs: Definitions, fn: Callable[[AssetSpec], AssetSpec]) -> 
     return copy(defs, assets=result_assets, asset_checks=result_asset_checks)
 
 
-def replace_asset_spec_dep_asset_keys(
-    spec: AssetSpec, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
-) -> AssetSpec:
-    if not new_keys_by_old_key:
-        return spec
+def map_asset_keys(defs: Definitions, fn: Callable[[AssetSpec], AssetKey]) -> "Definitions":
+    """Replaces asset keys for assets within this Definitions object, keeping downstream assets and
+    asset checks in sync.
 
-    new_deps = []
-    any_changed = False
-    for dep in spec.deps:
-        new_key = new_keys_by_old_key.get(dep.asset_key)
-        if new_key is not None:
-            new_deps.append(dep._replace(asset_key=new_key))
-            any_changed = True
-        else:
-            new_deps.append(dep)
+    Returns a new Definitions object with the transformed assets; does not mutate this object.
 
-    if any_changed:
-        return spec._replace(deps=new_deps)
-    else:
-        return spec
+    Does not support Definitions  objects that contain CacheableAssetsDefinitions.
+
+    Args:
+        fn (Callable[[AssetSpec], AssetKey]): A function that accepts an AssetSpec and returns
+            a new AssetKey.
+
+    Returns:
+        Definitions: A new Definitions object with the transformed assets.
+    """
+    # Don't want to unintentionally trigger a fetch from an external tool
+    for el in defs.assets or []:
+        if isinstance(el, CacheableAssetsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Can't use map_asset_specs on Definitions objects that contain "
+                "CacheableAssetsDefinitions."
+            )
+
+    new_keys_by_old_key: Dict[AssetKey, AssetKey] = {}
+
+    assets_defs = defs.get_asset_graph().assets_defs
+    for el in assets_defs:
+        for spec in el.specs:
+            new_key = fn(spec)
+            if new_key != spec.key:
+                new_keys_by_old_key[spec.key] = new_key
+
+    new_assets = [
+        assets_def.with_replaced_asset_keys(new_asset_keys_by_old_asset_key=new_keys_by_old_key)
+        for assets_def in assets_defs
+    ]
+    return copy(defs, assets=new_assets, asset_checks=[])
