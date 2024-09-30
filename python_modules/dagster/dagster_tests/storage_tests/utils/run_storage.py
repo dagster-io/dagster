@@ -98,6 +98,10 @@ class TestRunStorage:
     def supports_backfill_job_name_filtering_queries(self):
         return False
 
+    # Override for storages that support filtering backfills by backfill id
+    def supports_backfill_id_filtering_queries(self):
+        return False
+
     @staticmethod
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
@@ -1731,6 +1735,8 @@ class TestRunStorage:
         assert len(backfills_for_job) == 0
 
     def test_backfill_id_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_id_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by backfill id")
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
         assert len(backfills) == 0

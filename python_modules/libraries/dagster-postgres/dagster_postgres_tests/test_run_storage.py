@@ -16,6 +16,9 @@ class TestPostgresRunStorage(TestRunStorage):
     def supports_backfill_job_name_filtering_queries(self):
         return True
 
+    def supports_backfill_id_filtering_queries(self):
+        return True
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self, conn_string):
         PostgresRunStorage.create_clean_storage(conn_string)
