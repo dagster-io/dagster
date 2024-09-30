@@ -42,7 +42,7 @@ def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> 
     )
 
 
-def spec_with_metadata(spec: AssetSpec, metadata: Mapping[str, str]) -> "AssetSpec":
+def spec_with_metadata(spec: AssetSpec, metadata: Mapping[str, Any]) -> "AssetSpec":
     return spec._replace(metadata={**spec.metadata, **metadata})
 
 
