@@ -6,7 +6,7 @@ from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 
-from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX, TASK_MAPPING_METADATA_KEY
 
 
 def convert_to_valid_dagster_name(name: str) -> str:
@@ -36,3 +36,7 @@ def spec_iterator(
 
 def metadata_for_task_mapping(*, task_id: str, dag_id: str) -> dict:
     return {TASK_MAPPING_METADATA_KEY: [{"dag_id": dag_id, "task_id": task_id}]}
+
+
+def get_metadata_key(instance_name: str) -> str:
+    return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"

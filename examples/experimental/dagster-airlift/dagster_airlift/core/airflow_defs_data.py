@@ -1,15 +1,28 @@
-from typing import AbstractSet, Optional
+from functools import cached_property
+from typing import AbstractSet, Optional, cast
 
-from dagster import AssetKey
+from dagster import AssetKey, Definitions
 from dagster._record import record
+from dagster._serdes.serdes import deserialize_value
 
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
+from dagster_airlift.core.utils import get_metadata_key
 
 
 @record
 class AirflowDefinitionsData:
-    serialized_data: SerializedAirflowDefinitionsData
+    instance_name: str
+    resolved_airflow_defs: Definitions
+
+    @cached_property
+    def serialized_data(self) -> SerializedAirflowDefinitionsData:
+        serialized_data_str = self.resolved_airflow_defs.metadata[
+            get_metadata_key(self.instance_name)
+        ].value
+        return deserialize_value(
+            cast(str, serialized_data_str), as_type=SerializedAirflowDefinitionsData
+        )
 
     @property
     def all_dag_ids(self) -> AbstractSet[str]:
