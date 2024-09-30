@@ -471,9 +471,9 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_assets_in_repo = len(asset_node_snaps)
     external_resources = external_repo.get_external_resources()
 
-    num_checks = len(external_repo.external_repository_data.external_asset_checks or [])
+    num_checks = len(external_repo.external_repository_data.asset_check_nodes or [])
     num_assets_with_checks = len(
-        {c.asset_key for c in external_repo.external_repository_data.external_asset_checks or []}
+        {c.asset_key for c in external_repo.external_repository_data.asset_check_nodes or []}
     )
 
     num_partitioned_assets_in_repo = 0

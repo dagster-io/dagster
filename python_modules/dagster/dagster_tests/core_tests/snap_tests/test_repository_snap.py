@@ -52,10 +52,10 @@ def test_repository_snap_all_props():
     external_repo_data = external_repository_data_from_def(noop_repo)
 
     assert external_repo_data.name == "noop_repo"
-    assert len(external_repo_data.external_job_datas) == 1
-    assert isinstance(external_repo_data.external_job_datas[0], JobDataSnap)
+    assert len(external_repo_data.job_datas) == 1
+    assert isinstance(external_repo_data.job_datas[0], JobDataSnap)
 
-    job_snapshot = external_repo_data.external_job_datas[0].job
+    job_snapshot = external_repo_data.job_datas[0].job
     assert isinstance(job_snapshot, JobSnap)
     assert job_snapshot.name == "noop_job"
     assert job_snapshot.description is None
@@ -84,11 +84,11 @@ def test_repository_snap_definitions_resources_basic():
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
 
-    assert len(external_repo_data.external_resource_data) == 1
-    assert external_repo_data.external_resource_data[0].name == "foo"
-    assert external_repo_data.external_resource_data[0].resource_snapshot.name == "foo"
-    assert external_repo_data.external_resource_data[0].resource_snapshot.description is None
-    assert external_repo_data.external_resource_data[0].configured_values == {}
+    assert len(external_repo_data.resources) == 1
+    assert external_repo_data.resources[0].name == "foo"
+    assert external_repo_data.resources[0].resource_snapshot.name == "foo"
+    assert external_repo_data.resources[0].resource_snapshot.description is None
+    assert external_repo_data.resources[0].configured_values == {}
 
 
 def test_repository_snap_definitions_resources_nested() -> None:
@@ -105,11 +105,11 @@ def test_repository_snap_definitions_resources_nested() -> None:
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 1
+    assert len(external_repo_data.resources) == 1
 
-    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    foo = [data for data in external_repo_data.resources if data.name == "foo"]
 
     assert len(foo) == 1
     assert (
@@ -138,12 +138,12 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 2
+    assert len(external_repo_data.resources) == 2
 
-    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
-    inner = [data for data in external_repo_data.external_resource_data if data.name == "inner"]
+    foo = [data for data in external_repo_data.resources if data.name == "foo"]
+    inner = [data for data in external_repo_data.resources if data.name == "inner"]
 
     assert len(foo) == 1
     assert len(inner) == 1
@@ -180,12 +180,12 @@ def test_repository_snap_definitions_function_style_resources_nested() -> None:
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 2
+    assert len(external_repo_data.resources) == 2
 
-    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
-    inner = [data for data in external_repo_data.external_resource_data if data.name == "inner"]
+    foo = [data for data in external_repo_data.resources if data.name == "foo"]
+    inner = [data for data in external_repo_data.resources if data.name == "inner"]
 
     assert len(foo) == 1
     assert len(inner) == 1
@@ -228,13 +228,11 @@ def test_repository_snap_definitions_resources_nested_many() -> None:
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 2
+    assert len(external_repo_data.resources) == 2
 
-    outermost = [
-        data for data in external_repo_data.external_resource_data if data.name == "outermost"
-    ]
+    outermost = [data for data in external_repo_data.resources if data.name == "outermost"]
     assert len(outermost) == 1
 
     assert len(outermost[0].nested_resources) == 1
@@ -243,7 +241,7 @@ def test_repository_snap_definitions_resources_nested_many() -> None:
         NestedResourceType.TOP_LEVEL, "outer"
     )
 
-    outer = [data for data in external_repo_data.external_resource_data if data.name == "outer"]
+    outer = [data for data in external_repo_data.resources if data.name == "outer"]
     assert len(outer) == 1
 
     assert len(outer[0].nested_resources) == 1
@@ -275,23 +273,20 @@ def test_repository_snap_definitions_resources_complex():
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
 
-    assert len(external_repo_data.external_resource_data) == 1
-    assert external_repo_data.external_resource_data[0].name == "foo"
-    assert external_repo_data.external_resource_data[0].resource_snapshot.name == "foo"
-    assert (
-        external_repo_data.external_resource_data[0].resource_snapshot.description
-        == "My description."
-    )
+    assert len(external_repo_data.resources) == 1
+    assert external_repo_data.resources[0].name == "foo"
+    assert external_repo_data.resources[0].resource_snapshot.name == "foo"
+    assert external_repo_data.resources[0].resource_snapshot.description == "My description."
 
     # Ensure we get config snaps for the resource's fields
-    assert len(external_repo_data.external_resource_data[0].config_field_snaps) == 1
-    snap = external_repo_data.external_resource_data[0].config_field_snaps[0]
+    assert len(external_repo_data.resources[0].config_field_snaps) == 1
+    snap = external_repo_data.resources[0].config_field_snaps[0]
     assert snap.name == "my_string"
     assert not snap.is_required
     assert snap.default_value_as_json_str == '"bar"'
 
     # Ensure we get the configured values for the resource
-    assert external_repo_data.external_resource_data[0].configured_values == {
+    assert external_repo_data.resources[0].configured_values == {
         "my_string": '"baz"',
     }
 
@@ -303,8 +298,8 @@ def test_repository_snap_empty():
 
     external_repo_data = external_repository_data_from_def(empty_repo)
     assert external_repo_data.name == "empty_repo"
-    assert len(external_repo_data.external_job_datas) == 0
-    assert len(external_repo_data.external_resource_data) == 0
+    assert len(external_repo_data.job_datas) == 0
+    assert len(external_repo_data.resources) == 0
 
 
 def test_repository_snap_definitions_env_vars() -> None:
@@ -412,11 +407,11 @@ def test_repository_snap_definitions_resources_assets_usage() -> None:
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 3
+    assert len(external_repo_data.resources) == 3
 
-    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    foo = [data for data in external_repo_data.resources if data.name == "foo"]
     assert len(foo) == 1
 
     assert sorted(foo[0].asset_keys_using, key=lambda k: "".join(k.path)) == [
@@ -424,14 +419,14 @@ def test_repository_snap_definitions_resources_assets_usage() -> None:
         AssetKey("my_other_asset"),
     ]
 
-    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    bar = [data for data in external_repo_data.resources if data.name == "bar"]
     assert len(bar) == 1
 
     assert bar[0].asset_keys_using == [
         AssetKey("my_other_asset"),
     ]
 
-    baz = [data for data in external_repo_data.external_resource_data if data.name == "baz"]
+    baz = [data for data in external_repo_data.resources if data.name == "baz"]
     assert len(baz) == 1
 
     assert baz[0].asset_keys_using == []
@@ -461,11 +456,11 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 1
+    assert len(external_repo_data.resources) == 1
 
-    foo = external_repo_data.external_resource_data[0]
+    foo = external_repo_data.resources[0]
 
     assert sorted(foo.asset_keys_using, key=lambda k: "".join(k.path)) == [
         AssetKey("my_asset"),
@@ -517,11 +512,11 @@ def test_repository_snap_definitions_resources_job_op_usage() -> None:
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 2
+    assert len(external_repo_data.resources) == 2
 
-    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    foo = [data for data in external_repo_data.resources if data.name == "foo"]
     assert len(foo) == 1
 
     assert _to_dict(foo[0].job_ops_using) == {
@@ -530,7 +525,7 @@ def test_repository_snap_definitions_resources_job_op_usage() -> None:
         "my_second_job": ["my_op_in_other_job", "my_op_in_other_job_2"],
     }
 
-    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    bar = [data for data in external_repo_data.resources if data.name == "bar"]
     assert len(bar) == 1
 
     assert _to_dict(bar[0].job_ops_using) == {
@@ -577,11 +572,11 @@ def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 2
+    assert len(external_repo_data.resources) == 2
 
-    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    foo = [data for data in external_repo_data.resources if data.name == "foo"]
     assert len(foo) == 1
 
     assert _to_dict(foo[0].job_ops_using) == {
@@ -594,7 +589,7 @@ def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
         ]
     }
 
-    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    bar = [data for data in external_repo_data.resources if data.name == "bar"]
     assert len(bar) == 1
 
     assert _to_dict(bar[0].job_ops_using) == {"my_job": ["my_graph.my_other_op"]}
@@ -619,9 +614,9 @@ def test_asset_check():
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
 
-    assert len(external_repo_data.external_asset_checks) == 2
-    assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
-    assert external_repo_data.external_asset_checks[1].name == "my_asset_check_2"
+    assert len(external_repo_data.asset_check_nodes) == 2
+    assert external_repo_data.asset_check_nodes[0].name == "my_asset_check"
+    assert external_repo_data.asset_check_nodes[1].name == "my_asset_check_2"
 
 
 def test_asset_check_in_asset_op():
@@ -645,10 +640,10 @@ def test_asset_check_in_asset_op():
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
 
-    assert len(external_repo_data.external_asset_checks) == 3
-    assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
-    assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
-    assert external_repo_data.external_asset_checks[2].name == "my_other_asset_check_2"
+    assert len(external_repo_data.asset_check_nodes) == 3
+    assert external_repo_data.asset_check_nodes[0].name == "my_asset_check"
+    assert external_repo_data.asset_check_nodes[1].name == "my_other_asset_check"
+    assert external_repo_data.asset_check_nodes[2].name == "my_other_asset_check_2"
 
 
 def test_asset_check_multiple_jobs():
@@ -673,12 +668,12 @@ def test_asset_check_multiple_jobs():
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_asset_checks
-    assert len(external_repo_data.external_asset_checks) == 2
-    assert external_repo_data.external_asset_checks[0].name == "my_asset_check"
-    assert external_repo_data.external_asset_checks[1].name == "my_other_asset_check"
-    assert external_repo_data.external_asset_checks[0].job_names == ["__ASSET_JOB", "my_job"]
-    assert external_repo_data.external_asset_checks[1].job_names == ["__ASSET_JOB", "my_job"]
+    assert external_repo_data.asset_check_nodes
+    assert len(external_repo_data.asset_check_nodes) == 2
+    assert external_repo_data.asset_check_nodes[0].name == "my_asset_check"
+    assert external_repo_data.asset_check_nodes[1].name == "my_other_asset_check"
+    assert external_repo_data.asset_check_nodes[0].job_names == ["__ASSET_JOB", "my_job"]
+    assert external_repo_data.asset_check_nodes[1].job_names == ["__ASSET_JOB", "my_job"]
 
 
 def test_asset_check_multi_asset():
@@ -696,10 +691,10 @@ def test_asset_check_multi_asset():
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_asset_checks
-    assert len(external_repo_data.external_asset_checks) == 1
-    assert external_repo_data.external_asset_checks[0].name == "check_1"
-    assert external_repo_data.external_asset_checks[0].job_names == ["__ASSET_JOB"]
+    assert external_repo_data.asset_check_nodes
+    assert len(external_repo_data.asset_check_nodes) == 1
+    assert external_repo_data.asset_check_nodes[0].name == "check_1"
+    assert external_repo_data.asset_check_nodes[0].job_names == ["__ASSET_JOB"]
 
 
 def test_repository_snap_definitions_resources_schedule_sensor_usage():
@@ -742,11 +737,11 @@ def test_repository_snap_definitions_resources_schedule_sensor_usage():
 
     repo = resolve_pending_repo_if_required(defs)
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.external_resource_data
+    assert external_repo_data.resources
 
-    assert len(external_repo_data.external_resource_data) == 3
+    assert len(external_repo_data.resources) == 3
 
-    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    foo = [data for data in external_repo_data.resources if data.name == "foo"]
     assert len(foo) == 1
 
     assert set(cast(ResourceSnap, foo[0]).schedules_using) == {
@@ -755,13 +750,13 @@ def test_repository_snap_definitions_resources_schedule_sensor_usage():
     }
     assert set(cast(ResourceSnap, foo[0]).sensors_using) == {"my_sensor", "my_sensor_two"}
 
-    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    bar = [data for data in external_repo_data.resources if data.name == "bar"]
     assert len(bar) == 1
 
     assert set(cast(ResourceSnap, bar[0]).schedules_using) == set()
     assert set(cast(ResourceSnap, bar[0]).sensors_using) == {"my_sensor_two"}
 
-    baz = [data for data in external_repo_data.external_resource_data if data.name == "baz"]
+    baz = [data for data in external_repo_data.resources if data.name == "baz"]
     assert len(baz) == 1
 
     assert set(cast(ResourceSnap, baz[0]).schedules_using) == set({"my_schedule_two"})
