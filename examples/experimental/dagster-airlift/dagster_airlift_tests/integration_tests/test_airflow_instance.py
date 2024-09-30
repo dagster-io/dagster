@@ -41,6 +41,7 @@ def test_airflow_instance(airflow_instance: None) -> None:
     assert task_dict["print_task"].task_id == "print_task"
     assert task_dict["downstream_print_task"].dag_id == "print_dag"
     assert task_dict["downstream_print_task"].task_id == "downstream_print_task"
+    assert task_dict["print_task"].downstream_task_ids == ["downstream_print_task"]
 
     task_info = instance.get_task_info(dag_id="print_dag", task_id="downstream_print_task")
     assert task_info.dag_id == "print_dag"
