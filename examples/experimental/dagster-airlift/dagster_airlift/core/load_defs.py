@@ -19,6 +19,11 @@ from dagster_airlift.core.sensor import (
     get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
+from dagster_airlift.core.serialization.defs_construction import (
+    construct_automapped_dag_assets_defs,
+    construct_dag_assets_defs,
+    get_airflow_data_to_spec_mapper,
+)
 from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
 
@@ -45,14 +50,13 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
     def defs_from_state(
         self, serialized_airflow_data: SerializedAirflowDefinitionsData
     ) -> Definitions:
-        airflow_data = AirflowDefinitionsData(serialized_data=serialized_airflow_data)
         return Definitions.merge(
-            enrich_explicit_defs_with_airflow_metadata(self.explicit_defs, airflow_data),
-            airflow_data.construct_dag_assets_defs(),
+            enrich_explicit_defs_with_airflow_metadata(self.explicit_defs, serialized_airflow_data),
+            construct_dag_assets_defs(serialized_airflow_data),
             build_airflow_polling_sensor_defs(
                 airflow_instance=self.airflow_instance,
                 minimum_interval_seconds=self.sensor_minimum_interval_seconds,
-                airflow_data=airflow_data,
+                airflow_data=AirflowDefinitionsData(serialized_data=serialized_airflow_data),
                 event_translation_fn=get_asset_events,
             ),
         )
@@ -93,7 +97,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDef
     ) -> Definitions:
         airflow_data = AirflowDefinitionsData(serialized_data=serialized_airflow_data)
         return Definitions.merge(
-            airflow_data.construct_automapped_dag_assets_defs(),
+            construct_automapped_dag_assets_defs(serialized_airflow_data),
             build_airflow_polling_sensor_defs(
                 airflow_instance=self.airflow_instance,
                 minimum_interval_seconds=self.sensor_minimum_interval_seconds,
@@ -115,15 +119,35 @@ def build_full_automapped_dags_from_airflow_instance(
 
 
 def enrich_explicit_defs_with_airflow_metadata(
-    explicit_defs: Definitions, airflow_data: AirflowDefinitionsData
+    explicit_defs: Definitions, serialized_data: SerializedAirflowDefinitionsData
 ) -> Definitions:
-    return replace_assets_in_defs(
-        explicit_defs,
-        (
-            assets_def.map_asset_specs(airflow_data.map_airflow_data_to_spec)
-            for assets_def in assets_def_of_defs(explicit_defs)
-        ),
+    return Definitions(
+        assets=list(_apply_airflow_data_to_specs(explicit_defs, serialized_data)),
+        asset_checks=explicit_defs.asset_checks,
+        sensors=explicit_defs.sensors,
+        schedules=explicit_defs.schedules,
+        jobs=explicit_defs.jobs,
+        executor=explicit_defs.executor,
+        loggers=explicit_defs.loggers,
+        resources=explicit_defs.resources,
     )
+
+
+def _apply_airflow_data_to_specs(
+    explicit_defs: Definitions,
+    serialized_data: SerializedAirflowDefinitionsData,
+) -> Iterator[AssetsDefinition]:
+    """Apply asset spec transformations to the asset definitions."""
+    for asset in explicit_defs.assets or []:
+        asset = check.inst(  # noqa: PLW2901
+            asset,
+            (AssetSpec, AssetsDefinition),
+            "Expected passed assets to all be AssetsDefinitions or AssetSpecs.",
+        )
+        assets_def = (
+            asset if isinstance(asset, AssetsDefinition) else external_asset_from_spec(asset)
+        )
+        yield assets_def.map_asset_specs(get_airflow_data_to_spec_mapper(serialized_data))
 
 
 def replace_assets_in_defs(defs: Definitions, assets: Iterable[AssetsDefinition]) -> Definitions:
