@@ -203,14 +203,6 @@ a.pyobject {
     --ifm-h5-font-size: 0.8rem;
   }
 
-  // Emulate horizontal rule above h2 headers
-  h2 {
-    border-top: 1px;
-    border-top-style: solid;
-    border-top-color: var(--theme-color-keyline);
-    margin-top: 0px;
-    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading));
-  }
 
   // We want this to only apply to inline code
   :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
@@ -691,6 +683,7 @@ div[class^='announcementBar_'] {
   }
 }
 
+
 /* Feedback navigation item */
 .feedback-nav-link {
   color: var(--theme-color-text-light);
@@ -702,6 +695,8 @@ div[class^='announcementBar_'] {
   border: 1px solid var(--theme-color-border-default);
   border-radius: 8px;
   text-decoration: none;
+    transition: all 0.3s ease;
+
   &:hover {
     background-color: var(--theme-color-background-light);
     color:  var(--theme-color-text-light);
@@ -710,3 +705,23 @@ div[class^='announcementBar_'] {
 
 }
 
+/* Markdown Card */
+
+  .card {
+    background-color: var(--theme-color-background-default);
+    border: 1px solid var(--theme-color-keyline) !important;
+    transition: all .3s ease;
+    &:hover {
+      background-color: var(--theme-color-background-light);
+      border: 1px solid var(--theme-color-border-default) !important;
+      transform: translateY(0px);
+    }  
+    
+    h2: {
+      font-size: 1.5rem;
+      margin-top: 0;
+      margin-bottom: 0;
+      font-weight: 600;
+      display: none;
+    }
+  }
