@@ -2,15 +2,9 @@ from collections import defaultdict
 from functools import cached_property
 from typing import Dict, List, Optional, Set
 
-from dagster import (
-    AssetKey,
-    AssetSpec,
-    Definitions,
-    _check as check,
-)
+from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
 
-from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
 from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
@@ -22,7 +16,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     TaskHandle,
     TaskInfo,
 )
-from dagster_airlift.core.utils import spec_iterator
+from dagster_airlift.core.utils import is_mapped_asset_spec, spec_iterator, task_handles_for_spec
 from dagster_airlift.proxied_state import AirflowProxiedState
 
 
@@ -83,20 +77,6 @@ class AirliftMetadataMappingInfo:
             for dep in spec.deps:
                 downstreams[dep.asset_key].add(spec.key)
         return downstreams
-
-
-def is_mapped_asset_spec(spec: AssetSpec) -> bool:
-    return TASK_MAPPING_METADATA_KEY in spec.metadata
-
-
-def task_handles_for_spec(spec: AssetSpec) -> Set[TaskHandle]:
-    check.param_invariant(is_mapped_asset_spec(spec), "spec", "Must be mappped spec")
-    task_handles = []
-    for task_handle_dict in spec.metadata[TASK_MAPPING_METADATA_KEY]:
-        task_handles.append(
-            TaskHandle(dag_id=task_handle_dict["dag_id"], task_id=task_handle_dict["task_id"])
-        )
-    return set(task_handles)
 
 
 def build_airlift_metadata_mapping_info(defs: Definitions) -> AirliftMetadataMappingInfo:
