@@ -153,7 +153,7 @@ def fetch_all_airflow_data(
 ) -> FetchedAirflowData:
     dag_infos = {dag.dag_id: dag for dag in airflow_instance.list_dags()}
     task_info_map = defaultdict(dict)
-    for dag_id in mapping_info.dag_ids:
+    for dag_id in dag_infos:
         task_info_map[dag_id] = {
             task_info.task_id: task_info
             for task_info in airflow_instance.get_task_infos(dag_id=dag_id)
@@ -189,6 +189,7 @@ def compute_serialized_data(
                     asset_keys_in_dag=mapping_info.asset_keys_per_dag_id[dag_id],
                     downstreams_asset_dependency_graph=mapping_info.downstream_deps,
                 ),
+                task_infos=fetched_airflow_data.task_info_map[dag_id],
             )
             for dag_id, dag_info in fetched_airflow_data.dag_infos.items()
         },

@@ -149,12 +149,14 @@ def make_dag_info(dag_id: str, file_token: Optional[str]) -> DagInfo:
     )
 
 
-def make_task_info(dag_id: str, task_id: str) -> TaskInfo:
+def make_task_info(
+    dag_id: str, task_id: str, downstream_task_ids: Optional[List[str]] = None
+) -> TaskInfo:
     return TaskInfo(
         webserver_url="http://dummy.domain",
         dag_id=dag_id,
         task_id=task_id,
-        metadata={},
+        metadata={"downstream_task_ids": downstream_task_ids or []},
     )
 
 
@@ -193,6 +195,7 @@ def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datet
 def make_instance(
     dag_and_task_structure: Dict[str, List[str]],
     dag_runs: List[DagRun] = [],
+    task_deps: Dict[str, List[str]] = {},
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
 
@@ -206,7 +209,14 @@ def make_instance(
     for dag_id, task_ids in dag_and_task_structure.items():
         dag_info = make_dag_info(dag_id=dag_id, file_token=dag_id)
         dag_infos.append(dag_info)
-        task_infos.extend([make_task_info(dag_id=dag_id, task_id=task_id) for task_id in task_ids])
+        task_infos.extend(
+            [
+                make_task_info(
+                    dag_id=dag_id, task_id=task_id, downstream_task_ids=task_deps.get(task_id, [])
+                )
+                for task_id in task_ids
+            ]
+        )
     task_instances = []
     for dag_run in dag_runs:
         task_instances.extend(

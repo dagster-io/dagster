@@ -28,6 +28,11 @@ class TaskInfo:
         return check.is_list(self.metadata["downstream_task_ids"], str)
 
 
+def make_default_dag_asset_key(dag_id: str) -> AssetKey:
+    """Conventional asset key representing a successful run of an airfow dag."""
+    return AssetKey(["airflow_instance", "dag", convert_to_valid_dagster_name(dag_id)])
+
+
 @whitelist_for_serdes
 @record
 class DagInfo:
@@ -40,14 +45,9 @@ class DagInfo:
         return f"{self.webserver_url}/dags/{self.dag_id}"
 
     @cached_property
-    def dagster_safe_dag_id(self) -> str:
-        """Name based on the dag_id that is safe to use in dagster."""
-        return convert_to_valid_dagster_name(self.dag_id)
-
-    @property
     def dag_asset_key(self) -> AssetKey:
         # Conventional asset key representing a successful run of an airfow dag.
-        return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
+        return make_default_dag_asset_key(self.dag_id)
 
     @property
     def file_token(self) -> str:
@@ -63,6 +63,7 @@ class TaskHandle(NamedTuple):
 @whitelist_for_serdes
 @record
 class MappedAirflowTaskData:
+    # remove if we keep it in SerializedDataData
     task_info: TaskInfo
     task_handle: TaskHandle
     migrated: Optional[bool]
@@ -83,6 +84,7 @@ class SerializedDagData:
     dag_info: DagInfo
     source_code: str
     leaf_asset_keys: Set[AssetKey]
+    task_infos: Mapping[str, TaskInfo]
 
 
 @whitelist_for_serdes

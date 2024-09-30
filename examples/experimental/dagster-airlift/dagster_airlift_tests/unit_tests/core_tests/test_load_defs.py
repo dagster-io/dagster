@@ -16,14 +16,17 @@ from dagster import (
     schedule,
     sensor,
 )
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.test_utils import environ
 from dagster._serdes.serdes import deserialize_value
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
+from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData, key_for_task_asset
+from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 from dagster_airlift.core.serialization.compute import compute_serialized_data, is_mapped_asset_spec
+from dagster_airlift.core.serialization.serialized_data import make_default_dag_asset_key
 from dagster_airlift.core.state_backed_defs_loader import (
     scoped_reconstruction_metadata,
     unwrap_reconstruction_metadata,
@@ -158,7 +161,7 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
     assert not assets_def.is_executable
 
     assert AssetKey(["airflow_instance", "dag", "dag_with_hyphens"]) in repo.assets_defs_by_key
-    dag_def = repo.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag_with_hyphens"])]
+    dag_def = repo.assets_defs_by_key[make_default_dag_asset_key("dag_with_hyphens")]
     assert not dag_def.is_executable
 
 
@@ -179,8 +182,8 @@ def test_transitive_asset_deps() -> None:
         additional_defs=Definitions(assets=[AssetSpec(key="b", deps=["a"])]),
     )
     repo_def.load_all_definitions()
-    dag1_key = AssetKey(["airflow_instance", "dag", "dag1"])
-    dag2_key = AssetKey(["airflow_instance", "dag", "dag2"])
+    dag1_key = make_default_dag_asset_key("dag1")
+    dag2_key = make_default_dag_asset_key("dag2")
     a_key = AssetKey(["a"])
     b_key = AssetKey(["b"])
     c_key = AssetKey(["c"])
@@ -221,9 +224,7 @@ def test_peered_dags() -> None:
             "dag3": {"task": []},
         },
         additional_defs=Definitions(
-            assets=[
-                AssetSpec(key="a", deps=[AssetKey.from_user_string("airflow_instance/dag/dag1")])
-            ]
+            assets=[AssetSpec(key="a", deps=[make_default_dag_asset_key("dag1")])]
         ),
     )
     assert defs.assets
@@ -325,7 +326,7 @@ def test_cached_loading() -> None:
     assert len(list(defs.assets)) == 2
     assert {
         key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
-    } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
+    } == {a, make_default_dag_asset_key("dag")}
     assert len(defs.metadata) == 1
     assert "dagster-airlift/source/test_instance" in defs.metadata
     assert isinstance(defs.metadata["dagster-airlift/source/test_instance"].value, str)
@@ -352,7 +353,7 @@ def test_cached_loading() -> None:
                 key
                 for assets_def in reloaded_defs.assets
                 for key in cast(AssetsDefinition, assets_def).keys
-            } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
+            } == {a, make_default_dag_asset_key("dag")}
             assert len(reloaded_defs.metadata) == 1
             assert "dagster-airlift/source/test_instance" in reloaded_defs.metadata
             # Reconstruction data should remain the same.
@@ -388,8 +389,8 @@ def test_multiple_tasks_per_asset(init_load_context: None) -> None:
     } == {
         AssetKey("a"),
         AssetKey("b"),
-        AssetKey(["airflow_instance", "dag", "dag1"]),
-        AssetKey(["airflow_instance", "dag", "dag2"]),
+        make_default_dag_asset_key("dag1"),
+        make_default_dag_asset_key("dag2"),
     }
     repo_def = defs.get_repository_def()
     a_and_b_asset = repo_def.assets_defs_by_key[AssetKey("a")]
@@ -425,3 +426,25 @@ def test_multiple_tasks_to_single_asset() -> None:
         {"dag_id": "dag1", "task_id": "task1"},
         {"dag_id": "dag2", "task_id": "task2"},
     ]
+
+
+def test_automapped_build() -> None:
+    airflow_instance = make_instance(
+        dag_and_task_structure={"dag1": ["task1", "task2", "standalone"]},
+        task_deps={"task1": ["task2"]},
+    )
+    defs = build_full_automapped_dags_from_airflow_instance(
+        airflow_instance=airflow_instance,
+    )
+
+    dag1_task1 = key_for_task_asset("dag1", "task1")
+    dag1_task2 = key_for_task_asset("dag1", "task2")
+    dag1_standalone = key_for_task_asset("dag1", "standalone")
+
+    specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
+
+    assert specs[dag1_task1].deps == []
+    assert specs[dag1_task2].deps == [AssetDep(dag1_task1)]
+    assert specs[dag1_standalone].deps == []
+
+    assert make_default_dag_asset_key("dag1") in specs

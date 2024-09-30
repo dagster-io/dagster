@@ -16,7 +16,7 @@ def dagster_home_fixture(local_env: None) -> str:
 
 @pytest.fixture(name="dagster_dev_cmd")
 def dagster_dev_cmd_fixture() -> List[str]:
-    return ["make", "run_dagster", "-C", str(makefile_dir())]
+    return ["make", "run_dagster_mapped", "-C", str(makefile_dir())]
 
 
 expected_mats_per_dag = {
@@ -30,7 +30,7 @@ def test_dagster_materializes(
     dagster_home: str,
 ) -> None:
     """Test that assets can load properly, and that materializations register."""
-    from kitchen_sink.dagster_defs import airflow_instance as af_instance
+    from kitchen_sink.dagster_defs.mapped_defs import airflow_instance as af_instance
 
     for dag_id, expected_asset_keys in expected_mats_per_dag.items():
         run_id = af_instance.trigger_dag(dag_id=dag_id)
