@@ -13,7 +13,7 @@ PASSWORD = "admin"
 
 ASSETS_PATH = Path(__file__).parent / "defs"
 MIGRATION_STATE_PATH = Path(__file__).parent / "migration"
-DBT_DAG_ASSET_KEY = AssetKey(["airflow_instance", "dag", "dbt_dag"])
+DBT_DAG_ASSET_KEY = AssetKey([AIRFLOW_INSTANCE_NAME, "dag", "dbt_dag"])
 
 
 def dbt_project_path() -> Path:

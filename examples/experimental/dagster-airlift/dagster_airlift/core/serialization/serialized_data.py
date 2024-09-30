@@ -8,8 +8,6 @@ from dagster import (
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
-from dagster_airlift.core.utils import convert_to_valid_dagster_name
-
 
 @whitelist_for_serdes
 @record
@@ -28,11 +26,6 @@ class TaskInfo:
         return check.is_list(self.metadata["downstream_task_ids"], str)
 
 
-def make_default_dag_asset_key(dag_id: str) -> AssetKey:
-    """Conventional asset key representing a successful run of an airfow dag."""
-    return AssetKey(["airflow_instance", "dag", convert_to_valid_dagster_name(dag_id)])
-
-
 @whitelist_for_serdes
 @record
 class DagInfo:
@@ -43,11 +36,6 @@ class DagInfo:
     @property
     def url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
-
-    @cached_property
-    def dag_asset_key(self) -> AssetKey:
-        # Conventional asset key representing a successful run of an airfow dag.
-        return make_default_dag_asset_key(self.dag_id)
 
     @property
     def file_token(self) -> str:

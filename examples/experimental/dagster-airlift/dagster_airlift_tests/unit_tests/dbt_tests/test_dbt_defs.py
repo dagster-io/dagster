@@ -46,7 +46,8 @@ def test_dbt_defs(dbt_project_path: Path, dbt_project_setup: None, init_load_con
     assert isinstance(dbt_defs_inst, Definitions)
 
     test_airflow_instance = make_instance(
-        dag_and_task_structure={"dag_one": ["task_one"], "dag_two": ["task_two"]}
+        dag_and_task_structure={"dag_one": ["task_one"], "dag_two": ["task_two"]},
+        instance_name="airflow_instance",
     )
 
     initial_defs = Definitions.merge(

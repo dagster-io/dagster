@@ -5,6 +5,7 @@ from abc import ABC
 from typing import Any, Dict, List, Sequence
 
 import requests
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
@@ -46,7 +47,7 @@ class AirflowInstance:
         batch_dag_runs_limit: int = DEFAULT_BATCH_DAG_RUNS_LIMIT,
     ) -> None:
         self.auth_backend = auth_backend
-        self.name = name
+        self.name = check_valid_name(name)
         self.batch_task_instance_limit = batch_task_instance_limit
         self.batch_dag_runs_limit = batch_dag_runs_limit
 
