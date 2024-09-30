@@ -132,16 +132,15 @@ def get_additional_required_keys(
 
     # the set of atomic execution ids that any of the input asset keys are a part of
     required_execution_set_identifiers = {
-        asset_nodes_by_key[asset_key].external_asset_node.execution_set_identifier
+        asset_nodes_by_key[asset_key].asset_node_snap.execution_set_identifier
         for asset_key in asset_keys
     } - {None}
 
     # the set of all asset keys that are part of the required execution sets
     required_asset_keys = {
-        asset_node.external_asset_node.asset_key
+        asset_node.asset_node_snap.asset_key
         for asset_node in asset_nodes_by_key.values()
-        if asset_node.external_asset_node.execution_set_identifier
-        in required_execution_set_identifiers
+        if asset_node.asset_node_snap.execution_set_identifier in required_execution_set_identifiers
     }
 
     return list(required_asset_keys - asset_keys)
@@ -156,18 +155,18 @@ def get_asset_node_definition_collisions(
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
     for remote_asset_node in graphene_info.context.asset_graph.asset_nodes:
-        for repo_handle, external_asset_node in remote_asset_node.repo_node_pairs:
-            if external_asset_node.asset_key in asset_keys:
+        for repo_handle, asset_node_snap in remote_asset_node.repo_node_pairs:
+            if asset_node_snap.asset_key in asset_keys:
                 is_defined = (
-                    external_asset_node.node_definition_name
-                    or external_asset_node.graph_name
-                    or external_asset_node.op_name
+                    asset_node_snap.node_definition_name
+                    or asset_node_snap.graph_name
+                    or asset_node_snap.op_name
                 )
                 if not is_defined:
                     continue
 
                 code_location = graphene_info.context.get_code_location(repo_handle.location_name)
-                repos[external_asset_node.asset_key].append(
+                repos[asset_node_snap.asset_key].append(
                     GrapheneRepository(
                         workspace_context=graphene_info.context,
                         repository=code_location.get_repository(repo_handle.repository_name),
@@ -205,7 +204,7 @@ def _graphene_asset_node(
     return GrapheneAssetNode(
         code_location,
         repo,
-        remote_node.priority_node,
+        remote_node.priority_node_snap,
         asset_checks_loader=asset_checks_loader,
         depended_by_loader=depended_by_loader,
         stale_status_loader=stale_status_loader,

@@ -123,7 +123,7 @@ class ExternalRepositoryData(IHaveNew):
     external_schedule_datas: Sequence["ScheduleSnap"]
     external_partition_set_datas: Sequence["PartitionSetSnap"]
     external_sensor_datas: Sequence["SensorSnap"]
-    external_asset_graph_data: Sequence["ExternalAssetNode"]
+    external_asset_graph_data: Sequence["AssetNodeSnap"]
     external_job_datas: Optional[Sequence["ExternalJobData"]]
     external_job_refs: Optional[Sequence["ExternalJobRef"]]
     external_resource_data: Optional[Sequence["ExternalResourceData"]]
@@ -137,7 +137,7 @@ class ExternalRepositoryData(IHaveNew):
         external_schedule_datas: Sequence["ScheduleSnap"],
         external_partition_set_datas: Sequence["PartitionSetSnap"],
         external_sensor_datas: Optional[Sequence["SensorSnap"]] = None,
-        external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
+        external_asset_graph_data: Optional[Sequence["AssetNodeSnap"]] = None,
         external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
@@ -827,31 +827,37 @@ class ExternalPartitionExecutionErrorData:
     error: Optional[SerializableErrorInfo]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_name="ExternalAssetDependency",
+    storage_field_names={"parent_asset_key": "upstream_asset_key"},
+)
 @record
-class ExternalAssetDependency:
+class AssetParentEdgeSnap:
     """A definition of a directed edge in the logical asset graph.
 
     An upstream asset that's depended on, and the corresponding input name in the downstream asset
     that depends on it.
     """
 
-    upstream_asset_key: AssetKey
+    parent_asset_key: AssetKey
     input_name: Optional[str] = None
     output_name: Optional[str] = None
     partition_mapping: Optional[PartitionMapping] = None
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_name="ExternalAssetDependedBy",
+    storage_field_names={"child_asset_key": "downstream_asset_key"},
+)
 @record
-class ExternalAssetDependedBy:
+class AssetChildEdgeSnap:
     """A definition of a directed edge in the logical asset graph.
 
     An downstream asset that's depended by, and the corresponding input name in the upstream
     asset that it depends on.
     """
 
-    downstream_asset_key: AssetKey
+    child_asset_key: AssetKey
     input_name: Optional[str] = None
     output_name: Optional[str] = None
 
@@ -1023,7 +1029,10 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
 
 
 @whitelist_for_serdes(
+    storage_name="ExternalAssetNode",
     storage_field_names={
+        "child_edges": "depended_by",
+        "parent_edges": "dependencies",
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
         "description": "op_description",
@@ -1035,15 +1044,15 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
 )
 @suppress_dagster_warnings
 @record_custom
-class ExternalAssetNode(IHaveNew):
+class AssetNodeSnap(IHaveNew):
     """A definition of a node in the logical asset graph.
 
     A function for computing the asset and an identifier for that asset.
     """
 
     asset_key: AssetKey
-    dependencies: Sequence[ExternalAssetDependency]
-    depended_by: Sequence[ExternalAssetDependedBy]
+    parent_edges: Sequence[AssetParentEdgeSnap]
+    child_edges: Sequence[AssetChildEdgeSnap]
     execution_type: AssetExecutionType
     compute_kind: Optional[str]
     op_name: Optional[str]
@@ -1075,8 +1084,8 @@ class ExternalAssetNode(IHaveNew):
     def __new__(
         cls,
         asset_key: AssetKey,
-        dependencies: Sequence[ExternalAssetDependency],
-        depended_by: Sequence[ExternalAssetDependedBy],
+        parent_edges: Sequence[AssetParentEdgeSnap],
+        child_edges: Sequence[AssetChildEdgeSnap],
         execution_type: Optional[AssetExecutionType] = None,
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
@@ -1137,11 +1146,11 @@ class ExternalAssetNode(IHaveNew):
                 or default_execution_type
             )
 
-        # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
+        # backcompat logic to handle AssetNodeSnaps serialized without op_names/graph_name
         if not op_names:
             op_names = list(filter(None, [op_name]))
 
-        # backcompat logic to handle ExternalAssetNodes serialzied without is_source
+        # backcompat logic to handle AssetNodeSnaps serialzied without is_source
         if is_source is None:
             # prior to this field being added, all non-source assets must be part of at least one
             # job, and no source assets could be part of any job
@@ -1155,8 +1164,8 @@ class ExternalAssetNode(IHaveNew):
         return super().__new__(
             cls,
             asset_key=asset_key,
-            dependencies=dependencies or [],
-            depended_by=depended_by or [],
+            parent_edges=parent_edges or [],
+            child_edges=child_edges or [],
             compute_kind=compute_kind,
             op_name=op_name,
             op_names=op_names or [],
@@ -1275,10 +1284,7 @@ def external_repository_data_from_def(
         job_refs = None
 
     resource_datas = repository_def.get_top_level_resources()
-    asset_graph = external_asset_nodes_from_defs(
-        jobs,
-        repository_def.asset_graph,
-    )
+    asset_node_snaps = asset_node_snaps_from_repo(repository_def)
 
     nested_resource_map = _get_nested_resources_map(
         resource_datas, repository_def.get_top_level_resources()
@@ -1291,7 +1297,7 @@ def external_repository_data_from_def(
 
     resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
     # collect resource usage from normal non-source assets
-    for asset in asset_graph:
+    for asset in asset_node_snaps:
         if asset.required_top_level_resources:
             for resource_key in asset.required_top_level_resources:
                 resource_asset_usage_map[resource_key].append(asset.asset_key)
@@ -1337,7 +1343,7 @@ def external_repository_data_from_def(
             ],
             key=lambda sd: sd.name,
         ),
-        external_asset_graph_data=asset_graph,
+        external_asset_graph_data=asset_node_snaps,
         external_job_datas=job_datas,
         external_job_refs=job_refs,
         external_resource_data=sorted(
@@ -1398,16 +1404,13 @@ def external_asset_checks_from_defs(
     return sorted(external_checks, key=lambda check: (check.asset_key, check.name))
 
 
-def external_asset_nodes_from_defs(
-    job_defs: Sequence[JobDefinition],
-    asset_graph: AssetGraph,
-) -> Sequence[ExternalAssetNode]:
+def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNodeSnap]:
     # First iterate over all job defs to identify a "primary node" for each materializable asset
-    # key. This is the node that will be used to populate the ExternalAssetNode. We need to identify
+    # key. This is the node that will be used to populate the AssetNodeSnap. We need to identify
     # a primary node because the same asset can be materialized as part of multiple jobs.
     primary_node_pairs_by_asset_key: Dict[AssetKey, Tuple[NodeOutputHandle, JobDefinition]] = {}
     job_defs_by_asset_key: Dict[AssetKey, List[JobDefinition]] = {}
-    for job_def in job_defs:
+    for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
         asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
         for node_output_handle, asset_key in asset_keys_by_node_output.items():
@@ -1417,9 +1420,9 @@ def external_asset_nodes_from_defs(
                 primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
-    external_asset_nodes: List[ExternalAssetNode] = []
-    for key in sorted(asset_graph.all_asset_keys):
-        asset_node = asset_graph.get(key)
+    asset_node_snaps: List[AssetNodeSnap] = []
+    for key in sorted(repo.asset_graph.all_asset_keys):
+        asset_node = repo.asset_graph.get(key)
 
         # Materializable assets (which are always part of at least one job, due to asset base jobs)
         # have various fields related to their op/output/jobs etc defined. External assets have null
@@ -1460,31 +1463,30 @@ def external_asset_nodes_from_defs(
             output_name = None
             required_top_level_resources = []
 
-        # Partition mappings are only exposed on the ExternalAssetNode if at least one asset is
+        # Partition mappings are only exposed on the AssetNodeSnap if at least one asset is
         # partitioned and the partition mapping is one of the builtin types.
         partition_mappings: Dict[AssetKey, Optional[PartitionMapping]] = {}
         builtin_partition_mapping_types = get_builtin_partition_mapping_types()
         for pk in asset_node.parent_keys:
             # directly access the partition mapping to avoid the inference step of
             # get_partition_mapping, as we want to defer the inference to the global RemoteAssetGraph
-            partition_mapping = asset_graph.get(key).partition_mappings.get(pk)
-            if (asset_node.partitions_def or asset_graph.get(pk).partitions_def) and isinstance(
-                partition_mapping, builtin_partition_mapping_types
-            ):
+            partition_mapping = repo.asset_graph.get(key).partition_mappings.get(pk)
+            if (
+                asset_node.partitions_def or repo.asset_graph.get(pk).partitions_def
+            ) and isinstance(partition_mapping, builtin_partition_mapping_types):
                 partition_mappings[pk] = partition_mapping
 
-        external_asset_nodes.append(
-            ExternalAssetNode(
+        asset_node_snaps.append(
+            AssetNodeSnap(
                 asset_key=key,
-                dependencies=[
-                    ExternalAssetDependency(
-                        upstream_asset_key=pk, partition_mapping=partition_mappings.get(pk)
+                parent_edges=[
+                    AssetParentEdgeSnap(
+                        parent_asset_key=pk, partition_mapping=partition_mappings.get(pk)
                     )
                     for pk in sorted(asset_node.parent_keys)
                 ],
-                depended_by=[
-                    ExternalAssetDependedBy(downstream_asset_key=k)
-                    for k in sorted(asset_node.child_keys)
+                child_edges=[
+                    AssetChildEdgeSnap(child_asset_key=k) for k in sorted(asset_node.child_keys)
                 ],
                 execution_type=asset_node.execution_type,
                 compute_kind=compute_kind,
@@ -1507,7 +1509,7 @@ def external_asset_nodes_from_defs(
                 freshness_policy=asset_node.freshness_policy,
                 is_source=asset_node.is_external,
                 is_observable=asset_node.is_observable,
-                execution_set_identifier=asset_graph.get_execution_set_identifier(key),
+                execution_set_identifier=repo.asset_graph.get_execution_set_identifier(key),
                 required_top_level_resources=required_top_level_resources,
                 auto_materialize_policy=asset_node.auto_materialize_policy,
                 backfill_policy=asset_node.backfill_policy,
@@ -1516,7 +1518,7 @@ def external_asset_nodes_from_defs(
             )
         )
 
-    return external_asset_nodes
+    return asset_node_snaps
 
 
 def external_job_data_from_def(

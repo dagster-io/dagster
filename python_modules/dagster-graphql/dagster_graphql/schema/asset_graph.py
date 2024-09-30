@@ -24,7 +24,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation import CodeLocation, ExternalRepository
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
 from dagster._core.remote_representation.external_data import (
-    ExternalAssetNode,
+    AssetNodeSnap,
     ExternalDynamicPartitionsDefinitionData,
     ExternalMultiPartitionsDefinitionData,
     ExternalPartitionsDefinitionData,
@@ -183,7 +183,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         super().__init__(inputName=input_name)
 
     def resolve_asset(self, _graphene_info: ResolveInfo):
-        asset_node = self._external_repository.get_external_asset_node(self._asset_key)
+        asset_node = self._external_repository.get_asset_node_snap(self._asset_key)
         if not asset_node and self._depended_by_loader:
             # Only load from dependency loader if asset node cannot be found in current repository
             asset_node = self._depended_by_loader.get_sink_asset(self._asset_key)
@@ -234,7 +234,7 @@ class GrapheneMaterializationUpstreamDataVersion(graphene.ObjectType):
 
 class GrapheneAssetNode(graphene.ObjectType):
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
-    _external_asset_node: ExternalAssetNode
+    _asset_node_snap: AssetNodeSnap
     _node_definition_snap: Optional[Union[GraphDefSnap, OpDefSnap]]
     _external_job: Optional[ExternalJob]
     _external_repository: ExternalRepository
@@ -345,7 +345,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self,
         repository_location: CodeLocation,
         external_repository: ExternalRepository,
-        external_asset_node: ExternalAssetNode,
+        asset_node_snap: AssetNodeSnap,
         asset_checks_loader: AssetChecksLoader,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         stale_status_loader: Optional[StaleStatusLoader] = None,
@@ -362,9 +362,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
         )
-        self._external_asset_node = check.inst_param(
-            external_asset_node, "external_asset_node", ExternalAssetNode
-        )
+        self._asset_node_snap = check.inst_param(asset_node_snap, "asset_node_snap", AssetNodeSnap)
         self._depended_by_loader = check.opt_inst_param(
             depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
         )
@@ -387,16 +385,16 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         super().__init__(
             id=get_unique_asset_id(
-                external_asset_node.asset_key, repository_location.name, external_repository.name
+                asset_node_snap.asset_key, repository_location.name, external_repository.name
             ),
-            assetKey=external_asset_node.asset_key,
-            description=external_asset_node.description,
-            opName=external_asset_node.op_name,
-            opVersion=external_asset_node.code_version,
-            groupName=external_asset_node.group_name,
+            assetKey=asset_node_snap.asset_key,
+            description=asset_node_snap.description,
+            opName=asset_node_snap.op_name,
+            opVersion=asset_node_snap.code_version,
+            groupName=asset_node_snap.group_name,
             owners=[
                 self._graphene_asset_owner_from_owner_str(owner)
-                for owner in (external_asset_node.owners or [])
+                for owner in (asset_node_snap.owners or [])
             ],
         )
 
@@ -418,8 +416,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_repository
 
     @property
-    def external_asset_node(self) -> ExternalAssetNode:
-        return self._external_asset_node
+    def asset_node_snap(self) -> AssetNodeSnap:
+        return self._asset_node_snap
 
     @property
     def stale_status_loader(self) -> StaleStatusLoader:
@@ -436,23 +434,23 @@ class GrapheneAssetNode(graphene.ObjectType):
     def get_external_job(self) -> ExternalJob:
         if self._external_job is None:
             check.invariant(
-                len(self._external_asset_node.job_names) >= 1,
+                len(self._asset_node_snap.job_names) >= 1,
                 "Asset must be part of at least one job",
             )
             self._external_job = self._external_repository.get_full_external_job(
-                self._external_asset_node.job_names[0]
+                self._asset_node_snap.job_names[0]
             )
         return self._external_job
 
     def get_node_definition_snap(
         self,
     ) -> Union[GraphDefSnap, OpDefSnap]:
-        if self._node_definition_snap is None and len(self._external_asset_node.job_names) > 0:
+        if self._node_definition_snap is None and len(self._asset_node_snap.job_names) > 0:
             node_key = check.not_none(
-                self._external_asset_node.node_definition_name
+                self._asset_node_snap.node_definition_name
                 # nodes serialized using an older Dagster version may not have node_definition_name
-                or self._external_asset_node.graph_name
-                or self._external_asset_node.op_name
+                or self._asset_node_snap.graph_name
+                or self._asset_node_snap.op_name
             )
             self._node_definition_snap = self.get_external_job().get_node_def_snap(node_key)
         # weird mypy bug causes mistyped _node_definition_snap
@@ -477,7 +475,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
         partitions_def_data = (
-            self._external_asset_node.partitions_def_data
+            self._asset_node_snap.partitions_def_data
             if not partitions_def_data
             else partitions_def_data
         )
@@ -513,7 +511,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return []
 
     def is_multipartitioned(self) -> bool:
-        external_multipartitions_def = self._external_asset_node.partitions_def_data
+        external_multipartitions_def = self._asset_node_snap.partitions_def_data
 
         return external_multipartitions_def is not None and isinstance(
             external_multipartitions_def, ExternalMultiPartitionsDefinitionData
@@ -547,7 +545,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     @property
     def is_executable(self) -> bool:
-        return self._external_asset_node.is_executable
+        return self._asset_node_snap.is_executable
 
     def resolve_hasMaterializePermission(
         self,
@@ -575,7 +573,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         instance = graphene_info.context.instance
         asset_graph = self._external_repository.asset_graph
-        asset_key = self._external_asset_node.asset_key
+        asset_key = self._asset_node_snap.asset_key
 
         instance_queryer = CachingInstanceQueryer(
             instance=graphene_info.context.instance,
@@ -628,7 +626,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         if limit == 1 and not partitions and not before_timestamp:
             record = AssetRecord.blocking_get(
-                graphene_info.context, self._external_asset_node.asset_key
+                graphene_info.context, self._asset_node_snap.asset_key
             )
             latest_materialization_event = (
                 record.asset_entry.last_materialization if record else None
@@ -643,7 +641,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneMaterializationEvent(event=event)
             for event in get_asset_materializations(
                 graphene_info,
-                self._external_asset_node.asset_key,
+                self._asset_node_snap.asset_key,
                 partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
@@ -671,7 +669,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             and not before_timestamp
         ):
             record = AssetRecord.blocking_get(
-                graphene_info.context, self._external_asset_node.asset_key
+                graphene_info.context, self._asset_node_snap.asset_key
             )
             latest_observation_event = record.asset_entry.last_observation if record else None
 
@@ -684,7 +682,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
                 graphene_info,
-                self._external_asset_node.asset_key,
+                self._asset_node_snap.asset_key,
                 partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
@@ -706,7 +704,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
 
     def resolve_computeKind(self, _graphene_info: ResolveInfo) -> Optional[str]:
-        return self._external_asset_node.compute_kind
+        return self._asset_node_snap.compute_kind
 
     def resolve_changedReasons(
         self, graphene_info: ResolveInfo
@@ -714,14 +712,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         if self.asset_graph_differ is None:
             # asset_graph_differ is None when not in a branch deployment
             return []
-        return self.asset_graph_differ.get_changes_for_asset(self._external_asset_node.asset_key)
+        return self.asset_graph_differ.get_changes_for_asset(self._asset_node_snap.asset_key)
 
     def resolve_staleStatus(
         self, graphene_info: ResolveInfo, partition: Optional[str] = None
     ) -> Any:  # (GrapheneAssetStaleStatus)
         if partition:
             self._validate_partitions_existence()
-        return self.stale_status_loader.get_status(self._external_asset_node.asset_key, partition)
+        return self.stale_status_loader.get_status(self._asset_node_snap.asset_key, partition)
 
     def resolve_staleStatusByPartition(
         self,
@@ -733,7 +731,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             self._validate_partitions_existence()
         return [
-            self.stale_status_loader.get_status(self._external_asset_node.asset_key, partition)
+            self.stale_status_loader.get_status(self._asset_node_snap.asset_key, partition)
             for partition in partitions
         ]
 
@@ -759,7 +757,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self, partition: Optional[str] = None
     ) -> Sequence[GrapheneAssetStaleCause]:
         causes = self.stale_status_loader.get_stale_root_causes(
-            self._external_asset_node.asset_key, partition
+            self._asset_node_snap.asset_key, partition
         )
         return [
             GrapheneAssetStaleCause(
@@ -783,7 +781,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if partition:
             self._validate_partitions_existence()
         version = self.stale_status_loader.get_current_data_version(
-            self._external_asset_node.asset_key, partition
+            self._asset_node_snap.asset_key, partition
         )
         return None if version == NULL_DATA_VERSION else version.value
 
@@ -796,7 +794,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             self._validate_partitions_existence()
         data_versions = [
             self.stale_status_loader.get_current_data_version(
-                self._external_asset_node.asset_key, partition
+                self._asset_node_snap.asset_key, partition
             )
             for partition in partitions
         ]
@@ -817,9 +815,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             *_depended_by_loader.get_cross_repo_dependent_assets(
                 self._repository_location.name,
                 self._external_repository.name,
-                self._external_asset_node.asset_key,
+                self._asset_node_snap.asset_key,
             ),
-            *self._external_asset_node.depended_by,
+            *self._asset_node_snap.child_edges,
         ]
 
         if not depended_by_asset_nodes:
@@ -827,7 +825,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[dep.downstream_asset_key for dep in depended_by_asset_nodes],
+            asset_keys=[dep.child_asset_key for dep in depended_by_asset_nodes],
         )
 
         return [
@@ -835,7 +833,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 repository_location=self._repository_location,
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
-                asset_key=dep.downstream_asset_key,
+                asset_key=dep.child_asset_key,
                 asset_checks_loader=asset_checks_loader,
                 depended_by_loader=_depended_by_loader,
             )
@@ -855,48 +853,46 @@ class GrapheneAssetNode(graphene.ObjectType):
             *depended_by_loader.get_cross_repo_dependent_assets(
                 self._repository_location.name,
                 self._external_repository.name,
-                self._external_asset_node.asset_key,
+                self._asset_node_snap.asset_key,
             ),
-            *self._external_asset_node.depended_by,
+            *self._asset_node_snap.child_edges,
         ]
 
-        return [
-            GrapheneAssetKey(path=dep.downstream_asset_key.path) for dep in depended_by_asset_nodes
-        ]
+        return [GrapheneAssetKey(path=dep.child_asset_key.path) for dep in depended_by_asset_nodes]
 
     def resolve_dependencyKeys(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneAssetKey]:
         return [
-            GrapheneAssetKey(path=dep.upstream_asset_key.path)
-            for dep in self._external_asset_node.dependencies
+            GrapheneAssetKey(path=dep.parent_asset_key.path)
+            for dep in self._asset_node_snap.parent_edges
         ]
 
     def resolve_dependencies(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetDependency]:
-        if not self._external_asset_node.dependencies:
+        if not self._asset_node_snap.parent_edges:
             return []
 
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[dep.upstream_asset_key for dep in self._external_asset_node.dependencies],
+            asset_keys=[dep.parent_asset_key for dep in self._asset_node_snap.parent_edges],
         )
         return [
             GrapheneAssetDependency(
                 repository_location=self._repository_location,
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
-                asset_key=dep.upstream_asset_key,
+                asset_key=dep.parent_asset_key,
                 asset_checks_loader=asset_checks_loader,
                 partition_mapping=dep.partition_mapping,
             )
-            for dep in self._external_asset_node.dependencies
+            for dep in self._asset_node_snap.parent_edges
         ]
 
     def resolve_freshnessInfo(
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetFreshnessInfo]:
-        if self._external_asset_node.freshness_policy:
+        if self._asset_node_snap.freshness_policy:
             asset_graph = self._external_repository.asset_graph
             return get_freshness_info(
-                asset_key=self._external_asset_node.asset_key,
+                asset_key=self._asset_node_snap.asset_key,
                 # in the future, we can share this same CachingInstanceQueryer across all
                 # GrapheneAssetNodes which share an external repository for improved performance
                 data_time_resolver=CachingDataTimeResolver(
@@ -912,28 +908,28 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_freshnessPolicy(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneFreshnessPolicy]:
-        if self._external_asset_node.freshness_policy:
-            return GrapheneFreshnessPolicy(self._external_asset_node.freshness_policy)
+        if self._asset_node_snap.freshness_policy:
+            return GrapheneFreshnessPolicy(self._asset_node_snap.freshness_policy)
         return None
 
     def resolve_autoMaterializePolicy(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneAutoMaterializePolicy]:
-        if self._external_asset_node.auto_materialize_policy:
-            return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
+        if self._asset_node_snap.auto_materialize_policy:
+            return GrapheneAutoMaterializePolicy(self._asset_node_snap.auto_materialize_policy)
         return None
 
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneAutoMaterializePolicy]:
-        if self._external_asset_node.automation_condition:
-            return GrapheneAutomationCondition(self._external_asset_node.automation_condition)
+        if self._asset_node_snap.automation_condition:
+            return GrapheneAutomationCondition(self._asset_node_snap.automation_condition)
         return None
 
     def _sensor_targets_asset(
         self, sensor: ExternalSensor, asset_graph: RemoteAssetGraph, job_names: Set[str]
     ) -> bool:
-        asset_key = self._external_asset_node.asset_key
+        asset_key = self._asset_node_snap.asset_key
 
         if sensor.asset_selection is not None:
             try:
@@ -954,7 +950,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         job_names = {
             job_name
-            for job_name in self._external_asset_node.job_names
+            for job_name in self._asset_node_snap.job_names
             if not job_name == IMPLICIT_ASSET_JOB_NAME
         }
 
@@ -984,7 +980,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def _get_auto_materialize_external_sensor(self) -> Optional[ExternalSensor]:
         asset_graph = self._external_repository.asset_graph
 
-        asset_key = self._external_asset_node.asset_key
+        asset_key = self._asset_node_snap.asset_key
         matching_sensors = [
             sensor
             for sensor in self._external_repository.get_external_sensors()
@@ -1018,15 +1014,15 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_backfillPolicy(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneBackfillPolicy]:
-        if self._external_asset_node.backfill_policy:
-            return GrapheneBackfillPolicy(self._external_asset_node.backfill_policy)
+        if self._asset_node_snap.backfill_policy:
+            return GrapheneBackfillPolicy(self._asset_node_snap.backfill_policy)
         return None
 
     def resolve_jobNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
-        return self._external_asset_node.job_names
+        return self._asset_node_snap.job_names
 
     def resolve_jobs(self, _graphene_info: ResolveInfo) -> Sequence[GraphenePipeline]:
-        job_names = self._external_asset_node.job_names or []
+        job_names = self._asset_node_snap.job_names or []
         return [
             GraphenePipeline(self._external_repository.get_full_external_job(job_name))
             for job_name in job_names
@@ -1034,16 +1030,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_isPartitioned(self, _graphene_info: ResolveInfo) -> bool:
-        return self._external_asset_node.partitions_def_data is not None
+        return self._asset_node_snap.partitions_def_data is not None
 
     def resolve_isMaterializable(self, _graphene_info: ResolveInfo) -> bool:
-        return self._external_asset_node.is_materializable
+        return self._asset_node_snap.is_materializable
 
     def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
-        return self._external_asset_node.is_observable
+        return self._asset_node_snap.is_observable
 
     def resolve_isExecutable(self, _graphene_info: ResolveInfo) -> bool:
-        return self._external_asset_node.is_executable
+        return self._asset_node_snap.is_executable
 
     def resolve_latestMaterializationByPartition(
         self,
@@ -1064,13 +1060,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             latest_storage_ids = sorted(
                 (
                     graphene_info.context.instance.event_log_storage.get_latest_storage_id_by_partition(
-                        self._external_asset_node.asset_key, DagsterEventType.ASSET_MATERIALIZATION
+                        self._asset_node_snap.asset_key, DagsterEventType.ASSET_MATERIALIZATION
                     )
                 ).values()
             )
             events_for_partitions = get_asset_materializations(
                 graphene_info,
-                asset_key=self._external_asset_node.asset_key,
+                asset_key=self._asset_node_snap.asset_key,
                 storage_ids=latest_storage_ids,
             )
             latest_materialization_by_partition = {
@@ -1079,7 +1075,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             events_for_partitions = get_asset_materializations(
                 graphene_info,
-                self._external_asset_node.asset_key,
+                self._asset_node_snap.asset_key,
                 partitions,
             )
 
@@ -1108,7 +1104,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         partition: str,
     ) -> Optional[GrapheneRun]:
         planned_info = graphene_info.context.instance.get_latest_planned_materialization_info(
-            asset_key=self._external_asset_node.asset_key, partition=partition
+            asset_key=self._asset_node_snap.asset_key, partition=partition
         )
         if not planned_info:
             return None
@@ -1122,14 +1118,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         "GrapheneDefaultPartitionStatuses",
         "GrapheneMultiPartitionStatuses",
     ]:
-        asset_key = self._external_asset_node.asset_key
+        asset_key = self._asset_node_snap.asset_key
 
         if not self._dynamic_partitions_loader:
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
         partitions_def = (
-            self._external_asset_node.partitions_def_data.get_partitions_definition()
-            if self._external_asset_node.partitions_def_data
+            self._asset_node_snap.partitions_def_data.get_partitions_definition()
+            if self._asset_node_snap.partitions_def_data
             else None
         )
 
@@ -1156,9 +1152,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_partitionStats(
         self, graphene_info: ResolveInfo
     ) -> Optional[GraphenePartitionStats]:
-        partitions_def_data = self._external_asset_node.partitions_def_data
+        partitions_def_data = self._asset_node_snap.partitions_def_data
         if partitions_def_data:
-            asset_key = self._external_asset_node.asset_key
+            asset_key = self._asset_node_snap.asset_key
 
             if not self._dynamic_partitions_loader:
                 check.failed("dynamic_partitions_loader must be provided to get partition keys")
@@ -1173,8 +1169,8 @@ class GrapheneAssetNode(graphene.ObjectType):
                 asset_key,
                 self._dynamic_partitions_loader,
                 (
-                    self._external_asset_node.partitions_def_data.get_partitions_definition()
-                    if self._external_asset_node.partitions_def_data
+                    self._asset_node_snap.partitions_def_data.get_partitions_definition()
+                    if self._asset_node_snap.partitions_def_data
                     else None
                 ),
             )
@@ -1207,21 +1203,21 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_metadata_entries(
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneMetadataEntry]:
-        return list(iterate_metadata_entries(self._external_asset_node.metadata))
+        return list(iterate_metadata_entries(self._asset_node_snap.metadata))
 
     def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
         return [
             GrapheneDefinitionTag(key, value)
-            for key, value in (self._external_asset_node.tags or {}).items()
+            for key, value in (self._asset_node_snap.tags or {}).items()
         ]
 
     def resolve_kinds(self, _graphene_info: ResolveInfo) -> Sequence[str]:
-        if self._external_asset_node.compute_kind:
-            return [self._external_asset_node.compute_kind]
+        if self._asset_node_snap.compute_kind:
+            return [self._asset_node_snap.compute_kind]
 
         return [
             key[len(KIND_PREFIX) :]
-            for key in (self._external_asset_node.tags or {}).keys()
+            for key in (self._asset_node_snap.tags or {}).keys()
             if key.startswith(KIND_PREFIX)
         ]
 
@@ -1241,10 +1237,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         check.failed(f"Unknown solid definition type {type(node_def_snap)}")
 
     def resolve_opNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
-        return self._external_asset_node.op_names or []
+        return self._asset_node_snap.op_names or []
 
     def resolve_graphName(self, _graphene_info: ResolveInfo) -> Optional[str]:
-        return self._external_asset_node.graph_name
+        return self._asset_node_snap.graph_name
 
     def resolve_partitionKeysByDimension(
         self,
@@ -1256,7 +1252,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         # time partitions. StartIdx is inclusive, endIdx is exclusive.
         # For non time partition definitions, these arguments will be ignored
         # and the full list of partition keys will be returned.
-        if not self._external_asset_node.partitions_def_data:
+        if not self._asset_node_snap.partitions_def_data:
             return []
 
         if self.is_multipartitioned():
@@ -1274,7 +1270,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
                 for dimension in cast(
                     ExternalMultiPartitionsDefinitionData,
-                    self._external_asset_node.partitions_def_data,
+                    self._asset_node_snap.partitions_def_data,
                 ).external_partition_dimension_definitions
             ]
 
@@ -1282,7 +1278,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneDimensionPartitionKeys(
                 name="default",
                 type=GraphenePartitionDefinitionType.from_partition_def_data(
-                    self._external_asset_node.partitions_def_data
+                    self._asset_node_snap.partitions_def_data
                 ),
                 partition_keys=self.get_partition_keys(start_idx=startIdx, end_idx=endIdx),
             )
@@ -1294,7 +1290,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_partitionDefinition(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GraphenePartitionDefinition]:
-        partitions_def_data = self._external_asset_node.partitions_def_data
+        partitions_def_data = self._asset_node_snap.partitions_def_data
         if partitions_def_data:
             return GraphenePartitionDefinition(partitions_def_data)
         return None
@@ -1320,10 +1316,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             "GrapheneListDagsterType", "GrapheneNullableDagsterType", "GrapheneRegularDagsterType"
         ]
     ]:
-        if not self._external_asset_node.is_materializable:
+        if not self._asset_node_snap.is_materializable:
             return None
         external_pipeline = self.get_external_job()
-        output_name = self.external_asset_node.output_name
+        output_name = self._asset_node_snap.output_name
         if output_name:
             for output_def in self.get_node_definition_snap().output_def_snaps:
                 if output_def.name == output_name:
@@ -1334,16 +1330,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         return None
 
     def _get_partitions_def(self) -> PartitionsDefinition:
-        if not self._external_asset_node.partitions_def_data:
+        if not self._asset_node_snap.partitions_def_data:
             check.failed("Asset node has no partitions definition")
-        return self._external_asset_node.partitions_def_data.get_partitions_definition()
+        return self._asset_node_snap.partitions_def_data.get_partitions_definition()
 
     def _validate_partitions_existence(self) -> None:
-        if not self._external_asset_node.partitions_def_data:
+        if not self._asset_node_snap.partitions_def_data:
             check.failed("Asset node has no partitions definition")
 
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
-        return has_asset_checks(graphene_info, self._external_asset_node.asset_key)
+        return has_asset_checks(graphene_info, self._asset_node_snap.asset_key)
 
     def resolve_assetChecksOrError(
         self,
@@ -1352,7 +1348,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         pipeline: Optional[GraphenePipelineSelector] = None,
     ) -> AssetChecksOrErrorUnion:
         return self._asset_checks_loader.get_checks_for_asset(
-            self._external_asset_node.asset_key, limit, pipeline
+            self._asset_node_snap.asset_key, limit, pipeline
         )
 
 

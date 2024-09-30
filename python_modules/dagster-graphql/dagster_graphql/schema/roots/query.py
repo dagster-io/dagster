@@ -965,14 +965,14 @@ class GrapheneQuery(graphene.ObjectType):
                 return []
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_nodes()
+            asset_node_snaps = repo.get_asset_node_snaps()
             results = (
                 [
                     (repo_loc, repo, asset_node)
-                    for asset_node in external_asset_nodes
+                    for asset_node in asset_node_snaps
                     if asset_node.group_name == group_name
                 ]
-                if external_asset_nodes
+                if asset_node_snaps
                 else []
             )
         elif pipeline is not None:
@@ -985,10 +985,10 @@ class GrapheneQuery(graphene.ObjectType):
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
 
-            external_asset_nodes = repo.get_external_asset_nodes(job_name)
+            asset_node_snaps = repo.get_asset_node_snaps(job_name)
             results = (
-                [(repo_loc, repo, asset_node) for asset_node in external_asset_nodes]
-                if external_asset_nodes
+                [(repo_loc, repo, asset_node) for asset_node in asset_node_snaps]
+                if asset_node_snaps
                 else []
             )
         else:
@@ -1008,7 +1008,7 @@ class GrapheneQuery(graphene.ObjectType):
                     repo_handle = remote_node.priority_repository_handle
                     code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
                     repo = code_loc.get_repository(repo_handle.repository_name)
-                    results.append((code_loc, repo, remote_node.priority_node))
+                    results.append((code_loc, repo, remote_node.priority_node_snap))
 
         # Filter down to requested asset keys
         results = [
@@ -1049,7 +1049,7 @@ class GrapheneQuery(graphene.ObjectType):
             GrapheneAssetNode(
                 code_loc,
                 repo,
-                external_asset_node,
+                asset_node_snap,
                 asset_checks_loader=asset_checks_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
@@ -1064,7 +1064,7 @@ class GrapheneQuery(graphene.ObjectType):
                 if base_deployment_context is not None
                 else None,
             )
-            for (code_loc, repo, external_asset_node) in results
+            for (code_loc, repo, asset_node_snap) in results
         ]
         return sorted(nodes, key=lambda node: node.id)
 
@@ -1154,7 +1154,7 @@ class GrapheneQuery(graphene.ObjectType):
 
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            remote_node.key: remote_node.priority_node.op_names
+            remote_node.key: remote_node.priority_node_snap.op_names
             for remote_node in remote_nodes
             if remote_node
         }
