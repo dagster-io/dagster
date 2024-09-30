@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Mapping, Optional, cast
+from typing import AbstractSet, Mapping, cast
 
 from dagster import AssetKey, Definitions
 from dagster._record import record
@@ -54,12 +54,6 @@ class AirflowDefinitionsData:
 
     def asset_key_for_dag(self, dag_id: str) -> AssetKey:
         return make_default_dag_asset_key(self.serialized_data.instance_name, dag_id)
-
-    def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
-        return set(self.serialized_data.dag_datas[dag_id].task_handle_data.keys())
-
-    def proxied_state_for_task(self, dag_id: str, task_id: str) -> Optional[bool]:
-        return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].proxied_state
 
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
         return self.asset_keys_per_task_handle[TaskHandle(dag_id=dag_id, task_id=task_id)]
