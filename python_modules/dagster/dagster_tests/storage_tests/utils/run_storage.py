@@ -101,6 +101,7 @@ class TestRunStorage:
     # Override for storages that support filtering backfills by backfill id
     def supports_backfill_id_filtering_queries(self):
         return False
+
     # Override for storages that support getting backfill counts
     def supports_backfills_count(self):
         return False
@@ -1728,10 +1729,9 @@ class TestRunStorage:
             )
         )
 
-        backfills_for_id = storage.get_backfills(
-            filters=BulkActionsFilter(backfill_ids=[backfill.backfill_id])
+        backfills_for_id = self.get_backfills_and_assert_expected_count(
+            storage, BulkActionsFilter(backfill_ids=[backfill.backfill_id]), 1
         )
-        assert len(backfills_for_id) == 1
         assert backfills_for_id[0].backfill_id == backfill.backfill_id
 
     def test_secondary_index(self, storage):
