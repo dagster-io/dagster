@@ -23,7 +23,10 @@ from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData, key_for_task_asset
+from dagster_airlift.core.airflow_defs_data import (
+    AirflowDefinitionsData,
+    key_for_automapped_task_asset,
+)
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 from dagster_airlift.core.serialization.compute import compute_serialized_data, is_mapped_asset_spec
 from dagster_airlift.core.serialization.serialized_data import make_default_dag_asset_key
@@ -437,9 +440,9 @@ def test_automapped_build() -> None:
         airflow_instance=airflow_instance,
     )
 
-    dag1_task1 = key_for_task_asset("dag1", "task1")
-    dag1_task2 = key_for_task_asset("dag1", "task2")
-    dag1_standalone = key_for_task_asset("dag1", "standalone")
+    dag1_task1 = key_for_automapped_task_asset("dag1", "task1")
+    dag1_task2 = key_for_automapped_task_asset("dag1", "task2")
+    dag1_standalone = key_for_automapped_task_asset("dag1", "standalone")
 
     specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
 
@@ -448,3 +451,12 @@ def test_automapped_build() -> None:
     assert specs[dag1_standalone].deps == []
 
     assert make_default_dag_asset_key("dag1") in specs
+
+    assert specs[dag1_task1].metadata["Dag ID"] == "dag1"
+    assert specs[dag1_task1].metadata["Task ID"] == "task1"
+    assert specs[dag1_task1].description == 'Automapped task in dag "dag1" with task_id "task1"'
+    assert specs[dag1_task2].metadata["Dag ID"] == "dag1"
+    assert specs[dag1_task2].metadata["Task ID"] == "task2"
+
+    assert "dagster/kind/airflow" in specs[dag1_task1].tags
+    assert "dagster/kind/task" in specs[dag1_task1].tags

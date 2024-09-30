@@ -9,6 +9,7 @@ from dagster import (
     external_asset_from_spec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -16,6 +17,7 @@ from dagster_airlift.core.dag_asset import dag_asset_metadata, dag_description
 from dagster_airlift.core.serialization.serialized_data import (
     MappedAirflowTaskData,
     SerializedAirflowDefinitionsData,
+    TaskInfo,
 )
 from dagster_airlift.core.utils import airflow_kind_dict
 
@@ -61,8 +63,25 @@ def make_dag_external_asset(dag_data) -> AssetsDefinition:
     )
 
 
-def key_for_task_asset(dag_id, task_id) -> AssetKey:
+def key_for_automapped_task_asset(dag_id, task_id) -> AssetKey:
     return AssetKey(["airflow_instance", "dag", dag_id, "task", task_id])
+
+
+def description_for_automapped_task(task_info: TaskInfo) -> str:
+    return f'Automapped task in dag "{task_info.dag_id}" with task_id "{task_info.task_id}"'
+
+
+def tags_for_automapped_task() -> Mapping[str, str]:
+    return {f"{KIND_PREFIX}airflow": "", f"{KIND_PREFIX}task": ""}
+
+
+def metadata_for_auto_mapped_task(task_info: TaskInfo) -> Mapping[str, Any]:
+    return {
+        "Task Info (raw)": JsonMetadataValue(task_info.metadata),
+        "Dag ID": task_info.dag_id,
+        "Task ID": task_info.task_id,
+        "Link to DAG": UrlMetadataValue(task_info.dag_url),
+    }
 
 
 @whitelist_for_serdes
@@ -94,11 +113,14 @@ class AirflowDefinitionsData:
 
             specs.extend(
                 AssetSpec(
-                    key=key_for_task_asset(dag_data.dag_id, task_id),
+                    key=key_for_automapped_task_asset(dag_data.dag_id, task_id),
                     deps=[
-                        key_for_task_asset(dag_data.dag_id, upstream_task_id)
+                        key_for_automapped_task_asset(dag_data.dag_id, upstream_task_id)
                         for upstream_task_id in upstream_task_ids
                     ],
+                    description=description_for_automapped_task(dag_data.task_infos[task_id]),
+                    tags=tags_for_automapped_task(),
+                    metadata=metadata_for_auto_mapped_task(dag_data.task_infos[task_id]),
                 )
                 for task_id, upstream_task_ids in upstream_deps.items()
             )
