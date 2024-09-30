@@ -60,7 +60,7 @@ class MissingAutomationCondition(SubsetAutomationCondition[AssetKey]):
 class InProgressAutomationCondition(SubsetAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
-        return "Part of an in-progress run"
+        return "Part of an in-progress run or backfill"
 
     @property
     def name(self) -> str:

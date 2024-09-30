@@ -40,6 +40,7 @@ class AutomationConditionEvaluator:
         instance: DagsterInstance,
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
+        allow_backfills: bool,
         default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
@@ -68,7 +69,7 @@ class AutomationConditionEvaluator:
         self.legacy_respect_materialization_data_versions = (
             _instance.auto_materialize_respect_materialization_data_versions
         )
-        self.request_backfills = _instance.da_request_backfills()
+        self.allow_backfills = allow_backfills or _instance.da_request_backfills()
 
         self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
@@ -112,7 +113,7 @@ class AutomationConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[EntityKey]]]:
+    def evaluate(self) -> Tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         self.prefetch()
         num_conditions = len(self.entity_keys)
         num_evaluated = 0
@@ -144,7 +145,7 @@ class AutomationConditionEvaluator:
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
             num_evaluated += 1
-        return self.current_results_by_key.values(), self._get_entity_subsets()
+        return list(self.current_results_by_key.values()), list(self._get_entity_subsets())
 
     def evaluate_entity(self, key: EntityKey) -> None:
         # evaluate the condition of this asset

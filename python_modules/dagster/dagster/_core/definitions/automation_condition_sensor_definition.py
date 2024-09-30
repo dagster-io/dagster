@@ -40,6 +40,7 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         observe_run_tags={},
         auto_observe_asset_keys=set(),
         asset_selection=sensor_def.asset_selection,
+        allow_backfills=sensor_def.allow_backfills,
         default_condition=sensor_def.default_condition,
         logger=context.log,
     ).evaluate()
@@ -93,6 +94,14 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         **kwargs,
     ):
         self._user_code = kwargs.get("user_code", False)
+        self._allow_backfills = check.opt_bool_param(
+            kwargs.get("allow_backfills"), "allow_backfills", default=False
+        )
+        check.param_invariant(
+            not (self._allow_backfills and not self._user_code),
+            "allow_backfills",
+            "Setting `allow_backfills` for a non-user-code AutomationConditionSensorDefinition is not supported.",
+        )
         self._default_condition = check.opt_inst_param(
             kwargs.get("default_condition"), "default_condition", AutomationCondition
         )
@@ -126,6 +135,10 @@ class AutomationConditionSensorDefinition(SensorDefinition):
     @property
     def asset_selection(self) -> AssetSelection:
         return cast(AssetSelection, super().asset_selection)
+
+    @property
+    def allow_backfills(self) -> bool:
+        return self._allow_backfills
 
     @property
     def default_condition(self) -> Optional[AutomationCondition]:

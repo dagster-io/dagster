@@ -32,6 +32,7 @@ def get_auto_observe_run_requests(
         auto_observe_asset_keys,
         AssetSelection.all(),
         logging.getLogger(),
+        False,
         None,
         datetime.datetime.fromtimestamp(current_timestamp),
     ).evaluate()[0]
@@ -142,6 +143,7 @@ def test_reconcile() -> None:
         instance=instance,
         cursor=AssetDaemonCursor.empty(),
         materialize_run_tags={},
+        allow_backfills=False,
         observe_run_tags={"tag1": "tag_value"},
         logger=logging.getLogger("dagster.amp"),
     ).evaluate()

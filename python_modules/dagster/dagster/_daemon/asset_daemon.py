@@ -915,8 +915,6 @@ class AssetDaemon(DagsterDaemon):
 
         schedule_storage = check.not_none(instance.schedule_storage)
 
-        request_backfills = instance.da_request_backfills()
-
         if is_retry:
             # Unfinished or retried tick already generated evaluations and run requests and cursor, now
             # need to finish it
@@ -958,6 +956,7 @@ class AssetDaemon(DagsterDaemon):
                     **sensor_tags,
                 },
                 observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
+                allow_backfills=False,
                 auto_observe_asset_keys=auto_observe_asset_keys,
                 logger=self._logger,
             ).evaluate()
@@ -978,10 +977,10 @@ class AssetDaemon(DagsterDaemon):
                 )
                 check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 
-            if request_backfills:
-                reserved_run_ids = [make_new_backfill_id() for _ in range(len(run_requests))]
-            else:
-                reserved_run_ids = [make_new_run_id() for _ in range(len(run_requests))]
+            reserved_run_ids = [
+                make_new_backfill_id() if rr.requires_backfill_daemon() else make_new_run_id()
+                for rr in run_requests
+            ]
 
             # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
             tick = tick_context.set_run_requests(

@@ -366,8 +366,20 @@ class AssetGraphView(LoadingContext):
 
     @cached_method
     def compute_in_progress_asset_subset(self, *, asset_key: AssetKey) -> EntitySubset[AssetKey]:
-        value = self._queryer.get_in_progress_asset_subset(asset_key=asset_key).value
-        return EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
+        # part of in progress run
+        run_value = self._queryer.get_in_progress_asset_subset(asset_key=asset_key).value
+        run_subset = EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(run_value))
+        # part of in progress backfill
+        backfill_value = (
+            self._queryer.get_active_backfill_target_asset_graph_subset().get_asset_subset(
+                asset_key=asset_key, asset_graph=self.asset_graph
+            )
+        ).value
+        backfill_subset = EntitySubset(
+            self, key=asset_key, value=_ValidatedEntitySubsetValue(backfill_value)
+        )
+
+        return run_subset.compute_union(backfill_subset)
 
     @cached_method
     def compute_failed_asset_subset(self, *, asset_key: "AssetKey") -> EntitySubset[AssetKey]:
