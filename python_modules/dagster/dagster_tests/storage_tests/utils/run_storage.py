@@ -98,6 +98,10 @@ class TestRunStorage:
     def supports_backfill_job_name_filtering_queries(self):
         return False
 
+    # Override for storages that support filtering backfills by backfill id
+    def supports_backfill_id_filtering_queries(self):
+        return False
+
     @staticmethod
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
@@ -1729,6 +1733,40 @@ class TestRunStorage:
             filters=BulkActionsFilter(job_name="a_different_pipeline")
         )
         assert len(backfills_for_job) == 0
+
+    def test_backfill_id_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_id_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by backfill id")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="fake",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+
+        backfills_for_id = storage.get_backfills(
+            filters=BulkActionsFilter(backfill_ids=[backfill.backfill_id])
+        )
+        assert len(backfills_for_id) == 1
+        assert backfills_for_id[0].backfill_id == backfill.backfill_id
 
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
