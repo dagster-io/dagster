@@ -853,3 +853,124 @@ defs = Definitions.merge(
 ```
 
 </details>
+
+## Addendum: Customizing dagster definitions
+
+`dagster-airlift` provides various pluggability points for customizing implementation behavior. If you want to change something about either
+the produced `Definitions` object or the materializations constructed from `build_defs_from_airflow_instance`, we provide additional entrypoints for this purpose.
+Whenever we want to change anything about the created `Definitions`,
+we should split out the call to `build_defs_from_airflow_instance` into these calls:
+
+1. A call to `get_resolved_airflow_defs` to resolve the initial mapped definitions.
+2. Perform your definitions-level transformations to the resolved definitions.
+3. Build the airflow polling sensor using the transformed definitions.
+   Let's say for example, that we want to modify the metadata for a spec in one of the dag assets. Here is how we could accomplish such a thing:
+
+```python
+# additional_dagster_examples/customizing_dagster.py
+from dagster import AssetSpec, Definitions
+from dagster_airlift.core import (
+    AirflowDefinitionsData,
+    AirflowInstance,
+    BasicAuthBackend,
+    build_airflow_polling_sensor_defs,
+    get_resolved_airflow_defs,
+    maps_to_dag,
+)
+
+airflow_instance = AirflowInstance(
+    auth_backend=BasicAuthBackend(
+        webserver_url="http://localhost:8080", username="admin", password="admin"
+    ),
+    name="airflow_instance_one",
+)
+
+
+def get_resolved_defs() -> Definitions:
+    """Get resolved definitions with additional metadata for a particular dag."""
+    defs = get_resolved_airflow_defs(airflow_instance=airflow_instance)
+
+    def _add_metadata(spec: AssetSpec) -> AssetSpec:
+        if maps_to_dag(spec, "my_dag"):
+            return spec._replace(metadata={"team": "my_team", **spec.metadata})
+        return spec
+
+    return defs.map_asset_specs(_add_metadata)  # type: ignore
+
+
+defs_data = AirflowDefinitionsData(
+    resolved_airflow_defs=get_resolved_defs(),
+    airflow_instance=airflow_instance,
+)
+
+defs = Definitions.merge(
+    defs_data.resolved_airflow_defs,
+    build_airflow_polling_sensor_defs(defs_data),
+)
+```
+
+Above, we add metadata to the specific spec mapping to our dag, then construct the sensor over the transformed definitions objects.
+This ensures that the sensor is operating on the correct objects.
+
+You can also customize the behavior of the sensor. Let's say for example, that you want to add some metadata to a materialization for a dag.
+You can add a custom callback to `build_airflow_polling_sensor_defs` to accomplish this:
+
+```python
+# additional_dagster_examples/sensor_callback.py
+from typing import List, Sequence
+
+from dagster import AssetMaterialization, Definitions
+from dagster_airlift.core import (
+    AirflowDefinitionsData,
+    AirflowInstance,
+    BasicAuthBackend,
+    DagRun,
+    TaskInstance,
+    build_airflow_polling_sensor_defs,
+    get_resolved_airflow_defs,
+)
+
+airflow_instance = AirflowInstance(
+    auth_backend=BasicAuthBackend(
+        webserver_url="http://localhost:8080", username="admin", password="admin"
+    ),
+    name="airflow_instance_one",
+)
+
+
+def get_resolved_defs() -> Definitions:
+    """Get resolved definitions with additional metadata for a particular dag."""
+    return get_resolved_airflow_defs(airflow_instance=airflow_instance)
+
+
+defs_data = AirflowDefinitionsData(
+    resolved_airflow_defs=get_resolved_defs(),
+    airflow_instance=airflow_instance,
+)
+
+
+def alter_materializations(
+    dag_run: DagRun, task_instances: Sequence[TaskInstance]
+) -> List[AssetMaterialization]:
+    def _transform_materialization(materialization: AssetMaterialization) -> AssetMaterialization:
+        if defs_data.asset_key_for_dag("my_dag_id") == materialization.asset_key:
+            return materialization._replace(
+                metadata={"team": "my_team", **materialization.metadata}
+            )
+        return materialization
+
+    return [
+        _transform_materialization(mat)
+        for mat in defs_data.default_event_translation_fn(dag_run, task_instances)
+    ]
+
+
+defs = Definitions.merge(
+    defs_data.resolved_airflow_defs,
+    build_airflow_polling_sensor_defs(defs_data, event_translation_fn=alter_materializations),
+)
+```
+
+Above, we construct a function which takes `DagRun` and `TaskInstance` objects which are retrieved from the airflow rest API,
+calls the default event translator (which will create a materialization for each dag/task mapped asset), and performs a transformation
+to some of those produced materializations.

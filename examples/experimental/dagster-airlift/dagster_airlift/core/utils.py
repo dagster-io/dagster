@@ -11,7 +11,11 @@ from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 
-from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
+    STANDALONE_DAG_ID_METADATA_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 
 if TYPE_CHECKING:
     from dagster_airlift.core.serialization.serialized_data import TaskHandle
@@ -64,3 +68,10 @@ def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
             TaskHandle(dag_id=task_handle_dict["dag_id"], task_id=task_handle_dict["task_id"])
         )
     return set(task_handles)
+
+
+def maps_to_dag(asset_spec: AssetSpec, dag_id: str) -> bool:
+    return (
+        STANDALONE_DAG_ID_METADATA_KEY in asset_spec.metadata
+        and asset_spec.metadata[STANDALONE_DAG_ID_METADATA_KEY] == dag_id
+    )
