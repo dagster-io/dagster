@@ -61,6 +61,7 @@ class AutomationTickEvaluationContext:
         auto_observe_asset_keys: AbstractSet[AssetKey],
         asset_selection: AssetSelection,
         logger: logging.Logger,
+        allow_backfills: bool,
         default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
     ):
@@ -77,6 +78,7 @@ class AutomationTickEvaluationContext:
             default_condition=default_condition,
             instance=instance,
             asset_graph=asset_graph,
+            allow_backfills=allow_backfills,
             cursor=cursor,
             evaluation_time=evaluation_time,
             logger=logger,
@@ -130,31 +132,13 @@ class AutomationTickEvaluationContext:
             if len(asset_keys) > 0
         ]
 
-    def _build_run_requests(self, entity_subsets: Iterable[EntitySubset]) -> Sequence[RunRequest]:
-        if self._evaluator.request_backfills:
-            asset_subsets = cast(
-                Iterable[EntitySubset[AssetKey]],
-                [subset for subset in entity_subsets if isinstance(subset.key, AssetKey)],
-            )
-
-            run_requests = (
-                [
-                    RunRequest.for_asset_graph_subset(
-                        asset_graph_subset=AssetGraphSubset.from_entity_subsets(asset_subsets),
-                        tags=self._materialize_run_tags,
-                    )
-                ]
-                if asset_subsets
-                else []
-            )
-        else:
-            run_requests = build_run_requests(
-                entity_subsets=entity_subsets,
-                asset_graph=self.asset_graph,
-                run_tags=self._materialize_run_tags,
-            )
-
-        return run_requests
+    def _build_run_requests(self, entity_subsets: Sequence[EntitySubset]) -> Sequence[RunRequest]:
+        return build_run_requests(
+            entity_subsets=entity_subsets,
+            asset_graph=self.asset_graph,
+            run_tags=self._materialize_run_tags,
+            allow_backfills=self._evaluator.allow_backfills,
+        )
 
     def _get_updated_cursor(
         self, results: Iterable[AutomationResult], observe_run_requests: Iterable[RunRequest]
@@ -259,16 +243,85 @@ def build_run_requests_from_asset_partitions(
     )
 
 
-def build_run_requests(
-    entity_subsets: Iterable[EntitySubset[EntityKey]],
+def _build_backfill_request(
+    entity_subsets: Sequence[EntitySubset[EntityKey]],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
+) -> Tuple[Optional[RunRequest], Sequence[EntitySubset[EntityKey]]]:
+    """Determines a set of entity subsets that can be executed using a backfill.
+    If any entity subset has size greater than 1, then it and all assets connected
+    to it will be grouped into the backfill. Returns the corresponding backfill
+    run request, and all entity subsets not handled in this process.
+    """
+    entity_subsets_by_key = {es.key: es for es in entity_subsets}
+    visited: Set[EntityKey] = set()
+    backfill_subsets: List[EntitySubset[AssetKey]] = []
+
+    def _flood_fill_asset_subsets(k: EntityKey):
+        if k in visited or k not in entity_subsets_by_key:
+            return []
+        visited.add(k)
+        if isinstance(k, AssetKey):
+            node = asset_graph.get(k)
+            subset = cast(EntitySubset[AssetKey], entity_subsets_by_key.pop(k))
+            backfill_subsets.append(subset)
+            for sk in [
+                # include all parent and child assets
+                *node.parent_keys,
+                *node.child_keys,
+                # include all asset keys and check keys that must be executed alongside
+                # this asset key
+                *asset_graph.get_execution_set_asset_and_check_keys(k),
+            ]:
+                _flood_fill_asset_subsets(sk)
+        else:
+            # if we get an asset check in this code path, it must have been part of
+            # the required execution set of an asset that is being backfilled, and
+            # therefore the backfill daemon will handle executing it without being
+            # explicitly told to, so just remove it from the set of things to consider
+            entity_subsets_by_key.pop(k)
+
+    # list() here because we modify the dict in flood_fill
+    for k, es in list(entity_subsets_by_key.items()):
+        if k in visited or es.size <= 1 or isinstance(k, AssetCheckKey):
+            continue
+        # this entity subset should be backfilled, as should all of its
+        # attached assets
+        _flood_fill_asset_subsets(k)
+
+    backfill_request = (
+        RunRequest.for_asset_graph_subset(
+            asset_graph_subset=AssetGraphSubset.from_entity_subsets(backfill_subsets),
+            tags=run_tags,
+        )
+        if backfill_subsets
+        else None
+    )
+    return backfill_request, list(entity_subsets_by_key.values())
+
+
+def build_run_requests(
+    entity_subsets: Sequence[EntitySubset],
+    asset_graph: BaseAssetGraph,
+    run_tags: Optional[Mapping[str, str]],
+    allow_backfills: bool,
 ) -> Sequence[RunRequest]:
-    return _build_run_requests_from_partitions_def_mapping(
+    if allow_backfills:
+        backfill_run_request, entity_subsets = _build_backfill_request(
+            entity_subsets, asset_graph, run_tags
+        )
+    else:
+        backfill_run_request = None
+
+    run_requests = _build_run_requests_from_partitions_def_mapping(
         _get_mapping_from_entity_subsets(entity_subsets, asset_graph),
         asset_graph,
         run_tags,
     )
+    if backfill_run_request:
+        run_requests = [backfill_run_request, *run_requests]
+
+    return run_requests
 
 
 def _build_run_requests_from_partitions_def_mapping(
@@ -286,6 +339,7 @@ def _build_run_requests_from_partitions_def_mapping(
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
         for entity_keys_for_repo in asset_graph.split_entity_keys_by_repository(entity_keys):
+            asset_check_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)]
             run_requests.append(
                 # Do not call run_request.with_resolved_tags_and_config as the partition key is
                 # valid and there is no config.
@@ -295,9 +349,9 @@ def _build_run_requests_from_partitions_def_mapping(
                     asset_selection=[k for k in entity_keys_for_repo if isinstance(k, AssetKey)],
                     partition_key=partition_key,
                     tags=tags,
-                    asset_check_keys=[
-                        k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)
-                    ],
+                    # if selecting no asset_check_keys, just pass in `None` to allow required
+                    # checks to be included
+                    asset_check_keys=asset_check_keys or None,
                 )
             )
 

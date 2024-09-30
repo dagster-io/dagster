@@ -159,6 +159,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 if self.asset_graph.get(key).auto_observe_interval_minutes is not None
             },
             logger=self.logger,
+            allow_backfills=False,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)

@@ -6,9 +6,12 @@ from typing import AbstractSet, Mapping, Sequence, cast
 
 import dagster._check as check
 from dagster import AssetMaterialization, RunsFilter, instance_for_test
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.external import ExternalSensor
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
@@ -27,6 +30,7 @@ from dagster._daemon.asset_daemon import (
     AssetDaemon,
     asset_daemon_cursor_from_instigator_serialized_cursor,
 )
+from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._daemon.daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._time import get_current_datetime
@@ -126,6 +130,13 @@ def _execute_ticks(
         )
     )
 
+    list(
+        execute_backfill_iteration(
+            context,
+            get_default_daemon_logger("BackfillDaemon"),
+        )
+    )
+
     wait_for_futures(asset_daemon_futures)
     wait_for_futures(sensor_daemon_futures)
 
@@ -156,8 +167,8 @@ def _get_latest_evaluation_ids(context: WorkspaceProcessContext) -> AbstractSet[
     return {cursor.evaluation_id for cursor in _get_current_cursors(context).values()}
 
 
-def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[DagsterRun]:
-    run_ids = []
+def _get_reserved_ids_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[str]:
+    ids = []
     request_context = context.create_request_context()
     for sensor in _get_automation_sensors(request_context):
         ticks = request_context.instance.get_ticks(
@@ -167,16 +178,32 @@ def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[Dag
         )
         latest_tick = next(iter(ticks), None)
         if latest_tick and latest_tick.tick_data:
-            run_ids.extend(latest_tick.tick_data.reserved_run_ids or [])
+            ids.extend(latest_tick.tick_data.reserved_run_ids or [])
+    return ids
 
-    if run_ids:
+
+def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[DagsterRun]:
+    reserved_ids = _get_reserved_ids_for_latest_ticks(context)
+    if reserved_ids:
         # return the runs in a stable order to make unit testing easier
         return sorted(
-            context.instance.get_runs(filters=RunsFilter(run_ids=run_ids)),
+            context.instance.get_runs(filters=RunsFilter(run_ids=reserved_ids)),
             key=lambda r: (sorted(r.asset_selection or []), sorted(r.asset_check_selection or [])),
         )
     else:
         return []
+
+
+def _get_backfills_for_latest_ticks(
+    context: WorkspaceProcessContext,
+) -> Sequence[PartitionBackfill]:
+    reserved_ids = _get_reserved_ids_for_latest_ticks(context)
+    backfills = []
+    for rid in reserved_ids:
+        backfill = context.instance.get_backfill(rid)
+        if backfill:
+            backfills.append(backfill)
+    return sorted(backfills, key=lambda b: sorted(b.asset_selection))
 
 
 def test_checks_and_assets_in_same_run() -> None:
@@ -383,3 +410,114 @@ def test_non_subsettable_check() -> None:
                 AssetCheckKey(AssetKey("a"), name="2"),
                 AssetCheckKey(AssetKey("d"), name="3"),
             }
+
+
+def _get_subsets_by_key(
+    backfill: PartitionBackfill, asset_graph: BaseAssetGraph
+) -> Mapping[AssetKey, SerializableEntitySubset[AssetKey]]:
+    assert backfill.asset_backfill_data is not None
+    target_subset = backfill.asset_backfill_data.target_subset
+    return {s.key: s for s in target_subset.iterate_asset_subsets(asset_graph)}
+
+
+def test_backfill_creation_simple() -> None:
+    with get_workspace_request_context(
+        ["backfill_simple"]
+    ) as context, get_threadpool_executor() as executor:
+        asset_graph = context.create_request_context().asset_graph
+
+        # all start off missing, should be requested
+        time = get_current_datetime()
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 1
+            subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
+            assert subsets_by_key.keys() == {
+                AssetKey("A"),
+                AssetKey("B"),
+                AssetKey("C"),
+                AssetKey("D"),
+                AssetKey("E"),
+            }
+
+            assert subsets_by_key[AssetKey("A")].size == 1
+            assert subsets_by_key[AssetKey("B")].size == 3
+            assert subsets_by_key[AssetKey("C")].size == 3
+            assert subsets_by_key[AssetKey("D")].size == 3
+            assert subsets_by_key[AssetKey("E")].size == 1
+
+            # don't create runs
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            # second tick, don't kick off again
+            _execute_ticks(context, executor)
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 0
+            # still don't create runs
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+
+def test_backfill_with_runs_and_checks() -> None:
+    with get_workspace_request_context(
+        ["backfill_with_runs_and_checks"]
+    ) as context, get_threadpool_executor() as executor:
+        asset_graph = context.create_request_context().asset_graph
+
+        # report materializations for 2/3 of the partitions, resulting in only one
+        # partition needing to be requested
+        context.instance.report_runless_asset_event(AssetMaterialization("run2", partition="x"))
+        context.instance.report_runless_asset_event(AssetMaterialization("run2", partition="y"))
+
+        # all start off missing, should be requested
+        time = get_current_datetime()
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            # create a backfill for the part of the graph that has multiple partitions
+            # required
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 1
+            subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
+            assert subsets_by_key.keys() == {
+                AssetKey("backfillA"),
+                AssetKey("backfillB"),
+                AssetKey("backfillC"),
+            }
+
+            assert subsets_by_key[AssetKey("backfillA")].size == 1
+            assert subsets_by_key[AssetKey("backfillB")].size == 3
+            assert subsets_by_key[AssetKey("backfillC")].size == 3
+
+            # create 2 individual runs
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+
+            # unpartitioned
+            unpartitioned_run = runs[0]
+            assert unpartitioned_run.tags.get("dagster/partition") is None
+            assert unpartitioned_run.asset_selection == {AssetKey("run1")}
+            assert unpartitioned_run.asset_check_selection == {
+                AssetCheckKey(AssetKey("run1"), name="inside")
+            }
+
+            # static partitioned 1
+            static_partitioned_run = runs[1]
+            assert static_partitioned_run.tags.get("dagster/partition") == "z"
+            assert static_partitioned_run.asset_selection == {AssetKey("run2")}
+            assert static_partitioned_run.asset_check_selection == {
+                AssetCheckKey(AssetKey("run2"), name="inside")
+            }
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            # second tick, don't kick off again
+            _execute_ticks(context, executor)
+
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 0
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0

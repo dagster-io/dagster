@@ -70,7 +70,7 @@ class AutomationContext(Generic[T_EntityKey]):
         )
         condition_unqiue_id = condition.get_unique_id(parent_unique_id=None, index=None)
 
-        if condition.has_rule_condition and evaluator.request_backfills:
+        if condition.has_rule_condition and evaluator.allow_backfills:
             raise DagsterInvalidDefinitionError(
                 "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
             )

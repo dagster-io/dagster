@@ -92,6 +92,7 @@ def test_auto_materialize_perf(scenario: PerfScenario):
             entity_keys=AssetSelection.all().resolve(asset_graph),
             instance=instance,
             asset_graph=asset_graph,
+            allow_backfills=False,
             cursor=AssetDaemonCursor.empty(),
         ).evaluate()
 
