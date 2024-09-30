@@ -109,16 +109,12 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
-        encode: (tokens) => {
-          return {q: tokensAsStringArray(tokens), cursor: undefined};
-        },
-        decode: ({q = []}) => {
-          const res = tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY);
-          return res.filter(
+        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
+        decode: ({q = []}) =>
+          tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-          ) as RunFilterToken[];
-        },
+          ) as RunFilterToken[],
       }),
       [enabledFilters],
     ),
