@@ -171,8 +171,8 @@ def make_task_instance(
         run_id=run_id,
         metadata={
             "state": "success",
-            "start_date": AirflowInstance.airflow_date_from_datetime(start_date),
-            "end_date": AirflowInstance.airflow_date_from_datetime(end_date),
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
         },
     )
 
@@ -184,8 +184,8 @@ def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datet
         run_id=run_id,
         metadata={
             "state": "success",
-            "start_date": AirflowInstance.airflow_date_from_datetime(start_date),
-            "end_date": AirflowInstance.airflow_date_from_datetime(end_date),
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
             "run_type": "manual",
             "note": "dummy note",
             "conf": {},

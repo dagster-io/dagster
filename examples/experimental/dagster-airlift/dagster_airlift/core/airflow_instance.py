@@ -199,18 +199,14 @@ class AirflowInstance:
                 f"Failed to fetch source code. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    @staticmethod
-    def airflow_str_from_datetime(dt: datetime.datetime) -> str:
-        return dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-
     def get_dag_runs(
         self, dag_id: str, start_date: datetime.datetime, end_date: datetime.datetime
     ) -> List["DagRun"]:
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
             params={
-                "updated_at_gte": self.airflow_str_from_datetime(start_date),
-                "updated_at_lte": self.airflow_str_from_datetime(end_date),
+                "updated_at_gte": start_date.isoformat(),
+                "updated_at_lte": end_date.isoformat(),
                 "state": ["success"],
             },
         )
@@ -242,8 +238,8 @@ class AirflowInstance:
             f"{self.get_api_url()}/dags/~/dagRuns/list",
             json={
                 "dag_ids": dag_ids,
-                "end_date_gte": self.airflow_str_from_datetime(end_date_gte),
-                "end_date_lte": self.airflow_str_from_datetime(end_date_lte),
+                "end_date_gte": end_date_gte.isoformat(),
+                "end_date_lte": end_date_lte.isoformat(),
                 "order_by": "end_date",
                 "states": ["success"],
                 "page_offset": offset,
@@ -306,19 +302,6 @@ class AirflowInstance:
     def get_run_state(self, dag_id: str, run_id: str) -> str:
         return self.get_dag_run(dag_id, run_id).state
 
-    @staticmethod
-    def timestamp_from_airflow_date(airflow_date: str) -> float:
-        try:
-            return datetime.datetime.strptime(airflow_date, "%Y-%m-%dT%H:%M:%S+00:00").timestamp()
-        except ValueError:
-            return datetime.datetime.strptime(
-                airflow_date, "%Y-%m-%dT%H:%M:%S.%f+00:00"
-            ).timestamp()
-
-    @staticmethod
-    def airflow_date_from_datetime(datetime: datetime.datetime) -> str:
-        return datetime.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-
     def delete_run(self, dag_id: str, run_id: str) -> None:
         response = self.auth_backend.get_session().delete(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}"
@@ -356,11 +339,11 @@ class TaskInstance:
 
     @property
     def start_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
+        return datetime.datetime.fromisoformat(self.metadata["start_date"]).timestamp()
 
     @property
     def end_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
+        return datetime.datetime.fromisoformat(self.metadata["end_date"]).timestamp()
 
 
 @record
@@ -400,16 +383,16 @@ class DagRun:
 
     @property
     def start_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
+        return datetime.datetime.fromisoformat(self.metadata["start_date"]).timestamp()
 
     @property
     def start_datetime(self) -> datetime.datetime:
-        return datetime.datetime.strptime(self.metadata["start_date"], "%Y-%m-%dT%H:%M:%S+00:00")
+        return datetime.datetime.fromisoformat(self.metadata["start_date"])
 
     @property
     def end_date(self) -> float:
-        return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
+        return datetime.datetime.fromisoformat(self.metadata["end_date"]).timestamp()
 
     @property
     def end_datetime(self) -> datetime.datetime:
-        return datetime.datetime.strptime(self.metadata["end_date"], "%Y-%m-%dT%H:%M:%S+00:00")
+        return datetime.datetime.fromisoformat(self.metadata["end_date"])
