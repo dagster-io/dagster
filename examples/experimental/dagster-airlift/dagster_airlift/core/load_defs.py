@@ -92,7 +92,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsDa
 
     def defs_from_state(self, airflow_data: AirflowDefinitionsData) -> Definitions:
         return Definitions.merge(
-            airflow_data.construct_automapped_dag_assets_def(),
+            airflow_data.construct_automapped_dag_assets_defs(),
             build_airflow_polling_sensor_defs(
                 airflow_instance=self.airflow_instance,
                 minimum_interval_seconds=self.sensor_minimum_interval_seconds,

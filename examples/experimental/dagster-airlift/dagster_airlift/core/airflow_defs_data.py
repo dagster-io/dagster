@@ -84,7 +84,7 @@ class AirflowDefinitionsData:
             ]
         )
 
-    def construct_automapped_dag_assets_def(self) -> Definitions:
+    def construct_automapped_dag_assets_defs(self) -> Definitions:
         specs = []
         for dag_data in self.serialized_data.dag_datas.values():
             upstream_deps: Dict[str, Set[str]] = {task_id: set() for task_id in dag_data.task_infos}
