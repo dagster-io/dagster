@@ -340,13 +340,11 @@ def launch_scheduled_runs(
             # don't clean up state if its last iteration time is within a grace period
             continue
 
-        # don't clean up state if its location is an error state
-        if location_name not in error_locations:
-            logger.info(
-                f"Removing state for schedule {state.instigator_name} that is "
-                f"no longer present in {location_name}."
-            )
-            instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
+        logger.info(
+            f"Removing state for schedule {state.instigator_name} that is "
+            f"no longer present in {location_name}."
+        )
+        instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
     if not running_schedules:
         yield
