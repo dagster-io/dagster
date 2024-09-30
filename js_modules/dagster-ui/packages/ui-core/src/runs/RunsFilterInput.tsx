@@ -50,7 +50,8 @@ export type RunFilterTokenType =
   | 'tag'
   | 'backfill'
   | 'created_date_before'
-  | 'created_date_after';
+  | 'created_date_after'
+  | 'show_runs_within_backfills';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
@@ -88,6 +89,10 @@ const RUN_PROVIDERS_EMPTY = [
   },
   {
     token: 'created_date_after',
+    values: () => [],
+  },
+  {
+    token: 'show_runs_within_backfills',
     values: () => [],
   },
 ];
@@ -152,6 +157,11 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       } else {
         obj.tags = [{key: key!, value}];
       }
+    } else if (item.token === 'show_runs_within_backfills') {
+      // the Runs filter expects a boolen on whether to **exclude** runs that are within
+      // backfills. The UI checkbox is whether to **show** runs within backfills, so we
+      // negate the value when creating the filter
+      obj.excludeSubruns = item.value === 'false';
     }
   }
 

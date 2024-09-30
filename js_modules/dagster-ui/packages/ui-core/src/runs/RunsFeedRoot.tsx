@@ -1,6 +1,6 @@
 import {Box, Checkbox, Colors, NonIdealState, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
@@ -126,16 +126,41 @@ export const RunsFeedRoot = () => {
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
   const {error} = queryResult;
 
-  const [hideSubRuns, setHideSubRuns] = useState(false);
+  const showRunsWithinBackfills = useMemo(() => {
+    const excludeToken = filterTokens.find(
+      (token) => token?.token === 'show_runs_within_backfills',
+    );
+    if (!excludeToken) {
+      // If the token doesn't exist, the box is not checked
+      return false;
+    }
+    return excludeToken.value === 'true';
+  }, [filterTokens]);
 
   const actionBarComponents = (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       {button}
       <Checkbox
-        label={<span>Hide sub-runs</span>}
-        checked={hideSubRuns}
+        label={<span>Show runs within backfills</span>}
+        checked={showRunsWithinBackfills}
         onChange={() => {
-          setHideSubRuns(!hideSubRuns);
+          setFilterTokens((filterTokens) => {
+            const copy = [...filterTokens];
+            const index = copy.findIndex((token) => token?.token === 'show_runs_within_backfills');
+            if (index !== -1) {
+              const [token] = copy.splice(index, 1);
+              if (token?.value === 'false') {
+                copy.push({
+                  token: 'show_runs_within_backfills',
+                  value: 'true',
+                });
+              }
+              // if the token value is true, removing it is enough to disable the filter
+            } else {
+              copy.push({token: 'show_runs_within_backfills', value: 'true'});
+            }
+            return copy;
+          });
         }}
       />
     </Box>
