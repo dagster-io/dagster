@@ -2,7 +2,7 @@ import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
+from typing import AbstractSet, Iterable, List, Mapping, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -527,6 +527,11 @@ class AssetSelection(ABC, DagsterModel):
     def operand__str__(self) -> str:
         return f"({self})" if self.needs_parentheses_when_operand() else str(self)
 
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetSelection":
+        return self
+
 
 @whitelist_for_serdes
 class AllSelection(AssetSelection):
@@ -593,6 +598,15 @@ class AssetChecksForAssetKeysSelection(AssetSelection):
             return f"asset_check:{self.selected_asset_keys[0].to_user_string()}"
         return f"asset_check:({' or '.join(k.to_user_string() for k in self.selected_asset_keys)})"
 
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetSelection":
+        return AssetChecksForAssetKeysSelection(
+            selected_asset_keys=[
+                new_keys_by_old_key.get(key, key) for key in self.selected_asset_keys
+            ]
+        )
+
 
 @whitelist_for_serdes
 class AssetCheckKeysSelection(AssetSelection):
@@ -626,6 +640,19 @@ class AssetCheckKeysSelection(AssetSelection):
             return f"asset_check:{self.selected_asset_check_keys[0].to_user_string()}"
         return f"asset_check:({' or '.join(k.to_user_string() for k in self.selected_asset_check_keys)})"
 
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetSelection":
+        selected_asset_check_keys = []
+        for check_key in self.selected_asset_check_keys:
+            new_asset_key = new_keys_by_old_key.get(check_key.asset_key)
+            if new_asset_key is not None:
+                selected_asset_check_keys.append(check_key._replace(asset_key=new_asset_key))
+            else:
+                selected_asset_check_keys.append(check_key)
+
+        return AssetCheckKeysSelection(selected_asset_check_keys=selected_asset_check_keys)
+
 
 class OperandListAssetSelection(AssetSelection):
     """Superclass for classes like `AndAssetSelection` and `OrAssetSelection` that operate on
@@ -640,6 +667,17 @@ class OperandListAssetSelection(AssetSelection):
                 operands=[
                     operand.to_serializable_asset_selection(asset_graph)
                     for operand in self.operands
+                ]
+            )
+        )
+
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetSelection":
+        return self.model_copy(
+            update=dict(
+                operands=[
+                    operand.replace_asset_keys(new_keys_by_old_key) for operand in self.operands
                 ]
             )
         )
@@ -734,6 +772,16 @@ class SubtractAssetSelection(AssetSelection):
     def needs_parentheses_when_operand(self) -> bool:
         return True
 
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetSelection":
+        return self.model_copy(
+            update=dict(
+                left=self.left.replace_asset_keys(new_keys_by_old_key),
+                right=self.right.replace_asset_keys(new_keys_by_old_key),
+            )
+        )
+
     def __str__(self) -> str:
         return f"{self.left.operand__str__()} - {self.right.operand__str__()}"
 
@@ -748,6 +796,13 @@ class ChainedAssetSelection(AssetSelection):
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
         return self.model_copy(
             update=dict(child=self.child.to_serializable_asset_selection(asset_graph))
+        )
+
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetSelection":
+        return self.model_copy(
+            update=dict(child=self.child.replace_asset_keys(new_keys_by_old_key))
         )
 
 
@@ -936,6 +991,13 @@ class KeysAssetSelection(AssetSelection):
 
     def needs_parentheses_when_operand(self) -> bool:
         return len(self.selected_keys) > 1
+
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetSelection":
+        return KeysAssetSelection(
+            selected_keys=[new_keys_by_old_key.get(key, key) for key in self.selected_keys]
+        )
 
     def __str__(self) -> str:
         if len(self.selected_keys) <= 3:
