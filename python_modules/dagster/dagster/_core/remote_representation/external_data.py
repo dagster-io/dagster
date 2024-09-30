@@ -95,7 +95,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.snap import JobSnapshot
+from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -123,8 +123,8 @@ class ExternalRepositoryData(IHaveNew):
     external_partition_set_datas: Sequence["PartitionSetSnap"]
     external_sensor_datas: Sequence["SensorSnap"]
     external_asset_graph_data: Sequence["AssetNodeSnap"]
-    external_job_datas: Optional[Sequence["ExternalJobData"]]
-    external_job_refs: Optional[Sequence["ExternalJobRef"]]
+    external_job_datas: Optional[Sequence["JobDataSnap"]]
+    external_job_refs: Optional[Sequence["JobRefSnap"]]
     external_resource_data: Optional[Sequence["ResourceSnap"]]
     external_asset_checks: Optional[Sequence["AssetCheckNodeSnap"]]
     metadata: Optional[MetadataMapping]
@@ -137,8 +137,8 @@ class ExternalRepositoryData(IHaveNew):
         external_partition_set_datas: Sequence["PartitionSetSnap"],
         external_sensor_datas: Optional[Sequence["SensorSnap"]] = None,
         external_asset_graph_data: Optional[Sequence["AssetNodeSnap"]] = None,
-        external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
-        external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
+        external_job_datas: Optional[Sequence["JobDataSnap"]] = None,
+        external_job_refs: Optional[Sequence["JobRefSnap"]] = None,
         external_resource_data: Optional[Sequence["ResourceSnap"]] = None,
         external_asset_checks: Optional[Sequence["AssetCheckNodeSnap"]] = None,
         metadata: Optional[MetadataMapping] = None,
@@ -162,12 +162,12 @@ class ExternalRepositoryData(IHaveNew):
     def has_job_data(self):
         return self.external_job_datas is not None
 
-    def get_external_job_datas(self) -> Sequence["ExternalJobData"]:
+    def get_external_job_datas(self) -> Sequence["JobDataSnap"]:
         if self.external_job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
         return self.external_job_datas
 
-    def get_external_job_refs(self) -> Sequence["ExternalJobRef"]:
+    def get_external_job_refs(self) -> Sequence["JobRefSnap"]:
         if self.external_job_refs is None:
             check.failed("Snapshots were not deferred, external_job_refs not loaded")
         return self.external_job_refs
@@ -179,7 +179,7 @@ class ExternalRepositoryData(IHaveNew):
 
         for external_job_data in self.external_job_datas:
             if external_job_data.name == name:
-                return external_job_data.job_snapshot
+                return external_job_data.job
 
         check.failed("Could not find pipeline snapshot named " + name)
 
@@ -262,8 +262,8 @@ class PresetSnap(IHaveNew):
 @whitelist_for_serdes(
     storage_name="ExternalPipelineData",
     storage_field_names={
-        "job_snapshot": "pipeline_snapshot",
-        "parent_job_snapshot": "parent_pipeline_snapshot",
+        "job": "pipeline_snapshot",
+        "parent_job": "parent_pipeline_snapshot",
     },
     # There was a period during which `JobDefinition` was a newer subclass of the legacy
     # `PipelineDefinition`, and `is_job` was a boolean field used to distinguish between the two
@@ -271,11 +271,11 @@ class PresetSnap(IHaveNew):
     old_fields={"is_job": True},
 )
 @record
-class ExternalJobData:
+class JobDataSnap:
     name: str
-    job_snapshot: JobSnapshot
+    job: JobSnap
     active_presets: Sequence["PresetSnap"]
-    parent_job_snapshot: Optional[JobSnapshot]
+    parent_job: Optional[JobSnap]
 
 
 @whitelist_for_serdes(
@@ -286,7 +286,7 @@ class ExternalJobData:
 class ExternalJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
-    external_job_data: Optional[ExternalJobData] = None
+    external_job_data: Optional[JobDataSnap] = None
 
 
 @whitelist_for_serdes
@@ -312,9 +312,9 @@ class NestedResource(NamedTuple):
     name: str
 
 
-@whitelist_for_serdes(old_fields={"is_legacy_pipeline": False})
+@whitelist_for_serdes(storage_name="ExternalJobRef", old_fields={"is_legacy_pipeline": False})
 @record
-class ExternalJobRef:
+class JobRefSnap:
     name: str
     snapshot_id: str
     active_presets: Sequence["PresetSnap"]
@@ -1699,20 +1699,20 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
 def external_job_data_from_def(
     job_def: JobDefinition, include_parent_snapshot: bool
-) -> ExternalJobData:
+) -> JobDataSnap:
     check.inst_param(job_def, "job_def", JobDefinition)
-    return ExternalJobData(
+    return JobDataSnap(
         name=job_def.name,
-        job_snapshot=job_def.get_job_snapshot(),
-        parent_job_snapshot=job_def.get_parent_job_snapshot() if include_parent_snapshot else None,
+        job=job_def.get_job_snapshot(),
+        parent_job=job_def.get_parent_job_snapshot() if include_parent_snapshot else None,
         active_presets=active_presets_from_job_def(job_def),
     )
 
 
-def external_job_ref_from_def(job_def: JobDefinition) -> ExternalJobRef:
+def external_job_ref_from_def(job_def: JobDefinition) -> JobRefSnap:
     check.inst_param(job_def, "job_def", JobDefinition)
 
-    return ExternalJobRef(
+    return JobRefSnap(
         name=job_def.name,
         snapshot_id=job_def.get_job_snapshot_id(),
         parent_snapshot_id=None,

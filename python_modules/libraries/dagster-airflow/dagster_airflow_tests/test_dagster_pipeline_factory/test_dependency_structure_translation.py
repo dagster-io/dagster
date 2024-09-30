@@ -9,7 +9,7 @@ else:
     from airflow.utils.helpers import chain
 
 
-from dagster._core.snap import JobSnapshot
+from dagster._core.snap import JobSnap
 from dagster._serdes import serialize_pp
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 
@@ -42,9 +42,7 @@ def test_one_task_dag(snapshot):
 
     snapshot.assert_match(
         serialize_pp(
-            JobSnapshot.from_job_def(
-                make_dagster_job_from_airflow_dag(dag=dag)
-            ).dep_structure_snapshot
+            JobSnap.from_job_def(make_dagster_job_from_airflow_dag(dag=dag)).dep_structure_snapshot
         )
     )
 
@@ -74,9 +72,7 @@ def test_two_task_dag_no_dep(snapshot):
 
     snapshot.assert_match(
         serialize_pp(
-            JobSnapshot.from_job_def(
-                make_dagster_job_from_airflow_dag(dag=dag)
-            ).dep_structure_snapshot
+            JobSnap.from_job_def(make_dagster_job_from_airflow_dag(dag=dag)).dep_structure_snapshot
         )
     )
 
@@ -108,9 +104,7 @@ def test_two_task_dag_with_dep(snapshot):
 
     snapshot.assert_match(
         serialize_pp(
-            JobSnapshot.from_job_def(
-                make_dagster_job_from_airflow_dag(dag=dag)
-            ).dep_structure_snapshot
+            JobSnap.from_job_def(make_dagster_job_from_airflow_dag(dag=dag)).dep_structure_snapshot
         )
     )
 
@@ -152,9 +146,7 @@ def test_diamond_task_dag(snapshot):
 
     snapshot.assert_match(
         serialize_pp(
-            JobSnapshot.from_job_def(
-                make_dagster_job_from_airflow_dag(dag=dag)
-            ).dep_structure_snapshot
+            JobSnap.from_job_def(make_dagster_job_from_airflow_dag(dag=dag)).dep_structure_snapshot
         )
     )
 
@@ -196,9 +188,7 @@ def test_multi_root_dag(snapshot):
 
     snapshot.assert_match(
         serialize_pp(
-            JobSnapshot.from_job_def(
-                make_dagster_job_from_airflow_dag(dag=dag)
-            ).dep_structure_snapshot
+            JobSnap.from_job_def(make_dagster_job_from_airflow_dag(dag=dag)).dep_structure_snapshot
         )
     )
 
@@ -239,9 +229,7 @@ def test_multi_leaf_dag(snapshot):
 
     snapshot.assert_match(
         serialize_pp(
-            JobSnapshot.from_job_def(
-                make_dagster_job_from_airflow_dag(dag=dag)
-            ).dep_structure_snapshot
+            JobSnap.from_job_def(make_dagster_job_from_airflow_dag(dag=dag)).dep_structure_snapshot
         )
     )
 
@@ -496,9 +484,7 @@ def test_complex_dag(snapshot):
 
     snapshot.assert_match(
         serialize_pp(
-            JobSnapshot.from_job_def(
-                make_dagster_job_from_airflow_dag(dag=dag)
-            ).dep_structure_snapshot
+            JobSnap.from_job_def(make_dagster_job_from_airflow_dag(dag=dag)).dep_structure_snapshot
         )
     )
 

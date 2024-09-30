@@ -42,7 +42,7 @@ from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
-    JobSnapshot,
+    JobSnap,
     create_execution_plan_snapshot_id,
     create_job_snapshot_id,
 )
@@ -566,8 +566,8 @@ class SqlRunStorage(RunStorage):
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._has_snapshot_id(job_snapshot_id)
 
-    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
-        check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    def add_job_snapshot(self, job_snapshot: JobSnap, snapshot_id: Optional[str] = None) -> str:
+        check.inst_param(job_snapshot, "job_snapshot", JobSnap)
         check.opt_str_param(snapshot_id, "snapshot_id")
 
         if not snapshot_id:
@@ -579,7 +579,7 @@ class SqlRunStorage(RunStorage):
             snapshot_type=SnapshotType.PIPELINE,
         )
 
-    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnap:
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._get_snapshot(job_snapshot_id)  # type: ignore  # (allowed to return None?)
 
@@ -645,7 +645,7 @@ class SqlRunStorage(RunStorage):
 
         return bool(row)
 
-    def _get_snapshot(self, snapshot_id: str) -> Optional[JobSnapshot]:
+    def _get_snapshot(self, snapshot_id: str) -> Optional[JobSnap]:
         query = db_select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
@@ -1069,7 +1069,7 @@ GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 def defensively_unpack_execution_plan_snapshot_query(
     logger: logging.Logger, row: Sequence[Any]
-) -> Optional[Union[ExecutionPlanSnapshot, JobSnapshot]]:
+) -> Optional[Union[ExecutionPlanSnapshot, JobSnap]]:
     # minimal checking here because sqlalchemy returns a different type based on what version of
     # SqlAlchemy you are using
 
@@ -1093,7 +1093,7 @@ def defensively_unpack_execution_plan_snapshot_query(
         return None
 
     try:
-        return deserialize_value(decoded_str, (ExecutionPlanSnapshot, JobSnapshot))
+        return deserialize_value(decoded_str, (ExecutionPlanSnapshot, JobSnap))
     except JSONDecodeError:
         _warn("Could not parse json in snapshot table.")
         return None

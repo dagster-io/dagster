@@ -37,7 +37,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.remote_representation.external_data import StaticPartitionsSnap
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster._core.snap.job_snapshot import JobSnapshot
+from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
@@ -1317,6 +1317,6 @@ def test_legacy_compute_kind_tag_backcompat() -> None:
 
     legacy_snap_path = file_relative_path(__file__, "1_7_9_kind_op_job_snap.gz")
     legacy_snap = deserialize_value(
-        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnapshot
+        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnap
     )
     assert create_snapshot_id(legacy_snap) == "8db90f128b7eaa5c229bdde372e39d5cbecdc7e4"

@@ -93,7 +93,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._core.remote_representation.job_index import JobIndex
-    from dagster._core.snap import JobSnapshot
+    from dagster._core.snap import JobSnap
 
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
@@ -1024,20 +1024,20 @@ class JobDefinition(IHasInternalInit):
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         return self.get_job_snapshot().config_schema_snapshot
 
-    def get_job_snapshot(self) -> "JobSnapshot":
+    def get_job_snapshot(self) -> "JobSnap":
         return self.get_job_index().job_snapshot
 
     @cached_method
     def get_job_index(self) -> "JobIndex":
         from dagster._core.remote_representation import JobIndex
-        from dagster._core.snap import JobSnapshot
+        from dagster._core.snap import JobSnap
 
-        return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
+        return JobIndex(JobSnap.from_job_def(self), self.get_parent_job_snapshot())
 
     def get_job_snapshot_id(self) -> str:
         return self.get_job_index().job_snapshot_id
 
-    def get_parent_job_snapshot(self) -> Optional["JobSnapshot"]:
+    def get_parent_job_snapshot(self) -> Optional["JobSnap"]:
         if self.op_selection_data:
             return self.op_selection_data.parent_job_def.get_job_snapshot()
         elif self.asset_selection_data:

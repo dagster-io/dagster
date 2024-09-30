@@ -50,7 +50,7 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.job_snapshot import JobSnapshot
+    from dagster._core.snap.job_snapshot import JobSnap
     from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,
@@ -250,7 +250,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def add_snapshot(
         self,
-        snapshot: Union["JobSnapshot", "ExecutionPlanSnapshot"],
+        snapshot: Union["JobSnap", "ExecutionPlanSnapshot"],
         snapshot_id: Optional[str] = None,
     ) -> None:
         return self._storage.run_storage.add_snapshot(snapshot, snapshot_id)
@@ -261,12 +261,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_job_snapshot(job_snapshot_id)
 
-    def add_job_snapshot(
-        self, job_snapshot: "JobSnapshot", snapshot_id: Optional[str] = None
-    ) -> str:
+    def add_job_snapshot(self, job_snapshot: "JobSnap", snapshot_id: Optional[str] = None) -> str:
         return self._storage.run_storage.add_job_snapshot(job_snapshot, snapshot_id)
 
-    def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnapshot":
+    def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnap":
         return self._storage.run_storage.get_job_snapshot(job_snapshot_id)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:

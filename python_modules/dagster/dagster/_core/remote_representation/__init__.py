@@ -17,10 +17,10 @@ from dagster._core.remote_representation.external import (
 from dagster._core.remote_representation.external_data import (
     ExecutionParamsErrorSnap as ExecutionParamsErrorSnap,
     ExecutionParamsSnap as ExecutionParamsSnap,
-    ExternalJobData as ExternalJobData,
-    ExternalJobRef as ExternalJobRef,
     ExternalJobSubsetResult as ExternalJobSubsetResult,
     ExternalRepositoryData as ExternalRepositoryData,
+    JobDataSnap as JobDataSnap,
+    JobRefSnap as JobRefSnap,
     PartitionConfigSnap as PartitionConfigSnap,
     PartitionExecutionErrorSnap as PartitionExecutionErrorSnap,
     PartitionNamesSnap as PartitionNamesSnap,

@@ -55,7 +55,7 @@ from dagster._core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan as snapshot_from_execution_plan,
 )
 from dagster._core.snap.job_snapshot import (
-    JobSnapshot as JobSnapshot,
+    JobSnap as JobSnap,
     create_job_snapshot_id as create_job_snapshot_id,
 )
 from dagster._core.snap.mode import (

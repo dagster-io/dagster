@@ -893,9 +893,7 @@ class GrpcServerCodeLocation(CodeLocation):
             )
             subset = copy(
                 subset,
-                external_job_data=copy(
-                    subset.external_job_data, parent_job_snapshot=full_job.job_snapshot
-                ),
+                external_job_data=copy(subset.external_job_data, parent_job=full_job.job_snapshot),
             )
 
         return subset

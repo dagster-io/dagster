@@ -45,9 +45,9 @@ from dagster._core.remote_representation.external_data import (
     AssetCheckNodeSnap,
     AssetNodeSnap,
     EnvVarConsumer,
-    ExternalJobData,
-    ExternalJobRef,
     ExternalRepositoryData,
+    JobDataSnap,
+    JobRefSnap,
     NestedResource,
     PartitionSetSnap,
     PresetSnap,
@@ -75,7 +75,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import ExecutionPlanSnapshot
-from dagster._core.snap.job_snapshot import JobSnapshot
+from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
@@ -99,7 +99,7 @@ class ExternalRepository:
         external_repository_data: ExternalRepositoryData,
         repository_handle: RepositoryHandle,
         instance: DagsterInstance,
-        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalJobData]] = None,
+        ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
     ):
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
@@ -108,7 +108,7 @@ class ExternalRepository:
         self._instance = instance
 
         if external_repository_data.external_job_datas is not None:
-            self._job_map: Dict[str, Union[ExternalJobData, ExternalJobRef]] = {
+            self._job_map: Dict[str, Union[JobDataSnap, JobRefSnap]] = {
                 d.name: d for d in external_repository_data.external_job_datas
             }
             self._deferred_snapshots: bool = False
@@ -318,12 +318,12 @@ class ExternalRepository:
             if job_name not in self._cached_jobs:
                 job_item = self._job_map[job_name]
                 if self._deferred_snapshots:
-                    if not isinstance(job_item, ExternalJobRef):
+                    if not isinstance(job_item, JobRefSnap):
                         check.failed("unexpected job item")
                     external_ref = job_item
-                    external_data: Optional[ExternalJobData] = None
+                    external_data: Optional[JobDataSnap] = None
                 else:
-                    if not isinstance(job_item, ExternalJobData):
+                    if not isinstance(job_item, JobDataSnap):
                         check.failed("unexpected job item")
                     external_data = job_item
                     external_ref = None
@@ -466,13 +466,13 @@ class ExternalJob(RepresentedJob):
 
     def __init__(
         self,
-        external_job_data: Optional[ExternalJobData],
+        external_job_data: Optional[JobDataSnap],
         repository_handle: RepositoryHandle,
-        external_job_ref: Optional[ExternalJobRef] = None,
-        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalJobData]] = None,
+        external_job_ref: Optional[JobRefSnap] = None,
+        ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
     ):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.opt_inst_param(external_job_data, "external_job_data", ExternalJobData)
+        check.opt_inst_param(external_job_data, "external_job_data", JobDataSnap)
 
         self._repository_handle = repository_handle
 
@@ -507,8 +507,8 @@ class ExternalJob(RepresentedJob):
         with self._memo_lock:
             if self._index is None:
                 self._index = JobIndex(
-                    self.external_job_data.job_snapshot,
-                    self.external_job_data.parent_job_snapshot,
+                    self.external_job_data.job,
+                    self.external_job_data.parent_job,
                 )
             return self._index
 
@@ -611,7 +611,7 @@ class ExternalJob(RepresentedJob):
         return self._job_index.job_snapshot.metadata
 
     @property
-    def job_snapshot(self) -> JobSnapshot:
+    def job_snapshot(self) -> JobSnap:
         return self._job_index.job_snapshot
 
     @property

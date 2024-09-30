@@ -15,7 +15,7 @@ from dagster._core.remote_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalJobData
+from dagster._core.remote_representation.external_data import JobDataSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
@@ -141,7 +141,7 @@ def test_defer_snapshots(instance: DagsterInstance):
                 repo_origin,
                 ref.name,
             )
-            return deserialize_value(reply.serialized_job_data, ExternalJobData)
+            return deserialize_value(reply.serialized_job_data, JobDataSnap)
 
         external_repository_data = deserialize_value(ser_repo_data, ExternalRepositoryData)
         assert (
