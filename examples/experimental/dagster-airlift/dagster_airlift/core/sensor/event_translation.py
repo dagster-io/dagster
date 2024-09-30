@@ -14,7 +14,7 @@ from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
 
 AirflowEventTranslationFn = Callable[
-    [DagRun, Sequence[TaskInstance], AirflowDefinitionsData], Iterable[AssetMaterialization]
+    [DagRun, Sequence[TaskInstance]], Iterable[AssetMaterialization]
 ]
 
 

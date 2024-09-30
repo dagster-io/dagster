@@ -1,19 +1,22 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Mapping, cast
+from typing import TYPE_CHECKING, AbstractSet, List, Mapping, Sequence, cast
 
-from dagster import AssetKey, Definitions
+from dagster import AssetKey, AssetMaterialization, Definitions
 from dagster._record import record
 from dagster._serdes.serdes import deserialize_value
 
 from dagster_airlift.constants import STANDALONE_DAG_ID_METADATA_KEY
-from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
 from dagster_airlift.core.utils import get_metadata_key, is_mapped_asset_spec, task_handles_for_spec
+
+if TYPE_CHECKING:
+    from dagster_airlift.core.sensor.event_translation import AirflowEventTranslationFn
 
 
 @record
@@ -29,6 +32,17 @@ class AirflowDefinitionsData:
         return deserialize_value(
             cast(str, serialized_data_str), as_type=SerializedAirflowDefinitionsData
         )
+
+    @property
+    def default_event_translation_fn(self) -> "AirflowEventTranslationFn":
+        from dagster_airlift.core.sensor.event_translation import get_asset_events
+
+        def _get_asset_events(
+            dag_run: DagRun, task_instances: Sequence[TaskInstance]
+        ) -> List[AssetMaterialization]:
+            return get_asset_events(dag_run, task_instances, self)
+
+        return _get_asset_events
 
     @property
     def all_dag_ids(self) -> AbstractSet[str]:

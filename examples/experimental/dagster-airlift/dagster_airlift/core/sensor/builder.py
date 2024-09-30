@@ -156,7 +156,7 @@ def materializations_and_requests_from_batch_iter(
     end_date_lte: float,
     offset: int,
     airflow_data: AirflowDefinitionsData,
-    event_translation_fn: AirflowEventTranslationFn,
+    event_translation_fn: Optional[AirflowEventTranslationFn],
 ) -> Iterator[Optional[BatchResult]]:
     runs = airflow_data.airflow_instance.get_dag_runs_batch(
         dag_ids=list(airflow_data.all_dag_ids),
@@ -176,8 +176,8 @@ def materializations_and_requests_from_batch_iter(
             ],
             states=["success"],
         )
-
-        mats = event_translation_fn(dag_run, task_instances, airflow_data)
+        event_translation_fn = event_translation_fn or airflow_data.default_event_translation_fn
+        mats = event_translation_fn(dag_run, task_instances)
         all_asset_keys_materialized = {mat.asset_key for mat in mats}
         yield (
             BatchResult(
