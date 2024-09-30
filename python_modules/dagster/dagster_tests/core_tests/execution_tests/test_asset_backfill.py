@@ -1444,15 +1444,16 @@ def test_connected_assets_disconnected_partitions():
         backfill_start_datetime.timestamp(),
         [
             PartitionsByAssetSelector(
-                foo.key, PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")])
+                asset_key=foo.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")]),
             ),
             PartitionsByAssetSelector(
-                foo_child.key,
-                PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
+                asset_key=foo_child.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
             ),
             PartitionsByAssetSelector(
-                foo_grandchild.key,
-                PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
+                asset_key=foo_grandchild.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
             ),
         ],
     )

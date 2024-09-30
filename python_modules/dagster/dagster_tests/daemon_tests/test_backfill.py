@@ -2107,8 +2107,10 @@ def test_asset_backfill_with_single_run_backfill_policy(
         dynamic_partitions_store=instance,
         partitions_by_assets=[
             PartitionsByAssetSelector(
-                asset_with_single_run_backfill_policy.key,
-                PartitionsSelector([PartitionRangeSelector(partitions[0], partitions[-1])]),
+                asset_key=asset_with_single_run_backfill_policy.key,
+                partitions=PartitionsSelector(
+                    [PartitionRangeSelector(partitions[0], partitions[-1])]
+                ),
             )
         ],
         title=None,
