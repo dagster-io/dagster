@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Callable, List, Mapping, Optional, Sequence, S
 
 import dagster._check as check
 from dagster._annotations import experimental_param
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.schedule_definition import (
@@ -43,6 +44,7 @@ def schedule(
     name: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     tags_fn: Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
     should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
     environment_vars: Optional[Mapping[str, str]] = None,
     execution_timezone: Optional[str] = None,
@@ -87,6 +89,8 @@ def schedule(
             that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). **Note**: Either ``tags`` or ``tags_fn`` may be set, but not both.
+        metadata (Optional[Mapping[str, Any]]): A set of metadata entries that annotate the
+            schedule. Values will be normalized to typed `MetadataValue` objects.
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs at
             schedule execution time to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
@@ -195,6 +199,7 @@ def schedule(
             run_config_fn=None,
             tags=tags,
             tags_fn=None,  # cannot supply tags or tags_fn to decorator
+            metadata=metadata,
             should_execute=None,  # already encompassed in evaluation_fn
             target=target,
         )

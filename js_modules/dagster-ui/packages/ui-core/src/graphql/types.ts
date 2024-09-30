@@ -4844,6 +4844,27 @@ export type Schedule = {
   futureTick: DryRunInstigationTick;
   futureTicks: DryRunInstigationTicks;
   id: Scalars['ID']['output'];
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | CodeReferencesMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | TimestampMetadataEntry
+    | UrlMetadataEntry
+  >;
   mode: Scalars['String']['output'];
   name: Scalars['String']['output'];
   partitionSet: Maybe<PartitionSet>;
@@ -13731,6 +13752,8 @@ export const buildSchedule = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '71db947a-c94a-4681-979f-7d72688947d9',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'in',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'ut',
     partitionSet:
