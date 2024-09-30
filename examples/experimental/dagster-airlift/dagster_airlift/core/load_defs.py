@@ -96,16 +96,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDef
     def defs_from_state(
         self, serialized_airflow_data: SerializedAirflowDefinitionsData
     ) -> Definitions:
-        resolved_defs = construct_automapped_dag_assets_defs(serialized_airflow_data)
-        airflow_polling_sensor_defs = build_airflow_polling_sensor_defs(
-            airflow_instance=self.airflow_instance,
-            minimum_interval_seconds=self.sensor_minimum_interval_seconds,
-            airflow_data=AirflowDefinitionsData(
-                resolved_airflow_defs=resolved_defs, instance_name=self.airflow_instance.name
-            ),
-            event_translation_fn=get_asset_events,
-        )
-        return Definitions.merge(resolved_defs, airflow_polling_sensor_defs)
+        return construct_automapped_dag_assets_defs(serialized_airflow_data)
 
 
 def build_full_automapped_dags_from_airflow_instance(
@@ -113,10 +104,21 @@ def build_full_automapped_dags_from_airflow_instance(
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
-    return FullAutomappedDagsLoader(
+    defs = FullAutomappedDagsLoader(
         airflow_instance=airflow_instance,
         sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
     ).build_defs()
+    return Definitions.merge(
+        defs,
+        build_airflow_polling_sensor_defs(
+            airflow_instance=airflow_instance,
+            minimum_interval_seconds=sensor_minimum_interval_seconds,
+            airflow_data=AirflowDefinitionsData(
+                resolved_airflow_defs=defs, instance_name=airflow_instance.name
+            ),
+            event_translation_fn=get_asset_events,
+        ),
+    )
 
 
 def enrich_explicit_defs_with_airflow_metadata(

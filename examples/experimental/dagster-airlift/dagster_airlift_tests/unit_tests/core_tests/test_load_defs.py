@@ -30,7 +30,6 @@ from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 from dagster_airlift.core.serialization.compute import (
     build_airlift_metadata_mapping_info,
     compute_serialized_data,
-    is_mapped_asset_spec,
 )
 from dagster_airlift.core.serialization.defs_construction import (
     key_for_automapped_task_asset,
@@ -44,7 +43,7 @@ from dagster_airlift.core.state_backed_defs_loader import (
     scoped_reconstruction_metadata,
     unwrap_reconstruction_metadata,
 )
-from dagster_airlift.core.utils import metadata_for_task_mapping
+from dagster_airlift.core.utils import is_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
 
