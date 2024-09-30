@@ -67,9 +67,8 @@ def build_defs_from_airflow_instance(
     return Definitions.merge(
         resolved_defs,
         build_airflow_polling_sensor_defs(
-            airflow_instance=airflow_instance,
             airflow_data=AirflowDefinitionsData(
-                instance_name=airflow_instance.name, resolved_airflow_defs=resolved_defs
+                airflow_instance=airflow_instance, resolved_airflow_defs=resolved_defs
             ),
             event_translation_fn=get_asset_events,
             minimum_interval_seconds=sensor_minimum_interval_seconds,

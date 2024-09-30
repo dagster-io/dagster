@@ -7,6 +7,7 @@ from dagster._record import record
 from dagster._serdes.serdes import deserialize_value
 
 from dagster_airlift.constants import STANDALONE_DAG_ID_METADATA_KEY
+from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
@@ -17,13 +18,13 @@ from dagster_airlift.core.utils import get_metadata_key, is_mapped_asset_spec, t
 
 @record
 class AirflowDefinitionsData:
-    instance_name: str
+    airflow_instance: AirflowInstance
     resolved_airflow_defs: Definitions
 
     @cached_property
     def serialized_data(self) -> SerializedAirflowDefinitionsData:
         serialized_data_str = self.resolved_airflow_defs.metadata[
-            get_metadata_key(self.instance_name)
+            get_metadata_key(self.airflow_instance.name)
         ].value
         return deserialize_value(
             cast(str, serialized_data_str), as_type=SerializedAirflowDefinitionsData
