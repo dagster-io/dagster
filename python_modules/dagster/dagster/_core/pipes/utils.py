@@ -9,7 +9,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import IO, Any, Dict, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
+from typing import IO, Dict, Generator, Iterator, Mapping, Optional, Sequence, TypeVar, cast
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -331,15 +331,10 @@ class PipesThreadedMessageReader(PipesMessageReader):
         """
 
     @abstractmethod
-    def download_messages_parts(
-        self, cursor: Optional[TCursor], params: PipesParams
-    ) -> Optional[Tuple[TCursor, str]]:
-        """Download a chunk of messages from the target location.
+    def yield_chunks(self, params: PipesParams) -> Generator[str, None, None]:
+        """Yields chunks of messages from the target location.
 
         Args:
-            cursor (Optional[Any]): A cursor that specifies where to start downloading messages from.
-                it can be set according to specifics of each message reader implementation, for example.
-                it can be an index for a line in a log file, or a timestamp for a message in a stream.
             params (PipesParams): A dict of parameters that specifies where to download messages from.
         """
         ...
@@ -373,8 +368,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
 
             start_or_last_download = datetime.datetime.now()
             session_closed_at = None
-            cursor = None
-            while True:
+            for chunk in self.yield_chunks(params):
                 if handler.received_closed_message:
                     return
 
@@ -383,16 +377,13 @@ class PipesThreadedMessageReader(PipesMessageReader):
                     now - start_or_last_download
                 ).seconds > self.interval or is_session_closed.is_set():
                     start_or_last_download = now
-                    result = self.download_messages_parts(cursor, params)
-                    if result is not None:
-                        cursor, chunk = result
-                        for line in chunk.split("\n"):
-                            try:
-                                message = json.loads(line)
-                                if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
-                                    handler.handle_message(message)
-                            except json.JSONDecodeError:
-                                pass
+                    for line in chunk.split("\n"):
+                        try:
+                            message = json.loads(line)
+                            if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
+                                handler.handle_message(message)
+                        except json.JSONDecodeError:
+                            pass
 
                 time.sleep(DEFAULT_SLEEP_INTERVAL)
 
@@ -541,22 +532,21 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
 
         super().__init__(interval=interval, log_readers=log_readers)
 
-        self.counter = 1
+    def yield_chunks(self, params: PipesParams) -> Generator[str, None, None]:
+        counter = 1
+
+        while True:
+            chunk = self.download_messages_chunk(counter, params)
+            if chunk:
+                counter += 1
+                yield chunk
+            else:
+                break
 
     @abstractmethod
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         ...
         # historical reasons, keeping the original interface of PipesBlobStoreMessageReader
-
-    def download_messages_parts(
-        self, cursor: Any, params: PipesParams
-    ) -> Optional[Tuple[Any, str]]:
-        # mapping new interface to the old one
-        # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
-        chunk = self.download_messages_chunk(self.counter, params)
-        if chunk:
-            self.counter += 1
-            return None, chunk
 
     def can_start(self, params: PipesParams) -> bool:
         return (
@@ -584,7 +574,7 @@ class PipesLogReader(ABC):
 
 
 class PipesChunkedLogReader(PipesLogReader):
-    """Reader for reading stdout/stderr logs from a blob store such as S3, Azure blob storage, or GCS.
+    """Reader for reading stdout/stderr logs.
 
     Args:
         interval (float): interval in seconds between attempts to download a chunk.
@@ -597,7 +587,14 @@ class PipesChunkedLogReader(PipesLogReader):
         self.thread: Optional[Thread] = None
 
     @abstractmethod
-    def download_log_chunk(self, params: PipesParams) -> Optional[str]: ...
+    def yield_chunks(self, params: PipesParams) -> Generator[Optional[str], None, None]:
+        """Yields chunks of logs. Should yield None if no logs are available at the moment.
+
+        Timeouts should be handled within this method, if possible (it should yield None after a timeout).
+        Otherwise, in a hypothetical situation where the PipesChunkedLogReader is stuck waiting for the next
+        log message after the external process has exited, Pipes will be waiting for
+        WAIT_FOR_LOGS_TIMEOUT before abandoning the reader.
+        """
 
     def start(self, params: PipesParams, is_session_closed: Event) -> None:
         self.thread = Thread(target=self._reader_thread, args=(params, is_session_closed))
@@ -620,12 +617,12 @@ class PipesChunkedLogReader(PipesLogReader):
     ) -> None:
         start_or_last_download = datetime.datetime.now()
         after_execution_time_start = None
-        while True:
+        for chunk in self.yield_chunks(params):
             now = datetime.datetime.now()
             if (now - start_or_last_download).seconds > self.interval or is_session_closed.is_set():
                 start_or_last_download = now
-                chunk = self.download_log_chunk(params)
-                if chunk:
+
+                if chunk is not None:
                     self.target_stream.write(chunk)
 
                 # After execution is complete, we don't want to immediately exit, because it is
@@ -638,7 +635,7 @@ class PipesChunkedLogReader(PipesLogReader):
                     elif (
                         datetime.datetime.now() - after_execution_time_start
                     ).seconds > WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL:
-                        break
+                        return
                 time.sleep(self.interval)
 
 
