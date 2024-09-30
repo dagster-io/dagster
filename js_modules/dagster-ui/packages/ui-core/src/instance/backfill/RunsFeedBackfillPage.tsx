@@ -85,7 +85,7 @@ export const RunsFeedBackfillPage = () => {
         <Box padding={{left: 24}} border="bottom">
           <Tabs size="large" selectedTabId={selectedTab}>
             <Tab id="overview" title="Overview" onClick={() => setSelectedTab('overview')} />
-            <Tab id="runs" title="Sub-runs" onClick={() => setSelectedTab('runs')} />
+            <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
             <Tab id="timeline" title="Timeline" onClick={() => setSelectedTab('timeline')} />
             {featureContext.canSeeBackfillCoordinatorLogs ? (
               <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
