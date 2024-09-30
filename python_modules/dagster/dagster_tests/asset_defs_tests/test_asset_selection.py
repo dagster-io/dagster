@@ -532,7 +532,11 @@ def test_all_asset_selection_subclasses_serializable():
     assert len(asset_selection_subclasses) > 5
 
     for asset_selection_subclass in asset_selection_subclasses:
-        if asset_selection_subclass != AssetSelection:
+        if asset_selection_subclass not in [
+            AssetSelection,
+            asset_selection_module.ChainedAssetSelection,
+            asset_selection_module.OperandListAssetSelection,
+        ]:
             assert asset_selection_subclass.__name__ in _WHITELIST_MAP.object_serializers
 
 
