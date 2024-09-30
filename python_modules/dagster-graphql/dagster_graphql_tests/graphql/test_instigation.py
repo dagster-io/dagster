@@ -108,7 +108,7 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
 
-        sensor_name = "always_no_config_sensor_with_tags"
+        sensor_name = "always_no_config_sensor_with_tags_and_metadata"
         external_sensor = external_repository.get_external_sensor(sensor_name)
         selector = infer_instigation_selector(graphql_context, sensor_name)
 
