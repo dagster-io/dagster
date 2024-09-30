@@ -353,7 +353,7 @@ const buildBuckets = (
       const {name, schedules, sensors} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
 
-      if (sensors.length > 0) {
+      if (sensors.length > 0 || schedules.length > 0) {
         buckets.push({
           repoAddress,
           schedules,
