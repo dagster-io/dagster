@@ -1,26 +1,10 @@
 # ruff: noqa: T201
 from dagster import Definitions, asset
 from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 
 from .airflow_instance import local_airflow_instance
 
-from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
-# @asset
-# def print_asset():
-#     print("Hello, world!")
-
-
-# def build_basic_mapped_defs() -> Definitions:
-#     return build_defs_from_airflow_instance(
-#         airflow_instance=local_airflow_instance(),
-#         defs=dag_defs(
-#             "print_dag",
-#             task_defs("print_task", Definitions(assets=[print_asset])),
-#         ),
-#     )
-
-
-# defs = build_basic_mapped_defs()
 
 @asset
 def print_asset() -> None:
@@ -35,7 +19,7 @@ def asset_one() -> None:
 def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
         airflow_instance=local_airflow_instance(),
-        defs = Definitions.merge(
+        defs=Definitions.merge(
             dag_defs(
                 "print_dag",
                 task_defs("print_task", Definitions(assets=[print_asset])),
@@ -51,7 +35,8 @@ def build_mapped_defs() -> Definitions:
                     )
                 ]
             ),
-        )
+        ),
     )
+
 
 defs = build_mapped_defs()
