@@ -85,7 +85,9 @@ def test_dagster_weekly_daily_materializes(
     dagster_home: str,
 ) -> None:
     """Test that assets can load properly, and that materializations register."""
-    from kitchen_sink.dagster_defs import airflow_instance as af_instance
+    from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
+
+    af_instance = local_airflow_instance()
 
     dag_id = "weekly_dag"
     asset_one = AssetKey("asset_one")

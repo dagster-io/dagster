@@ -38,6 +38,7 @@ with DAG(
 ) as weekly_dag:
     PythonOperator(task_id="asset_one_weekly", python_callable=print_hello)
 
+
 with DAG(
     dag_id="daily_dag",
     default_args=default_args,
@@ -49,14 +50,5 @@ with DAG(
 
 mark_as_dagster_migrating(
     migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
-<<<<<<< HEAD
-dag = DAG(
-    "print_dag", default_args=default_args, schedule_interval=None, is_paused_upon_creation=False
-)
-print_op = PythonOperator(task_id="print_task", python_callable=print_hello, dag=dag)
-downstream_print_op = PythonOperator(
-    task_id="downstream_print_task", python_callable=print_hello, dag=dag
-)
-=======
     global_vars=globals(),
 )

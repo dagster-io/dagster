@@ -4,20 +4,54 @@ from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, tas
 
 from .airflow_instance import local_airflow_instance
 
+from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
+# @asset
+# def print_asset():
+#     print("Hello, world!")
+
+
+# def build_basic_mapped_defs() -> Definitions:
+#     return build_defs_from_airflow_instance(
+#         airflow_instance=local_airflow_instance(),
+#         defs=dag_defs(
+#             "print_dag",
+#             task_defs("print_task", Definitions(assets=[print_asset])),
+#         ),
+#     )
+
+
+# defs = build_basic_mapped_defs()
 
 @asset
-def print_asset():
+def print_asset() -> None:
     print("Hello, world!")
 
 
-def build_basic_mapped_defs() -> Definitions:
+@asset(description="Asset one is materialized by multiple airflow tasks")
+def asset_one() -> None:
+    print("Materialized asset one")
+
+
+def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
         airflow_instance=local_airflow_instance(),
-        defs=dag_defs(
-            "print_dag",
-            task_defs("print_task", Definitions(assets=[print_asset])),
-        ),
+        defs = Definitions.merge(
+            dag_defs(
+                "print_dag",
+                task_defs("print_task", Definitions(assets=[print_asset])),
+            ),
+            Definitions(
+                assets=[
+                    targeted_by_multiple_tasks(
+                        asset_one,
+                        task_handles=[
+                            {"dag_id": "weekly_dag", "task_id": "asset_one_weekly"},
+                            {"dag_id": "daily_dag", "task_id": "asset_one_daily"},
+                        ],
+                    )
+                ]
+            ),
+        )
     )
 
-
-defs = build_basic_mapped_defs()
+defs = build_mapped_defs()
