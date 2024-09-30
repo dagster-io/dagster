@@ -26,6 +26,7 @@ from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 
+from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
 
@@ -198,7 +199,9 @@ def materializations_and_requests_from_batch_iter(
 
 
 def get_timestamp_from_materialization(mat: AssetMaterialization) -> float:
-    return check.float_param(mat.metadata["End Date"].value, "Materialization 'End Date' Metadata")
+    return check.float_param(
+        mat.metadata[EFFECTIVE_TIMESTAMP_METADATA_KEY].value, "Materialization Effective Timestamp"
+    )
 
 
 def materializations_for_dag_run(
@@ -219,6 +222,7 @@ def get_dag_run_metadata(dag_run: DagRun) -> Mapping[str, Any]:
         "Run Details": MarkdownMetadataValue(f"[View Run]({dag_run.url})"),
         "Start Date": TimestampMetadataValue(dag_run.start_date),
         "End Date": TimestampMetadataValue(dag_run.end_date),
+        EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(dag_run.end_date),
     }
 
 
@@ -239,6 +243,7 @@ def get_task_instance_metadata(dag_run: DagRun, task_instance: TaskInstance) -> 
         "Task Logs": MarkdownMetadataValue(f"[View Logs]({task_instance.log_url})"),
         "Start Date": TimestampMetadataValue(task_instance.start_date),
         "End Date": TimestampMetadataValue(task_instance.end_date),
+        EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(task_instance.end_date),
     }
 
 

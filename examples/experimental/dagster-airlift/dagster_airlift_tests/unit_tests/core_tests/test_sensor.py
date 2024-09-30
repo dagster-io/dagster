@@ -44,6 +44,7 @@ def test_dag_and_task_metadata(init_load_context: None) -> None:
             "Run Details",
             "Airflow Config",
             "Run Type",
+            "dagster-airlift/effective_timestamp",
         }
         assert set(dag_mat.metadata.keys()) == expected_dag_metadata_keys
         task_mat = result.asset_events[0]
@@ -57,6 +58,7 @@ def test_dag_and_task_metadata(init_load_context: None) -> None:
             "Task Logs",
             "Airflow Config",
             "Run Type",
+            "dagster-airlift/effective_timestamp",
         }
         assert set(task_mat.metadata.keys()) == expected_task_metadata_keys
 
