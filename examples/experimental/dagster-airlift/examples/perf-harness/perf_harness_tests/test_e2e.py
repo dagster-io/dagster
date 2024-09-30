@@ -67,7 +67,7 @@ def test_dagster_materializes(
     start_time = get_current_datetime()
     while get_current_datetime() - start_time < timedelta(seconds=60):
         asset_materialization = dagster_instance.get_latest_materialization_event(
-            asset_key=AssetKey(["airflow_instance", "dag", "dag_0"])
+            asset_key=AssetKey(["my_airflow_instance", "dag", "dag_0"])
         )
         if asset_materialization:
             break

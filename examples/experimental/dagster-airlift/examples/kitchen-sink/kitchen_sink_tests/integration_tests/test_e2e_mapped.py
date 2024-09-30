@@ -58,7 +58,7 @@ def test_migrated_dagster_print_materializes(
         af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
         dagster_instance = DagsterInstance.get()
 
-        dag_asset_key = AssetKey(["airflow_instance", "dag", dag_id])
+        dag_asset_key = AssetKey(["my_airflow_instance", "dag", dag_id])
         assert poll_for_materialization(dagster_instance, dag_asset_key)
 
         for expected_asset_key in expected_asset_keys:
@@ -98,7 +98,7 @@ def test_dagster_weekly_daily_materializes(
     af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
     dagster_instance = DagsterInstance.get()
 
-    dag_asset_key = AssetKey(["airflow_instance", "dag", dag_id])
+    dag_asset_key = AssetKey(["my_airflow_instance", "dag", dag_id])
     assert poll_for_materialization(dagster_instance, dag_asset_key)
     weekly_mat_event = poll_for_materialization(dagster_instance, asset_one)
     assert weekly_mat_event.asset_materialization

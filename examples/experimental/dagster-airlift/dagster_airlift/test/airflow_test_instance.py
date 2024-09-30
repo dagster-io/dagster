@@ -27,6 +27,7 @@ class AirflowInstanceFake(AirflowInstance):
         task_instances: List[TaskInstance],
         dag_runs: List[DagRun],
         variables: List[Dict[str, Any]] = [],
+        instance_name: Optional[str] = None,
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
         self._task_infos_by_dag_and_task_id = {
@@ -46,7 +47,7 @@ class AirflowInstanceFake(AirflowInstance):
         self._variables = variables
         super().__init__(
             auth_backend=DummyAuthBackend(),
-            name="test_instance",
+            name="test_instance" if instance_name is None else instance_name,
         )
 
     def list_dags(self) -> List[DagInfo]:
@@ -196,6 +197,7 @@ def make_instance(
     dag_and_task_structure: Dict[str, List[str]],
     dag_runs: List[DagRun] = [],
     task_deps: Dict[str, List[str]] = {},
+    instance_name: Optional[str] = None,
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
 
@@ -239,4 +241,5 @@ def make_instance(
         task_infos=task_infos,
         task_instances=task_instances,
         dag_runs=dag_runs,
+        instance_name=instance_name,
     )

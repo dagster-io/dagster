@@ -22,6 +22,14 @@ from dagster_airlift_tests.unit_tests.conftest import (
 )
 
 
+def make_dag_key(dag_id: str) -> AssetKey:
+    return AssetKey(["test_instance", "dag", dag_id])
+
+
+def make_dag_key_str(dag_id: str) -> str:
+    return make_dag_key(dag_id).to_user_string()
+
+
 def test_dag_and_task_metadata(init_load_context: None) -> None:
     """Test the metadata produced by a sensor for a single dag and task."""
     freeze_datetime = datetime(2021, 1, 1)
@@ -33,7 +41,7 @@ def test_dag_and_task_metadata(init_load_context: None) -> None:
             },
         )
         assert len(result.asset_events) == 2
-        assert_expected_key_order(result.asset_events, ["a", "airflow_instance/dag/dag"])
+        assert_expected_key_order(result.asset_events, ["a", make_dag_key_str("dag")])
         dag_mat = result.asset_events[1]
         expected_dag_metadata_keys = {
             "Airflow Run ID",
@@ -121,8 +129,8 @@ def test_interleaved_executions(init_load_context: None) -> None:
         # c should be before d
         assert mats_order.index("c") < mats_order.index("d")
         # dag1 and dag2 should be after all task-mapped assets
-        assert mats_order.index("airflow_instance/dag/dag1") >= 4
-        assert mats_order.index("airflow_instance/dag/dag2") >= 4
+        assert mats_order.index(make_dag_key_str("dag1")) >= 4
+        assert mats_order.index(make_dag_key_str("dag2")) >= 4
         assert context.cursor
         cursor = deserialize_value(context.cursor, AirflowPollingSensorCursor)
         assert cursor.end_date_gte == freeze_datetime.timestamp()
@@ -154,7 +162,7 @@ def test_dependencies_within_tasks(init_load_context: None) -> None:
         )
         assert len(result.asset_events) == 7
         assert_expected_key_order(
-            result.asset_events, ["a", "b", "c", "d", "e", "f", "airflow_instance/dag/dag"]
+            result.asset_events, ["a", "b", "c", "d", "e", "f", make_dag_key_str("dag")]
         )
         assert context.cursor
         cursor = deserialize_value(context.cursor, AirflowPollingSensorCursor)
@@ -176,7 +184,7 @@ def test_outside_of_dag_dependency(init_load_context: None) -> None:
         )
         assert len(result.asset_events) == 3
         assert all(isinstance(event, AssetMaterialization) for event in result.asset_events)
-        assert_expected_key_order(result.asset_events, ["a", "c", "airflow_instance/dag/dag"])
+        assert_expected_key_order(result.asset_events, ["a", "c", make_dag_key_str("dag")])
         assert context.cursor
         cursor = deserialize_value(context.cursor, AirflowPollingSensorCursor)
         assert cursor.end_date_gte == freeze_datetime.timestamp()
@@ -188,11 +196,13 @@ def test_request_asset_checks(init_load_context: None) -> None:
     """Test that when a new dag or task run is detected, a new check run is requested for all checks which may target that dag/task."""
     freeze_datetime = datetime(2021, 1, 1)
 
+    dag_asset_key = make_dag_key("dag")
+
     @asset_check(asset="a")
     def check_task_asset():
         pass
 
-    @asset_check(asset=["airflow_instance", "dag", "dag"])
+    @asset_check(asset=dag_asset_key)
     def check_dag_asset():
         pass
 
@@ -218,9 +228,7 @@ def test_request_asset_checks(init_load_context: None) -> None:
         assert run_request.asset_check_keys
         assert set(run_request.asset_check_keys) == {
             AssetCheckKey(name="check_task_asset", asset_key=AssetKey(["a"])),
-            AssetCheckKey(
-                name="check_dag_asset", asset_key=AssetKey(["airflow_instance", "dag", "dag"])
-            ),
+            AssetCheckKey(name="check_dag_asset", asset_key=dag_asset_key),
         }
         assert context.cursor
         cursor = deserialize_value(context.cursor, AirflowPollingSensorCursor)

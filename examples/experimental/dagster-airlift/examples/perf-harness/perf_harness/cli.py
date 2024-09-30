@@ -173,7 +173,7 @@ def run_suite_for_defs(
 
     print("Running sensor ticks with no runs...")
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
-        sensor_def = repo_def.get_sensor_def("airflow_dag_status_sensor")
+        sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         print(f"Running {module_name} sensor ticks...")
         sensor_tick_no_runs_start_time = time.time()
         sensor_def(build_sensor_context(repository_def=repo_def))
@@ -189,7 +189,7 @@ def run_suite_for_defs(
     print("Dag run completed.")
     print("Running sensor ticks with single run...")
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
-        sensor_def = repo_def.get_sensor_def("airflow_dag_status_sensor")
+        sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         sensor_tick_with_single_run_start_time = time.time()
         sensor_def(build_sensor_context(repository_def=repo_def))
         sensor_tick_with_single_run_end_time = time.time()
@@ -217,7 +217,7 @@ def run_suite_for_defs(
     print("All runs completed.")
     print("Running sensor ticks with all runs...")
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
-        sensor_def = repo_def.get_sensor_def("airflow_dag_status_sensor")
+        sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         sensor_tick_with_all_runs_start_time = time.time()
         sensor_def(build_sensor_context(repository_def=repo_def))
         sensor_tick_with_all_runs_end_time = time.time()

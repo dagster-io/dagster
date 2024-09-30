@@ -60,7 +60,7 @@ def build_airflow_polling_sensor_defs(
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     @sensor(
-        name="airflow_dag_status_sensor",
+        name=f"{airflow_instance.name}__airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=DefaultSensorStatus.RUNNING,
         # This sensor will only ever execute asset checks and not asset materializations.
