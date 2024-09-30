@@ -153,6 +153,12 @@ class MdxTranslator(SphinxTranslator):
 
         self.max_line_width = self.config.mdx_max_line_width or 120
 
+        self.special_characters = {
+            ord("<"): "&lt;",
+            ord('"'): "&quot;",
+            ord(">"): "&gt;",
+        }
+
     ############################################################
     # Utility and State Methods
     ############################################################
@@ -177,6 +183,81 @@ class MdxTranslator(SphinxTranslator):
         else:
             node_type = node
         self.add_text(f"---------depart: {node_type}")
+
+    def attval(self, text, whitespace=re.compile("[\n\r\t\v\f]")):
+        """Cleanse, HTML encode, and return attribute value text."""
+        encoded = self.encode(whitespace.sub(" ", text))
+        return encoded
+
+    def encode(self, text):
+        """Encode special characters in `text` & return."""
+        # Use only named entities known in both XML and HTML
+        # other characters are automatically encoded "by number" if required.
+        # @@@ A codec to do these and all other HTML entities would be nice.
+        text = str(text)
+        return text.translate(self.special_characters)
+
+    # From:https://github.com/docutils/docutils/blob/master/docutils/docutils/writers/_html_base.py
+    def starttag(self, node, tagname, suffix="\n", empty=False, **attributes):
+        """Construct and return a start tag given a node (id & class attributes
+        are extracted), tag name, and optional attributes.
+        """
+        tagname = tagname.lower()
+        prefix = []
+        atts = {}
+        for name, value in attributes.items():
+            atts[name.lower()] = value
+        classes = atts.pop("classes", [])
+        languages = []
+        # unify class arguments and move language specification
+        for cls in node.get("classes", []) + atts.pop("class", "").split():
+            if cls.startswith("language-"):
+                languages.append(cls.removeprefix("language-"))
+            elif cls.strip() and cls not in classes:
+                classes.append(cls)
+        if languages:
+            # attribute name is 'lang' in XHTML 1.0 but 'xml:lang' in 1.1
+            atts[self.lang_attribute] = languages[0]
+        # filter classes that are processed by the writer:
+        internal = ("colwidths-auto", "colwidths-given", "colwidths-grid")
+        if isinstance(node, nodes.table):
+            classes = [cls for cls in classes if cls not in internal]
+        if classes:
+            atts["class"] = " ".join(classes)
+        assert "id" not in atts
+        ids = node.get("ids", [])
+        ids.extend(atts.pop("ids", []))
+        if ids:
+            atts["id"] = ids[0]
+            for id in ids[1:]:
+                # Add empty "span" elements for additional IDs.  Note
+                # that we cannot use empty "a" elements because there
+                # may be targets inside of references, but nested "a"
+                # elements aren't allowed in XHTML (even if they do
+                # not all have a "href" attribute).
+                if empty or isinstance(node, (nodes.Sequential, nodes.docinfo, nodes.table)):
+                    # Insert target right in front of element.
+                    prefix.append('<Link id="%s"></Link>' % id)
+                else:
+                    # Non-empty tag.  Place the auxiliary <span> tag
+                    # *inside* the element, as the first child.
+                    suffix += '<Link id="%s"></Link>' % id
+        attlist = sorted(atts.items())
+        parts = [tagname]
+        for name, value in attlist:
+            # value=None was used for boolean attributes without
+            # value, but this isn't supported by XHTML.
+            assert value is not None
+            if isinstance(value, list):
+                values = [str(v) for v in value]
+                parts.append('%s="%s"' % (name.lower(), self.attval(" ".join(values))))
+            else:
+                parts.append('%s="%s"' % (name.lower(), self.attval(str(value))))
+        if empty:
+            infix = " /"
+        else:
+            infix = ""
+        return "".join(prefix) + "<%s%s>" % (" ".join(parts), infix) + suffix
 
     def end_state(
         self,
@@ -271,9 +352,11 @@ class MdxTranslator(SphinxTranslator):
 
     def visit_section(self, node: Element) -> None:
         self.sectionlevel += 1
+        self.add_text(self.starttag(node, "div", CLASS="section"))
 
     def depart_section(self, node: Element) -> None:
         self.sectionlevel -= 1
+        self.add_text("</div>")
 
     def visit_topic(self, node: Element) -> None:
         self.new_state(0)
@@ -353,11 +436,19 @@ class MdxTranslator(SphinxTranslator):
     def visit_desc_signature(self, node: Element) -> None:
         self.in_literal += 1
         self.new_state()
-        self.add_text("<dt>")
+        ids = node.get("ids")
+        if ids:
+            self.add_text(f"<dt><Link id='{ids[0]}'>")
+        else:
+            self.add_text("<dt>")
 
     def depart_desc_signature(self, node: Element) -> None:
         self.in_literal -= 1
-        self.add_text("</dt>")
+        ids = node.get("ids")
+        if ids:
+            self.add_text("</Link></dt>")
+        else:
+            self.add_text("</dt>")
         self.end_state(wrap=False, end=None)
 
     def visit_desc_signature_line(self, node: Element) -> None:
@@ -498,11 +589,11 @@ class MdxTranslator(SphinxTranslator):
     def depart_reference(self, node: Element) -> None:
         self.reference_uri = ""
 
-    def visit_title_reference(self, node: Element) -> None:
-        self.add_text("xxx")
+    def visit_title_reference(self, node) -> None:
+        self.add_text("<cite>")
 
-    def depart_title_reference(self, node: Element) -> None:
-        self.add_text("xxx")
+    def depart_title_reference(self, node) -> None:
+        self.add_text("</cite>")
 
     def visit_image(self, node: Element) -> None:
         self.add_text(f"![{node.get('alt', '')}]({node['uri']})")

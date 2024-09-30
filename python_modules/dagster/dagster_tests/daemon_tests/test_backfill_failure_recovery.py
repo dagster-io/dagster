@@ -52,7 +52,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -83,7 +83,7 @@ def test_before_submit(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -130,7 +130,7 @@ def test_crash_after_submit(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,

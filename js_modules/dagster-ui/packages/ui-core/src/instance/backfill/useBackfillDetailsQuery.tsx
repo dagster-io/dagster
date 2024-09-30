@@ -1,23 +1,62 @@
 import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillFragments';
 import {
-  BackfillStatusesByAssetQuery,
-  BackfillStatusesByAssetQueryVariables,
+  BackfillDetailsQuery,
+  BackfillDetailsQueryVariables,
 } from './types/useBackfillDetailsQuery.types';
 import {gql, useQuery} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
-
 export function useBackfillDetailsQuery(backfillId: string) {
-  const queryResult = useQuery<BackfillStatusesByAssetQuery, BackfillStatusesByAssetQueryVariables>(
+  const queryResult = useQuery<BackfillDetailsQuery, BackfillDetailsQueryVariables>(
     BACKFILL_DETAILS_QUERY,
     {variables: {backfillId}},
   );
-  useBlockTraceOnQueryResult(queryResult, 'BackfillStatusesByAssetQuery');
   return queryResult;
 }
 
+export const JOB_BACKFILL_DETAILS_FRAGMENT = gql`
+  fragment JobBackfillDetailsFragment on PartitionStatuses {
+    results {
+      id
+      partitionName
+      runId
+      runStatus
+      runDuration
+    }
+  }
+`;
+export const ASSET_BACKFILL_DETAILS_FRAGMENT = gql`
+  fragment AssetBackfillDetailsFragment on AssetBackfillData {
+    rootTargetedPartitions {
+      partitionKeys
+      ranges {
+        start
+        end
+      }
+    }
+    assetBackfillStatuses {
+      ... on AssetPartitionsStatusCounts {
+        assetKey {
+          path
+        }
+        numPartitionsTargeted
+        numPartitionsInProgress
+        numPartitionsMaterialized
+        numPartitionsFailed
+      }
+      ... on UnpartitionedAssetStatus {
+        assetKey {
+          path
+        }
+        inProgress
+        materialized
+        failed
+      }
+    }
+  }
+`;
+
 export const BACKFILL_DETAILS_QUERY = gql`
-  query BackfillStatusesByAsset($backfillId: String!) {
+  query BackfillDetailsQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ...BackfillDetailsBackfillFragment
       ...PythonErrorFragment
@@ -34,40 +73,25 @@ export const BACKFILL_DETAILS_QUERY = gql`
     endTimestamp
     numPartitions
     ...BackfillActionsBackfillFragment
+    isAssetBackfill
+    assetSelection {
+      path
+    }
+    partitionSetName
 
     error {
       ...PythonErrorFragment
     }
     assetBackfillData {
-      rootTargetedPartitions {
-        partitionKeys
-        ranges {
-          start
-          end
-        }
-      }
-      assetBackfillStatuses {
-        ... on AssetPartitionsStatusCounts {
-          assetKey {
-            path
-          }
-          numPartitionsTargeted
-          numPartitionsInProgress
-          numPartitionsMaterialized
-          numPartitionsFailed
-        }
-        ... on UnpartitionedAssetStatus {
-          assetKey {
-            path
-          }
-          inProgress
-          materialized
-          failed
-        }
-      }
+      ...AssetBackfillDetailsFragment
+    }
+    partitionStatuses {
+      ...JobBackfillDetailsFragment
     }
   }
 
   ${PYTHON_ERROR_FRAGMENT}
   ${BACKFILL_ACTIONS_BACKFILL_FRAGMENT}
+  ${ASSET_BACKFILL_DETAILS_FRAGMENT}
+  ${JOB_BACKFILL_DETAILS_FRAGMENT}
 `;

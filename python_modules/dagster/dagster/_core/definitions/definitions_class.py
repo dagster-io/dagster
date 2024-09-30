@@ -723,20 +723,30 @@ class Definitions(IHaveNew):
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
     @experimental
-    def with_reconstruction_metadata(self, state_metadata: Mapping[str, Any]) -> Self:
-        """Add metadata to the Definitions object. This is typically used to cache data
-        loaded from some external API that is computed during execution of a DefinitionsLoader in a
-        code server. The cached data is then made available on the DefinitionsLoadContext during
+    def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
+        """Add reconstruction metadata to the Definitions object. This is typically used to cache data
+        loaded from some external API that is computed during initialization of a code server.
+        The cached data is then made available on the DefinitionsLoadContext during
         reconstruction of the same code location context (such as a run worker), allowing use of the
-        cached data to avoid additional external API queries. Values must be JSON-serializable.
+        cached data to avoid additional external API queries. Values are expected to be serialized
+        in advance and must be strings.
         """
-        state_metadata = {
-            k: CodeLocationReconstructionMetadataValue(v) for k, v in state_metadata.items()
+        check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
+        for k, v in reconstruction_metadata.items():
+            if not isinstance(v, str):
+                raise DagsterInvariantViolationError(
+                    f"Reconstruction metadata values must be strings. State-representing values are"
+                    f" expected to be serialized before being passed as reconstruction metadata."
+                    f" Got for key {k}:\n\n{v}"
+                )
+        normalized_metadata = {
+            k: CodeLocationReconstructionMetadataValue(v)
+            for k, v in reconstruction_metadata.items()
         }
         return copy(
             self,
             metadata={
                 **(self.metadata or {}),
-                **state_metadata,
+                **normalized_metadata,
             },
         )

@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.8.9 (core) / 0.24.9 (libraries)
+
+### New
+
+- `AssetSpec` now has a `with_io_manager_key` method that returns an `AssetSpec` with the appropriate metadata entry to dictate the key for the IO manager used to load it. The deprecation warning for `SourceAsset` now references this method.
+- Added a `max_runtime_seconds` configuration option to run monitoring, allowing you to specify that any run in your Dagster deployment should terminate if it exceeds a certain runtime. Prevoiusly, jobs had to be individually tagged with a `dagster/max_runtime` tag in order to take advantage of this feature. Jobs and runs can still be tagged in order to override this value for an individual run.
+- It is now possible to set both `tags` and a custom `execution_fn` on a `ScheduleDefinition`. Schedule `tags` are intended to annotate the definition and can be used to search and filter in the UI. They will not be attached to run requests emitted from the schedule if a custom `execution_fn` is provided. If no custom `execution_fn` is provided, then for back-compatibility the tags will also be automatically attached to run requests emitted from the schedule.
+- `SensorDefinition` and all of its variants/decorators now accept a `tags` parameter. The tags annotate the definition and can be used to search and filter in the UI.
+- Added the `dagster definitions validate` command to Dagster CLI. This command validates if Dagster definitions are loadable.
+- [dagster-databricks] Databricks Pipes now allow running tasks in existing clusters.
+
+### Bugfixes
+
+- Fixed an issue where calling `build_op_context` in a unit test would sometimes raise a `TypeError: signal handler must be signal.SIG_IGN, signal.SIG_DFL, or a callable object` Exception on process shutdown.
+- [dagster-webserver] Fix an issue where the incorrect sensor/schedule state would appear when using `DefaultScheduleStatus.STOPPED` / `DefaultSensorStatus.STOPPED` after performing a reset.
+
+### Documentation
+
+- [dagster-pipes] Fixed inconsistencies in the k8s pipes example.
+- [dagster-pandas-pyspark] Fixed example in the Spark/Pandas SDA guide.
+
+### Dagster Plus
+
+- Fixed an issue where users with Launcher permissions for a particular code location were not able to cancel backfills targeting only assets in that code location.
+- Fixed an issue preventing long-running alerts from being sent when there was a quick subsequent run.
+
 ## 1.8.8 (core) / 0.24.8 (libraries)
 
 ### New

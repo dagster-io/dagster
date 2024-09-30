@@ -2,6 +2,7 @@
 title: "Setting up alerts"
 sidebar_position: 30
 sidebar_label: "Alerting"
+unlisted: true
 ---
 
 Alerting if my pipeline didn't execute

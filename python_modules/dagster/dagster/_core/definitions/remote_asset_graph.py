@@ -70,11 +70,11 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def description(self) -> Optional[str]:
-        return self._priority_node.description
+        return self.priority_node.description
 
     @property
     def group_name(self) -> str:
-        return self._priority_node.group_name or DEFAULT_GROUP_NAME
+        return self.priority_node.group_name or DEFAULT_GROUP_NAME
 
     @cached_property
     def is_materializable(self) -> bool:
@@ -94,23 +94,23 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def metadata(self) -> ArbitraryMetadataMapping:
-        return self._priority_node.metadata
+        return self.priority_node.metadata
 
     @property
     def tags(self) -> Mapping[str, str]:
-        return self._priority_node.tags or {}
+        return self.priority_node.tags or {}
 
     @property
     def owners(self) -> Sequence[str]:
-        return self._priority_node.owners or []
+        return self.priority_node.owners or []
 
     @property
     def is_partitioned(self) -> bool:
-        return self._priority_node.partitions_def_data is not None
+        return self.priority_node.partitions_def_data is not None
 
     @cached_property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        external_def = self._priority_node.partitions_def_data
+        external_def = self.priority_node.partitions_def_data
         return external_def.get_partitions_definition() if external_def else None
 
     @property
@@ -128,7 +128,7 @@ class RemoteAssetNode(BaseAssetNode):
     def freshness_policy(self) -> Optional[FreshnessPolicy]:
         # It is currently not possible to access the freshness policy for an observation definition
         # if a materialization definition also exists. This needs to be fixed.
-        return self._priority_node.freshness_policy
+        return self.priority_node.freshness_policy
 
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
@@ -155,7 +155,7 @@ class RemoteAssetNode(BaseAssetNode):
     def code_version(self) -> Optional[str]:
         # It is currently not possible to access the code version for an observation definition if a
         # materialization definition also exists. This needs to be fixed.
-        return self._priority_node.code_version
+        return self.priority_node.code_version
 
     @property
     def check_keys(self) -> AbstractSet[AssetCheckKey]:
@@ -163,10 +163,10 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {k for k in self.execution_set_asset_and_check_keys if isinstance(k, AssetKey)}
+        return {k for k in self.execution_set_entity_keys if isinstance(k, AssetKey)}
 
     @property
-    def execution_set_asset_and_check_keys(self) -> AbstractSet[EntityKey]:
+    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
         return self._execution_set_keys
 
     ##### REMOTE-SPECIFIC INTERFACE
@@ -175,7 +175,7 @@ class RemoteAssetNode(BaseAssetNode):
     def job_names(self) -> Sequence[str]:
         # It is currently not possible to access the job names for an observation definition if a
         # materialization definition also exists. This needs to be fixed.
-        return self._priority_node.job_names if self.is_executable else []
+        return self.priority_node.job_names if self.is_executable else []
 
     @property
     def priority_repository_handle(self) -> RepositoryHandle:
@@ -193,10 +193,12 @@ class RemoteAssetNode(BaseAssetNode):
     def repository_handles(self) -> Sequence[RepositoryHandle]:
         return [repo_handle for repo_handle, _ in self._repo_node_pairs]
 
-    ##### HELPERS
+    @property
+    def repo_node_pairs(self) -> Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]]:
+        return self._repo_node_pairs
 
     @cached_property
-    def _priority_node(self) -> "ExternalAssetNode":
+    def priority_node(self) -> "ExternalAssetNode":
         # Return a materialization node if it exists, otherwise return an observable node if it
         # exists, otherwise return any node. This exists to preserve implicit behavior, where the
         # materialization node was previously preferred over the observable node. This is a
@@ -209,6 +211,8 @@ class RemoteAssetNode(BaseAssetNode):
                 (node for node in self._external_asset_nodes),
             )
         )
+
+    ##### HELPERS
 
     @cached_property
     def _materializable_node(self) -> "ExternalAssetNode":
@@ -318,7 +322,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
-            return self.get(entity_key).execution_set_asset_and_check_keys
+            return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
             return self._asset_check_execution_sets_by_key[entity_key]
 
@@ -329,11 +333,11 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         # This exists to support existing callsites but it should be removed ASAP, since it exposes
         # `ExternalAssetNode` instances directly. All sites using this should use RemoteAssetNode
         # instead.
-        return {k: node._priority_node for k, node in self._asset_nodes_by_key.items()}  # noqa: SLF001
+        return {k: node.priority_node for k, node in self._asset_nodes_by_key.items()}
 
     @property
     def asset_checks(self) -> Sequence["ExternalAssetCheck"]:
-        return list(dict.fromkeys(self._asset_checks_by_key.values()))
+        return list(self._asset_checks_by_key.values())
 
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:

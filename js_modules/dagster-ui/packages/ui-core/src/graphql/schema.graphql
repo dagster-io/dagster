@@ -645,6 +645,7 @@ type AssetNode {
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
+  automationCondition: AutomationCondition
   graphName: String
   groupName: String!
   owners: [AssetOwner!]!
@@ -756,6 +757,11 @@ enum AutoMaterializeDecisionType {
   MATERIALIZE
   SKIP
   DISCARD
+}
+
+type AutomationCondition {
+  label: String
+  expandedLabel: [String!]!
 }
 
 union AssetOwner = UserAssetOwner | TeamAssetOwner
@@ -1074,6 +1080,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+  runTags: [PipelineTag!]!
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1369,6 +1376,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   parentSnapshotId: String
   graphName: String!
   solidSelection: [String!]
+  runTags: [PipelineTag!]!
 }
 
 union PipelineSnapshotOrError =
@@ -2144,6 +2152,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+  runTags: [PipelineTag!]!
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -2340,6 +2349,7 @@ input RunsFilter {
   createdBefore: Float
   createdAfter: Float
   mode: String
+  excludeSubruns: Boolean
 }
 
 input PipelineSelector {

@@ -423,6 +423,7 @@ export type AssetNode = {
   assetObservations: Array<ObservationEvent>;
   assetPartitionStatuses: AssetPartitionStatuses;
   autoMaterializePolicy: Maybe<AutoMaterializePolicy>;
+  automationCondition: Maybe<AutomationCondition>;
   backfillPolicy: Maybe<BackfillPolicy>;
   changedReasons: Array<ChangeReason>;
   computeKind: Maybe<Scalars['String']['output']>;
@@ -684,6 +685,12 @@ export type AutoMaterializeRuleWithRuleEvaluations = {
   __typename: 'AutoMaterializeRuleWithRuleEvaluations';
   rule: AutoMaterializeRule;
   ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
+};
+
+export type AutomationCondition = {
+  __typename: 'AutomationCondition';
+  expandedLabel: Array<Scalars['String']['output']>;
+  label: Maybe<Scalars['String']['output']>;
 };
 
 export type AutomationConditionEvaluationNode = {
@@ -2089,6 +2096,7 @@ export type Job = IPipelineSnapshot &
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -3386,6 +3394,7 @@ export type Pipeline = IPipelineSnapshot &
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -3619,6 +3628,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     name: Scalars['String']['output'];
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     pipelineSnapshotId: Scalars['String']['output'];
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -4767,6 +4777,7 @@ export type RunsFeedEntry = {
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  excludeSubruns?: InputMaybe<Scalars['Boolean']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
   runIds?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -6457,6 +6468,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AutoMaterializePolicy')
         ? ({} as AutoMaterializePolicy)
         : buildAutoMaterializePolicy({}, relationshipsToOmit),
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+        ? ({} as AutomationCondition)
+        : buildAutomationCondition({}, relationshipsToOmit),
     backfillPolicy:
       overrides && overrides.hasOwnProperty('backfillPolicy')
         ? overrides.backfillPolicy!
@@ -6909,6 +6926,20 @@ export const buildAutoMaterializeRuleWithRuleEvaluations = (
         : buildAutoMaterializeRule({}, relationshipsToOmit),
     ruleEvaluations:
       overrides && overrides.hasOwnProperty('ruleEvaluations') ? overrides.ruleEvaluations! : [],
+  };
+};
+
+export const buildAutomationCondition = (
+  overrides?: Partial<AutomationCondition>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AutomationCondition'} & AutomationCondition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutomationCondition');
+  return {
+    __typename: 'AutomationCondition',
+    expandedLabel:
+      overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'eligendi',
   };
 };
 
@@ -9151,6 +9182,7 @@ export const buildJob = (
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -11336,6 +11368,7 @@ export const buildPipeline = (
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -11744,6 +11777,7 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
         : 'labore',
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -13542,6 +13576,8 @@ export const buildRunsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
+    excludeSubruns:
+      overrides && overrides.hasOwnProperty('excludeSubruns') ? overrides.excludeSubruns! : false,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'voluptas',

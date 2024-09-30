@@ -48,7 +48,7 @@ from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
-from dagster._core.remote_representation.external_data import ExternalTargetData
+from dagster._core.remote_representation.external_data import TargetSnap
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -217,7 +217,7 @@ class SensorLaunchContext(AbstractContextManager):
         # because we want to minimize the window of clobbering the sensor state upon updating the
         # sensor state data.
         state = self._instance.get_instigator_state(
-            self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
+            self._external_sensor.get_remote_origin_id(), self._external_sensor.selector_id
         )
         last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
         last_sensor_start_timestamp = (
@@ -293,7 +293,7 @@ class SensorLaunchContext(AbstractContextManager):
             if day_offset <= 0:
                 continue
             self._instance.purge_ticks(
-                self._external_sensor.get_external_origin_id(),
+                self._external_sensor.get_remote_origin_id(),
                 selector_id=self._external_sensor.selector_id,
                 before=(get_current_datetime() - datetime.timedelta(days=day_offset)).timestamp(),
                 tick_statuses=list(statuses),
@@ -407,7 +407,7 @@ def execute_sensor_iteration(
         if not sensor_state:
             assert external_sensor.default_status == DefaultSensorStatus.RUNNING
             sensor_state = InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.DECLARED_IN_CODE,
                 SensorInstigatorData(
@@ -492,8 +492,8 @@ def _get_evaluation_tick(
     """Returns the current tick that the sensor should evaluate for. If there is unfinished work
     from the previous tick that must be resolved before proceeding, will return that previous tick.
     """
-    origin_id = sensor.get_external_origin_id()
-    selector_id = sensor.get_external_origin().get_selector().get_id()
+    origin_id = sensor.get_remote_origin_id()
+    selector_id = sensor.get_remote_origin().get_selector().get_id()
 
     if instigator_data and instigator_data.last_tick_success_timestamp:
         # if a last tick end timestamp was set, then the previous tick could not have been
@@ -574,7 +574,7 @@ def _process_tick_generator(
     now = get_current_datetime()
     sensor_state = check.not_none(
         instance.get_instigator_state(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
     )
     if is_under_min_interval(sensor_state, external_sensor):
@@ -687,11 +687,9 @@ def _submit_run_request(
 ) -> SubmitRunRequestResult:
     instance = workspace_process_context.instance
 
-    sensor_origin = external_sensor.get_external_origin()
+    sensor_origin = external_sensor.get_remote_origin()
 
-    target_data: ExternalTargetData = check.not_none(
-        external_sensor.get_target_data(run_request.job_name)
-    )
+    target_data: TargetSnap = check.not_none(external_sensor.get_target(run_request.job_name))
 
     # reload the code_location on each submission, request_context derived data can become out date
     # * non-threaded: if number of serial submissions is too many
@@ -779,7 +777,7 @@ def _get_code_location_for_sensor(
     workspace_process_context: IWorkspaceProcessContext,
     external_sensor: ExternalSensor,
 ) -> CodeLocation:
-    sensor_origin = external_sensor.get_external_origin()
+    sensor_origin = external_sensor.get_remote_origin()
     return workspace_process_context.create_request_context().get_code_location(
         sensor_origin.repository_origin.code_location_origin.location_name
     )
@@ -1244,7 +1242,7 @@ def _fetch_existing_runs(
         elif (
             run.external_job_origin is not None
             and run.external_job_origin.repository_origin.get_selector_id()
-            == external_sensor.get_external_origin().repository_origin.get_selector_id()
+            == external_sensor.get_remote_origin().repository_origin.get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):
             valid_runs.append(run)
@@ -1266,7 +1264,7 @@ def _get_or_create_sensor_run(
     external_job: ExternalJob,
     run_id: str,
     run_request: RunRequest,
-    target_data: ExternalTargetData,
+    target_data: TargetSnap,
     existing_runs_by_key: Mapping[Optional[str], DagsterRun],
 ) -> Union[DagsterRun, SkippedSensorRun]:
     run = existing_runs_by_key.get(run_request.run_key) or instance.get_run_by_id(run_id)
@@ -1297,7 +1295,7 @@ def _create_sensor_run(
     external_job: ExternalJob,
     run_id: str,
     run_request: RunRequest,
-    target_data: ExternalTargetData,
+    target_data: TargetSnap,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
@@ -1311,7 +1309,7 @@ def _create_sensor_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     job_tags = normalize_tags(
-        external_job.tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
+        external_job.run_tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
     ).tags
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
@@ -1347,7 +1345,7 @@ def _create_sensor_run(
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None

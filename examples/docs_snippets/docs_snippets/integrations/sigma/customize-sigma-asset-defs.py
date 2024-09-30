@@ -5,9 +5,7 @@ from dagster_sigma import (
     SigmaWorkbook,
 )
 
-from dagster import AssetSpec, Definitions, EnvVar
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster import AssetSpec, EnvVar
 
 resource = SigmaOrganization(
     base_url=SigmaBaseUrl.AWS_US,
@@ -24,8 +22,4 @@ class MyCustomSigmaTranslator(DagsterSigmaTranslator):
         return super().get_workbook_spec(data)._replace(owners=["my_team"])
 
 
-@definitions
-def defs(context: DefinitionsLoadContext) -> Definitions:
-    return resource.build_defs(
-        context, dagster_sigma_translator=MyCustomSigmaTranslator
-    )
+defs = resource.build_defs(dagster_sigma_translator=MyCustomSigmaTranslator)

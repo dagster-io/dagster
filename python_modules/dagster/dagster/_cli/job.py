@@ -51,7 +51,7 @@ from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._time import get_current_timestamp
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
@@ -492,7 +492,7 @@ def _create_external_run(
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         asset_check_selection=None,
@@ -615,7 +615,7 @@ def _execute_backfill_command_at_location(
     cli_args: ClickArgMapping,
     print_fn: PrintFn,
     instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace: BaseWorkspaceRequestContext,
     code_location: CodeLocation,
 ) -> None:
     external_repo = get_external_repository_from_code_location(
@@ -682,7 +682,7 @@ def _execute_backfill_command_at_location(
         backfill_id = make_new_backfill_id()
         backfill_job = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=job_partition_set.get_external_origin(),
+            partition_set_origin=job_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=False,

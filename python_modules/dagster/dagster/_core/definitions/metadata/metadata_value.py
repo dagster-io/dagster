@@ -20,8 +20,7 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.errors import SerializationError
-from dagster._serdes.serdes import PackableValue, serialize_value
+from dagster._serdes.serdes import PackableValue
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
 from dagster._serdes import pack_value
@@ -492,13 +491,13 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     # not public because rest of code location metadata API is not public
     @staticmethod
-    def code_location_reconstruction(data: Any) -> "CodeLocationReconstructionMetadataValue":
+    def code_location_reconstruction(data: str) -> "CodeLocationReconstructionMetadataValue":
         """Static constructor for a metadata value wrapping arbitrary code location data useful during reconstruction as
         :py:class:`CodeLocationReconstructionMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events.
 
         Args:
-            data (Any): The code location state for a metadata entry.
+            data (str): The serialized code location state for a metadata entry.
         """
         return CodeLocationReconstructionMetadataValue(data)
 
@@ -1034,26 +1033,24 @@ class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None
 
 @whitelist_for_serdes
 class CodeLocationReconstructionMetadataValue(
-    NamedTuple("_CodeLocationReconstructionMetadataValue", [("data", PublicAttr[Any])]),
-    MetadataValue[Any],
+    NamedTuple("_CodeLocationReconstructionMetadataValue", [("data", PublicAttr[str])]),
+    MetadataValue[str],
 ):
-    """Representation of some state data used to define the Definitions in a code location.
+    """Representation of some state data used to define the Definitions in a code location. Users
+    are expected to serialize data before passing it to this class.
 
     Args:
-        data (Any): Arbitrary JSON-serializable data used to define the Definitions in a
+        data (str): A string representing data used to define the Definitions in a
             code location.
     """
 
-    def __new__(cls, data: Any):
-        try:
-            serialize_value(data)
-        except SerializationError:
-            raise DagsterInvalidMetadata("Value is not JSON-serializable.")
-
-        return super(CodeLocationReconstructionMetadataValue, cls).__new__(cls, data)
+    def __new__(cls, data: str):
+        return super(CodeLocationReconstructionMetadataValue, cls).__new__(
+            cls, check.str_param(data, "data")
+        )
 
     @public
     @property
-    def value(self) -> Any:
-        """None: The wrapped code location state data."""
+    def value(self) -> str:
+        """str: The wrapped code location state data."""
         return self.data

@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Iterator, List, Optional, Set, Tuple
+from typing import Iterable, Iterator, List, Optional, Set, Tuple
 
 from dagster import (
     AssetCheckKey,
@@ -9,13 +9,17 @@ from dagster import (
     JsonMetadataValue,
     MarkdownMetadataValue,
     RunRequest,
-    SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
     TimestampMetadataValue,
+    _check as check,
     sensor,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
@@ -40,11 +44,20 @@ class AirflowPollingSensorCursor:
     dag_query_offset: Optional[int] = None
 
 
-def build_airflow_polling_sensor(
+def check_keys_for_asset_keys(
+    repository_def: RepositoryDefinition, asset_keys: Set[AssetKey]
+) -> Iterable[AssetCheckKey]:
+    for assets_def in repository_def.asset_graph.assets_defs:
+        for check_spec in assets_def.check_specs:
+            if check_spec.asset_key in asset_keys:
+                yield check_spec.key
+
+
+def build_airflow_polling_sensor_defs(
     airflow_instance: AirflowInstance,
     airflow_data: AirflowDefinitionsData,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-) -> SensorDefinition:
+) -> Definitions:
     @sensor(
         name="airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -80,21 +93,18 @@ def build_airflow_polling_sensor(
         all_materializations: List[Tuple[float, AssetMaterialization]] = []
         all_check_keys: Set[AssetCheckKey] = set()
         latest_offset = current_dag_offset
+        repository_def = check.not_none(context.repository_def)
         while get_current_datetime() - current_date < timedelta(seconds=MAIN_LOOP_TIMEOUT_SECONDS):
             batch_result = next(sensor_iter, None)
             if batch_result is None:
                 break
             all_materializations.extend(batch_result.materializations_and_timestamps)
 
-            for asset_key in batch_result.all_asset_keys_materialized:
-                all_check_keys.update(airflow_data.check_keys_for_asset_key(asset_key))
+            all_check_keys.update(
+                check_keys_for_asset_keys(repository_def, batch_result.all_asset_keys_materialized)
+            )
             latest_offset = batch_result.idx
 
-        # Sort materializations by end date and toposort order
-        sorted_mats = sorted(
-            all_materializations,
-            key=lambda x: (x[0], airflow_data.topo_order_index(x[1].asset_key)),
-        )
         if batch_result is not None:
             new_cursor = AirflowPollingSensorCursor(
                 end_date_gte=end_date_gte,
@@ -109,14 +119,29 @@ def build_airflow_polling_sensor(
                 dag_query_offset=0,
             )
         context.update_cursor(serialize_value(new_cursor))
+
         return SensorResult(
-            asset_events=[sorted_mat[1] for sorted_mat in sorted_mats],
+            asset_events=sorted_asset_events(all_materializations, repository_def),
             run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]
             if all_check_keys
             else None,
         )
 
-    return airflow_dag_sensor
+    return Definitions(sensors=[airflow_dag_sensor])
+
+
+def sorted_asset_events(
+    all_materializations: List[Tuple[float, AssetMaterialization]],
+    repository_def: RepositoryDefinition,
+) -> List[AssetMaterialization]:
+    """Sort materializations by end date and toposort order."""
+    topo_aks = repository_def.asset_graph.toposorted_asset_keys
+    return [
+        sorted_mat[1]
+        for sorted_mat in sorted(
+            all_materializations, key=lambda x: (x[0], topo_aks.index(x[1].asset_key))
+        )
+    ]
 
 
 @record

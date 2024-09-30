@@ -1290,7 +1290,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = poll_for_finished_run(graphql_context.instance, run_id, timeout=10000000000)
 
-        logs = graphql_context.instance.all_logs(run_id)
         assert run.is_success
 
         result = execute_dagster_graphql(
@@ -1370,7 +1369,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
-        logs = graphql_context.instance.all_logs(run_id)
         assert run.is_success
 
         res = execute_dagster_graphql(
@@ -1416,7 +1414,6 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
 
         run = poll_for_finished_run(graphql_context.instance, run_id)
 
-        logs = graphql_context.instance.all_logs(run_id)
         assert run.is_success
 
         res = execute_dagster_graphql(

@@ -511,7 +511,7 @@ def test_simple_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -544,7 +544,7 @@ def test_canceled_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -582,7 +582,7 @@ def test_failure_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="shouldfail",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -631,7 +631,7 @@ def test_failure_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="fromfailure",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=True,
@@ -683,7 +683,7 @@ def test_job_backfill_status(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -743,7 +743,7 @@ def test_partial_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="full",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -790,7 +790,7 @@ def test_partial_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="partial",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -833,7 +833,7 @@ def test_large_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -1072,7 +1072,7 @@ def test_backfill_from_partitioned_job(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="partition_schedule_from_job",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_keys[:3],
             from_failure=False,
@@ -1107,7 +1107,7 @@ def test_backfill_with_asset_selection(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="backfill_with_asset_selection",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_keys,
             from_failure=False,
@@ -1277,7 +1277,7 @@ def test_backfill_from_failure_for_subselection(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="fromfailure",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one"],
             from_failure=True,
@@ -1958,7 +1958,7 @@ def _get_abcd_job_backfill(external_repo: ExternalRepository, job_name: str) -> 
     external_partition_set = external_repo.get_external_partition_set(f"{job_name}_partition_set")
     return PartitionBackfill(
         backfill_id="simple",
-        partition_set_origin=external_partition_set.get_external_origin(),
+        partition_set_origin=external_partition_set.get_remote_origin(),
         status=BulkActionStatus.REQUESTED,
         partition_names=["a", "b", "c", "d"],
         from_failure=False,

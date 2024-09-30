@@ -655,6 +655,7 @@ class GrapheneIPipelineSnapshotMixin:
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    run_tags = non_null_list(GraphenePipelineTag)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     runs = graphene.Field(
         non_null_list(GrapheneRun),
@@ -760,6 +761,13 @@ class GrapheneIPipelineSnapshotMixin:
             for key, value in represented_pipeline.job_snapshot.tags.items()
         ]
 
+    def resolve_run_tags(self, _graphene_info: ResolveInfo):
+        represented_pipeline = self.get_represented_job()
+        return [
+            GraphenePipelineTag(key=key, value=value)
+            for key, value in (represented_pipeline.job_snapshot.run_tags or {}).items()
+        ]
+
     def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
         represented_pipeline = self.get_represented_job()
         return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
@@ -776,7 +784,7 @@ class GrapheneIPipelineSnapshotMixin:
                 job_name=pipeline.name,
                 tags={
                     REPOSITORY_LABEL_TAG: (
-                        pipeline.get_external_origin().repository_origin.get_label()
+                        pipeline.get_remote_origin().repository_origin.get_label()
                     )
                 },
             )
@@ -920,7 +928,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_job.get_external_origin_id()
+        return self._external_job.get_remote_origin_id()
 
     def get_represented_job(self) -> RepresentedJob:
         return self._external_job
@@ -1021,35 +1029,31 @@ class GrapheneGraph(graphene.ObjectType):
     )
     modes = non_null_list(GrapheneMode)
 
-    def __init__(self, external_pipeline, solid_handle_id=None):
-        self._external_pipeline = check.inst_param(
-            external_pipeline, "external_pipeline", ExternalJob
-        )
+    def __init__(self, external_job: ExternalJob, solid_handle_id=None):
+        self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
         self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
         super().__init__()
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         if self._solid_handle_id:
-            return (
-                f"{self._external_pipeline.get_external_origin_id()}:solid:{self._solid_handle_id}"
-            )
-        return f"graph:{self._external_pipeline.get_external_origin_id()}"
+            return f"{self._external_job.get_remote_origin_id()}:solid:{self._solid_handle_id}"
+        return f"graph:{self._external_job.get_remote_origin_id()}"
 
     def resolve_name(self, _graphene_info: ResolveInfo):
-        return self._external_pipeline.get_graph_name()
+        return self._external_job.get_graph_name()
 
     def resolve_description(self, _graphene_info: ResolveInfo):
-        return self._external_pipeline.description
+        return self._external_job.description
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
     ) -> Optional[GrapheneSolidHandle]:
-        return build_solid_handles(self._external_pipeline).get(handleID)
+        return build_solid_handles(self._external_job).get(handleID)
 
     def resolve_solid_handles(
         self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
     ) -> Sequence[GrapheneSolidHandle]:
-        handles = build_solid_handles(self._external_pipeline)
+        handles = build_solid_handles(self._external_job)
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}

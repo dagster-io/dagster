@@ -21,7 +21,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._model import DagsterModel
+from dagster._record import copy, record
 from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
@@ -93,8 +93,6 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     """
 
-    label: Optional[str] = None
-
     @property
     def requires_cursor(self) -> bool:
         return True
@@ -113,13 +111,16 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return self.__class__.__name__
 
+    def get_label(self) -> Optional[str]:
+        return None
+
     def get_node_snapshot(self, unique_id: str) -> AutomationConditionNodeSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
         return AutomationConditionNodeSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
-            label=self.label,
+            label=self.get_label(),
             name=self.name,
         )
 
@@ -555,15 +556,19 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         return AnyDownstreamConditionsCondition()
 
 
-class BuiltinAutomationCondition(DagsterModel, AutomationCondition[T_EntityKey]):
+@record
+class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
     """Base class for AutomationConditions provided by the core dagster framework."""
 
     label: Optional[str] = None
 
+    def get_label(self) -> Optional[str]:
+        return self.label
+
     @public
     def with_label(self, label: Optional[str]) -> Self:
         """Returns a copy of this AutomationCondition with a human-readable label."""
-        return self.model_copy(update={"label": label})
+        return copy(self, label=label)
 
     def __hash__(self) -> int:
         return self.get_hash()

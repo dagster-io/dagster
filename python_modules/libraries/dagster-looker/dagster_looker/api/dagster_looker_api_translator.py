@@ -1,10 +1,11 @@
 from enum import Enum
-from typing import Any, Dict, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
 from dagster import (
     AssetSpec,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
@@ -20,58 +21,49 @@ class LookerInstanceData:
     explores_by_id: Dict[str, LookmlModelExplore]
     dashboards_by_id: Dict[str, Dashboard]
 
-    def to_cacheable_metadata(self, *, sdk: Looker40SDK) -> Mapping[str, Any]:
+    def to_state(self, sdk: Looker40SDK) -> Mapping[str, Any]:
         return {
             "dashboards_by_id": {
-                dashboard_id: (
-                    sdk.serialize(api_model=dashboard_data).decode()  # type: ignore
-                )
+                dashboard_id: (sdk.serialize(api_model=dashboard_data).decode())  # type: ignore
                 for dashboard_id, dashboard_data in self.dashboards_by_id.items()
             },
             "explores_by_id": {
-                explore_id: (
-                    sdk.serialize(api_model=explore_data).decode()  # type: ignore
-                )
+                explore_id: (sdk.serialize(api_model=explore_data).decode())  # type: ignore
                 for explore_id, explore_data in self.explores_by_id.items()
             },
         }
 
     @staticmethod
-    def from_cacheable_metadata(
-        *, sdk: Looker40SDK, cacheable_metadata: Sequence[Mapping[str, Any]]
-    ) -> "LookerInstanceData":
+    def from_state(sdk: Looker40SDK, state: Mapping[str, Any]) -> "LookerInstanceData":
         explores_by_id = {
             explore_id: (
-                sdk.deserialize(
-                    data=serialized_lookml_explore,  # type: ignore
-                    structure=LookmlModelExplore,
-                )
+                sdk.deserialize(data=serialized_lookml_explore, structure=LookmlModelExplore)  # type: ignore
             )
-            for cached_metadata in cacheable_metadata
-            for explore_id, serialized_lookml_explore in cached_metadata["explores_by_id"].items()
+            for explore_id, serialized_lookml_explore in state["explores_by_id"].items()
         }
 
         dashboards_by_id = {
-            dashboard_id: (
-                sdk.deserialize(
-                    data=serialized_looker_dashboard,  # type: ignore
-                    structure=Dashboard,
-                )
-            )
-            for cached_metadata in cacheable_metadata
-            for dashboard_id, serialized_looker_dashboard in cached_metadata[
-                "dashboards_by_id"
-            ].items()
+            dashboard_id: (sdk.deserialize(data=serialized_looker_dashboard, structure=Dashboard))  # type: ignore
+            for dashboard_id, serialized_looker_dashboard in state["dashboards_by_id"].items()
         }
 
-        return LookerInstanceData(
-            explores_by_id=explores_by_id,
-            dashboards_by_id=dashboards_by_id,
-        )
+        return LookerInstanceData(explores_by_id=explores_by_id, dashboards_by_id=dashboards_by_id)
 
 
 @record
 class RequestStartPdtBuild:
+    """A request to start a PDT build. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
+    for documentation on all available fields.
+
+    Args:
+        model_name: The model of the PDT to start building.
+        view_name: The view name of the PDT to start building.
+        force_rebuild: Force rebuild of required dependent PDTs, even if they are already materialized.
+        force_full_incremental: Force involved incremental PDTs to fully re-materialize.
+        workspace: Workspace in which to materialize selected PDT ('dev' or default 'production').
+        source: The source of this request.
+    """
+
     model_name: str
     view_name: str
     force_rebuild: Optional[str] = None
@@ -155,6 +147,7 @@ class DagsterLookerApiTranslator:
             },
         )
 
+    @public
     def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
         if looker_structure.structure_type == LookerStructureType.VIEW:
             data = check.inst(looker_structure.data, LookmlView)

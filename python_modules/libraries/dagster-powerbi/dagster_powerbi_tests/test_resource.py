@@ -26,7 +26,7 @@ def test_basic_resource_request() -> None:
         status=200,
     )
 
-    resource.get_reports()
+    resource._get_reports()  # noqa: SLF001
 
     assert len(responses.calls) == 1
     assert responses.calls[0].request.headers["Authorization"] == f"Bearer {fake_token}"
@@ -63,7 +63,7 @@ def test_service_principal_auth() -> None:
         status=200,
     )
 
-    resource.get_reports()
+    resource._get_reports()  # noqa: SLF001
 
     assert len(responses.calls) == 2
     assert fake_client_id in responses.calls[0].request.body

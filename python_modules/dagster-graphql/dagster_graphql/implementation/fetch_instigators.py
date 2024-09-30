@@ -30,7 +30,7 @@ def get_instigator_state_by_selector(
 
     if instigator_id:
         state = graphene_info.context.instance.get_instigator_state(
-            origin_id=instigator_id.external_origin_id,
+            origin_id=instigator_id.remote_origin_id,
             selector_id=instigator_id.selector_id,
         )
         # if the state tells us the status on its own short cut and return it
@@ -44,14 +44,14 @@ def get_instigator_state_by_selector(
     if repository.has_external_sensor(selector.name):
         external_sensor = repository.get_external_sensor(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
-            external_sensor.get_external_origin_id(),
+            external_sensor.get_remote_origin_id(),
             external_sensor.selector_id,
         )
         current_state = external_sensor.get_current_instigator_state(stored_state)
     elif repository.has_external_schedule(selector.name):
         external_schedule = repository.get_external_schedule(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
-            external_schedule.get_external_origin_id(),
+            external_schedule.get_remote_origin_id(),
             external_schedule.selector_id,
         )
         current_state = external_schedule.get_current_instigator_state(stored_state)
@@ -71,7 +71,7 @@ def get_instigation_states_by_repository_id(
     )
 
     states = graphene_info.context.instance.all_instigator_state(
-        repository_origin_id=repository_id.external_origin_id,
+        repository_origin_id=repository_id.remote_origin_id,
         repository_selector_id=repository_id.selector_id,
     )
 

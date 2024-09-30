@@ -484,7 +484,7 @@ def create_backfill_run(
         root_run_id=root_run_id,
         parent_run_id=parent_run_id,
         status=DagsterRunStatus.NOT_STARTED,
-        external_job_origin=external_pipeline.get_external_origin(),
+        external_job_origin=external_pipeline.get_remote_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
         op_selection=op_selection,
         asset_selection=(

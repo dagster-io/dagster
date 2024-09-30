@@ -53,12 +53,12 @@ from dagster._core.remote_representation.external_data import (
     ExternalResourceData,
     ExternalResourceValue,
     ExternalSensorMetadata,
-    ExternalTargetData,
     NestedResource,
     PartitionSetSnap,
     ResourceJobUsageEntry,
     ScheduleSnap,
     SensorSnap,
+    TargetSnap,
 )
 from dagster._core.remote_representation.handle import (
     InstigatorHandle,
@@ -95,11 +95,11 @@ _DELIMITER = "::"
 class CompoundID:
     """Compound ID object for the two id schemes that state is recorded in the database against."""
 
-    external_origin_id: str
+    remote_origin_id: str
     selector_id: str
 
     def to_string(self) -> str:
-        return f"{self.external_origin_id}{_DELIMITER}{self.selector_id}"
+        return f"{self.remote_origin_id}{_DELIMITER}{self.selector_id}"
 
     @staticmethod
     def from_string(serialized: str):
@@ -108,7 +108,7 @@ class CompoundID:
             raise DagsterInvariantViolationError(f"Invalid serialized InstigatorID: {serialized}")
 
         return CompoundID(
-            external_origin_id=parts[0],
+            remote_origin_id=parts[0],
             selector_id=parts[1],
         )
 
@@ -238,7 +238,7 @@ class ExternalRepository:
             existing_automation_condition_sensors = {
                 sensor_name: sensor
                 for sensor_name, sensor in sensor_datas.items()
-                if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
+                if sensor.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
             }
 
             covered_entity_keys: Set[EntityKey] = set()
@@ -382,21 +382,21 @@ class ExternalRepository:
 
     def get_compound_id(self) -> CompoundID:
         return CompoundID(
-            external_origin_id=self.get_external_origin_id(),
+            remote_origin_id=self.get_remote_origin_id(),
             selector_id=self.selector_id,
         )
 
-    def get_external_origin(self) -> RemoteRepositoryOrigin:
-        return self.handle.get_external_origin()
+    def get_remote_origin(self) -> RemoteRepositoryOrigin:
+        return self.handle.get_remote_origin()
 
     def get_python_origin(self) -> RepositoryPythonOrigin:
         return self.handle.get_python_origin()
 
-    def get_external_origin_id(self) -> str:
+    def get_remote_origin_id(self) -> str:
         """A means of identifying the repository this ExternalRepository represents based on
         where it came from.
         """
-        return self.get_external_origin().get_id()
+        return self.get_remote_origin().get_id()
 
     def get_external_asset_nodes(
         self, job_name: Optional[str] = None
@@ -625,6 +625,14 @@ class ExternalJob(RepresentedJob):
         return self._job_index.job_snapshot.tags
 
     @property
+    def run_tags(self) -> Mapping[str, str]:
+        snapshot_tags = self._job_index.job_snapshot.run_tags
+        # Snapshot tags will be None for snapshots originating from old code servers before the
+        # introduction of run tags. In these cases, the job definition tags are treated as run tags
+        # to maintain backcompat.
+        return snapshot_tags if snapshot_tags is not None else self.tags
+
+    @property
     def metadata(self) -> Mapping[str, MetadataValue]:
         return self._job_index.job_snapshot.metadata
 
@@ -648,11 +656,11 @@ class ExternalJob(RepresentedJob):
         repository_python_origin = self.repository_handle.get_python_origin()
         return JobPythonOrigin(self.name, repository_python_origin)
 
-    def get_external_origin(self) -> RemoteJobOrigin:
-        return self.handle.get_external_origin()
+    def get_remote_origin(self) -> RemoteJobOrigin:
+        return self.handle.get_remote_origin()
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
 
 class ExternalExecutionPlan:
@@ -867,11 +875,11 @@ class ExternalSchedule:
     def tags(self) -> Mapping[str, str]:
         return self._external_schedule_data.tags
 
-    def get_external_origin(self) -> RemoteInstigatorOrigin:
-        return self.handle.get_external_origin()
+    def get_remote_origin(self) -> RemoteInstigatorOrigin:
+        return self.handle.get_remote_origin()
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
     @property
     def selector(self) -> InstigatorSelector:
@@ -895,7 +903,7 @@ class ExternalSchedule:
 
     def get_compound_id(self) -> CompoundID:
         return CompoundID(
-            external_origin_id=self.get_external_origin_id(),
+            remote_origin_id=self.get_remote_origin_id(),
             selector_id=self.selector_id,
         )
 
@@ -917,7 +925,7 @@ class ExternalSchedule:
                 return stored_state
 
             return InstigatorState(
-                self.get_external_origin(),
+                self.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.DECLARED_IN_CODE,
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
@@ -935,7 +943,7 @@ class ExternalSchedule:
                 )
 
             return InstigatorState(
-                self.get_external_origin(),
+                self.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
@@ -985,19 +993,19 @@ class ExternalSensor:
         target = self._get_single_target()
         return target.op_selection if target else None
 
-    def _get_single_target(self) -> Optional[ExternalTargetData]:
+    def _get_single_target(self) -> Optional[TargetSnap]:
         if self._external_sensor_data.target_dict:
             return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 
-    def get_target_data(self, job_name: Optional[str] = None) -> Optional[ExternalTargetData]:
+    def get_target(self, job_name: Optional[str] = None) -> Optional[TargetSnap]:
         if job_name:
             return self._external_sensor_data.target_dict[job_name]
         else:
             return self._get_single_target()
 
-    def get_external_targets(self) -> Sequence[ExternalTargetData]:
+    def get_targets(self) -> Sequence[TargetSnap]:
         return list(self._external_sensor_data.target_dict.values())
 
     @property
@@ -1017,11 +1025,11 @@ class ExternalSensor:
     def run_tags(self) -> Mapping[str, str]:
         return self._external_sensor_data.run_tags
 
-    def get_external_origin(self) -> RemoteInstigatorOrigin:
-        return self._handle.get_external_origin()
+    def get_remote_origin(self) -> RemoteInstigatorOrigin:
+        return self._handle.get_remote_origin()
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
     @property
     def selector(self) -> InstigatorSelector:
@@ -1045,7 +1053,7 @@ class ExternalSensor:
 
     def get_compound_id(self) -> CompoundID:
         return CompoundID(
-            external_origin_id=self.get_external_origin_id(),
+            remote_origin_id=self.get_remote_origin_id(),
             selector_id=self.selector_id,
         )
 
@@ -1067,7 +1075,7 @@ class ExternalSensor:
                 stored_state
                 if stored_state
                 else InstigatorState(
-                    self.get_external_origin(),
+                    self.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.DECLARED_IN_CODE,
                     SensorInstigatorData(
@@ -1088,7 +1096,7 @@ class ExternalSensor:
                 )
 
             return InstigatorState(
-                self.get_external_origin(),
+                self.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.STOPPED,
                 SensorInstigatorData(
@@ -1143,11 +1151,11 @@ class ExternalPartitionSet:
     def repository_handle(self) -> RepositoryHandle:
         return self._handle.repository_handle
 
-    def get_external_origin(self) -> RemotePartitionSetOrigin:
-        return self._handle.get_external_origin()
+    def get_remote_origin(self) -> RemotePartitionSetOrigin:
+        return self._handle.get_remote_origin()
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
     def has_partition_name_data(self) -> bool:
         # Partition sets from older versions of Dagster as well as partition sets using

@@ -372,6 +372,18 @@ GET_AUTO_MATERIALIZE_POLICY = """
     }
 """
 
+GET_AUTOMATION_CONDITION = """
+    query AssetNodeQuery {
+        assetNodes {
+            id
+            automationCondition {
+                label
+                expandedLabel
+            }
+        }
+    }
+"""
+
 GET_ASSET_OBSERVATIONS = """
     query AssetGraphQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -2594,6 +2606,22 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
+
+    def test_automation_condition(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(graphql_context, GET_AUTOMATION_CONDITION)
+
+        assert result.data
+        assert result.data["assetNodes"]
+
+        automation_condition_asset = [
+            a
+            for a in result.data["assetNodes"]
+            if a["id"] == 'test.test_repo.["asset_with_automation_condition"]'
+        ]
+        assert len(automation_condition_asset) == 1
+        condition = automation_condition_asset[0]["automationCondition"]
+        assert condition["label"] == "eager"
+        assert "(in_latest_time_window)" in condition["expandedLabel"]
 
     def test_tags(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(

@@ -46,6 +46,7 @@ def test_empty_job_snap_props(snapshot):
     assert job_snapshot.name == "noop_job"
     assert job_snapshot.description is None
     assert job_snapshot.tags == {}
+    assert job_snapshot.run_tags is None
 
     assert job_snapshot == serialize_rt(job_snapshot)
 

@@ -1,21 +1,10 @@
-import {
-  Alert,
-  Body2,
-  Box,
-  Checkbox,
-  Colors,
-  CursorHistoryControls,
-  NonIdealState,
-  ifPlural,
-  tokenToString,
-} from '@dagster-io/ui-components';
-import {useVirtualizer} from '@tanstack/react-virtual';
+import {Box, Checkbox, Colors, NonIdealState, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
-import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunsQueryRefetchContext} from './RunUtils';
-import {RUNS_FEED_TABLE_ENTRY_FRAGMENT, RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRow';
+import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
+import {RunsFeedTable} from './RunsFeedTable';
 import {useRunsFeedTabs, useSelectedRunsFeedTab} from './RunsFeedTabs';
 import {
   RunFilterToken,
@@ -25,7 +14,6 @@ import {
   useRunsFilterInput,
 } from './RunsFilterInput';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/RunsFeedRoot.types';
-import {RunsFeedTableEntryFragment_Run} from './types/RunsFeedRow.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -37,12 +25,7 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {RunsFilter} from '../graphql/types';
-import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {CheckAllBox} from '../ui/CheckAllBox';
-import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
-import {numberFormatter} from '../ui/formatters';
 
 const PAGE_SIZE = 25;
 
@@ -143,87 +126,33 @@ export const RunsFeedRoot = () => {
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
   const {error} = queryResult;
 
-  const parentRef = useRef<HTMLDivElement | null>(null);
-
-  const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
-  const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
-
-  const rowVirtualizer = useVirtualizer({
-    count: entries.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 84,
-    overscan: 15,
-  });
-
-  const totalHeight = rowVirtualizer.getTotalSize();
-  const items = rowVirtualizer.getVirtualItems();
-
   const [hideSubRuns, setHideSubRuns] = useState(false);
 
-  function actionBar() {
-    const selectedRuns = entries.filter(
-      (e): e is RunsFeedTableEntryFragment_Run => checkedIds.has(e.id) && e.__typename === 'Run',
-    );
-    const backfillsExcluded = entries.length - selectedRuns.length;
-    return (
-      <Box flex={{direction: 'column', gap: 8}}>
-        <Box
-          flex={{justifyContent: 'space-between'}}
-          style={{width: '100%'}}
-          padding={{left: 24, right: 12}}
-        >
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-            {button}
-            <Checkbox
-              label={<span>Hide sub-runs</span>}
-              checked={hideSubRuns}
-              onChange={() => {
-                setHideSubRuns(!hideSubRuns);
-              }}
-            />
-          </Box>
-          <Box flex={{gap: 12}} style={{marginRight: 8}}>
-            <CursorHistoryControls {...paginationProps} style={{marginTop: 0}} />
-            <RunBulkActionsMenu
-              clearSelection={() => onToggleAll(false)}
-              selected={selectedRuns}
-              notice={
-                backfillsExcluded ? (
-                  <Alert
-                    intent="warning"
-                    title={
-                      <Box flex={{direction: 'column'}}>
-                        <Body2>Currently bulk actions are only supported for runs.</Body2>
-                        <Body2>
-                          {numberFormatter.format(backfillsExcluded)}&nbsp;
-                          {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being
-                          excluded
-                        </Body2>
-                      </Box>
-                    }
-                  />
-                ) : null
-              }
-            />
-          </Box>
-        </Box>
-        {activeFiltersJsx.length ? (
-          <Box
-            border="top"
-            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-            padding={{left: 24, right: 12, top: 12}}
-          >
-            {activeFiltersJsx}
-          </Box>
-        ) : null}
-      </Box>
-    );
-  }
+  const actionBarComponents = (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      {button}
+      <Checkbox
+        label={<span>Hide sub-runs</span>}
+        checked={hideSubRuns}
+        onChange={() => {
+          setHideSubRuns(!hideSubRuns);
+        }}
+      />
+    </Box>
+  );
 
-  const content = () => {
+  const belowActionBarComponents = activeFiltersJsx.length ? (
+    <Box
+      border="top"
+      flex={{direction: 'row', gap: 4, alignItems: 'center'}}
+      padding={{left: 24, right: 12, top: 12}}
+    >
+      {activeFiltersJsx}
+    </Box>
+  ) : null;
+
+  function content() {
     if (error) {
-      // In this case, a 400 is most likely due to invalid run filters, which are a GraphQL
-      // validation error but surfaced as a 400.
       const badRequest = !!(
         typeof error === 'object' &&
         'statusCode' in error &&
@@ -252,47 +181,21 @@ export const RunsFeedRoot = () => {
     }
 
     return (
-      <div style={{overflow: 'hidden'}}>
-        {queryResult.loading ? <IndeterminateLoadingBar /> : null}
-        <Container ref={parentRef}>
-          <RunsFeedTableHeader
-            checkbox={
-              <CheckAllBox
-                checkedCount={checkedIds.size}
-                totalCount={entries.length}
-                onToggleAll={onToggleAll}
-              />
-            }
-          />
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, size, start, key}) => {
-              const entry = entries[index];
-              if (!entry) {
-                return <span key={key} />;
-              }
-              return (
-                <Row $height={size} $start={start} data-key={key} key={key}>
-                  <div ref={rowVirtualizer.measureElement} data-index={index}>
-                    <RunsFeedRow
-                      key={key}
-                      entry={entry}
-                      checked={checkedIds.has(entry.id)}
-                      onToggleChecked={onToggleFactory(entry.id)}
-                      refetch={combinedRefreshState.refetch}
-                      onAddTag={onAddTag}
-                    />
-                  </div>
-                </Row>
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
+      <RunsFeedTable
+        entries={entries}
+        loading={queryResult.loading}
+        onAddTag={onAddTag}
+        refetch={combinedRefreshState.refetch}
+        actionBarComponents={actionBarComponents}
+        belowActionBarComponents={belowActionBarComponents}
+        paginationProps={paginationProps}
+        filter={filter}
+      />
     );
-  };
+  }
 
   return (
-    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+    <Box style={{height: '100%', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)'}}>
       <Box
         border="bottom"
         background={Colors.backgroundLight()}
@@ -304,14 +207,11 @@ export const RunsFeedRoot = () => {
           <QueryRefreshCountdown refreshState={combinedRefreshState} />
         </Box>
       </Box>
-
-      <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 12}}>
-        {actionBar()}
-      </Box>
-
-      <RunsQueryRefetchContext.Provider value={{refetch: combinedRefreshState.refetch}}>
-        {content()}
-      </RunsQueryRefetchContext.Provider>
+      <div>
+        <RunsQueryRefetchContext.Provider value={{refetch: combinedRefreshState.refetch}}>
+          {content()}
+        </RunsQueryRefetchContext.Provider>
+      </div>
     </Box>
   );
 };

@@ -69,7 +69,7 @@ def test_launch_docker_no_network(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             instance.launch_run(run.run_id, workspace)
@@ -116,7 +116,8 @@ def test_launch_docker_image_on_job_config(aws_env):
         "env_vars": aws_env + ["DOCKER_LAUNCHER_NETWORK"],
         "network": {"env": "DOCKER_LAUNCHER_NETWORK"},
         "container_kwargs": {
-            "auto_remove": True,
+            "auto_remove": False,
+            "labels": {"foo": "baz", "bar": ""},
         },
     }
 
@@ -153,7 +154,7 @@ def test_launch_docker_image_on_job_config(aws_env):
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.launch_run(run.run_id, workspace)
@@ -165,6 +166,12 @@ def test_launch_docker_image_on_job_config(aws_env):
                 assert run.status == DagsterRunStatus.SUCCESS
 
                 assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+
+                container_obj = instance.run_launcher._get_container(run)  # noqa
+                assert container_obj.labels["foo"] == "baz"
+                assert container_obj.labels["bar"] == ""
+                assert container_obj.labels["dagster/run_id"] == run.run_id
+                assert container_obj.labels["dagster/job_name"] == run.job_name
 
 
 def check_event_log_contains(event_log, expected_type_and_message):
@@ -219,7 +226,7 @@ def test_terminate_launched_docker_run(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
@@ -286,7 +293,7 @@ def test_launch_docker_invalid_image(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
@@ -479,7 +486,7 @@ def _test_launch(
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
 

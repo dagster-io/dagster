@@ -460,7 +460,9 @@ const AssetGraphExplorerWithData = ({
 
   const svgViewport = layout ? (
     <SVGViewport
-      ref={(r) => (viewportEl.current = r || undefined)}
+      ref={(r) => {
+        viewportEl.current = r || undefined;
+      }}
       defaultZoom="zoom-to-fit-width"
       interactor={SVGViewport.Interactors.PanAndZoom}
       graphWidth={layout.width}
@@ -507,7 +509,7 @@ const AssetGraphExplorerWithData = ({
                   e.stopPropagation();
                 }}
               >
-                <GroupOutline $minimal={scale < MINIMAL_SCALE} />
+                <GroupOutline minimal={scale < MINIMAL_SCALE} />
               </foreignObject>
             ))}
 

@@ -20,7 +20,7 @@ export const ProgressBar = ({fillColor = Colors.accentGray(), ...rest}: Props) =
 };
 
 const StyledProgressBar = styled(BlueprintProgressBar)<{$fillColor: string}>`
-  &.bp4-progress-bar {
+  &.bp5-progress-bar {
     background: transparent;
 
     ::before {
@@ -31,7 +31,7 @@ const StyledProgressBar = styled(BlueprintProgressBar)<{$fillColor: string}>`
       opacity: 0.25;
     }
 
-    .bp4-progress-meter {
+    .bp5-progress-meter {
       background-color: ${(p) => p.$fillColor};
     }
   }

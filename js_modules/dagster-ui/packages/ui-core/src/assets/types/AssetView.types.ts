@@ -97,6 +97,11 @@ export type AssetViewDefinitionQuery = {
               decisionType: Types.AutoMaterializeDecisionType;
             }>;
           } | null;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
+          } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
             maximumLagMinutes: number;
@@ -16377,6 +16382,11 @@ export type AssetViewDefinitionNodeFragment = {
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
   } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
     maximumLagMinutes: number;
@@ -32438,4 +32448,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '77ecb76ceb98cec5fc78c06edb596a328a2ea9e4ac4b2577eae74aa931eb8f90';
+export const AssetViewDefinitionQueryVersion = '932aa7a5c3d285d2a938c89f24eb6cab960123277a2abaab3027d80f944d0ddd';

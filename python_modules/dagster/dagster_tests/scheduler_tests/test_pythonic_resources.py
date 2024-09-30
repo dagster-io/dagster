@@ -191,7 +191,7 @@ def test_resources(
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 0
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
@@ -201,7 +201,7 @@ def test_resources(
         wait_for_all_runs_to_start(instance)
 
         ticks: Sequence[InstigatorTick] = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
 
         assert len(ticks) == 1

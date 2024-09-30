@@ -30,10 +30,10 @@ from dagster._core.remote_representation.external_data import (
     ExternalRepositoryErrorData as ExternalRepositoryErrorData,
     ExternalScheduleExecutionErrorData as ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData as ExternalSensorExecutionErrorData,
-    ExternalTargetData as ExternalTargetData,
     PartitionSetSnap as PartitionSetSnap,
     ScheduleSnap as ScheduleSnap,
     SensorSnap as SensorSnap,
+    TargetSnap as TargetSnap,
     external_job_data_from_def as external_job_data_from_def,
     external_repository_data_from_def as external_repository_data_from_def,
 )

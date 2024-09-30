@@ -97,7 +97,7 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
     instance = instance_with_auto_materialize_sensors
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -135,7 +135,7 @@ def test_default_auto_materialize_sensors_without_observable(
     instance = instance_with_auto_materialize_sensors
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -162,7 +162,7 @@ def test_default_auto_materialize_sensors_without_observable(
 
 def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -199,7 +199,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
     )
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )
@@ -270,7 +270,7 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
     )
 
     repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_external_origin.return_value = RemoteRepositoryOrigin(
+    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
         code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
         repository_name="bar_repo",
     )

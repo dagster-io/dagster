@@ -44,16 +44,16 @@ def test_runtime_typecheck() -> None:
 
 
 def test_override_constructor_in_subclass() -> None:
-    @record
-    class MyClass:
+    @record_custom
+    class MyClass(IHaveNew):
         foo: str
         bar: int
 
         def __new__(cls, foo: str, bar: int):
             return super().__new__(
                 cls,
-                foo=foo,  # type: ignore
-                bar=bar,  # type: ignore
+                foo=foo,
+                bar=bar,
             )
 
     assert MyClass(foo="fdsjk", bar=4)
@@ -741,7 +741,6 @@ def test_generic_with_propagate_type_checking() -> None:
         copy(valid_record, val4=4)
 
 
-@pytest.mark.xfail()
 def test_custom_subclass() -> None:
     @record_custom
     class Thing(IHaveNew):
@@ -752,9 +751,11 @@ def test_custom_subclass() -> None:
 
     assert Thing(val_short="abc").val == "abcabc"
 
-    @record
-    class SubThing(Thing):
-        other_val: int
+    with pytest.raises(
+        CheckError,
+        match=r"@record can not inherit from @record_custom",
+    ):
 
-    # this does not work, as we've overridden the wrong __new__
-    SubThing(other_val=1)
+        @record
+        class SubThing(Thing):
+            other_val: int

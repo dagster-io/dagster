@@ -5,7 +5,6 @@ from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoader
 from dagster._core.definitions.load_assets_from_modules import assets_from_modules
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 
@@ -50,13 +49,14 @@ def loadable_targets_from_python_package(
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
     from dagster._core.definitions import JobDefinition
+    from dagster._utils.test.definitions import LazyDefinitions
 
-    loadable_def_loaders = _loadable_targets_of_type(module, DefinitionsLoader)
+    loadable_def_loaders = _loadable_targets_of_type(module, LazyDefinitions)
 
     if loadable_def_loaders:
         if len(loadable_def_loaders) > 1:
             raise DagsterInvariantViolationError(
-                "Cannot have more than one function decorated with @definitions defined in module scope"
+                "Cannot have more than one function decorated with @lazy_definitions defined in module scope"
             )
 
         return loadable_def_loaders
@@ -114,7 +114,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         return [LoadableTarget(LOAD_ALL_ASSETS, [*module_assets, *module_source_assets])]
 
     raise DagsterInvariantViolationError(
-        "No Definitions, function decorated with @definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "
+        "No Definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "
         f'"{module.__name__}".'
     )
 

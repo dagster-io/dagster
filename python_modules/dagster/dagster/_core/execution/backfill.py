@@ -23,7 +23,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.tags import USER_TAG
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -227,7 +227,7 @@ class PartitionBackfill(
             return self.tags.get(USER_TAG)
         return None
 
-    def is_valid_serialization(self, workspace: IWorkspace) -> bool:
+    def is_valid_serialization(self, workspace: BaseWorkspaceRequestContext) -> bool:
         if self.is_asset_backfill:
             if self.serialized_asset_backfill_data:
                 return AssetBackfillData.is_valid_serialization(
@@ -240,7 +240,7 @@ class PartitionBackfill(
             return True
 
     def get_backfill_status_per_asset_key(
-        self, workspace: IWorkspace
+        self, workspace: BaseWorkspaceRequestContext
     ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
         """Returns a sequence of backfill statuses for each targeted asset key in the asset graph,
         in topological order.
@@ -260,7 +260,7 @@ class PartitionBackfill(
             return []
 
     def get_target_partitions_subset(
-        self, workspace: IWorkspace, asset_key: AssetKey
+        self, workspace: BaseWorkspaceRequestContext, asset_key: AssetKey
     ) -> Optional[PartitionsSubset]:
         if not self.is_valid_serialization(workspace):
             return None
@@ -277,7 +277,7 @@ class PartitionBackfill(
             return None
 
     def get_target_root_partitions_subset(
-        self, workspace: IWorkspace
+        self, workspace: BaseWorkspaceRequestContext
     ) -> Optional[PartitionsSubset]:
         if not self.is_valid_serialization(workspace):
             return None
@@ -293,7 +293,7 @@ class PartitionBackfill(
         else:
             return None
 
-    def get_num_partitions(self, workspace: IWorkspace) -> Optional[int]:
+    def get_num_partitions(self, workspace: BaseWorkspaceRequestContext) -> Optional[int]:
         if not self.is_valid_serialization(workspace):
             return 0
 
@@ -311,7 +311,9 @@ class PartitionBackfill(
 
             return len(self.partition_names)
 
-    def get_partition_names(self, workspace: IWorkspace) -> Optional[Sequence[str]]:
+    def get_partition_names(
+        self, workspace: BaseWorkspaceRequestContext
+    ) -> Optional[Sequence[str]]:
         if not self.is_valid_serialization(workspace):
             return []
 

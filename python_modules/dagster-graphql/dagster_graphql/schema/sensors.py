@@ -6,7 +6,7 @@ from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
+from dagster._core.remote_representation import ExternalSensor, TargetSnap
 from dagster._core.remote_representation.external import CompoundID, ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
@@ -50,10 +50,8 @@ class GrapheneTarget(graphene.ObjectType):
     class Meta:
         name = "Target"
 
-    def __init__(self, external_target: ExternalTargetData):
-        self._external_target = check.inst_param(
-            external_target, "external_target", ExternalTargetData
-        )
+    def __init__(self, external_target: TargetSnap):
+        self._external_target = check.inst_param(external_target, "external_target", TargetSnap)
         super().__init__(
             pipelineName=external_target.job_name,
             mode=external_target.mode,
@@ -111,10 +109,10 @@ class GrapheneSensor(graphene.ObjectType):
 
         super().__init__(
             name=external_sensor.name,
-            jobOriginId=external_sensor.get_external_origin_id(),
+            jobOriginId=external_sensor.get_remote_origin_id(),
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
-            targets=[GrapheneTarget(target) for target in external_sensor.get_external_targets()],
+            targets=[GrapheneTarget(target) for target in external_sensor.get_targets()],
             metadata=GrapheneSensorMetadata(
                 assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
             ),
@@ -250,12 +248,12 @@ class GrapheneStopSensorMutation(graphene.Mutation):
     ):
         if id:
             cid = CompoundID.from_string(id)
-            sensor_origin_id = cid.external_origin_id
+            sensor_origin_id = cid.remote_origin_id
             sensor_selector_id = cid.selector_id
         elif job_origin_id and CompoundID.is_valid_string(job_origin_id):
             # cross-push handle if InstigationState.id being passed through as origin id
             cid = CompoundID.from_string(job_origin_id)
-            sensor_origin_id = cid.external_origin_id
+            sensor_origin_id = cid.remote_origin_id
             sensor_selector_id = cid.selector_id
         elif job_origin_id is None or job_selector_id is None:
             raise DagsterInvariantViolationError("Must specify id or jobOriginId and jobSelectorId")

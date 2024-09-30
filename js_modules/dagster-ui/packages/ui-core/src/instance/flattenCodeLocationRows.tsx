@@ -80,13 +80,13 @@ const filterRows = (
   });
 };
 
-export type CodeLocationFilters = Partial<{status: CodeLocationRowStatusType[]}>;
+export type CodeLocationFilters = {status: CodeLocationRowStatusType[]};
 
 export const flattenCodeLocationRows = (
   locationStatuses: LocationStatusEntryFragment[],
   locationEntries: WorkspaceLocationNodeFragment[],
   searchValue: string = '',
-  filters: CodeLocationFilters = {},
+  filters: CodeLocationFilters = {status: []},
 ) => {
   const flattened = flatten(locationStatuses, locationEntries);
   const filtered = filterRows(flattened, searchValue, filters);

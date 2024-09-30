@@ -161,7 +161,7 @@ const GhostDaggy = () => (
 );
 
 const DaggyTooltip = styled(Tooltip)`
-  &.bp4-popover2-target {
+  &.bp5-popover-target {
     display: inline-flex;
   }
 `;

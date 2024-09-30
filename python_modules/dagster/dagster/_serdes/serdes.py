@@ -168,6 +168,7 @@ class WhitelistMap(NamedTuple):
         storage_field_names: Optional[Mapping[str, str]] = None,
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+        skip_when_none_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
         kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
@@ -185,6 +186,7 @@ class WhitelistMap(NamedTuple):
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
+            skip_when_none_fields=skip_when_none_fields,
             field_serializers=(
                 {k: klass.get_instance() for k, klass in field_serializers.items()}
                 if field_serializers
@@ -257,6 +259,7 @@ def whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = ...,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
+    skip_when_none_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Callable[[T_Type], T_Type]: ...
@@ -271,6 +274,7 @@ def whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = None,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+    skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
@@ -306,11 +310,19 @@ def whitelist_for_serdes(
          Does not apply to enums.
       skip_when_empty_fields (Optional[AbstractSet[str]]):
           A set of fields that should be skipped when serializing if they are an empty collection
-          (list, dict, tuple, or set). This allows a stable snapshot ID to be maintained when a new
+          (list, dict, tuple, or set) or None. This allows a stable snapshot ID to be maintained when a new
           field is added. For example, if `{"bar"}` is passed as `skip_when_empty_fields` for `Foo`,
           then serializing `Foo(bar=[])` will give `{"__class__": "Foo"}` (no `bar` in the
           serialization). This is because the `[]` is an empty list and so is dropped. Does not
           apply to enums.
+      skip_when_none_fields (Optional[AbstractSet[str]]):
+          A set of fields that should be skipped when serializing if they are None. Unlike `skip_when_empty_fields`,
+          this will not skip fields that are empty collections, allowing preservation of a
+          distinction between None and empty collections across serialization boundaries. This
+          allows a stable snapshot ID to be maintained when a new field is added. For example, if
+          `{"bar"}` is passed as `skip_when_none_fields` for `Foo`, then serializing `Foo(bar=None)`
+          will give `{"__class__": "Foo"}` (no `bar` in the serialization). This is because the `None`
+          is an empty list and so is dropped. Does not apply to enums.
       field_serializers (Optional[Mapping[str, FieldSerializer]]):
           A mapping of field names to `FieldSerializer` classes containing custom serialization
           logic. If a field has an associated `FieldSerializer`, then the `pack` and `unpack`
@@ -321,10 +333,10 @@ def whitelist_for_serdes(
           if a `FieldSerializer` is provided. Does not apply to enums.
         kwargs_fields (Optional[AbstractSet[str]]): A set of fields that will be passed to the constructor in kwargs.
     """
-    if storage_field_names or old_fields or skip_when_empty_fields:
+    if storage_field_names or old_fields or skip_when_empty_fields or skip_when_none_fields:
         check.invariant(
             serializer is None or issubclass(serializer, ObjectSerializer),
-            "storage_field_names, old_fields, skip_when_empty_fields can only be used with a"
+            "storage_field_names, old_fields, skip_when_empty_fields, skip_when_none_fields can only be used with a"
             " ObjectSerializer",
         )
     if __cls is not None:  # decorator invoked directly on class
@@ -343,6 +355,7 @@ def whitelist_for_serdes(
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
+            skip_when_none_fields=skip_when_none_fields,
             field_serializers=field_serializers,
             kwargs_fields=kwargs_fields,
         )
@@ -356,6 +369,7 @@ def _whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = None,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+    skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Callable[[T_Type], T_Type]:
@@ -388,6 +402,7 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
                 kwargs_fields=kwargs_fields,
             )
@@ -405,6 +420,7 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
             return klass  # type: ignore
@@ -420,6 +436,7 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
             return klass
@@ -542,6 +559,7 @@ class ObjectSerializer(Serializer, Generic[T]):
         storage_field_names: Optional[Mapping[str, str]] = None,
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+        skip_when_none_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, "FieldSerializer"]] = None,
         kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
@@ -551,6 +569,7 @@ class ObjectSerializer(Serializer, Generic[T]):
         self.loaded_field_names = {v: k for k, v in self.storage_field_names.items()}
         self.old_fields = old_fields or {}
         self.skip_when_empty_fields = skip_when_empty_fields or set()
+        self.skip_when_none_fields = skip_when_none_fields or set()
         self.field_serializers = field_serializers or {}
         self.kwargs_fields = kwargs_fields
 
@@ -624,7 +643,9 @@ class ObjectSerializer(Serializer, Generic[T]):
     ) -> Iterator[Tuple[str, JsonSerializableValue]]:
         yield "__class__", self.get_storage_name()
         for key, inner_value in self.object_as_mapping(self.before_pack(value)).items():
-            if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
+            if (key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP) or (
+                key in self.skip_when_none_fields and inner_value is None
+            ):
                 continue
             storage_key = self.storage_field_names.get(key, key)
             custom = self.field_serializers.get(key)

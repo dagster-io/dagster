@@ -161,7 +161,7 @@ def create_and_launch_partition_backfill(
 
         backfill = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=bool(backfill_params.get("fromFailure")),

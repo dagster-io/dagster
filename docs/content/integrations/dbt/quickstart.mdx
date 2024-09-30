@@ -7,6 +7,17 @@ description: Get started quickly with this simple dbt & Dagster example.
 
 This quickstart will get your dbt project up and running quickly with Dagster. By the end of this guide, you'll have an integrated Dagster and dbt project and be able to view it in the Dagster UI.
 
+<details>
+  <summary>Prerequisites</summary>
+
+To complete the steps in this guide, you'll need:
+
+- A valid dbt project
+  - A dbt project must contain the `dbt_project.yml` and `profiles.yml` files
+  - A test project like [Jaffle Shop](https://github.com/dagster-io/jaffle_shop) can be used
+
+</details>
+
 ---
 
 ## Step 1: Set up your environment
@@ -25,6 +36,8 @@ pip install dagster-dbt dagster-webserver
 ```
 
 The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/install) installation docs for more information.
+
+Other requirements based on the dbt project could be needed. In most cases, installing the library that supports your [dbt adapter](https://docs.getdbt.com/docs/supported-data-platforms#types-of-adapters) will be required. For instance, `dbt-duckdb` if you are using DuckDB as a dbt adapter.
 
 ---
 

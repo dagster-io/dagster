@@ -11,7 +11,7 @@ from third_party_api import (  # type: ignore
 
 from dagster import (
     AssetExecutionContext,
-    PipesResult,
+    PipesExecutionResult,
     PipesTempFileContextInjector,
     PipesTempFileMessageReader,
     asset,
@@ -20,7 +20,7 @@ from dagster import (
 
 
 @asset
-def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesResult]:
+def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesExecutionResult]:
     with open_pipes_session(
         context=context,
         extras={"foo": "bar"},

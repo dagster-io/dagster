@@ -311,7 +311,7 @@ class GrapheneRepository(graphene.ObjectType):
         return self._repository.get_compound_id().to_string()
 
     def resolve_origin(self, _graphene_info: ResolveInfo):
-        origin = self._repository.get_external_origin()
+        origin = self._repository.get_remote_origin()
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_location(self, _graphene_info: ResolveInfo):

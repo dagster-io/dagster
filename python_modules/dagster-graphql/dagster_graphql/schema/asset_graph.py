@@ -53,6 +53,7 @@ from dagster_graphql.schema import external
 from dagster_graphql.schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
+from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.dagster_types import (
@@ -276,6 +277,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
+    automationCondition = graphene.Field(GrapheneAutomationCondition)
     graphName = graphene.String()
     groupName = graphene.NonNull(graphene.String)
     owners = non_null_list(GrapheneAssetOwner)
@@ -921,6 +923,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAutoMaterializePolicy(self._external_asset_node.auto_materialize_policy)
         return None
 
+    def resolve_automationCondition(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAutoMaterializePolicy]:
+        if self._external_asset_node.automation_condition:
+            return GrapheneAutomationCondition(self._external_asset_node.automation_condition)
+        return None
+
     def _sensor_targets_asset(
         self, sensor: ExternalSensor, asset_graph: RemoteAssetGraph, job_names: Set[str]
     ) -> bool:
@@ -935,7 +944,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             if asset_key in asset_selection:
                 return True
 
-        return any(target.job_name in job_names for target in sensor.get_external_targets())
+        return any(target.job_name in job_names for target in sensor.get_targets())
 
     def resolve_targetingInstigators(self, graphene_info) -> Sequence[GrapheneSensor]:
         external_sensors = self._external_repository.get_external_sensors()
@@ -955,7 +964,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 continue
 
             sensor_state = graphene_info.context.instance.get_instigator_state(
-                external_sensor.get_external_origin_id(),
+                external_sensor.get_remote_origin_id(),
                 external_sensor.selector_id,
             )
             results.append(GrapheneSensor(external_sensor, self._external_repository, sensor_state))
@@ -963,7 +972,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         for external_schedule in external_schedules:
             if external_schedule.job_name in job_names:
                 schedule_state = graphene_info.context.instance.get_instigator_state(
-                    external_schedule.get_external_origin_id(),
+                    external_schedule.get_remote_origin_id(),
                     external_schedule.selector_id,
                 )
                 results.append(
@@ -1001,7 +1010,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return None
 
             return get_current_evaluation_id(
-                graphene_info.context.instance, external_sensor.get_external_origin()
+                graphene_info.context.instance, external_sensor.get_remote_origin()
             )
         else:
             return get_current_evaluation_id(graphene_info.context.instance, None)

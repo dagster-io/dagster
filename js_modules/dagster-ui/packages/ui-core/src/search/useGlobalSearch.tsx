@@ -1,5 +1,6 @@
 import qs from 'qs';
 import {useCallback, useContext, useEffect, useRef} from 'react';
+import {useAugmentSearchResults} from 'shared/search/useAugmentSearchResults.oss';
 
 import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -15,7 +16,6 @@ import {
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {gql} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
-import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -323,7 +323,6 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
-  const {useAugmentSearchResults} = useContext(CloudOSSContext);
   const augmentSearchResults = useAugmentSearchResults();
 
   const {localCacheIdPrefix} = useContext(AppContext);

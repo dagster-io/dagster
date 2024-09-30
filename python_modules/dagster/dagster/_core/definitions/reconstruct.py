@@ -48,7 +48,7 @@ from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
@@ -115,7 +115,7 @@ class ReconstructableRepository(
         return self._replace(repository_load_data=metadata)
 
     def get_definition(self) -> "RepositoryDefinition":
-        from dagster._core.definitions.definitions_loader import DefinitionsLoadType
+        from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 
         return repository_def_from_pointer(
             self.pointer, DefinitionsLoadType.RECONSTRUCTION, self.repository_load_data
@@ -592,13 +592,13 @@ def _is_list_of_assets(
 
 def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
     from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.definitions_loader import DefinitionsLoader
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
+    from dagster._utils.test.definitions import LazyDefinitions
 
     if not (
         isinstance(
@@ -609,14 +609,14 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
                 PendingRepositoryDefinition,
                 GraphDefinition,
                 Definitions,
-                DefinitionsLoader,
+                LazyDefinitions,
             ),
         )
         or _is_list_of_assets(definition)
     ):
         raise DagsterInvariantViolationError(
             "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, "
-            f"function decorated with @definitions, or RepositoryDefinition. Got {definition!r}."
+            f"or RepositoryDefinition. Got {definition!r}."
         )
     return definition
 
@@ -646,13 +646,13 @@ def def_from_pointer(
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
-    from dagster._core.definitions.definitions_loader import DefinitionsLoader
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
+    from dagster._utils.test.definitions import LazyDefinitions
 
     if isinstance(
         target,
@@ -661,7 +661,7 @@ def def_from_pointer(
             JobDefinition,
             PendingRepositoryDefinition,
             RepositoryDefinition,
-            DefinitionsLoader,
+            LazyDefinitions,
         ),
     ) or not callable(target):
         return _check_is_loadable(target)  # type: ignore
@@ -715,10 +715,7 @@ def repository_def_from_target_def(
 ) -> Optional["RepositoryDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.definitions_loader import (
-        DefinitionsLoadContext,
-        DefinitionsLoader,
-    )
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
@@ -728,19 +725,15 @@ def repository_def_from_target_def(
         RepositoryDefinition,
     )
     from dagster._core.definitions.source_asset import SourceAsset
+    from dagster._utils.test.definitions import LazyDefinitions
 
     DefinitionsLoadContext.set(
         DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
     )
 
-    # DefinitionsLoader will always return Definitions
-    if isinstance(target, DefinitionsLoader):
-        context = (
-            DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
-            if target.has_context_param
-            else None
-        )
-        target = target(context)
+    # LazyDefinitions is a private test utility
+    if isinstance(target, LazyDefinitions):
+        target = target()
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
@@ -777,7 +770,7 @@ def repository_def_from_pointer(
     load_type: "DefinitionsLoadType",
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
-    from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
     DefinitionsLoadContext.set(
         DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)

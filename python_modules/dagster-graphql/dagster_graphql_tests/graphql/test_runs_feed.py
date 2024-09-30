@@ -268,6 +268,90 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
 
         assert not result.data["runsFeedOrError"]["hasMore"]
 
+    def test_get_runs_feed_with_subruns(self, gql_context_with_runs_and_backfills):
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+                "filter": {"excludeSubruns": False},
+            },
+        )
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"excludeSubruns": False},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 5,
+                "cursor": None,
+                "filter": {"excludeSubruns": False},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert result.data["runsFeedOrError"]["hasMore"]
+        old_cursor = result.data["runsFeedOrError"]["cursor"]
+        assert old_cursor is not None
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 5,
+                "cursor": old_cursor,
+                "filter": {"excludeSubruns": False},
+            },
+        )
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        for res in result.data["runsFeedOrError"]["results"]:
+            assert res["__typename"] == "Run"
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
 
 class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
     """Tests for the runs feed that need special ordering of runs and backfills. Split these
@@ -600,6 +684,86 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert len(result.data["runsFeedOrError"]["results"]) == 1
 
+    def test_get_runs_feed_filter_status_and_show_subruns(self, graphql_context):
+        _create_run(graphql_context, status=DagsterRunStatus.SUCCESS)
+        _create_run(graphql_context, status=DagsterRunStatus.CANCELING)
+        _create_run(graphql_context, status=DagsterRunStatus.FAILURE)
+        _create_run(graphql_context, status=DagsterRunStatus.NOT_STARTED)
+        time.sleep(CREATE_DELAY)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_SUCCESS)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_FAILED)
+        _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED)
+        _create_backfill(graphql_context, status=BulkActionStatus.CANCELING)
+        _create_backfill(graphql_context, status=BulkActionStatus.CANCELED)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"excludeSubruns": False},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["SUCCESS"], "excludeSubruns": False},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["FAILURE"], "excludeSubruns": False},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["CANCELING"], "excludeSubruns": False},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"statuses": ["CANCELED"], "excludeSubruns": False},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 0
+
     def test_get_runs_feed_filter_create_time(self, graphql_context):
         nothing_created_ts = get_current_timestamp()
         time.sleep(CREATE_DELAY)
@@ -714,7 +878,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         repository = code_location.get_repository("test_repo")
 
         partition_set_origin = RemotePartitionSetOrigin(
-            repository_origin=repository.get_external_origin(),
+            repository_origin=repository.get_remote_origin(),
             partition_set_name="foo_partition",
         )
         for _ in range(3):
@@ -726,7 +890,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             _create_run_for_backfill(graphql_context, backfill_id, job_name="foo")
 
         partition_set_origin = RemotePartitionSetOrigin(
-            repository_origin=repository.get_external_origin(),
+            repository_origin=repository.get_remote_origin(),
             partition_set_name="bar_partition",
         )
         for _ in range(3):
@@ -880,6 +1044,42 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"runIds": [run.run_id]},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+    def test_get_runs_feed_filters_that_dont_apply_to_backfills_and_show_subruns(
+        self, graphql_context
+    ):
+        run = _create_run(graphql_context)
+        time.sleep(CREATE_DELAY)
+        _create_backfill(graphql_context)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": {"excludeSubruns": False},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"runIds": [run.run_id], "excludeSubruns": False},
             },
         )
         assert not result.errors

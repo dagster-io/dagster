@@ -56,6 +56,7 @@ Hudi
 IAM
 JavaScript
 Jupyter
+JWT
 Lakehouse
 Looker
 MLOps
@@ -94,6 +95,7 @@ SSH
 Secoda
 Snowflake
 Spark
+Tableau
 Tensorflow
 Trino
 Twilio

@@ -8,11 +8,13 @@ on:
       - .github/workflows/build-docs-revamp.yml
       - docs/docs-beta/**
       - examples/docs_beta_snippets/**
+      - docs/sphinx/**
   pull_request:
     paths:
       - docs/docs-beta/**
       - examples/docs_beta_snippets/**
       - .github/workflows/build-docs-revamp.yml
+      - docs/sphinx/**
 
 concurrency:
   group: ${{ github.workflow}}-${{github.ref}}

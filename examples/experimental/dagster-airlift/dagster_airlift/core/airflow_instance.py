@@ -2,23 +2,20 @@ import datetime
 import json
 import time
 from abc import ABC
-from functools import cached_property
 from typing import Any, Dict, List, Sequence
 
 import requests
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
+from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
 from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
     load_migration_state_from_yaml,
 )
 from dagster_airlift.utils import get_local_migration_state_dir
-
-from .utils import convert_to_valid_dagster_name
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
@@ -153,6 +150,26 @@ class AirflowInstance:
             raise DagsterError(
                 f"Failed to fetch task instance for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
+
+    def get_task_infos(self, *, dag_id: str) -> List["TaskInfo"]:
+        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags/{dag_id}/tasks")
+
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch task infos for {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
+        dag_json = response.json()
+        webserver_url = self.auth_backend.get_webserver_url()
+        return [
+            TaskInfo(
+                webserver_url=webserver_url,
+                dag_id=dag_id,
+                metadata=task_data,
+                task_id=task_data["task_id"],
+            )
+            for task_data in dag_json["tasks"]
+        ]
 
     def get_task_info(self, *, dag_id: str, task_id: str) -> "TaskInfo":
         response = self.auth_backend.get_session().get(
@@ -310,43 +327,6 @@ class AirflowInstance:
                 f"Failed to delete run for {dag_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
         return None
-
-
-@record
-class DagInfo:
-    webserver_url: str
-    dag_id: str
-    metadata: Dict[str, Any]
-
-    @property
-    def url(self) -> str:
-        return f"{self.webserver_url}/dags/{self.dag_id}"
-
-    @cached_property
-    def dagster_safe_dag_id(self) -> str:
-        """Name based on the dag_id that is safe to use in dagster."""
-        return convert_to_valid_dagster_name(self.dag_id)
-
-    @property
-    def dag_asset_key(self) -> AssetKey:
-        # Conventional asset key representing a successful run of an airfow dag.
-        return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
-
-    @property
-    def file_token(self) -> str:
-        return self.metadata["file_token"]
-
-
-@record
-class TaskInfo:
-    webserver_url: str
-    dag_id: str
-    task_id: str
-    metadata: Dict[str, Any]
-
-    @property
-    def dag_url(self) -> str:
-        return f"{self.webserver_url}/dags/{self.dag_id}"
 
 
 @record

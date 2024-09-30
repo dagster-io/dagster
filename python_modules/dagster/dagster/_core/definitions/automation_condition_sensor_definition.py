@@ -4,6 +4,9 @@ from typing import Any, Mapping, Optional, cast
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
@@ -14,9 +17,7 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.definitions.utils import check_valid_name, normalize_tags
 
 
-def evaluate_automation_conditions(
-    sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext
-):
+def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
     from dagster._core.definitions.automation_tick_evaluation_context import (
         AutomationTickEvaluationContext,
     )
@@ -35,10 +36,11 @@ def evaluate_automation_conditions(
         instance=context.instance,
         asset_graph=asset_graph,
         cursor=cursor,
-        materialize_run_tags=context.instance.auto_materialize_run_tags,
+        materialize_run_tags=sensor_def.run_tags,
         observe_run_tags={},
         auto_observe_asset_keys=set(),
         asset_selection=sensor_def.asset_selection,
+        default_condition=sensor_def.default_condition,
         logger=context.log,
     ).evaluate()
 
@@ -51,7 +53,7 @@ def evaluate_automation_conditions(
 
 def not_supported(context) -> None:
     raise NotImplementedError(
-        "Automation policy sensors cannot be evaluated like regular user-space sensors."
+        "Automation condition sensors cannot be evaluated like regular user-space sensors."
     )
 
 
@@ -88,14 +90,21 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         **kwargs,
     ):
         self._user_code = kwargs.get("user_code", False)
+        self._default_condition = check.opt_inst_param(
+            kwargs.get("default_condition"), "default_condition", AutomationCondition
+        )
+        check.param_invariant(
+            not (self._default_condition and not self._user_code),
+            "default_condition",
+            "Setting a `default_condition` for a non-user-code AutomationConditionSensorDefinition is not supported.",
+        )
+
         self._run_tags = normalize_tags(run_tags).tags
 
         super().__init__(
             name=check_valid_name(name),
             job_name=None,
-            evaluation_fn=partial(evaluate_automation_conditions, sensor_def=self)
-            if self._user_code
-            else not_supported,
+            evaluation_fn=partial(_evaluate, self) if self._user_code else not_supported,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=None,
@@ -113,6 +122,10 @@ class AutomationConditionSensorDefinition(SensorDefinition):
     @property
     def asset_selection(self) -> AssetSelection:
         return cast(AssetSelection, super().asset_selection)
+
+    @property
+    def default_condition(self) -> Optional[AutomationCondition]:
+        return self._default_condition
 
     @property
     def sensor_type(self) -> SensorType:

@@ -304,7 +304,7 @@ def test_submit_run():
             run = create_run_for_test(
                 instance=instance,
                 job_name=external_job.name,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
