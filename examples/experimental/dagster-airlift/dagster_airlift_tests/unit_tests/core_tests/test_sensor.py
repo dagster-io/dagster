@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
 import mock
+import pytest
+import pytz
 from dagster import (
     AssetCheckKey,
     AssetKey,
@@ -11,10 +13,15 @@ from dagster import (
     asset_check,
     build_sensor_context,
 )
+from dagster._check.functions import CheckError
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
+from dagster_airlift.core import dag_defs, task_defs
+from dagster_airlift.core.load_defs import build_defs_from_airflow_instance
 from dagster_airlift.core.sensor import AirflowPollingSensorCursor
+from dagster_airlift.test.airflow_test_instance import make_dag_run, make_instance
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_expected_key_order,
@@ -344,3 +351,265 @@ def test_no_runs(init_load_context: None, instance: DagsterInstance) -> None:
         assert new_cursor.dag_query_offset == 0
         assert not result.asset_events
         assert not result.run_requests
+
+
+def test_default_time_partitioned_asset(init_load_context: None) -> None:
+    """Test that a task instance for a time-partitioned asset is correctly ingested."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance(
+            dag_and_task_structure={
+                "dag": ["task"],
+            },
+            dag_runs=[
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 2, 5, tzinfo=timezone.utc),
+                    end_date=datetime(2021, 1, 2, 6, tzinfo=timezone.utc),
+                    logical_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                )
+            ],
+        ),
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc)
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 2, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(repository_def=defs.get_repository_def())
+        result = sensor(sensor_context)
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 2
+        assert_expected_key_order(result.asset_events, ["a", "airflow_instance/dag/dag"])
+        a_asset_mat = result.asset_events[0]
+        assert isinstance(a_asset_mat, AssetMaterialization)
+        # We expect the partition to match the logical date.
+        assert a_asset_mat.partition == "2021-01-01"
+
+
+def test_timezones_mismatch_partitioned_asset(init_load_context: None) -> None:
+    """We expect that timezones should match for the logical date and the passed-in partitions definition."""
+    instance_with_pacific_run = make_instance(
+        dag_and_task_structure={
+            "dag": ["task"],
+        },
+        dag_runs=[
+            make_dag_run(
+                dag_id="dag",
+                run_id="run-dag",
+                start_date=datetime(2021, 1, 2, 5, tzinfo=pytz.timezone("US/Pacific")),
+                end_date=datetime(2021, 1, 2, 6, tzinfo=pytz.timezone("US/Pacific")),
+                logical_date=datetime(2021, 1, 1, tzinfo=pytz.timezone("US/Pacific")),
+            )
+        ],
+    )
+    # We have a dag run whose logical date aligns with the partition definition, except for the timezone.
+    # As a result, we should expect an error, since there is no partition window bounded at this exact timestamp.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance_with_pacific_run,
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=pytz.timezone("US/Eastern")),
+                                timezone="US/Eastern",
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    # Freeze at a time s.t. the run will be processed.
+    with freeze_time(datetime(2021, 1, 2, 6, tzinfo=pytz.timezone("US/Pacific"))):
+        sensor_context = build_sensor_context(repository_def=defs.get_repository_def())
+        with pytest.raises(CheckError, match="does not match"):
+            sensor(sensor_context)
+
+
+def test_before_start_of_partitioned_asset(init_load_context: None) -> None:
+    """We expect to throw an error if there is no matching partition after the start date."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance(
+            dag_and_task_structure={
+                "dag": ["task"],
+            },
+            dag_runs=[
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 1, 5, tzinfo=timezone.utc),
+                    end_date=datetime(2021, 1, 1, 6, tzinfo=timezone.utc),
+                    logical_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                )
+            ],
+        ),
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                # Partitions definition starts after the logical date.
+                                start_date=datetime(2021, 1, 2, tzinfo=timezone.utc)
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(repository_def=defs.get_repository_def())
+        with pytest.raises(CheckError, match="before the start of the partitions definition"):
+            sensor(sensor_context)
+
+
+def test_logical_date_mismatch(init_load_context: None) -> None:
+    """Test a logical date which does not align with the partition definition due to date mismatch."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance(
+            dag_and_task_structure={
+                "dag": ["task"],
+            },
+            dag_runs=[
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 1, 5, tzinfo=timezone.utc),
+                    end_date=datetime(2021, 1, 1, 6, tzinfo=timezone.utc),
+                    # Logical date isn't aligned with midnight.
+                    logical_date=datetime(2021, 1, 1, 3, tzinfo=timezone.utc),
+                )
+            ],
+        ),
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc)
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(repository_def=defs.get_repository_def())
+        with pytest.raises(CheckError, match="match a partition"):
+            sensor(sensor_context)
+
+
+def test_partition_offset_mismatch(init_load_context: None) -> None:
+    """Test that partition offsets are respected when determining the partition corresponding to a logical date."""
+    instance = make_instance(
+        dag_and_task_structure={
+            "dag": ["task"],
+        },
+        dag_runs=[
+            make_dag_run(
+                dag_id="dag",
+                run_id="run-dag",
+                start_date=datetime(2021, 1, 1, 5, tzinfo=timezone.utc),
+                end_date=datetime(2021, 1, 1, 6, tzinfo=timezone.utc),
+                # Logical date is 3 AM.
+                logical_date=datetime(2021, 1, 1, 3, tzinfo=timezone.utc),
+            )
+        ],
+    )
+
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance,
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                                hour_offset=6,
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    # Due to differing hours offset, we expect an error to throw.
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(repository_def=defs.get_repository_def())
+        with pytest.raises(CheckError, match="match a partition"):
+            sensor(sensor_context)
+
+    # now, align the offset and expect success.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance,
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                                hour_offset=3,
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(repository_def=defs.get_repository_def())
+        result = sensor(sensor_context)
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 2
+        assert_expected_key_order(result.asset_events, ["a", "airflow_instance/dag/dag"])
+        a_asset_mat = result.asset_events[0]
+        assert isinstance(a_asset_mat, AssetMaterialization)
+        # We expect the partition to match the logical date.
+        assert a_asset_mat.partition == "2021-01-01"

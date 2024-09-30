@@ -343,6 +343,9 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     def get_check_spec(self, key: AssetCheckKey) -> AssetCheckSpec:
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
 
+    def get_asset_spec(self, key: AssetKey) -> AssetSpec:
+        return self.assets_def_for_key(key).get_asset_spec(key)
+
 
 def executable_in_same_run(
     asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
