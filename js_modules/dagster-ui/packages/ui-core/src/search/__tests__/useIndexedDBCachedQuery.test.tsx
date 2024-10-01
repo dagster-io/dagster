@@ -31,10 +31,8 @@ jest.mock('idb-lru-cache', () => {
   return {
     cache: jest.fn(() => {
       if (mockShouldThrowError) {
-        console.log('throwing');
         throw new Error('Internal error opening backing store for indexedDB.open.');
       }
-      console.log('not throwing');
       return mockedCache;
     }),
   };
@@ -89,7 +87,6 @@ describe('useIndexedDBCachedQuery', () => {
         });
 
         it('should use cached data if available and version matches', async () => {
-          console.log('in test', {throwingError});
           if (!throwingError) {
             mockCache().has.mockResolvedValue(true);
             mockCache().get.mockResolvedValue({value: {data: 'test', version: 1}});
