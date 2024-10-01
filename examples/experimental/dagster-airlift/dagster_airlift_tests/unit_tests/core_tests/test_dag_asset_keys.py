@@ -1,6 +1,6 @@
 from dagster._core.definitions.utils import check_valid_name
-from dagster_airlift.core.airflow_defs_data import make_default_dag_asset_key
 from dagster_airlift.core.airflow_instance import DagInfo
+from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 
 INSTANCE_NAME = "airflow_instance"
 

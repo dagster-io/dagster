@@ -25,16 +25,16 @@ from dagster_airlift.core import (
     dag_defs,
     task_defs,
 )
-from dagster_airlift.core.airflow_defs_data import (
-    key_for_automapped_task_asset,
-    make_default_dag_asset_key,
-)
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 from dagster_airlift.core.serialization.compute import (
     build_airlift_metadata_mapping_info,
     compute_serialized_data,
     is_mapped_asset_spec,
+)
+from dagster_airlift.core.serialization.defs_construction import (
+    key_for_automapped_task_asset,
+    make_default_dag_asset_key,
 )
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
