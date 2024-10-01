@@ -346,7 +346,9 @@ def project_prepare_and_package_command(
         ),
     ],
 ) -> None:
-    """This command will invoke ``prepare_and_package`` on :py:class:`DbtProject` found in the target module or file."""
+    """This command will invoke ``prepare_and_package`` on :py:class:`DbtProject` found in the target module or file.
+    Note that this command runs `dbt deps` and `dbt parse`.
+    """
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )
