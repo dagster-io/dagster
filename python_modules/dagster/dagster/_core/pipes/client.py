@@ -15,7 +15,7 @@ from dagster._annotations import public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.pipes.context import PipesExecutionResult, PipesSession
+from dagster._core.pipes.context import PipesExecutionResult, PipesLaunchedData, PipesSession
 
 if TYPE_CHECKING:
     from dagster._core.pipes.context import PipesMessageHandler
@@ -164,10 +164,20 @@ class PipesMessageReader(ABC):
 
     def on_opened(self, opened_payload: PipesOpenedData) -> None:
         """Hook called when the external process has successfully launched and returned an opened
-        payload.
-
-        By default this is a no-op. Specific message readers can override this to action information
+        payload. By default, this is a no-op. Specific message readers can override this to consume information
         that can only be obtained from the external process.
+        """
+
+    def on_launched(self, launched_payload: PipesLaunchedData) -> None:
+        """Hook that is called if `PipesSession.report_launched()` is called. By default, this
+        is a no-op. Specific message readers can override this to consume information that is only
+        available after the external process has been launched.
+
+        This hook is not necessarily called in every pipes session. It is useful primarily when we wish to
+        condition the behavior of the message reader on some parameter that is only available after
+        external process launch (such as a run id in the external system).
+        The code calling `open_pipes_session()` is responsible for calling `PipesSession.report_launched()`
+        if using a message reader that accesses `launched_payload`.
         """
 
     @abstractmethod

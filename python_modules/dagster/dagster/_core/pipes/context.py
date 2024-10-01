@@ -3,7 +3,18 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import cached_property
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
@@ -54,6 +65,14 @@ if TYPE_CHECKING:
 
 
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
+
+
+class PipesLaunchedData(TypedDict):
+    """Payload generated in the orchestration process after external process startup
+    containing arbitrary information about the external process.
+    """
+
+    extras: Mapping[str, Any]
 
 
 class PipesMessageHandler:
@@ -238,6 +257,11 @@ class PipesMessageHandler:
                 error=serializable_error_info_from_exc_info(exc_info),
             ),
         )
+
+    def on_launched(self, launched_payload: PipesLaunchedData) -> None:
+        """Hook that is called if `PipesSession.report_launched()` is called."""
+        self._context.log.info("[pipes] additional launch_payload reported")
+        self._message_reader.on_launched(launched_payload)
 
 
 @dataclass
@@ -427,6 +451,18 @@ class PipesSession:
         Returns: Sequence[Any]
         """
         return self.message_handler.get_custom_messages()
+
+    def report_launched(self, launched_payload: PipesLaunchedData):
+        """Submit arbitrary information about the launched process to Pipes.
+
+        This hook is not necessarily called in every pipes session. It is useful primarily when we wish to
+        condition the behavior of Pipes on some parameter that is only available after
+        external process launch (such as a run id in the external system). The code calling `open_pipes_session()`
+        is responsible for calling `PipesSession.report_launched()`.
+
+        Passes the `launched_payload` to the message reader's `on_launched` method.
+        """
+        self.message_handler.on_launched(launched_payload)
 
 
 def build_external_execution_context_data(
