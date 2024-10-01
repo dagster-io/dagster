@@ -54,9 +54,9 @@ from dagster._core.remote_representation.external import (
 )
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
+    RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
-    external_repository_data_from_def,
     partition_set_snap_name_for_job_name,
 )
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
@@ -398,7 +398,7 @@ class InProcessCodeLocation(CodeLocation):
         self._repositories: Dict[str, ExternalRepository] = {}
         for repo_name, repo_def in self._loaded_repositories.definitions_by_name.items():
             self._repositories[repo_name] = ExternalRepository(
-                external_repository_data_from_def(repo_def),
+                RepositorySnap.from_def(repo_def),
                 RepositoryHandle.from_location(repository_name=repo_name, code_location=self),
                 instance=instance,
             )

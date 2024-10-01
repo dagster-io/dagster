@@ -14,7 +14,7 @@ from dagster._core.definitions.automation_condition_sensor_definition import (
 )
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import instance_for_test
 
@@ -94,7 +94,7 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
         repository_name="bar_repo",
     )
     external_repo = ExternalRepository(
-        external_repository_data_from_def(
+        RepositorySnap.from_def(
             defs.get_repository_def(),
         ),
         repository_handle=repo_handle,
@@ -131,7 +131,7 @@ def test_default_auto_materialize_sensors_without_observable(
     )
 
     external_repo = ExternalRepository(
-        external_repository_data_from_def(
+        RepositorySnap.from_def(
             defs_without_observables.get_repository_def(),
         ),
         repository_handle=repo_handle,
@@ -158,7 +158,7 @@ def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_s
 
     # If not opted in, no default sensors are created
     external_repo = ExternalRepository(
-        external_repository_data_from_def(
+        RepositorySnap.from_def(
             defs.get_repository_def(),
         ),
         repository_handle=repo_handle,
@@ -192,7 +192,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
     )
 
     external_repo = ExternalRepository(
-        external_repository_data_from_def(
+        RepositorySnap.from_def(
             defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,
@@ -262,7 +262,7 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
     )
 
     external_repo = ExternalRepository(
-        external_repository_data_from_def(
+        RepositorySnap.from_def(
             defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,

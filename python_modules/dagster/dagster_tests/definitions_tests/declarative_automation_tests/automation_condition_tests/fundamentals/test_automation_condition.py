@@ -5,10 +5,7 @@ from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, ass
 from dagster._check.functions import CheckError
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.remote_representation.external_data import (
-    RepositorySnap,
-    external_repository_data_from_def,
-)
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 
@@ -95,7 +92,7 @@ def test_serialize_definitions_with_asset_condition() -> None:
     assert isinstance(serialized, str)
 
     serialized = serialize_value(
-        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
 
@@ -114,7 +111,7 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
         return 0
 
     serialized = serialize_value(
-        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
     deserialized = deserialize_value(serialized)
