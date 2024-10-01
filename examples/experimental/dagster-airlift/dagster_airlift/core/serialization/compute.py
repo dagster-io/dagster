@@ -175,6 +175,7 @@ def compute_serialized_data(
     mapping_info = build_airlift_metadata_mapping_info(defs)
     fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
     return SerializedAirflowDefinitionsData(
+        instance_name=airflow_instance.name,
         key_scoped_data_items=[
             KeyScopedDataItem(asset_key=k, mapped_tasks=v)
             for k, v in fetched_airflow_data.all_mapped_tasks.items()
