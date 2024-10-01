@@ -1,8 +1,8 @@
-package io.quicktype;
+package dagster.pipes;
 
 import com.fasterxml.jackson.annotation.*;
 
-public class PartitionKeyRange {
+public class PartitionTimeWindow {
     private String end;
     private String start;
 

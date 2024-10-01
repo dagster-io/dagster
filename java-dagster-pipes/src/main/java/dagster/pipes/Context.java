@@ -1,4 +1,4 @@
-package io.quicktype;
+package dagster.pipes;
 
 import com.fasterxml.jackson.annotation.*;
 import java.util.Map;

@@ -1,10 +1,13 @@
-package io.quicktype;
+package dagster.pipes;
 
 import com.fasterxml.jackson.annotation.*;
 
-public class PurpleException {
-    private ExceptionCause cause;
-    private ExceptionContext context;
+/**
+ * exception that explicitly led to this exception
+ */
+public class CauseCause {
+    private CauseCause cause;
+    private CauseContext context;
     private String message;
     private String name;
     private String[] stack;
@@ -13,17 +16,17 @@ public class PurpleException {
      * exception that explicitly led to this exception
      */
     @JsonProperty("cause")
-    public ExceptionCause getCause() { return cause; }
+    public CauseCause getCause() { return cause; }
     @JsonProperty("cause")
-    public void setCause(ExceptionCause value) { this.cause = value; }
+    public void setCause(CauseCause value) { this.cause = value; }
 
     /**
      * exception that being handled when this exception was raised
      */
     @JsonProperty("context")
-    public ExceptionContext getContext() { return context; }
+    public CauseContext getContext() { return context; }
     @JsonProperty("context")
-    public void setContext(ExceptionContext value) { this.context = value; }
+    public void setContext(CauseContext value) { this.context = value; }
 
     @JsonProperty("message")
     public String getMessage() { return message; }

@@ -1,13 +1,11 @@
-package io.quicktype;
+package dagster.pipes;
 
 import com.fasterxml.jackson.annotation.*;
 
 /**
- * exception that being handled when this exception was raised
- *
  * exception that explicitly led to this exception
  */
-public class ExceptionContext {
+public class ExceptionCause {
     private CauseCause cause;
     private CauseContext context;
     private String message;
