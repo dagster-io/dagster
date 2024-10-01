@@ -1,7 +1,7 @@
 tasks: 
   - id: first_task 
-    migrated: True
+    proxied: True
   - id: second_task 
-    migrated: False
+    proxied: False
   - id: third_task 
-    migrated: True
+    proxied: True

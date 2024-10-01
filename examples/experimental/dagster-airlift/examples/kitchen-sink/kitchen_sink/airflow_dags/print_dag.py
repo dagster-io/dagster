@@ -3,8 +3,8 @@ from pathlib import Path
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from dagster_airlift.in_airflow import mark_as_dagster_migrating
-from dagster_airlift.migration_state import load_migration_state_from_yaml
+from dagster_airlift.in_airflow import proxying_to_dagster
+from dagster_airlift.proxied_state import load_proxied_state_from_yaml
 
 
 def print_hello() -> None:
@@ -48,7 +48,7 @@ with DAG(
     PythonOperator(task_id="asset_one_daily", python_callable=print_hello)
 
 
-mark_as_dagster_migrating(
-    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+proxying_to_dagster(
+    proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
     global_vars=globals(),
 )

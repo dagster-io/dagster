@@ -3,8 +3,8 @@ from pathlib import Path
 import requests
 from airflow import DAG
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import BaseProxyToDagsterOperator, mark_as_dagster_migrating
-from dagster_airlift.migration_state import load_migration_state_from_yaml
+from dagster_airlift.in_airflow import BaseProxyToDagsterOperator, proxying_to_dagster
+from dagster_airlift.proxied_state import load_proxied_state_from_yaml
 
 
 class CustomProxyToDagsterOperator(BaseProxyToDagsterOperator):
@@ -25,8 +25,8 @@ dag = DAG(
 )
 
 # At the end of your dag file
-mark_as_dagster_migrating(
+proxying_to_dagster(
     global_vars=globals(),
-    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+    proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
     dagster_operator_klass=CustomProxyToDagsterOperator,
 )

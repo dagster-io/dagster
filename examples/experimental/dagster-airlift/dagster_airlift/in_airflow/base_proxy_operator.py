@@ -35,7 +35,7 @@ def matched_dag_id_task_id(asset_node: dict, dag_id: str, task_id: str) -> bool:
 class BaseProxyToDagsterOperator(BaseOperator, ABC):
     """Interface for a DagsterOperator.
 
-    This interface is used to create a custom operator that will be used to replace the original airflow operator when a task is marked as migrated.
+    This interface is used to create a custom operator that will be used to replace the original airflow operator when a task is marked as proxied.
     """
 
     @abstractmethod

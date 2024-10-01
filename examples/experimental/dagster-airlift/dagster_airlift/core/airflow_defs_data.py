@@ -24,22 +24,22 @@ from dagster_airlift.core.utils import airflow_kind_dict, convert_to_valid_dagst
 
 
 def tags_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, str]:
-    all_not_migrated = all(not task.migrated for task in tasks)
+    all_not_migrated = all(not task.proxied for task in tasks)
     # Only show the airflow kind if the asset is orchestrated exlusively by airflow
     return airflow_kind_dict() if all_not_migrated else {}
 
 
 def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, Any]:
     mapped_task = tasks[0]
-    task_info, migration_state = mapped_task.task_info, mapped_task.migrated
+    task_info, proxied_state = mapped_task.task_info, mapped_task.proxied
     task_level_metadata = {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
         "Dag ID": task_info.dag_id,
         "Link to DAG": UrlMetadataValue(task_info.dag_url),
     }
-    task_level_metadata[
-        "Computed in Task ID" if not migration_state else "Triggered by Task ID"
-    ] = task_info.task_id
+    task_level_metadata["Computed in Task ID" if not proxied_state else "Triggered by Task ID"] = (
+        task_info.task_id
+    )
     return task_level_metadata
 
 
@@ -162,8 +162,8 @@ class AirflowDefinitionsData:
     def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
         return set(self.serialized_data.dag_datas[dag_id].task_handle_data.keys())
 
-    def migration_state_for_task(self, dag_id: str, task_id: str) -> Optional[bool]:
-        return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].migration_state
+    def proxied_state_for_task(self, dag_id: str, task_id: str) -> Optional[bool]:
+        return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].proxied_state
 
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
         return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].asset_keys_in_task

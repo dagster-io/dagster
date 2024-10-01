@@ -1,4 +1,4 @@
-from ..migration_state import load_migration_state_from_yaml as load_migration_state_from_yaml
+from ..proxied_state import load_proxied_state_from_yaml as load_proxied_state_from_yaml
 from .basic_auth import BasicAuthBackend as BasicAuthBackend
 from .dag_defs import (
     dag_defs as dag_defs,

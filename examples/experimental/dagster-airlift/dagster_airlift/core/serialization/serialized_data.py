@@ -54,7 +54,7 @@ class MappedAirflowTaskData:
     # remove if we keep it in SerializedDataData
     task_info: TaskInfo
     task_handle: TaskHandle
-    migrated: Optional[bool]
+    proxied: Optional[bool]
 
 
 ###################################################################################################
@@ -108,5 +108,5 @@ class SerializedAirflowDefinitionsData:
 class SerializedTaskHandleData:
     """A record containing known data about a given airflow task handle."""
 
-    migration_state: Optional[bool]
+    proxied_state: Optional[bool]
     asset_keys_in_task: AbstractSet[AssetKey]

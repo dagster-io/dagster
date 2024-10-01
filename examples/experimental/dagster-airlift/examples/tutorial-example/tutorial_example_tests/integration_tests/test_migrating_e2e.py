@@ -19,7 +19,7 @@ def test_migration_status(
     airflow_instance,
     mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
 ) -> None:
-    """Iterates through various combinations of marking tasks as migrated and checks that the migration state is updated correctly in
+    """Iterates through various combinations of marking tasks as proxied and checks that the proxied state is updated correctly in
     both the Airflow DAGs and the Dagster asset definitions.
     """
     instance = AirflowInstance(
@@ -35,14 +35,14 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert not migration_state.get_migration_state_for_task(
+        proxied_state = instance.get_proxied_state()
+        assert not proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
@@ -51,14 +51,14 @@ def test_migration_status(
         dag = instance.list_dags()[0]
 
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert migration_state.get_migration_state_for_task(
+        proxied_state = instance.get_proxied_state()
+        assert proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
@@ -66,14 +66,14 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert not migration_state.get_migration_state_for_task(
+        proxied_state = instance.get_proxied_state()
+        assert not proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert migration_state.get_migration_state_for_task(
+        assert proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert not migration_state.get_migration_state_for_task(
+        assert not proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
@@ -81,14 +81,14 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        migration_state = instance.get_migration_state()
-        assert migration_state.get_migration_state_for_task(
+        proxied_state = instance.get_proxied_state()
+        assert proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="load_raw_customers"
         )
-        assert migration_state.get_migration_state_for_task(
+        assert proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="build_dbt_models"
         )
-        assert migration_state.get_migration_state_for_task(
+        assert proxied_state.get_task_proxied_state(
             dag_id="rebuild_customers_list", task_id="export_customers"
         )
 
@@ -100,7 +100,7 @@ def setup_dagster_defs_path(
     local_env,
     mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
 ) -> Iterable[str]:
-    # Mark only the build_dbt_models task as migrated
+    # Mark only the build_dbt_models task as proxied
     with mark_tasks_migrated({"load_raw_customers", "build_dbt_models", "export_customers"}):
         yield str(makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "migrate.py")
 
@@ -122,7 +122,7 @@ def test_migrate_runs_properly_in_dagster(airflow_instance: None, dagster_dev: N
 
     poll_for_materialization(instance, target=all_keys)
 
-    # Ensure migrated tasks are run in Dagster
+    # Ensure proxied tasks are run in Dagster
     wait_for_all_runs_to_complete(instance)
     runs = instance.get_runs()
     assert len(runs) == 1

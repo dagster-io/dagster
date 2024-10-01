@@ -14,7 +14,7 @@ from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow
 
 from perf_harness.shared.constants import CONSTANTS_FILE, get_perf_output_file
-from perf_harness.shared.utils import scaffold_migration_state
+from perf_harness.shared.utils import scaffold_proxied_state
 
 MAKEFILE_DIR = Path(__file__).parent.parent
 DAGSTER_HOME = MAKEFILE_DIR / ".dagster_home"
@@ -60,8 +60,8 @@ def main() -> None:
     with modify_constants(num_dags, num_tasks, num_assets), environ(
         {"DAGSTER_HOME": str(DAGSTER_HOME)}
     ):
-        print("Scaffolding migration state...")
-        scaffold_migration_state(num_dags=num_dags, num_tasks=num_tasks, migration_state=True)
+        print("Scaffolding proxied state...")
+        scaffold_proxied_state(num_dags=num_dags, num_tasks=num_tasks, proxied_state=True)
 
         print("Importing airflow defs...")
         from perf_harness.airflow_dags.dags import (
@@ -72,7 +72,7 @@ def main() -> None:
 
         lines.append(f"Total airflow dags load time: {total_load_time:.4f} seconds\n")
         lines.append(f"Airflow defs import time: {import_time:.4f} seconds\n")
-        lines.append(f"Mark as dagster migrating time: {mark_as_dagster_time:.4f} seconds\n")
+        lines.append(f"Proxying to dagster time: {mark_as_dagster_time:.4f} seconds\n")
 
         print("Initializing airflow...")
         # Take in as an argument the number of tasks and the number of dags.
@@ -128,7 +128,7 @@ def main() -> None:
 
             module_name_to_defs_and_instance["observe"] = (defs, airflow_instance)
 
-            print("Loading migrating defs...")
+            print("Loading migrated defs...")
             migrate_defs_import_start_time = time.time()
             from perf_harness.dagster_defs.migrate import defs
 
