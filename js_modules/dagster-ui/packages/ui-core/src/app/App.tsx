@@ -1,11 +1,13 @@
-import {Alert, Box} from '@dagster-io/ui-components';
+import {Alert, Box, ButtonLink} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
-import {useFeatureFlags} from './Flags';
+import {getFeatureFlags, setFeatureFlags, useFeatureFlags} from './Flags';
 import {LayoutContext} from './LayoutProvider';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
+import {LeftNav} from '../nav/LeftNav';
 
 interface Props {
   banner?: React.ReactNode;
@@ -23,42 +25,16 @@ export const App = ({banner, children}: Props) => {
   );
 
   const onClickMain = React.useCallback(() => {
-    if (nav.isSmallScreen) {
-      nav.close();
-    }
+    nav.close();
   }, [nav]);
 
   return (
     <Container>
-      {flagSettingsPage ? null : <LeftNav />}
-      <Main
-        $smallScreen={nav.isSmallScreen}
-        $navOpen={nav.isOpen && !flagSettingsPage}
-        onClick={onClickMain}
-      >
+      <LeftNav />
+      <Main $navOpen={nav.isOpen} onClick={onClickMain}>
         <div>{banner}</div>
         {flagSettingsPage && !didDismissNavAlert ? (
-          <Box padding={8} border="top-and-bottom">
-            <Alert
-              title={
-                <>
-                  <span>Experimental navigation is enabled.</span>
-                  <span style={{fontWeight: 'normal'}}>
-                    {' '}
-                    We&apos;re testing some changes to the navigation to make it easier to explore.{' '}
-                    <a
-                      href="https://github.com/dagster-io/dagster/discussions/21370"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Learn more and share feedback
-                    </a>
-                  </span>
-                </>
-              }
-              onClose={() => setDidDismissNavAlert(true)}
-            />
-          </Box>
+          <ExperimentalNavAlert setDidDismissNavAlert={setDidDismissNavAlert} />
         ) : null}
         <ChildContainer>{children}</ChildContainer>
       </Main>
@@ -66,25 +42,58 @@ export const App = ({banner, children}: Props) => {
   );
 };
 
-const Main = styled.div<{$smallScreen: boolean; $navOpen: boolean}>`
+interface AlertProps {
+  setDidDismissNavAlert: (didDismissNavAlert: boolean) => void;
+}
+
+const ExperimentalNavAlert = (props: AlertProps) => {
+  const {setDidDismissNavAlert} = props;
+  const [flags] = useState<FeatureFlag[]>(() => getFeatureFlags());
+
+  const revertToLegacyNavigation = () => {
+    const copy = new Set(flags);
+    copy.delete(FeatureFlag.flagSettingsPage);
+    setFeatureFlags(Array.from(copy));
+    setDidDismissNavAlert(true);
+    window.location.reload();
+  };
+
+  return (
+    <Box padding={8} border="top-and-bottom">
+      <Alert
+        title={
+          <>
+            <span>Experimental navigation:</span>
+            <span style={{fontWeight: 'normal'}}>
+              {' '}
+              We&apos;re testing some changes to make it easier to explore jobs and automations.{' '}
+              <a
+                href="https://github.com/dagster-io/dagster/discussions/21370"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Share feedback
+              </a>{' '}
+              or{' '}
+              <ButtonLink underline="always" onClick={revertToLegacyNavigation}>
+                revert to legacy navigation
+              </ButtonLink>
+              .
+            </span>
+          </>
+        }
+        onClose={() => setDidDismissNavAlert(true)}
+      />
+    </Box>
+  );
+};
+
+const Main = styled.div<{$navOpen: boolean}>`
   height: 100%;
   z-index: 1;
   display: flex;
   flex-direction: column;
-
-  ${({$navOpen, $smallScreen}) => {
-    if ($smallScreen || !$navOpen) {
-      return `
-        margin-left: 0;
-        width: 100%;
-      `;
-    }
-
-    return `
-      margin-left: ${LEFT_NAV_WIDTH}px;
-      width: calc(100% - ${LEFT_NAV_WIDTH}px);
-    `;
-  }}
+  width: 100%;
 `;
 
 const Container = styled.div`
