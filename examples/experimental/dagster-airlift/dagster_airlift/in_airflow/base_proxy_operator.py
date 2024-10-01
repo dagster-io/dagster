@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Set, Tuple, Type
 import requests
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
+from requests import Response
 
 from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_MAPPING_METADATA_KEY
 
@@ -61,6 +62,16 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
     def get_dagster_url(self, context: Context) -> str:
         """Returns the URL for the Dagster instance."""
 
+    def get_valid_graphql_response(self, response: Response, key: str) -> Any:
+        response_json = response.json()
+        if not response_json.get("data"):
+            raise Exception(f"Error in GraphQL request. No data key: {response_json}")
+
+        if key not in response_json["data"]:
+            raise Exception(f"Error in GraphQL request. No {key} key: {response_json}")
+
+        return response_json["data"][key]
+
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
         """Launches runs for the given task in Dagster."""
         session = self._get_validated_session(context)
@@ -74,8 +85,8 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             json={"query": ASSET_NODES_QUERY},
             timeout=3,
         )
-        response_data = response.json()["data"]
-        for asset_node in response_data["assetNodes"]:
+        asset_nodes_data = self.get_valid_graphql_response(response, "assetNodes")
+        for asset_node in asset_nodes_data:
             if matched_dag_id_task_id(asset_node, dag_id, task_id):
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
@@ -118,16 +129,8 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                 # Timeout in seconds
                 timeout=10,
             )
-            response_json = response.json()
-
-            if "data" not in response_json:
-                raise Exception(f"Error in GraphQL request: {response_json}")
-            if not response_json.get("data"):
-                raise Exception(f"Error in GraphQL request: {response_json}")
-            if "launchPipelineExecution" not in response_json.get("data", {}):
-                raise Exception(f"Error in GraphQL request: {response_json}")
-
-            run_id = response.json()["data"]["launchPipelineExecution"]["run"]["id"]
+            launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
+            run_id = launch_data["run"]["id"]
             logger.debug(f"Launched run {run_id}...")
             triggered_runs.append(run_id)
         completed_runs = {}  # key is run_id, value is status
@@ -141,7 +144,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                     # Timeout in seconds
                     timeout=3,
                 )
-                run_status = response.json()["data"]["runOrError"]["status"]
+                run_status = self.get_valid_graphql_response(response, "runOrError")["status"]
                 if run_status in ["SUCCESS", "FAILURE", "CANCELED"]:
                     logger.debug(f"Run {run_id} completed with status {run_status}")
                     completed_runs[run_id] = run_status
