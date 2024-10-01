@@ -403,6 +403,9 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         self.log_modification_time = None
         self.log_path = None
 
+    def can_start(self, params: PipesParams) -> bool:
+        return self._get_log_path(params) is not None
+
     def download_log_chunk(self, params: PipesParams) -> Optional[str]:
         log_path = self._get_log_path(params)
         if log_path is None:
