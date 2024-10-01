@@ -715,11 +715,6 @@ div[class^='announcementBar_'] {
     background-color: var(--theme-color-background-default);
     border: 1px solid var(--theme-color-keyline) !important;
     transition: all .3s ease;
-    &:hover {
-      background-color: var(--theme-color-background-light);
-      border: 1px solid var(--theme-color-border-default) !important;
-      transform: translateY(0px);
-    }  
     
     h2: {
       font-size: 1.5rem;
@@ -728,4 +723,10 @@ div[class^='announcementBar_'] {
       font-weight: 600;
       display: none;
     }
+    
+    &:hover {
+      background-color: var(--theme-color-background-light);
+      border: 1px solid var(--theme-color-border-default) !important;
+      transform: translateY(0px);
+    }  
   }
