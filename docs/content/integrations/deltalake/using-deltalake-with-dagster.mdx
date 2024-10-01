@@ -37,12 +37,9 @@ from dagster_deltalake import LocalConfig
 from dagster_deltalake_pandas import DeltaLakePandasIOManager
 
 from dagster import Definitions
-from . import assets
-
-all_assets = load_assets_from_modules([assets])
 
 defs = Definitions(
-    assets=all_assets,
+    assets=[iris_dataset],
     resources={
         "io_manager": DeltaLakePandasIOManager(
             root_uri="path/to/deltalake",  # required
