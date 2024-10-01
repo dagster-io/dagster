@@ -283,7 +283,7 @@ export const buildAssetPartitionDetailMock = (
 ): MockedResponse<AssetPartitionDetailQuery> => ({
   request: {
     operationName: 'AssetPartitionDetailQuery',
-    variables: {assetKey: {path: ['asset_1']}, partitionKey: Partition},
+    variables: {assetKey: {path: ['asset_1']}, partitionKey: Partition, eventLimit: 10},
     query: ASSET_PARTITION_DETAIL_QUERY,
   },
   result: {

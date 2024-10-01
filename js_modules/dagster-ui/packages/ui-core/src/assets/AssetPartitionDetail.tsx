@@ -46,7 +46,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partitionKey: string}) => {
   const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
     ASSET_PARTITION_DETAIL_QUERY,
-    {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
+    {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey, eventLimit: 10}},
   );
 
   const stale = useQuery<AssetPartitionStaleQuery, AssetPartitionStaleQueryVariables>(
@@ -119,7 +119,11 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
 };
 
 export const ASSET_PARTITION_DETAIL_QUERY = gql`
-  query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
+  query AssetPartitionDetailQuery(
+    $assetKey: AssetKeyInput!
+    $partitionKey: String!
+    $eventLimit: Int!
+  ) {
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
@@ -128,13 +132,13 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
           id
           ...AssetPartitionLatestRunFragment
         }
-        assetMaterializations(partitions: [$partitionKey]) {
+        assetMaterializations(partitions: [$partitionKey], limit: $eventLimit) {
           ... on MaterializationEvent {
             runId
             ...AssetMaterializationFragment
           }
         }
-        assetObservations(partitions: [$partitionKey]) {
+        assetObservations(partitions: [$partitionKey], limit: $eventLimit) {
           ... on ObservationEvent {
             runId
             ...AssetObservationFragment
