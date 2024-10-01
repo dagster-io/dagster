@@ -50,6 +50,7 @@ export type AssetColumnLineageQuery = {
               name: string;
               type: string;
               description: string | null;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
           };
         }
@@ -98,6 +99,7 @@ export type AssetColumnLineageQuery = {
                 name: string;
                 type: string;
                 description: string | null;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
             };
           }
@@ -109,5 +111,4 @@ export type AssetColumnLineageQuery = {
   }>;
 };
 
-export const AssetColumnLineageVersion =
-  'bcb70460f77b88bbbfaec90982f3e99f522d9a4e270e63832684cfde169fabc7';
+export const AssetColumnLineageVersion = 'ce1683cb51cf7ac96c82f05bbf5f1cc2df57ce6c944615109e30dc6d93246dc4';
