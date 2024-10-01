@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 import boto3
 import dagster._check as check
 from dagster import PipesClient
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -67,13 +67,14 @@ def add_configuration(
         configurations.append(configuration)
 
 
+@public
+@experimental
 class PipesEMRClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running jobs on AWS EMR.
 
     Args:
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
-            from the EMR jobs.
-                Recommended to use :py:class:`PipesS3MessageReader` with `expect_s3_message_writer` set to `True`.
+            from the EMR jobs. Recommended to use :py:class:`PipesS3MessageReader` with `expect_s3_message_writer` set to `True`.
         client (Optional[boto3.client]): The boto3 EMR client used to interact with AWS EMR.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into AWS EMR job. Defaults to :py:class:`PipesEnvContextInjector`.
@@ -126,12 +127,11 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         Args:
             context (OpExecutionContext): The context of the currently executing Dagster op or asset.
             run_job_flow_params (Optional[dict]): Parameters for the ``run_job_flow`` boto3 EMR client call.
-                See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr/client/emr.html#emr>`_
+                See `Boto3 EMR API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr/client/emr.html#emr>`_
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:
-            PipesClientCompletedInvocation: Wrapper containing results reported by the external
-            process.
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external process.
         """
         with open_pipes_session(
             context=context,
