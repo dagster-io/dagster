@@ -19,7 +19,7 @@ public class RawValue {
 
     static class Deserializer extends JsonDeserializer<RawValue> {
         @Override
-        public RawValue deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+        public RawValue deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
             RawValue value = new RawValue();
             switch (jsonParser.currentToken()) {
                 case VALUE_NULL:
