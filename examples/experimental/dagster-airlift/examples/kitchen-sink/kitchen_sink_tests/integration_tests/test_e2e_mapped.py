@@ -8,6 +8,7 @@ from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.events.log import EventLogEntry
 from dagster._time import get_current_datetime
+from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 
 from kitchen_sink_tests.integration_tests.conftest import makefile_dir
 
@@ -54,8 +55,8 @@ def test_migrated_dagster_print_materializes(
     }
 
     for dag_id, expected_asset_keys in expected_mats_per_dag.items():
-        run_id = af_instance.trigger_dag(dag_id=dag_id)
-        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
+        airflow_run_id = af_instance.trigger_dag(dag_id=dag_id)
+        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=airflow_run_id, timeout=60)
         dagster_instance = DagsterInstance.get()
 
         dag_asset_key = AssetKey(["my_airflow_instance", "dag", dag_id])
@@ -65,6 +66,20 @@ def test_migrated_dagster_print_materializes(
             mat_event_log_entry = poll_for_materialization(dagster_instance, expected_asset_key)
             assert mat_event_log_entry.asset_materialization
             assert mat_event_log_entry.asset_materialization.asset_key == expected_asset_key
+
+            assert mat_event_log_entry.asset_materialization
+            dagster_run_id = mat_event_log_entry.run_id
+
+            # test for dag run-tag-id
+            dagster_run = dagster_instance.get_run_by_id(dagster_run_id)
+            run_ids = dagster_instance.get_run_ids()
+            assert dagster_run, f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
+            assert (
+                DAG_RUN_ID_TAG_KEY in dagster_run.tags
+            ), f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
+            assert (
+                dagster_run.tags[DAG_RUN_ID_TAG_KEY] == airflow_run_id
+            ), "dagster run tag does not match dag run id"
 
 
 RAW_METADATA_KEY = "Run Metadata (raw)"
@@ -94,8 +109,8 @@ def test_dagster_weekly_daily_materializes(
 
     dag_id = "weekly_dag"
     asset_one = AssetKey("asset_one")
-    run_id = af_instance.trigger_dag(dag_id=dag_id)
-    af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
+    dag_run_id = af_instance.trigger_dag(dag_id=dag_id)
+    af_instance.wait_for_run_completion(dag_id=dag_id, run_id=dag_run_id, timeout=60)
     dagster_instance = DagsterInstance.get()
 
     dag_asset_key = AssetKey(["my_airflow_instance", "dag", dag_id])
@@ -106,8 +121,8 @@ def test_dagster_weekly_daily_materializes(
     assert dag_id_of_mat(weekly_mat_event) == "weekly_dag"
 
     dag_id = "daily_dag"
-    run_id = af_instance.trigger_dag(dag_id=dag_id)
-    af_instance.wait_for_run_completion(dag_id=dag_id, run_id=run_id, timeout=60)
+    dag_run_id = af_instance.trigger_dag(dag_id=dag_id)
+    af_instance.wait_for_run_completion(dag_id=dag_id, run_id=dag_run_id, timeout=60)
 
     start_time = get_current_datetime()
     final_result = None
