@@ -10,7 +10,6 @@ export const PersistentTabProvider = ({children}: {children: React.ReactNode}) =
 
   const windowExists = typeof window !== 'undefined';
   React.useEffect(() => {
-    console.log(windowExists);
     if (windowExists) {
       const ts = localStorage.getItem('persistentTabStates');
       if (ts) {

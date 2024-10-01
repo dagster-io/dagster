@@ -1,7 +1,7 @@
 import {Box, MetadataTable} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {RunStatus} from '../../graphql/types';
 import {StorybookProvider} from '../../testing/StorybookProvider';
@@ -42,22 +42,22 @@ export const Colors = () => {
 };
 
 export const List = () => {
-  const tenDaysAgo = React.useMemo(() => Date.now() - 10 * 24 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
+  const tenDaysAgo = useMemo(() => Date.now() - 10 * 24 * 60 * 60 * 1000, []);
+  const now = useMemo(() => Date.now(), []);
 
   const wrapToFragment = (
     inp: {
       id: string;
       status: RunStatus;
       startTime: number;
+      creationTime: number;
       endTime: number;
     }[],
   ): RunTimeFragment[] =>
     inp.map((r) => ({...r, runId: r.id, updateTime: null, __typename: 'Run'}));
 
   const fakeRepo = 'a_repo.py';
-  const fakeId = React.useCallback(() => faker.datatype.uuid(), []);
-
+  const fakeId = useCallback(() => faker.datatype.uuid(), []);
   return (
     <StorybookProvider apolloProps={{mocks}}>
       <Box flex={{direction: 'column', gap: 8}}>
@@ -87,6 +87,7 @@ export const List = () => {
                   id,
                   runId: id,
                   status: RunStatus.STARTING,
+                  creationTime: Date.now() - (idx + 1) * 60 * 60 * 1000,
                   startTime: Date.now() - (idx + 1) * 60 * 60 * 1000,
                   endTime: Date.now() - idx * 60 * 60 * 1000,
                   updateTime: null,

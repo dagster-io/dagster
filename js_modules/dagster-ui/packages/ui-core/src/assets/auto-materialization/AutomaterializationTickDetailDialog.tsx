@@ -1,41 +1,33 @@
-import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  Subtitle2,
-  Caption,
-  Icon,
-  Spinner,
-  colorTextLight,
-  colorBackgroundDefault,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import {memo, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {Timestamp} from '../../app/time/Timestamp';
-import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
-import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
-import {HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
-import {buildRepoAddress} from '../../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../../workspace/workspacePath';
-import {AssetLink} from '../AssetLink';
-import {
-  AssetKeysDialog,
-  AssetKeysDialogHeader,
-  AssetKeysDialogEmptyState,
-} from '../AutoMaterializePolicyPage/AssetKeysDialog';
-import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
 } from './types/AutomaterializationTickDetailDialog.types';
+import {gql, useQuery} from '../../apollo-client';
+import {Timestamp} from '../../app/time/Timestamp';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
+import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
+import {HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {buildRepoAddress} from '../../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../../workspace/workspacePath';
+import {AssetLink} from '../AssetLink';
+import {
+  AssetKeysDialog,
+  AssetKeysDialogEmptyState,
+  AssetKeysDialogHeader,
+} from '../AutoMaterializePolicyPage/AssetKeysDialog';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
+
 const TEMPLATE_COLUMNS = '30% 17% 53%';
 
-export const AutomaterializationTickDetailDialog = React.memo(
+export const AutomaterializationTickDetailDialog = memo(
   ({
     tick,
     isOpen,
@@ -45,9 +37,9 @@ export const AutomaterializationTickDetailDialog = React.memo(
     isOpen: boolean;
     close: () => void;
   }) => {
-    const [queryString, setQueryString] = React.useState('');
+    const [queryString, setQueryString] = useState('');
 
-    const filteredAssetKeys = React.useMemo(
+    const filteredAssetKeys = useMemo(
       () =>
         tick
           ? tick.requestedAssetKeys.filter((assetKey) =>
@@ -59,7 +51,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
 
     const count = tick?.requestedAssetKeys.length || 0;
 
-    const parentRef = React.useRef<HTMLDivElement | null>(null);
+    const parentRef = useRef<HTMLDivElement | null>(null);
     const rowVirtualizer = useVirtualizer({
       count: filteredAssetKeys.length,
       getScrollElement: () => parentRef.current,
@@ -69,7 +61,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
     const totalHeight = rowVirtualizer.getTotalSize();
     const items = rowVirtualizer.getVirtualItems();
 
-    const assetKeyToPartitionsMap = React.useMemo(() => {
+    const assetKeyToPartitionsMap = useMemo(() => {
       const map: Record<string, string[]> = {};
       tick?.requestedMaterializationsForAssets.forEach(({assetKey, partitionKeys}) => {
         map[tokenForAssetKey(assetKey)] = partitionKeys;
@@ -77,7 +69,7 @@ export const AutomaterializationTickDetailDialog = React.memo(
       return map;
     }, [tick?.requestedMaterializationsForAssets]);
 
-    const content = React.useMemo(() => {
+    const content = useMemo(() => {
       if (queryString && !filteredAssetKeys.length) {
         return (
           <AssetKeysDialogEmptyState
@@ -93,30 +85,17 @@ export const AutomaterializationTickDetailDialog = React.memo(
       if (!tick?.requestedAssetKeys.length) {
         return (
           <Box padding={{vertical: 12, horizontal: 24}}>
-            <Caption color={colorTextLight()}>None</Caption>
+            <Caption color={Colors.textLight()}>None</Caption>
           </Box>
         );
       }
       return (
         <div style={{overflow: 'scroll'}} ref={parentRef}>
-          <Box
-            border="top-and-bottom"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: TEMPLATE_COLUMNS,
-              height: '32px',
-              fontSize: '12px',
-              color: colorTextLight(),
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
-              background: colorBackgroundDefault(),
-            }}
-          >
+          <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
             <HeaderCell>Asset</HeaderCell>
             <HeaderCell>Group</HeaderCell>
             <HeaderCell>Result</HeaderCell>
-          </Box>
+          </HeaderRow>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const assetKey = filteredAssetKeys[index]!;
@@ -201,7 +180,7 @@ const AssetDetailRow = ({
   evaluationId: number;
 }) => {
   const numMaterializations = partitionKeys?.length || 1;
-  const {data} = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
+  const queryResult = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
     ASSET_GROUP_QUERY,
     {
       fetchPolicy: 'cache-and-network',
@@ -210,6 +189,8 @@ const AssetDetailRow = ({
       },
     },
   );
+  const {data} = queryResult;
+
   const asset = data?.assetOrError.__typename === 'Asset' ? data.assetOrError : null;
   const definition = asset?.definition;
   const repoAddress = definition
@@ -228,12 +209,12 @@ const AssetDetailRow = ({
                 to={workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)}
               >
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                  <Icon color={colorTextLight()} name="asset_group" />
+                  <Icon color={Colors.textLight()} name="asset_group" />
                   {definition.groupName}
                 </Box>
               </Link>
             ) : (
-              <Caption color={colorTextLight()}>Asset not found</Caption>
+              <Caption color={Colors.textLight()}>Asset not found</Caption>
             )
           ) : (
             <Spinner purpose="body-text" />
@@ -242,7 +223,7 @@ const AssetDetailRow = ({
         <RowCell>
           <Link
             to={assetDetailsPathForKey(assetKey, {
-              view: 'auto-materialize-history',
+              view: 'automation',
               evaluation: `${evaluationId}`,
             })}
           >

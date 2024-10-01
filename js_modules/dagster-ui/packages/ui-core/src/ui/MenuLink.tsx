@@ -1,12 +1,10 @@
-// eslint-disable-next-line no-restricted-imports
 import {
   Box,
+  Colors,
   CommonMenuItemProps,
   IconWrapper,
-  iconWithColor,
   MenuItem,
-  colorTextDefault,
-  colorBackgroundLighter,
+  iconWithColor,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
@@ -14,7 +12,7 @@ import styled from 'styled-components';
 
 interface MenuLinkProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick' | 'onFocus' | 'target'>,
+    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick' | 'onFocus' | 'target' | 'ref'>,
     LinkProps {}
 
 /**
@@ -65,11 +63,11 @@ const StyledMenuLink = styled(Link)`
   &&&:visited,
   &&&:hover,
   &&&:active {
-    color: ${colorTextDefault()};
+    color: ${Colors.textDefault()};
     text-decoration: none;
   }
 
   &&&:hover {
-    background: ${colorBackgroundLighter()};
+    background: ${Colors.backgroundLighter()};
   }
 `;

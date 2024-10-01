@@ -1,6 +1,5 @@
-import {Story, Meta} from '@storybook/react';
+import {Meta, StoryFn} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {TerminationDialog, Props as TerminationDialogProps} from '../TerminationDialog';
@@ -11,7 +10,7 @@ export default {
   component: TerminationDialog,
 } as Meta;
 
-const Template: Story<TerminationDialogProps> = (props) => (
+const Template: StoryFn<TerminationDialogProps> = (props) => (
   <StorybookProvider>
     <TerminationDialog {...props} />
   </StorybookProvider>

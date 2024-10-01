@@ -1,12 +1,11 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {AssetGroupSelector} from '../../graphql/types';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AssetGroupTags} from '../AssetGroupRoot';
-import * as AutomationPolicySensorFlag from '../AutomationPolicySensorFlag';
+import * as AutoMaterializeSensorFlag from '../AutoMaterializeSensorFlag';
 import {
   GROUP_NAME,
   LOCATION_NAME,
@@ -37,7 +36,7 @@ describe('AssetGroupTags', () => {
 
   it('renders asset group tag', async () => {
     jest
-      .spyOn(AutomationPolicySensorFlag, 'useAutomationPolicySensorFlag')
+      .spyOn(AutoMaterializeSensorFlag, 'useAutoMaterializeSensorFlag')
       .mockReturnValue('has-global-amp');
 
     render(
@@ -54,7 +53,7 @@ describe('AssetGroupTags', () => {
 
   it('renders global AMP tag', async () => {
     jest
-      .spyOn(AutomationPolicySensorFlag, 'useAutomationPolicySensorFlag')
+      .spyOn(AutoMaterializeSensorFlag, 'useAutoMaterializeSensorFlag')
       .mockReturnValue('has-global-amp');
 
     render(
@@ -72,7 +71,7 @@ describe('AssetGroupTags', () => {
 
   it('does not render global AMP tag when sensors are turned on', async () => {
     jest
-      .spyOn(AutomationPolicySensorFlag, 'useAutomationPolicySensorFlag')
+      .spyOn(AutoMaterializeSensorFlag, 'useAutoMaterializeSensorFlag')
       .mockReturnValue('has-sensor-amp');
 
     render(

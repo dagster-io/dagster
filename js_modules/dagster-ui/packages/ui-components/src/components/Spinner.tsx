@@ -1,9 +1,8 @@
 // eslint-disable-next-line no-restricted-imports
 import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
-import * as React from 'react';
 import styled from 'styled-components';
 
-import {colorAccentGray} from '../theme/color';
+import {Colors} from './Color';
 
 type SpinnerPurpose = 'page' | 'section' | 'body-text' | 'caption-text';
 
@@ -18,7 +17,7 @@ interface Props {
 export const Spinner = ({
   purpose,
   value,
-  fillColor = colorAccentGray(),
+  fillColor = Colors.accentGray(),
   stopped,
   title = 'Loading…',
 }: Props) => {
@@ -59,15 +58,15 @@ export const SpinnerWrapper = styled.div<{$padding: number}>`
 `;
 
 const SlowSpinner = styled(BlueprintSpinner)<{$fillColor: string; $stopped?: boolean}>`
-  .bp4-spinner-animation {
+  .bp5-spinner-animation {
     animation-duration: 0.8s;
     ${(p) => (p.$stopped ? 'animation: none;' : '')}
 
-    path.bp4-spinner-track {
+    path.bp5-spinner-track {
       stroke: ${(p) => p.$fillColor};
       stroke-opacity: 0.25;
     }
-    path.bp4-spinner-head {
+    path.bp5-spinner-head {
       ${(p) =>
         p.$stopped
           ? `stroke-opacity: 0;

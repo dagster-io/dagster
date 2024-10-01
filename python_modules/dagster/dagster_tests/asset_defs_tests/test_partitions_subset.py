@@ -1,22 +1,19 @@
 from typing import cast
 from unittest.mock import Mock
 
-import pendulum
 import pytest
-from dagster import (
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-)
+from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
+    PersistedTimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
+from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._time import create_datetime, get_current_datetime
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -137,7 +134,10 @@ def test_time_window_partitions_subset_num_partitions_serialization():
         end_offset=daily_partitions_def.end_offset,
     )
 
-    tw = time_partitions_def.time_window_for_partition_key("2023-01-01")
+    tw = PersistedTimeWindow.from_public_time_window(
+        time_partitions_def.time_window_for_partition_key("2023-01-01"),
+        time_partitions_def.timezone,
+    )
 
     subset = TimeWindowPartitionsSubset(
         time_partitions_def, num_partitions=None, included_time_windows=[tw]
@@ -148,10 +148,10 @@ def test_time_window_partitions_subset_num_partitions_serialization():
 
 def test_all_partitions_subset_static_partitions_def() -> None:
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
-    all_subset = AllPartitionsSubset(static_partitions_def, Mock(), pendulum.now("UTC"))
+    all_subset = AllPartitionsSubset(static_partitions_def, Mock(), get_current_datetime())
     assert len(all_subset) == 4
     assert set(all_subset.get_partition_keys()) == {"a", "b", "c", "d"}
-    assert all_subset == AllPartitionsSubset(static_partitions_def, Mock(), pendulum.now("UTC"))
+    assert all_subset == AllPartitionsSubset(static_partitions_def, Mock(), get_current_datetime())
 
     abc_subset = DefaultPartitionsSubset({"a", "b", "c"})
     assert all_subset & abc_subset == abc_subset
@@ -165,9 +165,9 @@ def test_all_partitions_subset_static_partitions_def() -> None:
 
 
 def test_all_partitions_subset_time_window_partitions_def() -> None:
-    with pendulum.test(create_pendulum_time(2020, 1, 6, hour=10)):
+    with freeze_time(create_datetime(2020, 1, 6, hour=10)):
         time_window_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
-        all_subset = AllPartitionsSubset(time_window_partitions_def, Mock(), pendulum.now("UTC"))
+        all_subset = AllPartitionsSubset(time_window_partitions_def, Mock(), get_current_datetime())
         assert len(all_subset) == 5
         assert set(all_subset.get_partition_keys()) == {
             "2020-01-01",
@@ -177,7 +177,7 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
             "2020-01-05",
         }
         assert all_subset == AllPartitionsSubset(
-            time_window_partitions_def, Mock(), pendulum.now("UTC")
+            time_window_partitions_def, Mock(), get_current_datetime()
         )
 
         subset = PartitionKeysTimeWindowPartitionsSubset(
@@ -196,3 +196,20 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
         round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))  # type: ignore
         assert isinstance(round_trip_subset, TimeWindowPartitionsSubset)
         assert set(round_trip_subset.get_partition_keys()) == set(all_subset.get_partition_keys())
+
+
+def test_partitions_set_short_circuiting() -> None:
+    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    default_ps = DefaultPartitionsSubset({"a", "b", "c"})
+    all_ps = AllPartitionsSubset(static_partitions_def, Mock(), get_current_datetime())
+
+    # Test short-circuiting of |. Returns the same AllPartionsSubset
+    or_result = default_ps | all_ps
+    assert or_result is all_ps
+
+    # Test short-circuiting of &. Returns the same DefaultPartitionsSubset
+    and_result = default_ps & all_ps
+    assert and_result is default_ps
+
+    # Test short-circuiting of -. Returns an empty DefaultPartitionsSubset
+    assert (default_ps - all_ps) == DefaultPartitionsSubset.empty_subset()

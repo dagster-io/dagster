@@ -1,9 +1,13 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {_setCacheEntryForTest} from '../../asset-data/AssetLiveDataProvider';
+import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
+import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
+import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
+import {buildAssetNode, buildStaleCause} from '../../graphql/types';
 import {AssetNode} from '../AssetNode';
+import {tokenForAssetKey} from '../Utils';
 import {
   AssetNodeScenariosBase,
   AssetNodeScenariosPartitioned,
@@ -29,11 +33,33 @@ describe('AssetNode', () => {
       definitionCopy.assetKey.path = scenario.liveData
         ? [scenario.liveData.stepKey]
         : JSON.parse(scenario.definition.id);
-      _setCacheEntryForTest(definitionCopy.assetKey, scenario.liveData);
+
+      function SetCacheEntry() {
+        if (scenario.liveData) {
+          const key = tokenForAssetKey(definitionCopy.assetKey);
+          const entry = {[key]: scenario.liveData!};
+          const {staleStatus, staleCauses} = scenario.liveData!;
+          const staleEntry = {
+            [key]: buildAssetNode({
+              assetKey: definitionCopy.assetKey,
+              staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
+              staleStatus,
+            }),
+          };
+          AssetStaleStatusData.manager._updateCache(staleEntry);
+          AssetBaseData.manager._updateCache(entry);
+        }
+        return null;
+      }
 
       render(
         <MemoryRouter>
-          <AssetNode definition={definitionCopy} selected={false} />
+          <MockedProvider>
+            <AssetLiveDataProvider>
+              <SetCacheEntry />
+              <AssetNode definition={definitionCopy} selected={false} />
+            </AssetLiveDataProvider>
+          </MockedProvider>
         </MemoryRouter>,
       );
 

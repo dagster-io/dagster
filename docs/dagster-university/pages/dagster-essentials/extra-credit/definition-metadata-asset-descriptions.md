@@ -15,7 +15,7 @@ When defined, asset descriptions will be displayed in the Dagster UI alongside t
 
 ## Using docstrings
 
-As you went through this course, you might have noticed that the asests all contain **docstrings.** A [Python docstring, or documentation string](https://www.datacamp.com/tutorial/docstrings-python), embeds documentation about a class, module, function, or method definition in the code itself. While code comments serve a similar purpose, docstrings support built-in Python functionality, like [`help`](https://docs.python.org/3/library/functions.html#help).
+As you went through this course, you might have noticed that the assets all contain **docstrings.** A [Python docstring, or documentation string](https://www.datacamp.com/tutorial/docstrings-python), embeds documentation about a class, module, function, or method definition in the code itself. While code comments serve a similar purpose, docstrings support built-in Python functionality, like [`help`](https://docs.python.org/3/library/functions.html#help).
 
 Docstrings are defined by including a string, surrounded by triple quotes (`”””`) as the first statement in an object’s definition. For example:
 
@@ -23,16 +23,16 @@ Docstrings are defined by including a string, surrounded by triple quotes (`”�
 from dagster import asset
 
 @asset
-def taxi_zones_file():
-  """
-    The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
-  """
-  raw_taxi_zones = requests.get(
-    "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
-  )
+def taxi_zones_file() -> None:
+    """
+      The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
+    """
+    raw_taxi_zones = requests.get(
+        "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
+    )
 
-  with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
-    output_file.write(raw_taxi_zones.content)
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
+        output_file.write(raw_taxi_zones.content)
 ```
 
 ---
@@ -47,18 +47,18 @@ For example:
 from dagster import asset
 
 @asset(
- description="The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."
+    description="The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."
 )
-def taxi_zones_file():
-  """
-    This will not show in the Dagster UI
-  """
-  raw_taxi_zones = requests.get(
-    "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
-  )
+def taxi_zones_file() -> None:
+    """
+      This will not show in the Dagster UI
+    """
+    raw_taxi_zones = requests.get(
+        "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
+    )
 
-  with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
-    output_file.write(raw_taxi_zones.content)
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
+        output_file.write(raw_taxi_zones.content)
 ```
 
 ---

@@ -62,7 +62,7 @@ class DescentStack(
 
     @property
     def current_handle_str(self) -> str:
-        return check.not_none(self.handle).to_string()
+        return str(check.not_none(self.handle))
 
     def descend(self, node: Node) -> "DescentStack":
         parent = self.handle if self.handle != _ROOT_HANDLE else None
@@ -102,7 +102,7 @@ def composite_descent(
         )
 
     return {
-        handle.to_string(): op_config
+        str(handle): op_config
         for handle, op_config in _composite_descent(
             parent_stack=DescentStack(job_def, _ROOT_HANDLE),
             ops_config_dict=ops_config,
@@ -222,7 +222,7 @@ def _apply_top_level_config_mapping(
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
             asset_layer=job_def.asset_layer,
-            node_input_source_assets=graph_def.node_input_source_assets,
+            input_assets=graph_def.input_assets,
         )
 
         # process against that new type
@@ -290,7 +290,7 @@ def _apply_config_mapping(
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,
         asset_layer=asset_layer,
-        node_input_source_assets=graph_def.node_input_source_assets,
+        input_assets=graph_def.input_assets,
     )
 
     # process against that new type

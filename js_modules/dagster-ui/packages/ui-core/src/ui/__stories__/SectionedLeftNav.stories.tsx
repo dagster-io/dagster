@@ -1,5 +1,4 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {LEFT_NAV_WIDTH} from '../../nav/LeftNav';
 import {StorybookProvider} from '../../testing/StorybookProvider';

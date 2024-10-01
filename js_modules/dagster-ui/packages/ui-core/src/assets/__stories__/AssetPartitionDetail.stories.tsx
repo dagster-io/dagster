@@ -1,19 +1,18 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
 import {RunStatus, buildStaleCause} from '../../graphql/types';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {
   AssetPartitionDetail,
   AssetPartitionDetailEmpty,
   AssetPartitionDetailLoader,
 } from '../AssetPartitionDetail';
 import {
+  MaterializationUpstreamDataFullMock,
   buildAssetPartitionDetailMock,
   buildAssetPartitionStaleMock,
-  MaterializationUpstreamDataFullMock,
 } from '../__fixtures__/AssetEventDetail.fixtures';
 
 // eslint-disable-next-line import/no-default-export

@@ -1,29 +1,51 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  DialogFooter,
+  Colors,
   Dialog,
+  DialogFooter,
   Icon,
-  MenuItem,
   Menu,
+  MenuItem,
+  MiddleTruncate,
   Popover,
   useViewport,
-  colorKeylineDefault,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {PartitionRunList} from './PartitionRunList';
+import {
+  BOX_SIZE,
+  GridColumn,
+  GridFloatingContainer,
+  LeftLabel,
+  TopLabel,
+  TopLabelTilted,
+  topLabelHeightForLabels,
+} from './RunMatrixUtils';
+import {
+  PartitionStepStatusPipelineQuery,
+  PartitionStepStatusPipelineQueryVariables,
+} from './types/PartitionStepStatus.types';
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  MatrixData,
+  MatrixStep,
+  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  PartitionRuns,
+  StatusSquareColor,
+  useMatrixData,
+} from './useMatrixData';
+import {gql, useQuery} from '../apollo-client';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
-  partitionStatusAtIndex,
   Range,
+  partitionStatusAtIndex,
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
@@ -33,30 +55,6 @@ import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-
-import {PartitionRunList} from './PartitionRunList';
-import {
-  BOX_SIZE,
-  GridColumn,
-  GridFloatingContainer,
-  LeftLabel,
-  TopLabel,
-  topLabelHeightForLabels,
-  TopLabelTilted,
-} from './RunMatrixUtils';
-import {
-  PartitionStepStatusPipelineQuery,
-  PartitionStepStatusPipelineQueryVariables,
-} from './types/PartitionStepStatus.types';
-import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
-import {
-  MatrixStep,
-  PartitionRuns,
-  useMatrixData,
-  MatrixData,
-  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
-  StatusSquareColor,
-} from './useMatrixData';
 
 const BUFFER = 3;
 
@@ -100,58 +98,68 @@ interface PartitionPerAssetStatusProps
   rangeDimension: PartitionHealthDimension;
 }
 
-export const PartitionPerAssetStatus = ({
-  assetHealth,
-  rangeDimension,
-  rangeDimensionIdx,
-  assetQueryItems,
-  ...rest
-}: PartitionPerAssetStatusProps) => {
-  const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
-  for (const a of assetHealth) {
-    if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
-      // Ignore assets in the job / graph that do not have the range partition dimension.
-      continue;
-    }
-    const ranges = a.rangesForSingleDimension(rangeDimensionIdx);
-    rangesByAssetKey[tokenForAssetKey(a.assetKey)] = ranges;
-  }
+export const PartitionPerAssetStatus = React.memo(
+  ({
+    assetHealth,
+    rangeDimension,
+    rangeDimensionIdx,
+    assetQueryItems,
+    ...rest
+  }: PartitionPerAssetStatusProps) => {
+    const rangesByAssetKey = useMemo(() => {
+      const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
+      for (const a of assetHealth) {
+        if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
+          // Ignore assets in the job / graph that do not have the range partition dimension.
+          continue;
+        }
+        const ranges = a.rangesForSingleDimension(rangeDimensionIdx);
+        rangesByAssetKey[tokenForAssetKey(a.assetKey)] = ranges;
+      }
+      return rangesByAssetKey;
+    }, [assetHealth, rangeDimension.name, rangeDimensionIdx]);
 
-  const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
-  const layoutBoxesWithRangeDimension = layout.boxes.filter((b) => !!rangesByAssetKey[b.node.name]);
+    const layoutBoxesWithRangeDimension = useMemo(() => {
+      const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
+      return layout.boxes.filter((b) => !!rangesByAssetKey[b.node.name]);
+    }, [assetQueryItems, rangesByAssetKey]);
 
-  const data: MatrixData = {
-    stepRows: layoutBoxesWithRangeDimension.map((box) => ({
-      x: box.x,
-      name: box.node.name,
-      totalFailurePercent: 0,
-      finalFailurePercent: 0,
-    })),
-    partitions: [],
-    partitionColumns: rangeDimension.partitionKeys.map((partitionKey, partitionKeyIdx) => ({
-      idx: partitionKeyIdx,
-      name: partitionKey,
-      runsLoaded: true,
-      runs: [],
-      steps: layoutBoxesWithRangeDimension.map((box) => ({
-        name: box.node.name,
-        unix: 0,
-        color: assetPartitionStatusToSquareColor(
-          partitionStatusAtIndex(rangesByAssetKey[box.node.name]!, partitionKeyIdx),
-        ),
-      })),
-    })),
-  };
+    const data: MatrixData = useMemo(
+      () => ({
+        stepRows: layoutBoxesWithRangeDimension.map((box) => ({
+          x: box.x,
+          name: box.node.name,
+          totalFailurePercent: 0,
+          finalFailurePercent: 0,
+        })),
+        partitions: [],
+        partitionColumns: rangeDimension.partitionKeys.map((partitionKey, partitionKeyIdx) => ({
+          idx: partitionKeyIdx,
+          name: partitionKey,
+          runsLoaded: true,
+          runs: [],
+          steps: layoutBoxesWithRangeDimension.map((box) => ({
+            name: box.node.name,
+            unix: 0,
+            color: assetPartitionStatusToSquareColor(
+              partitionStatusAtIndex(rangesByAssetKey[box.node.name]!, partitionKeyIdx),
+            ),
+          })),
+        })),
+      }),
+      [layoutBoxesWithRangeDimension, rangeDimension.partitionKeys, rangesByAssetKey],
+    );
 
-  return (
-    <PartitionStepStatus
-      {...rest}
-      partitionNames={rangeDimension.partitionKeys}
-      data={data}
-      showLatestRun={false}
-    />
-  );
-};
+    return (
+      <PartitionStepStatus
+        {...rest}
+        partitionNames={rangeDimension.partitionKeys}
+        data={data}
+        showLatestRun={false}
+      />
+    );
+  },
+);
 
 const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]): StatusSquareColor => {
   return state.includes(AssetPartitionStatus.MATERIALIZED) &&
@@ -171,60 +179,62 @@ interface PartitionPerOpStatusProps extends PartitionStepStatusBaseProps {
   partitions: PartitionRuns[];
 }
 
-export const PartitionPerOpStatus = ({
-  repoAddress,
-  pipelineName,
-  partitions,
-  partitionNames,
-  ...rest
-}: PartitionPerOpStatusProps) => {
-  // Retrieve the pipeline's structure
-  const repositorySelector = repoAddressToSelector(repoAddress);
-  const pipelineSelector = {...repositorySelector, pipelineName};
-  const pipeline = useQuery<
-    PartitionStepStatusPipelineQuery,
-    PartitionStepStatusPipelineQueryVariables
-  >(PARTITION_STEP_STATUS_PIPELINE_QUERY, {
-    variables: {pipelineSelector},
-  });
+export const PartitionPerOpStatus = React.memo(
+  ({repoAddress, pipelineName, partitions, partitionNames, ...rest}: PartitionPerOpStatusProps) => {
+    // Retrieve the pipeline's structure
+    const repositorySelector = repoAddressToSelector(repoAddress);
+    const pipelineSelector = {...repositorySelector, pipelineName};
+    const pipeline = useQuery<
+      PartitionStepStatusPipelineQuery,
+      PartitionStepStatusPipelineQueryVariables
+    >(PARTITION_STEP_STATUS_PIPELINE_QUERY, {
+      variables: {pipelineSelector},
+      fetchPolicy: 'no-cache',
+    });
 
-  const solidHandles =
-    pipeline.data?.pipelineSnapshotOrError.__typename === 'PipelineSnapshot' &&
-    pipeline.data.pipelineSnapshotOrError.solidHandles;
+    const solidHandles =
+      pipeline.data?.pipelineSnapshotOrError.__typename === 'PipelineSnapshot' &&
+      pipeline.data.pipelineSnapshotOrError.solidHandles;
 
-  const data = useMatrixData({
-    partitionNames,
-    partitions,
-    stepQuery: '',
-    solidHandles,
-  });
+    const data = useMatrixData(
+      useMemo(
+        () => ({
+          partitionNames,
+          partitions,
+          stepQuery: '',
+          solidHandles,
+        }),
+        [partitionNames, partitions, solidHandles],
+      ),
+    );
 
-  if (!data) {
-    return <span />;
-  }
-  return (
-    <PartitionStepStatus
-      {...rest}
-      showLatestRun={true}
-      pipelineName={pipelineName}
-      partitionNames={partitionNames}
-      data={data}
-    />
-  );
-};
+    if (!data) {
+      return <span />;
+    }
+    return (
+      <PartitionStepStatus
+        {...rest}
+        showLatestRun={true}
+        pipelineName={pipelineName}
+        partitionNames={partitionNames}
+        data={data}
+      />
+    );
+  },
+);
 
 interface PartitionStepStatusProps extends PartitionStepStatusBaseProps {
   data: MatrixData;
   showLatestRun: boolean;
 }
 
-const PartitionStepStatus = (props: PartitionStepStatusProps) => {
+const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
   const {viewport, containerProps} = useViewport();
-  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
+  const [hovered, setHovered] = useState<PartitionRunSelection | null>(null);
+  const [focused, setFocused] = useState<PartitionRunSelection | null>(null);
   const {setPageSize, data} = props;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewport.width) {
       setPageSize(getVisibleItemCount(viewport.width));
     }
@@ -241,9 +251,18 @@ const PartitionStepStatus = (props: PartitionStepStatusProps) => {
   const visibleCount = getVisibleItemCount(viewport.width);
   const visibleStart = Math.max(0, partitionColumns.length - props.offset - visibleCount);
   const visibleEnd = Math.max(visibleCount, partitionColumns.length - props.offset);
-  const visibleColumns = partitionColumns.slice(visibleStart, visibleEnd);
-  const [minUnix, maxUnix] = timeboundsOfPartitions(partitionColumns);
-  const topLabelHeight = topLabelHeightForLabels(partitionColumns.map((p) => p.name));
+  const visibleColumns = useMemo(
+    () => partitionColumns.slice(visibleStart, visibleEnd),
+    [partitionColumns, visibleEnd, visibleStart],
+  );
+  const [minUnix, maxUnix] = useMemo(
+    () => timeboundsOfPartitions(partitionColumns),
+    [partitionColumns],
+  );
+  const topLabelHeight = useMemo(
+    () => topLabelHeightForLabels(partitionColumns.map((p) => p.name)),
+    [partitionColumns],
+  );
 
   return (
     <PartitionRunMatrixContainer>
@@ -280,12 +299,12 @@ const PartitionStepStatus = (props: PartitionStepStatusProps) => {
             <Divider />
             {stepRows.map((step) => (
               <LeftLabel
-                style={{paddingLeft: 8 + step.x}}
+                style={{paddingLeft: 8 + step.x, paddingRight: 8}}
                 key={step.name}
                 data-tooltip={step.name}
                 hovered={step.name === hovered?.stepName}
               >
-                {step.name}
+                <MiddleTruncate text={step.name} />
               </LeftLabel>
             ))}
           </GridColumn>
@@ -375,12 +394,12 @@ const PartitionStepStatus = (props: PartitionStepStatusProps) => {
       </div>
     </PartitionRunMatrixContainer>
   );
-};
+});
 
 const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   width: 30px;
   position: absolute;
-  border: 1px solid ${colorKeylineDefault()};
+  border: 1px solid ${Colors.keylineDefault()};
   border-radius: 3px;
   display: flex;
   justify-content: center;
@@ -388,7 +407,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   top: calc(50% - 15px);
   bottom: calc(50% - 15px);
   ${({$direction}) => ($direction === 'left' ? 'left: 315px;' : 'right: 0;')}
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   z-index: 10;
 
   justify-content: center;
@@ -396,7 +415,7 @@ const PagerControl = styled.div<{$direction: 'left' | 'right'}>`
   cursor: pointer;
   display: flex;
   &:hover {
-    background: ${colorBackgroundDefaultHover()};
+    background: ${Colors.backgroundDefaultHover()};
   }
 `;
 
@@ -408,7 +427,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${colorKeylineDefault()};
+  border-top: 1px solid ${Colors.keylineDefault()};
 `;
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
@@ -434,83 +453,85 @@ const TOOLTIP_STYLE = JSON.stringify({
   left: 10,
 });
 
-const PartitionSquare = ({
-  step,
-  runs,
-  runsLoaded,
-  hovered,
-  setHovered,
-  setFocused,
-  partitionName,
-}: {
-  step?: MatrixStep;
-  runs: PartitionMatrixStepRunFragment[];
-  runsLoaded: boolean;
-  hovered: PartitionRunSelection | null;
-  minUnix: number;
-  maxUnix: number;
-  partitionName: string;
-  setHovered: (hovered: PartitionRunSelection | null) => void;
-  setFocused: (hovered: PartitionRunSelection | null) => void;
-}) => {
-  const [opened, setOpened] = React.useState(false);
-  let squareStatus;
+const PartitionSquare = React.memo(
+  ({
+    step,
+    runs,
+    runsLoaded,
+    hovered,
+    setHovered,
+    setFocused,
+    partitionName,
+  }: {
+    step?: MatrixStep;
+    runs: PartitionMatrixStepRunFragment[];
+    runsLoaded: boolean;
+    hovered: PartitionRunSelection | null;
+    minUnix: number;
+    maxUnix: number;
+    partitionName: string;
+    setHovered: (hovered: PartitionRunSelection | null) => void;
+    setFocused: (hovered: PartitionRunSelection | null) => void;
+  }) => {
+    const [opened, setOpened] = useState(false);
+    let squareStatus;
 
-  if (!runsLoaded) {
-    squareStatus = 'loading';
-  } else if (step) {
-    squareStatus = step.color.toLowerCase();
-  } else if (runs.length === 0) {
-    squareStatus = 'empty';
-  } else {
-    const runStatus = [...runs].reverse().find((r) => r.status !== RunStatus.CANCELED)?.status;
-    if (runStatus) {
-      squareStatus = runStatus.toLowerCase();
-    } else {
+    if (!runsLoaded) {
+      squareStatus = 'loading';
+    } else if (step) {
+      squareStatus = step.color.toLowerCase();
+    } else if (runs.length === 0) {
       squareStatus = 'empty';
+    } else {
+      const runStatus = [...runs].reverse().find((r) => r.status !== RunStatus.CANCELED)?.status;
+      if (runStatus) {
+        squareStatus = runStatus.toLowerCase();
+      } else {
+        squareStatus = 'empty';
+      }
     }
-  }
-  const content = (
-    <div
-      className={`square ${squareStatus}`}
-      onMouseEnter={() => setHovered({stepName: step?.name, partitionName})}
-      onMouseLeave={() => setHovered(null)}
-      data-tooltip={
-        runsLoaded && !step ? (runs.length === 1 ? `1 run` : `${runs.length} runs`) : undefined
-      }
-      data-tooltip-style={TOOLTIP_STYLE}
-    />
-  );
+    const content = (
+      <div
+        className={`square ${squareStatus}`}
+        onMouseEnter={() => setHovered({stepName: step?.name, partitionName})}
+        onMouseLeave={() => setHovered(null)}
+        data-tooltip={
+          runsLoaded && !step ? (runs.length === 1 ? `1 run` : `${runs.length} runs`) : undefined
+        }
+        data-tooltip-style={TOOLTIP_STYLE}
+      />
+    );
 
-  if (
-    !opened &&
-    (!runs.length || hovered?.stepName !== step?.name || hovered?.partitionName !== partitionName)
-  ) {
-    return content;
-  }
+    if (
+      !opened &&
+      (!runs.length || hovered?.stepName !== step?.name || hovered?.partitionName !== partitionName)
+    ) {
+      return content;
+    }
 
-  return (
-    <Popover
-      interactionKind="click"
-      placement="bottom-start"
-      onOpening={() => setOpened(true)}
-      onClosed={() => setOpened(false)}
-      content={
-        <Menu>
-          <MenuLink
-            icon="open_in_new"
-            text="Show logs from last run"
-            to={linkToRunEvent(runs[runs.length - 1]!, {stepKey: step ? step.name : null})}
-          />
-          <MenuItem
-            icon="settings_backup_restore"
-            text={`View runs (${runs.length})`}
-            onClick={() => setFocused({stepName: step?.name, partitionName})}
-          />
-        </Menu>
-      }
-    >
-      {content}
-    </Popover>
-  );
-};
+    return (
+      <Popover
+        interactionKind="click"
+        placement="bottom-start"
+        onOpening={() => setOpened(true)}
+        onClosed={() => setOpened(false)}
+        content={
+          <Menu>
+            <MenuLink
+              icon="open_in_new"
+              text="Show logs from last run"
+              to={linkToRunEvent(runs[runs.length - 1]!, {stepKey: step ? step.name : null})}
+            />
+            <MenuItem
+              icon="settings_backup_restore"
+              text={`View runs (${runs.length})`}
+              onClick={() => setFocused({stepName: step?.name, partitionName})}
+            />
+          </Menu>
+        }
+      >
+        {content}
+      </Popover>
+    );
+  },
+);

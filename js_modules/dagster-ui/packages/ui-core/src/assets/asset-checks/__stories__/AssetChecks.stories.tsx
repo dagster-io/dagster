@@ -1,10 +1,11 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {
+  buildAssetCheckNeedsAgentUpgradeError,
   buildAssetCheckNeedsMigrationError,
+  buildAssetCheckNeedsUserCodeUpgrade,
   buildAssetChecks,
   buildAssetKey,
   buildAssetNode,
@@ -14,10 +15,10 @@ import {buildQueryMock} from '../../AutoMaterializePolicyPage/__fixtures__/AutoM
 import {ASSET_CHECK_DETAILS_QUERY} from '../AssetCheckDetailModal';
 import {ASSET_CHECKS_QUERY, AssetChecks} from '../AssetChecks';
 import {
-  testAssetKey,
-  testLatestMaterializationTimeStamp,
   TestAssetCheck,
   TestAssetCheckWarning,
+  testAssetKey,
+  testLatestMaterializationTimeStamp,
 } from '../__fixtures__/AssetChecks.fixtures';
 import {AssetCheckDetailsQueryVariables} from '../types/AssetCheckDetailModal.types';
 import {AssetChecksQueryVariables} from '../types/AssetChecks.types';
@@ -54,6 +55,44 @@ export const MigrationRequired = () => {
             assetNodeOrError: buildAssetNode({
               assetKey: buildAssetKey(testAssetKey),
               assetChecksOrError: buildAssetCheckNeedsMigrationError(),
+            }),
+          },
+        }),
+      ]}
+    />
+  );
+};
+
+export const AgentUpgradeRequired = () => {
+  return (
+    <Component
+      mocks={[
+        buildQueryMock<any, AssetChecksQueryVariables>({
+          query: ASSET_CHECKS_QUERY,
+          variables: {assetKey: testAssetKey},
+          data: {
+            assetNodeOrError: buildAssetNode({
+              assetKey: buildAssetKey(testAssetKey),
+              assetChecksOrError: buildAssetCheckNeedsAgentUpgradeError(),
+            }),
+          },
+        }),
+      ]}
+    />
+  );
+};
+
+export const NeedsUserCodeUpgradeRequired = () => {
+  return (
+    <Component
+      mocks={[
+        buildQueryMock<any, AssetChecksQueryVariables>({
+          query: ASSET_CHECKS_QUERY,
+          variables: {assetKey: testAssetKey},
+          data: {
+            assetNodeOrError: buildAssetNode({
+              assetKey: buildAssetKey(testAssetKey),
+              assetChecksOrError: buildAssetCheckNeedsUserCodeUpgrade(),
             }),
           },
         }),

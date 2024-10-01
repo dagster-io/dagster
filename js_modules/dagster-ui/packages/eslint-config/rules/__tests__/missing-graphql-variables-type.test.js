@@ -10,7 +10,7 @@ jest.mock('fs');
 const fs = require('fs');
 
 // @ts-expect-error - using require because this package isn't setup for import declarations
-const {rule} = require('../missing-graphql-variables-type');
+const rule = require('../missing-graphql-variables-type');
 
 fs.readFileSync = (path) => {
   const api = path.includes('Query')

@@ -1,20 +1,25 @@
-import {
-  Spinner,
-  Tooltip,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentRed,
-} from '@dagster-io/ui-components';
-import React from 'react';
+import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 import styled, {keyframes} from 'styled-components';
 
+import {AssetKeyInput} from '../../graphql/types';
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
 
-export type FolderNodeNonAssetType =
-  | {groupName: string; id: string; level: number}
-  | {locationName: string; id: string; level: number};
+export type FolderNodeGroupType = {
+  id: string;
+  level: number;
+  groupNode: {
+    groupName: string;
+    assets: GraphNode[];
+    repositoryName: string;
+    repositoryLocationName: string;
+  };
+};
+
+export type FolderNodeCodeLocationType = {locationName: string; id: string; level: number};
+
+export type FolderNodeNonAssetType = FolderNodeGroupType | FolderNodeCodeLocationType;
 
 export type FolderNodeType = FolderNodeNonAssetType | {path: string; id: string; level: number};
 
@@ -24,12 +29,12 @@ export function nodePathKey(node: {path: string; id: string} | {id: string}) {
   return 'path' in node ? node.path : node.id;
 }
 
-export function getDisplayName(node: GraphNode) {
+export function getDisplayName(node: {assetKey: AssetKeyInput}) {
   return node.assetKey.path[node.assetKey.path.length - 1]!;
 }
 
 export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
-  const type = React.useMemo(() => {
+  const type = useMemo(() => {
     switch (statusCase) {
       case StatusCase.LOADING:
         return 'loading' as const;
@@ -43,7 +48,9 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
         return 'missing' as const;
       case StatusCase.MATERIALIZING:
         return 'inprogress' as const;
-      case StatusCase.LATE_OR_FAILED:
+      case StatusCase.FAILED_MATERIALIZATION:
+      case StatusCase.OVERDUE:
+      case StatusCase.CHECKS_FAILED:
         return 'failed' as const;
       case StatusCase.NEVER_MATERIALIZED:
         return 'missing' as const;
@@ -64,33 +71,33 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
-          <Dot style={{border: `2px solid ${colorAccentGray()}`}} />
+          <Dot style={{border: `2px solid ${Colors.accentGray()}`}} />
         </Tooltip>
       );
     case 'failed':
       return (
         <Tooltip content="Failed" position="top">
-          <Dot style={{backgroundColor: colorAccentRed()}} />
+          <Dot style={{backgroundColor: Colors.accentRed()}} />
         </Tooltip>
       );
     case 'inprogress':
       return <Spinner purpose="caption-text" />;
     case 'successful':
-      return <Dot style={{backgroundColor: colorAccentGreen()}} />;
+      return <Dot style={{backgroundColor: Colors.accentGreen()}} />;
   }
 }
 
 const pulse = keyframes`
   from {
-    background-color: ${colorAccentGray()}
+    background-color: ${Colors.accentGray()}
   }
 
   50% {
-    background-color: ${colorAccentGrayHover()}
+    background-color: ${Colors.accentGrayHover()}
   }
 
   to {
-    background-color: ${colorAccentGray()}
+    background-color: ${Colors.accentGray()}
   }
 `;
 

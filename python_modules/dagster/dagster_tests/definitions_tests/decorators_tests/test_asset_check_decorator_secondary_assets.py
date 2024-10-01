@@ -9,8 +9,12 @@ from dagster import (
     asset,
     asset_check,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.events import AssetKey
 
-from .test_asset_check_decorator import execute_assets_and_checks
+from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (
+    execute_assets_and_checks,
+)
 
 
 @asset
@@ -34,7 +38,8 @@ def test_additional_deps():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
-    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.additional_deps == [AssetDep(asset2.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -46,7 +51,8 @@ def test_additional_deps_with_managed_input():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
-    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.additional_deps == [AssetDep(asset2.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -120,7 +126,8 @@ def test_additional_ins():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
-    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.additional_deps == [AssetDep(asset2.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -132,7 +139,8 @@ def test_additional_ins_primary_asset_not_a_param():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 2
-    assert check1.spec.additional_deps == [AssetDep(asset2.key)]
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert spec.additional_deps == [AssetDep(asset2.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -145,7 +153,8 @@ def test_additional_ins_and_deps():
         return AssetCheckResult(passed=True)
 
     assert len(check1.node_def.input_defs) == 3
-    assert sorted(check1.spec.additional_deps) == [AssetDep(asset2.key), AssetDep(asset3.key)]
+    spec = check1.get_spec_for_check_key(AssetCheckKey(AssetKey(["asset1"]), "check1"))
+    assert sorted(spec.additional_deps) == [AssetDep(asset2.key), AssetDep(asset3.key)]
 
     execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
 
@@ -159,11 +168,11 @@ def test_check_waits_for_additional_deps():
     def my_fail_asset():
         raise Exception("foobar")
 
-    @asset_check(asset=asset1, additional_deps=[my_fail_asset])
+    @asset_check(asset=my_asset, additional_deps=[my_fail_asset])
     def check_with_dep():
         return AssetCheckResult(passed=True)
 
-    @asset_check(asset=asset1)
+    @asset_check(asset=my_asset)
     def check_without_dep():
         return AssetCheckResult(passed=True)
 

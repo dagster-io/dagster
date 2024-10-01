@@ -13,14 +13,10 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster_pipes import (
-    DagsterPipesError,
-    PipesContext,
-)
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster_pipes import DagsterPipesError, PipesContext
 
-from .in_process_client import (
-    InProcessPipesClient,
-)
+from dagster_tests.execution_tests.pipes_tests.in_process_client import InProcessPipesClient
 
 
 def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:
@@ -228,9 +224,11 @@ def test_get_asset_check_result() -> None:
 
     @asset_check(asset="an_asset")
     def an_asset_check(
-        context: AssetExecutionContext, inprocess_client: InProcessPipesClient
+        context: AssetCheckExecutionContext, inprocess_client: InProcessPipesClient
     ) -> AssetCheckResult:
-        return inprocess_client.run(context=context, fn=_impl).get_asset_check_result()
+        return inprocess_client.run(
+            context=context.op_execution_context, fn=_impl
+        ).get_asset_check_result()
 
     result = (
         Definitions(

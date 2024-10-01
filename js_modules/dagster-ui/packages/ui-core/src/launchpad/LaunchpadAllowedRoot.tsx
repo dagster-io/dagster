@@ -1,15 +1,5 @@
-import {gql, useQuery} from '@apollo/client';
-import * as React from 'react';
+import {useMemo} from 'react';
 import * as yaml from 'yaml';
-
-import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useTrackPageView} from '../app/analytics';
-import {useStartTrace} from '../performance';
-import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
-import {useJobTitle} from '../pipelines/useJobTitle';
-import {useRepository, isThisThingAJob} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
 
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
@@ -20,10 +10,17 @@ import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {LaunchpadType} from './types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
+import {gql, useQuery} from '../apollo-client';
+import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useTrackPageView} from '../app/analytics';
+import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
+import {useJobTitle} from '../pipelines/useJobTitle';
+import {lazy} from '../util/lazy';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
+import {RepoAddress} from '../workspace/types';
 
-const LaunchpadStoredSessionsContainer = React.lazy(
-  () => import('./LaunchpadStoredSessionsContainer'),
-);
+const LaunchpadStoredSessionsContainer = lazy(() => import('./LaunchpadStoredSessionsContainer'));
 
 interface Props {
   launchpadType: LaunchpadType;
@@ -51,7 +48,6 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
 
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
-  const trace = useStartTrace('LaunchpadAllowedRoot');
 
   const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
@@ -76,7 +72,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
 
   const runConfigSchemaOrError = result.data?.runConfigSchemaOrError;
-  const filteredRootDefaultYaml = React.useMemo(() => {
+  const filteredRootDefaultYaml = useMemo(() => {
     if (!runConfigSchemaOrError || runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
       return undefined;
     }
@@ -88,12 +84,6 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     const opNames = new Set(opNameList);
     return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
   }, [runConfigSchemaOrError, sessionPresets]);
-
-  React.useEffect(() => {
-    if (!result.loading) {
-      trace.endTrace();
-    }
-  }, [trace, result.loading]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
@@ -160,19 +150,17 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   } else {
     // job
     return (
-      <React.Suspense fallback={<div />}>
-        <LaunchpadStoredSessionsContainer
-          launchpadType={launchpadType}
-          pipeline={pipelineOrError}
-          partitionSets={partitionSetsOrError}
-          repoAddress={repoAddress}
-          rootDefaultYaml={
-            result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
-              ? result.data.runConfigSchemaOrError.rootDefaultYaml
-              : undefined
-          }
-        />
-      </React.Suspense>
+      <LaunchpadStoredSessionsContainer
+        launchpadType={launchpadType}
+        pipeline={pipelineOrError}
+        partitionSets={partitionSetsOrError}
+        repoAddress={repoAddress}
+        rootDefaultYaml={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError.rootDefaultYaml
+            : undefined
+        }
+      />
     );
   }
 };

@@ -16,20 +16,19 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, experimental_param
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.inference import InferredInputProps
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
 )
+from dagster._core.definitions.utils import NoValueSentinel, check_valid_name
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
-
-from .inference import InferredInputProps
-from .utils import NoValueSentinel, check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
@@ -57,7 +56,7 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
                     f"Received value {default_value} of type {type(default_value)}",
                 )
 
-    return default_value
+    return default_value  # type: ignore  # (pyright bug)
 
 
 @experimental_param(param="asset_key")
@@ -114,7 +113,7 @@ class InputDefinition:
         self._name = check_valid_name(name, allow_list=["config"])
 
         self._type_not_set = dagster_type is None
-        self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
+        self._dagster_type = resolve_dagster_type(dagster_type)
 
         self._description = check.opt_str_param(description, "description")
 

@@ -1,0 +1,167 @@
+---
+title: "Using Dagster with Power BI"
+description: Represent your Power BI assets in Dagster
+---
+
+# Using Dagster with Power BI
+
+<ExperimentalCallout />
+
+This guide provides instructions for using Dagster with Power BI. Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
+
+## What you'll learn
+
+- How to represent Power BI assets in the Dagster asset graph, including lineage to other Dagster assets.
+- How to customize asset definition metadata for these Power BI assets.
+- How to materialize Power BI semantic models from Dagster.
+- How to customize how Power BI semantic models are materialized.
+
+<details>
+  <summary>Prerequisites</summary>
+
+- Familiarity with asset definitions and the Dagster asset graph
+- Familiarity with Dagster resources - Familiarity with Power BI concepts, like semantic models, data sources, reports, and dashboards
+- A Power BI workspace
+- A service principal configured to access Power BI, or an API access token. For more information, see [Embed Power BI content with service principal and an application secret](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-service-principal) in the Power BI documentation.
+
+</details>
+
+## Represent Power BI assets in the asset graph
+
+To load Power BI assets into the Dagster asset graph, you must first construct a `PowerBIWorkspace` resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and credentials. You may configure a service principal or use an API access token, which can be passed directly or accessed from the environment using `EnvVar`.
+
+Dagster can automatically load all semantic models, data sources, reports, and dashboards from your Power BI workspace. Call the `build_defs()` function, which returns a `Definitions` object containing all the asset definitions for these Power BI assets.
+
+```python file=/integrations/power-bi/representing-power-bi-assets.py
+import uuid
+from http import client
+from typing import cast
+
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIToken, PowerBIWorkspace
+
+from dagster import Definitions, EnvVar, asset, define_asset_job
+
+# Connect using a service principal
+resource = PowerBIWorkspace(
+    credentials=PowerBIServicePrincipal(
+        client_id=EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    ),
+    workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
+)
+
+# Alternatively, connect directly using an API access token
+resource = PowerBIWorkspace(
+    credentials=PowerBIToken(api_token=EnvVar("POWER_BI_API_TOKEN")),
+    workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
+)
+
+defs = resource.build_defs()
+```
+
+### Customize asset definition metadata for Power BI assets
+
+By default, Dagster will generate asset keys for each Power BI asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom `DagsterPowerBITranslator` subclass to the `build_defs()` function. This subclass can implement methods to customize the asset keys or specs for each Power BI asset type.
+
+```python file=/integrations/power-bi/customize-power-bi-asset-defs.py
+from dagster_powerbi import (
+    DagsterPowerBITranslator,
+    PowerBIServicePrincipal,
+    PowerBIWorkspace,
+)
+from dagster_powerbi.translator import PowerBIContentData
+
+from dagster import EnvVar
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
+
+resource = PowerBIWorkspace(
+    credentials=PowerBIServicePrincipal(
+        client_id=EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    ),
+    workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
+)
+
+
+# A translator class lets us customize properties of the built
+# Power BI assets, such as the owners or asset key
+class MyCustomPowerBITranslator(DagsterPowerBITranslator):
+    def get_report_spec(self, data: PowerBIContentData) -> AssetSpec:
+        # We add a team owner tag to all reports
+        return super().get_report_spec(data)._replace(owners=["my_team"])
+
+    def get_semantic_model_spec(self, data: PowerBIContentData) -> AssetSpec:
+        return super().get_semantic_model_spec(data)._replace(owners=["my_team"])
+
+    def get_dashboard_spec(self, data: PowerBIContentData) -> AssetSpec:
+        return super().get_dashboard_spec(data)._replace(owners=["my_team"])
+
+    def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
+        # We prefix all dashboard asset keys with "powerbi" for organizational
+        # purposes
+        return super().get_dashboard_asset_key(data).with_prefix("powerbi")
+
+
+defs = resource.build_defs(dagster_powerbi_translator=MyCustomPowerBITranslator)
+```
+
+### Load Power BI assets from multiple workspaces
+
+Definitions from multiple Power BI workspaces can be combined by instantiating multiple `PowerBIWorkspace` resources and merging their definitions. This lets you view all your Power BI assets in a single asset graph:
+
+```python file=/integrations/power-bi/multiple-power-bi-workspaces.py
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIWorkspace
+
+from dagster import Definitions, EnvVar
+
+credentials = PowerBIServicePrincipal(
+    client_id=EnvVar("POWER_BI_CLIENT_ID"),
+    client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+    tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+)
+
+sales_team_workspace = PowerBIWorkspace(
+    credentials=credentials,
+    workspace_id="726c94ff-c408-4f43-8edf-61fbfa1753c7",
+)
+
+marketing_team_workspace = PowerBIWorkspace(
+    credentials=credentials,
+    workspace_id="8b7f815d-4e64-40dd-993c-cfa4fb12edee",
+)
+
+# We use Definitions.merge to combine the definitions from both workspaces
+# into a single set of definitions to load
+defs = Definitions.merge(
+    sales_team_workspace.build_defs(),
+    marketing_team_workspace.build_defs(),
+)
+```
+
+## Materialize Power BI semantic models from Dagster
+
+Dagster's default behavior is to pull in representations of Power BI semantic models as external assets, which appear in the asset graph but can't be materialized. However, you can instruct Dagster to allow you to materialize these semantic models, refreshing them, by passing `enable_refresh_semantic_models=True` to the `build_defs()` function:
+
+```python file=/integrations/power-bi/materialize-semantic-models.py
+import uuid
+from typing import cast
+
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIWorkspace
+
+from dagster import Definitions, EnvVar, asset, define_asset_job
+
+resource = PowerBIWorkspace(
+    credentials=PowerBIServicePrincipal(
+        client_id=EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    ),
+    workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
+)
+defs = resource.build_defs(enable_refresh_semantic_models=True)
+```
+
+You can then add these semantic models to jobs or as targets of Dagster sensors or schedules to trigger refreshes of the models on a cadence or based on other conditions.

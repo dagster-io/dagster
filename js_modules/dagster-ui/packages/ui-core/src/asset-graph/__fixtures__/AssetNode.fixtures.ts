@@ -1,16 +1,21 @@
 import {
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+  ChangeReason,
   RunStatus,
-  StaleStatus,
   StaleCause,
   StaleCauseCategory,
-  AssetCheckSeverity,
-  AssetCheckExecutionResolvedStatus,
-  buildAssetCheckExecution,
-  buildAssetCheckEvaluation,
+  StaleStatus,
   buildAssetCheck,
+  buildAssetCheckEvaluation,
+  buildAssetCheckExecution,
+  buildAssetFreshnessInfo,
   buildAssetKey,
+  buildAssetNode,
+  buildMaterializationEvent,
+  buildRun,
 } from '../../graphql/types';
-import {LiveDataForNode} from '../Utils';
+import {LiveDataForNodeWithStaleData} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
 
 export const MockStaleReasonData: StaleCause = {
@@ -20,7 +25,7 @@ export const MockStaleReasonData: StaleCause = {
     __typename: 'AssetKey',
   },
   partitionKey: null,
-  reason: 'updated data version',
+  reason: 'has a new data version',
   category: StaleCauseCategory.DATA,
   dependency: {
     path: ['asset0'],
@@ -36,7 +41,7 @@ export const MockStaleReasonCode: StaleCause = {
     __typename: 'AssetKey',
   },
   partitionKey: null,
-  reason: 'code version changed',
+  reason: 'has a new code version',
   category: StaleCauseCategory.CODE,
   dependency: {
     path: ['asset1'],
@@ -47,9 +52,8 @@ export const MockStaleReasonCode: StaleCause = {
 
 const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
 
-export const AssetNodeFragmentBasic: AssetNodeFragment = {
-  __typename: 'AssetNode',
-  assetKey: {__typename: 'AssetKey', path: ['asset1']},
+export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
+  assetKey: buildAssetKey({path: ['asset1']}),
   computeKind: null,
   description: 'This is a test asset description',
   graphName: null,
@@ -57,32 +61,49 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = {
   id: '["asset1"]',
   isObservable: false,
   isPartitioned: false,
-  isSource: false,
+  isMaterializable: true,
   jobNames: ['job1'],
   opNames: ['asset1'],
   opVersion: '1',
-};
+  changedReasons: [
+    ChangeReason.NEW,
+    ChangeReason.CODE_VERSION,
+    ChangeReason.DEPENDENCIES,
+    ChangeReason.PARTITIONS_DEFINITION,
+    ChangeReason.TAGS,
+    ChangeReason.METADATA,
+    ChangeReason.REMOVED,
+  ],
+});
 
-export const AssetNodeFragmentSource: AssetNodeFragment = {
+export const AssetNodeFragmentSource = buildAssetNode({
   ...AssetNodeFragmentBasic,
-  assetKey: {__typename: 'AssetKey', path: ['source_asset']},
+  assetKey: buildAssetKey({path: ['source_asset']}),
   description: 'This is a test source asset',
   id: '["source_asset"]',
   isObservable: true,
-  isSource: true,
+  isMaterializable: false,
   jobNames: [],
   opNames: [],
-};
+});
 
-export const AssetNodeFragmentPartitioned: AssetNodeFragment = {
+export const AssetNodeFragmentSourceOverdue = buildAssetNode({
+  isMaterializable: false,
+  isObservable: false,
+  freshnessInfo: buildAssetFreshnessInfo({
+    currentMinutesLate: 12,
+  }),
+});
+
+export const AssetNodeFragmentPartitioned: AssetNodeFragment = buildAssetNode({
   ...AssetNodeFragmentBasic,
-  assetKey: {__typename: 'AssetKey', path: ['asset_partioned']},
+  assetKey: buildAssetKey({path: ['asset_partioned']}),
   description: 'This is a partitioned asset description',
   id: '["asset_partioned"]',
   isPartitioned: true,
-};
+});
 
-export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
+export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNodeWithStaleData = {
   stepKey: 'asset2',
   unstartedRunIds: ['ABCDEF'],
   inProgressRunIds: [],
@@ -98,7 +119,7 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
+export const LiveDataForNodeRunStartedMaterializing: LiveDataForNodeWithStaleData = {
   stepKey: 'asset3',
   unstartedRunIds: [],
   inProgressRunIds: ['ABCDEF'],
@@ -114,19 +135,18 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeRunFailed: LiveDataForNode = {
+export const LiveDataForNodeRunFailed: LiveDataForNodeWithStaleData = {
   stepKey: 'asset4',
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
-  runWhichFailedToMaterialize: {
-    __typename: 'Run',
+  runWhichFailedToMaterialize: buildRun({
     id: 'ABCDEF',
     status: RunStatus.FAILURE,
     endTime: 1673301346,
-  },
+  }),
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],
@@ -135,7 +155,7 @@ export const LiveDataForNodeRunFailed: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
+export const LiveDataForNodeNeverMaterialized: LiveDataForNodeWithStaleData = {
   stepKey: 'asset5',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -151,15 +171,14 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeMaterialized: LiveDataForNode = {
+export const LiveDataForNodeMaterialized: LiveDataForNodeWithStaleData = {
   stepKey: 'asset6',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -171,15 +190,14 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
+export const LiveDataForNodeMaterializedWithChecks: LiveDataForNodeWithStaleData = {
   stepKey: 'asset7',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -242,22 +260,21 @@ export const LiveDataForNodeMaterializedWithChecks: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNode = {
+export const LiveDataForNodeMaterializedWithChecksOk: LiveDataForNodeWithStaleData = {
   ...LiveDataForNodeMaterializedWithChecks,
   assetChecks: LiveDataForNodeMaterializedWithChecks.assetChecks.filter(
     (c) => c.executionForLatestMaterialization?.evaluation?.severity !== AssetCheckSeverity.ERROR,
   ),
 };
 
-export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
+export const LiveDataForNodeMaterializedAndStale: LiveDataForNodeWithStaleData = {
   stepKey: 'asset8',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -269,15 +286,14 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
+export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNodeWithStaleData = {
   stepKey: 'asset9',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -292,20 +308,33 @@ export const LiveDataForNodeMaterializedAndStaleAndOverdue: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
+export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNodeWithStaleData = {
   stepKey: 'asset10',
+
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
-  staleCauses: [MockStaleReasonCode, MockStaleReasonData],
+  staleCauses: [
+    MockStaleReasonCode,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+    MockStaleReasonData,
+  ],
   assetChecks: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
@@ -315,15 +344,14 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
+export const LiveDataForNodeMaterializedAndFresh: LiveDataForNodeWithStaleData = {
   stepKey: 'asset11',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -338,15 +366,14 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
+export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNodeWithStaleData = {
   stepKey: 'asset12',
   unstartedRunIds: [],
   inProgressRunIds: [],
-  lastMaterialization: {
-    __typename: 'MaterializationEvent',
+  lastMaterialization: buildMaterializationEvent({
     runId: 'ABCDEF',
     timestamp: TIMESTAMP,
-  },
+  }),
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
@@ -361,31 +388,29 @@ export const LiveDataForNodeMaterializedAndOverdue: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeFailedAndOverdue: LiveDataForNode = {
+export const LiveDataForNodeFailedAndOverdue: LiveDataForNodeWithStaleData = {
   stepKey: 'asset13',
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterializationRunStatus: null,
   lastObservation: null,
   lastMaterialization: null,
-  runWhichFailedToMaterialize: {
-    __typename: 'Run',
+  runWhichFailedToMaterialize: buildRun({
     id: '123456',
     status: RunStatus.FAILURE,
     endTime: 1673301346,
-  },
+  }),
   staleStatus: StaleStatus.FRESH,
   staleCauses: [],
   assetChecks: [],
-  freshnessInfo: {
-    __typename: 'AssetFreshnessInfo',
+  freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,
-  },
+  }),
   partitionStats: null,
   opNames: [],
 };
 
-export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
+export const LiveDataForNodeSourceNeverObserved: LiveDataForNodeWithStaleData = {
   stepKey: 'source_asset2',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -402,7 +427,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
+export const LiveDataForNodeSourceObservationRunning: LiveDataForNodeWithStaleData = {
   stepKey: 'source_asset3',
   unstartedRunIds: [],
   inProgressRunIds: ['ABCDEF'],
@@ -417,7 +442,7 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   partitionStats: null,
   opNames: [],
 };
-export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
+export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData = {
   stepKey: 'source_asset4',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -437,7 +462,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   partitionStats: null,
 };
 
-export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
+export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData = {
   stepKey: 'partitioned_asset1',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -462,7 +487,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
+export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData = {
   stepKey: 'partitioned_asset2',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -487,7 +512,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
+export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData = {
   stepKey: 'partitioned_asset3',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -512,7 +537,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
+export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNodeWithStaleData = {
   stepKey: 'asset20',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -533,7 +558,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
+export const LiveDataForNodePartitionedMaterializing: LiveDataForNodeWithStaleData = {
   stepKey: 'asset21',
   unstartedRunIds: ['LMAANO'],
   inProgressRunIds: ['ABCDEF', 'CDEFG', 'HIHKA'],
@@ -554,7 +579,7 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedStale: LiveDataForNode = {
+export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
   stepKey: 'asset22',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -579,7 +604,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
+export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
   stepKey: 'asset23',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -607,7 +632,7 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
+export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
   stepKey: 'asset24',
   unstartedRunIds: [],
   inProgressRunIds: [],
@@ -635,19 +660,18 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNode = {
   opNames: [],
 };
 
-export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
+export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNodeWithStaleData = {
   stepKey: 'asset25',
   unstartedRunIds: [],
   inProgressRunIds: [],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
-  runWhichFailedToMaterialize: {
-    __typename: 'Run',
+  runWhichFailedToMaterialize: buildRun({
     id: 'ABCDEF',
     status: RunStatus.FAILURE,
     endTime: 1673301346,
-  },
+  }),
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],
@@ -717,14 +741,14 @@ export const AssetNodeScenariosBase = [
     title: 'Materialized and Stale',
     liveData: LiveDataForNodeMaterializedAndStale,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Upstream code version', 'Feb'],
+    expectedText: ['Unsynced', 'Feb'],
   },
 
   {
     title: 'Materialized and Stale and Overdue',
     liveData: LiveDataForNodeMaterializedAndStaleAndOverdue,
     definition: AssetNodeFragmentBasic,
-    expectedText: ['Upstream code version', 'Overdue', 'Feb'],
+    expectedText: ['Unsynced', 'Overdue', 'Feb'],
   },
 
   {
@@ -807,6 +831,12 @@ export const AssetNodeScenariosSource = [
     expectedText: ['Never observed', '–'],
   },
 
+  {
+    title: 'Source Asset - Overdue',
+    liveData: LiveDataForNodeMaterializedAndOverdue,
+    definition: AssetNodeFragmentSourceOverdue,
+    expectedText: ['Overdue', 'Feb'],
+  },
   {
     title: 'Source Asset - Observation Running',
     liveData: LiveDataForNodeSourceObservationRunning,

@@ -16,6 +16,15 @@ from dagster._core.utils import (
 from dagster._utils import hash_collection, library_version_from_core_version
 
 
+@pytest.fixture
+def library_registry_fixture():
+    previous_libraries = DagsterLibraryRegistry.get()
+
+    yield
+
+    DagsterLibraryRegistry._libraries = previous_libraries  # noqa: SLF001
+
+
 def test_parse_env_var_no_equals():
     env_var = "FOO_ENV_VAR"
 
@@ -73,6 +82,15 @@ def test_library_version_from_core_version():
     assert library_version_from_core_version("1.1.16post0") == "0.17.16post0"
 
 
+def test_non_dagster_library_registry(library_registry_fixture):
+    DagsterLibraryRegistry.register("not-dagster", "0.0.1", is_dagster_package=False)
+
+    assert DagsterLibraryRegistry.get() == {
+        "dagster": dagster.version.__version__,
+        "not-dagster": "0.0.1",
+    }
+
+
 def test_library_registry():
     assert DagsterLibraryRegistry.get() == {"dagster": dagster.version.__version__}
 
@@ -122,7 +140,7 @@ def test_inherit_context_threadpool():
             assert f.result()
 
 
-def test_inherit_context_threadpool_properties():
+def test_inherit_context_threadpool_properties() -> None:
     def sleepy_thread():
         time.sleep(1)
         return True
@@ -142,3 +160,11 @@ def test_inherit_context_threadpool_properties():
 
         assert executor.num_running_futures == 0
         assert executor.num_queued_futures == 0
+
+        # futures still have strong refs so are still tracked
+        assert executor.weak_tracked_futures_count == 10
+
+        futures = []
+        f = None
+        # now they dont
+        assert executor.weak_tracked_futures_count == 0

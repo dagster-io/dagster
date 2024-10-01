@@ -78,6 +78,7 @@ def test_clean_event_generator_exit():
     resource_context = InitResourceContext(
         resource_def=resource_def,
         resources=ScopedResourcesBuilder().build(None),
+        all_resource_defs=job_def.resource_defs,
         resource_config=None,
         dagster_run=run,
         instance=instance,

@@ -17,6 +17,7 @@
    sections/api/apidocs/loggers
    sections/api/apidocs/ops
    sections/api/apidocs/io-managers
+   sections/api/apidocs/metadata
    sections/api/apidocs/partitions
    sections/api/apidocs/pipes
    sections/api/apidocs/definitions
@@ -26,9 +27,7 @@
    sections/api/apidocs/dynamic
    sections/api/apidocs/types
    sections/api/apidocs/utilities
-   sections/api/apidocs/memoization
    sections/api/apidocs/libraries/dagster-airbyte
-   sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws
    sections/api/apidocs/libraries/dagster-azure
    sections/api/apidocs/libraries/dagster-celery
@@ -56,14 +55,17 @@
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
    sections/api/apidocs/libraries/dagster-k8s
+   sections/api/apidocs/libraries/dagster-looker
    sections/api/apidocs/libraries/dagster-mlflow
    sections/api/apidocs/libraries/dagster-msteams
    sections/api/apidocs/libraries/dagster-mysql
+   sections/api/apidocs/libraries/dagster-openai
    sections/api/apidocs/libraries/dagster-pagerduty
    sections/api/apidocs/libraries/dagster-pandas
    sections/api/apidocs/libraries/dagster-pandera
    sections/api/apidocs/libraries/dagster-papertrail
    sections/api/apidocs/libraries/dagster-pipes
+   sections/api/apidocs/libraries/dagster-polars
    sections/api/apidocs/libraries/dagster-postgres
    sections/api/apidocs/libraries/dagster-prometheus
    sections/api/apidocs/libraries/dagster-pyspark

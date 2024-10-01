@@ -1,6 +1,4 @@
-import {gql} from '@apollo/client';
-import * as React from 'react';
-
+import {gql} from '../apollo-client';
 import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
 
 export const REPOSITORY_INFO_FRAGMENT = gql`

@@ -16,15 +16,15 @@ export default {
   input: {
     index: './src/index.ts',
 
-    // Our core fonts, usable as global style components, e.g. `<GlobalInconsolata />`.
-    'fonts/GlobalInconsolata': './src/fonts/GlobalInconsolata.tsx',
-    'fonts/GlobalInter': './src/fonts/GlobalInter.tsx',
+    // Our core fonts, usable as global style components, e.g. `<GlobalGeist />`.
+    'fonts/GlobalGeistMono': './src/fonts/GlobalGeistMono.tsx',
+    'fonts/GlobalGeist': './src/fonts/GlobalGeist.tsx',
 
     // Components are listed here individually so that they may be imported
     // without pulling in the entire library.
     'components/Box': './src/components/Box.tsx',
     'components/Button': './src/components/Button.tsx',
-    'components/Colors': './src/components/Colors.tsx',
+    'components/Color': './src/components/Color.tsx',
     'components/Icon': './src/components/Icon.tsx',
   },
   output: {
@@ -54,10 +54,10 @@ export default {
     '@blueprintjs/core',
     '@blueprintjs/popover2',
     '@blueprintjs/select',
+    '@tanstack/react-virtual',
     'react',
     'react-dom',
     'react-is',
-    'react-virtualized',
     'styled-components',
   ],
 };

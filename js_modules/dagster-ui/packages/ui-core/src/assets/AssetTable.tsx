@@ -1,72 +1,81 @@
-import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
   Checkbox,
+  Colors,
   Icon,
   Menu,
   MenuItem,
   NonIdealState,
   Popover,
   Tooltip,
-  colorAccentRed,
-  colorBackgroundDefault,
-  colorTextDisabled,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
+import {useContext, useMemo} from 'react';
+import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 
-import {useUnscopedPermissions} from '../app/Permissions';
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetGroupSelector, AssetKeyInput} from '../graphql/types';
-import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {testId} from '../testing/testId';
-import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
-
-import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
+import {RefetchQueriesFunction} from '../apollo-client';
+import {CloudOSSContext} from '../app/CloudOSSContext';
+import {useUnscopedPermissions} from '../app/Permissions';
+import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {testId} from '../testing/testId';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 type Asset = AssetTableFragment;
 
 interface Props {
   view: AssetViewType;
   assets: Asset[];
-  refreshState: QueryRefreshState;
+  refreshState: RefreshState;
   actionBarComponents: React.ReactNode;
+  belowActionBarComponents: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
-  requery?: RefetchQueriesFunction;
   searchPath: string;
-  searchGroups: AssetGroupSelector[];
+  isFiltered: boolean;
+  kindFilter?: StaticSetFilter<string>;
+  isLoading: boolean;
 }
 
 export const AssetTable = ({
   assets,
   actionBarComponents,
+  belowActionBarComponents,
   refreshState,
   prefixPath,
   displayPathForAsset,
-  requery,
   searchPath,
-  searchGroups,
+  isFiltered,
   view,
+  kindFilter,
+  isLoading,
 }: Props) => {
-  const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
-
-  const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
-  const displayKeys = Object.keys(groupedByDisplayKey).sort();
+  const groupedByDisplayKey = useMemo(
+    () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
+    [assets, displayPathForAsset],
+  );
+  const displayKeys = useMemo(() => Object.keys(groupedByDisplayKey).sort(), [groupedByDisplayKey]);
 
   const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] =
     useSelectionReducer(displayKeys);
 
-  const checkedAssets: Asset[] = [];
-  displayKeys.forEach((displayKey) => {
-    if (checkedDisplayKeys.has(displayKey)) {
-      checkedAssets.push(...(groupedByDisplayKey[displayKey] || []));
-    }
-  });
+  const checkedAssets = useMemo(() => {
+    const assets: Asset[] = [];
+    displayKeys.forEach((displayKey) => {
+      if (checkedDisplayKeys.has(displayKey)) {
+        groupedByDisplayKey[displayKey]?.forEach((asset) => {
+          assets.push(asset);
+        });
+      }
+    });
+    return assets;
+  }, [checkedDisplayKeys, displayKeys, groupedByDisplayKey]);
 
   const content = () => {
     if (!assets.length) {
@@ -77,14 +86,10 @@ export const AssetTable = ({
               icon="search"
               title="No matching assets"
               description={
-                searchGroups.length ? (
+                isFiltered ? (
                   <div>
-                    No assets matching <strong>{searchPath}</strong> were found in{' '}
-                    {searchGroups.length === 1 ? (
-                      <strong>{searchGroups[0]?.groupName}</strong>
-                    ) : (
-                      'the selected asset groups'
-                    )}
+                    No assets matching <strong>{searchPath}</strong> were found in the selected
+                    filters
                   </div>
                 ) : (
                   <div>
@@ -103,18 +108,9 @@ export const AssetTable = ({
             icon="search"
             title="No assets"
             description={
-              searchGroups.length ? (
-                <div>
-                  No assets were found in{' '}
-                  {searchGroups.length === 1 ? (
-                    <strong>{searchGroups[0]?.groupName}</strong>
-                  ) : (
-                    'the selected asset groups'
-                  )}
-                </div>
-              ) : (
-                'No assets were found'
-              )
+              isFiltered
+                ? 'No assets were found matching the selected filters'
+                : 'No assets were found'
             }
           />
         </Box>
@@ -140,9 +136,11 @@ export const AssetTable = ({
         groups={groupedByDisplayKey}
         checkedDisplayKeys={checkedDisplayKeys}
         onToggleFactory={onToggleFactory}
+        onRefresh={() => refreshState.refetch()}
         showRepoColumn
         view={view}
-        onWipe={(assetKeys: AssetKeyInput[]) => setToWipe(assetKeys)}
+        kindFilter={kindFilter}
+        isLoading={isLoading}
       />
     );
   };
@@ -151,9 +149,9 @@ export const AssetTable = ({
     <>
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <Box
-          background={colorBackgroundDefault()}
+          background={Colors.backgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
-          padding={{vertical: 8, left: 24, right: 12}}
+          padding={{vertical: 12, horizontal: 24}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
         >
           {actionBarComponents}
@@ -184,15 +182,9 @@ export const AssetTable = ({
             />
           </Box>
         </Box>
+        {belowActionBarComponents}
         {content()}
       </Box>
-      <AssetWipeDialog
-        assetKeys={toWipe || []}
-        isOpen={!!toWipe}
-        onClose={() => setToWipe(undefined)}
-        onComplete={() => setToWipe(undefined)}
-        requery={requery}
-      />
     </>
   );
 };
@@ -210,7 +202,11 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
     permissions: {canWipeAssets},
   } = useUnscopedPermissions();
 
-  if (!canWipeAssets) {
+  const {
+    featureContext: {canSeeWipeMaterializationAction},
+  } = useContext(CloudOSSContext);
+
+  if (!canWipeAssets || !canSeeWipeMaterializationAction) {
     return null;
   }
 
@@ -226,7 +222,7 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
               text="Wipe materializations"
               onClick={() => setShowBulkWipeDialog(true)}
               icon={
-                <Icon name="delete" color={disabled ? colorTextDisabled() : colorAccentRed()} />
+                <Icon name="delete" color={disabled ? Colors.textDisabled() : Colors.accentRed()} />
               }
               disabled={disabled}
               intent="danger"
@@ -241,7 +237,6 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
         isOpen={showBulkWipeDialog}
         onClose={() => setShowBulkWipeDialog(false)}
         onComplete={() => {
-          setShowBulkWipeDialog(false);
           clearSelection();
         }}
         requery={requery}

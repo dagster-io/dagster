@@ -1,7 +1,8 @@
-import {Icon, Tooltip, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
+import {useContext} from 'react';
 import styled from 'styled-components';
 
+import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
 import {DEFAULT_TIME_FORMAT, TimeFormat} from '../app/time/TimestampFormat';
 import {timestampToString} from '../app/time/timestampToString';
@@ -10,15 +11,16 @@ interface Props {
   timestamp: number;
   timezone?: string | null;
   timeFormat?: TimeFormat;
+  hourCycle?: HourCycle | null;
   tooltipTimeFormat?: TimeFormat;
 }
 
 export const TimestampDisplay = (props: Props) => {
-  const {timestamp, timezone, timeFormat, tooltipTimeFormat} = props;
+  const {timestamp, timezone, timeFormat, hourCycle, tooltipTimeFormat} = props;
   const {
     timezone: [userTimezone],
-    hourCycle: [hourCycle],
-  } = React.useContext(TimeContext);
+    hourCycle: [userHourCycle],
+  } = useContext(TimeContext);
 
   const locale = navigator.language;
   const mainString = timestampToString({
@@ -26,7 +28,7 @@ export const TimestampDisplay = (props: Props) => {
     locale,
     timezone: timezone || userTimezone,
     timeFormat,
-    hourCycle,
+    hourCycle: hourCycle || userHourCycle,
   });
 
   return (
@@ -48,7 +50,7 @@ export const TimestampDisplay = (props: Props) => {
             </TabularNums>
           }
         >
-          <Icon name="schedule" color={colorTextLight()} size={12} />
+          <Icon name="schedule" color={Colors.textLight()} size={12} />
         </TimestampTooltip>
       ) : null}
     </span>

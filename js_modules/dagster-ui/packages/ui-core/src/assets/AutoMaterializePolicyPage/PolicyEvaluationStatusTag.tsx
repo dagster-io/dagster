@@ -2,8 +2,7 @@ import {Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {assertUnreachable} from '../../app/Util';
-
-import {AssetConditionEvaluationStatus} from './types';
+import {AssetConditionEvaluationStatus} from '../../graphql/types';
 
 export const PolicyEvaluationStatusTag = ({status}: {status: AssetConditionEvaluationStatus}) => {
   switch (status) {

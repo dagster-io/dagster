@@ -1,24 +1,22 @@
 from datetime import datetime
 from typing import cast
 
-import pendulum
-from dagster import (
-    DailyPartitionsDefinition,
-    PartitionKeyRange,
-)
+from dagster import DailyPartitionsDefinition, PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
     PartitionRangeStatus,
     PartitionTimeWindowStatus,
     TimeWindow,
     fetch_flattened_time_window_ranges,
 )
+from dagster._time import parse_time_string
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, pendulum.parser.parse(start)), cast(datetime, pendulum.parser.parse(end))
+        cast(datetime, parse_time_string(start)),
+        cast(datetime, parse_time_string(end)),
     )
 
 

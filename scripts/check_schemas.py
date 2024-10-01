@@ -55,7 +55,7 @@ def validate_column(column: Column):
         raise Exception(
             f"Column {column} has a server default of CURRENT_TIMESTAMP without precision"
             " specified. To allow schema compatibility between MySQL, Postgres, and SQLite, use"
-            " dagster._core.storage.sql.py::get_current_timestamp() instead."
+            " dagster._core.storage.sql.py::get_sql_current_timestamp() instead."
         )
 
 

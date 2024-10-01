@@ -8,11 +8,11 @@ import pytest
 from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation.origin import (
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
+from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
@@ -24,19 +24,16 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import (
-    ExecuteExternalJobArgs,
-    open_server_process,
-    wait_for_grpc_server,
+from dagster._grpc.server import ExecuteExternalJobArgs, open_server_process, wait_for_grpc_server
+from dagster._grpc.types import (
+    JobSubsetSnapshotArgs,
+    ListRepositoriesResponse,
+    SensorExecutionArgs,
+    StartRunResult,
 )
-from dagster._grpc.types import ListRepositoriesResponse, SensorExecutionArgs, StartRunResult
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import (
-    file_relative_path,
-    find_free_port,
-    safe_tempfile_path_unmanaged,
-)
+from dagster._utils import file_relative_path, find_free_port, safe_tempfile_path_unmanaged
 from dagster._utils.error import SerializableErrorInfo
 from dagster.version import __version__ as dagster_version
 
@@ -711,9 +708,9 @@ def test_load_with_secrets_loader_instance_ref(entrypoint):
                     run = create_run_for_test(instance, job_name="needs_env_var_job")
                     run_id = run.run_id
 
-                    job_origin = ExternalJobOrigin(
+                    job_origin = RemoteJobOrigin(
                         job_name="needs_env_var_job",
-                        external_repository_origin=ExternalRepositoryOrigin(
+                        repository_origin=RemoteRepositoryOrigin(
                             repository_name="needs_env_var_repo",
                             code_location_origin=RegisteredCodeLocationOrigin("not_used"),
                         ),
@@ -828,7 +825,7 @@ def test_sensor_timeout(entrypoint):
         client = DagsterGrpcClient(port=port)
 
         with instance_for_test() as instance:
-            repo_origin = ExternalRepositoryOrigin(
+            repo_origin = RemoteRepositoryOrigin(
                 code_location_origin=GrpcServerCodeLocationOrigin(port=port, host="localhost"),
                 repository_name="bar_repo",
             )
@@ -906,3 +903,58 @@ def test_load_with_container_context(entrypoint):
     finally:
         process.terminate()
         process.wait()
+
+
+def test_load_with_error_logging(capfd):
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+
+    subprocess_args = ["dagster", "api", "grpc"] + [
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+    ]
+
+    process = subprocess.Popen(
+        subprocess_args,
+        env={**os.environ, "DAGSTER_CODE_SERVER_LOG_EXCEPTIONS": "1"},
+        text=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
+
+    try:
+        client = DagsterGrpcClient(port=port, host="localhost")
+
+        wait_for_grpc_server(process, client, subprocess_args)
+
+        missing_job_origin = RemoteJobOrigin(
+            job_name="missing_job_name",
+            repository_origin=RemoteRepositoryOrigin(
+                repository_name="missing_repo_name",
+                code_location_origin=RegisteredCodeLocationOrigin(
+                    location_name="missing_location_name"
+                ),
+            ),
+        )
+
+        result = deserialize_value(
+            client.external_pipeline_subset(
+                pipeline_subset_snapshot_args=JobSubsetSnapshotArgs(
+                    job_origin=missing_job_origin,
+                    op_selection=None,
+                ),
+            )
+        )
+
+        assert result.error
+        assert 'Could not find a repository called "missing_repo_name"' in str(result.error)
+
+    finally:
+        process.terminate()
+        process.wait()
+
+    out, _err = capfd.readouterr()
+
+    assert 'Could not find a repository called "missing_repo_name"' in out

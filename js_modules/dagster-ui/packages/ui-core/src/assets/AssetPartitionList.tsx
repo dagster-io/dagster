@@ -1,17 +1,10 @@
-import {
-  Box,
-  MiddleTruncate,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextDefault,
-} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 
-import {Inner} from '../ui/VirtualizedTable';
-
-import {AssetListRow, AssetListContainer} from './AssetEventList';
+import {AssetListContainer, AssetListRow} from './AssetEventList';
 import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
+import {Inner} from '../ui/VirtualizedTable';
 
 export interface AssetPartitionListProps {
   partitions: string[];
@@ -25,7 +18,7 @@ export const AssetPartitionList = ({
   statusForPartition,
   partitions,
 }: AssetPartitionListProps) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
@@ -37,7 +30,7 @@ export const AssetPartitionList = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (focusedDimensionKey && partitions.indexOf(focusedDimensionKey) !== -1) {
       rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
         behavior: 'auto',
@@ -135,9 +128,9 @@ export const AssetPartitionStatusDot = ({status}: {status: AssetPartitionStatus[
 );
 
 const PartitionTooltipStyle = JSON.stringify({
-  background: colorBackgroundLight(),
-  border: `1px solid ${colorBorderDefault()}`,
-  color: colorTextDefault(),
+  background: Colors.backgroundLight(),
+  border: `1px solid ${Colors.borderDefault()}`,
+  color: Colors.textDefault(),
   fontSize: '14px',
   top: 0,
   left: 0,

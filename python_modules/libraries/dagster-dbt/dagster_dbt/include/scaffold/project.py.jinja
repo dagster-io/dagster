@@ -1,0 +1,12 @@
+from pathlib import Path
+
+from dagster_dbt import DbtProject
+
+{{ dbt_project_name }} = DbtProject(
+    project_dir=Path(__file__).joinpath({{ dbt_project_dir_relative_path_parts | join(', ')}}).resolve(),
+    packaged_project_dir=Path(__file__).joinpath("..", "..", "dbt-project").resolve(),
+    {%- if use_experimental_dbt_state %}
+    state_path=Path("target", "state"),
+    {%- endif %}
+)
+{{ dbt_project_name }}.prepare_if_dev()

@@ -7,5 +7,4 @@ materialize_on_cron_policy = AutoMaterializePolicy.eager().with_rules(
 
 
 @asset(auto_materialize_policy=materialize_on_cron_policy)
-def root_asset():
-    ...
+def root_asset(): ...

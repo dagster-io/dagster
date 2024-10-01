@@ -1,44 +1,38 @@
-import {
-  Box,
-  Group,
-  Icon,
-  Mono,
-  NonIdealState,
-  Table,
-  colorAccentGray,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {AssetLineageElements} from './AssetLineageElements';
+import {ChangedReasonsTag} from './ChangedReasons';
+import {StaleReasonsTag} from './Stale';
+import {isRunlessEvent} from './isRunlessEvent';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {
+  AssetMaterializationFragment,
+  AssetObservationFragment,
+} from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob, LiveDataForNode} from '../asset-graph/Utils';
+import {LiveDataForNodeWithStaleData, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
+import {isCanonicalColumnLineageEntry} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-
-import {AssetLineageElements} from './AssetLineageElements';
-import {StaleReasonsTags} from './Stale';
-import {isRunlessEvent} from './isRunlessEvent';
-import {
-  AssetObservationFragment,
-  AssetMaterializationFragment,
-} from './types/useRecentAssetEvents.types';
 
 export const LatestMaterializationMetadata = ({
   assetKey,
   latest,
   liveData,
+  definition,
 }: {
   assetKey: AssetKeyInput;
   latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
-  liveData: LiveDataForNode | undefined;
+  liveData: LiveDataForNodeWithStaleData | undefined;
+  definition: Pick<AssetViewDefinitionNodeFragment, 'changedReasons'>;
 }) => {
   const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
@@ -103,7 +97,7 @@ export const LatestMaterializationMetadata = ({
                             spacing={8}
                             alignItems="center"
                           >
-                            <Icon name="linear_scale" color={colorAccentGray()} />
+                            <Icon name="linear_scale" color={Colors.accentGray()} />
                             <Link to={linkToRunEvent(latestRun, latestEvent)}>
                               {latestEvent.stepKey}
                             </Link>
@@ -129,7 +123,13 @@ export const LatestMaterializationMetadata = ({
                 <Box flex={{gap: 8, alignItems: 'center'}}>
                   <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
                   {liveData && (
-                    <StaleReasonsTags assetKey={assetKey} liveData={liveData} include="all" />
+                    <>
+                      <StaleReasonsTag assetKey={assetKey} liveData={liveData} />
+                      <ChangedReasonsTag
+                        changedReasons={definition.changedReasons}
+                        assetKey={assetKey}
+                      />
+                    </>
                   )}
                 </Box>
               </td>
@@ -137,7 +137,7 @@ export const LatestMaterializationMetadata = ({
             {isRunlessEvent(latestEvent) ? (
               <tr>
                 <td>Description</td>
-                <td style={{color: colorTextLight()}}>
+                <td style={{color: Colors.textLight()}}>
                   <Description
                     description={latestEvent.description}
                     fontSize={14}
@@ -157,18 +157,20 @@ export const LatestMaterializationMetadata = ({
                 </td>
               </tr>
             ) : null}
-            {latestEvent.metadataEntries.map((entry) => (
-              <tr key={`metadata-${entry.label}`}>
-                <td>{entry.label}</td>
-                <td>
-                  <MetadataEntry
-                    entry={entry}
-                    expandSmallValues={true}
-                    repoLocation={repoAddress?.location}
-                  />
-                </td>
-              </tr>
-            ))}
+            {latestEvent.metadataEntries
+              .filter((entry) => !isCanonicalColumnLineageEntry(entry))
+              .map((entry) => (
+                <tr key={`metadata-${entry.label}`}>
+                  <td>{entry.label}</td>
+                  <td>
+                    <MetadataEntry
+                      entry={entry}
+                      expandSmallValues={true}
+                      repoLocation={repoAddress?.location}
+                    />
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </MetadataTable>
       ) : (

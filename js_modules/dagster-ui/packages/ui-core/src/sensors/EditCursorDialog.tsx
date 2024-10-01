@@ -1,28 +1,27 @@
-import {gql, useMutation} from '@apollo/client';
 import {
-  ButtonLink,
   Button,
+  ButtonLink,
+  Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   TextArea,
-  colorAccentReversed,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 
 import 'chartjs-adapter-date-fns';
-
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {SensorSelector} from '../graphql/types';
 
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
 } from './types/EditCursorDialog.types';
+import {gql, useMutation} from '../apollo-client';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {showSharedToaster} from '../app/DomUtils';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {SensorSelector} from '../graphql/types';
 
 export const EditCursorDialog = ({
   isOpen,
@@ -35,14 +34,13 @@ export const EditCursorDialog = ({
   sensorSelector: SensorSelector;
   onClose: () => void;
 }) => {
-  const [cursorValue, setCursorValue] = React.useState(cursor);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [requestSet] = useMutation<SetSensorCursorMutation, SetSensorCursorMutationVariables>(
-    SET_CURSOR_MUTATION,
-  );
+  const [cursorValue, setCursorValue] = useState(cursor);
+  const [requestSet, {loading: isSaving}] = useMutation<
+    SetSensorCursorMutation,
+    SetSensorCursorMutationVariables
+  >(SET_CURSOR_MUTATION);
 
   const onSave = async () => {
-    setIsSaving(true);
     const {data} = await requestSet({
       variables: {sensorSelector, cursor: cursorValue},
     });
@@ -56,7 +54,7 @@ export const EditCursorDialog = ({
           <Group direction="row" spacing={8}>
             <div>Could not set cursor value.</div>
             <ButtonLink
-              color={colorAccentReversed()}
+              color={Colors.accentReversed()}
               underline="always"
               onClick={() => {
                 showCustomAlert({

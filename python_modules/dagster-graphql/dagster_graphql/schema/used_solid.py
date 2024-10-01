@@ -1,8 +1,8 @@
 import graphene
 
-from .pipelines.pipeline import GraphenePipeline
-from .solids import GrapheneISolidDefinition, GrapheneSolidHandle
-from .util import non_null_list
+from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
+from dagster_graphql.schema.solids import GrapheneISolidDefinition, GrapheneSolidHandle
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneNodeInvocationSite(graphene.ObjectType):

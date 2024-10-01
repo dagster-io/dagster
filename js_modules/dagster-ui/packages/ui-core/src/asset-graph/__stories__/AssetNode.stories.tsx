@@ -1,11 +1,15 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {_setCacheEntryForTest} from '../../asset-data/AssetLiveDataProvider';
+import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
+import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
+import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';
-import {buildAssetKey} from '../../graphql/types';
+import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNodeLink} from '../ForeignNode';
+import {tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {getAssetNodeDimensions} from '../layout';
 
@@ -21,7 +25,7 @@ export const LiveStates = () => {
       ...scenario.definition,
       assetKey: {
         ...scenario.definition.assetKey,
-        path: [],
+        path: [] as string[],
       },
     };
     definitionCopy.assetKey.path = scenario.liveData
@@ -29,45 +33,67 @@ export const LiveStates = () => {
       : JSON.parse(scenario.definition.id);
 
     const dimensions = getAssetNodeDimensions(definitionCopy);
-    _setCacheEntryForTest(definitionCopy.assetKey, scenario.liveData);
+
+    function SetCacheEntry() {
+      if (!scenario.liveData) {
+        return null;
+      }
+      const entry = {[tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData};
+      const {staleStatus, staleCauses} = scenario.liveData;
+      const staleEntry = {
+        [tokenForAssetKey(definitionCopy.assetKey)]: buildAssetNode({
+          assetKey: definitionCopy.assetKey,
+          staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
+          staleStatus,
+        }),
+      };
+      AssetStaleStatusData.manager._updateCache(staleEntry);
+      AssetBaseData.manager._updateCache(entry);
+      return null;
+    }
+
     return (
-      <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
-        <div
-          style={{
-            position: 'relative',
-            width: dimensions.width,
-            height: dimensions.height,
-            overflowY: 'hidden',
-          }}
-        >
-          <AssetNode definition={definitionCopy} selected={false} />
-        </div>
-        <div style={{position: 'relative', width: dimensions.width, height: 82}}>
-          <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
-            <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
+      <>
+        <SetCacheEntry />
+        <Box flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}>
+          <div
+            style={{
+              position: 'relative',
+              width: dimensions.width,
+              height: dimensions.height,
+              overflowY: 'hidden',
+            }}
+          >
+            <AssetNode definition={definitionCopy} selected={false} />
           </div>
-        </div>
-        <code>
-          <strong>{scenario.title}</strong>
-          <pre>{JSON.stringify(scenario.liveData, null, 2)}</pre>
-        </code>
-      </Box>
+          <div style={{position: 'relative', width: dimensions.width, height: 104}}>
+            <div style={{position: 'absolute', width: dimensions.width}}>
+              <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
+            </div>
+          </div>
+          <code>
+            <strong>{scenario.title}</strong>
+          </code>
+        </Box>
+      </>
     );
   };
 
   return (
-    <>
-      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-        {Mocks.AssetNodeScenariosBase.map(caseWithLiveData)}
-      </Box>
+    <MockedProvider>
+      <AssetLiveDataProvider>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Mocks.AssetNodeScenariosBase.map(caseWithLiveData)}
+        </Box>
 
-      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-        {Mocks.AssetNodeScenariosSource.map(caseWithLiveData)}
-      </Box>
-      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-        {Mocks.AssetNodeScenariosPartitioned.map(caseWithLiveData)}
-      </Box>
-    </>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Mocks.AssetNodeScenariosSource.map(caseWithLiveData)}
+        </Box>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Mocks.AssetNodeScenariosPartitioned.map(caseWithLiveData)}
+        </Box>
+      </AssetLiveDataProvider>
+    </MockedProvider>
   );
   return;
 };
@@ -85,26 +111,55 @@ export const PartnerTags = () => {
   const caseWithComputeKind = (computeKind: string) => {
     const def = {...Mocks.AssetNodeFragmentBasic, computeKind};
     const liveData = Mocks.LiveDataForNodeMaterialized;
-    _setCacheEntryForTest(buildAssetKey({path: [liveData.stepKey]}), liveData);
+
+    function SetCacheEntry() {
+      const assetKey = buildAssetKey({path: [liveData.stepKey]});
+      const key = tokenForAssetKey(assetKey);
+      const entry = {[key]: liveData!};
+      const {staleStatus, staleCauses} = liveData!;
+      const staleEntry = {
+        [key]: buildAssetNode({
+          assetKey,
+          staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
+          staleStatus,
+        }),
+      };
+      AssetStaleStatusData.manager._updateCache(staleEntry);
+      AssetBaseData.manager._updateCache(entry);
+      return null;
+    }
+
     const dimensions = getAssetNodeDimensions(def);
 
     return (
-      <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
-        <strong>{computeKind}</strong>
-        <div
-          style={{position: 'relative', width: 280, height: dimensions.height, overflowY: 'hidden'}}
-        >
-          <AssetNode definition={def} selected={false} />
-        </div>
-      </Box>
+      <>
+        <SetCacheEntry />
+        <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
+          <strong>{computeKind}</strong>
+          <div
+            style={{
+              position: 'relative',
+              width: 280,
+              height: dimensions.height,
+              overflowY: 'hidden',
+            }}
+          >
+            <AssetNode definition={def} selected={false} />
+          </div>
+        </Box>
+      </>
     );
   };
 
   return (
-    <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-      {Object.keys(KNOWN_TAGS).map(caseWithComputeKind)}
-      {caseWithComputeKind('Unknown-Kind-Long')}
-      {caseWithComputeKind('another')}
-    </Box>
+    <MockedProvider>
+      <AssetLiveDataProvider>
+        <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+          {Object.keys(KNOWN_TAGS).map(caseWithComputeKind)}
+          {caseWithComputeKind('Unknown-Kind-Long')}
+          {caseWithComputeKind('another')}
+        </Box>
+      </AssetLiveDataProvider>
+    </MockedProvider>
   );
 };

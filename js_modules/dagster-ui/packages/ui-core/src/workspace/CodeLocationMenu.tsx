@@ -9,18 +9,18 @@ import {
   StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 
 export const CodeLocationMenu = ({
   locationNode,
 }: {
   locationNode: WorkspaceRepositoryLocationNode;
 }) => {
-  const [configIsOpen, setConfigIsOpen] = React.useState(false);
-  const [libsIsOpen, setLibsIsOpen] = React.useState(false);
+  const [configIsOpen, setConfigIsOpen] = useState(false);
+  const [libsIsOpen, setLibsIsOpen] = useState(false);
 
   let libsMenuItem = null;
   let libsDialog = null;
@@ -110,7 +110,7 @@ export const DagsterLibrariesDialog = ({
       <Table>
         <thead>
           <tr>
-            <th>Libray</th>
+            <th>Library</th>
             <th>Version</th>
           </tr>
         </thead>
@@ -137,10 +137,14 @@ const CodeLocationConfig = ({
 }: {
   displayMetadata: WorkspaceRepositoryLocationNode['displayMetadata'];
 }) => {
-  const yamlString = React.useMemo(() => {
-    const kvPairs = displayMetadata.reduce((accum, item) => {
-      return {...accum, [item.key]: item.value};
-    }, {});
+  const yamlString = useMemo(() => {
+    const kvPairs = displayMetadata.reduce(
+      (accum, item) => {
+        accum[item.key] = item.value;
+        return accum;
+      },
+      {} as Record<string, string>,
+    );
     return yaml.stringify(kvPairs);
   }, [displayMetadata]);
 

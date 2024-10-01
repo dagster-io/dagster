@@ -1,18 +1,30 @@
-import {gql} from '@apollo/client';
 import {
   Body,
   Box,
   Caption,
+  Colors,
   ConfigTypeSchema,
   Icon,
   Mono,
   Subheading,
-  colorAccentGray,
-  colorLinkDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
+import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
+import {
+  ASSET_NODE_OP_METADATA_FRAGMENT,
+  AssetMetadataTable,
+  metadataForAssetNode,
+} from './AssetMetadata';
+import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
+import {AssetNodeList} from './AssetNodeList';
+import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
+import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
+import {Version} from './Version';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {gql} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -24,24 +36,6 @@ import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
-import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
-import {
-  AssetMetadataTable,
-  ASSET_NODE_OP_METADATA_FRAGMENT,
-  metadataForAssetNode,
-} from './AssetMetadata';
-import {AssetNodeList} from './AssetNodeList';
-import {
-  automaterializePolicyDescription,
-  AutomaterializePolicyTag,
-} from './AutomaterializePolicyTag';
-import {DependsOnSelfBanner} from './DependsOnSelfBanner';
-import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
-import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
-import {Version} from './Version';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition = ({
   assetNode,
@@ -118,22 +112,6 @@ export const AssetNodeDefinition = ({
               </Box>
             </>
           )}
-          {assetNode.autoMaterializePolicy && (
-            <>
-              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-                <Subheading>Auto-materialize policy</Subheading>
-              </Box>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                flex={{gap: 12, alignItems: 'flex-start'}}
-              >
-                <Body style={{flex: 1}}>
-                  {automaterializePolicyDescription(assetNode.autoMaterializePolicy)}
-                </Body>
-                <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
-              </Box>
-            </>
-          )}
 
           {assetNode.backfillPolicy && (
             <>
@@ -160,11 +138,15 @@ export const AssetNodeDefinition = ({
             <Link to="?view=lineage&lineageScope=upstream">
               <Box flex={{gap: 4, alignItems: 'center'}}>
                 View upstream graph
-                <Icon name="open_in_new" color={colorLinkDefault()} />
+                <Icon name="open_in_new" color={Colors.linkDefault()} />
               </Box>
             </Link>
           </Box>
-          {dependsOnSelf && <DependsOnSelfBanner />}
+          {dependsOnSelf && (
+            <Box padding={{vertical: 16, left: 24, right: 12}} border="bottom">
+              <DependsOnSelfBanner />
+            </Box>
+          )}
           <AssetNodeList items={upstream} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -174,12 +156,6 @@ export const AssetNodeDefinition = ({
             <Subheading>
               Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
             </Subheading>
-            <Link to="?view=lineage&lineageScope=downstream">
-              <Box flex={{gap: 4, alignItems: 'center'}}>
-                View downstream graph
-                <Icon name="open_in_new" color={colorLinkDefault()} />
-              </Box>
-            </Link>
           </Box>
           <AssetNodeList items={downstream} />
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
@@ -196,7 +172,7 @@ export const AssetNodeDefinition = ({
                 .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
                 .map((resource) => (
                   <ResourceContainer key={resource.resourceKey}>
-                    <Icon name="resource" color={colorAccentGray()} />
+                    <Icon name="resource" color={Colors.accentGray()} />
                     {repoAddress ? (
                       <Link
                         to={workspacePathFromAddress(
@@ -320,9 +296,7 @@ const DescriptionAnnotations = ({
         </Mono>
       ))}
     <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
-    {assetNode.isSource ? (
-      <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
-    ) : !assetNode.isExecutable ? (
+    {!assetNode.isMaterializable ? (
       <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
@@ -332,19 +306,35 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     description
+    groupName
     graphName
     opNames
     opVersion
     jobNames
-    isSource
+    isMaterializable
     isExecutable
+    tags {
+      key
+      value
+    }
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     autoMaterializePolicy {
-      policyType
       rules {
         className
         description
         decisionType
       }
+    }
+    automationCondition {
+      label
+      expandedLabel
     }
     freshnessPolicy {
       maximumLagMinutes
@@ -372,9 +362,11 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
+    ...AssetNodeInstigatorsFragment
   }
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
 `;

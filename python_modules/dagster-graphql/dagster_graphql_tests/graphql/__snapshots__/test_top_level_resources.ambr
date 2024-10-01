@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_fetch_top_level_resource[0]
   dict({
     'topLevelResourceDetailsOrError': dict({
@@ -90,15 +91,9 @@
       ]),
       'jobsOpsUsing': list([
         dict({
-          'job': dict({
-            'name': 'my_asset_job',
-          }),
-          'opsUsing': list([
-            dict({
-              'solid': dict({
-                'name': 'my_asset',
-              }),
-            }),
+          'jobName': 'my_asset_job',
+          'opHandleIDs': list([
+            'my_asset',
           ]),
         }),
       ]),

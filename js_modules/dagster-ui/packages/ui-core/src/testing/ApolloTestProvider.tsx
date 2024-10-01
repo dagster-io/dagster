@@ -1,13 +1,12 @@
-import {ApolloClient, ApolloProvider, DocumentNode} from '@apollo/client';
 import {SchemaLink} from '@apollo/client/link/schema';
 import {mergeResolvers} from '@graphql-tools/merge';
 import {addMocksToSchema} from '@graphql-tools/mock';
 import {makeExecutableSchema} from '@graphql-tools/schema';
 import * as React from 'react';
 
-import {createAppCache} from '../app/AppCache';
-
 import {defaultMocks} from './defaultMocks';
+import {ApolloClient, ApolloProvider, DocumentNode} from '../apollo-client';
+import {createAppCache} from '../app/AppCache';
 
 export interface ApolloTestProps {
   /**

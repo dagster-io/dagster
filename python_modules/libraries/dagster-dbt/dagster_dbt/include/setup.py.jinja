@@ -4,20 +4,17 @@ setup(
     name="{{ project_name }}",
     version="0.0.1",
     packages=find_packages(),
-    {%- if use_dbt_project_package_data_dir %}
     package_data={
         "{{ project_name }}": [
             "dbt-project/**/*",
         ],
     },
-    {%- endif %}
     install_requires=[
         "dagster",
         "dagster-cloud",
         "dagster-dbt",
-        "dbt-core>=1.4.0",
         {%- for dbt_adapter in dbt_adapter_packages %}
-        "{{ dbt_adapter }}",
+        "{{ dbt_adapter }}<{{ dbt_core_version_upper_bound }}",
         {%- endfor %}
     ],
     extras_require={

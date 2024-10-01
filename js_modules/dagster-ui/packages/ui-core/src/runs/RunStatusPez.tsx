@@ -1,23 +1,14 @@
-import {
-  Box,
-  FontFamily,
-  Mono,
-  Popover,
-  colorKeylineDefault,
-  colorTextDefault,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, CaptionMono, Colors, FontFamily, Popover} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {RunStatus} from '../graphql/types';
-import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 import {RunStatusIndicator} from './RunStatusDots';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunUtils.types';
+import {RunStatus} from '../graphql/types';
+import {StepSummaryForRun} from '../instance/StepSummaryForRun';
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;
@@ -86,10 +77,10 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
         <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
           <RunStatusIndicator status={run.status} />
           <Link to={`/runs/${run.id}`}>
-            <Mono style={{fontSize: '14px'}}>{titleForRun(run)}</Mono>
+            <CaptionMono>{titleForRun(run)}</CaptionMono>
           </Link>
         </Box>
-        <Box flex={{direction: 'column', gap: 4}} padding={{top: 2}}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <RunTime run={run} />
           <RunStateSummary run={run} />
         </Box>
@@ -111,11 +102,11 @@ const OverlayContainer = styled.div`
 
 const OverlayTitle = styled.div`
   padding: 8px;
-  box-shadow: inset 0 -1px ${colorKeylineDefault()};
+  box-shadow: inset 0 -1px ${Colors.keylineDefault()};
   font-family: ${FontFamily.default};
   font-size: 14px;
   font-weight: 500;
-  color: ${colorTextDefault()};
+  color: ${Colors.textDefault()};
   max-width: 100%;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -124,7 +115,6 @@ const OverlayTitle = styled.div`
 
 const RunRow = styled.div`
   padding: 8px;
-  font-size: 12px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;

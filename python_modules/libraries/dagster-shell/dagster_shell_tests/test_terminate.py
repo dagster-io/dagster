@@ -70,7 +70,7 @@ def test_terminate_kills_subproc():
             )
             dagster_run = instance.create_run_for_job(
                 job_def=sleepy_job,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 

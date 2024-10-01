@@ -1,16 +1,11 @@
 from typing import Any, Dict, Optional
 
-from dagster import (
-    Config,
-    ConfigurableResource,
-    IAttachDifferentObjectToOpContext,
-    resource,
-)
-from dagster._config.pythonic_config.pydantic_compat_layer import compat_model_validator
+from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._model.pydantic_compat_layer import compat_model_validator
 from pydantic import Field
 
-from .databricks import DatabricksClient
+from dagster_databricks.databricks import DatabricksClient
 
 
 class OauthCredentials(Config):

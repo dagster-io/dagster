@@ -1,11 +1,10 @@
-import {Box, Icon, colorAccentGray} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-
-import {RepoAddress} from '../workspace/types';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import styled from 'styled-components';
 
 import {PipelineSnapshotLink} from './PipelinePathUtils';
+import {RepoAddress} from '../workspace/types';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 export interface Props {
   pipelineName: string;
@@ -56,7 +55,7 @@ export const PipelineReference = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <Icon color={colorAccentGray()} name="job" />
+          <Icon color={Colors.accentGray()} name="job" />
         </Box>
       )}
       <span>
@@ -69,3 +68,19 @@ export const PipelineReference = ({
     </Box>
   );
 };
+
+export const PipelineTag = (props: Props) => {
+  return (
+    <PipelineTagWrap>
+      <Tag tooltipText={props.pipelineName}>
+        <PipelineReference {...props} />
+      </Tag>
+    </PipelineTagWrap>
+  );
+};
+
+const PipelineTagWrap = styled.span`
+  span {
+    line-height: 0;
+  }
+`;

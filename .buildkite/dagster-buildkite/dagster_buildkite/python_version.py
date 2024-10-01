@@ -11,6 +11,7 @@ class AvailablePythonVersion(str, Enum):
     V3_9 = "3.9"
     V3_10 = "3.10"
     V3_11 = "3.11"
+    V3_12 = "3.12"
 
     @classmethod
     def get_all(cls) -> List["AvailablePythonVersion"]:
@@ -18,7 +19,7 @@ class AvailablePythonVersion(str, Enum):
 
     @classmethod
     def get_default(cls) -> "AvailablePythonVersion":
-        return cls["V3_10"]
+        return cls["V3_11"]
 
     @classmethod
     def get_pytest_defaults(cls) -> List["AvailablePythonVersion"]:

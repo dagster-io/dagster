@@ -1,10 +1,20 @@
-import {gql, useQuery} from '@apollo/client';
-import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
+import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
+import {AssetGlobalLineageLink} from 'shared/assets/AssetPageHeader.oss';
 
+import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
+import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {
+  AssetGroupMetadataQuery,
+  AssetGroupMetadataQueryVariables,
+} from './types/AssetGroupRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -14,21 +24,10 @@ import {
   explorerPathFromString,
   explorerPathToString,
 } from '../pipelines/PipelinePathUtils';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {TabLink} from '../ui/TabLink';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {AssetGlobalLineageLink} from './AssetPageHeader';
-import {AssetsCatalogTable} from './AssetsCatalogTable';
-import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
-import {useAutomationPolicySensorFlag} from './AutomationPolicySensorFlag';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {
-  AssetGroupMetadataQuery,
-  AssetGroupMetadataQueryVariables,
-} from './types/AssetGroupRoot.types';
 
 interface AssetGroupRootParams {
   groupName: string;
@@ -51,7 +50,7 @@ export const AssetGroupRoot = ({
   useDocumentTitle(`Asset Group: ${groupName}`);
 
   const groupPath = workspacePathFromAddress(repoAddress, `/asset-groups/${groupName}`);
-  const groupSelector = React.useMemo(
+  const groupSelector = useMemo(
     () => ({
       groupName,
       repositoryLocationName: repoAddress.location,
@@ -60,29 +59,43 @@ export const AssetGroupRoot = ({
     [groupName, repoAddress],
   );
 
-  const onChangeExplorerPath = React.useCallback(
+  const onChangeExplorerPath = useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
-      history[mode](`${groupPath}/${explorerPathToString(path)}`);
+      history[mode]({
+        pathname: `${groupPath}/${explorerPathToString(path)}`,
+        search: history.location.search,
+      });
     },
     [groupPath, history],
   );
 
-  const onNavigateToSourceAssetNode = React.useCallback(
-    (node: AssetLocation) => {
+  const onNavigateToSourceAssetNode = useCallback(
+    (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
+      let path;
       if (node.groupName && node.repoAddress) {
-        history.push(
-          workspacePathFromAddress(
-            node.repoAddress,
-            `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
-              .map(encodeURIComponent)
-              .join('/')}`,
-          ),
+        path = workspacePathFromAddress(
+          node.repoAddress,
+          `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
+            .map(encodeURIComponent)
+            .join('/')}`,
         );
       } else {
-        history.push(assetDetailsPathForKey(node.assetKey, {view: 'definition'}));
+        path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
+      }
+      if (e.metaKey) {
+        window.open(path, '_blank');
+      } else {
+        history.push(path);
       }
     },
     [history],
+  );
+
+  const fetchOptions = React.useMemo(() => ({groupSelector}), [groupSelector]);
+
+  const lineageOptions = React.useMemo(
+    () => ({preferAssetRendering: true, explodeComposites: true}),
+    [],
   );
 
   return (
@@ -106,11 +119,12 @@ export const AssetGroupRoot = ({
       />
       {tab === 'lineage' ? (
         <AssetGraphExplorer
-          fetchOptions={{groupSelector}}
-          options={{preferAssetRendering: true, explodeComposites: true}}
+          fetchOptions={fetchOptions}
+          options={lineageOptions}
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
+          viewType={AssetGraphViewType.GROUP}
         />
       ) : (
         <AssetsCatalogTable
@@ -130,12 +144,10 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
     assetNodes(group: $selector) {
       id
       autoMaterializePolicy {
-        policyType
+        __typename
       }
     }
   }
-
-  ${SENSOR_SWITCH_FRAGMENT}
 `;
 
 export const AssetGroupTags = ({
@@ -145,11 +157,12 @@ export const AssetGroupTags = ({
   groupSelector: AssetGroupSelector;
   repoAddress: RepoAddress;
 }) => {
-  const automaterializeSensorsFlagState = useAutomationPolicySensorFlag();
-  const {data} = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
+  const queryResult = useQuery<AssetGroupMetadataQuery, AssetGroupMetadataQueryVariables>(
     ASSET_GROUP_METADATA_QUERY,
     {variables: {selector: groupSelector}},
   );
+  const {data} = queryResult;
 
   const sensorTag = () => {
     const assetNodes = data?.assetNodes;

@@ -367,7 +367,7 @@ telemetry:
 # Configures how long Dagster waits for code locations
 # to load before timing out.
 code_servers:
-  local_startup_timeout: 120
+  local_startup_timeout: 360
 
 # end_marker_code_servers
 
@@ -401,10 +401,6 @@ schedules:
 
 # end_marker_schedules
 
-# start_marker_auto_materialize
-
 auto_materialize:
   run_tags:
     key: value
-
-# end_marker_auto_materialize

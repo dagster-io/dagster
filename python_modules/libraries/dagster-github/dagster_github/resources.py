@@ -81,9 +81,7 @@ class GithubClient:
             (
                 f"https://api.github.com/app/installations/{installation_id}/access_tokens"
                 if self.hostname is None
-                else "https://{}/api/v3/app/installations/{}/access_tokens".format(
-                    self.hostname, installation_id
-                )
+                else f"https://{self.hostname}/api/v3/app/installations/{installation_id}/access_tokens"
             ),
             headers=headers,
         )

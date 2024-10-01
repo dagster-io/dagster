@@ -1,13 +1,12 @@
-import {Tooltip, Spinner, FontFamily} from '@dagster-io/ui-components';
-import React from 'react';
+import {FontFamily, Spinner, Tooltip} from '@dagster-io/ui-components';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {LiveDataForNode} from './Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../assets/types';
 import {AssetKeyInput} from '../graphql/types';
-import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
-
-import {LiveDataForNode} from './Utils';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 
 interface AssetLatestRunSpinnerProps {
   liveData?: LiveDataForNode;
@@ -27,7 +26,7 @@ export const AssetLatestRunSpinner = ({
   }
   if (liveData?.unstartedRunIds?.length) {
     return (
-      <Tooltip content="A run has started that will rematerialize this asset soon.">
+      <Tooltip content="A run that targets this asset is queued.">
         <Spinner purpose={purpose} stopped />
       </Tooltip>
     );
@@ -44,7 +43,7 @@ interface AssetRunLinkProps {
 
 export const AssetRunLink = ({assetKey, runId, children, event}: AssetRunLinkProps) => {
   const content = children || (
-    <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
+    <span style={{fontSize: '1em', fontFamily: FontFamily.monospace}}>
       {titleForRun({id: runId})}
     </span>
   );

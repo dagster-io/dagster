@@ -1,21 +1,21 @@
-import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import keyBy from 'lodash/keyBy';
-import React from 'react';
-
-import {assertUnreachable} from '../app/Util';
-import {LiveDataForNode} from '../asset-graph/Utils';
-import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
-import {assembleIntoSpans} from '../partitions/SpanRepresentation';
+import {useEffect, useMemo, useState} from 'react';
 
 import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
-import {assembleRangesFromTransitions, Transition} from './MultipartitioningSupport';
+import {Transition, assembleRangesFromTransitions} from './MultipartitioningSupport';
 import {usePartitionDataSubscriber} from './PartitionSubscribers';
 import {AssetKey} from './types';
 import {
   PartitionHealthQuery,
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
+import {gql, useApolloClient} from '../apollo-client';
+import {assertUnreachable} from '../app/Util';
+import {LiveDataForNode} from '../asset-graph/Utils';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
+import {assembleIntoSpans} from '../partitions/SpanRepresentation';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 type PartitionHealthMaterializedPartitions = Extract<
   PartitionHealthQuery['assetNodeOrError'],
@@ -521,14 +521,14 @@ export function usePartitionHealthData(
   assetsCacheKey = '',
   cacheClearStrategy: 'immediate' | 'background' = 'background',
 ) {
-  const [partitionsLastUpdated, setPartitionsLastUpdatedAt] = React.useState<string>('');
+  const [partitionsLastUpdated, setPartitionsLastUpdatedAt] = useState<string>('');
   usePartitionDataSubscriber(() => {
     setPartitionsLastUpdatedAt(Date.now().toString());
   });
 
   const cacheKey = `${assetsCacheKey}-${partitionsLastUpdated}`;
 
-  const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
+  const [result, setResult] = useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
 
   const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
@@ -540,7 +540,7 @@ export function usePartitionHealthData(
   // Fetching partition health ranges can take a while -- if the "Background" refresh
   // style is enabled, fill our `result` state with whatever we can from the Apollo
   // cache. This is especially helpful if you're navigating between assets in the UI.
-  React.useEffect(() => {
+  useEffect(() => {
     if (cacheClearStrategy === 'immediate') {
       return;
     }
@@ -572,7 +572,7 @@ export function usePartitionHealthData(
   // Refresh state health ranges, one asset key at a time. This kicks off one
   // request and then missingKeyJSON updates when that is complete, kicking
   // off the next query.
-  React.useMemo(() => {
+  useMemo(() => {
     if (!missingKeyJSON) {
       return;
     }
@@ -594,7 +594,7 @@ export function usePartitionHealthData(
     run();
   }, [client, missingKeyJSON, cacheKey]);
 
-  return React.useMemo(() => {
+  const data = useMemo(() => {
     const assetKeyJSONs = JSON.parse(assetKeyJSON);
     return result.filter(
       (r) =>
@@ -602,6 +602,8 @@ export function usePartitionHealthData(
         (r.fetchedAt === cacheKey || cacheClearStrategy === 'background'),
     );
   }, [assetKeyJSON, result, cacheKey, cacheClearStrategy]);
+  useBlockTraceUntilTrue('usePartitionHealthData', data.length === assetKeys.length);
+  return data;
 }
 
 // This function returns a string value that changes when the partition health bar

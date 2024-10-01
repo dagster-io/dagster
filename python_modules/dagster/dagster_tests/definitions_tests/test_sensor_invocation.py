@@ -6,16 +6,15 @@ import pytest
 from dagster import (
     AssetKey,
     AssetOut,
+    AssetRecordsFilter,
     AssetSelection,
     Config,
-    DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DagsterUnknownPartitionError,
     DailyPartitionsDefinition,
     Definitions,
-    EventRecordsFilter,
     FreshnessPolicy,
     Output,
     RunConfig,
@@ -44,6 +43,8 @@ from dagster import (
     static_partitioned_config,
 )
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import ResourceParam
@@ -371,8 +372,7 @@ def test_multi_asset_sensor_invocation_resources() -> None:
 def test_multi_asset_sensor_with_source_assets() -> None:
     # upstream_asset1 exists in another repository
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-03-01"))
-    def upstream_asset1():
-        ...
+    def upstream_asset1(): ...
 
     upstream_asset1_source = SourceAsset(
         key=upstream_asset1.key,
@@ -380,8 +380,7 @@ def test_multi_asset_sensor_with_source_assets() -> None:
     )
 
     @asset()
-    def downstream_asset(upstream_asset1):
-        ...
+    def downstream_asset(upstream_asset1): ...
 
     @multi_asset_sensor(
         monitored_assets=[
@@ -622,6 +621,7 @@ def test_validated_partitions():
         assert run_request.run_config == {}
         assert run_request.tags.get(PARTITION_NAME_TAG) == "foo"
         assert run_request.tags.get("yay") == "yay!"
+        assert run_request.tags.get("dagster/sensor_name") == "valid_req_sensor"
 
 
 def test_partitioned_config_run_request():
@@ -681,11 +681,11 @@ def test_partitioned_config_run_request():
 
 
 def test_asset_selection_run_request_partition_key():
-    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    @sensor(asset_selection=AssetSelection.assets("a_asset"))
     def valid_req_sensor():
         return RunRequest(partition_key="a")
 
-    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    @sensor(asset_selection=AssetSelection.assets("a_asset"))
     def invalid_req_sensor():
         return RunRequest(partition_key="b")
 
@@ -956,8 +956,8 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert context.assets_defs_by_key[AssetKey("asset_a")] == two_assets
-        assert context.assets_defs_by_key[AssetKey("asset_b")] == two_assets
+        assert context.assets_defs_by_key[AssetKey("asset_a")].keys == two_assets.keys
+        assert context.assets_defs_by_key[AssetKey("asset_b")].keys == two_assets.keys
         assert len(context.assets_defs_by_key) == 2
 
     @repository
@@ -1270,7 +1270,7 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
 def test_multi_asset_sensor_no_unconsumed_events():
     @multi_asset_sensor(monitored_assets=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
-        # This call reads unconsumed event IDs from the cursor, fetches them via get_event_records,
+        # This call reads unconsumed event IDs from the cursor, fetches them from storage
         # and caches them in memory
         context.latest_materialization_records_by_partition_and_asset()
         # Assert that when no unconsumed events exist in the cursor, no events are cached
@@ -1372,9 +1372,7 @@ def test_multi_asset_sensor_unconsumed_events():
         materialize([july_asset], partition_key="2022-07-10", instance=instance)
 
         event_records = list(
-            instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION), ascending=True
-            )
+            instance.fetch_materializations(july_asset.key, ascending=True, limit=5000).records
         )
         assert len(event_records) == 3
         first_2022_07_10_mat = event_records[1].storage_id
@@ -1600,11 +1598,12 @@ def test_unfetched_partitioned_events_are_unconsumed():
         assert first_july_cursor.latest_consumed_event_partition == "2022-07-05"
 
         mats_2022_07_04 = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION, asset_partitions=["2022-07-04"]
-                )
-            )
+            instance.fetch_materializations(
+                records_filter=AssetRecordsFilter(
+                    asset_key=july_asset.key, asset_partitions=["2022-07-04"]
+                ),
+                limit=1,
+            ).records
         )
         # Assert that the unconsumed event points to the most recent 2022_07_04 materialization.
         assert (
@@ -1654,14 +1653,8 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = next(
-            iter(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-                )
-            )
-        )
-        assert records.event_log_entry.run_id == result.run_id
+        record = next(iter(instance.fetch_materializations(my_asset.key, limit=1).records))
+        assert record.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
             monitored_assets=AssetSelection.groups("default"),
@@ -1671,7 +1664,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
         )
         assert (
             ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
-            == records.storage_id
+            == record.storage_id
         )
         my_sensor(ctx)
 
@@ -1701,14 +1694,8 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = next(
-            iter(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-                )
-            )
-        )
-        assert records.event_log_entry.run_id == result.run_id
+        record = next(iter(instance.fetch_materializations(my_asset.key, limit=1).records))
+        assert record.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
             monitored_assets=[my_asset.key],
@@ -1718,7 +1705,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
         )
         assert (
             ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
-            == records.storage_id
+            == record.storage_id
         )
         my_sensor(ctx)
         evaluated = True
@@ -1744,18 +1731,10 @@ def test_build_multi_asset_context_set_after_multiple_materializations():
         materialize([my_asset], instance=instance)
         materialize([my_asset_2], instance=instance)
 
-        records = sorted(
-            list(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-                )
-            ),
-            key=lambda x: x.storage_id,
+        my_asset_record = next(iter(instance.fetch_materializations(my_asset.key, limit=1).records))
+        my_asset_2_record = next(
+            iter(instance.fetch_materializations(my_asset_2.key, limit=1).records)
         )
-        assert len(records) == 2
-
-        my_asset_cursor = records[0].storage_id
-        my_asset_2_cursor = records[1].storage_id
 
         ctx = build_multi_asset_sensor_context(
             monitored_assets=[my_asset.key, my_asset_2.key],
@@ -1765,11 +1744,11 @@ def test_build_multi_asset_context_set_after_multiple_materializations():
         )
         assert (
             ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
-            == my_asset_cursor
+            == my_asset_record.storage_id
         )
         assert (
             ctx._get_cursor(my_asset_2.key).latest_consumed_event_id  # noqa: SLF001
-            == my_asset_2_cursor
+            == my_asset_2_record.storage_id
         )
 
 
@@ -1863,3 +1842,65 @@ def test_sensor_invocation_runconfig() -> None:
     assert cast(RunRequest, basic_sensor()).run_config.get("ops", {}) == {
         "foo": {"config": {"a_str": "foo", "an_int": 55}}
     }
+
+
+def test_empty_asset_selection():
+    @asset
+    def asset1():
+        pass
+
+    @sensor(asset_selection=AssetSelection.all())
+    def my_sensor(context):
+        return RunRequest(asset_selection=[])
+
+    @repository
+    def my_repo():
+        return [asset1, my_sensor]
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            repository_def=my_repo,
+            instance=instance,
+        )
+        exec_data = my_sensor.evaluate_tick(ctx)
+        assert exec_data.run_requests[0].asset_selection == []
+
+
+def test_reject_invalid_asset_check_keys():
+    @asset
+    def asset1():
+        pass
+
+    @asset
+    def asset2():
+        pass
+
+    @asset_check(asset=asset1)
+    def check1():
+        return AssetCheckResult(passed=True)
+
+    @sensor(asset_selection=AssetSelection.assets(asset1))
+    def asset1_sensor(context):
+        return RunRequest(asset_check_keys=[check1.check_key])
+
+    @sensor(asset_selection=AssetSelection.assets(asset2))
+    def asset2_sensor(context):
+        return RunRequest(asset_check_keys=[check1.check_key])
+
+    my_repo = Definitions(
+        assets=[asset1, asset2],
+        asset_checks=[check1],
+        sensors=[asset1_sensor, asset2_sensor],
+    ).get_repository_def()
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            repository_def=my_repo,
+            instance=instance,
+        )
+        asset1_sensor_data = asset1_sensor.evaluate_tick(ctx)
+        assert asset1_sensor_data.run_requests[0].asset_selection == [asset1.key]
+        assert asset1_sensor_data.run_requests[0].asset_check_keys == [check1.check_key]
+
+        with pytest.warns(DeprecationWarning, match="asset check keys"):
+            asset2_sensor.evaluate_tick(ctx)

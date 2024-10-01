@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type RunGroupPanelQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
+  runId: Types.Scalars['ID']['input'];
 }>;
 
 export type RunGroupPanelQuery = {
@@ -29,6 +29,7 @@ export type RunGroupPanelQuery = {
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           pipelineName: string;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -45,8 +46,11 @@ export type RunGroupPanelRunFragment = {
   status: Types.RunStatus;
   stepKeysToExecute: Array<string> | null;
   pipelineName: string;
+  creationTime: number;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
+
+export const RunGroupPanelQueryVersion = 'c454b4e4c3d881b2a78361c5868212f734c458291a3cb28be8ba4a63030eb004';

@@ -1,8 +1,8 @@
 import {Meta} from '@storybook/react';
 import * as React from 'react';
 
-import {colorBorderDefault} from '../../theme/color';
 import {ButtonLink} from '../ButtonLink';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {useSuggestionsForString} from '../useSuggestionsForString';
 
@@ -47,7 +47,7 @@ export const Example = () => {
         value={value}
         onChange={onChange}
         style={{
-          border: `1px solid ${colorBorderDefault()}`,
+          border: `1px solid ${Colors.borderDefault()}`,
           borderRadius: '3px',
           padding: '8px',
           fontSize: '14px',

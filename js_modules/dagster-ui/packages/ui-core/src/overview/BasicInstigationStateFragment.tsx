@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const BASIC_INSTIGATION_STATE_FRAGMENT = gql`
   fragment BasicInstigationStateFragment on InstigationState {

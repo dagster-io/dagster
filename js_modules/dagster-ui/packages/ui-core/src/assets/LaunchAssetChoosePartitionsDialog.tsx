@@ -1,4 +1,3 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Radio} from '@blueprintjs/core';
 import {
@@ -7,6 +6,7 @@ import {
   Button,
   ButtonLink,
   Checkbox,
+  Colors,
   Dialog,
   DialogFooter,
   DialogHeader,
@@ -14,52 +14,11 @@ import {
   RadioContainer,
   Subheading,
   Tooltip,
-  colorAccentGray,
-  colorBackgroundYellow,
-  colorTextYellow,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
-import React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useHistory} from 'react-router-dom';
-
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PipelineRunTag} from '../app/ExecutionSessionStorage';
-import {usePermissionsForLocation} from '../app/Permissions';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {
-  displayNameForAssetKey,
-  isHiddenAssetGroupJob,
-  itemWithAssetKey,
-} from '../asset-graph/Utils';
-import {AssetKey} from '../assets/types';
-import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
-import {
-  LaunchPartitionBackfillMutation,
-  LaunchPartitionBackfillMutationVariables,
-} from '../instance/backfill/types/BackfillUtils.types';
-import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {TagContainer, TagEditor} from '../launchpad/TagEditor';
-import {
-  ConfigPartitionSelectionQuery,
-  ConfigPartitionSelectionQueryVariables,
-} from '../launchpad/types/ConfigEditorConfigPicker.types';
-import {
-  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
-  DaemonNotRunningAlert,
-  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
-  UsingDefaultLauncherAlert,
-  showBackfillErrorToast,
-  showBackfillSuccessToast,
-} from '../partitions/BackfillMessaging';
-import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
-import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
-import {DagsterTag} from '../runs/RunTag';
-import {testId} from '../testing/testId';
-import {ToggleableSection} from '../ui/ToggleableSection';
-import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
+import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
@@ -85,10 +44,44 @@ import {
 } from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
+import {gql, useApolloClient, useQuery} from '../apollo-client';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PipelineRunTag} from '../app/ExecutionSessionStorage';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {
+  displayNameForAssetKey,
+  isHiddenAssetGroupJob,
+  itemWithAssetKey,
+} from '../asset-graph/Utils';
+import {AssetKey} from '../assets/types';
+import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
+import {
+  LaunchPartitionBackfillMutation,
+  LaunchPartitionBackfillMutationVariables,
+} from '../instance/backfill/types/BackfillUtils.types';
+import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
+import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
+  DaemonNotRunningAlert,
+  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
+  UsingDefaultLauncherAlert,
+  isBackfillDaemonHealthy,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
+} from '../partitions/BackfillMessaging';
+import {DimensionRangeWizards} from '../partitions/DimensionRangeWizards';
+import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
+import {DagsterTag} from '../runs/RunTag';
+import {testId} from '../testing/testId';
+import {ToggleableSection} from '../ui/ToggleableSection';
+import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext/util';
+import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
-interface Props {
+export interface LaunchAssetChoosePartitionsDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
@@ -101,7 +94,9 @@ interface Props {
   refetch?: () => Promise<void>;
 }
 
-export const LaunchAssetChoosePartitionsDialog = (props: Props) => {
+export const LaunchAssetChoosePartitionsDialog = (
+  props: LaunchAssetChoosePartitionsDialogProps,
+) => {
   const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
@@ -137,24 +132,24 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   target,
   upstreamAssetKeys,
   refetch: _refetch,
-}: Props) => {
+}: LaunchAssetChoosePartitionsDialogProps) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
   const {
     permissions: {canLaunchPipelineExecution, canLaunchPartitionBackfill},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
-  const [launching, setLaunching] = React.useState(false);
-  const [tagEditorOpen, setTagEditorOpen] = React.useState(false);
-  const [previewOpen, setPreviewOpen] = React.useState(false);
-  const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
+  const [launching, setLaunching] = useState(false);
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [tags, setTags] = useState<PipelineRunTag[]>([]);
 
   const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
     repoAddress.location,
     'SHOW_SINGLE_RUN_BACKFILL_TOGGLE',
   );
 
-  const [lastRefresh, setLastRefresh] = React.useState(Date.now());
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   const refetch = async () => {
     await _refetch?.();
@@ -169,12 +164,12 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const assetHealthLoading = assetHealth.length === 0;
 
-  const displayedHealth = React.useMemo(() => {
+  const displayedHealth = useMemo(() => {
     if (target.type === 'pureAll') {
       return mergedAssetHealth([]);
     }
     if (target.type === 'job' || assetHealthLoading) {
-      return mergedAssetHealth(assetHealth);
+      return mergedAssetHealth(assetHealth, true);
     }
     return assetHealth.find(itemWithAssetKey(target.anchorAssetKey)) || mergedAssetHealth([]);
   }, [assetHealth, assetHealthLoading, target]);
@@ -189,7 +184,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
-  const [missingFailedOnly, setMissingFailedOnly] = React.useState(false);
+  const [missingFailedOnly, setMissingFailedOnly] = useState(false);
 
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
@@ -200,12 +195,12 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     shouldReadPartitionQueryStringParam: true,
   });
 
-  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = React.useState(false);
+  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = useState(false);
   const canLaunchWithRangesAsTags =
     selections.every((s) => s.selectedRanges.length === 1) &&
     selections.some((s) => s.selectedKeys.length > 1);
 
-  const keysFiltered = React.useMemo(() => {
+  const keysFiltered = useMemo(() => {
     return explodePartitionKeysInSelectionMatching(selections, (dIdxs) => {
       if (missingFailedOnly) {
         const state = displayedHealth.stateForKeyIdx(dIdxs);
@@ -220,7 +215,6 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const client = useApolloClient();
   const history = useHistory();
 
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
     ['pureWithAnchorAsset', 'pureAll'].includes(target.type) ||
@@ -228,15 +222,15 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const backfillPolicyVaries = assets.some((a) => a.backfillPolicy !== assets[0]?.backfillPolicy);
 
-  React.useEffect(() => {
+  useEffect(() => {
     !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
   }, [canLaunchWithRangesAsTags]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     launchWithRangesAsTags && setMissingFailedOnly(false);
   }, [launchWithRangesAsTags]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     ['pureWithAnchorAsset', 'pureAll'].includes(target.type) && setMissingFailedOnly(false);
   }, [target]);
 
@@ -271,50 +265,19 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       });
     }
 
-    const {data: tagAndConfigData} = await client.query<
-      ConfigPartitionSelectionQuery,
-      ConfigPartitionSelectionQueryVariables
-    >({
-      query: CONFIG_PARTITION_SELECTION_QUERY,
-      fetchPolicy: 'network-only',
-      variables: {
-        repositorySelector: {
-          repositoryLocationName: repoAddress.location,
-          repositoryName: repoAddress.name,
-        },
-        partitionSetName: target.partitionSetName,
-        partitionName: keysFiltered[0]!,
-      },
+    const config = await fetchTagsAndConfigForAssetJob(client, {
+      partitionName: keysFiltered[0]!,
+      repositoryLocationName: repoAddress.location,
+      repositoryName: repoAddress.name,
+      assetKeys: target.assetKeys,
+      jobName: target.jobName,
     });
-
-    if (
-      !tagAndConfigData ||
-      !tagAndConfigData.partitionSetOrError ||
-      tagAndConfigData.partitionSetOrError.__typename !== 'PartitionSet' ||
-      !tagAndConfigData.partitionSetOrError.partition
-    ) {
+    if (!config) {
       return;
     }
 
-    const {partition} = tagAndConfigData.partitionSetOrError;
-
-    if (partition.tagsOrError.__typename === 'PythonError') {
-      showCustomAlert({
-        title: 'Unable to load tags',
-        body: <PythonErrorInfo error={partition.tagsOrError} />,
-      });
-      return;
-    }
-    if (partition.runConfigOrError.__typename === 'PythonError') {
-      showCustomAlert({
-        title: 'Unable to load tags',
-        body: <PythonErrorInfo error={partition.runConfigOrError} />,
-      });
-      return;
-    }
-
-    const runConfigData = partition.runConfigOrError.yaml || '';
-    let allTags = [...partition.tagsOrError.results, ...tags];
+    const runConfigData = config.yaml || '';
+    let allTags = [...config.tags, ...tags];
 
     if (launchWithRangesAsTags) {
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
@@ -333,7 +296,6 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         executionParams: {
           ...executionParamsForAssetJob(repoAddress, target.jobName, assets, allTags),
           runConfigData,
-          mode: partition.mode,
         },
       },
       'toast',
@@ -353,7 +315,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             partitionNames: keysFiltered,
             fromFailure: false,
             selector: {
-              partitionSetName: target.partitionSetName,
+              // Todo: Fix after PR #23720 merges
+              partitionSetName: `${target.jobName}_partition_set`,
               repositorySelector: {
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,
@@ -428,7 +391,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     if (target.type === 'pureWithAnchorAsset') {
       notices.push(
         `Dagster will materialize all partitions downstream of the ` +
-          `selected partitions for the selected assets, using separate runs 
+          `selected partitions for the selected assets, using separate runs
                 ${backfillPolicyVaries ? `and obeying backfill policies.` : `as needed.`}`,
       );
     } else if (backfillPolicyVaries) {
@@ -504,50 +467,14 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
               </Box>
             )}
-            {selections.map((range, idx) => (
-              <Box
-                key={range.dimension.name}
-                border={idx < selections.length - 1 ? 'bottom' : undefined}
-                padding={{vertical: 12, horizontal: 20}}
-              >
-                <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
-                  <Icon name="partition" />
-                  {range.dimension.name}
-                </Box>
-                <Box>
-                  Select partitions to materialize.{' '}
-                  {range.dimension.type === PartitionDefinitionType.TIME_WINDOW
-                    ? 'Click and drag to select a range on the timeline.'
-                    : null}
-                </Box>
-                <DimensionRangeWizard
-                  partitionKeys={range.dimension.partitionKeys}
-                  health={{
-                    ranges: displayedHealth.rangesForSingleDimension(
-                      idx,
-                      selections.length === 2 ? selections[1 - idx]!.selectedRanges : undefined,
-                    ),
-                  }}
-                  dimensionType={range.dimension.type}
-                  selected={range.selectedKeys}
-                  setSelected={(selectedKeys) =>
-                    setSelections((selections) =>
-                      selections.map((r) =>
-                        r.dimension === range.dimension ? {...r, selectedKeys} : r,
-                      ),
-                    )
-                  }
-                  partitionDefinitionName={
-                    displayedPartitionDefinition?.name ||
-                    displayedBaseAsset?.partitionDefinition?.dimensionTypes.find(
-                      (d) => d.name === range.dimension.name,
-                    )?.dynamicPartitionsDefinitionName
-                  }
-                  repoAddress={repoAddress}
-                  refetch={refetch}
-                />
-              </Box>
-            ))}
+            <DimensionRangeWizards
+              repoAddress={repoAddress}
+              refetch={refetch}
+              selections={selections}
+              setSelections={setSelections}
+              displayedHealth={displayedHealth}
+              displayedPartitionDefinition={displayedPartitionDefinition}
+            />
           </ToggleableSection>
         )}
         <ToggleableSection
@@ -623,7 +550,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                           </div>
                         }
                       >
-                        <Icon name="info" color={colorAccentGray()} />
+                        <Icon name="info" color={Colors.accentGray()} />
                       </Tooltip>
                     </Box>
                   </Radio>
@@ -656,9 +583,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       <DialogFooter
         topBorder={!previewNotice}
         left={
-          'partitionSetName' in target && (
-            <RunningBackfillsNotice partitionSetName={target.partitionSetName} />
-          )
+          'assetKeys' in target &&
+          target.assetKeys && <RunningBackfillsNotice assetSelection={target.assetKeys} />
         }
       >
         <Button intent="none" onClick={() => setOpen(false)}>
@@ -693,9 +619,8 @@ const UpstreamUnavailableWarning = ({
   const upstreamUnavailable = (singleDimensionKey: string) =>
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
-      return (
-        a.dimensions.length && a.stateForKey([singleDimensionKey]) === AssetPartitionStatus.MISSING
-      );
+      const state = a.dimensions.length ? a.stateForKey([singleDimensionKey]) : null;
+      return state === AssetPartitionStatus.FAILED || state === AssetPartitionStatus.MISSING;
     });
 
   const upstreamUnavailableSpans =
@@ -729,7 +654,7 @@ const UpstreamUnavailableWarning = ({
             .map((span) => stringForSpan(span, selections[0]!.selectedKeys))
             .join(', ')}
           {
-            ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
+            ' cannot be materialized because upstream materializations are not available. Consider materializing upstream assets or '
           }
           <ButtonLink underline="always" onClick={onRemoveUpstreamUnavailable}>
             remove these partitions
@@ -745,7 +670,7 @@ export const LAUNCH_ASSET_WARNINGS_QUERY = gql`
   query LaunchAssetWarningsQuery($upstreamAssetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $upstreamAssetKeys) {
       id
-      isSource
+      isMaterializable
       assetKey {
         path
       }
@@ -784,17 +709,17 @@ const Warnings = ({
 }) => {
   const warningsResult = useQuery<LaunchAssetWarningsQuery, LaunchAssetWarningsQueryVariables>(
     LAUNCH_ASSET_WARNINGS_QUERY,
-    {variables: {upstreamAssetKeys}},
+    {variables: {upstreamAssetKeys}, blocking: false},
   );
 
   const instance = warningsResult.data?.instance;
   const upstreamAssets = warningsResult.data?.assetNodes;
-  const upstreamAssetKeysSamePartitioning = React.useMemo(
+  const upstreamAssetKeysSamePartitioning = useMemo(
     () =>
       (upstreamAssets || [])
         .filter(
           (a) =>
-            !a.isSource &&
+            a.isMaterializable &&
             a.partitionDefinition &&
             displayedPartitionDefinition &&
             partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition),
@@ -809,7 +734,7 @@ const Warnings = ({
       selections,
       setSelections,
     }),
-    instance && launchAsBackfill && DaemonNotRunningAlert({instance}),
+    instance && launchAsBackfill && !isBackfillDaemonHealthy(instance) && DaemonNotRunningAlert(),
     instance && launchAsBackfill && UsingDefaultLauncherAlert({instance}),
   ]
     .filter((a) => !!a)
@@ -821,15 +746,15 @@ const Warnings = ({
 
   return (
     <ToggleableSection
-      background={colorBackgroundYellow()}
+      background={Colors.backgroundYellow()}
       isInitiallyOpen={false}
       title={
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          style={{color: colorTextYellow()}}
+          style={{color: Colors.textYellow()}}
         >
           <Box flex={{alignItems: 'center', gap: 12}}>
-            <Icon name="warning" color={colorTextYellow()} />
+            <Icon name="warning" color={Colors.textYellow()} />
             <Subheading>Warnings</Subheading>
           </Box>
           <span>{alerts.length > 1 ? `${alerts.length} warnings` : `1 warning`}</span>

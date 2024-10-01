@@ -1,10 +1,12 @@
-import * as React from 'react';
-
 import {InstigationStatus} from '../../graphql/types';
-
-import {useStaticSetFilter} from './useStaticSetFilter';
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 export const useInstigationStatusFilter = () => {
+  const [state, onStateChanged] = useQueryPersistedState<Set<InstigationStatus>>({
+    encode: (vals) => ({instigationStatus: vals.size ? Array.from(vals).join(',') : undefined}),
+    decode: (qs) => new Set((qs.instigationStatus?.split(',') as InstigationStatus[]) || []),
+  });
   return useStaticSetFilter<InstigationStatus>({
     name: 'Running state',
     icon: 'toggle_off',
@@ -16,6 +18,8 @@ export const useInstigationStatusFilter = () => {
     renderLabel: ({value}) => (
       <span>{value === InstigationStatus.RUNNING ? 'Running' : 'Stopped'}</span>
     ),
+    state,
+    onStateChanged,
     getStringValue: (value) => value,
   });
 };

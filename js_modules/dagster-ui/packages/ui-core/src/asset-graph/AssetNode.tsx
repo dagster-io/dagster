@@ -1,118 +1,104 @@
-import {gql} from '@apollo/client';
-import {
-  Box,
-  FontFamily,
-  Icon,
-  Spinner,
-  Tooltip,
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentYellow,
-  colorBackgroundDefault,
-  colorBackgroundGray,
-  colorBackgroundLight,
-  colorTextDefault,
-  colorTextLight,
-  colorTextLighter,
-  colorLineageNodeBorder,
-  colorLineageNodeBorderSelected,
-  colorLineageNodeBorderHover,
-  colorLineageNodeBackground,
-  colorShadowDefault,
-} from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
+import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled, {CSSObject} from 'styled-components';
 
+import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
+import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
+import {ContextMenuWrapper} from './ContextMenuWrapper';
+import {LiveDataForNode} from './Utils';
+import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
+import {AssetNodeFragment} from './types/AssetNode.types';
+import {gql} from '../apollo-client';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
-import {StaleReasonsTags} from '../assets/Stale';
+import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons';
+import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
+import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetComputeKindTag} from '../graph/OpTags';
-import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../graphql/types';
-import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {AssetKind} from '../graph/KindTags';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-
-import {useAssetNodeMenu} from './AssetNodeMenu';
-import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {AssetLatestRunSpinner} from './AssetRunLinking';
-import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphData, GraphNode, LiveDataForNode} from './Utils';
-import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNode.types';
 
 interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
+  kindFilter?: StaticSetFilter<string>;
 }
 
-export const AssetNode = React.memo(({definition, selected}: Props) => {
-  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
-  const isSource = definition.isSource;
-
+export const AssetNode = React.memo(({definition, selected, kindFilter}: Props) => {
   const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
-      <AssetTopTags definition={definition} liveData={liveData} />
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        style={{minHeight: 24}}
+      >
+        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+        <ChangedReasonsTag
+          changedReasons={definition.changedReasons}
+          assetKey={definition.assetKey}
+        />
+      </Box>
       <AssetNodeContainer $selected={selected}>
-        <AssetNodeBox $selected={selected} $isSource={isSource}>
-          <AssetName $isSource={isSource}>
-            <span style={{marginTop: 1}}>
-              <Icon name={isSource ? 'source_asset' : 'asset'} />
-            </span>
-            <div
-              data-tooltip={displayName}
-              data-tooltip-style={isSource ? NameTooltipStyleSource : NameTooltipStyle}
-              style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
-            >
-              {withMiddleTruncation(displayName, {
-                maxLength: ASSET_NODE_NAME_MAX_LENGTH,
-              })}
-            </div>
-            <div style={{flex: 1}} />
-          </AssetName>
+        <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
+          <AssetNameRow definition={definition} />
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
-              <AssetDescription $color={colorTextDefault()}>
+              <AssetDescription $color={Colors.textDefault()}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
               </AssetDescription>
             ) : (
-              <AssetDescription $color={colorTextLight()}>No description</AssetDescription>
+              <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
             )}
-            {definition.isPartitioned && !definition.isSource && (
+            {definition.isPartitioned && definition.isMaterializable && (
               <PartitionCountTags definition={definition} liveData={liveData} />
             )}
-            <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="self" />
           </Box>
 
-          {isSource && !definition.isObservable ? null : (
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          )}
+          <AssetNodeStatusRow definition={definition} liveData={liveData} />
           {(liveData?.assetChecks || []).length > 0 && (
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
         </AssetNodeBox>
-        <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
+        <Box flex={{direction: 'row-reverse', gap: 8}}>
+          {definition.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              kind={kind}
+              style={{position: 'relative', paddingTop: 7, margin: 0}}
+              currentPageFilter={kindFilter}
+            />
+          ))}
+        </Box>
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
 }, isEqual);
 
-interface AssetTopTagsProps {
-  definition: AssetNodeFragment;
-  liveData?: LiveDataForNode;
-}
+export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
-const AssetTopTags = ({definition, liveData}: AssetTopTagsProps) => (
-  <Box flex={{gap: 4}} padding={{left: 4}} style={{height: 24}}>
-    <StaleReasonsTags liveData={liveData} assetKey={definition.assetKey} include="upstream" />
-  </Box>
-);
+  return (
+    <AssetName $isMaterializable={definition.isMaterializable}>
+      <span style={{marginTop: 1}}>
+        <Icon name={definition.isMaterializable ? 'asset' : 'source_asset'} />
+      </span>
+      <div
+        data-tooltip={displayName}
+        data-tooltip-style={definition.isMaterializable ? NameTooltipStyle : NameTooltipStyleSource}
+        style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
+      >
+        {withMiddleTruncation(displayName, {
+          maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+        })}
+      </div>
+      <div style={{flex: 1}} />
+    </AssetName>
+  );
+};
 
 const AssetNodeRowBox = styled(Box)`
   white-space: nowrap;
@@ -150,65 +136,9 @@ const AssetNodeStatusRow = ({definition, liveData}: StatusRowProps) => {
   );
 };
 
-type AssetCheckIconType =
-  | Exclude<
-      AssetCheckExecutionResolvedStatus,
-      AssetCheckExecutionResolvedStatus.FAILED | AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-    >
-  | 'NOT_EVALUATED'
-  | 'WARN'
-  | 'ERROR';
-
-const AssetCheckIconsOrdered: {type: AssetCheckIconType; content: React.ReactNode}[] = [
-  {
-    type: AssetCheckExecutionResolvedStatus.IN_PROGRESS,
-    content: <Spinner purpose="caption-text" />,
-  },
-  {
-    type: 'NOT_EVALUATED',
-    content: <Icon name="dot" color={colorAccentGray()} />,
-  },
-  {
-    type: 'ERROR',
-    content: <Icon name="cancel" color={colorAccentRed()} />,
-  },
-  {
-    type: 'WARN',
-    content: <Icon name="warning_outline" color={colorAccentYellow()} />,
-  },
-  {
-    type: AssetCheckExecutionResolvedStatus.SKIPPED,
-    content: <Icon name="dot" color={colorAccentGray()} />,
-  },
-  {
-    type: AssetCheckExecutionResolvedStatus.SUCCEEDED,
-    content: <Icon name="check_circle" color={colorAccentGreen()} />,
-  },
-];
-
 export const AssetNodeContextMenuWrapper = React.memo(
-  ({
-    children,
-    graphData,
-    explorerPath,
-    onChangeExplorerPath,
-    selectNode,
-    node,
-  }: {
-    children: React.ReactNode;
-    graphData: GraphData;
-    node: GraphNode;
-    selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-    explorerPath?: ExplorerPath;
-    onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  }) => {
-    const {dialog, menu} = useAssetNodeMenu({
-      graphData,
-      explorerPath,
-      onChangeExplorerPath,
-      selectNode,
-      node,
-    });
+  ({children, ...menuProps}: AssetNodeMenuProps & {children: React.ReactNode}) => {
+    const {dialog, menu} = useAssetNodeMenu(menuProps);
     return (
       <>
         <ContextMenuWrapper menu={menu} stopPropagation>
@@ -231,41 +161,23 @@ const AssetNodeChecksRow = ({
     return <span />;
   }
 
-  const byIconType = countBy(liveData.assetChecks, (c) => {
-    const status = c.executionForLatestMaterialization?.status;
-    const value: AssetCheckIconType =
-      status === undefined
-        ? 'NOT_EVALUATED'
-        : status === AssetCheckExecutionResolvedStatus.FAILED
-        ? c.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
-          ? 'WARN'
-          : 'ERROR'
-        : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-        ? 'ERROR'
-        : status;
-    return value;
-  });
-
   return (
     <AssetNodeRowBox
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
       border="top"
-      background={colorBackgroundLight()}
+      background={Colors.backgroundLight()}
     >
       Checks
       <Link
         to={assetDetailsPathForKey(definition.assetKey, {view: 'checks'})}
         onClick={(e) => e.stopPropagation()}
       >
-        <Box flex={{gap: 6, alignItems: 'center'}}>
-          {AssetCheckIconsOrdered.filter((a) => byIconType[a.type]).map((icon) => (
-            <Box flex={{gap: 2, alignItems: 'center'}} key={icon.type}>
-              {icon.content}
-              {byIconType[icon.type]}
-            </Box>
-          ))}
-        </Box>
+        <AssetChecksStatusSummary
+          liveData={liveData}
+          rendering="dag"
+          assetKey={definition.assetKey}
+        />
       </Link>
     </AssetNodeRowBox>
   );
@@ -280,14 +192,21 @@ export const AssetNodeMinimal = ({
   definition: AssetNodeFragment;
   height: number;
 }) => {
-  const {isSource, assetKey} = definition;
+  const {isMaterializable, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
+
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
+  const isChanged = definition.changedReasons.length;
+  const isStale = isAssetStale(liveData);
+
+  const queuedRuns = liveData?.unstartedRunIds.length;
+  const inProgressRuns = liveData?.inProgressRunIds.length;
+
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: (height - 64) / 2}}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 52}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}
@@ -296,15 +215,21 @@ export const AssetNodeMinimal = ({
         >
           <MinimalAssetNodeBox
             $selected={selected}
-            $isSource={isSource}
+            $isMaterializable={isMaterializable}
             $background={background}
             $border={border}
+            $inProgress={!!inProgressRuns}
+            $isQueued={!!queuedRuns}
           >
-            <AssetNodeSpinnerContainer>
-              <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-            </AssetNodeSpinnerContainer>
-            <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-              {withMiddleTruncation(displayName, {maxLength: 14})}
+            {isChanged ? (
+              <MinimalNodeChangedDot
+                changedReasons={definition.changedReasons}
+                assetKey={assetKey}
+              />
+            ) : null}
+            {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
+            <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
+              {withMiddleTruncation(displayName, {maxLength: 18})}
             </MinimalName>
           </MinimalAssetNodeBox>
         </TooltipStyled>
@@ -323,16 +248,22 @@ export const ASSET_NODE_FRAGMENT = gql`
     graphName
     hasMaterializePermission
     jobNames
+    changedReasons
     opNames
     opVersion
     description
     computeKind
     isPartitioned
     isObservable
-    isSource
+    isMaterializable
     assetKey {
       ...AssetNodeKey
     }
+    tags {
+      key
+      value
+    }
+    kinds
   }
 
   fragment AssetNodeKey on AssetKey {
@@ -340,7 +271,7 @@ export const ASSET_NODE_FRAGMENT = gql`
   }
 `;
 
-const AssetInsetForHoverEffect = styled.div`
+export const AssetInsetForHoverEffect = styled.div`
   padding: 10px 4px 2px 4px;
   height: 100%;
 
@@ -349,7 +280,7 @@ const AssetInsetForHoverEffect = styled.div`
   }
 `;
 
-const AssetNodeContainer = styled.div<{$selected: boolean}>`
+export const AssetNodeContainer = styled.div<{$selected: boolean}>`
   user-select: none;
   cursor: pointer;
   padding: 6px;
@@ -360,23 +291,27 @@ const AssetNodeShowOnHover = styled.span`
   display: none;
 `;
 
-const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
+export const AssetNodeBox = styled.div<{
+  $isMaterializable: boolean;
+  $selected: boolean;
+  $noScale?: boolean;
+}>`
   ${(p) =>
-    p.$isSource
-      ? `border: 2px dashed ${p.$selected ? colorAccentGrayHover() : colorAccentGray()}`
+    !p.$isMaterializable
+      ? `border: 2px dashed ${p.$selected ? Colors.accentGrayHover() : Colors.accentGray()}`
       : `border: 2px solid ${
-          p.$selected ? colorLineageNodeBorderSelected() : colorLineageNodeBorder()
+          p.$selected ? Colors.lineageNodeBorderSelected() : Colors.lineageNodeBorder()
         }`};
-  ${(p) => p.$selected && `outline: 2px solid ${colorLineageNodeBorderSelected()}`};
+  ${(p) => p.$selected && `outline: 2px solid ${Colors.lineageNodeBorderSelected()}`};
 
-  background: ${colorBackgroundDefault()};
+  background: ${Colors.backgroundDefault()};
   border-radius: 10px;
   position: relative;
   transition: all 150ms linear;
   &:hover {
-    ${(p) => !p.$selected && `border: 2px solid ${colorLineageNodeBorderHover()};`};
-    box-shadow: ${colorShadowDefault()} 0px 1px 4px 0px;
-    scale: 1.03;
+    ${(p) => !p.$selected && `border: 2px solid ${Colors.lineageNodeBorderHover()};`};
+    box-shadow: ${Colors.shadowDefault()} 0px 1px 4px 0px;
+    scale: ${(p) => (p.$noScale ? '1' : '1.03')};
     ${AssetNodeShowOnHover} {
       display: initial;
     }
@@ -385,8 +320,8 @@ const AssetNodeBox = styled.div<{$isSource: boolean; $selected: boolean}>`
 
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
 const NameCSS: CSSObject = {
-  padding: '3px 6px',
-  color: colorTextDefault(),
+  padding: '3px 0 3px 6px',
+  color: Colors.textDefault(),
   fontFamily: FontFamily.monospace,
   fontWeight: 600,
 };
@@ -395,34 +330,29 @@ export const NameTooltipCSS: CSSObject = {
   ...NameCSS,
   top: -9,
   left: -12,
-  fontSize: 16.8,
+  fontSize: 14,
 };
 
 export const NameTooltipStyle = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorLineageNodeBackground(),
+  background: Colors.lineageNodeBackground(),
   border: `none`,
 });
 
 const NameTooltipStyleSource = JSON.stringify({
   ...NameTooltipCSS,
-  background: colorBackgroundGray(),
+  background: Colors.backgroundLight(),
   border: `none`,
 });
 
-const AssetName = styled.div<{$isSource: boolean}>`
+const AssetName = styled.div<{$isMaterializable: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
-  background: ${(p) => (p.$isSource ? colorBackgroundLight() : colorLineageNodeBackground())};
+  background: ${(p) =>
+    p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight()};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
-`;
-
-const AssetNodeSpinnerContainer = styled.div`
-  top: 50%;
-  position: absolute;
-  transform: translate(8px, -16px);
 `;
 
 const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
@@ -430,24 +360,70 @@ const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
 `;
 
 const MinimalAssetNodeBox = styled.div<{
-  $isSource: boolean;
+  $isMaterializable: boolean;
   $selected: boolean;
   $background: string;
   $border: string;
+  $inProgress: boolean;
+  $isQueued: boolean;
 }>`
   background: ${(p) => p.$background};
+  overflow: hidden;
   ${(p) =>
-    p.$isSource
-      ? `border: 4px dashed ${p.$selected ? colorAccentGray() : p.$border}`
-      : `border: 4px solid ${p.$selected ? colorLineageNodeBorderSelected() : p.$border}`};
+    !p.$isMaterializable
+      ? `border: 4px dashed ${p.$selected ? Colors.accentGray() : p.$border}`
+      : `border: 4px solid ${p.$selected ? Colors.lineageNodeBorderSelected() : p.$border}`};
+  ${(p) =>
+    p.$inProgress
+      ? `
+      background-color: ${p.$background};
+      &::after {
+        inset: 0;
+        position: absolute;
+        transform: translateX(-100%);
+        mask-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3));
+        background: ${p.$background};
+        animation: shimmer 1.5s infinite;
+        content: '';
+      }
 
+      @keyframes shimmer {
+        100% {
+          transform: translateX(100%);
+        }
+      }
+  `
+      : ''}
+
+  ${(p) =>
+    p.$isQueued
+      ? `
+      border: none;
+      &::after {
+        inset: 0;
+        position: absolute;
+        animation: pulse 0.75s infinite alternate;
+        border-radius: 16px;
+        border: 4px solid ${p.$border};
+        content: '';
+      }
+      @keyframes pulse {
+        0% {
+          opacity: 0.2;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      `
+      : ''}
   border-radius: 16px;
   position: relative;
-  padding: 4px;
+  padding: 2px;
   height: 100%;
   min-height: 86px;
   &:hover {
-    box-shadow: ${colorShadowDefault()} 0px 2px 12px 0px;
+    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
   }
 `;
 
@@ -465,7 +441,7 @@ export const AssetDescription = styled.div<{$color: string}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   font-size: 12px;
 `;
 

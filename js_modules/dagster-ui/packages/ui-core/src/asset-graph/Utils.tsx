@@ -1,8 +1,11 @@
-import {pathHorizontalDiagonal} from '@vx/shape';
+import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
 
+import {AssetNodeKeyFragment} from './types/AssetNode.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
+  AssetCheckLiveFragment,
   AssetGraphLiveQuery,
   AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
@@ -10,12 +13,23 @@ import {
   AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
   AssetNodeLiveObservationFragment,
-  AssetCheckLiveFragment,
-} from '../asset-data/types/AssetLiveDataProvider.types';
-import {RunStatus, StaleStatus} from '../graphql/types';
+} from '../asset-data/types/AssetBaseDataProvider.types';
+import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import {RunStatus} from '../graphql/types';
 
-import {AssetNodeKeyFragment} from './types/AssetNode.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
+export enum AssetGraphViewType {
+  GLOBAL = 'global',
+  JOB = 'job',
+  GROUP = 'group',
+}
+
+/**
+ * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
+ */
+
+/**
+ * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
+ */
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
@@ -23,9 +37,10 @@ type AssetLiveNode = AssetNodeLiveFragment;
 type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
+export const __ANONYMOUS_ASSET_JOB_PREFIX = '__anonymous_asset_job';
 
 export function isHiddenAssetGroupJob(jobName: string) {
-  return jobName.startsWith(__ASSET_JOB_PREFIX);
+  return jobName.startsWith(__ASSET_JOB_PREFIX) || jobName.startsWith(__ANONYMOUS_ASSET_JOB_PREFIX);
 }
 
 // IMPORTANT: We use this, rather than AssetNode.id throughout this file because
@@ -37,7 +52,7 @@ export function isHiddenAssetGroupJob(jobName: string) {
 //
 export type GraphId = string;
 export const toGraphId = (key: {path: string[]}): GraphId => JSON.stringify(key.path);
-export const fromGraphID = (graphId: GraphId): AssetNodeKeyFragment => ({
+export const fromGraphId = (graphId: GraphId): AssetNodeKeyFragment => ({
   path: JSON.parse(graphId),
   __typename: 'AssetKey',
 });
@@ -122,7 +137,13 @@ export const graphHasCycles = (graphData: GraphData) => {
   return hasCycles;
 };
 
-export const buildSVGPath = pathHorizontalDiagonal({
+export const buildSVGPathHorizontal = pathHorizontalDiagonal({
+  source: (s: any) => s.source,
+  target: (s: any) => s.target,
+  x: (s: any) => s.x,
+  y: (s: any) => s.y,
+});
+export const buildSVGPathVertical = pathVerticalDiagonal({
   source: (s: any) => s.source,
   target: (s: any) => s.target,
   x: (s: any) => s.x,
@@ -138,8 +159,6 @@ export interface LiveDataForNode {
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
-  staleStatus: StaleStatus | null;
-  staleCauses: AssetGraphLiveQuery['assetNodes'][0]['staleCauses'];
   assetChecks: AssetCheckLiveFragment[];
   partitionStats: {
     numMaterialized: number;
@@ -150,7 +169,12 @@ export interface LiveDataForNode {
   opNames: string[];
 }
 
-export const MISSING_LIVE_DATA: LiveDataForNode = {
+export type LiveDataForNodeWithStaleData = LiveDataForNode & {
+  staleStatus: AssetStaleDataFragment['staleStatus'];
+  staleCauses: AssetStaleDataFragment['staleCauses'];
+};
+
+export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
   unstartedRunIds: [],
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
@@ -194,39 +218,56 @@ export const buildLiveDataForNode = (
 ): LiveDataForNode => {
   const lastMaterialization = assetNode.assetMaterializations[0] || null;
   const lastObservation = assetNode.assetObservations[0] || null;
-  const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
-
-  const runWhichFailedToMaterialize =
-    (latestRunForAsset?.status === 'FAILURE' &&
-      (!lastMaterialization || lastMaterialization.runId !== latestRunForAsset?.id) &&
-      latestRunForAsset) ||
-    null;
+  const latestRun = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
 
   return {
     lastMaterialization,
     lastMaterializationRunStatus:
-      latestRunForAsset && lastMaterialization?.runId === latestRunForAsset?.id
-        ? latestRunForAsset.status
-        : null,
+      latestRun && lastMaterialization?.runId === latestRun.id ? latestRun.status : null,
     lastObservation,
     assetChecks:
       assetNode.assetChecksOrError.__typename === 'AssetChecks'
         ? assetNode.assetChecksOrError.checks
         : [],
-    staleStatus: assetNode.staleStatus,
-    staleCauses: assetNode.staleCauses,
     stepKey: stepKeyForAsset(assetNode),
     freshnessInfo: assetNode.freshnessInfo,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
     partitionStats: assetNode.partitionStats || null,
-    runWhichFailedToMaterialize,
+    runWhichFailedToMaterialize:
+      latestRun && shouldDisplayRunFailure(latestRun, lastMaterialization) ? latestRun : null,
     opNames: assetNode.opNames,
   };
 };
 
+export function shouldDisplayRunFailure(
+  latestRun: AssetLatestInfoRunFragment,
+  lastMaterialization: AssetNodeLiveMaterializationFragment | null,
+) {
+  if (latestRun.status !== 'FAILURE') {
+    return false; // The run did not fail
+  }
+  if (lastMaterialization) {
+    if (lastMaterialization && lastMaterialization.runId === latestRun.id) {
+      // The run failed, but it successfully emitted the latest materialization event. This
+      // is caused by the run failing in a later step.
+      return false;
+    }
+    if (Number(lastMaterialization.timestamp) > Number(latestRun.endTime) * 1000) {
+      // The latest materialization is NEWER than the latest run. This is caused by the user
+      // reporting a materialization manually.
+      return false;
+    }
+  }
+  return true;
+}
+
 export function tokenForAssetKey(key: {path: string[]}) {
   return key.path.join('/');
+}
+
+export function tokenToAssetKey(token: string) {
+  return {path: token.split('/')};
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {
@@ -249,7 +290,7 @@ export const itemWithAssetKey = (key: {path: string[]}) => {
   return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
 };
 
-export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:[^@:]+$/.test(str);
+export const isGroupId = (str: string) => /^[^@:]+@[^@:]+:.+$/.test(str);
 
 export const groupIdForNode = (node: GraphNode) =>
   [
@@ -264,7 +305,7 @@ export const groupIdForNode = (node: GraphNode) =>
 export const getUpstreamNodes = memoize(
   (assetKey: AssetNodeKeyFragment, graphData: GraphData): AssetNodeKeyFragment[] => {
     const upstream = Object.keys(graphData.upstream[toGraphId(assetKey)] || {});
-    const currentUpstream = upstream.map((graphId) => fromGraphID(graphId));
+    const currentUpstream = upstream.map((graphId) => fromGraphId(graphId));
     return [
       assetKey,
       ...currentUpstream,

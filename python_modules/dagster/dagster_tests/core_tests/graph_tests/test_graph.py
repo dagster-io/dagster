@@ -4,7 +4,6 @@ from datetime import datetime
 from itertools import count
 from typing import Any, List, Optional
 
-import pendulum
 import pytest
 from dagster import (
     ConfigMapping,
@@ -31,10 +30,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
@@ -43,6 +39,7 @@ from dagster._core.errors import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import json_console_logger
+from dagster._time import parse_time_string
 
 
 def get_ops():
@@ -973,7 +970,7 @@ def test_job_partitions_def():
         assert context.has_partition_key
         assert context.partition_key == "2020-01-01"
         assert context.partition_time_window == TimeWindow(
-            pendulum.parse("2020-01-01"), pendulum.parse("2020-01-02")
+            parse_time_string("2020-01-01"), parse_time_string("2020-01-02")
         )
 
     @graph
@@ -1014,17 +1011,21 @@ def test_run_id_execute_in_process():
         pass
 
     with instance_for_test() as instance:
-        result = blank.execute_in_process(instance=instance, run_id="foo")
-        assert result.success
-        assert instance.get_run_by_id("foo")
+        result_one = blank.execute_in_process(instance=instance)
+        assert result_one.success
+        assert instance.get_run_by_id(result_one.dagster_run.run_id)
 
-        result = blank.to_job().execute_in_process(instance=instance, run_id="bar")
-        assert result.success
-        assert instance.get_run_by_id("bar")
+        result_two = blank.to_job().execute_in_process(instance=instance)
+        assert result_two.success
+        assert instance.get_run_by_id(result_two.dagster_run.run_id)
+        assert result_one.dagster_run.run_id != result_two.dagster_run.run_id
 
-        result = blank.alias("some_name").execute_in_process(instance=instance, run_id="baz")
-        assert result.success
-        assert instance.get_run_by_id("baz")
+        result_three = blank.alias("some_name").execute_in_process(instance=instance)
+        assert result_three.success
+        assert instance.get_run_by_id(result_three.dagster_run.run_id)
+        assert result_three.dagster_run.run_id not in set(
+            [result_one.dagster_run.run_id, result_two.dagster_run.run_id]
+        )
 
 
 def test_graphs_break_type_checks():
@@ -1238,8 +1239,7 @@ def test_graph_with_mapped_out():
 
 def test_infer_graph_input_type_from_inner_input():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def graph1(in1):
@@ -1266,8 +1266,7 @@ def test_infer_graph_input_type_from_inner_input_int():
 
 def test_infer_graph_input_type_from_inner_input_explicit_any():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def graph1(in1: Any):
@@ -1280,8 +1279,7 @@ def test_infer_graph_input_type_from_inner_input_explicit_any():
 
 def test_infer_graph_input_type_from_inner_input_explicit_graphin_type():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def graph1(in1: int):
@@ -1292,12 +1290,10 @@ def test_infer_graph_input_type_from_inner_input_explicit_graphin_type():
 
 def test_infer_graph_input_type_from_multiple_inner_inputs():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @op(ins={"in2": In(Nothing)})
-    def op2():
-        ...
+    def op2(): ...
 
     @graph
     def graph1(in1):
@@ -1311,8 +1307,7 @@ def test_infer_graph_input_type_from_multiple_inner_inputs():
 
 def test_dont_infer_graph_input_type_from_different_inner_inputs():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @op
     def op2(in2):
@@ -1331,8 +1326,7 @@ def test_dont_infer_graph_input_type_from_different_inner_inputs():
 
 def test_infer_graph_input_type_from_inner_inner_input():
     @op(ins={"in1": In(Nothing)})
-    def op1():
-        ...
+    def op1(): ...
 
     @graph
     def inner(in1):

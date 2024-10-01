@@ -5,12 +5,14 @@ import sys
 import time
 from abc import abstractmethod
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
 from dagster import (
     ConfigurableResource,
     Failure,
+    InitResourceContext,
     _check as check,
     get_dagster_logger,
     resource,
@@ -19,12 +21,16 @@ from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 
 from dagster_airbyte.types import AirbyteOutput
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
+
+# The access token expire every 3 minutes in Airbyte Cloud.
+# Refresh is needed after 2.5 minutes to avoid the "token expired" error message.
+AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS = 150
 
 
 class AirbyteState:
@@ -94,7 +100,11 @@ class BaseAirbyteResource(ConfigurableResource):
         raise NotImplementedError()
 
     def make_request(
-        self, endpoint: str, data: Optional[Mapping[str, object]] = None, method: str = "POST"
+        self,
+        endpoint: str,
+        data: Optional[Mapping[str, object]] = None,
+        method: str = "POST",
+        include_additional_request_params: bool = True,
     ) -> Optional[Mapping[str, object]]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -120,10 +130,11 @@ class BaseAirbyteResource(ConfigurableResource):
                 if data:
                     request_args["json"] = data
 
-                request_args = deep_merge_dicts(
-                    request_args,
-                    self.all_additional_request_params,
-                )
+                if include_additional_request_params:
+                    request_args = deep_merge_dicts(
+                        request_args,
+                        self.all_additional_request_params,
+                    )
 
                 response = requests.request(
                     **request_args,
@@ -244,7 +255,7 @@ class BaseAirbyteResource(ConfigurableResource):
 
 
 class AirbyteCloudResource(BaseAirbyteResource):
-    """This resource allows users to programatically interface with the Airbyte Cloud API to launch
+    """This resource allows users to programmatically interface with the Airbyte Cloud API to launch
     syncs and monitor their progress.
 
     **Examples:**
@@ -255,7 +266,8 @@ class AirbyteCloudResource(BaseAirbyteResource):
         from dagster_airbyte import AirbyteResource
 
         my_airbyte_resource = AirbyteCloudResource(
-            api_key=EnvVar("AIRBYTE_API_KEY"),
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
         airbyte_assets = build_airbyte_assets(
@@ -269,7 +281,15 @@ class AirbyteCloudResource(BaseAirbyteResource):
         )
     """
 
-    api_key: str = Field(..., description="The Airbyte Cloud API key.")
+    client_id: str = Field(..., description="The Airbyte Cloud client ID.")
+    client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
+
+    _access_token_value: Optional[str] = PrivateAttr(default=None)
+    _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        # Refresh access token when the resource is initialized
+        self._refresh_access_token()
 
     @property
     def api_base_url(self) -> str:
@@ -277,7 +297,32 @@ class AirbyteCloudResource(BaseAirbyteResource):
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
-        return {"headers": {"Authorization": f"Bearer {self.api_key}", "User-Agent": "dagster"}}
+        # Make sure the access token is refreshed before using it when calling the API.
+        if self._needs_refreshed_access_token():
+            self._refresh_access_token()
+        return {
+            "headers": {
+                "Authorization": f"Bearer {self._access_token_value}",
+                "User-Agent": "dagster",
+            }
+        }
+
+    def make_request(
+        self,
+        endpoint: str,
+        data: Optional[Mapping[str, object]] = None,
+        method: str = "POST",
+        include_additional_request_params: bool = True,
+    ) -> Optional[Mapping[str, object]]:
+        # Make sure the access token is refreshed before using it when calling the API.
+        if include_additional_request_params and self._needs_refreshed_access_token():
+            self._refresh_access_token()
+        return super().make_request(
+            endpoint=endpoint,
+            data=data,
+            method=method,
+            include_additional_request_params=include_additional_request_params,
+        )
 
     def start_sync(self, connection_id: str) -> Mapping[str, object]:
         job_sync = check.not_none(
@@ -305,6 +350,31 @@ class AirbyteCloudResource(BaseAirbyteResource):
     def _should_forward_logs(self) -> bool:
         # Airbyte Cloud does not support streaming logs yet
         return False
+
+    def _refresh_access_token(self) -> None:
+        response = check.not_none(
+            self.make_request(
+                endpoint="/applications/token",
+                data={
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                },
+                # Must not pass the bearer access token when refreshing it.
+                include_additional_request_params=False,
+            )
+        )
+        self._access_token_value = str(response["access_token"])
+        self._access_token_timestamp = datetime.now().timestamp()
+
+    def _needs_refreshed_access_token(self) -> bool:
+        return (
+            not self._access_token_value
+            or not self._access_token_timestamp
+            or self._access_token_timestamp
+            <= datetime.timestamp(
+                datetime.now() - timedelta(seconds=AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS)
+            )
+        )
 
 
 class AirbyteResource(BaseAirbyteResource):
@@ -478,12 +548,15 @@ class AirbyteResource(BaseAirbyteResource):
 
     def get_source_definition_by_name(self, name: str) -> Optional[str]:
         name_lower = name.lower()
-        definitions = self.make_request_cached(endpoint="/source_definitions/list", data={})
+        definitions = check.not_none(
+            self.make_request_cached(endpoint="/source_definitions/list", data={})
+        )
+        source_definitions = cast(List[Dict[str, Any]], definitions["sourceDefinitions"])
 
         return next(
             (
                 definition["sourceDefinitionId"]
-                for definition in definitions["sourceDefinitions"]
+                for definition in source_definitions
                 if definition["name"].lower() == name_lower
             ),
             None,

@@ -1,6 +1,6 @@
 from dagster_dbt import DbtCloudOutput
 
-from .utils import sample_run_details, sample_run_results
+from dagster_dbt_tests.cloud.utils import sample_run_details, sample_run_results
 
 
 def test_timestamps():

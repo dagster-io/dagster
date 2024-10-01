@@ -3,9 +3,7 @@ import tempfile
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.pipes.utils import (
-    PipesFileContextInjector,
-)
+from dagster._core.pipes.utils import PipesFileContextInjector
 from dagster_docker.pipes import PipesDockerClient
 from dagster_test.test_project import (
     IS_BUILDKITE,
@@ -50,7 +48,7 @@ def test_default():
     )
     assert result.success
     mats = result.asset_materializations_for_node(number_x.op.name)
-    assert mats[0].metadata["path"]
+    assert mats[0].metadata["foo"]
 
 
 @pytest.mark.integration
@@ -115,7 +113,7 @@ def test_file_io():
         )
         assert result.success
         mats = result.asset_materializations_for_node(number_x.op.name)
-        assert mats[0].metadata["path"]
+        assert mats[0].metadata["foo"]
 
 
 _print_script = """

@@ -1,13 +1,15 @@
 import os
 import pickle
-import warnings
+import re
 from tempfile import TemporaryDirectory
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AssetSpec,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
@@ -28,15 +30,12 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.test_utils import ignore_warning, instance_for_test
+from dagster._core.test_utils import ignore_warning, instance_for_test, raise_exception_on_warnings
 
 
 @pytest.fixture(autouse=True)
 def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
 
 def test_basic_materialize():
@@ -57,7 +56,7 @@ def test_basic_materialize():
 def test_materialize_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         assert materialize(
@@ -70,7 +69,7 @@ def test_materialize_config():
 def test_materialize_bad_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
@@ -130,6 +129,7 @@ def test_materialize_conflicting_resources():
 
 
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_materialize_source_assets():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -154,8 +154,44 @@ def test_materialize_source_assets():
         assert result.output_for_node("the_asset") == 6
 
 
+def test_materialize_asset_specs():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    the_source = AssetSpec(key=AssetKey(["the_source"])).with_io_manager_key("my_io_manager")
+
+    @asset
+    def the_asset(the_source):
+        return the_source + 1
+
+    with instance_for_test() as instance:
+        result = materialize(
+            [the_asset, the_source], instance=instance, resources={"my_io_manager": MyIOManager()}
+        )
+        assert result.success
+        assert result.output_for_node("the_asset") == 6
+
+
+def test_materialize_asset_specs_conflicting_key():
+    the_source = AssetSpec(key=AssetKey(["the_source"]))
+
+    @asset(key="the_source")
+    def the_asset(): ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape("Duplicate asset key: AssetKey(['the_source'])"),
+    ):
+        materialize([the_asset, the_source])
+
+
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_materialize_source_asset_conflicts():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
@@ -268,7 +304,7 @@ def test_materialize_multi_asset():
 def test_materialize_tags():
     @asset
     def the_asset(context):
-        assert context.get_tag("key1") == "value1"
+        assert context.run.tags.get("key1") == "value1"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], instance=instance, tags={"key1": "value1"})
@@ -278,8 +314,8 @@ def test_materialize_tags():
 
 def test_materialize_partition_key():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def the_asset(context):
-        assert context.asset_partition_key_for_output() == "2022-02-02"
+    def the_asset(context: AssetExecutionContext):
+        assert context.partition_key == "2022-02-02"
 
     with instance_for_test() as instance:
         result = materialize([the_asset], partition_key="2022-02-02", instance=instance)
@@ -361,12 +397,10 @@ def test_raise_on_error():
 
 def test_selection():
     @asset
-    def upstream():
-        ...
+    def upstream(): ...
 
     @asset
-    def downstream(upstream):
-        ...
+    def downstream(upstream): ...
 
     assets = [upstream, downstream]
 

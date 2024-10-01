@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useCallback, useState} from 'react';
 
 import {Button} from '../Button';
 import {Countdown, useCountdown} from '../Countdown';
@@ -13,9 +13,9 @@ export default {
 } as Meta;
 
 export const FiveSeconds = () => {
-  const [status, setStatus] = React.useState<'counting' | 'idle'>('idle');
+  const [status, setStatus] = useState<'counting' | 'idle'>('idle');
 
-  const onComplete = React.useCallback(() => setStatus('idle'), []);
+  const onComplete = useCallback(() => setStatus('idle'), []);
 
   const timeRemaining = useCountdown({
     duration: 5000,

@@ -2,11 +2,11 @@ import {
   Box,
   Button,
   Checkbox,
+  Colors,
   Icon,
   Menu,
   MenuItem,
   Popover,
-  colorTextLight,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -72,7 +72,7 @@ export const LogFilterSelect = ({options, onSetFilter}: Props) => {
                           style={{flex: 1}}
                         >
                           <div>{label}</div>
-                          <div style={{color: colorTextLight()}}>{compactNumber(count)}</div>
+                          <div style={{color: Colors.textLight()}}>{compactNumber(count)}</div>
                         </Box>
                       }
                     />

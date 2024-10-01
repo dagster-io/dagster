@@ -1,9 +1,6 @@
 import os
 from contextlib import contextmanager
-from typing import (
-    Iterator,
-    Mapping,
-)
+from typing import Iterator, Mapping
 
 
 @contextmanager

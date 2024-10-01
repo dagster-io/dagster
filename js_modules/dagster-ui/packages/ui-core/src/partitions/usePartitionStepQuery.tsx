@@ -1,18 +1,17 @@
-import {useApolloClient, ApolloClient, gql} from '@apollo/client';
-import * as React from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  PartitionStepLoaderQuery,
+  PartitionStepLoaderQueryVariables,
+} from './types/usePartitionStepQuery.types';
+import {PARTITION_MATRIX_STEP_RUN_FRAGMENT, PartitionRuns} from './useMatrixData';
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
-
-import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
-import {
-  PartitionStepLoaderQueryVariables,
-  PartitionStepLoaderQuery,
-} from './types/usePartitionStepQuery.types';
-import {PartitionRuns, PARTITION_MATRIX_STEP_RUN_FRAGMENT} from './useMatrixData';
 
 interface DataState {
   runs: PartitionMatrixStepRunFragment[];
@@ -58,21 +57,27 @@ export function usePartitionStepQuery({
 }: PartitionStepQueryOptions) {
   const client = useApolloClient();
 
-  const version = React.useRef(0);
-  const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
+  const version = useRef(0);
+  const [dataState, setDataState] = useState<DataState>(InitialDataState);
 
-  const _serializedRunTags = JSON.stringify([
-    ...runsFilter.map((token) => {
-      const [key, value] = token.value.split('=');
-      return {key, value};
-    }),
-    {
-      key: DagsterTag.RepositoryLabelTag,
-      value: `${repositorySelector.repositoryName}@${repositorySelector.repositoryLocationName}`,
-    },
-  ]);
+  const _serializedRunTags = useMemo(
+    () =>
+      JSON.stringify([
+        ...runsFilter.map((token) => {
+          const [key, value] = token.value.split('=');
+          return {key, value};
+        }),
+        {
+          key: DagsterTag.RepositoryLabelTag,
+          value: `${repositorySelector.repositoryName}@${repositorySelector.repositoryLocationName}`,
+        },
+      ]),
+    [repositorySelector.repositoryLocationName, repositorySelector.repositoryName, runsFilter],
+  );
 
-  React.useEffect(() => {
+  const partitionNamesSet = useMemo(() => new Set(partitionNames), [partitionNames]);
+
+  useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
     // invocation, we bump a version number that is captured in a local variable.
     // eg: If version.current no longer === v, this should stop updating state and exit.
@@ -161,7 +166,7 @@ export function usePartitionStepQuery({
         // Filter detected changes to just runs in our visible range of partitions, and then update
         // local state if changes have been found.
         const relevant = [...pending, ...recent].filter((run) =>
-          run.tags.find((t) => t.key === partitionTagName && partitionNames.includes(t.value)),
+          run.tags.find((t) => t.key === partitionTagName && partitionNamesSet.has(t.value)),
         );
         setDataState((state) => {
           const updated = state.runs
@@ -189,9 +194,13 @@ export function usePartitionStepQuery({
     offset,
     partitionNames,
     skipQuery,
+    partitionNamesSet,
   ]);
 
-  return assemblePartitions(dataState, partitionTagName);
+  return useMemo(
+    () => assemblePartitions(dataState, partitionTagName),
+    [dataState, partitionTagName],
+  );
 }
 
 async function fetchRunsForFilter(
@@ -199,7 +208,7 @@ async function fetchRunsForFilter(
   variables: PartitionStepLoaderQueryVariables,
 ) {
   const result = await client.query<PartitionStepLoaderQuery, PartitionStepLoaderQueryVariables>({
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'no-cache',
     query: PARTITION_STEP_LOADER_QUERY,
     variables,
   });

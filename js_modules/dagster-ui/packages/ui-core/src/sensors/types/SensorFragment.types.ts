@@ -5,11 +5,12 @@ import * as Types from '../../graphql/types';
 export type SensorFragment = {
   __typename: 'Sensor';
   id: string;
-  jobOriginId: string;
   name: string;
   description: string | null;
   minIntervalSeconds: number;
   sensorType: Types.SensorType;
+  defaultStatus: Types.InstigationStatus;
+  canReset: boolean;
   nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
   sensorState: {
     __typename: 'InstigationState';
@@ -31,6 +32,7 @@ export type SensorFragment = {
       __typename: 'Run';
       id: string;
       status: Types.RunStatus;
+      creationTime: number;
       startTime: number | null;
       endTime: number | null;
       updateTime: number | null;

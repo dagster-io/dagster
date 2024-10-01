@@ -401,8 +401,8 @@ def define_custom_dict(name, permitted_key_names):
                 return TypeCheck(
                     False,
                     description=(
-                        "Key {name} is not a permitted value, values can only be of: {name_list}"
-                    ).format(name=value.name, name_list=permitted_key_names),
+                        f"Key {value.name} is not a permitted value, values can only be of: {permitted_key_names}"
+                    ),
                 )
         return TypeCheck(
             True,

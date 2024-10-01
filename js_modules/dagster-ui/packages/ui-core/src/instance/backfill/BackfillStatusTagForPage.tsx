@@ -1,5 +1,4 @@
 import {Box, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {showCustomAlert} from '../../app/CustomAlertProvider';
@@ -40,6 +39,10 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
       return errorState('Failed');
     case BulkActionStatus.COMPLETED:
       return <Tag intent="success">Completed</Tag>;
+    case BulkActionStatus.COMPLETED_SUCCESS:
+      return <Tag intent="success">Succeeded</Tag>;
+    case BulkActionStatus.COMPLETED_FAILED:
+      return errorState('Failed');
     default:
       return <Tag>{status}</Tag>;
   }

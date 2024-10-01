@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_basic_ops_config
   dict({
     'execution': dict({

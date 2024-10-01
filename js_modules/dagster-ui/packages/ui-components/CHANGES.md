@@ -1,3 +1,21 @@
+# 1.1.3 (September 25, 2024)
+
+- Revert Rollup upgrade
+
+# 1.1.2 (September 25, 2024)
+
+- Upgrade to Rollup 4
+- Expose all icons from icon-svgs directory
+
+## 1.1.1 (September 24, 2024)
+
+- Add `DateRangePickerWrapper` export
+
+## 1.1.0 (September 10, 2024)
+
+- Add `VirtualizedTable` export
+- A whole lot of stuff, including switching from Inter/Inconsolata to Geist fonts.
+
 ## 1.0.9 (June 12, 2023)
 
 - Upgrade to Storybook 7

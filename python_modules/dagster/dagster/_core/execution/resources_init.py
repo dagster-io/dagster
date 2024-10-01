@@ -29,6 +29,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.plan.inputs import (
     StepInput,
     UnresolvedCollectStepInput,
@@ -44,8 +45,6 @@ from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration, time_execution_scope
-
-from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
@@ -76,7 +75,8 @@ def resolve_resource_dependencies(
 ) -> Mapping[str, AbstractSet[str]]:
     """Generates a dictionary that maps resource key to resource keys it requires for initialization."""
     resource_dependencies = {
-        key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
+        key: resource_def.get_required_resource_keys(resource_defs)
+        for key, resource_def in resource_defs.items()
     }
     return resource_dependencies
 
@@ -163,7 +163,7 @@ def _core_resource_initialization_event_generator(
 
                 resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)
                 resources = ScopedResourcesBuilder(resource_instances).build(
-                    resource_def.required_resource_keys
+                    resource_def.get_required_resource_keys(resource_defs)
                 )
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
@@ -176,6 +176,7 @@ def _core_resource_initialization_event_generator(
                     ),
                     resources=resources,
                     instance=instance,
+                    all_resource_defs=resource_defs,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
@@ -402,7 +403,11 @@ def get_required_resource_keys_for_step(
 
         resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
 
-        resource_keys = resource_keys.union(step_input.source.required_resource_keys(job_def))
+        resource_keys = resource_keys.union(
+            step_input.source.required_resource_keys(
+                job_def, execution_step.node_handle, step_input.name
+            )
+        )
 
         if input_def.input_manager_key:
             resource_keys = resource_keys.union([input_def.input_manager_key])

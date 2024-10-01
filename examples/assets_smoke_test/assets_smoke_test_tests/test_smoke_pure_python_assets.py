@@ -1,7 +1,7 @@
 from dagster import InMemoryIOManager, TableSchema, load_assets_from_modules, materialize
 from pandas import DataFrame, Series
 
-from assets_smoke_test import pure_python_assets
+from assets_smoke_test.assets import pure_python_assets
 
 
 def empty_dataframe_from_column_schema(column_schema: TableSchema) -> DataFrame:
@@ -10,8 +10,8 @@ def empty_dataframe_from_column_schema(column_schema: TableSchema) -> DataFrame:
 
 class SmokeIOManager(InMemoryIOManager):
     def load_input(self, context):
-        if context.asset_key not in context.step_context.job_def.asset_layer.asset_keys:
-            column_schema = context.upstream_output.metadata["column_schema"]
+        if context.asset_key not in context.step_context.job_def.asset_layer.executable_asset_keys:
+            column_schema = context.upstream_output.definition_metadata["column_schema"]
             return empty_dataframe_from_column_schema(column_schema)
         else:
             return super().load_input(context)

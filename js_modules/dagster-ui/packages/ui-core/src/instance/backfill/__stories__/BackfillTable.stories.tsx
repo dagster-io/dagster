@@ -1,14 +1,11 @@
 import {MockedProvider} from '@apollo/client/testing';
-import React from 'react';
 
 import {StorybookProvider} from '../../../testing/StorybookProvider';
 import {BackfillTable} from '../BackfillTable';
 import {
-  BackfillTableFragmentCancelledAssetsPartitionSetStatus,
   BackfillTableFragmentCompletedAssetJobStatus,
   BackfillTableFragmentCompletedOpJobStatus,
   BackfillTableFragmentFailedErrorStatus,
-  BackfillTableFragmentRequested2000AssetsPureStatus,
   BackfillTableFragments,
 } from '../__fixtures__/BackfillTable.fixtures';
 
@@ -23,8 +20,6 @@ export const GeneralStates = () => {
     <StorybookProvider>
       <MockedProvider
         mocks={[
-          BackfillTableFragmentRequested2000AssetsPureStatus,
-          BackfillTableFragmentCancelledAssetsPartitionSetStatus,
           BackfillTableFragmentCompletedOpJobStatus,
           BackfillTableFragmentCompletedAssetJobStatus,
           BackfillTableFragmentFailedErrorStatus,

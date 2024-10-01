@@ -1,14 +1,14 @@
 import styled from 'styled-components';
 
-import {colorBackgroundLight, colorTextLight} from '../theme/color';
-
+import {Colors} from './Color';
 import {FontFamily} from './styles';
 
 export const Trace = styled.div`
-  background-color: ${colorBackgroundLight()};
-  color: ${colorTextLight()};
+  background-color: ${Colors.backgroundLight()};
+  color: ${Colors.textLight()};
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 13px;
+  font-variant-ligatures: none;
   max-height: 90vh;
   overflow: auto;
   white-space: pre;

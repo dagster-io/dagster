@@ -1,14 +1,17 @@
-import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  NonIdealState,
-  Spinner,
-  TextInput,
-  Tooltip,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
+import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
+import {useRepository} from './WorkspaceContext/util';
+import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {repoAddressToSelector} from './repoAddressToSelector';
+import {RepoAddress} from './types';
+import {
+  WorkspaceSchedulesQuery,
+  WorkspaceSchedulesQueryVariables,
+} from './types/WorkspaceSchedulesRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -19,22 +22,18 @@ import {filterPermissionedInstigationState} from '../instigation/filterPermissio
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
+import {useFilters} from '../ui/BaseFilters';
 import {CheckAllBox} from '../ui/CheckAllBox';
-import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 
-import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
-import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {repoAddressToSelector} from './repoAddressToSelector';
-import {RepoAddress} from './types';
-import {
-  WorkspaceSchedulesQuery,
-  WorkspaceSchedulesQueryVariables,
-} from './types/WorkspaceSchedulesRoot.types';
+// Reuse this reference to distinguish no sensors case from data is still loading case;
+const NO_DATA_EMPTY_ARR: any[] = [];
 
 export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repo = useRepository(repoAddress);
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Schedules: ${repoName}`);
@@ -46,7 +45,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   });
 
   const runningStateFilter = useInstigationStatusFilter();
-  const filters = React.useMemo(() => [runningStateFilter], [runningStateFilter]);
+  const filters = useMemo(() => [runningStateFilter], [runningStateFilter]);
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<WorkspaceSchedulesQuery, WorkspaceSchedulesQueryVariables>(
@@ -57,27 +56,32 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       variables: {selector},
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const schedules = React.useMemo(() => {
+  const schedules = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.schedules;
     }
-    return [];
-  }, [data]);
+    if (repo) {
+      return repo.repository.schedules;
+    }
+    return NO_DATA_EMPTY_ARR;
+  }, [data, repo]);
+
+  const loading = NO_DATA_EMPTY_ARR === schedules;
 
   const {state: runningState} = runningStateFilter;
-  const filteredByRunningState = React.useMemo(() => {
+  const filteredByRunningState = useMemo(() => {
     return runningState.size
       ? schedules.filter(({scheduleState}) => runningState.has(scheduleState.status))
       : schedules;
   }, [schedules, runningState]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return filteredByRunningState.filter(({name}) =>
       name.toLocaleLowerCase().includes(searchToLower),
@@ -86,20 +90,20 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
 
   const anySchedulesVisible = filteredBySearch.length > 0;
 
-  const permissionedSchedules = React.useMemo(() => {
+  const permissionedSchedules = useMemo(() => {
     return filteredBySearch.filter(({scheduleState}) =>
       filterPermissionedInstigationState(scheduleState),
     );
   }, [filteredBySearch]);
 
-  const permissionedKeys = React.useMemo(() => {
+  const permissionedKeys = useMemo(() => {
     return permissionedSchedules.map(({name}) => makeScheduleKey(repoAddress, name));
   }, [permissionedSchedules, repoAddress]);
 
   const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
     useSelectionReducer(permissionedKeys);
 
-  const checkedSchedules = React.useMemo(() => {
+  const checkedSchedules = useMemo(() => {
     return permissionedSchedules
       .filter(({name}) => checkedKeys.has(makeScheduleKey(repoAddress, name)))
       .map(({name, scheduleState}) => {
@@ -118,7 +122,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading schedules…</div>
+            <div style={{color: Colors.textLight()}}>Loading schedules…</div>
           </Box>
         </Box>
       );
@@ -171,14 +175,11 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     );
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="schedules"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="schedules" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}} flex={{justifyContent: 'space-between'}}>
         <Box flex={{direction: 'row', gap: 12}}>
           {filterButton}
@@ -191,6 +192,11 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
             }}
             placeholder="Filter by schedule name…"
             style={{width: '340px'}}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading schedules…" />
+              ) : undefined
+            }
           />
         </Box>
         <Tooltip

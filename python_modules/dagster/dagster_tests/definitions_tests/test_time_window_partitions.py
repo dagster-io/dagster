@@ -1,9 +1,8 @@
 import pickle
 import random
-from datetime import datetime
-from typing import NamedTuple, Optional, Sequence, cast
+from datetime import datetime, timedelta
+from typing import Optional, Sequence, cast
 
-import pendulum.parser
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -21,16 +20,18 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
-    DatetimeFieldSerializer,
     PartitionKeysTimeWindowPartitionsSubset,
+    PersistedTimeWindow,
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
+    dst_safe_strptime,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
-from dagster._seven.compat.pendulum import create_pendulum_time
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.test_utils import freeze_time
+from dagster._record import copy
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._time import create_datetime, parse_time_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -38,8 +39,15 @@ DATE_FORMAT = "%Y-%m-%d"
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, pendulum.parser.parse(start)),
-        cast(datetime, pendulum.parser.parse(end)),
+        cast(datetime, parse_time_string(start)),
+        cast(datetime, parse_time_string(end)),
+    )
+
+
+def persisted_time_window(start: str, end: str) -> PersistedTimeWindow:
+    return PersistedTimeWindow(
+        TimestampWithTimezone(parse_time_string(start).timestamp(), "UTC"),
+        TimestampWithTimezone(parse_time_string(end).timestamp(), "UTC"),
     )
 
 
@@ -50,17 +58,19 @@ def test_daily_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
+    assert copy(partitions_def) == DailyPartitionsDefinition(start_date="2021-05-05")
+
     assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
+    assert partitions_def.get_last_partition_key(parse_time_string("2021-05-06")) == "2021-05-05"
     assert (
-        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06")) == "2021-05-05"
-    )
-    assert (
-        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06").add(minutes=1))
+        partitions_def.get_last_partition_key(
+            parse_time_string("2021-05-06") + timedelta(minutes=1)
+        )
         == "2021-05-05"
     )
     assert (
         partitions_def.get_last_partition_key(
-            pendulum.parser.parse("2021-05-07").subtract(minutes=1)
+            parse_time_string("2021-05-07") - timedelta(minutes=1)
         )
         == "2021-05-05"
     )
@@ -140,6 +150,7 @@ def test_monthly_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == MonthlyPartitionsDefinition(start_date="2021-05-01")
+    assert copy(partitions_def) == MonthlyPartitionsDefinition(start_date="2021-05-01")
 
     assert [
         partitions_def.time_window_for_partition_key(key)
@@ -209,6 +220,7 @@ def test_hourly_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
+    assert copy(partitions_def) == HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
 
     partition_keys = partitions_def.get_partition_keys(
         datetime.strptime("2021-05-05-03:00", DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE)
@@ -263,6 +275,7 @@ def test_weekly_partitions():
 
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == WeeklyPartitionsDefinition(start_date="2021-05-01")
+    assert copy(partitions_def) == WeeklyPartitionsDefinition(start_date="2021-05-01")
 
     partitions_def = my_partitioned_config.partitions_def
     assert [
@@ -350,14 +363,14 @@ def assert_expected_partition_keys(
         (
             datetime(year=2021, month=1, day=1),
             0,
-            create_pendulum_time(2021, 1, 6, 1, 20),
+            create_datetime(2021, 1, 6, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05"],
             None,
         ),
         (
             datetime(year=2021, month=1, day=1),
             1,
-            create_pendulum_time(2021, 1, 6, 1, 20),
+            create_datetime(2021, 1, 6, 1, 20),
             [
                 "2021-01-01",
                 "2021-01-02",
@@ -371,7 +384,7 @@ def assert_expected_partition_keys(
         (
             datetime(year=2021, month=1, day=1),
             2,
-            create_pendulum_time(2021, 1, 6, 1, 20),
+            create_datetime(2021, 1, 6, 1, 20),
             [
                 "2021-01-01",
                 "2021-01-02",
@@ -386,7 +399,7 @@ def assert_expected_partition_keys(
         (
             datetime(year=2021, month=1, day=1),
             -2,
-            create_pendulum_time(2021, 1, 8, 1, 20),
+            create_datetime(2021, 1, 8, 1, 20),
             [
                 "2021-01-01",
                 "2021-01-02",
@@ -399,21 +412,21 @@ def assert_expected_partition_keys(
         (
             datetime(year=2020, month=12, day=29),
             0,
-            create_pendulum_time(2021, 1, 3, 1, 20),
+            create_datetime(2021, 1, 3, 1, 20),
             ["2020-12-29", "2020-12-30", "2020-12-31", "2021-01-01", "2021-01-02"],
             None,
         ),
         (
             datetime(year=2020, month=2, day=28),
             0,
-            create_pendulum_time(2020, 3, 3, 1, 20),
+            create_datetime(2020, 3, 3, 1, 20),
             ["2020-02-28", "2020-02-29", "2020-03-01", "2020-03-02"],
             None,
         ),
         (
             datetime(year=2021, month=2, day=28),
             0,
-            create_pendulum_time(2021, 3, 3, 1, 20),
+            create_datetime(2021, 3, 3, 1, 20),
             ["2021-02-28", "2021-03-01", "2021-03-02"],
             None,
         ),
@@ -454,31 +467,31 @@ def test_time_partitions_daily_partitions(
         (
             datetime(year=2021, month=1, day=1),
             0,
-            create_pendulum_time(2021, 3, 1, 1, 20),
+            create_datetime(2021, 3, 1, 1, 20),
             ["2021-01-01", "2021-02-01"],
         ),
         (
             datetime(year=2021, month=1, day=1),
             1,
-            create_pendulum_time(2021, 3, 1, 1, 20),
+            create_datetime(2021, 3, 1, 1, 20),
             ["2021-01-01", "2021-02-01", "2021-03-01"],
         ),
         (
             datetime(year=2021, month=1, day=1),
             2,
-            create_pendulum_time(2021, 3, 1, 1, 20),
+            create_datetime(2021, 3, 1, 1, 20),
             ["2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01"],
         ),
         (
             datetime(year=2021, month=1, day=1),
             -1,
-            create_pendulum_time(2021, 3, 27),
+            create_datetime(2021, 3, 27),
             ["2021-01-01"],
         ),
         (
             datetime(year=2021, month=1, day=3),
             0,
-            create_pendulum_time(2021, 1, 31),
+            create_datetime(2021, 1, 31),
             [],
         ),
     ],
@@ -517,19 +530,19 @@ def test_time_partitions_monthly_partitions(
         (
             datetime(year=2021, month=1, day=1),
             0,
-            create_pendulum_time(2021, 1, 31, 1, 20),
+            create_datetime(2021, 1, 31, 1, 20),
             ["2021-01-03", "2021-01-10", "2021-01-17", "2021-01-24"],
         ),
         (
             datetime(year=2021, month=1, day=1),
             1,
-            create_pendulum_time(2021, 1, 31, 1, 20),
+            create_datetime(2021, 1, 31, 1, 20),
             ["2021-01-03", "2021-01-10", "2021-01-17", "2021-01-24", "2021-01-31"],
         ),
         (
             datetime(year=2021, month=1, day=1),
             2,
-            create_pendulum_time(2021, 1, 31, 1, 20),
+            create_datetime(2021, 1, 31, 1, 20),
             [
                 "2021-01-03",
                 "2021-01-10",
@@ -542,13 +555,13 @@ def test_time_partitions_monthly_partitions(
         (
             datetime(year=2021, month=1, day=1),
             -2,
-            create_pendulum_time(2021, 1, 24, 1, 20),
+            create_datetime(2021, 1, 24, 1, 20),
             ["2021-01-03"],
         ),
         (
             datetime(year=2021, month=1, day=4),
             0,
-            create_pendulum_time(2021, 1, 9),
+            create_datetime(2021, 1, 9),
             [],
         ),
     ],
@@ -591,7 +604,7 @@ def test_time_partitions_weekly_partitions(
             datetime(year=2021, month=1, day=1, hour=0),
             None,
             0,
-            create_pendulum_time(2021, 1, 1, 4, 1),
+            create_datetime(2021, 1, 1, 4, 1),
             [
                 "2021-01-01-00:00",
                 "2021-01-01-01:00",
@@ -603,7 +616,7 @@ def test_time_partitions_weekly_partitions(
             datetime(year=2021, month=1, day=1, hour=0),
             None,
             1,
-            create_pendulum_time(2021, 1, 1, 4, 1),
+            create_datetime(2021, 1, 1, 4, 1),
             [
                 "2021-01-01-00:00",
                 "2021-01-01-01:00",
@@ -616,7 +629,7 @@ def test_time_partitions_weekly_partitions(
             datetime(year=2021, month=1, day=1, hour=0),
             None,
             2,
-            create_pendulum_time(2021, 1, 1, 4, 1),
+            create_datetime(2021, 1, 1, 4, 1),
             [
                 "2021-01-01-00:00",
                 "2021-01-01-01:00",
@@ -630,21 +643,21 @@ def test_time_partitions_weekly_partitions(
             datetime(year=2021, month=1, day=1, hour=0),
             None,
             -1,
-            create_pendulum_time(2021, 1, 1, 3, 30),
+            create_datetime(2021, 1, 1, 3, 30),
             ["2021-01-01-00:00", "2021-01-01-01:00"],
         ),
         (
             datetime(year=2021, month=1, day=1, hour=0, minute=2),
             None,
             0,
-            create_pendulum_time(2021, 1, 1, 0, 59),
+            create_datetime(2021, 1, 1, 0, 59),
             [],
         ),
         (
             datetime(year=2021, month=3, day=14, hour=1),
             None,
             0,
-            create_pendulum_time(2021, 3, 14, 4, 1),
+            create_datetime(2021, 3, 14, 4, 1),
             [
                 "2021-03-14-01:00",
                 "2021-03-14-02:00",
@@ -655,14 +668,14 @@ def test_time_partitions_weekly_partitions(
             datetime(year=2021, month=3, day=14, hour=1),
             "US/Central",
             0,
-            create_pendulum_time(2021, 3, 14, 4, 1, tz="US/Central"),
+            create_datetime(2021, 3, 14, 4, 1, tz="US/Central"),
             ["2021-03-14-01:00", "2021-03-14-03:00"],
         ),
         (
             datetime(year=2021, month=11, day=7, hour=0),
             None,
             0,
-            create_pendulum_time(2021, 11, 7, 4, 1),
+            create_datetime(2021, 11, 7, 4, 1),
             [
                 "2021-11-07-00:00",
                 "2021-11-07-01:00",
@@ -674,7 +687,7 @@ def test_time_partitions_weekly_partitions(
             datetime(year=2021, month=11, day=7, hour=0),
             "US/Central",
             0,
-            create_pendulum_time(2021, 11, 7, 4, 1, tz="US/Central"),
+            create_datetime(2021, 11, 7, 4, 1, tz="US/Central"),
             [
                 "2021-11-07-00:00",
                 "2021-11-07-01:00",
@@ -741,7 +754,7 @@ def test_invalid_get_partition_keys_in_range():
 
 def test_twice_daily_partitions():
     partitions_def = TimeWindowPartitionsDefinition(
-        start=pendulum.parse("2021-05-05"),
+        start=parse_time_string("2021-05-05"),
         cron_schedule="0 0,11 * * *",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     )
@@ -766,7 +779,7 @@ def test_twice_daily_partitions():
 
 def test_start_not_aligned():
     partitions_def = TimeWindowPartitionsDefinition(
-        start=pendulum.parse("2021-05-05"),
+        start=parse_time_string("2021-05-05"),
         cron_schedule="0 7 * * *",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     )
@@ -1029,16 +1042,21 @@ def test_current_time_window_partitions_serialization():
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
 
 
-def test_time_window_partitions_contains():
+@pytest.mark.parametrize(
+    "subset_class", [TimeWindowPartitionsSubset, PartitionKeysTimeWindowPartitionsSubset]
+)
+def test_time_window_partitions_contains(subset_class: BaseTimeWindowPartitionsSubset) -> None:
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     keys = ["2015-01-06", "2015-01-07", "2015-01-08", "2015-01-10"]
-    subset = partitions_def.empty_subset().with_partition_keys(keys)
+    subset = subset_class.empty_subset(partitions_def).with_partition_keys(keys)
     for key in keys:
         assert key in subset
 
     assert "2015-01-05" not in subset
     assert "2015-01-09" not in subset
     assert "2015-01-11" not in subset
+    assert None not in subset
+    assert "<not a time string>" not in subset
 
 
 def test_dst_transition_15_minute_partitions() -> None:
@@ -1229,6 +1247,38 @@ def test_time_window_partition_len():
         == partitions_def.get_partition_keys(current_time=current_time)[50:53]
     )
 
+    partitions_def = TimeWindowPartitionsDefinition(
+        cron_schedule="*/15 * * * *",
+        start="2020-11-01-00:30",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time) == len(
+        partitions_def.get_partition_keys(current_time)
+    )
+
+    @daily_partitioned_config(start_date="2020-01-01", timezone="US/Pacific")
+    def my_daily_dst_transition_partitioned_config(_start, _end):
+        return {}
+
+    partitions_def = cast(
+        TimeWindowPartitionsDefinition, my_daily_dst_transition_partitioned_config.partitions_def
+    )
+
+    current_time_post_transition = datetime.strptime("2024-05-22", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time_post_transition) == len(
+        partitions_def.get_partition_keys(current_time_post_transition)
+    )
+
+    current_time_pre_transition = datetime.strptime("2024-02-01", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time_pre_transition) == len(
+        partitions_def.get_partition_keys(current_time_pre_transition)
+    )
+
 
 def test_get_first_partition_window():
     assert DailyPartitionsDefinition(
@@ -1344,7 +1394,7 @@ def test_invalid_cron_schedule():
     # creating a new partition definition with an invalid cron schedule should raise an error
     with pytest.raises(DagsterInvalidDefinitionError):
         TimeWindowPartitionsDefinition(
-            start=pendulum.parse("2021-05-05"),
+            start=parse_time_string("2021-05-05"),
             cron_schedule="0 -24 * * *",
             fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         )
@@ -1422,13 +1472,13 @@ def test_partition_with_end_date(
     fmt: str,
 ):
     first_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(first_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(first_partition_window[1], fmt), tz="UTC"),
+        start=dst_safe_strptime(first_partition_window[0], partitions_def.timezone, fmt),
+        end=dst_safe_strptime(first_partition_window[1], partitions_def.timezone, fmt),
     )
 
     last_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(last_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(last_partition_window[1], fmt), tz="UTC"),
+        start=dst_safe_strptime(last_partition_window[0], partitions_def.timezone, fmt),
+        end=dst_safe_strptime(last_partition_window[1], partitions_def.timezone, fmt),
     )
 
     # get_last_partition_window
@@ -1478,27 +1528,14 @@ def test_time_window_partitions_def_serialization(partitions_def):
     assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo
 
 
-def test_datetime_field_serializer():
-    @whitelist_for_serdes(field_serializers={"dt": DatetimeFieldSerializer})
-    class Foo(NamedTuple):
-        dt: datetime
-
-    utc_datetime_with_no_timezone = Foo(
-        dt=utc_datetime_from_timestamp(pendulum.now("UTC").timestamp())
-    )
-    with pytest.raises(CheckError, match="not a valid IANA timezone"):
-        serialize_value(utc_datetime_with_no_timezone)
-
-
-def test_cannot_pickle_time_window_partitions_def():
+def test_pickle_time_window_partitions_def():
     import datetime
 
     partitions_def = TimeWindowPartitionsDefinition(
         datetime.datetime(2021, 1, 1), "America/Los_Angeles", cron_schedule="0 0 * * *"
     )
 
-    with pytest.raises(DagsterInvariantViolationError, match="not pickleable"):
-        pickle.loads(pickle.dumps(partitions_def))
+    assert pickle.loads(pickle.dumps(partitions_def)) == partitions_def
 
 
 def test_time_window_partitions_subset_add_partition_to_front():
@@ -1514,3 +1551,299 @@ def test_time_window_partitions_subset_add_partition_to_front():
     assert combined == PartitionKeysTimeWindowPartitionsSubset(
         partitions_def, {"2023-01-01", "2023-01-02"}
     )
+
+
+def test_get_partition_keys_not_in_subset_empty_subset() -> None:
+    # starts in the future
+    partitions_def = DailyPartitionsDefinition("2024-01-01")
+    time_windows_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=0, included_time_windows=[]
+    )
+    with freeze_time(create_datetime(2023, 1, 1)):
+        assert time_windows_subset.get_partition_keys_not_in_subset(partitions_def) == []
+
+
+@pytest.mark.parametrize(
+    "subtractor,subtractee,result",
+    [
+        (  # Subtractee earlier than subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-01-02", "2019-01-03"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee later than subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2025-05-01", "2026-01-01"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee <= subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-01-02", "2019-02-27"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee >= subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2025-04-01", "2026-01-01"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee == subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            [],
+        ),
+        (  # Subtractee fully covers subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2018-02-27", "2026-04-01"),
+            [],
+        ),
+        (  # Subtractee overlaps left part of subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-02-27", "2024-01-01"),
+            [
+                persisted_time_window("2024-01-01", "2025-04-01"),
+            ],
+        ),
+        (  # Subtractee overlaps left part of subtractor, extends earlier
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2018-02-27", "2024-01-01"),
+            [
+                persisted_time_window("2024-01-01", "2025-04-01"),
+            ],
+        ),
+        (  # Subtractee overlaps right part of subtractor
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2021-02-27", "2025-04-01"),
+            [
+                persisted_time_window("2019-02-27", "2021-02-27"),
+            ],
+        ),
+        (  # Subtractee overlaps right part of subtractor, extends later
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2021-02-27", "2026-04-01"),
+            [
+                persisted_time_window("2019-02-27", "2021-02-27"),
+            ],
+        ),
+        (  # Subtractee breaks subtractor into two
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2021-02-27", "2023-04-01"),
+            [
+                persisted_time_window("2019-02-27", "2021-02-27"),
+                persisted_time_window("2023-04-01", "2025-04-01"),
+            ],
+        ),
+    ],
+)
+def test_persisted_time_window_subtract(subtractor, subtractee, result):
+    assert subtractor.subtract(subtractee) == result
+
+
+@pytest.mark.parametrize(
+    "subtractor,subtractee,result",
+    [
+        (
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                # does nothing, is just happy to be here
+                persisted_time_window("2017-01-01", "2018-01-01"),
+                # fully consumes the first two windows and part of the third window
+                persisted_time_window("2019-01-01", "2023-12-31"),
+                # also does nothing, too late
+                persisted_time_window("2025-01-01", "2026-01-01"),
+            ],
+            [persisted_time_window("2023-12-31", "2024-12-31")],
+        ),
+        (
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+            ],
+            [  # splits the first window in two
+                persisted_time_window("2019-06-01", "2019-07-01"),
+                # splits the newly split second window into two as well
+                persisted_time_window("2019-10-01", "2019-11-01"),
+            ],
+            [
+                persisted_time_window("2019-02-27", "2019-06-01"),
+                persisted_time_window("2019-07-01", "2019-10-01"),
+                persisted_time_window("2019-11-01", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+            ],
+        ),
+        (
+            [],  # nothing comes from nothing, nothing ever could
+            [],
+            [],
+        ),
+        (
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
+            ],
+            [],  # subtracting nothing leaves you with the same thing
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
+            ],
+        ),
+        (
+            [  # subtracting yourself from yourself leaves you with nothing
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
+            ],
+            [],
+        ),
+    ],
+)
+def test_asset_subset_subtract(subtractor, subtractee, result):
+    partitions_def = DailyPartitionsDefinition("2015-01-01")
+
+    subtractor_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=subtractor
+    )
+
+    subtractee_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=subtractee
+    )
+
+    assert subtractor_subset - subtractee_subset == TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=result
+    )
+
+
+@pytest.mark.parametrize(
+    "a,b,result",
+    [
+        (
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                # does nothing, is just happy to be here
+                persisted_time_window("2017-01-01", "2018-01-01"),
+                # fully intersects the first two windows and part of the third
+                persisted_time_window("2019-01-01", "2023-12-31"),
+                # also does nothing, too late
+                persisted_time_window("2025-01-01", "2026-01-01"),
+            ],
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2023-12-31"),
+            ],
+        ),
+        (
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+            ],
+            [
+                # takes a chunk out of the first window
+                persisted_time_window("2019-06-01", "2019-07-01"),
+                # also takes a chunk out of the first window
+                persisted_time_window("2019-10-01", "2019-11-01"),
+                # overlaps both the first and second window
+                persisted_time_window("2019-11-15", "2022-08-16"),
+            ],
+            [
+                persisted_time_window("2019-06-01", "2019-07-01"),
+                persisted_time_window("2019-10-01", "2019-11-01"),
+                persisted_time_window("2019-11-15", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-08-16"),
+            ],
+        ),
+    ],
+)
+def test_asset_subset_and(a, b, result) -> None:
+    partitions_def = DailyPartitionsDefinition("2015-01-01")
+
+    a_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=a
+    )
+
+    b_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=b
+    )
+
+    assert a_subset & b_subset == TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=result
+    )
+
+
+@pytest.mark.parametrize(
+    "a,b,result",
+    [
+        (
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                # no intersection
+                persisted_time_window("2017-01-01", "2018-01-01"),
+                # fully intersects the first two windows and part of the third
+                persisted_time_window("2019-01-01", "2023-12-31"),
+                # no intersection
+                persisted_time_window("2025-01-01", "2026-01-01"),
+            ],
+            [
+                persisted_time_window("2017-01-01", "2018-01-01"),
+                persisted_time_window("2019-01-01", "2024-12-31"),
+                persisted_time_window("2025-01-01", "2026-01-01"),
+            ],
+        ),
+        (
+            [
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+            ],
+            [
+                # intersects with the first window
+                persisted_time_window("2019-06-01", "2019-07-01"),
+                # also intersects with the first window
+                persisted_time_window("2019-10-01", "2019-11-01"),
+                # overlaps both the first and second window
+                persisted_time_window("2019-11-15", "2022-08-16"),
+            ],
+            [
+                persisted_time_window("2019-02-27", "2022-12-31"),
+            ],
+        ),
+    ],
+)
+def test_asset_subset_or(a, b, result) -> None:
+    partitions_def = DailyPartitionsDefinition("2015-01-01")
+
+    a_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=a
+    )
+
+    b_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=b
+    )
+
+    assert a_subset | b_subset == TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=result
+    )
+
+
+def test_persisted_time_window_serdes():
+    serialized_time_window = '{"__class__": "TimeWindow", "end": {"__class__": "TimestampWithTimezone", "timestamp": 1717680319.16809, "timezone": "America/Chicago"}, "start": {"__class__": "TimestampWithTimezone", "timestamp": 1717593919.168011, "timezone": "America/Chicago"}}'
+    deserialized_time_window = deserialize_value(serialized_time_window, PersistedTimeWindow)
+    assert isinstance(deserialized_time_window, PersistedTimeWindow)
+    assert serialize_value(deserialized_time_window) == serialized_time_window

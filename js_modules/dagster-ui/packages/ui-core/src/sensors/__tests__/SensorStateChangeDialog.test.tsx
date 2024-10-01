@@ -1,23 +1,22 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
 
 import {SensorStateChangeDialog} from '../SensorStateChangeDialog';
 import {
-  buildStopMinnesotaSuccess,
-  buildStopOregonError,
-  buildStopOregonSuccess,
   buildStartKansasSuccess,
   buildStartLouisianaError,
   buildStartLouisianaSuccess,
+  buildStopMinnesotaSuccess,
+  buildStopOregonError,
+  buildStopOregonSuccess,
   sensorKansasCurrentlyStopped,
   sensorLouisianaCurrentlyStopped,
   sensorMinnesotaCurrentlyRunning,
   sensorOregonCurrentlyRunning,
 } from '../__fixtures__/SensorState.fixtures';
 
-jest.mock('../..//runs/NavigationBlock', () => ({
+jest.mock('../../runs/NavigationBlock', () => ({
   NavigationBlock: () => <div />,
 }));
 

@@ -1,8 +1,6 @@
 import {PartitionKeyRange} from '../../graphql/types';
 import {AssetKey} from '../types';
 
-import {AutoMaterializeEvaluationRecordItemFragment} from './types/GetEvaluationsQuery.types';
-
 export type NoConditionsMetEvaluation = {
   __typename: 'no_conditions_met';
   evaluationId: number;
@@ -15,10 +13,6 @@ export type NoConditionsMetEvaluation = {
   numRequests?: undefined;
   conditions?: undefined;
 };
-
-export type EvaluationOrEmpty =
-  | AutoMaterializeEvaluationRecordItemFragment
-  | NoConditionsMetEvaluation;
 
 /* todo dish: Replace these types with GraphQL generated types */
 

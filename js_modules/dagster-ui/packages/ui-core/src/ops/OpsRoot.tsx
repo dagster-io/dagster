@@ -1,6 +1,7 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Colors,
+  MiddleTruncate,
   NonIdealState,
   SplitPanelContainer,
   SuggestionProvider,
@@ -8,38 +9,27 @@ import {
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-  FontFamily,
-  colorKeylineDefault,
-  colorBackgroundLight,
-  colorBackgroundDefault,
-  colorAccentLime,
-  colorTextLight,
 } from '@dagster-io/ui-components';
+import {useVirtualizer} from '@tanstack/react-virtual';
 import qs from 'qs';
 import * as React from 'react';
+import {useMemo, useRef} from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
-import {
-  AutoSizer as _AutoSizer,
-  CellMeasurer as _CellMeasurerer,
-  CellMeasurerCache,
-  List as _List,
-} from 'react-virtualized';
 import styled from 'styled-components';
 
+import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
+import {OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
+import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
+import {gql, useQuery} from '../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
+import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
-import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
-
-const AutoSizer: any = _AutoSizer;
-const CellMeasurer: any = _CellMeasurerer;
-const List: any = _List;
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};
@@ -165,7 +155,7 @@ interface OpsRootWithDataProps extends Props {
   usedSolids: Solid[];
 }
 
-const OpsRootWithData = (props: OpsRootWithDataProps) => {
+export const OpsRootWithData = (props: OpsRootWithDataProps) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
@@ -174,6 +164,12 @@ const OpsRootWithData = (props: OpsRootWithDataProps) => {
   const suggestions = searchSuggestionsForOps(usedSolids);
   const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) =>
+      COMMON_COLLATOR.compare(a.definition.name, b.definition.name),
+    );
+  }, [filtered]);
 
   const selected = usedSolids.find((s) => s.definition.name === name);
 
@@ -189,8 +185,8 @@ const OpsRootWithData = (props: OpsRootWithDataProps) => {
 
   React.useEffect(() => {
     // If the user has typed in a search that brings us to a single result, autoselect it
-    if (filtered.length === 1 && (!selected || filtered[0] !== selected)) {
-      onClickOp(filtered[0]!.definition.name);
+    if (sorted.length === 1 && (!selected || sorted[0] !== selected)) {
+      onClickOp(sorted[0]!.definition.name);
     }
 
     // If the user has clicked a type, translate it into a search
@@ -217,7 +213,7 @@ const OpsRootWithData = (props: OpsRootWithDataProps) => {
       <SplitPanelContainer
         identifier="ops"
         firstInitialPercent={40}
-        firstMinSize={420}
+        firstMinSize={448}
         first={
           <OpListColumnContainer>
             <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
@@ -228,20 +224,8 @@ const OpsRootWithData = (props: OpsRootWithDataProps) => {
                 placeholder="Filter by name or input/output type..."
               />
             </Box>
-            <div style={{flex: 1}}>
-              <AutoSizer nonce={(window as any).__webpack_nonce__}>
-                {({height, width}: {width: number; height: number}) => (
-                  <OpList
-                    height={height}
-                    width={width}
-                    selected={selected}
-                    onClickOp={onClickOp}
-                    items={filtered.sort((a, b) =>
-                      a.definition.name.localeCompare(b.definition.name),
-                    )}
-                  />
-                )}
-              </AutoSizer>
+            <div style={{flex: 1, overflow: 'hidden'}}>
+              <OpList selected={selected} onClickOp={onClickOp} items={sorted} />
             </div>
           </OpListColumnContainer>
         }
@@ -271,63 +255,48 @@ const OpsRootWithData = (props: OpsRootWithDataProps) => {
 
 interface OpListProps {
   items: Solid[];
-  width: number;
-  height: number;
   selected: Solid | undefined;
   onClickOp: (name: string) => void;
 }
 
 const OpList = (props: OpListProps) => {
   const {items, selected} = props;
-  const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
-  // Reset our cell sizes when the panel's width is changed. This is similar to a useEffect
-  // but we need it to run /before/ the render not just after it completes.
-  const lastWidth = React.useRef(props.width);
-  if (props.width !== lastWidth.current) {
-    cache.current.clearAll();
-    lastWidth.current = props.width;
-  }
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => 42,
+    overscan: 10,
+  });
+
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const virtualItems = rowVirtualizer.getVirtualItems();
 
   const selectedIndex = selected ? items.findIndex((item) => item === selected) : undefined;
 
   return (
-    <Container>
-      <List
-        width={props.width}
-        height={props.height}
-        rowCount={props.items.length}
-        rowHeight={cache.current.rowHeight}
-        scrollToIndex={selectedIndex}
-        className="solids-list"
-        rowRenderer={({parent, index, key, style}: any) => {
-          const solid = props.items[index]!;
+    <Container ref={containerRef}>
+      <Inner $totalHeight={totalHeight}>
+        {virtualItems.map(({index, size, start}) => {
+          const solid = items[index]!;
           return (
-            <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
+            <Row key={solid.definition.name} $height={size} $start={start}>
               <OpListItem
-                style={style}
-                selected={solid === props.selected}
+                $selected={selectedIndex === index}
                 onClick={() => props.onClickOp(solid.definition.name)}
               >
-                <OpName>{solid.definition.name}</OpName>
-                <OpTypeSignature definition={solid.definition} />
+                <MiddleTruncate text={solid.definition.name} />
               </OpListItem>
-            </CellMeasurer>
+            </Row>
           );
-        }}
-        overscanRowCount={10}
-      />
+        })}
+      </Inner>
     </Container>
   );
 };
 
-const Container = styled.div`
-  .solids-list:focus {
-    outline: none;
-  }
-`;
-
-const OPS_ROOT_QUERY = gql`
+export const OPS_ROOT_QUERY = gql`
   query OpsRootQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
@@ -336,6 +305,7 @@ const OPS_ROOT_QUERY = gql`
           ...OpsRootUsedSolid
         }
       }
+      ...PythonErrorFragment
     }
   }
 
@@ -354,32 +324,23 @@ const OPS_ROOT_QUERY = gql`
   }
 
   ${OP_TYPE_SIGNATURE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const OpListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? colorBackgroundLight() : colorBackgroundDefault())};
+const OpListItem = styled.div<{$selected: boolean}>`
+  background: ${({$selected}) =>
+    $selected ? Colors.backgroundLight() : Colors.backgroundDefault()};
   box-shadow:
-    ${({selected}) => (selected ? colorAccentLime() : 'transparent')} 4px 0 0 inset,
-    ${colorKeylineDefault()} 0 -1px 0 inset;
-  color: ${colorTextLight()};
+    ${({$selected}) => ($selected ? Colors.accentBlue() : 'transparent')} 4px 0 0 inset,
+    ${Colors.keylineDefault()} 0 -1px 0 inset;
+  color: ${({$selected}) => ($selected ? Colors.textDefault() : Colors.textLight())};
   cursor: pointer;
   font-size: 14px;
-  display: flex;
-  flex-direction: column;
+  gap: 8px;
   padding: 12px 24px;
   user-select: none;
-
-  & > code.bp4-code {
-    color: ${colorTextLight()};
-    background: transparent;
-    font-family: ${FontFamily.monospace};
-    padding: 5px 0 0 0;
-  }
-`;
-
-const OpName = styled.div`
-  flex: 1;
-  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
 `;
 
 const OpListColumnContainer = styled.div`

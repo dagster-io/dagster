@@ -1,4 +1,9 @@
-import {InstigationTick, InstigationTickStatus} from '../graphql/types';
+import {
+  DynamicPartitionsRequestResult,
+  DynamicPartitionsRequestType,
+  InstigationTick,
+  InstigationTickStatus,
+} from '../graphql/types';
 
 const TRUNCATION_THRESHOLD = 100;
 const TRUNCATION_BUFFER = 5;
@@ -21,4 +26,16 @@ export function isStuckStartedTick(
     ((index !== 0 && tick.status === InstigationTickStatus.STARTED) ||
       tick.timestamp * 1000 < Date.now() - THREE_DAYS)
   );
+}
+
+export function countPartitionsAddedOrDeleted(
+  requests: Pick<DynamicPartitionsRequestResult, 'partitionKeys' | 'type'>[],
+  type: DynamicPartitionsRequestType,
+) {
+  return requests.reduce((sum, request) => {
+    if (request.type === type) {
+      return sum + (request.partitionKeys?.length || 0);
+    }
+    return sum;
+  }, 0);
 }

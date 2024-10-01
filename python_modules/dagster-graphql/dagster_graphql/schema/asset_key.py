@@ -1,6 +1,6 @@
 import graphene
 
-from .util import non_null_list
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneAssetKey(graphene.ObjectType):

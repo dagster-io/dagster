@@ -1,44 +1,26 @@
 from abc import abstractmethod
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    Mapping,
-    Optional,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Generic, Mapping, Optional, Type, Union, cast
 
 from typing_extensions import TypeVar
 
-from dagster._core.definitions.definition_config_schema import (
-    CoercableToConfigSchema,
+from dagster._config.pythonic_config.attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
-from dagster._core.definitions.resource_definition import (
-    ResourceDefinition,
-    ResourceFunction,
+from dagster._config.pythonic_config.config import Config
+from dagster._config.pythonic_config.conversion_utils import TResValue
+from dagster._config.pythonic_config.resource import (
+    CoercibleToResource,
+    ConfigurableResourceFactory,
+    NestedResourcesResourceDefinition,
+    PartialResource,
+    T_Self,
 )
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+from dagster._core.definitions.definition_config_schema import CoercableToConfigSchema
+from dagster._core.definitions.resource_definition import ResourceFunction
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.cached_method import cached_method
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-from .config import Config
-from .conversion_utils import TResValue
-from .resource import (
-    AllowDelayedDependencies,
-    ConfigurableResourceFactory,
-    PartialResource,
-    ResourceId,
-    ResourceWithKeyMapping,
-    T_Self,
-)
-from .type_check_utils import safe_is_subclass
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -51,15 +33,18 @@ except ImportError:
 TIOManagerValue = TypeVar("TIOManagerValue", bound=IOManager)
 
 
-class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowDelayedDependencies):
+class ConfigurableIOManagerFactoryResourceDefinition(
+    NestedResourcesResourceDefinition,
+    IOManagerDefinition,
+):
     def __init__(
         self,
         configurable_resource_cls: Type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
-        resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
         nested_resources: Mapping[str, Any],
+        nested_partial_resources: Mapping[str, Any],
         input_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
         output_config_schema: Optional[Union[CoercableToConfigSchema, Type[Config]]] = None,
         dagster_maintained: bool = False,
@@ -81,7 +66,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
             input_config_schema=input_config_schema_resolved,
             output_config_schema=output_config_schema_resolved,
         )
-        self._resolve_resource_keys = resolve_resource_keys
+        self._nested_partial_resources = nested_partial_resources
         self._nested_resources = nested_resources
         self._configurable_resource_cls = configurable_resource_cls
         self._dagster_maintained = dagster_maintained
@@ -96,24 +81,11 @@ class ConfigurableIOManagerFactoryResourceDefinition(IOManagerDefinition, AllowD
     ) -> Mapping[str, Any]:
         return self._nested_resources
 
-    def _resolve_required_resource_keys(
-        self, resource_mapping: Mapping[int, str]
-    ) -> AbstractSet[str]:
-        return self._resolve_resource_keys(resource_mapping)
-
-
-class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
-    """Version of ResourceWithKeyMapping wrapper that also implements IOManagerDefinition."""
-
-    def __init__(
+    @property
+    def nested_partial_resources(
         self,
-        resource: ResourceDefinition,
-        resource_id_to_key_mapping: Dict[ResourceId, str],
-    ):
-        ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
-        IOManagerDefinition.__init__(
-            self, resource_fn=self.resource_fn, config_schema=resource.config_schema
-        )
+    ) -> Mapping[str, "CoercibleToResource"]:
+        return self._nested_partial_resources
 
 
 class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValue]):
@@ -186,7 +158,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
             resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
-            resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_partial_resources=self._nested_partial_resources,
             nested_resources=self.nested_resources,
             input_config_schema=self.__class__.input_config_schema(),
             output_config_schema=self.__class__.output_config_schema(),
@@ -226,8 +198,8 @@ class PartialIOManager(
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
-            resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self._state__internal__.nested_resources,
+            nested_partial_resources=self._state__internal__.nested_partial_resources,
             input_config_schema=input_config_schema,
             output_config_schema=output_config_schema,
             dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
@@ -315,7 +287,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
             resource_fn=self.wrapped_io_manager.resource_fn,
             config_schema=self._config_schema,
             description=self.__doc__,
-            resolve_resource_keys=self._resolve_required_resource_keys,
+            nested_partial_resources=self._nested_partial_resources,
             nested_resources=self.nested_resources,
             dagster_maintained=self._is_dagster_maintained(),
         )

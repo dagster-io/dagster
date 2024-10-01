@@ -1,8 +1,4 @@
-import {
-  CursorControlsContainer,
-  colorBackgroundDefault,
-  colorKeylineDefault,
-} from '@dagster-io/ui-components';
+import {Colors, CursorControlsContainer} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 export const OptionsContainer = styled.div`
@@ -10,8 +6,8 @@ export const OptionsContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 5px 12px 5px 24px;
-  border-bottom: 1px solid ${colorKeylineDefault()};
-  background: ${colorBackgroundDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
+  background: ${Colors.backgroundDefault()};
   flex-shrink: 0;
   flex-wrap: wrap;
   z-index: 3;

@@ -1,16 +1,14 @@
-import {Box, PageHeader, Tag, Heading} from '@dagster-io/ui-components';
-import React from 'react';
-import {useRouteMatch} from 'react-router-dom';
-
-import {usePermissionsForLocation} from '../app/Permissions';
-import {JobFeatureContext} from '../pipelines/JobFeatureContext';
-import {JobTabs} from '../pipelines/JobTabs';
-import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {useRepository} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
+import {Box, Heading, PageHeader, Tag} from '@dagster-io/ui-components';
+import {Link, useRouteMatch} from 'react-router-dom';
+import {buildJobTabs} from 'shared/pipelines/buildJobTabs.oss';
 
 import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {JobTabs} from '../pipelines/JobTabs';
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {useRepository} from '../workspace/WorkspaceContext/util';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -19,8 +17,6 @@ interface Props {
 export const PipelineNav = (props: Props) => {
   const {repoAddress} = props;
   const permissions = usePermissionsForLocation(repoAddress.location);
-
-  const {tabBuilder} = React.useContext(JobFeatureContext);
 
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/locations/:repoPath/pipelines/:selector/:tab?',
@@ -46,12 +42,18 @@ export const PipelineNav = (props: Props) => {
     (partitionSet) => partitionSet.pipelineName === pipelineName,
   );
 
-  const tabs = tabBuilder({hasLaunchpad, hasPartitionSet});
+  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet});
 
   return (
     <>
       <PageHeader
-        title={<Heading>{pipelineName}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <Link to="/jobs">Jobs</Link>
+            <span>/</span>
+            {pipelineName}
+          </Heading>
+        }
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
             <Tag icon="job">

@@ -1,26 +1,28 @@
-import {gql, useMutation} from '@apollo/client';
-import {Button, Group, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {
+  Button,
+  Group,
+  Icon,
+  JoinedButtons,
+  Menu,
+  MenuItem,
+  Popover,
+} from '@dagster-io/ui-components';
+import {useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
+import {BackfillStepStatusDialog, backfillCanShowStepStatus} from './BackfillStepStatusDialog';
+import {BackfillTerminationDialog} from './BackfillTerminationDialog';
+import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
+import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
+import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
+import {useMutation} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {showSharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {BulkActionStatus} from '../../graphql/types';
+import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
-
-import {
-  BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT,
-  BackfillStepStatusDialog,
-  backfillCanShowStepStatus,
-} from './BackfillStepStatusDialog';
-import {
-  BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT,
-  BackfillTerminationDialog,
-} from './BackfillTerminationDialog';
-import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
-import {BackfillActionsBackfillFragment} from './types/BackfillActionsMenu.types';
-import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
+import {AnchorButton} from '../../ui/AnchorButton';
 
 export function backfillCanCancelSubmission(backfill: {
   hasCancelPermission: boolean;
@@ -49,24 +51,24 @@ export function backfillCanResume(backfill: {
 
 export function backfillCanCancelRuns(
   backfill: {hasCancelPermission: boolean},
-  counts: {[runStatus: string]: number} | null,
+  hasCancelableRuns: boolean,
 ) {
-  if (!backfill.hasCancelPermission || !counts) {
+  if (!backfill.hasCancelPermission || !hasCancelableRuns) {
     return false;
   }
-  const queuedCount = counts[RunStatus.QUEUED] || 0;
-  const startedCount = counts[RunStatus.STARTED] || 0;
-  return queuedCount > 0 || startedCount > 0;
+  return hasCancelableRuns;
 }
 
 export const BackfillActionsMenu = ({
   backfill,
   canCancelRuns,
   refetch,
+  anchorLabel,
 }: {
   backfill: BackfillActionsBackfillFragment;
   canCancelRuns: boolean;
   refetch: () => void;
+  anchorLabel?: string;
 }) => {
   const history = useHistory();
   const runsUrl = runsPathWithFilters([
@@ -76,8 +78,8 @@ export const BackfillActionsMenu = ({
     },
   ]);
 
-  const [showTerminateDialog, setShowTerminateDialog] = React.useState(false);
-  const [showStepStatus, setShowStepStatus] = React.useState(false);
+  const [showTerminateDialog, setShowTerminateDialog] = useState(false);
+  const [showStepStatus, setShowStepStatus] = useState(false);
   const [resumeBackfill] = useMutation<ResumeBackfillMutation, ResumeBackfillMutationVariables>(
     RESUME_BACKFILL_MUTATION,
   );
@@ -117,47 +119,55 @@ export const BackfillActionsMenu = ({
 
   const canCancelSubmission = backfillCanCancelSubmission(backfill);
 
+  const popover = (
+    <Popover
+      position="bottom-right"
+      content={
+        <Menu>
+          <MenuItem
+            text="View backfill runs"
+            icon="settings_backup_restore"
+            onClick={() => history.push(runsUrl)}
+          />
+          <MenuItem
+            disabled={!backfillCanShowStepStatus(backfill)}
+            text="View step status"
+            icon="view_list"
+            onClick={() => {
+              setShowStepStatus(true);
+            }}
+          />
+          <MenuItem
+            disabled={!backfillCanResume(backfill)}
+            text="Resume failed backfill"
+            title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
+            icon="refresh"
+            onClick={() => resume()}
+          />
+          <MenuItem
+            text={canCancelSubmission ? 'Cancel backfill submission' : 'Terminate unfinished runs'}
+            icon="cancel"
+            intent="danger"
+            disabled={!(canCancelSubmission || canCancelRuns)}
+            onClick={() => setShowTerminateDialog(true)}
+          />
+        </Menu>
+      }
+    >
+      <Button icon={<Icon name="expand_more" />} />
+    </Popover>
+  );
+
   return (
     <>
-      <Popover
-        position="bottom-right"
-        content={
-          <Menu>
-            <MenuItem
-              text="View backfill runs"
-              icon="settings_backup_restore"
-              onClick={() => history.push(runsUrl)}
-            />
-            <MenuItem
-              disabled={!backfillCanShowStepStatus(backfill)}
-              text="View step status"
-              icon="view_list"
-              onClick={() => {
-                setShowStepStatus(true);
-              }}
-            />
-            <MenuItem
-              disabled={!backfillCanResume(backfill)}
-              text="Resume failed backfill"
-              title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
-              icon="refresh"
-              onClick={() => resume()}
-            />
-            <MenuItem
-              text={
-                canCancelSubmission ? 'Cancel backfill submission' : 'Terminate unfinished runs'
-              }
-              icon="cancel"
-              intent="danger"
-              disabled={!(canCancelSubmission || canCancelRuns)}
-              onClick={() => setShowTerminateDialog(true)}
-            />
-          </Menu>
-        }
-      >
-        <Button icon={<Icon name="expand_more" />} />
-      </Popover>
-
+      {anchorLabel ? (
+        <JoinedButtons>
+          <AnchorButton to={getBackfillPath(backfill.id)}>View run</AnchorButton>
+          {popover}
+        </JoinedButtons>
+      ) : (
+        popover
+      )}
       <BackfillStepStatusDialog
         backfill={showStepStatus ? backfill : undefined}
         onClose={() => setShowStepStatus(false)}
@@ -170,20 +180,3 @@ export const BackfillActionsMenu = ({
     </>
   );
 };
-
-export const BACKFILL_ACTIONS_BACKFILL_FRAGMENT = gql`
-  fragment BackfillActionsBackfillFragment on PartitionBackfill {
-    id
-    hasCancelPermission
-    hasResumePermission
-    isAssetBackfill
-    status
-    numCancelable
-
-    ...BackfillStepStatusDialogBackfillFragment
-    ...BackfillTerminationDialogBackfillFragment
-  }
-
-  ${BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT}
-  ${BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT}
-`;

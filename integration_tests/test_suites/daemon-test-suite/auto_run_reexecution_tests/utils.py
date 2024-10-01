@@ -3,10 +3,7 @@ import sys
 from contextlib import contextmanager
 
 from dagster import job, op, repository
-from dagster._core.host_representation import (
-    JobHandle,
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-)
+from dagster._core.remote_representation import JobHandle, ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
 

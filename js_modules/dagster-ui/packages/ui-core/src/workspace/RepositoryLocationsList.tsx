@@ -1,24 +1,29 @@
-import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Row, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-
-import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
+import {useRef} from 'react';
 
 import {
   CodeLocationRowType,
-  VirtualizedCodeLocationErrorRow,
   VirtualizedCodeLocationHeader,
+  VirtualizedCodeLocationRepositoryRow,
   VirtualizedCodeLocationRow,
 } from './VirtualizedCodeLocationRow';
+import {Container, Inner} from '../ui/VirtualizedTable';
 
 interface Props {
   loading: boolean;
   codeLocations: CodeLocationRowType[];
   searchValue: string;
+  isFilteredView: boolean;
 }
 
-export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement>(null);
+export const RepositoryLocationsList = ({
+  loading,
+  codeLocations,
+  searchValue,
+  isFilteredView,
+}: Props) => {
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
     count: codeLocations.length,
@@ -56,6 +61,18 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
       );
     }
 
+    if (isFilteredView) {
+      return (
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="folder"
+            title="No matching code locations"
+            description={<div>No code locations were found for these filter settings.</div>}
+          />
+        </Box>
+      );
+    }
+
     return (
       <Box padding={{vertical: 32}}>
         <NonIdealState
@@ -68,37 +85,36 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
   }
 
   return (
-    <>
+    <Container ref={parentRef}>
       <VirtualizedCodeLocationHeader />
-      <Container ref={parentRef}>
-        <Inner $totalHeight={totalHeight}>
-          <DynamicRowContainer $start={items[0]?.start ?? 0}>
-            {items.map(({index, key}) => {
-              const row: CodeLocationRowType = codeLocations[index]!;
-              if (row.type === 'error') {
-                return (
-                  <VirtualizedCodeLocationErrorRow
-                    key={key}
-                    index={index}
-                    locationNode={row.node}
-                    ref={virtualizer.measureElement}
-                  />
-                );
-              }
-
-              return (
+      <Inner $totalHeight={totalHeight}>
+        {items.map(({index, key, size, start}) => {
+          const row: CodeLocationRowType = codeLocations[index]!;
+          if (row.type === 'location') {
+            return (
+              <Row $height={size} $start={start} key={key}>
                 <VirtualizedCodeLocationRow
-                  key={key}
                   index={index}
-                  codeLocation={row.codeLocation}
-                  repository={row.repository}
+                  locationEntry={row.locationEntry}
+                  locationStatus={row.locationStatus}
                   ref={virtualizer.measureElement}
                 />
-              );
-            })}
-          </DynamicRowContainer>
-        </Inner>
-      </Container>
-    </>
+              </Row>
+            );
+          }
+          return (
+            <Row $height={size} $start={start} key={key}>
+              <VirtualizedCodeLocationRepositoryRow
+                index={index}
+                locationStatus={row.locationStatus}
+                locationEntry={row.locationEntry}
+                repository={row.repository}
+                ref={virtualizer.measureElement}
+              />
+            </Row>
+          );
+        })}
+      </Inner>
+    </Container>
   );
 };

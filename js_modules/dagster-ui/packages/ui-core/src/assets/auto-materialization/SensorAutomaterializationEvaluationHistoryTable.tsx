@@ -1,5 +1,11 @@
-import React from 'react';
+import {useEffect, useMemo} from 'react';
 
+import {
+  AutomaterializationEvaluationHistoryTable,
+  AutomaterializationTickStatusDisplay,
+  AutomaterializationTickStatusDisplayMappings,
+} from './AutomaterializationEvaluationHistoryTable';
+import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
@@ -11,9 +17,6 @@ import {
 } from '../../sensors/types/AssetSensorTicksQuery.types';
 import {SensorFragment} from '../../sensors/types/SensorFragment.types';
 import {RepoAddress} from '../../workspace/types';
-
-import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
-import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 
 const PAGE_SIZE = 15;
 
@@ -34,25 +37,17 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
   setTimerange,
   setParentStatuses,
 }: Props) => {
-  const [statuses, setStatuses] = useQueryPersistedState<Set<InstigationTickStatus>>({
-    queryKey: 'statuses',
-    decode: React.useCallback(({statuses}: {statuses?: string}) => {
-      return new Set<InstigationTickStatus>(
-        statuses
-          ? JSON.parse(statuses)
-          : [
-              InstigationTickStatus.STARTED,
-              InstigationTickStatus.SUCCESS,
-              InstigationTickStatus.FAILURE,
-              InstigationTickStatus.SKIPPED,
-            ],
-      );
-    }, []),
-    encode: React.useCallback((raw: Set<InstigationTickStatus>) => {
-      return {statuses: JSON.stringify(Array.from(raw))};
-    }, []),
+  const [tickStatus, setTickStatus] = useQueryPersistedState<AutomaterializationTickStatusDisplay>({
+    queryKey: 'status',
+    defaults: {status: AutomaterializationTickStatusDisplay.ALL},
   });
 
+  const statuses = useMemo(
+    () =>
+      AutomaterializationTickStatusDisplayMappings[tickStatus] ||
+      AutomaterializationTickStatusDisplayMappings[AutomaterializationTickStatusDisplay.ALL],
+    [tickStatus],
+  );
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     AssetSensorTicksQuery,
     AssetSensorTicksQueryVariables
@@ -64,7 +59,7 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
         repositoryName: repoAddress.name,
         repositoryLocationName: repoAddress.location,
       },
-      statuses: React.useMemo(() => Array.from(statuses), [statuses]),
+      statuses: useMemo(() => Array.from(statuses), [statuses]),
     },
     nextCursorForResult: (data) => {
       if (data?.sensorOrError.__typename === 'Sensor') {
@@ -92,7 +87,7 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
       ? queryResult.data.sensorOrError.sensorState.ticks
       : null;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (paginationProps.hasPrevCursor) {
       if (allTicks && allTicks.length) {
         const start = allTicks[allTicks.length - 1]?.timestamp;
@@ -106,7 +101,7 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
     }
   }, [allTicks, paginationProps.hasPrevCursor, setTimerange]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (paginationProps.hasPrevCursor) {
       setParentStatuses(Array.from(statuses));
     } else {
@@ -120,9 +115,9 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
       ticks={allTicks || []}
       paginationProps={paginationProps}
       setSelectedTick={setSelectedTick}
-      setStatuses={setStatuses}
+      tickStatus={tickStatus}
+      setTickStatus={setTickStatus}
       setTableView={setTableView}
-      statuses={statuses}
     />
   );
 };

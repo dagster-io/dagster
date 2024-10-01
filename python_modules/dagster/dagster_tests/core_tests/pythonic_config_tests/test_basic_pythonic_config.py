@@ -20,7 +20,6 @@ from dagster._config.field_utils import convert_potential_field
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.type_printer import print_config_type_to_string
-from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.run_config import RunConfig
@@ -154,21 +153,16 @@ def test_with_assets():
         assert config.an_int == 2
         executed["yes"] = True
 
-    assert (
-        build_assets_job(
-            "blah",
-            [my_asset],
-            config={
-                "ops": {
-                    "my_asset": {
-                        "config": {"a_string": "foo", "an_int": 2},
-                    },
+    assert materialize(
+        [my_asset],
+        run_config={
+            "ops": {
+                "my_asset": {
+                    "config": {"a_string": "foo", "an_int": 2},
                 },
             },
-        )
-        .execute_in_process()
-        .success
-    )
+        },
+    ).success
 
     assert executed["yes"]
 
@@ -187,15 +181,10 @@ def test_multi_asset():
         executed["yes"] = True
         return 1, 2
 
-    assert (
-        build_assets_job(
-            "blah",
-            [two_assets],
-            config={"ops": {"two_assets": {"config": {"a_string": "foo", "an_int": 2}}}},
-        )
-        .execute_in_process()
-        .success
-    )
+    assert materialize(
+        [two_assets],
+        run_config={"ops": {"two_assets": {"config": {"a_string": "foo", "an_int": 2}}}},
+    ).success
 
     assert executed["yes"]
 
@@ -676,24 +665,19 @@ def test_env_var():
             assert config.an_int == 2
             executed["yes"] = True
 
-        assert (
-            build_assets_job(
-                "blah",
-                [my_asset],
-                config={
-                    "ops": {
-                        "my_asset": {
-                            "config": {
-                                "a_string": {"env": "ENV_VARIABLE_FOR_TEST"},
-                                "an_int": {"env": "ENV_VARIABLE_FOR_TEST_INT"},
-                            }
+        assert materialize(
+            [my_asset],
+            run_config={
+                "ops": {
+                    "my_asset": {
+                        "config": {
+                            "a_string": {"env": "ENV_VARIABLE_FOR_TEST"},
+                            "an_int": {"env": "ENV_VARIABLE_FOR_TEST_INT"},
                         }
                     }
-                },
-            )
-            .execute_in_process()
-            .success
-        )
+                }
+            },
+        ).success
 
         assert executed["yes"]
 
@@ -760,15 +744,10 @@ def test_structured_run_config_multi_asset():
         executed["yes"] = True
         return 1, 2
 
-    assert (
-        build_assets_job(
-            "blah",
-            [two_assets],
-            config=RunConfig(ops={"two_assets": AMultiAssetConfig(a_string="foo", an_int=2)}),
-        )
-        .execute_in_process()
-        .success
-    )
+    assert materialize(
+        [two_assets],
+        run_config=RunConfig(ops={"two_assets": AMultiAssetConfig(a_string="foo", an_int=2)}),
+    ).success
 
 
 def test_structured_run_config_assets():
@@ -784,20 +763,14 @@ def test_structured_run_config_assets():
         assert config.an_int == 2
         executed["yes"] = True
 
-    # build_assets_job
-    assert (
-        build_assets_job(
-            "blah",
-            [my_asset],
-            config=RunConfig(
-                ops={
-                    "my_asset": AnAssetConfig(a_string="foo", an_int=2),
-                }
-            ),
-        )
-        .execute_in_process()
-        .success
-    )
+    assert materialize(
+        [my_asset],
+        run_config=RunConfig(
+            ops={
+                "my_asset": AnAssetConfig(a_string="foo", an_int=2),
+            }
+        ),
+    ).success
     assert executed["yes"]
 
     # define_asset_job

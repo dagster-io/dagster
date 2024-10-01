@@ -81,6 +81,23 @@ dbt build
 
 This will run all the models, seeds, and snapshots in the project and store a set of tables in your DuckDB database.
 
+<Note>
+  <strong>Heads up!</strong> For other dbt projects, you may need to run
+  additional commands before building the project. For instance, a project with{" "}
+  <a href="https://docs.getdbt.com/docs/collaborate/govern/project-dependencies">
+    dependencies
+  </a>{" "}
+  will require you to run{" "}
+  <a href="https://docs.getdbt.com/reference/commands/deps">
+    <code>dbt deps</code>
+  </a>{" "}
+  before building the project. Visit{" "}
+  <a href="https://docs.getdbt.com/reference/dbt-commands">
+    the official dbt Command reference page
+  </a>{" "}
+  for more information.
+</Note>
+
 ---
 
 ## What's next?

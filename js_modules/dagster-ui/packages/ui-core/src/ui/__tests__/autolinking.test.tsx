@@ -1,11 +1,11 @@
 import {render, screen, waitFor} from '@testing-library/react';
-import React from 'react';
+import {createRef, useEffect} from 'react';
 
 import {autolinkTextContent} from '../autolinking';
 
 const Test = ({message, useIdleCallback}: {message: string; useIdleCallback: boolean}) => {
-  const messageEl = React.createRef<HTMLDivElement>();
-  React.useEffect(() => {
+  const messageEl = createRef<HTMLDivElement>();
+  useEffect(() => {
     if (messageEl.current) {
       // Note: window.requestIdleCallback is not available in the test runner,
       // requesting it tests the fallback async code path

@@ -35,7 +35,7 @@ def observation_op(context: OpExecutionContext):
 # end_observation_asset_marker_0
 
 # start_partitioned_asset_observation
-from dagster import AssetMaterialization, Config, op, OpExecutionContext
+from dagster import Config, op, OpExecutionContext
 
 
 class MyOpConfig(Config):
@@ -56,7 +56,7 @@ def partitioned_dataset_op(context: OpExecutionContext, config: MyOpConfig):
 
 
 # start_observation_asset_marker_2
-from dagster import AssetMaterialization, AssetObservation, MetadataValue, op
+from dagster import AssetObservation, MetadataValue, op
 
 
 @op
@@ -76,7 +76,6 @@ def observes_dataset_op(context: OpExecutionContext):
             },
         )
     )
-    context.log_event(AssetMaterialization(asset_key="my_dataset"))
     return remote_storage_path
 
 

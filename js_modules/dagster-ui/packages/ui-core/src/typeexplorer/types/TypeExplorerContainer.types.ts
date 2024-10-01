@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type TypeExplorerContainerQueryVariables = Types.Exact<{
   pipelineSelector: Types.PipelineSelector;
-  dagsterTypeName: Types.Scalars['String'];
+  dagsterTypeName: Types.Scalars['String']['input'];
 }>;
 
 export type TypeExplorerContainerQuery = {
@@ -35,6 +35,20 @@ export type TypeExplorerContainerQuery = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -96,6 +110,20 @@ export type TypeExplorerContainerQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -144,6 +172,12 @@ export type TypeExplorerContainerQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1263,3 +1297,5 @@ export type TypeExplorerContainerQuery = {
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const TypeExplorerContainerQueryVersion = '5d2f11df92b7138d1d4415354615f4329ccb84bbc4b0a5c98bb3f5e56f0c694b';

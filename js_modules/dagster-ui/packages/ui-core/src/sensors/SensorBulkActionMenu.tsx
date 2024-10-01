@@ -1,10 +1,9 @@
 import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {instigationStateSummary} from '../instigation/instigationStateSummary';
-import {OpenWithIntent} from '../instigation/useInstigationStateReducer';
+import {useMemo, useState} from 'react';
 
 import {SensorInfo, SensorStateChangeDialog} from './SensorStateChangeDialog';
+import {instigationStateSummary} from '../instigation/instigationStateSummary';
+import {OpenWithIntent} from '../instigation/useInstigationStateReducer';
 
 interface Props {
   sensors: SensorInfo[];
@@ -15,9 +14,9 @@ export const SensorBulkActionMenu = (props: Props) => {
   const {sensors, onDone} = props;
   const count = sensors.length;
 
-  const [openWithIntent, setOpenWithIntent] = React.useState<OpenWithIntent>('not-open');
+  const [openWithIntent, setOpenWithIntent] = useState<OpenWithIntent>('not-open');
 
-  const {anyOff, anyOn} = React.useMemo(() => {
+  const {anyOff, anyOn} = useMemo(() => {
     return instigationStateSummary(sensors.map(({sensorState}) => sensorState));
   }, [sensors]);
 

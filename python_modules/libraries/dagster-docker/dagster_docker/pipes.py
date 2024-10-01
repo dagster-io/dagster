@@ -2,32 +2,26 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import docker
+import docker.errors
 from dagster import (
     OpExecutionContext,
-    ResourceParam,
     _check as check,
 )
 from dagster._annotations import experimental
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.context import (
-    PipesMessageHandler,
-)
+from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,
     open_pipes_session,
 )
-from dagster_pipes import (
-    DagsterPipesError,
-    PipesDefaultMessageWriter,
-    PipesExtras,
-    PipesParams,
-)
+from dagster_pipes import DagsterPipesError, PipesDefaultMessageWriter, PipesExtras, PipesParams
 
 
 @experimental
@@ -62,7 +56,7 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
 
 
 @experimental
-class _PipesDockerClient(PipesClient):
+class PipesDockerClient(PipesClient, TreatAsResourceParam):
     """A pipes client that runs external processes in docker containers.
 
     By default context is injected via environment variables and messages are parsed out of the
@@ -213,6 +207,3 @@ class _PipesDockerClient(PipesClient):
             },
             **kwargs,
         )
-
-
-PipesDockerClient = ResourceParam[_PipesDockerClient]

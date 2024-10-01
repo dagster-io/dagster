@@ -1,14 +1,17 @@
-import {gql, useQuery} from '@apollo/client';
-import {
-  Box,
-  NonIdealState,
-  Spinner,
-  TextInput,
-  Tooltip,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
+import {VirtualizedSensorTable} from './VirtualizedSensorTable';
+import {useRepository} from './WorkspaceContext/util';
+import {WorkspaceHeader} from './WorkspaceHeader';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {repoAddressToSelector} from './repoAddressToSelector';
+import {RepoAddress} from './types';
+import {
+  WorkspaceSensorsQuery,
+  WorkspaceSensorsQueryVariables,
+} from './types/WorkspaceSensorsRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -19,22 +22,18 @@ import {filterPermissionedInstigationState} from '../instigation/filterPermissio
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {makeSensorKey} from '../sensors/makeSensorKey';
+import {useFilters} from '../ui/BaseFilters';
 import {CheckAllBox} from '../ui/CheckAllBox';
-import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 
-import {VirtualizedSensorTable} from './VirtualizedSensorTable';
-import {WorkspaceHeader} from './WorkspaceHeader';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {repoAddressToSelector} from './repoAddressToSelector';
-import {RepoAddress} from './types';
-import {
-  WorkspaceSensorsQuery,
-  WorkspaceSensorsQueryVariables,
-} from './types/WorkspaceSensorsRoot.types';
+// Reuse this reference to distinguish no sensors case from data is still loading case;
+const NO_DATA_EMPTY_ARR: any[] = [];
 
 export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repo = useRepository(repoAddress);
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Sensors: ${repoName}`);
@@ -46,7 +45,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
   });
 
   const runningStateFilter = useInstigationStatusFilter();
-  const filters = React.useMemo(() => [runningStateFilter], [runningStateFilter]);
+  const filters = useMemo(() => [runningStateFilter], [runningStateFilter]);
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<WorkspaceSensorsQuery, WorkspaceSensorsQueryVariables>(
@@ -57,27 +56,32 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
       variables: {selector},
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const sensors = React.useMemo(() => {
+  const sensors = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.sensors;
     }
-    return [];
-  }, [data]);
+    if (repo) {
+      return repo.repository.sensors;
+    }
+    return NO_DATA_EMPTY_ARR;
+  }, [repo, data]);
+
+  const loading = NO_DATA_EMPTY_ARR === sensors;
 
   const {state: runningState} = runningStateFilter;
-  const filteredByRunningState = React.useMemo(() => {
+  const filteredByRunningState = useMemo(() => {
     return runningState.size
       ? sensors.filter(({sensorState}) => runningState.has(sensorState.status))
       : sensors;
   }, [sensors, runningState]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return filteredByRunningState.filter(({name}) =>
       name.toLocaleLowerCase().includes(searchToLower),
@@ -86,20 +90,20 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
 
   const anySensorsVisible = filteredBySearch.length > 0;
 
-  const permissionedSensors = React.useMemo(() => {
+  const permissionedSensors = useMemo(() => {
     return filteredBySearch.filter(({sensorState}) =>
       filterPermissionedInstigationState(sensorState),
     );
   }, [filteredBySearch]);
 
-  const permissionedKeys = React.useMemo(() => {
+  const permissionedKeys = useMemo(() => {
     return permissionedSensors.map(({name}) => makeSensorKey(repoAddress, name));
   }, [permissionedSensors, repoAddress]);
 
   const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
     useSelectionReducer(permissionedKeys);
 
-  const checkedSensors = React.useMemo(() => {
+  const checkedSensors = useMemo(() => {
     return permissionedSensors
       .filter(({name}) => checkedKeys.has(makeSensorKey(repoAddress, name)))
       .map(({name, sensorState}) => {
@@ -118,7 +122,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading sensors…</div>
+            <div style={{color: Colors.textLight()}}>Loading sensors…</div>
           </Box>
         </Box>
       );
@@ -171,14 +175,11 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     );
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="sensors"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="sensors" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}} flex={{justifyContent: 'space-between'}}>
         <Box flex={{direction: 'row', gap: 12}}>
           {filterButton}
@@ -188,6 +189,11 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by sensor name…"
             style={{width: '340px'}}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading sensors…" />
+              ) : undefined
+            }
           />
         </Box>
         <Tooltip

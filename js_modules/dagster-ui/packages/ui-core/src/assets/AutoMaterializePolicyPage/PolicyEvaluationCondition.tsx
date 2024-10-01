@@ -1,12 +1,4 @@
-import {
-  Box,
-  Icon,
-  IconName,
-  colorAccentPrimary,
-  colorKeylineDefault,
-  colorTextDefault,
-  colorTextDisabled,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -14,14 +6,16 @@ export type ConditionType = 'group' | 'leaf';
 
 interface Props {
   depth: number;
-  icon: IconName;
+  icon: React.ReactNode;
   label: React.ReactNode;
   type: ConditionType;
   skipped?: boolean;
+  isExpanded: boolean;
+  hasChildren: boolean;
 }
 
 export const PolicyEvaluationCondition = (props: Props) => {
-  const {depth, icon, label, type, skipped = false} = props;
+  const {depth, icon, label, type, skipped = false, isExpanded, hasChildren} = props;
   const depthLines = React.useMemo(() => {
     return new Array(depth).fill(null).map((_, ii) => <DepthLine key={ii} />);
   }, [depth]);
@@ -30,10 +24,16 @@ export const PolicyEvaluationCondition = (props: Props) => {
     <Box
       padding={{vertical: 2, horizontal: 8}}
       flex={{direction: 'row', alignItems: 'center', gap: 8}}
-      style={{height: '48px'}}
     >
       {depthLines}
-      <Icon name={icon} color={colorAccentPrimary()} />
+      {hasChildren ? (
+        <Icon
+          name="arrow_drop_down"
+          size={20}
+          style={{transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+        />
+      ) : null}
+      {hasChildren ? icon : <div style={{marginLeft: 28}}>{icon}</div>}
       <ConditionLabel $type={type} $skipped={skipped}>
         {label}
       </ConditionLabel>
@@ -42,8 +42,8 @@ export const PolicyEvaluationCondition = (props: Props) => {
 };
 
 const DepthLine = styled.div`
-  background-color: ${colorKeylineDefault()};
-  height: 100%;
+  background-color: ${Colors.keylineDefault()};
+  align-self: stretch;
   margin: 0 4px 0 7px; /* 7px to align with center of icon in row above */
   width: 2px;
 `;
@@ -55,5 +55,5 @@ interface ConditionLabelProps {
 
 const ConditionLabel = styled.div<ConditionLabelProps>`
   font-weight: ${({$type}) => ($type === 'group' ? '600' : '400')};
-  color: ${({$skipped}) => ($skipped ? colorTextDisabled() : colorTextDefault())};
+  color: ${({$skipped}) => ($skipped ? Colors.textDisabled() : Colors.textDefault())};
 `;

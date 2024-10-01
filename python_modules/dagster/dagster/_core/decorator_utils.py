@@ -73,7 +73,7 @@ def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
     return list(signature(fn).parameters.values())
 
 
-def get_type_hints(fn: Callable) -> Mapping[str, Any]:
+def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     if isinstance(fn, functools.partial):
         target = fn.func
     elif inspect.isfunction(fn):
@@ -128,7 +128,7 @@ def param_is_var_keyword(param: Parameter) -> bool:
     return param.kind == Parameter.VAR_KEYWORD
 
 
-def format_docstring_for_description(fn: Callable) -> Optional[str]:
+def format_docstring_for_description(fn: Callable[..., Any]) -> Optional[str]:
     if fn.__doc__ is not None:
         docstring = fn.__doc__
         if len(docstring) > 0 and docstring[0].isspace():
@@ -225,7 +225,7 @@ def _wrap_with_context_manager(
     return cast(T_Callable, wrapped_with_context_manager_fn)
 
 
-def _update_decoratable(decoratable: T_Decoratable, new_fn: Callable) -> T_Decoratable:
+def _update_decoratable(decoratable: T_Decoratable, new_fn: Callable[..., Any]) -> T_Decoratable:
     """Update a property with a new `fget` function.
 
     `property` objects are immutable, so if we want to apply a decorator to the underlying `fget`,

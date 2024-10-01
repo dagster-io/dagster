@@ -1,6 +1,5 @@
-import {AssetCheckHandleInput} from '../graphql/types';
-
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionButton.types';
+import {AssetCheckHandleInput} from '../graphql/types';
 
 export function getAssetCheckHandleInputs(
   assets: Pick<LaunchAssetExecutionAssetNodeFragment, 'assetKey' | 'assetChecksOrError'>[],
@@ -28,6 +27,23 @@ export function asAssetKeyInput(assetOrAssetKey: {assetKey: {path: string[]}} | 
   return 'path' in assetOrAssetKey
     ? {path: assetOrAssetKey.path}
     : {path: assetOrAssetKey.assetKey.path};
+}
+
+export function asAssetPartitionRangeInput(
+  assetOrAssetKey: {assetKey: {path: string[]}} | {path: string[]},
+  partitionKeyOrRange?: string | {start: string; end: string},
+) {
+  const assetKey =
+    'path' in assetOrAssetKey
+      ? {path: assetOrAssetKey.path}
+      : {path: assetOrAssetKey.assetKey.path};
+  let partitionRange: {start: string; end: string} | undefined;
+  if (typeof partitionKeyOrRange === 'string') {
+    partitionRange = {start: partitionKeyOrRange, end: partitionKeyOrRange};
+  } else if (typeof partitionKeyOrRange === 'object') {
+    partitionRange = partitionKeyOrRange;
+  }
+  return {assetKey, partitionRange};
 }
 
 export function asAssetCheckHandleInput(check: {name: string; assetKey: {path: string[]}}) {

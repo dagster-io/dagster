@@ -20,7 +20,7 @@ To practice what you’ve learned, create an asset in `metrics.py` that:
 
 {% callout %}
 
-> 💡 **Extra credit!** If want a challenge, follow this constraint:
+> 💡 **Extra credit!** If you want a challenge, follow this constraint:
 > Imagine that the entire `trips` data is too big to fit into memory. However, a week’s worth of data fits comfortably. How would you structure your asset’s function to accommodate this?
 
 {% /callout %}
@@ -64,9 +64,9 @@ from . import constants
 import pandas as pd
 
 @asset(
-		deps=["taxi_trips"]
+    deps=["taxi_trips"]
 )
-def trips_by_week():
+def trips_by_week() -> None:
     conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
 
     current_date = datetime.strptime("2023-03-01", constants.DATE_FORMAT)

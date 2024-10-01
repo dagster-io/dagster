@@ -7,13 +7,13 @@ from dagster import Config, DagsterInstance, Field, job, op
 from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.host_representation import InProcessCodeLocationOrigin
+from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalJob
+    from dagster._core.remote_representation.external import ExternalJob
 
 
 @pytest.fixture
@@ -24,19 +24,25 @@ def instance():
 
 def test_basic_default():
     snap = snap_from_config_type(resolve_to_config_type({"a": Field(str, "foo")}))
-    yaml_str = default_values_yaml_from_type_snap(ConfigSchemaSnapshot({}), snap)
+    yaml_str = default_values_yaml_from_type_snap(
+        ConfigSchemaSnapshot(all_config_snaps_by_key={}), snap
+    )
     assert yaml_str == "a: foo\n"
 
 
 def test_basic_no_nested_fields():
     snap = snap_from_config_type(resolve_to_config_type(str))
-    yaml_str = default_values_yaml_from_type_snap(ConfigSchemaSnapshot({}), snap)
+    yaml_str = default_values_yaml_from_type_snap(
+        ConfigSchemaSnapshot(all_config_snaps_by_key={}), snap
+    )
     assert yaml_str == "{}\n"
 
 
 def test_with_spaces():
     snap = snap_from_config_type(resolve_to_config_type({"a": Field(str, "with spaces")}))
-    yaml_str = default_values_yaml_from_type_snap(ConfigSchemaSnapshot({}), snap)
+    yaml_str = default_values_yaml_from_type_snap(
+        ConfigSchemaSnapshot(all_config_snaps_by_key={}), snap
+    )
     assert yaml_str == "a: with spaces\n"
 
 

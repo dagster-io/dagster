@@ -1,0 +1,160 @@
+---
+title: "PagerDuty & Dagster+ | Dagster Docs"
+description: "Create alerts that make PagerDuty incidents based on events in Dagster+."
+
+platform_type: "cloud"
+feature: "alerting"
+integration: "pagerduty"
+---
+
+# PagerDuty & Dagster+
+
+<ApplicableCloudPlan />
+
+Dagster+ supports [sending alerts](/dagster-plus/managing-deployments/alerts) to PagerDuty, which will automatically create a PagerDuty incident.
+
+---
+
+## PagerDuty & Dagster+ integration benefits
+
+- Empower your team with real-time incident response by integrating Dagster+ and PagerDuty
+- Notify on-call responders when alerts are triggered in Dagster+
+- Dramatically reduce downtime for issues related to asset materialization, asset checks, job runs, schedules, sensors, and code locations
+- Customize the urgency and routing of PagerDuty incidents based on the content of the Dagster+ event payload
+
+---
+
+## How it works
+
+- Events that trigger an alert in Dagster+ will automatically create a PagerDuty incident
+- Incidents can be triggered for events related to runs, assets, schedules, sensors, and code locations
+- Users must resolve incidents in PagerDuty. Dagster+ doesn't currently automatically resolve incidents.
+
+### Requirements
+
+To integrate PagerDuty with Dagster+, you'll need:
+
+- **Permissions in PagerDuty that allow you to manage services and integrations.** Refer to PagerDuty's [User roles](https://support.pagerduty.com/docs/user-roles) documentation for more information.
+- **The following in Dagster+**:
+  - **A Pro plan**
+  - **Organization, Admin, or Editor permissions**, which are required to create and manage alerts
+
+---
+
+## Integration walkthrough
+
+### In PagerDuty
+
+1. From the **Configuration** menu, click **Services > Service Directory**.
+
+2. There are two ways to add an integration to a service:
+
+   - **If adding your integration to an existing service**: Click the **name** of the service you want to add the integration to. Then, select the **Integrations** tab and click the **New Integration** button.
+
+   - **If creating a new service for your integration**: Refer to PagerDuty's [Configuring services and integrations documentation](https://support.pagerduty.com/docs/services-and-integrations#section-configuring-services-and-integrations) and follow the steps outlined in the [Create a new service](https://support.pagerduty.com/docs/services-and-integrations#section-create-a-new-service) section, selecting **Dagster+** as the **Integration Type** in step 4. Continue with the [**In Dagster+**](#in-dagster) section (below) once finished.
+
+3. Enter an **Integration Name** in the format `monitoring-tool-service-name` (e.g. `dagster-plus-run-failures`) and select **Dagster+** from the **Integration Type** menu.
+
+4. Click the **Add Integration** button to save your new integration. You will be redirected to the **Integrations** tab for your service.
+
+5. An **Integration Key** will be generated on this screen. Keep this key saved in a safe place, as it will be used when you configure the integration with **Dagster+** in the next section.
+
+   <!-- ![Highlighted integration key field in the PagerDuty UI](/images/dagster-cloud/alerts/pagerduty-integration-key.png) -->
+
+   <Image
+   alt="Highlighted integration key field in the PagerDuty UI"
+   src="/images/dagster-cloud/alerts/pagerduty-integration-key.png"
+   width={1908}
+   height={1015}
+   />
+
+### In Dagster+
+
+Creating an alert policy can be done using the Dagster+ UI or in code.
+
+<TabGroup>
+<TabItem name="In the UI">
+
+#### In the UI
+
+1. Sign into your Dagster+ account.
+
+2. Create and configure an alert policy as per the [alert policy documentation](/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui#creating-alert-policies).
+
+3. In the **Notification Service** section of the **Create alert policy** window:
+
+   1. Select **PagerDuty**.
+   2. In the field that displays, paste the PagerDuty integration key you created in the previous section.
+
+4. Click **Save policy**.
+
+</TabItem>
+<TabItem name="dagster-cloud CLI">
+
+#### dagster-cloud CLI
+
+To define a PagerDuty alert policy in code, use the `notification_service.pagerduty.integration_key` key to provide the integration key. For example:
+
+```yaml file=/dagster_cloud/alerts/pagerduty_policy.yaml
+# alert_policies.yaml
+
+alert_policies:
+  - name: "pagerduty-alert-policy"
+    description: "An alert policy to create a PagerDuty incident upon job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "AGENT_UNAVAILABLE"
+    notification_service:
+      pagerduty:
+        integration_key: "<pagerduty_integration_key>"
+```
+
+Then, use the `dagster-cloud` CLI to set the alert policies for the deployment:
+
+```bash file=/dagster_cloud/alerts/cli_commands.yaml startafter=start_set_alerts endbefore=end_set_alerts
+dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
+```
+
+Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Uninstalling PagerDuty
+
+To uninstall PagerDuty, click the **Delete** button next to the policy. When prompted, confirm the deletion.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster+ alerts"
+    href="/dagster-plus/managing-deployments/alerts"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts in Dagster+"
+    href="/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts using the dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/alerts/managing-alerts-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deployment settings"
+    href="/dagster-plus/managing-deployments/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/dagster-plus-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster_cloud.yaml"
+    href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+</ArticleList>

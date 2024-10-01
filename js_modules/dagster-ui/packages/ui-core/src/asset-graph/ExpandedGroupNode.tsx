@@ -1,19 +1,12 @@
-import {
-  Box,
-  Icon,
-  colorLineageGroupBackground,
-  colorLineageGroupNodeBorder,
-  colorLineageGroupNodeBackground,
-  colorLineageGroupNodeBackgroundHover,
-  colorLineageGroupNodeBorderHover,
-} from '@dagster-io/ui-components';
-import React from 'react';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import * as React from 'react';
 import styled from 'styled-components';
 
 import {GroupNodeNameAndRepo, useGroupNodeContextMenu} from './CollapsedGroupNode';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
+import {SVGRelativeContainerForSafari} from '../graph/SVGComponents';
 
 export const ExpandedGroupNode = ({
   group,
@@ -38,7 +31,7 @@ export const ExpandedGroupNode = ({
     preferredJobName,
   });
   return (
-    <div style={{position: 'relative', width: '100%', height: '100%'}}>
+    <SVGRelativeContainerForSafari>
       <ContextMenuWrapper menu={menu} stopPropagation>
         <GroupNodeHeaderBox
           $minimal={minimal}
@@ -61,29 +54,35 @@ export const ExpandedGroupNode = ({
           )}
         </GroupNodeHeaderBox>
       </ContextMenuWrapper>
-      <GroupOutline $minimal={minimal} />
       {dialog}
-    </div>
+    </SVGRelativeContainerForSafari>
   );
 };
 
-const GroupOutline = styled.div<{$minimal: boolean}>`
+export const GroupOutline = ({minimal}: {minimal: boolean}) => (
+  <SVGRelativeContainerForSafari>
+    <GroupOutlineBox $minimal={minimal} />
+  </SVGRelativeContainerForSafari>
+);
+
+const GroupOutlineBox = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;
-  background: ${colorLineageGroupBackground()};
+  background: ${Colors.lineageGroupBackground()};
   width: 100%;
   border-radius: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   pointer-events: none;
 
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorLineageGroupNodeBorder()};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  border-top: 0;
 `;
 
 const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
-  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${colorLineageGroupNodeBorder()};
-  background: ${colorLineageGroupNodeBackground()};
+  border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  background: ${Colors.lineageGroupNodeBackground()};
   width: 100%;
   height: 60px;
   display: flex;
@@ -93,14 +92,13 @@ const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
   border-radius: 8px;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  border-bottom: 0;
   position: relative;
   transition:
     background 100ms linear,
     border-color 100ms linear;
 
   &:hover {
-    background: ${colorLineageGroupNodeBackgroundHover()};
-    border-color: ${colorLineageGroupNodeBorderHover()};
+    background: ${Colors.lineageGroupNodeBackgroundHover()};
+    border-color: ${Colors.lineageGroupNodeBorderHover()};
   }
 `;

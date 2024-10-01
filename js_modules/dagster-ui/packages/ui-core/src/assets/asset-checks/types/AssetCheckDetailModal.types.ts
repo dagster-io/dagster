@@ -13,6 +13,7 @@ export type AssetCheckExecutionFragment = {
     __typename: 'AssetCheckEvaluation';
     severity: Types.AssetCheckSeverity;
     timestamp: number;
+    description: string | null;
     targetMaterialization: {
       __typename: 'AssetCheckEvaluationTargetMaterializationData';
       timestamp: number;
@@ -30,6 +31,20 @@ export type AssetCheckExecutionFragment = {
           boolValue: boolean | null;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
         }
       | {
           __typename: 'FloatMetadataEntry';
@@ -86,6 +101,20 @@ export type AssetCheckExecutionFragment = {
           description: string | null;
         }
       | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
+      | {
           __typename: 'TableMetadataEntry';
           label: string;
           description: string | null;
@@ -132,6 +161,12 @@ export type AssetCheckExecutionFragment = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   } | null;
@@ -139,9 +174,9 @@ export type AssetCheckExecutionFragment = {
 
 export type AssetCheckDetailsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  checkName: Types.Scalars['String'];
-  limit: Types.Scalars['Int'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  checkName: Types.Scalars['String']['input'];
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type AssetCheckDetailsQuery = {
@@ -157,6 +192,7 @@ export type AssetCheckDetailsQuery = {
       __typename: 'AssetCheckEvaluation';
       severity: Types.AssetCheckSeverity;
       timestamp: number;
+      description: string | null;
       targetMaterialization: {
         __typename: 'AssetCheckEvaluationTargetMaterializationData';
         timestamp: number;
@@ -174,6 +210,20 @@ export type AssetCheckDetailsQuery = {
             boolValue: boolean | null;
             label: string;
             description: string | null;
+          }
+        | {
+            __typename: 'CodeReferencesMetadataEntry';
+            label: string;
+            description: string | null;
+            codeReferences: Array<
+              | {
+                  __typename: 'LocalFileCodeReference';
+                  filePath: string;
+                  lineNumber: number | null;
+                  label: string | null;
+                }
+              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+            >;
           }
         | {
             __typename: 'FloatMetadataEntry';
@@ -230,6 +280,20 @@ export type AssetCheckDetailsQuery = {
             description: string | null;
           }
         | {
+            __typename: 'TableColumnLineageMetadataEntry';
+            label: string;
+            description: string | null;
+            lineage: Array<{
+              __typename: 'TableColumnLineageEntry';
+              columnName: string;
+              columnDeps: Array<{
+                __typename: 'TableColumnDep';
+                columnName: string;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              }>;
+            }>;
+          }
+        | {
             __typename: 'TableMetadataEntry';
             label: string;
             description: string | null;
@@ -276,8 +340,16 @@ export type AssetCheckDetailsQuery = {
             };
           }
         | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+        | {
+            __typename: 'TimestampMetadataEntry';
+            timestamp: number;
+            label: string;
+            description: string | null;
+          }
         | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
       >;
     } | null;
   }>;
 };
+
+export const AssetCheckDetailsQueryVersion = '371e01d6e3718d0ef48652ec614938af424d77ce9bc4e459f0f43c21309aedda';

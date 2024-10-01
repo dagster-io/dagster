@@ -1,8 +1,7 @@
-import {useQuery} from '@apollo/client';
 import {render, screen} from '@testing-library/react';
 import {loader} from 'graphql.macro';
-import React from 'react';
 
+import {useQuery} from '../../apollo-client';
 import {INSTANCE_CONFIG_QUERY} from '../../instance/InstanceConfig';
 import {
   InstanceConfigQuery,

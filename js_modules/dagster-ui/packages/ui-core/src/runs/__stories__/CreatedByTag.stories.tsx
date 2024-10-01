@@ -1,11 +1,10 @@
 import {MetadataTableWIP} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {buildPipelineTag} from '../../graphql/types';
 import {CreatedByTag} from '../CreatedByTag';
 import {DagsterTag} from '../RunTag';
-import {RunTagsFragment} from '../types/RunTable.types';
+import {RunTagsFragment} from '../types/RunTagsFragment.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

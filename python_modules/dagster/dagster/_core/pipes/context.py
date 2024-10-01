@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, Union, cast
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
@@ -18,13 +18,14 @@ from dagster_pipes import (
     PipesOpenedData,
     PipesParams,
     PipesTimeWindow,
-    encode_env_var,
+    _env_var_to_cli_argument,
+    encode_param,
 )
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster import DagsterEvent
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -39,7 +40,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.events import EngineEventData
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.execution.context.invocation import BoundOpExecutionContext
+from dagster._core.execution.context.invocation import BaseDirectExecutionContext
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
@@ -53,7 +54,6 @@ if TYPE_CHECKING:
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
 
-@experimental
 class PipesMessageHandler:
     """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
 
@@ -238,7 +238,6 @@ class PipesMessageHandler:
         )
 
 
-@experimental
 @dataclass
 class PipesSession:
     """Object representing a pipes session.
@@ -277,7 +276,7 @@ class PipesSession:
     context: OpExecutionContext
 
     @public
-    def get_bootstrap_env_vars(self) -> Dict[str, str]:
+    def get_bootstrap_env_vars(self) -> Mapping[str, str]:
         """Encode context injector and message reader params as environment variables.
 
         Passing environment variables is the typical way to expose the pipes I/O parameters
@@ -288,12 +287,28 @@ class PipesSession:
             serialized as json, compressed with gzip, and then base-64-encoded.
         """
         return {
-            param_name: encode_env_var(param_value)
+            param_name: encode_param(param_value)
             for param_name, param_value in self.get_bootstrap_params().items()
         }
 
     @public
-    def get_bootstrap_params(self) -> Dict[str, Any]:
+    def get_bootstrap_cli_arguments(self) -> Mapping[str, str]:
+        """Encode context injector and message reader params as CLI arguments.
+
+        Passing CLI arguments is an alternative way to expose the pipes I/O parameters to a pipes process.
+        Using environment variables should be preferred when possible.
+
+        Returns:
+            Mapping[str, str]: CLI arguments pass to the external process. The values are
+            serialized as json, compressed with zlib, and then base64-encoded.
+        """
+        return {
+            _env_var_to_cli_argument(param_name): encode_param(param_value)
+            for param_name, param_value in self.get_bootstrap_params().items()
+        }
+
+    @public
+    def get_bootstrap_params(self) -> Mapping[str, Any]:
         """Get the params necessary to bootstrap a launched pipes process. These parameters are typically
         are as environment variable. See `get_bootstrap_env_vars`. It is the context injector's
         responsibility to decide how to pass these parameters to the external environment.
@@ -390,7 +405,7 @@ def build_external_execution_context_data(
         context.partition_time_window
         if context.has_partition_key
         and has_one_dimension_time_window_partitioning(
-            context.get_step_execution_context().partitions_def
+            context.get_step_execution_context().run_partitions_def
         )
         else None
     )
@@ -406,8 +421,8 @@ def build_external_execution_context_data(
             _convert_time_window(partition_time_window) if partition_time_window else None
         ),
         run_id=context.run_id,
-        job_name=None if isinstance(context, BoundOpExecutionContext) else context.job_name,
-        retry_number=0 if isinstance(context, BoundOpExecutionContext) else context.retry_number,
+        job_name=None if isinstance(context, BaseDirectExecutionContext) else context.job_name,
+        retry_number=0 if isinstance(context, BaseDirectExecutionContext) else context.retry_number,
         extras=extras or {},
     )
 

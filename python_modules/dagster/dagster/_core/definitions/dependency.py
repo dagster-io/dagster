@@ -7,6 +7,7 @@ from typing import (
     Any,
     DefaultDict,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -25,26 +26,28 @@ from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._serdes.serdes import (
-    whitelist_for_serdes,
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.input import (
+    FanInInputPointer,
+    InputDefinition,
+    InputMapping,
+    InputPointer,
 )
+from dagster._core.definitions.output import OutputDefinition
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.utils import DEFAULT_OUTPUT, normalize_tags, struct_to_string
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 
-from .hook_definition import HookDefinition
-from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
-from .output import OutputDefinition
-from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
-
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.composition import MappedInputPlaceholder
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.node_definition import NodeDefinition
     from dagster._core.definitions.op_definition import OpDefinition
-
-    from .asset_layer import AssetLayer
-    from .composition import MappedInputPlaceholder
-    from .graph_definition import GraphDefinition
-    from .node_definition import NodeDefinition
-    from .resource_requirement import ResourceRequirement
+    from dagster._core.definitions.resource_requirement import ResourceRequirement
 
 T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 DependencyMapping: TypeAlias = Mapping[T_DependencyKey, Mapping[str, "IDependencyDefinition"]]
@@ -134,8 +137,8 @@ class Node(ABC):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        from .graph_definition import GraphDefinition
-        from .node_definition import NodeDefinition
+        from dagster._core.definitions.graph_definition import GraphDefinition
+        from dagster._core.definitions.node_definition import NodeDefinition
 
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", NodeDefinition)
@@ -144,7 +147,7 @@ class Node(ABC):
             "graph_definition",
             GraphDefinition,
         )
-        self._additional_tags = validate_tags(tags)
+        self._additional_tags = normalize_tags(tags).tags
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
@@ -240,8 +243,7 @@ class Node(ABC):
         return self._retry_policy
 
     @abstractmethod
-    def describe_node(self) -> str:
-        ...
+    def describe_node(self) -> str: ...
 
     @abstractmethod
     def get_resource_requirements(
@@ -249,8 +251,7 @@ class Node(ABC):
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
         asset_layer: Optional["AssetLayer"] = None,
-    ) -> Iterator["ResourceRequirement"]:
-        ...
+    ) -> Iterator["ResourceRequirement"]: ...
 
 
 class GraphNode(Node):
@@ -265,7 +266,7 @@ class GraphNode(Node):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        from .graph_definition import GraphDefinition
+        from dagster._core.definitions.graph_definition import GraphDefinition
 
         check.inst_param(definition, "definition", GraphDefinition)
         super().__init__(name, definition, graph_definition, tags, hook_defs, retry_policy)
@@ -301,7 +302,7 @@ class OpNode(Node):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        from .op_definition import OpDefinition
+        from dagster._core.definitions.op_definition import OpDefinition
 
         check.inst_param(definition, "definition", OpDefinition)
         super().__init__(name, definition, graph_definition, tags, hook_defs, retry_policy)
@@ -312,12 +313,13 @@ class OpNode(Node):
         parent_handle: Optional["NodeHandle"] = None,
         asset_layer: Optional["AssetLayer"] = None,
     ) -> Iterator["ResourceRequirement"]:
-        from .resource_requirement import InputManagerRequirement
+        from dagster._core.definitions.resource_requirement import InputManagerRequirement
 
         cur_node_handle = NodeHandle(self.name, parent_handle)
 
         for requirement in self.definition.get_resource_requirements(
-            (cur_node_handle, asset_layer)
+            handle=cur_node_handle,
+            asset_layer=asset_layer,
         ):
             # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
             if (
@@ -348,10 +350,14 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         )
 
     def __str__(self):
-        return self.to_string()
+        """Return a unique string representation of the handle.
+
+        Inverse of NodeHandle.from_string.
+        """
+        return str(self.parent) + "." + self.name if self.parent else self.name
 
     @property
-    def root(self):
+    def root(self) -> "NodeHandle":
         if self.parent:
             return self.parent.root
         else:
@@ -374,13 +380,6 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         path.reverse()
         return path
 
-    def to_string(self) -> str:
-        """Return a unique string representation of the handle.
-
-        Inverse of NodeHandle.from_string.
-        """
-        return self.parent.to_string() + "." + self.name if self.parent else self.name
-
     def is_or_descends_from(self, handle: "NodeHandle") -> bool:
         """Check if the handle is or descends from another handle.
 
@@ -399,7 +398,14 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
                 return False
         return True
 
-    def pop(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
+    def pop(self) -> Optional["NodeHandle"]:
+        """Return a copy of the handle with some its root pruned."""
+        if self.parent is None:
+            return None
+        else:
+            return NodeHandle.from_path(self.path[1:])
+
+    def pop_ancestor(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
         """Return a copy of the handle with some of its ancestors pruned.
 
         Args:
@@ -413,21 +419,21 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
             ancestor = NodeHandle('bar', NodeHandle('foo', None))
-            assert handle.pop(ancestor) == NodeHandle('baz', None)
+            assert handle.pop_ancestor(ancestor) == NodeHandle('baz', None)
         """
         check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
-            f"Handle {self.to_string()} does not descend from {ancestor.to_string()}",
+            f"Handle {self} does not descend from {ancestor}",
         )
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])
 
-    def with_ancestor(self, ancestor: Optional["NodeHandle"]) -> "NodeHandle":
-        """Returns a copy of the handle with an ancestor grafted on.
+    def with_child(self, child: Optional["NodeHandle"]) -> "NodeHandle":
+        """Returns a copy of the handle with a child grafted on.
 
         Args:
-            ancestor (NodeHandle): Handle to the new ancestor.
+            child (NodeHandle): Handle to the new ancestor.
 
         Returns:
             NodeHandle:
@@ -435,15 +441,18 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         Example:
         .. code-block:: python
 
-            handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
-            ancestor = NodeHandle('quux' None)
-            assert handle.with_ancestor(ancestor) == NodeHandle(
+            handle = NodeHandle('quux' None)
+            child = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
+            assert str(child) == "foo.baz.bar"
+            assert handle.with_child(child) == NodeHandle(
                 'baz', NodeHandle('bar', NodeHandle('foo', NodeHandle('quux', None)))
             )
+            assert str(handle.with_child(child)) == "quux.foo.baz.bar""
         """
-        check.opt_inst_param(ancestor, "ancestor", NodeHandle)
-
-        return NodeHandle.from_path([*(ancestor.path if ancestor else []), *self.path])
+        if child is None:
+            return self
+        else:
+            return NodeHandle.from_path([*self.path, *child.path])
 
     @staticmethod
     def from_path(path: Sequence[str]) -> "NodeHandle":
@@ -492,16 +501,35 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         return NodeHandle(name=dict_repr["name"], parent=parent)
 
 
-class NodeInputHandle(
-    NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
-):
+# The advantage of using this TypeVar instead of just Optional[NodeHandle] is that the type checker
+# can know the value not None if it knew it was not None at construction. E.g. this passes
+# type-checking:
+#     node_handle = NodeHandle("foo", parent=None)
+#     node_output_handle = NodeOutputHandle(node_handle=node_handle, output_name="bar")
+#     node_output_handle.node_handle.path  # type checker knows node_output_handle.node_handle is not None
+T_OptionalNodeHandle = TypeVar("T_OptionalNodeHandle", bound=Optional[NodeHandle])
+
+
+@record(checked=False)
+class NodeInputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
+    node_handle: T_OptionalNodeHandle
+    input_name: str
 
-class NodeOutputHandle(
-    NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
-):
+    def __str__(self) -> str:
+        return f"{self.node_handle}:{self.input_name}"
+
+
+@record(checked=False)
+class NodeOutputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
+
+    node_handle: T_OptionalNodeHandle
+    output_name: str
+
+    def __str__(self) -> str:
+        return f"{self.node_handle}:{self.output_name}"
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
@@ -728,7 +756,7 @@ class MultiDependencyDefinition(
         cls,
         dependencies: Sequence[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]],
     ):
-        from .composition import MappedInputPlaceholder
+        from dagster._core.definitions.composition import MappedInputPlaceholder
 
         deps = check.sequence_param(dependencies, "dependencies")
         seen = {}
@@ -829,7 +857,7 @@ def _create_handle_dict(
     node_dict: Mapping[str, Node],
     dep_dict: DependencyMapping[str],
 ) -> InputToOutputMap:
-    from .composition import MappedInputPlaceholder
+    from dagster._core.definitions.composition import MappedInputPlaceholder
 
     check.mapping_param(node_dict, "node_dict", key_type=str, value_type=Node)
     check.two_dim_mapping_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
@@ -1037,7 +1065,7 @@ class DependencyStructure:
         self, node_name: str
     ) -> Mapping[NodeInput, Sequence[NodeOutput]]:
         """Returns a Dict[NodeInput, List[NodeOutput]] that encodes
-        where all the the inputs are sourced from upstream. Usually the
+        where all the inputs are sourced from upstream. Usually the
         List[NodeOutput] will be a list of one, except for the
         multi-dependency case.
         """

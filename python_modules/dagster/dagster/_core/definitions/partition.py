@@ -3,9 +3,7 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import (
-    datetime,
-)
+from datetime import datetime
 from enum import Enum
 from typing import (
     AbstractSet,
@@ -27,28 +25,25 @@ from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.run_request import (
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
+)
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
+    DagsterInvalidInvocationError,
+    DagsterUnknownPartitionError,
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
-from dagster._utils.warnings import (
-    normalize_renamed_param,
-)
-
-from ..errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidDeserializationVersionError,
-    DagsterInvalidInvocationError,
-    DagsterUnknownPartitionError,
-)
-from .config import ConfigMapping
-from .utils import validate_tags
+from dagster._utils.warnings import normalize_renamed_param
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -109,11 +104,15 @@ class ScheduleType(Enum):
         return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
 
     def __gt__(self, other: "ScheduleType") -> bool:
-        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
+        check.inst_param(
+            other, "other", ScheduleType, "Cannot compare ScheduleType with non-ScheduleType"
+        )
         return self.ordinal > other.ordinal
 
     def __lt__(self, other: "ScheduleType") -> bool:
-        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
+        check.inst_param(
+            other, "other", ScheduleType, "Cannot compare ScheduleType with non-ScheduleType"
+        )
         return self.ordinal < other.ordinal
 
 
@@ -306,6 +305,8 @@ def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> No
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
     """A statically-defined set of partitions.
 
+    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+
     Example:
         .. code-block:: python
 
@@ -418,6 +419,8 @@ class DynamicPartitionsDefinition(
     Partitions can be added and removed using `instance.add_dynamic_partitions` and
     `instance.delete_dynamic_partition` methods.
 
+    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+
     Args:
         name (Optional[str]): The name of the partitions definition.
         partition_fn (Optional[Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]]):
@@ -521,7 +524,9 @@ class DynamicPartitionsDefinition(
                 check.failed(
                     "The instance is not available to load partitions. You may be seeing this error"
                     " when using dynamic partitions with a version of dagster-webserver or"
-                    " dagster-cloud that is older than 1.1.18."
+                    " dagster-cloud that is older than 1.1.18. The other possibility is that an"
+                    " internal framework error where a dynamic partitions store was not properly"
+                    " threaded down a call stack."
                 )
 
             return dynamic_partitions_store.get_dynamic_partitions(
@@ -541,7 +546,9 @@ class DynamicPartitionsDefinition(
                 check.failed(
                     "The instance is not available to load partitions. You may be seeing this error"
                     " when using dynamic partitions with a version of dagster-webserver or"
-                    " dagster-cloud that is older than 1.1.18."
+                    " dagster-cloud that is older than 1.1.18. The other possibility is that an"
+                    " internal framework error where a dynamic partitions store was not properly"
+                    " threaded down a call stack."
                 )
 
             return dynamic_partitions_store.has_dynamic_partition(
@@ -643,6 +650,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         """Optional[Callable[[str], Mapping[str, Any]]]: A function that accepts a partition key
         and returns a dictionary representing the config to attach to runs for that partition.
         """
+        return self._run_config_for_partition_key_fn
 
     @deprecated(
         breaking_version="2.0", additional_warn_text="Use `tags_for_partition_key_fn` instead."
@@ -706,8 +714,8 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         partition_key: str,
         job_name: Optional[str] = None,
     ) -> Mapping[str, str]:
-        from dagster._core.host_representation.external_data import (
-            external_partition_set_name_for_job_name,
+        from dagster._core.remote_representation.external_data import (
+            partition_set_snap_name_for_job_name,
         )
 
         # _tags_for_partition_fn is deprecated, we can remove this branching logic in 2.0
@@ -717,14 +725,14 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             user_tags = self._tags_for_partition_key_fn(partition_key)
         else:
             user_tags = {}
-        user_tags = validate_tags(user_tags, allow_reserved_tags=False)
+        user_tags = normalize_tags(user_tags, allow_reserved_tags=False).tags
 
         system_tags = {
             **self.partitions_def.get_tags_for_partition_key(partition_key),
             # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
             # order for reexecution against partitions to work properly.
             **(
-                {PARTITION_SET_TAG: external_partition_set_name_for_job_name(job_name)}
+                {PARTITION_SET_TAG: partition_set_snap_name_for_job_name(job_name)}
                 if job_name
                 else {}
             ),
@@ -753,7 +761,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         else:
             hardcoded_config = config if config else {}
             return cls(
-                partitions_def,
+                partitions_def,  # type: ignore # ignored for update, fix me!
                 run_config_for_partition_key_fn=lambda _: cast(Mapping, hardcoded_config),
             )
 
@@ -929,19 +937,21 @@ def cron_schedule_from_schedule_type_and_offsets(
 class PartitionsSubset(ABC, Generic[T_str]):
     """Represents a subset of the partitions within a PartitionsDefinition."""
 
+    @property
+    def is_empty(self) -> bool:
+        return len(list(self.get_partition_keys())) == 0
+
     @abstractmethod
     def get_partition_keys_not_in_subset(
         self,
         partitions_def: PartitionsDefinition[T_str],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Iterable[T_str]:
-        ...
+    ) -> Iterable[T_str]: ...
 
     @abstractmethod
     @public
-    def get_partition_keys(self) -> Iterable[T_str]:
-        ...
+    def get_partition_keys(self) -> Iterable[T_str]: ...
 
     @abstractmethod
     def get_partition_key_ranges(
@@ -949,12 +959,10 @@ class PartitionsSubset(ABC, Generic[T_str]):
         partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[PartitionKeyRange]:
-        ...
+    ) -> Sequence[PartitionKeyRange]: ...
 
     @abstractmethod
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]":
-        ...
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]": ...
 
     def with_partition_key_range(
         self,
@@ -968,35 +976,46 @@ class PartitionsSubset(ABC, Generic[T_str]):
             )
         )
 
-    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
-        if self is other:
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self is other or other.is_empty:
             return self
+        # Anything | AllPartitionsSubset = AllPartitionsSubset
+        if isinstance(other, AllPartitionsSubset):
+            return other
         return self.with_partition_keys(other.get_partition_keys())
 
-    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
+    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
+            return self.empty_subset()
+        if other.is_empty:
+            return self
+        # Anything - AllPartitionsSubset = Empty
+        if isinstance(other, AllPartitionsSubset):
             return self.empty_subset()
         return self.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
         )
 
-    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_str]":
+    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
+            return self
+        if other.is_empty:
+            return other
+        # Anything & AllPartitionsSubset = Anything
+        if isinstance(other, AllPartitionsSubset):
             return self
         return self.empty_subset().with_partition_keys(
             set(self.get_partition_keys()) & set(other.get_partition_keys())
         )
 
     @abstractmethod
-    def serialize(self) -> str:
-        ...
+    def serialize(self) -> str: ...
 
     @classmethod
     @abstractmethod
     def from_serialized(
         cls, partitions_def: PartitionsDefinition[T_str], serialized: str
-    ) -> "PartitionsSubset[T_str]":
-        ...
+    ) -> "PartitionsSubset[T_str]": ...
 
     @classmethod
     @abstractmethod
@@ -1006,23 +1025,19 @@ class PartitionsSubset(ABC, Generic[T_str]):
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     @abstractmethod
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
     @abstractmethod
-    def __contains__(self, value) -> bool:
-        ...
+    def __contains__(self, value) -> bool: ...
 
     @classmethod
     @abstractmethod
     def empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
-    ) -> "PartitionsSubset[T_str]":
-        ...
+    ) -> "PartitionsSubset[T_str]": ...
 
     def to_serializable_subset(self) -> "PartitionsSubset":
         return self
@@ -1220,6 +1235,10 @@ class AllPartitionsSubset(
             current_time=current_time,
         )
 
+    @property
+    def is_empty(self) -> bool:
+        return False
+
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         check.param_invariant(current_time is None, "current_time")
         return self.partitions_def.get_partition_keys(
@@ -1264,8 +1283,15 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        from dagster._core.definitions.time_window_partitions import (
+            BaseTimeWindowPartitionsSubset,
+            TimeWindowPartitionsSubset,
+        )
+
         if self == other:
             return self.partitions_def.empty_subset()
+        elif isinstance(other, BaseTimeWindowPartitionsSubset):
+            return TimeWindowPartitionsSubset.from_all_partitions_subset(self) - other
         return self.partitions_def.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
         )

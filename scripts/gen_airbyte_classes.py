@@ -60,21 +60,21 @@ class SchemaType(ABC):
     description: Optional[str] = None
 
     @abstractmethod
-    def get_check(self, name: str, scope: Optional[str] = None):
+    def get_check(self, name: str, scope: Optional[str] = None) -> str:
         """Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')."""
 
     @abstractmethod
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
-    ):
+    ) -> str:
         """Returns the Python type annotation for this type, e.g. str or Union[str, int]."""
 
     @property
-    def const_value(self):
+    def const_value(self) -> object:
         """If this is a constant field, returns the constant value, otherwise returns None."""
         return None
 
-    def add_description(self, description: str):
+    def add_description(self, description: str) -> None:
         if not description:
             return
         self.description = description.replace("\n", " ")

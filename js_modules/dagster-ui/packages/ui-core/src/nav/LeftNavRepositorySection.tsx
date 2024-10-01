@@ -1,13 +1,13 @@
-import {Body, Box, colorBackgroundLight, colorTextLighter} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Body, Box, Colors} from '@dagster-io/ui-components';
+import {memo, useContext} from 'react';
 import styled from 'styled-components';
-
-import {SectionedLeftNav} from '../ui/SectionedLeftNav';
-import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
 
 import {RepoNavItem} from './RepoNavItem';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
+import {SectionedLeftNav} from '../ui/SectionedLeftNav';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
+import {RepoAddress} from '../workspace/types';
 
 const LoadedRepositorySection = ({
   allRepos,
@@ -58,7 +58,7 @@ const LoadedRepositorySection = ({
 };
 
 const Container = styled.div`
-  background: ${colorBackgroundLight()};
+  background: ${Colors.backgroundLight()};
   display: flex;
   flex: 1;
   overflow: none;
@@ -74,15 +74,15 @@ const ListContainer = styled.div`
 `;
 
 const EmptyState = styled.div`
-  color: ${colorTextLighter()};
+  color: ${Colors.textLighter()};
   line-height: 20px;
   padding: 6px 24px 0;
 `;
 
-export const LeftNavRepositorySection = React.memo(() => {
-  const {allRepos, loading, visibleRepos, toggleVisible} = React.useContext(WorkspaceContext);
+export const LeftNavRepositorySection = memo(() => {
+  const {allRepos, loading, visibleRepos, toggleVisible} = useContext(WorkspaceContext);
 
-  if (loading) {
+  if (loading && !visibleRepos) {
     return <div style={{flex: 1}} />;
   }
 

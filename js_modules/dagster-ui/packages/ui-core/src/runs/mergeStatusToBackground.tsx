@@ -1,27 +1,22 @@
-import {
-  colorAccentBlue,
-  colorAccentGreen,
-  colorAccentRed,
-  colorBackgroundDisabled,
-} from '@dagster-io/ui-components';
+import {Colors} from '@dagster-io/ui-components';
 
-import {queuedStatuses, inProgressStatuses, failedStatuses, successStatuses} from './RunStatuses';
-import {TimelineRun} from './RunTimeline';
+import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
+import {TimelineRun} from './RunTimelineTypes';
 
 type BackgroundStatus = 'inProgress' | 'queued' | 'failed' | 'succeeded' | 'scheduled';
 
 const statusToColor = (status: BackgroundStatus) => {
   switch (status) {
     case 'queued':
-      return colorBackgroundDisabled();
+      return Colors.backgroundDisabled();
     case 'scheduled':
-      return colorBackgroundDisabled();
+      return Colors.backgroundDisabled();
     case 'inProgress':
-      return colorAccentBlue();
+      return Colors.accentBlue();
     case 'failed':
-      return colorAccentRed();
+      return Colors.accentRed();
     case 'succeeded':
-      return colorAccentGreen();
+      return Colors.accentGreen();
   }
 };
 
@@ -57,7 +52,6 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
     return statusToColor(element!);
   }
 
-  // const colorList = statusArr.map(statusToColor);
   const runCount = runs.length;
 
   const colors = [

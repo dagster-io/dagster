@@ -2,11 +2,7 @@
 import pandas as pd
 from upath import UPath
 
-from dagster import (
-    InputContext,
-    OutputContext,
-    UPathIOManager,
-)
+from dagster import InputContext, OutputContext, UPathIOManager
 
 
 class PandasParquetIOManager(UPathIOManager):

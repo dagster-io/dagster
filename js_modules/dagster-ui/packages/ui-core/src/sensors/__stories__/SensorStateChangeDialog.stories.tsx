@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Button} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {OpenWithIntent} from '../../instigation/useInstigationStateReducer';
 import {SensorStateChangeDialog} from '../SensorStateChangeDialog';
@@ -24,7 +24,7 @@ export default {
 } as Meta;
 
 export const StartSensors = () => {
-  const [dialogState, setDialogState] = React.useState<OpenWithIntent>('not-open');
+  const [dialogState, setDialogState] = useState<OpenWithIntent>('not-open');
 
   return (
     <MockedProvider mocks={[buildStartKansasSuccess(1000), buildStartLouisianaSuccess(1000)]}>
@@ -42,7 +42,7 @@ export const StartSensors = () => {
 };
 
 export const StopSensors = () => {
-  const [dialogState, setDialogState] = React.useState<OpenWithIntent>('not-open');
+  const [dialogState, setDialogState] = useState<OpenWithIntent>('not-open');
 
   return (
     <MockedProvider mocks={[buildStopMinnesotaSuccess(1000), buildStopOregonSuccess(1000)]}>
@@ -60,7 +60,7 @@ export const StopSensors = () => {
 };
 
 export const StartSensorsWithError = () => {
-  const [dialogState, setDialogState] = React.useState<OpenWithIntent>('not-open');
+  const [dialogState, setDialogState] = useState<OpenWithIntent>('not-open');
 
   return (
     <MockedProvider mocks={[buildStartKansasSuccess(1000), buildStartLouisianaError(1000)]}>

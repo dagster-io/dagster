@@ -1,0 +1,2 @@
+include:
+  remote: https://raw.githubusercontent.com/dagster-io/dagster-cloud-action/v0.1.29/gitlab/dbt/serverless-ci-dbt.yml 

@@ -4,8 +4,10 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
 from dagster_graphql.test.utils import infer_job_selector
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .utils import sync_execute_get_events
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
+from dagster_graphql_tests.graphql.utils import sync_execute_get_events
 
 
 def get_expectation_results(logs, op_name: str):

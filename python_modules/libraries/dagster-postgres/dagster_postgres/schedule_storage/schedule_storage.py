@@ -1,13 +1,13 @@
 from typing import ContextManager, Optional, Sequence
 
 import dagster._check as check
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeAssetEvaluation,
+from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.config import PostgresStorageConfig, pg_config
@@ -24,15 +24,17 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
+from dagster._time import get_current_datetime
+from sqlalchemy import event
 from sqlalchemy.engine import Connection
 
-from ..utils import (
+from dagster_postgres.utils import (
     create_pg_connection,
     pg_alembic_config,
-    pg_statement_timeout,
     pg_url_from_config,
     retry_pg_connection_fn,
     retry_pg_creation_fn,
+    set_pg_statement_timeout,
 )
 
 
@@ -103,18 +105,19 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
+        kwargs = {
+            "isolation_level": "AUTOCOMMIT",
+            "pool_size": 1,
+            "pool_recycle": pool_recycle,
+        }
         existing_options = self._engine.url.query.get("options")
-        timeout_option = pg_statement_timeout(statement_timeout)
         if existing_options:
-            options = f"{timeout_option} {existing_options}"
-        else:
-            options = timeout_option
-        self._engine = create_engine(
-            self.postgres_url,
-            isolation_level="AUTOCOMMIT",
-            pool_size=1,
-            connect_args={"options": options},
-            pool_recycle=pool_recycle,
+            kwargs["connect_args"] = {"options": existing_options}
+        self._engine = create_engine(self.postgres_url, **kwargs)
+        event.listen(
+            self._engine,
+            "connect",
+            lambda connection, _: set_pg_statement_timeout(connection, statement_timeout),
         )
 
     @property
@@ -173,7 +176,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                     "status": state.status.value,
                     "instigator_type": state.instigator_type.value,
                     "instigator_body": serialize_value(state),
-                    "update_timestamp": pendulum.now("UTC"),
+                    "update_timestamp": get_current_datetime(),
                 },
             )
         )
@@ -181,7 +184,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds[EntityKey]],
     ):
         if not asset_evaluations:
             return
@@ -190,11 +193,9 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             [
                 {
                     "evaluation_id": evaluation_id,
-                    "asset_key": evaluation.asset_key.to_string(),
+                    "asset_key": evaluation.key.to_db_string(),
                     "asset_evaluation_body": serialize_value(evaluation),
                     "num_requested": evaluation.num_requested,
-                    "num_skipped": evaluation.num_skipped,
-                    "num_discarded": evaluation.num_discarded,
                 }
                 for evaluation in asset_evaluations
             ]
@@ -207,8 +208,6 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             set_={
                 "asset_evaluation_body": insert_stmt.excluded.asset_evaluation_body,
                 "num_requested": insert_stmt.excluded.num_requested,
-                "num_skipped": insert_stmt.excluded.num_skipped,
-                "num_discarded": insert_stmt.excluded.num_discarded,
             },
         )
 

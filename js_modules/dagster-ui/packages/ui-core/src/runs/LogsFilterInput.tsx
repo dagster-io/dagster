@@ -1,13 +1,10 @@
 import {
-  Popover,
-  TextInput,
-  SuggestionProvider,
-  useSuggestionsForString,
+  Colors,
   Icon,
-  colorBackgroundDefault,
-  colorAccentPrimary,
-  colorBackgroundBlue,
-  colorBackgroundGray,
+  Popover,
+  SuggestionProvider,
+  TextInput,
+  useSuggestionsForString,
 } from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -70,9 +67,10 @@ export const LogsFilterInput = (props: Props) => {
     const perProvider = suggestionProviders.reduce(
       (accum, provider) => {
         const values = provider.values();
-        return provider.token
-          ? {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}}
-          : accum;
+        if (provider.token) {
+          accum[provider.token] = {fuse: new Fuse(values, fuseOptions), all: values};
+        }
+        return accum;
       },
       {} as {[token: string]: {fuse: Fuse<string>; all: string[]}},
     );
@@ -249,8 +247,8 @@ interface HighlightableTextProps {
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
   background-color: ${({isHighlight}) =>
-    isHighlight ? colorBackgroundBlue() : colorBackgroundDefault()};
-  color: ${({isHighlight}) => (isHighlight ? colorAccentPrimary() : 'default')};
+    isHighlight ? Colors.backgroundBlue() : Colors.backgroundDefault()};
+  color: ${({isHighlight}) => (isHighlight ? Colors.accentPrimary() : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -263,6 +261,6 @@ const Item = styled.li<HighlightableTextProps>`
 
   &:hover {
     background-color: ${({isHighlight}) =>
-      isHighlight ? colorBackgroundBlue() : colorBackgroundGray()};
+      isHighlight ? Colors.backgroundBlue() : Colors.backgroundGray()};
   }
 `;

@@ -1,14 +1,12 @@
 from typing import Optional
 
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster._core.telemetry import log_workspace_stats
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from starlette.applications import Starlette
 
-from .webserver import DagsterWebserver
+from dagster_webserver.webserver import DagsterWebserver
 
 
 def create_app_from_workspace_process_context(

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useCallback, useMemo} from 'react';
 
 export const useSuggestionsForString = (
   buildSuggestions: (value: string) => string[],
@@ -7,12 +7,9 @@ export const useSuggestionsForString = (
   const tokens = value.toLocaleLowerCase().trim().split(/\s+/);
   const queryString = tokens[tokens.length - 1] || '';
 
-  const suggestions = React.useMemo(
-    () => buildSuggestions(queryString),
-    [buildSuggestions, queryString],
-  );
+  const suggestions = useMemo(() => buildSuggestions(queryString), [buildSuggestions, queryString]);
 
-  const onSelectSuggestion = React.useCallback(
+  const onSelectSuggestion = useCallback(
     (suggestion: string) => {
       const lastIndex = value.toLocaleLowerCase().lastIndexOf(queryString);
       if (lastIndex !== -1) {
@@ -27,7 +24,7 @@ export const useSuggestionsForString = (
     [queryString, value],
   );
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       suggestions,
       onSelectSuggestion,

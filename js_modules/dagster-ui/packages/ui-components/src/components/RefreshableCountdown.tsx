@@ -1,8 +1,6 @@
-import * as React from 'react';
 import styled from 'styled-components';
 
-import {colorAccentGray, colorAccentGrayHover, colorTextLight} from '../theme/color';
-
+import {Colors} from './Color';
 import {Group} from './Group';
 import {Icon, IconWrapper} from './Icon';
 import {Tooltip} from './Tooltip';
@@ -20,7 +18,11 @@ export const RefreshableCountdown = (props: Props) => {
   return (
     <Group direction="row" spacing={8} alignItems="center">
       <span
-        style={{color: colorTextLight(), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'}}
+        style={{
+          color: Colors.textLight(),
+          fontVariantNumeric: 'tabular-nums',
+          whiteSpace: 'nowrap',
+        }}
       >
         {refreshing
           ? `Refreshing ${dataDescription}…`
@@ -30,7 +32,7 @@ export const RefreshableCountdown = (props: Props) => {
       </span>
       <Tooltip content={<span style={{whiteSpace: 'nowrap'}}>Refresh now</span>} position="top">
         <RefreshButton onClick={onRefresh}>
-          <Icon name="refresh" color={colorAccentGray()} />
+          <Icon name="refresh" color={Colors.accentGray()} />
         </RefreshButton>
       </Tooltip>
     </Group>
@@ -52,7 +54,7 @@ export const RefreshButton = styled.button`
     transition: color 100ms linear;
 
     &:hover {
-      color: ${colorAccentGrayHover()};
+      color: ${Colors.accentGrayHover()};
     }
   }
 `;

@@ -1,23 +1,12 @@
-import {
-  Box,
-  Caption,
-  Icon,
-  MiddleTruncate,
-  Mono,
-  Tooltip,
-  colorAccentGray,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Caption, Colors, Icon, MiddleTruncate, Mono, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {succinctType} from './ResourceRoot';
 import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
+import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 1fr';
 
@@ -55,7 +44,7 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              <Icon name="resource" color={colorAccentGray()} />
+              <Icon name="resource" color={Colors.accentGray()} />
 
               <span style={{fontWeight: 500}}>
                 <Link to={workspacePathFromAddress(repoAddress, `/resources/${name}`)}>
@@ -72,7 +61,7 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
             >
               <Caption
                 style={{
-                  color: colorTextLight(),
+                  color: Colors.textLight(),
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -96,20 +85,11 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
 
 export const VirtualizedResourceHeader = () => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: colorTextLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Type</HeaderCell>
       <HeaderCell>Uses</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

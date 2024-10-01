@@ -11,7 +11,7 @@ from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"))
 def my_daily_partitioned_asset(context: AssetExecutionContext) -> None:
-    partition_date_str = context.asset_partition_key_for_output()
+    partition_date_str = context.partition_key
 
     url = f"https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date={partition_date_str}"
     target_location = f"nasa/{partition_date_str}.csv"

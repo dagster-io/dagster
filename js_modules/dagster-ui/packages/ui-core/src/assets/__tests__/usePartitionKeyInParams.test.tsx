@@ -1,5 +1,4 @@
-import {render, waitFor, screen} from '@testing-library/react';
-import React from 'react';
+import {render, screen, waitFor} from '@testing-library/react';
 
 import {usePartitionKeyInParams} from '../usePartitionKeyInParams';
 

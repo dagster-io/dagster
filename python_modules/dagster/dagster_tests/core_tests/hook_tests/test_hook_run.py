@@ -5,7 +5,9 @@ from dagster import DynamicOut, DynamicOutput, Int, Out, Output, graph, job, op,
 from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import Failure, HookExecutionResult
+from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
 class SomeUserException(Exception):
@@ -323,6 +325,42 @@ def test_op_outputs_access():
     assert called.get("dynamic_op") == {"result": {"mapping_1": 1, "mapping_2": 2}}
     assert called.get("echo[mapping_1]") == {"result": 1}
     assert called.get("echo[mapping_2]") == {"result": 2}
+
+
+def test_op_metadata_access():
+    """Test that HookContext op_output_metadata is successfully populated upon both Output(value, metadata) and context.add_output_metadata(metadata) calls."""
+    called = {}
+
+    @success_hook
+    def my_success_hook(context):
+        called[context.step_key] = context.op_output_metadata
+
+    @op(out={"one": Out(), "two": Out(), "three": Out()})
+    def output_metadata_op(_):
+        yield Output(1, "one", metadata={"foo": "bar"})
+        yield Output(2, "two", metadata={"baz": "qux"})
+        yield Output(3, "three", metadata={"quux": "quuz"})
+
+    @op()
+    def context_metadata_op(context: OpExecutionContext):
+        context.add_output_metadata(metadata={"foo": "bar"})
+        yield Output(value=1)
+
+    @my_success_hook
+    @job
+    def metadata_job():
+        output_metadata_op()
+        context_metadata_op()
+
+    result = metadata_job.execute_in_process(raise_on_error=False)
+
+    assert result.success
+    assert called.get("context_metadata_op") == {"result": {"foo": TextMetadataValue(text="bar")}}
+    assert called.get("output_metadata_op") == {
+        "one": {"foo": TextMetadataValue(text="bar")},
+        "two": {"baz": TextMetadataValue(text="qux")},
+        "three": {"quux": TextMetadataValue(text="quuz")},
+    }
 
 
 def test_hook_on_job_def():

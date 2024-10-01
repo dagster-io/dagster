@@ -1,11 +1,9 @@
-import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {colorLinkDefault} from '../theme/color';
-
 import {Box} from './Box';
+import {Colors} from './Color';
 
-type Color =
+type Colors =
   | string
   | {
       link: string;
@@ -16,12 +14,12 @@ type Color =
 type Underline = 'never' | 'always' | 'hover';
 
 interface Props {
-  color: Color;
+  color: Colors;
   disabled?: boolean;
   underline?: Underline;
 }
 
-const fontColor = (color: Color) => {
+const fontColor = (color: Colors) => {
   if (typeof color === 'string') {
     return css`
       color: ${color};
@@ -57,7 +55,9 @@ const textDecoration = (underline: Underline) => {
   }
 };
 
-export const ButtonLink = styled(({color, underline, ...rest}) => <button {...rest} />)<Props>`
+export const ButtonLink = styled(({color: _color, underline: _underline, ...rest}) => (
+  <button {...rest} />
+))<Props>`
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -83,6 +83,6 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
 `;
 
 ButtonLink.defaultProps = {
-  color: colorLinkDefault(),
+  color: Colors.linkDefault(),
   underline: 'hover',
 };

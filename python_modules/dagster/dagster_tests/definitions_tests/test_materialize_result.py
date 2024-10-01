@@ -36,12 +36,14 @@ def test_materialize_result_asset():
     def ret_untyped(context: AssetExecutionContext):
         return MaterializeResult(
             metadata={"one": 1},
+            tags={"foo": "bar"},
         )
 
     mats = _exec_asset(ret_untyped)
     assert len(mats) == 1, mats
     assert "one" in mats[0].metadata
     assert mats[0].tags
+    assert mats[0].tags["foo"] == "bar"
 
     # key mismatch
     @asset
@@ -373,10 +375,10 @@ def test_materialize_result_output_typing():
     )
 
 
-def test_materialize_result_no_output_typing_calls_io():
+def test_materialize_result_no_output_typing_does_not_call_io():
     """Returning MaterializeResult from a vanilla asset or a multi asset that does not use
     AssetSpecs AND with no return type annotation results in an Any typing type for the
-    Output. In this case we emit a warning, then call the I/O manager.
+    Output. In this case we do not call the IO manager.
     """
 
     class TestingIOManager(IOManager):
@@ -401,7 +403,7 @@ def test_materialize_result_no_output_typing_calls_io():
         return MaterializeResult(metadata={"foo": "bar"})
 
     _exec_asset(asset_without_type_annotation, resources={"io_manager": io_mgr})
-    assert io_mgr.handle_output_calls == 1
+    assert io_mgr.handle_output_calls == 0
 
     @multi_asset(outs={"one": AssetOut(), "two": AssetOut()})
     def multi_asset_with_outs():
@@ -409,7 +411,7 @@ def test_materialize_result_no_output_typing_calls_io():
 
     io_mgr.reset()
     _exec_asset(multi_asset_with_outs, resources={"io_manager": io_mgr})
-    assert io_mgr.handle_output_calls == 2
+    assert io_mgr.handle_output_calls == 0
 
     io_mgr.reset()
 
@@ -437,7 +439,7 @@ def test_materialize_result_no_output_typing_calls_io():
         with_checks,
         resources={"io_manager": io_mgr},
     )
-    assert io_mgr.handle_output_calls == 1
+    assert io_mgr.handle_output_calls == 0
 
     io_mgr.reset()
 
@@ -446,7 +448,7 @@ def test_materialize_result_no_output_typing_calls_io():
         yield MaterializeResult(metadata={"foo": "bar"})
 
     _exec_asset(generator_asset, resources={"io_manager": io_mgr})
-    io_mgr.handle_output_calls == 1
+    io_mgr.handle_output_calls == 0
 
 
 def test_materialize_result_implicit_output_typing():

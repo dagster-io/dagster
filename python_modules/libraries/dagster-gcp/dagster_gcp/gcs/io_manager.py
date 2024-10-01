@@ -20,7 +20,7 @@ from google.cloud import storage
 from pydantic import Field
 from upath import UPath
 
-from .resources import GCSResource
+from dagster_gcp.gcs.resources import GCSResource
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 
@@ -120,9 +120,10 @@ class GCSPickleIOManager(ConfigurableIOManager):
             resources={
                 "io_manager": GCSPickleIOManager(
                     gcs_bucket="my-cool-bucket",
-                    gcs_prefix="my-cool-prefix"
+                    gcs_prefix="my-cool-prefix",
+                    gcs=GCSResource(project="my-cool-project")
                 ),
-                "gcs": GCSResource(project="my-cool-project")
+
             }
         )
 

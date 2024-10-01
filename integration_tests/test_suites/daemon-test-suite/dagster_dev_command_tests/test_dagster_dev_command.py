@@ -6,7 +6,7 @@ import time
 
 import requests
 import yaml
-from dagster import DagsterEventType, DagsterInstance, EventRecordsFilter
+from dagster import DagsterEventType, DagsterInstance
 from dagster._core.test_utils import environ, new_cwd
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import wait_for_grpc_server
@@ -58,11 +58,49 @@ def test_dagster_dev_command_workspace():
                     dev_process.communicate()
 
 
+def test_dagster_dev_command_loads_toys():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with environ({"DAGSTER_HOME": ""}):
+            with new_cwd(tempdir):
+                dagit_port = find_free_port()
+                dev_process = subprocess.Popen(
+                    [
+                        "dagster",
+                        "dev",
+                        "-m",
+                        "dagster_test.toys.repo",
+                        "--dagit-port",
+                        str(dagit_port),
+                        "--log-level",
+                        "debug",
+                    ],
+                    cwd=tempdir,
+                )
+                try:
+                    _wait_for_dagit_running(dagit_port)
+
+                    client = DagsterGraphQLClient(hostname="localhost", port_number=dagit_port)
+                    locations_and_names = client._get_repo_locations_and_names_with_pipeline(  # noqa
+                        "hammer"
+                    )
+                    assert (
+                        len(locations_and_names) > 0
+                    ), "toys repo failed to load or was missing a job called 'hammer'"
+                finally:
+                    dev_process.send_signal(signal.SIGINT)
+                    dev_process.communicate()
+
+
 # E2E test that spins up "dagster dev", accesses dagit,
 # and waits for a schedule run to launch
 def test_dagster_dev_command_no_dagster_home():
     with tempfile.TemporaryDirectory() as tempdir:
-        with environ({"DAGSTER_HOME": ""}):
+        with environ(
+            {
+                "DAGSTER_HOME": "",  # unset dagster home
+                "CHECK_DAGSTER_DEV": "1",  # trigger target user code to check for DAGSTER_DEV env var
+            }
+        ):
             with new_cwd(tempdir):
                 dagster_yaml = {
                     "run_coordinator": {
@@ -124,11 +162,9 @@ def test_dagster_dev_command_no_dagster_home():
                             if (
                                 len(instance.get_runs()) > 0
                                 and len(
-                                    instance.get_event_records(
-                                        event_records_filter=EventRecordsFilter(
-                                            event_type=DagsterEventType.PIPELINE_ENQUEUED
-                                        )
-                                    )
+                                    instance.fetch_run_status_changes(
+                                        DagsterEventType.PIPELINE_ENQUEUED, limit=1
+                                    ).records
                                 )
                                 > 0
                             ):
@@ -172,7 +208,6 @@ def test_dagster_dev_command_grpc_port():
 
             client = DagsterGrpcClient(port=grpc_port, host="localhost")
             wait_for_grpc_server(grpc_process, client, subprocess_args)
-
             dev_process = subprocess.Popen(
                 [
                     "dagster",

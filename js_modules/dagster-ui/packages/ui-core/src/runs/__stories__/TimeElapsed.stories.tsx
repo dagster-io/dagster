@@ -1,7 +1,6 @@
-import {Story, Meta} from '@storybook/react';
-import * as React from 'react';
+import {Meta, StoryFn} from '@storybook/react';
 
-import {TimeElapsed, Props} from '../TimeElapsed';
+import {Props, TimeElapsed} from '../TimeElapsed';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -9,7 +8,7 @@ export default {
   component: TimeElapsed,
 } as Meta;
 
-const Template: Story<Props> = (props) => <TimeElapsed {...props} />;
+const Template: StoryFn<Props> = (props) => <TimeElapsed {...props} />;
 
 const now = Date.now() / 1000;
 const startUnix = now - 60;

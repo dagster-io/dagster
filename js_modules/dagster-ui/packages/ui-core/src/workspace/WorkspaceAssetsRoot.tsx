@@ -1,15 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, NonIdealState, Spinner, TextInput, colorTextLight} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useAssetNodeSearch} from '../assets/useAssetSearch';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-
-import {REPO_ASSET_TABLE_FRAGMENT, VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
+import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
+import {WORKSPACE_ASSETS_QUERY} from './WorkspaceAssetsQuery';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -17,7 +10,13 @@ import {RepoAddress} from './types';
 import {
   WorkspaceAssetsQuery,
   WorkspaceAssetsQueryVariables,
-} from './types/WorkspaceAssetsRoot.types';
+} from './types/WorkspaceAssetsQuery.types';
+import {useQuery} from '../apollo-client';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useAssetSearch} from '../assets/useAssetSearch';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -45,14 +44,14 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const assetNodes = React.useMemo(() => {
+  const assetNodes = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.assetNodes;
     }
     return [];
   }, [data]);
 
-  const filteredBySearch = useAssetNodeSearch(searchValue, assetNodes);
+  const filteredBySearch = useAssetSearch(searchValue, assetNodes);
 
   const content = () => {
     if (loading && !data) {
@@ -60,7 +59,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: colorTextLight()}}>Loading assets…</div>
+            <div style={{color: Colors.textLight()}}>Loading assets…</div>
           </Box>
         </Box>
       );
@@ -99,12 +98,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="assets"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="assets" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
@@ -124,22 +118,3 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     </Box>
   );
 };
-
-const WORKSPACE_ASSETS_QUERY = gql`
-  query WorkspaceAssetsQuery($selector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $selector) {
-      ... on Repository {
-        id
-        name
-        assetNodes {
-          id
-          ...RepoAssetTableFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${REPO_ASSET_TABLE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;

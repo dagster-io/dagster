@@ -5,11 +5,20 @@ from typing import Any, Mapping, Type, TypeVar
 import dagster._check as check
 import kubernetes
 import kubernetes.client.models
-from dateutil.parser import parse
+from dagster._vendored.dateutil.parser import parse
 from kubernetes.client.api_client import ApiClient
+from kubernetes.client.configuration import Configuration
 
 # Unclear what the correct type is to use for a bound here.
 T_KubernetesModel = TypeVar("T_KubernetesModel")
+
+
+# Create a single Configuration object to pass through to each model creation -
+# the default otherwise in the OpenAPI version currently in use by the k8s
+# client will create one on each model creation otherwise, which can cause
+# lock contention since it acquires the global python logger lock
+# see: https://github.com/kubernetes-client/python/issues/1921
+shared_k8s_model_configuration = Configuration()
 
 
 def _get_k8s_class(classname: str) -> Type[Any]:
@@ -100,7 +109,7 @@ def _k8s_snake_case_value(val: Any, attr_type: str, attr_name: str) -> Any:
             return k8s_snake_case_dict(klass, val)
 
 
-def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
+def k8s_snake_case_keys(model_class, model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
     snake_case_to_camel_case = model_class.attribute_map
     camel_case_to_snake_case = dict((v, k) for k, v in snake_case_to_camel_case.items())
 
@@ -120,6 +129,12 @@ def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -
 
     if len(invalid_keys):
         raise Exception(f"Unexpected keys in model class {model_class.__name__}: {invalid_keys}")
+
+    return snake_case_dict
+
+
+def k8s_snake_case_dict(model_class: Type[Any], model_dict: Mapping[str, Any]) -> Mapping[str, Any]:
+    snake_case_dict = k8s_snake_case_keys(model_class, model_dict)
 
     final_dict = {}
     for key, val in snake_case_dict.items():
@@ -143,7 +158,10 @@ def k8s_model_from_dict(
     if len(invalid_keys):
         raise Exception(f"Unexpected keys in model class {model_class.__name__}: {invalid_keys}")
 
-    kwargs = {}
+    # Pass through the configuration object since the default implementation creates a new one
+    # in the constructor, which can create lock contention if multiple threads are calling this
+    # simultaneously
+    kwargs = {"local_vars_configuration": shared_k8s_model_configuration}
     for attr, attr_type in model_class.openapi_types.items():  # type: ignore
         # e.g. config_map => configMap
         if attr in model_dict:

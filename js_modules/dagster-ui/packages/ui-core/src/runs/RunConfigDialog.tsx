@@ -6,11 +6,10 @@ import {
   StyledRawCodeMirror,
   Subheading,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {RunTags} from './RunTags';
-import {RunTagsFragment} from './types/RunTable.types';
+import {RunTagsFragment} from './types/RunTagsFragment.types';
 
 interface Props {
   isOpen: boolean;

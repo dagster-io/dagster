@@ -1,4 +1,4 @@
-import {buildRepoAddress, DUNDER_REPO_NAME} from './buildRepoAddress';
+import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
 import {RepoAddress} from './types';
 
 export const repoAddressFromPath = (path: string): RepoAddress | null => {

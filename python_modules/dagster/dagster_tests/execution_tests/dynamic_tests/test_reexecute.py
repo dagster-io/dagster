@@ -1,3 +1,5 @@
+import time
+from multiprocessing import Process
 from typing import List
 
 import pytest
@@ -20,6 +22,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.errors import DagsterExecutionStepNotFoundError
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 
 
@@ -681,3 +684,71 @@ def test_conditional():
             ),
         ) as reexec_result:
             assert reexec_result.success
+
+
+@op
+def maybe_trigger(context: OpExecutionContext, b):
+    if b and not context.instance.run_storage.get_cursor_values({"boom"}):
+        time.sleep(1)
+        context.instance.run_storage.set_cursor_values({"boom": context.run_id})
+        time.sleep(3)  # should get killed well before
+        return 0
+    return 1
+
+
+@op(out=DynamicOut())
+def dyn_bool():
+    for i in range(2):
+        yield DynamicOutput(None, mapping_key=f"no_{i}")
+    yield DynamicOutput(True, mapping_key="yes")
+
+
+@job
+def crashy_job():
+    echo(dyn_bool().map(maybe_trigger).collect())
+
+
+def _execute_crashy_job():
+    execute_job(reconstructable(crashy_job), instance=DagsterInstance.get())
+
+
+def test_crash() -> None:
+    with instance_for_test() as instance:
+        run_proc = Process(
+            target=_execute_crashy_job,
+        )
+        run_proc.start()
+        time.sleep(0.1)
+
+        while run_proc.is_alive() and not instance.run_storage.get_cursor_values({"boom"}):
+            time.sleep(0.1)
+        run_proc.kill()
+        run_proc.join()
+        run_id = instance.run_storage.get_cursor_values({"boom"})["boom"]
+        run = instance.get_run_by_id(run_id)
+        assert run
+        instance.report_run_failed(run)
+        dagster_events = [
+            e.get_dagster_event() for e in instance.all_logs(run_id) if e.is_dagster_event
+        ]
+        success_steps = {
+            dagster_event.step_key
+            for dagster_event in dagster_events
+            if dagster_event.is_step_success
+        }
+        assert success_steps == {"dyn_bool", "maybe_trigger[no_0]", "maybe_trigger[no_1]"}
+
+        with execute_job(
+            reconstructable(crashy_job),
+            instance=instance,
+            reexecution_options=ReexecutionOptions.from_failure(
+                run_id=run_id,
+                instance=instance,
+            ),
+        ) as reexec_result:
+            assert reexec_result.success
+            assert {e.step_key for e in reexec_result.get_step_success_events()} == {
+                "maybe_trigger[yes]",
+                "echo",
+            }
+            assert reexec_result.output_for_node("echo") == [1, 1, 1]

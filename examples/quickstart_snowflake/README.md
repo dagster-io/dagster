@@ -26,7 +26,7 @@ This guide covers:
 This starter kit includes:
 
 - Basics of creating, connecting, and testing [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) in Dagster.
-- Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata), etc.
+- Convenient ways to organize and monitor assets, e.g. [grouping assets](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets), [recording asset metadata](https://docs.dagster.io/concepts/metadata-tags/asset-metadata), etc.
 - [Snowflake I/O manager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake) to load the datasets in Snowflake and read from it, which [uses environment variables](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets) to handle credentials.
 - A [schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) defined to run a job that generates assets daily.
 - [Scaffolded project layout](https://docs.dagster.io/getting-started/create-new-project) that helps you to quickly get started with everything set up.
@@ -56,7 +56,7 @@ To connect to Snowflake, you'll need to set up your credentials in Dagster.
 
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
-In this example, we use [SnowflakePandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake-pandas#dagster_snowflake_pandas.SnowflakePandasIOManager) to write outputs to Snowflake and read inputs from it. The configurations of the Snowflake connection are defined [in `quickstart_snowflake/__init__.py`](./quickstart_snowflake/__init__.py), which requires the following environment variables:
+In this example, we use [SnowflakePandasIOManager](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake-pandas#dagster_snowflake_pandas.SnowflakePandasIOManager) to write outputs to Snowflake and read inputs from it. The configurations of the Snowflake connection are defined [in `quickstart_snowflake/definitions.py`](./quickstart_snowflake/definitions.py), which requires the following environment variables:
 
 - `SNOWFLAKE_ACCOUNT`
 - `SNOWFLAKE_USER`

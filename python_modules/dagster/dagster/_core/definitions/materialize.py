@@ -1,27 +1,26 @@
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._utils.merger import merge_dicts
-
-from ..errors import DagsterInvariantViolationError
-from ..instance import DagsterInstance
-from ..storage.io_manager import IOManagerDefinition
-from ..storage.mem_io_manager import mem_io_manager
-from .assets import AssetsDefinition
-from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-    from dagster._core.definitions.events import AssetKey
-
-    from ..execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 EPHEMERAL_JOB_NAME = "__ephemeral_asset_job__"
 
 
 def materialize(
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
@@ -35,7 +34,7 @@ def materialize(
     By default, will materialize assets to the local filesystem.
 
     Args:
-        assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
+        assets (Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]]):
             The assets to materialize.
 
             Unless you're using `deps` or `non_argument_deps`, you must also include all assets that are
@@ -85,21 +84,22 @@ def materialize(
     """
     from dagster._core.definitions.definitions_class import Definitions
 
-    assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
+    assets = check.sequence_param(
+        assets, "assets", of_type=(AssetsDefinition, AssetSpec, SourceAsset)
+    )
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
-
-    all_executable_keys: Set[AssetKey] = set()
-    for asset in assets:
-        if isinstance(asset, AssetsDefinition):
-            all_executable_keys = all_executable_keys.union(set(asset.keys))
 
     defs = Definitions(
         jobs=[define_asset_job(name=EPHEMERAL_JOB_NAME, selection=selection)],
         assets=assets,
         resources=resources,
     )
+
+    # validate input asset graph and resources
+    defs.get_all_job_defs()
+
     return check.not_none(
         defs.get_job_def(EPHEMERAL_JOB_NAME),
         "This should always return a job",
@@ -113,7 +113,7 @@ def materialize(
 
 
 def materialize_to_memory(
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
@@ -129,7 +129,7 @@ def materialize_to_memory(
     argument, a :py:class:`DagsterInvariantViolationError` will be thrown.
 
     Args:
-        assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
+        assets (Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]]):
             The assets to materialize. Can also provide :py:class:`SourceAsset` objects to fill dependencies for asset defs.
         run_config (Optional[Any]): The run config to use for the run that materializes the assets.
         resources (Optional[Mapping[str, object]]):
@@ -169,13 +169,16 @@ def materialize_to_memory(
             # executes a run that materializes just asset1
             materialize([asset1, asset2], selection=[asset1])
     """
-    assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
+    assets = check.sequence_param(
+        assets, "assets", of_type=(AssetsDefinition, AssetSpec, SourceAsset)
+    )
 
     # Gather all resource defs for the purpose of checking io managers.
     resources_dict = resources or {}
     all_resource_keys = set(resources_dict.keys())
     for asset in assets:
-        all_resource_keys = all_resource_keys.union(asset.resource_defs.keys())
+        if isinstance(asset, (AssetsDefinition, SourceAsset)):
+            all_resource_keys = all_resource_keys.union(asset.resource_defs.keys())
 
     io_manager_keys = _get_required_io_manager_keys(assets)
     for io_manager_key in io_manager_keys:
@@ -203,11 +206,14 @@ def materialize_to_memory(
 
 
 def _get_required_io_manager_keys(
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
 ) -> Set[str]:
     io_manager_keys = set()
     for asset in assets:
-        for requirement in asset.get_resource_requirements():
-            if requirement.expected_type == IOManagerDefinition:
-                io_manager_keys.add(requirement.key)
+        if isinstance(asset, (AssetsDefinition, SourceAsset)):
+            for requirement in asset.get_resource_requirements():
+                if requirement.expected_type == IOManagerDefinition and isinstance(
+                    requirement, ResourceKeyRequirement
+                ):
+                    io_manager_keys.add(requirement.key)
     return io_manager_keys

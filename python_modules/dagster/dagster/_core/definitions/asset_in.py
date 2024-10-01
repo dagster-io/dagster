@@ -9,9 +9,8 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
-
-from .partition_mapping import PartitionMapping
 
 
 class AssetIn(

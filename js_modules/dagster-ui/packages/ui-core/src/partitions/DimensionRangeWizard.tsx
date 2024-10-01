@@ -1,34 +1,14 @@
-import {
-  Box,
-  Button,
-  Checkbox,
-  TagSelectorDropdownProps,
-  Icon,
-  Menu,
-  MenuDivider,
-  MenuItem,
-  TagSelectorWithSearch,
-  TagSelectorDropdownItemProps,
-  MiddleTruncate,
-  colorLinkDefault,
-  colorTextLight,
-  colorBackgroundLight,
-  colorBorderDefault,
-  colorTextDefault,
-} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
-import {partitionStatusAtIndex} from '../assets/usePartitionHealthData';
-import {PartitionDefinitionType, RunStatus} from '../graphql/types';
-import {RunStatusDot} from '../runs/RunStatusDots';
-import {testId} from '../testing/testId';
-import {RepoAddress} from '../workspace/types';
-
 import {CreatePartitionDialog} from './CreatePartitionDialog';
 import {DimensionRangeInput} from './DimensionRangeInput';
-import {PartitionStatusHealthSource, PartitionStatus} from './PartitionStatus';
+import {OrdinalPartitionSelector} from './OrdinalPartitionSelector';
+import {PartitionStatus, PartitionStatusHealthSource} from './PartitionStatus';
+import {PartitionDefinitionType} from '../graphql/types';
+import {testId} from '../testing/testId';
+import {RepoAddress} from '../workspace/types';
 
 export const DimensionRangeWizard = ({
   selected,
@@ -36,7 +16,7 @@ export const DimensionRangeWizard = ({
   partitionKeys,
   health,
   dimensionType,
-  partitionDefinitionName,
+  dynamicPartitionsDefinitionName,
   repoAddress,
   refetch,
 }: {
@@ -45,7 +25,7 @@ export const DimensionRangeWizard = ({
   partitionKeys: string[];
   health: PartitionStatusHealthSource;
   dimensionType: PartitionDefinitionType;
-  partitionDefinitionName?: string | null;
+  dynamicPartitionsDefinitionName?: string | null;
   repoAddress?: RepoAddress;
   refetch?: () => Promise<void>;
 }) => {
@@ -96,6 +76,7 @@ export const DimensionRangeWizard = ({
             onClick={() => {
               setShowCreatePartition(true);
             }}
+            data-testid={testId('add-partition-link')}
           >
             <StyledIcon name="add" size={24} />
             <div>Add a partition</div>
@@ -115,7 +96,7 @@ export const DimensionRangeWizard = ({
         <CreatePartitionDialog
           key={showCreatePartition ? '1' : '0'}
           isOpen={showCreatePartition}
-          partitionDefinitionName={partitionDefinitionName}
+          dynamicPartitionsDefinitionName={dynamicPartitionsDefinitionName}
           repoAddress={repoAddress}
           close={() => {
             setShowCreatePartition(false);
@@ -130,154 +111,8 @@ export const DimensionRangeWizard = ({
   );
 };
 
-const OrdinalPartitionSelector = ({
-  allPartitions,
-  selectedPartitions,
-  setSelectedPartitions,
-  setShowCreatePartition,
-  isDynamic,
-  health,
-}: {
-  allPartitions: string[];
-  selectedPartitions: string[];
-  setSelectedPartitions: (tags: string[]) => void;
-  health: PartitionStatusHealthSource;
-  setShowCreatePartition: (show: boolean) => void;
-  isDynamic: boolean;
-}) => {
-  const dotForPartitionKey = React.useCallback(
-    (partitionKey: string) => {
-      const index = allPartitions.indexOf(partitionKey);
-      if ('ranges' in health) {
-        return <AssetPartitionStatusDot status={partitionStatusAtIndex(health.ranges, index)} />;
-      } else {
-        return (
-          <RunStatusDot
-            size={10}
-            status={health.runStatusForPartitionKey(partitionKey, index) || RunStatus.NOT_STARTED}
-          />
-        );
-      }
-    },
-    [allPartitions, health],
-  );
-
-  return (
-    <>
-      <TagSelectorWithSearch
-        allTags={allPartitions}
-        selectedTags={selectedPartitions}
-        setSelectedTags={setSelectedPartitions}
-        placeholder="Select a partition or create one"
-        renderDropdownItem={React.useCallback(
-          (tag: string, dropdownItemProps: TagSelectorDropdownItemProps) => {
-            return (
-              <label>
-                <MenuItem
-                  tagName="div"
-                  text={
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'auto auto minmax(0, 1fr)',
-                        alignItems: 'center',
-                        gap: 12,
-                      }}
-                    >
-                      <Checkbox
-                        checked={dropdownItemProps.selected}
-                        onChange={dropdownItemProps.toggle}
-                      />
-                      {dotForPartitionKey(tag)}
-                      <div data-tooltip={tag} data-tooltip-style={DropdownItemTooltipStyle}>
-                        <MiddleTruncate text={tag} />
-                      </div>
-                    </div>
-                  }
-                />
-              </label>
-            );
-          },
-          [dotForPartitionKey],
-        )}
-        renderDropdown={React.useCallback(
-          (dropdown: React.ReactNode, {width, allTags}: TagSelectorDropdownProps) => {
-            const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
-            return (
-              <Menu style={{width}}>
-                <Box padding={4}>
-                  {isDynamic && (
-                    <>
-                      <Box flex={{direction: 'column'}}>
-                        <MenuItem
-                          tagName="div"
-                          text={
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-                              <StyledIcon name="add" size={24} />
-                              <span>Add partition</span>
-                            </Box>
-                          }
-                          onClick={() => {
-                            setShowCreatePartition(true);
-                          }}
-                        />
-                      </Box>
-                      <MenuDivider />
-                    </>
-                  )}
-                  {allTags.length ? (
-                    <>
-                      <label>
-                        <MenuItem
-                          tagName="div"
-                          text={
-                            <Box flex={{alignItems: 'center', gap: 12}}>
-                              <Checkbox
-                                checked={isAllSelected}
-                                onChange={() => {
-                                  if (isAllSelected) {
-                                    setSelectedPartitions([]);
-                                  } else {
-                                    setSelectedPartitions(allTags);
-                                  }
-                                }}
-                              />
-                              <span>Select all ({allTags.length})</span>
-                            </Box>
-                          }
-                        />
-                      </label>
-                      {dropdown}
-                    </>
-                  ) : (
-                    <div style={{padding: '6px 6px 0px 6px', color: colorTextLight()}}>
-                      No matching partitions found
-                    </div>
-                  )}
-                </Box>
-              </Menu>
-            );
-          },
-          [isDynamic, selectedPartitions, setSelectedPartitions, setShowCreatePartition],
-        )}
-        renderTagList={(tags) => {
-          if (tags.length > 4) {
-            return <span>{tags.length} partitions selected</span>;
-          }
-          return tags;
-        }}
-        searchPlaceholder="Filter partitions"
-      />
-    </>
-  );
-};
-
-const StyledIcon = styled(Icon)`
-  font-weight: 500;
-`;
-
 const LinkText = styled(Box)`
-  color: ${colorLinkDefault()};
+  color: ${Colors.linkDefault()};
   cursor: pointer;
   &:hover {
     text-decoration: underline;
@@ -289,9 +124,6 @@ const LinkText = styled(Box)`
   }
 `;
 
-const DropdownItemTooltipStyle = JSON.stringify({
-  background: colorBackgroundLight(),
-  border: `1px solid ${colorBorderDefault()}`,
-  color: colorTextDefault(),
-  fontSize: '14px',
-});
+const StyledIcon = styled(Icon)`
+  font-weight: 500;
+`;

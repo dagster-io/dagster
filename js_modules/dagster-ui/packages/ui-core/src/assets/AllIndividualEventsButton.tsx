@@ -1,32 +1,19 @@
 import {
   Box,
   Button,
-  DialogFooter,
+  Colors,
   Dialog,
+  DialogFooter,
   Group,
   Icon,
   IconWrapper,
-  Table,
   Mono,
-  colorTextLight,
-  colorBackgroundLight,
-  colorAccentLime,
-  colorBackgroundLightHover,
-  colorTextDefault,
+  Table,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {Timestamp} from '../app/time/Timestamp';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {MetadataEntry} from '../metadata/MetadataEntry';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
@@ -34,21 +21,30 @@ import {
   AssetMaterializationFragment,
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
+import {Timestamp} from '../app/time/Timestamp';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {MetadataEntry} from '../metadata/MetadataEntry';
+import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunStatusWithStats} from '../runs/RunStatusDots';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface AssetEventsTableProps {
   hasPartitions: boolean;
   hasLineage: boolean;
   groups: AssetEventGroup[];
-  focused?: AssetEventGroup;
-  setFocused?: (timestamp: AssetEventGroup | undefined) => void;
+  focusedTimestamp?: string;
+  setFocusedTimestamp?: (timestamp: string | undefined) => void;
 }
 
 const AssetEventsTable = ({
   hasPartitions,
   hasLineage,
   groups,
-  focused,
-  setFocused,
+  focusedTimestamp,
+  setFocusedTimestamp,
 }: AssetEventsTableProps) => {
   return (
     <Table>
@@ -71,17 +67,19 @@ const AssetEventsTable = ({
                 if (e.target instanceof HTMLElement && e.target.closest('a')) {
                   return;
                 }
-                setFocused?.(focused !== group ? group : undefined);
+                setFocusedTimestamp?.(
+                  focusedTimestamp !== group.timestamp ? group.timestamp : undefined,
+                );
               }}
             >
               <EventGroupRow
                 group={group}
                 hasPartitions={hasPartitions}
                 hasLineage={hasLineage}
-                isFocused={focused === group}
+                isFocused={focusedTimestamp === group.timestamp}
               />
             </HoverableRow>
-            {focused === group ? (
+            {focusedTimestamp === group.timestamp ? (
               <MetadataEntriesRow hasLineage={hasLineage} group={group} />
             ) : undefined}
           </React.Fragment>
@@ -91,7 +89,7 @@ const AssetEventsTable = ({
   );
 };
 
-const NoneSpan = () => <span style={{color: colorTextLight()}}>None</span>;
+const NoneSpan = () => <span style={{color: Colors.textLight()}}>None</span>;
 
 interface MetadataEntriesRowProps {
   group: AssetEventGroup;
@@ -114,7 +112,7 @@ const MetadataEntriesRow = React.memo(({group, hasLineage}: MetadataEntriesRowPr
       : [];
 
   return (
-    <tr style={{background: colorBackgroundLight()}}>
+    <tr style={{background: Colors.backgroundLight()}}>
       <td colSpan={6} style={{fontSize: 14, padding: 0}}>
         {latest.description && (
           <Box padding={{horizontal: 24, vertical: 12}}>{latest.description}</Box>
@@ -190,7 +188,7 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
   const {latest, partition, timestamp, all} = group;
 
   const focusCss = isFocused
-    ? {paddingLeft: 4, borderLeft: `4px solid ${colorAccentLime()}`}
+    ? {paddingLeft: 4, borderLeft: `4px solid ${Colors.accentLime()}`}
     : {paddingLeft: 8};
 
   const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
@@ -235,13 +233,13 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
                 events={all}
               >{`View ${all.length} events`}</AllIndividualEventsButton>
             ) : latest.__typename === 'MaterializationEvent' ? (
-              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: colorTextLight()}}>
-                <Icon name="materialization" size={16} color={colorTextLight()} />
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.textLight()}}>
+                <Icon name="materialization" size={16} color={Colors.textLight()} />
                 Materialization
               </Box>
             ) : (
-              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: colorTextLight()}}>
-                <Icon name="observation" size={16} color={colorTextLight()} /> Observation
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.textLight()}}>
+                <Icon name="observation" size={16} color={Colors.textLight()} /> Observation
               </Box>
             )}
           </Group>
@@ -260,7 +258,7 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
               />
             </Box>
             <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-              <Icon name="linear_scale" color={colorTextLight()} />
+              <Icon name="linear_scale" color={Colors.textLight()} />
               <Link to={linkToRunEvent(run, latest)}>{latest.stepKey}</Link>
             </Group>
           </Box>
@@ -280,7 +278,7 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
 
 const HoverableRow = styled.tr`
   &:hover {
-    background: ${colorBackgroundLightHover()};
+    background: ${Colors.backgroundLightHover()};
   }
 `;
 
@@ -308,8 +306,12 @@ export const AllIndividualEventsButton = ({
   children: React.ReactNode;
   disabled?: boolean;
 }) => {
-  const [open, setOpen] = React.useState(false);
-  const [focused, setFocused] = React.useState<AssetEventGroup | undefined>();
+  const [_open, setOpen] = useQueryPersistedState({
+    queryKey: 'showAllEvents',
+    decode: (qs) => (qs.showAllEvents === 'true' ? true : false),
+    encode: (b) => ({showAllEvents: b || undefined}),
+  });
+  const [focusedTimestamp, setFocusedTimestamp] = React.useState<string | undefined>();
   const groups = React.useMemo(
     () =>
       events.map((p) => ({
@@ -320,6 +322,7 @@ export const AllIndividualEventsButton = ({
       })),
     [events],
   );
+
   const title = () => {
     if (hasPartitions && events[0]) {
       const partition = events[0].partition;
@@ -329,6 +332,8 @@ export const AllIndividualEventsButton = ({
     }
     return `Materialization and observation events`;
   };
+
+  const open = _open && !disabled;
 
   return (
     <>
@@ -348,8 +353,8 @@ export const AllIndividualEventsButton = ({
             <AssetEventsTable
               hasLineage={hasLineage}
               hasPartitions={hasPartitions}
-              focused={focused}
-              setFocused={setFocused}
+              focusedTimestamp={focusedTimestamp}
+              setFocusedTimestamp={setFocusedTimestamp}
               groups={groups}
             />
           </Box>
@@ -388,7 +393,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
     outline: none;
 
     ${IconWrapper} {
-      background: ${colorTextDefault()};
+      background: ${Colors.textDefault()};
       opacity: 0.5;
     }
   }

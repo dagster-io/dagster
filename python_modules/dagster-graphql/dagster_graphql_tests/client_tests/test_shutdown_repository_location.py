@@ -6,7 +6,7 @@ from dagster_graphql import ShutdownRepositoryLocationStatus
 from dagster_graphql.client.client_queries import SHUTDOWN_REPOSITORY_LOCATION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from ..graphql.graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     ReadonlyGraphQLContextTestMatrix,
     make_graphql_context_test_suite,
@@ -33,7 +33,7 @@ class TestShutdownRepositoryLocationReadOnly(ReadonlyGraphQLContextTestMatrix):
 
 class TestShutdownRepositoryLocation(BaseTestSuite):
     def test_shutdown_repository_location(self, graphql_client, graphql_context):
-        origin = next(iter(graphql_context.get_workspace_snapshot().values())).origin
+        origin = next(iter(graphql_context.get_code_location_entries().values())).origin
         origin.create_client().heartbeat()
 
         result = graphql_client.shutdown_repository_location("test")

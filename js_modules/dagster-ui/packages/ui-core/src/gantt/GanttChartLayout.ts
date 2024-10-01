@@ -1,19 +1,4 @@
-import {
-  colorAccentGray,
-  colorAccentGrayHover,
-  colorAccentGreen,
-  colorAccentRed,
-  colorAccentReversed,
-  colorAccentWhite,
-  colorAccentYellow,
-  colorBackgroundBlue,
-  colorBackgroundDefault,
-  colorBackgroundLight,
-  colorTextBlue,
-  colorTextLight,
-} from '@dagster-io/ui-components';
-
-import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
+import {Colors} from '@dagster-io/ui-components';
 
 import {
   BOX_DOT_WIDTH_CUTOFF,
@@ -28,7 +13,8 @@ import {
   IGanttNode,
   LEFT_INSET,
 } from './Constants';
-import {isDynamicStep, isPlannedDynamicStep, dynamicKeyWithoutIndex} from './DynamicStepSupport';
+import {dynamicKeyWithoutIndex, isDynamicStep, isPlannedDynamicStep} from './DynamicStepSupport';
+import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
 
 export interface BuildLayoutParams {
   nodes: IGanttNode[];
@@ -267,21 +253,21 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 };
 
 const TextColorForStates = {
-  [IStepState.RUNNING]: colorTextBlue(),
-  [IStepState.RETRY_REQUESTED]: colorAccentWhite(),
-  [IStepState.SUCCEEDED]: colorAccentWhite(),
-  [IStepState.FAILED]: colorAccentWhite(),
-  [IStepState.SKIPPED]: colorAccentWhite(),
-  [IStepState.UNKNOWN]: colorAccentWhite(),
+  [IStepState.RUNNING]: Colors.textBlue(),
+  [IStepState.RETRY_REQUESTED]: Colors.accentWhite(),
+  [IStepState.SUCCEEDED]: Colors.accentWhite(),
+  [IStepState.FAILED]: Colors.accentWhite(),
+  [IStepState.SKIPPED]: Colors.accentWhite(),
+  [IStepState.UNKNOWN]: Colors.accentWhite(),
 };
 
 const BackgroundColorForStates = {
-  [IStepState.RUNNING]: colorBackgroundBlue(),
-  [IStepState.RETRY_REQUESTED]: colorAccentYellow(),
-  [IStepState.SUCCEEDED]: colorAccentGreen(),
-  [IStepState.FAILED]: colorAccentRed(),
-  [IStepState.SKIPPED]: colorAccentGray(),
-  [IStepState.UNKNOWN]: colorAccentGrayHover(),
+  [IStepState.RUNNING]: Colors.backgroundBlue(),
+  [IStepState.RETRY_REQUESTED]: Colors.accentYellow(),
+  [IStepState.SUCCEEDED]: Colors.accentGreen(),
+  [IStepState.FAILED]: Colors.accentRed(),
+  [IStepState.SKIPPED]: Colors.accentGray(),
+  [IStepState.UNKNOWN]: Colors.accentGrayHover(),
 };
 
 export const boxStyleFor = (
@@ -302,16 +288,16 @@ export const boxStyleFor = (
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      color: TextColorForStates[state] || colorAccentReversed(),
-      background: BackgroundColorForStates[state] || colorBackgroundLight(),
+      color: TextColorForStates[state] || Colors.accentReversed(),
+      background: BackgroundColorForStates[state] || Colors.backgroundLight(),
     };
   }
 
   // Step has not started, use "hypothetical dotted box".
   return {
-    color: colorTextLight(),
-    background: colorBackgroundDefault(),
-    border: `1.5px dotted ${colorAccentGray()}`,
+    color: Colors.textLight(),
+    background: Colors.backgroundDefault(),
+    border: `1.5px dotted ${Colors.accentGray()}`,
   };
 };
 

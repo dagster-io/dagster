@@ -1,20 +1,19 @@
 import {ButtonLink} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
-import {AssetLink} from '../AssetLink';
-import {AssetKey} from '../types';
+import {useState} from 'react';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
 import {useFilterAssetKeys} from './assetFilters';
+import {VirtualizedItemListForDialog} from '../../ui/VirtualizedItemListForDialog';
+import {AssetLink} from '../AssetLink';
+import {AssetKey} from '../types';
 
 interface Props {
   assetKeys: AssetKey[];
 }
 
 export const WaitingOnAssetKeysLink = ({assetKeys}: Props) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [queryString, setQueryString] = React.useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [queryString, setQueryString] = useState('');
   const count = assetKeys.length;
   const filteredAssetKeys = useFilterAssetKeys(assetKeys, queryString);
 

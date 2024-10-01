@@ -3,11 +3,10 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 import dagster._check as check
+from dagster._config import Shape
 from dagster._core.definitions.configurable import ConfigurableDefinition
+from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
-
-from ..._config import Shape
-from .resource_requirement import ensure_requirements_satisfied
 
 if TYPE_CHECKING:
     from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -17,8 +16,11 @@ if TYPE_CHECKING:
 def resource_invocation_result(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> Any:
-    from ..execution.context.init import UnboundInitResourceContext
-    from .resource_definition import ResourceDefinition, has_at_least_one_parameter
+    from dagster._core.definitions.resource_definition import (
+        ResourceDefinition,
+        has_at_least_one_parameter,
+    )
+    from dagster._core.execution.context.init import UnboundInitResourceContext
 
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
     check.opt_inst_param(init_context, "init_context", UnboundInitResourceContext)
@@ -66,7 +68,7 @@ def _check_invocation_requirements(
     if context_provided and init_context is not None and resource_def.required_resource_keys:
         ensure_requirements_satisfied(
             init_context._resource_defs,  # noqa: SLF001
-            list(resource_def.get_resource_requirements()),
+            list(resource_def.get_resource_requirements(source_key=None)),
         )
 
     # Check config requirements
@@ -88,6 +90,7 @@ def _check_invocation_requirements(
         resource_config=resource_config,
         resources=_init_context.resources,
         resource_def=resource_def,
+        all_resource_defs={},
         instance=_init_context.instance,
         log_manager=_init_context.log,
     )

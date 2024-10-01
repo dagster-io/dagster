@@ -1,26 +1,25 @@
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
+  GlobalGeistMono,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
+  GlobalThemeStyle,
+  Colors,
+  GlobalGeist,
 } from '../src';
 
+import {withThemeByClassName} from '@storybook/addon-themes';
+
 import {MemoryRouter} from 'react-router-dom';
-import * as React from 'react';
 
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
-import './blueprint.css';
-import {
-  colorBackgroundDefault,
-  colorLinkDefault,
-  colorTextDefault,
-  colorTextLight,
-} from '../src/theme/color';
+import '@blueprintjs/core/lib/css/blueprint.css';
+import '@blueprintjs/select/lib/css/blueprint-select.css';
+import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -28,8 +27,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -37,7 +36,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${colorLinkDefault()};
+    color: ${Colors.linkDefault()};
   }
 
   body {
@@ -46,8 +45,8 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body, input, select, textarea {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     font-family: ${FontFamily.default};
   }
 
@@ -57,11 +56,12 @@ const GlobalStyle = createGlobalStyle`
 
   code, pre {
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
+    font-variant-ligatures: none;
   }
 
   input::placeholder {
-    color: ${colorTextLight()};
+    color: ${Colors.textLight()};
   }
 `;
 
@@ -70,8 +70,9 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
-      <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalThemeStyle />
+      <GlobalGeist />
+      <GlobalGeistMono />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
@@ -80,10 +81,15 @@ export const decorators = [
       <Story />
     </MemoryRouter>
   ),
+  withThemeByClassName({
+    themes: {
+      light: 'themeLight',
+      dark: 'themeDark',
+      system: 'themeSystem',
+    },
+    defaultTheme: 'system',
+    parentSelector: 'body',
+  }),
 ];
 
-export const parameters = {
-  parameters: {
-    actions: {argTypesRegex: '^on[A-Z].*'},
-  },
-};
+export const parameters = {};

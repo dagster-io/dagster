@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, Union, overload
 
 import dagster._check as check
-
-from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
+from dagster._core.types.dagster_type import (
+    PythonObjectDagsterType,
+    make_python_type_usable_as_dagster_type,
+)
 
 if TYPE_CHECKING:
     from dagster._core.types.config_schema import DagsterTypeLoader
@@ -15,15 +17,13 @@ def usable_as_dagster_type(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     loader: Optional["DagsterTypeLoader"] = ...,
-) -> Callable[[T_Type], T_Type]:
-    ...
+) -> Callable[[T_Type], T_Type]: ...
 
 
 @overload
 def usable_as_dagster_type(
     name: T_Type,
-) -> T_Type:
-    ...
+) -> T_Type: ...
 
 
 def usable_as_dagster_type(

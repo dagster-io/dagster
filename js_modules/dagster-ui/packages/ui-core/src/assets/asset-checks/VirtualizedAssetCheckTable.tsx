@@ -1,21 +1,20 @@
-import {gql} from '@apollo/client';
-import {Body2, Box, Caption, colorTextLight} from '@dagster-io/ui-components';
+import {Body2, Box, Caption} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {linkToRunEvent} from '../../runs/RunUtils';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {testId} from '../../testing/testId';
-import {HeaderCell, Row, RowCell, Container, Inner} from '../../ui/VirtualizedTable';
-import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailModal';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
+import {gql} from '../../apollo-client';
+import {linkToRunEvent} from '../../runs/RunUtils';
+import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {testId} from '../../testing/testId';
+import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {assetDetailsPathForAssetCheck} from '../assetDetailsPathForKey';
 
 type Props = {
   assetNode: ExecuteChecksButtonAssetNodeFragment;
@@ -23,7 +22,7 @@ type Props = {
 };
 
 export const VirtualizedAssetCheckTable = ({assetNode, rows}: Props) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
   const count = rows.length;
 
   const rowVirtualizer = useVirtualizer({
@@ -131,22 +130,13 @@ const CaptionEllipsed = styled(Caption)`
 
 export const VirtualizedAssetCheckHeader = () => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: colorTextLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Check name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Evaluation timestamp</HeaderCell>
       <HeaderCell>Evaluation metadata</HeaderCell>
       <HeaderCell>Actions</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

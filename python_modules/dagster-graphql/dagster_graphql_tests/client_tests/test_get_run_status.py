@@ -6,9 +6,11 @@ from dagster_graphql import DagsterGraphQLClientError
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
-from ..graphql.graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from ..graphql.repo import csv_hello_world_ops_config
-from .conftest import MockClient, python_client_test_suite
+from dagster_graphql_tests.client_tests.conftest import MockClient, python_client_test_suite
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
+from dagster_graphql_tests.graphql.repo import csv_hello_world_ops_config
 
 
 @python_client_test_suite

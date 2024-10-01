@@ -8,7 +8,7 @@ from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
-from .utils import _wait_k8s_job_to_delete
+from tests.utils import _wait_k8s_job_to_delete
 
 
 def _get_pods_logs(cluster_provider, job_name, namespace, container_name=None):
@@ -220,7 +220,7 @@ def test_k8s_job_op_with_failure(namespace, cluster_provider):
     def failure_job():
         failure_op()
 
-    with pytest.raises(DagsterK8sError, match=r"Pod did not exit successfully"):
+    with pytest.raises(DagsterK8sError):
         failure_job.execute_in_process()
 
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
@@ -312,6 +312,7 @@ def test_k8s_job_op_with_deep_merge(namespace, cluster_provider):
                             "namespace": namespace,
                             "load_incluster_config": False,
                             "kubeconfig_file": cluster_provider.kubeconfig_file,
+                            "merge_behavior": "SHALLOW",
                         }
                     }
                 }
@@ -322,7 +323,7 @@ def test_k8s_job_op_with_deep_merge(namespace, cluster_provider):
 
         assert "FOO IS  AND BAR IS 2" in _get_pod_logs(cluster_provider, job_name, namespace)
 
-        # now with deep merge, both are set
+        # now with default deep merge, both are set
 
         execute_result = with_config_job.execute_in_process(
             instance=instance,
@@ -344,7 +345,6 @@ def test_k8s_job_op_with_deep_merge(namespace, cluster_provider):
                             "namespace": namespace,
                             "load_incluster_config": False,
                             "kubeconfig_file": cluster_provider.kubeconfig_file,
-                            "merge_behavior": "DEEP",
                         }
                     }
                 }

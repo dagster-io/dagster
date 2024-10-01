@@ -1,0 +1,201 @@
+---
+title: "Dagster+ | Dagster Docs"
+---
+
+# Dagster+
+
+Dagster+ provides robust, managed infrastructure, elegant CI/CD capability, and multiple deployment options to suit your needs.
+
+---
+
+## Getting started
+
+Learn how to set up your Dagster+ account! Check out the [Getting started guide](/dagster-plus/getting-started) for everything you need to get up and running.
+
+---
+
+## Understanding deployment types
+
+Dagster+ currently offers two deployment options to meet your needs: Serverless and Hybrid. Learn about your options and how to manage your selection in Dagster+.
+
+<ArticleList>
+  <ArticleListItem
+    title="Serverless deployment"
+    href="/dagster-plus/deployment/serverless"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Hybrid deployment"
+    href="/dagster-plus/deployment/hybrid"
+  ></ArticleListItem>
+</ArticleList>
+
+### Managing Hybrid Deployment agents
+
+Hybrid Deployments use an agent that is responsible for executing your code. Learn how to spin up and maintain an agent in your infrastructure.
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-plus/deployment/agents/amazon-ecs"
+    title="Amazon Elastic Container Service (ECS) agents"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/deployment/agents/docker"
+    title="Docker agents"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+    title="Kubernetes agents"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/deployment/agents/local"
+    title="Local agents"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/deployment/agents/customizing-configuration"
+    title="Customizing agent configuration"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/deployment/agents/running-multiple-agents"
+    title="Running multiple agents"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Managing organization settings
+
+<ArticleList>
+  <ArticleListItem
+    title="Managing user and agent tokens"
+    href="/dagster-plus/account/managing-user-agent-tokens"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Managing authentication and users
+
+Learn how to manage users and permissions in Dagster+. You can secure your account using our out-of-the-box support for Google and GitHub SSO, or take full control with SAML SSO.
+
+<ArticleList>
+  <ArticleListItem
+    title="Managing users and permissions in Dagster+"
+    href="/dagster-plus/account/managing-users"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-azure-ad-saml-sso"
+    title="Azure Active Directory SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-google-workspace-saml-sso"
+    title="Google Workspace SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/okta/saml-sso"
+    title="Okta SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-onelogin-saml-sso"
+    title="OneLogin SAML SSO"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-pingone-saml-sso"
+    title="PingOne SAML SSO"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Managing deployments
+
+Learn how to deploy your code to Dagster+, use command line tools, set up CI/CD, and define environment variables.
+
+<ArticleList>
+  <ArticleListItem
+    title="Managing full deployments"
+    href="/dagster-plus/managing-deployments/managing-deployments"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deployment settings reference"
+    href="/dagster-plus/managing-deployments/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Adding and managing code locations"
+    href="/dagster-plus/managing-deployments/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Using the dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/dagster-plus-cli"
+  ></ArticleListItem>
+</ArticleList>
+
+### Alerts
+
+<ArticleList>
+  <ArticleListItem
+    title="Alerting overview"
+    href="/dagster-plus/managing-deployments/alerts"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts in Dagster+"
+    href="/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts using the dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/alerts/managing-alerts-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Email alerts"
+    href="/dagster-plus/managing-deployments/alerts/email"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Microsoft Teams alerts"
+    href="/dagster-plus/managing-deployments/alerts/microsoft-teams"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Slack alerts"
+    href="/dagster-plus/managing-deployments/alerts/slack"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="PagerDuty alerts"
+    href="/dagster-plus/managing-deployments/alerts/pagerduty"
+  ></ArticleListItem>
+</ArticleList>
+
+### Environment variables and secrets
+
+<ArticleList>
+  <ArticleListItem
+    title="Using environment variables and secrets"
+    href="/dagster-plus/managing-deployments/environment-variables-and-secrets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Setting up environment variables using Hybrid agent configuration"
+    href="/dagster-plus/managing-deployments/setting-environment-variables-agents"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Reserved environment variables"
+    href="/dagster-plus/managing-deployments/reserved-environment-variables"
+  ></ArticleListItem>
+</ArticleList>
+
+### Branch deployments
+
+<ArticleList>
+  <ArticleListItem
+    title="Using Branch Deployments for Continous Integration (CI)"
+    href="/dagster-plus/managing-deployments/branch-deployments"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Setting up Branch Deployments with GitHub Actions"
+    href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Setting up Branch Deployments with the dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Tracking asset changes with Branch Deployments"
+    href="/dagster-plus/managing-deployments/branch-deployments/change-tracking"
+  ></ArticleListItem>
+</ArticleList>

@@ -21,20 +21,30 @@ export type AssetViewDefinitionQuery = {
         definition: {
           __typename: 'AssetNode';
           id: string;
-          groupName: string | null;
-          hasAssetChecks: boolean;
+          groupName: string;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
           opVersion: string | null;
           jobNames: Array<string>;
-          isSource: boolean;
+          isMaterializable: boolean;
           isExecutable: boolean;
           hasMaterializePermission: boolean;
+          changedReasons: Array<Types.ChangeReason>;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
-          partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+          kinds: Array<string>;
+          partitionDefinition: {
+            __typename: 'PartitionDefinition';
+            description: string;
+            dimensionTypes: Array<{
+              __typename: 'DimensionDefinitionType';
+              type: Types.PartitionDefinitionType;
+              dynamicPartitionsDefinitionName: string | null;
+            }>;
+          } | null;
           partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
           repository: {
             __typename: 'Repository';
@@ -59,25 +69,38 @@ export type AssetViewDefinitionQuery = {
             | {
                 __typename: 'Sensor';
                 id: string;
-                jobOriginId: string;
                 name: string;
+                sensorType: Types.SensorType;
                 sensorState: {
                   __typename: 'InstigationState';
                   id: string;
                   selectorId: string;
                   status: Types.InstigationStatus;
+                  typeSpecificData:
+                    | {__typename: 'ScheduleData'}
+                    | {__typename: 'SensorData'; lastCursor: string | null}
+                    | null;
                 };
               }
           >;
+          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+          owners: Array<
+            | {__typename: 'TeamAssetOwner'; team: string}
+            | {__typename: 'UserAssetOwner'; email: string}
+          >;
           autoMaterializePolicy: {
             __typename: 'AutoMaterializePolicy';
-            policyType: Types.AutoMaterializePolicyType;
             rules: Array<{
               __typename: 'AutoMaterializeRule';
               className: string;
               description: string;
               decisionType: Types.AutoMaterializeDecisionType;
             }>;
+          } | null;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
           } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
@@ -658,6 +681,20 @@ export type AssetViewDefinitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -717,6 +754,20 @@ export type AssetViewDefinitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -769,6 +820,12 @@ export type AssetViewDefinitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -809,6 +866,20 @@ export type AssetViewDefinitionQuery = {
                             boolValue: boolean | null;
                             label: string;
                             description: string | null;
+                          }
+                        | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
                           }
                         | {
                             __typename: 'FloatMetadataEntry';
@@ -874,6 +945,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -928,6 +1013,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -2067,6 +2158,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -2130,6 +2235,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -2184,6 +2303,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -3323,6 +3448,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -3386,6 +3525,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -3440,6 +3593,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -4570,6 +4729,20 @@ export type AssetViewDefinitionQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'CodeReferencesMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      codeReferences: Array<
+                        | {
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number | null;
+                            label: string | null;
+                          }
+                        | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                      >;
+                    }
+                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -4629,6 +4802,20 @@ export type AssetViewDefinitionQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -4680,6 +4867,12 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -5830,6 +6023,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -5893,6 +6100,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -5947,6 +6168,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -7086,6 +7313,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -7149,6 +7390,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -7203,6 +7458,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -8342,6 +8603,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -8405,6 +8680,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -8459,6 +8748,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -9589,6 +9884,20 @@ export type AssetViewDefinitionQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'CodeReferencesMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      codeReferences: Array<
+                        | {
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number | null;
+                            label: string | null;
+                          }
+                        | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                      >;
+                    }
+                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -9648,6 +9957,20 @@ export type AssetViewDefinitionQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -9699,6 +10022,12 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -10849,6 +11178,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -10912,6 +11255,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -10966,6 +11323,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -12105,6 +12468,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -12168,6 +12545,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -12222,6 +12613,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -13361,6 +13758,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'CodeReferencesMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            codeReferences: Array<
+                              | {
+                                  __typename: 'LocalFileCodeReference';
+                                  filePath: string;
+                                  lineNumber: number | null;
+                                  label: string | null;
+                                }
+                              | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                            >;
+                          }
+                        | {
                             __typename: 'FloatMetadataEntry';
                             floatValue: number | null;
                             label: string;
@@ -13424,6 +13835,20 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
+                            __typename: 'TableColumnLineageMetadataEntry';
+                            label: string;
+                            description: string | null;
+                            lineage: Array<{
+                              __typename: 'TableColumnLineageEntry';
+                              columnName: string;
+                              columnDeps: Array<{
+                                __typename: 'TableColumnDep';
+                                columnName: string;
+                                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                              }>;
+                            }>;
+                          }
+                        | {
                             __typename: 'TableMetadataEntry';
                             label: string;
                             description: string | null;
@@ -13478,6 +13903,12 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'TextMetadataEntry';
                             text: string;
+                            label: string;
+                            description: string | null;
+                          }
+                        | {
+                            __typename: 'TimestampMetadataEntry';
+                            timestamp: number;
                             label: string;
                             description: string | null;
                           }
@@ -14608,6 +15039,20 @@ export type AssetViewDefinitionQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'CodeReferencesMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      codeReferences: Array<
+                        | {
+                            __typename: 'LocalFileCodeReference';
+                            filePath: string;
+                            lineNumber: number | null;
+                            label: string | null;
+                          }
+                        | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                      >;
+                    }
+                  | {
                       __typename: 'FloatMetadataEntry';
                       floatValue: number | null;
                       label: string;
@@ -14667,6 +15112,20 @@ export type AssetViewDefinitionQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'TableColumnLineageMetadataEntry';
+                      label: string;
+                      description: string | null;
+                      lineage: Array<{
+                        __typename: 'TableColumnLineageEntry';
+                        columnName: string;
+                        columnDeps: Array<{
+                          __typename: 'TableColumnDep';
+                          columnName: string;
+                          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                        }>;
+                      }>;
+                    }
+                  | {
                       __typename: 'TableMetadataEntry';
                       label: string;
                       description: string | null;
@@ -14718,6 +15177,12 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'TextMetadataEntry';
                       text: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'TimestampMetadataEntry';
+                      timestamp: number;
                       label: string;
                       description: string | null;
                     }
@@ -15842,20 +16307,30 @@ export type AssetViewDefinitionQuery = {
 export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
-  hasAssetChecks: boolean;
+  groupName: string;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
-  isSource: boolean;
+  isMaterializable: boolean;
   isExecutable: boolean;
   hasMaterializePermission: boolean;
+  changedReasons: Array<Types.ChangeReason>;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  kinds: Array<string>;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
   partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
   repository: {
     __typename: 'Repository';
@@ -15880,25 +16355,37 @@ export type AssetViewDefinitionNodeFragment = {
     | {
         __typename: 'Sensor';
         id: string;
-        jobOriginId: string;
         name: string;
+        sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
         };
       }
   >;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   autoMaterializePolicy: {
     __typename: 'AutoMaterializePolicy';
-    policyType: Types.AutoMaterializePolicyType;
     rules: Array<{
       __typename: 'AutoMaterializeRule';
       className: string;
       description: string;
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
@@ -16475,6 +16962,20 @@ export type AssetViewDefinitionNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -16524,6 +17025,20 @@ export type AssetViewDefinitionNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -16570,6 +17085,12 @@ export type AssetViewDefinitionNodeFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   type:
@@ -16606,6 +17127,20 @@ export type AssetViewDefinitionNodeFragment = {
                     boolValue: boolean | null;
                     label: string;
                     description: string | null;
+                  }
+                | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
                   }
                 | {
                     __typename: 'FloatMetadataEntry';
@@ -16667,6 +17202,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -16715,6 +17264,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -17854,6 +18409,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -17913,6 +18482,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -17961,6 +18544,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -19100,6 +19689,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -19159,6 +19762,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -19207,6 +19824,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -20337,6 +20960,20 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -20396,6 +21033,20 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -20444,6 +21095,12 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -21589,6 +22246,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -21648,6 +22319,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -21696,6 +22381,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -22835,6 +23526,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -22894,6 +23599,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -22942,6 +23661,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -24081,6 +24806,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -24140,6 +24879,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -24188,6 +24941,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -25318,6 +26077,20 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -25377,6 +26150,20 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -25425,6 +26212,12 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -26570,6 +27363,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -26629,6 +27436,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -26677,6 +27498,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -27816,6 +28643,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -27875,6 +28716,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -27923,6 +28778,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -29062,6 +29923,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -29121,6 +29996,20 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -29169,6 +30058,12 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -30299,6 +31194,20 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -30358,6 +31267,20 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -30406,6 +31329,12 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -31518,3 +32447,5 @@ export type AssetViewDefinitionNodeFragment = {
       }
     | null;
 };
+
+export const AssetViewDefinitionQueryVersion = '932aa7a5c3d285d2a938c89f24eb6cab960123277a2abaab3027d80f944d0ddd';

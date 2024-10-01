@@ -1,11 +1,12 @@
-import {DocumentNode} from '@apollo/client';
 import {MockedResponse} from '@apollo/client/testing';
 import deepmerge from 'deepmerge';
 import {GraphQLError} from 'graphql';
 
+import {DocumentNode, OperationVariables} from '../apollo-client';
+
 export function buildQueryMock<
   TQuery extends {__typename: 'Query'},
-  TVariables extends Record<string, any>,
+  TVariables extends OperationVariables,
 >({
   query,
   variables,
@@ -14,10 +15,10 @@ export function buildQueryMock<
   ...rest
 }: Partial<Omit<MockedResponse, 'result'>> & {
   query: DocumentNode;
-  variables: TVariables;
+  variables?: TVariables;
   data?: Omit<TQuery, '__typename'>;
   errors?: ReadonlyArray<GraphQLError>;
-}): MockedResponse<TQuery> {
+}): Omit<MockedResponse<TQuery>, 'newData'> {
   return {
     request: {
       query,
@@ -50,7 +51,7 @@ export function buildMutationMock<
   variables: TVariables;
   data?: Omit<TMutation, '__typename'>;
   errors?: ReadonlyArray<GraphQLError>;
-}): MockedResponse<TMutation> {
+}): Omit<MockedResponse<TMutation>, 'newData'> {
   return {
     request: {
       query,
@@ -89,11 +90,14 @@ export function mergeMockQueries<T extends Record<string, any>>(
   defaultData: MockedResponse<T>,
   ...queries: Array<MockedResponse<T>>
 ): MockedResponse<T> {
-  let mergedResult = resultData(queries[0]!.result);
+  let mergedResult = resultData(queries[0]!.result, queries[0]!.request.variables);
   for (let i = 1; i < queries.length; i++) {
     mergedResult = deepmerge(
       mergedResult,
-      removeDefaultValues(resultData(defaultData.result!), resultData(queries[i]!.result!)),
+      removeDefaultValues(
+        resultData(defaultData.result!),
+        resultData(queries[i]!.result!, queries[i]?.request.variables),
+      ),
     );
   }
   return {
@@ -102,9 +106,9 @@ export function mergeMockQueries<T extends Record<string, any>>(
   };
 }
 
-function resultData<T>(result: MockedResponse<T>['result']) {
+function resultData<T>(result: MockedResponse<T>['result'], variables: Record<string, any> = {}) {
   if (result instanceof Function) {
-    return result()!;
+    return result(variables)!;
   } else {
     return result!;
   }
@@ -142,4 +146,27 @@ function removeDefaultValues<T extends Record<string | number, any> | Array<any>
   }
 
   return dataWithoutDefaultValues as T; // Cast to the original type 'T'
+}
+
+let nativeGBRC: any;
+
+/* simulate getBoundingCLientRect returning a > 0x0 size, important for
+testing React trees that useVirtualized()
+*/
+export function mockViewportClientRect() {
+  if (nativeGBRC) {
+    return;
+  }
+  nativeGBRC = window.Element.prototype.getBoundingClientRect;
+  window.Element.prototype.getBoundingClientRect = jest
+    .fn()
+    .mockReturnValue({height: 400, width: 400});
+}
+
+export function restoreViewportClientRect() {
+  if (!nativeGBRC) {
+    return;
+  }
+  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  nativeGBRC = null;
 }

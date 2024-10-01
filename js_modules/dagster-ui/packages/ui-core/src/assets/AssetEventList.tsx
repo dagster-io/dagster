@@ -1,28 +1,17 @@
-import {
-  Box,
-  Caption,
-  Icon,
-  Tag,
-  colorAccentBlue,
-  colorBackgroundBlue,
-  colorBackgroundLight,
-  colorTextBlue,
-  colorTextLight,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
+import {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 
+import {RunlessEventTag} from './RunlessEventTag';
+import {AssetEventGroup} from './groupByPartition';
+import {isRunlessEvent} from './isRunlessEvent';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {AssetKeyInput} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
-
-import {RunlessEventTag} from './RunlessEventTag';
-import {AssetEventGroup} from './groupByPartition';
-import {isRunlessEvent} from './isRunlessEvent';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 
@@ -32,15 +21,20 @@ export const AssetEventList = ({
   setFocused,
   xAxis,
   assetKey,
+  loading,
+  onLoadMore,
 }: {
   xAxis: 'time' | 'partition';
   groups: AssetEventGroup[];
   assetKey: AssetKeyInput;
   focused?: AssetEventGroup;
   setFocused?: (item: AssetEventGroup | undefined) => void;
+
+  loading: boolean;
+  onLoadMore: () => void;
 }) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const focusedRowRef = React.useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const focusedRowRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: groups.length,
@@ -51,61 +45,91 @@ export const AssetEventList = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (focusedRowRef.current) {
       const el = focusedRowRef.current;
       if (el && el instanceof HTMLElement && 'scrollIntoView' in el) {
         el.scrollIntoView({block: 'nearest'});
       }
     }
-  }, [focused]);
+  }, [focused?.timestamp, focused?.partition]);
 
   return (
-    <AssetListContainer ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
-        {items.map(({index, key, size, start}) => {
-          const group = groups[index]!;
-          return (
-            <AssetListRow
-              key={key}
-              $height={size}
-              $start={start}
-              $focused={group === focused}
-              ref={group === focused ? focusedRowRef : undefined}
-              onClick={(e) => {
-                // If you're interacting with something in the row, don't trigger a focus change.
-                // Since focus is stored in the URL bar this overwrites any link click navigation.
-                // We could alternatively e.preventDefault() on every link but it's easy to forget.
-                if (e.target instanceof HTMLElement && e.target.closest('a')) {
-                  return;
-                }
-                setFocused?.(focused !== group ? group : undefined);
-              }}
-            >
-              <Box
-                style={{height: size}}
-                padding={{left: 24, right: 12}}
-                flex={{direction: 'column', justifyContent: 'center', gap: 8}}
-                border="bottom"
+    <Box style={{position: 'relative', flex: 1, minHeight: 0}}>
+      <AssetListContainer
+        ref={parentRef}
+        onScroll={(e) => {
+          if (
+            !loading &&
+            e.currentTarget.scrollHeight > e.currentTarget.clientHeight &&
+            e.currentTarget.clientHeight + e.currentTarget.scrollTop >= e.currentTarget.scrollHeight
+          ) {
+            onLoadMore();
+          }
+        }}
+      >
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const group = groups[index]!;
+            return (
+              <AssetListRow
+                key={key}
+                $height={size}
+                $start={start}
+                $focused={group === focused}
+                ref={group === focused ? focusedRowRef : undefined}
+                onClick={(e) => {
+                  // If you're interacting with something in the row, don't trigger a focus change.
+                  // Since focus is stored in the URL bar this overwrites any link click navigation.
+                  // We could alternatively e.preventDefault() on every link but it's easy to forget.
+                  if (e.target instanceof HTMLElement && e.target.closest('a')) {
+                    return;
+                  }
+                  setFocused?.(focused !== group ? group : undefined);
+                }}
               >
-                {xAxis === 'partition' ? (
-                  <AssetEventListPartitionRow group={group} />
-                ) : (
-                  <AssetEventListEventRow group={group} assetKey={assetKey} />
-                )}
-              </Box>
-            </AssetListRow>
-          );
-        })}
-      </Inner>
-    </AssetListContainer>
+                <Box
+                  style={{height: size}}
+                  padding={{left: 24, right: 12}}
+                  flex={{direction: 'column', justifyContent: 'center', gap: 8}}
+                  border="bottom"
+                >
+                  {xAxis === 'partition' ? (
+                    <AssetEventListPartitionRow group={group} />
+                  ) : (
+                    <AssetEventListEventRow group={group} assetKey={assetKey} />
+                  )}
+                </Box>
+              </AssetListRow>
+            );
+          })}
+        </Inner>
+      </AssetListContainer>
+
+      {loading ? (
+        <Box
+          style={{position: 'absolute', bottom: 12, left: 0, right: 0}}
+          flex={{alignItems: 'center', justifyContent: 'center'}}
+        >
+          <Box
+            style={{borderRadius: 6}}
+            padding={{vertical: 8, horizontal: 12}}
+            flex={{gap: 4, alignItems: 'center', justifyContent: 'center'}}
+            background={Colors.backgroundLighter()}
+          >
+            <Spinner purpose="body-text" />
+            Loading...
+          </Box>
+        </Box>
+      ) : undefined}
+    </Box>
   );
 };
 
 export const AssetListContainer = styled(Container)`
   outline: none;
   &:focus {
-    box-shadow: 0 -1px ${colorAccentBlue()};
+    box-shadow: 0 -1px ${Colors.accentBlue()};
   }
 `;
 
@@ -117,14 +141,14 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
   :active,
   :hover {
     outline: none;
-    background: ${colorBackgroundLight()};
+    background: ${Colors.backgroundLight()};
   }
   ${(p) =>
     p.$focused &&
-    `background: ${colorBackgroundBlue()};
-     color: ${colorTextBlue()};
+    `background: ${Colors.backgroundBlue()};
+     color: ${Colors.textBlue()};
      :hover {
-       background: ${colorBackgroundBlue()};
+       background: ${Colors.backgroundBlue()};
      }
     `}
 `;
@@ -140,7 +164,7 @@ const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
         {!latest ? <Tag intent="none">Missing</Tag> : <Tag intent="success">Materialized</Tag>}
       </Box>
 
-      <Caption color={colorTextLight()} style={{userSelect: 'none'}}>
+      <Caption color={Colors.textLight()} style={{userSelect: 'none'}}>
         {timestamp ? (
           <span>
             Materialized <Timestamp timestamp={{ms: Number(timestamp)}} />

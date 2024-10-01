@@ -1,41 +1,33 @@
 import memoize from 'lodash/memoize';
-import * as React from 'react';
+import {useMemo} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 
-// Use const because we need to extend this in cloud. https://blog.logrocket.com/extend-enums-typescript/
-export const FeatureFlag = {
-  flagDebugConsoleLogging: 'flagDebugConsoleLogging' as const,
-  flagDisableWebsockets: 'flagDisableWebsockets' as const,
-  flagSidebarResources: 'flagSidebarResources' as const,
-  flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
-};
-export type FeatureFlagType = keyof typeof FeatureFlag;
-
-export const getFeatureFlags: () => FeatureFlagType[] = memoize(
+export const getFeatureFlags: () => FeatureFlag[] = memoize(
   () => getJSONForKey(DAGSTER_FLAGS_KEY) || [],
 );
 
-export const featureEnabled = memoize((flag: FeatureFlagType) => getFeatureFlags().includes(flag));
+export const featureEnabled = memoize((flag: FeatureFlag) => getFeatureFlags().includes(flag));
 
 type FlagMap = {
-  readonly [F in FeatureFlagType]: boolean;
+  readonly [F in FeatureFlag]: boolean;
 };
 
 export const useFeatureFlags = () => {
-  return React.useMemo(() => {
+  return useMemo(() => {
     const flagSet = new Set(getFeatureFlags());
     const all: Record<string, boolean> = {};
     for (const flag in FeatureFlag) {
-      all[flag] = flagSet.has(flag as FeatureFlagType);
+      all[flag] = flagSet.has(flag as FeatureFlag);
     }
     return all as FlagMap;
   }, []);
 };
 
-export const setFeatureFlags = (flags: FeatureFlagType[]) => {
+export const setFeatureFlags = (flags: FeatureFlag[]) => {
   if (!(flags instanceof Array)) {
     throw new Error('flags must be an array');
   }

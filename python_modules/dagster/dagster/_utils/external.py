@@ -2,20 +2,20 @@ from typing import Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.host_representation import CodeLocation
-from dagster._core.host_representation.external import ExternalJob
-from dagster._core.host_representation.origin import ExternalJobOrigin
+from dagster._core.remote_representation import CodeLocation
+from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.origin import RemoteJobOrigin
 
 
 def external_job_from_location(
     code_location: CodeLocation,
-    external_job_origin: ExternalJobOrigin,
+    external_job_origin: RemoteJobOrigin,
     op_selection: Optional[Sequence[str]],
 ) -> ExternalJob:
     check.inst_param(code_location, "code_location", CodeLocation)
-    check.inst_param(external_job_origin, "external_pipeline_origin", ExternalJobOrigin)
+    check.inst_param(external_job_origin, "external_pipeline_origin", RemoteJobOrigin)
 
-    repo_name = external_job_origin.external_repository_origin.repository_name
+    repo_name = external_job_origin.repository_origin.repository_name
     job_name = external_job_origin.job_name
 
     check.invariant(

@@ -39,6 +39,19 @@ def standalone_subchart_helm_template() -> HelmTemplate:
     )
 
 
+def test_service_account_automount(template: HelmTemplate):
+    service_account_name = "service-account-name"
+    service_account_values = DagsterHelmValues.construct(
+        serviceAccount=ServiceAccount.construct(name=service_account_name, create=True)
+    )
+
+    service_account_templates = template.render(service_account_values)
+
+    service_account_template = service_account_templates[0]
+
+    assert not service_account_template.automount_service_account_token
+
+
 def test_service_account_name(template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_values = DagsterHelmValues.construct(

@@ -1,20 +1,19 @@
-import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {breakOnUnderscores} from '../app/Util';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {useRepositoryOptions, findRepositoryAmongOptions} from '../workspace/WorkspaceContext';
-import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
-import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
-import {SidebarSubhead, SidebarTitle, SidebarSection} from './SidebarComponents';
+import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
 import {
-  SidebarResourcesSection,
   SIDEBAR_RESOURCES_SECTION_FRAGMENT,
+  SidebarResourcesSection,
 } from './SidebarResourcesSection';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
+import {gql} from '../apollo-client';
+import {breakOnUnderscores} from '../app/Util';
+import {MetadataEntry} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext/util';
+import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
+import {RepoAddress} from '../workspace/types';
 
 export const SidebarContainerOverview = ({
   container,

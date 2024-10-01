@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -10,35 +9,8 @@ import {
   TokenizingFieldValue,
   tokenToString,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useStartTrace} from '../performance';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {DagsterTag} from '../runs/RunTag';
-import {RunsQueryRefetchContext} from '../runs/RunUtils';
-import {
-  RunFilterTokenType,
-  runsFilterForSearchTokens,
-  useQueryPersistedRunFilters,
-  RunFilterToken,
-  useRunsFilterInput,
-} from '../runs/RunsFilterInput';
-import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {AnchorButton} from '../ui/AnchorButton';
-import {Loading} from '../ui/Loading';
-import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {isThisThingAJob, isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext';
-import {repoAddressAsTag} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {
@@ -46,6 +18,37 @@ import {
   PipelineRunsRootQueryVariables,
 } from './types/PipelineRunsRoot.types';
 import {useJobTitle} from './useJobTitle';
+import {gql} from '../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
+import {DagsterTag} from '../runs/RunTag';
+import {RunsQueryRefetchContext} from '../runs/RunUtils';
+import {
+  RunFilterToken,
+  RunFilterTokenType,
+  runsFilterForSearchTokens,
+  useQueryPersistedRunFilters,
+  useRunsFilterInput,
+} from '../runs/RunsFilterInput';
+import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {AnchorButton} from '../ui/AnchorButton';
+import {Loading} from '../ui/Loading';
+import {StickyTableContainer} from '../ui/StickyTableContainer';
+import {
+  isThisThingAJob,
+  isThisThingAnAssetJob,
+  useRepository,
+} from '../workspace/WorkspaceContext/util';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = [
@@ -73,10 +76,8 @@ export const PipelineRunsRoot = (props: Props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const trace = useStartTrace('PipelineRunsRoot');
-
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
-  const permanentTokens = React.useMemo(() => {
+  const permanentTokens = useMemo(() => {
     return [
       isJob ? {token: 'job', value: pipelineName} : {token: 'pipeline', value: pipelineName},
       snapshotId ? {token: 'snapshotId', value: snapshotId} : null,
@@ -115,7 +116,7 @@ export const PipelineRunsRoot = (props: Props) => {
     },
   });
 
-  const onAddTag = React.useCallback(
+  const onAddTag = useCallback(
     (token: RunFilterToken) => {
       const tokenAsString = tokenToString(token);
       if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
@@ -132,12 +133,6 @@ export const PipelineRunsRoot = (props: Props) => {
     onChange: setFilterTokens,
     loading: queryResult.loading,
   });
-
-  React.useEffect(() => {
-    if (!queryResult.loading) {
-      trace.endTrace();
-    }
-  }, [queryResult.loading, trace]);
 
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>

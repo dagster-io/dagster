@@ -2,6 +2,7 @@
 # ruff: noqa: T201
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -73,6 +74,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--no-cache",
+    action="store_true",
+    default=False,
+    help="If rebuilding pyright environments, do not use the uv cache. This is much slower but can be useful for debugging.",
+)
+
+parser.add_argument(
     "--rebuild",
     "-r",
     action="store_true",
@@ -88,8 +96,18 @@ parser.add_argument(
         "Update `requirements-pinned.txt` for selected environments (implies `--rebuild`). The"
         " virtual env for the selected environment will be rebuilt using the abstract requirements"
         " specified in `requirements.txt`. After the environment is built, the full dependency list"
-        " will be extracted with `pip freeze` and written to `requirements-pinned.txt` (this is"
+        " will be extracted with `uv pip freeze` and written to `requirements-pinned.txt` (this is"
         " what is used in CI and for building the default venv)."
+    ),
+)
+
+parser.add_argument(
+    "--skip-typecheck",
+    action="store_true",
+    default=False,
+    help=(
+        "Skip type checking, i.e. actually running pyright. This only makes sense when used together"
+        " with `--rebuild` or `--update-pins` to build an environment."
     ),
 )
 
@@ -110,8 +128,11 @@ class Params(TypedDict):
     mode: Literal["env", "path"]
     targets: Sequence[str]
     json: bool
+    no_cache: bool
     rebuild: bool
     update_pins: bool
+    venv_python: str
+    skip_typecheck: bool
 
 
 class Position(TypedDict):
@@ -166,16 +187,10 @@ PYRIGHT_ENV_ROOT: Final = "pyright"
 
 DEFAULT_REQUIREMENTS_FILE: Final = "requirements.txt"
 
-# Help reduce build errors
-EXTRA_PIP_INSTALL_ARGS: Final = [
-    # find-links for M1 lookup of grpcio wheels
-    "--find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels",
-]
-
 
 def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
-    return os.path.join(env_root, rel_path) if rel_path else env_root
+    return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
 
 
 def load_path_file(path: str) -> Sequence[str]:
@@ -203,7 +218,9 @@ def get_params(args: argparse.Namespace) -> Params:
     elif args.diff:
         mode = "path"
         targets = (
-            subprocess.check_output(["git", "diff", "--name-only", "origin/master"])
+            subprocess.check_output(
+                ["git", "diff", "--name-only", "origin/master", "--diff-filter=d"]
+            )
             .decode("utf-8")
             .splitlines()
         )
@@ -213,6 +230,10 @@ def get_params(args: argparse.Namespace) -> Params:
     else:
         mode = "path"
         targets = args.paths
+
+    venv_python = (
+        subprocess.run(["which", "python"], check=True, capture_output=True).stdout.decode().strip()
+    )
     return Params(
         mode=mode,
         targets=targets,
@@ -220,6 +241,9 @@ def get_params(args: argparse.Namespace) -> Params:
         json=args.json,
         rebuild=args.rebuild,
         unannotated=args.unannotated,
+        no_cache=args.no_cache,
+        venv_python=venv_python,
+        skip_typecheck=args.skip_typecheck,
     )
 
 
@@ -246,22 +270,24 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
     env_path_map: Dict[str, List[str]] = {}
     for path in paths:
         if os.path.isdir(path) or os.path.splitext(path)[1] in [".py", ".pyi"]:
-            try:
-                env = next(
-                    (
-                        env_path_spec["env"]
-                        for env_path_spec in env_path_specs
-                        if match_path(path, env_path_spec)
-                    )
-                )
-            except StopIteration:
-                raise Exception(f"Could not find environment that matched path: {path}.")
-            env_path_map.setdefault(env, []).append(path)
+            env = next(
+                (
+                    env_path_spec["env"]
+                    for env_path_spec in env_path_specs
+                    if match_path(path, env_path_spec)
+                ),
+                None,
+            )
+            if env:
+                env_path_map.setdefault(env, []).append(path)
     return env_path_map
 
 
-def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
+def normalize_env(
+    env: str, rebuild: bool, update_pins: bool, venv_python: str, no_cache: bool
+) -> None:
     venv_path = os.path.join(get_env_path(env), ".venv")
+    python_path = f"{venv_path}/bin/python"
     if (rebuild or update_pins) and os.path.exists(venv_path):
         print(f"Removing existing virtualenv for pyright environment {env}...")
         subprocess.run(f"rm -rf {venv_path}", shell=True, check=True)
@@ -269,27 +295,42 @@ def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
         print(f"Creating virtualenv for pyright environment {env}...")
         if update_pins:
             src_requirements_path = get_env_path(env, "requirements.txt")
-            extra_pip_install_args = EXTRA_PIP_INSTALL_ARGS
+            extra_pip_install_args = []
         else:
             src_requirements_path = get_env_path(env, "requirements-pinned.txt")
-            extra_pip_install_args = [*EXTRA_PIP_INSTALL_ARGS, "--no-deps"]
+            extra_pip_install_args = ["--no-deps"]
         dest_requirements_path = f"requirements-{env}.txt"
+
+        # This is a hack to get around a bug in uv wherein "--editable-mode=compat" is not respected
+        # if the package is in uv's global cache. This forces uv to reinstall the package and
+        # thereby respect --editable-mode=compat, which is necessary to guarantee that pyright can
+        # read the pth file for the editable install. Tracking uv issue here:
+        #  https://github.com/astral-sh/uv/issues/7028
+        reinstall_package_args = [
+            f"--reinstall-package {pkg}" for pkg in get_all_editable_packages(env)
+        ]
+
         build_venv_cmd = " && ".join(
             [
-                f"python -m venv {venv_path}",
-                f"{venv_path}/bin/pip install -U pip setuptools wheel",
+                f"uv venv --python={venv_python} --seed {venv_path}",
+                f"uv pip install --python {python_path} -U pip setuptools wheel",
                 " ".join(
                     [
-                        f"{venv_path}/bin/pip",
+                        "uv",
+                        "pip",
                         "install",
-                        "-r",
-                        dest_requirements_path,
+                        "--python",
+                        python_path,
                         # editable-mode=compat ensures dagster-internal editable installs are done
                         # in a way that is legible to pyright (i.e. not using import hooks). See:
                         #  https://github.com/microsoft/pyright/blob/main/docs/import-resolution.md#editable-installs
                         "--config-settings",
                         "editable-mode=compat",
+                        "-r",
+                        dest_requirements_path,
+                        "--no-cache" if no_cache else "",
                         *extra_pip_install_args,
+                        *reinstall_package_args,
                     ]
                 ),
             ]
@@ -298,6 +339,7 @@ def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
             print(f"Copying {src_requirements_path} to {dest_requirements_path}....")
             shutil.copyfile(src_requirements_path, dest_requirements_path)
             subprocess.run(build_venv_cmd, shell=True, check=True)
+            validate_editable_installs(env)
         except subprocess.CalledProcessError as e:
             subprocess.run(f"rm -rf {venv_path}", shell=True, check=True)
             print(f"Partially built virtualenv for pyright environment {env} deleted.")
@@ -311,18 +353,58 @@ def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
     return None
 
 
+def extract_package_name_from_editable_requirement(line: str) -> str:
+    trailing_component = line.strip("/").rsplit("/", 1)[1]  # last component of requirement
+    pkg = trailing_component.split("[")[0]  # remove extras if present
+    return pkg.replace("-", "_")
+
+
+def get_all_editable_packages(env: str) -> Sequence[str]:
+    requirements = get_env_path(env, "requirements.txt")
+    with open(requirements, "r") as f:
+        lines = [line.strip() for line in f.readlines()]
+    return [
+        extract_package_name_from_editable_requirement(line)
+        for line in lines
+        if line.startswith("-e")
+    ]
+
+
+# This ensures that all of our editable installs are "legacy" style, which is required to work with
+# pyright.
+def validate_editable_installs(env: str) -> None:
+    venv_path = os.path.join(get_env_path(env), ".venv")
+    for pth_file in glob.glob(f"{venv_path}/lib/python*/site-packages/__editable__*.pth"):
+        with open(pth_file, "r") as f:
+            first_line = f.readlines()[0]
+        # Not a legacy pth-- all legacy pth files contain an absolute path on the first line
+        if first_line[0] != "/":
+            raise Exception(f"Found unexpected modern-style pth file in env: {pth_file}.")
+
+
 def update_pinned_requirements(env: str) -> None:
     print(f"Updating pinned requirements for pyright environment {env}...")
     venv_path = os.path.join(get_env_path(env), ".venv")
+    python_path = f"{venv_path}/bin/python"
     raw_dep_list = subprocess.run(
-        f"{venv_path}/bin/pip freeze", capture_output=True, shell=True, text=True, check=True
+        f"uv pip freeze --python={python_path}",
+        capture_output=True,
+        shell=True,
+        text=True,
+        check=True,
     ).stdout
-    is_internal = not os.path.exists("python_modules/dagster")
-    oss_root = "${DAGSTER_GIT_REPO_DIR}/" if is_internal else ""
-    dep_list = re.sub(
-        r"-e git.*?dagster-io/dagster.*?\&subdirectory=(.+)", f"-e {oss_root}\\1", raw_dep_list
-    )
-    dep_list = re.sub(r"-e git.*?dagster-io/internal.*?\&subdirectory=(.+)", "-e \\1", dep_list)
+
+    if os.path.exists("python_modules/dagster"):  # in oss
+        resolved_oss_root = os.getcwd()
+        dep_list = re.sub(f"-e file://{resolved_oss_root}/(.+)", "-e \\1", raw_dep_list)
+    else:  # in internal
+        resolved_oss_root = os.environ["DAGSTER_GIT_REPO_DIR"].rstrip("/")
+        resolved_internal_root = os.getcwd()
+        dep_list = re.sub(
+            f"-e file://{resolved_oss_root}/(.+)", "-e ${DAGSTER_GIT_REPO_DIR}/\\1", raw_dep_list
+        )
+        dep_list = re.sub(f"-e file://{resolved_internal_root}/(.+)", "-e \\1", dep_list)
+
     with open(get_env_path(env, "requirements-pinned.txt"), "w") as f:
         f.write(dep_list)
 
@@ -333,8 +415,8 @@ def run_pyright(
     rebuild: bool,
     unannotated: bool,
     pinned_deps: bool,
+    venv_python: str,
 ) -> RunResult:
-    normalize_env(env, rebuild, pinned_deps)
     with temp_pyright_config_file(env, unannotated) as config_path:
         base_pyright_cmd = " ".join(
             [
@@ -490,16 +572,27 @@ if __name__ == "__main__":
         env_path_map = map_paths_to_envs(params["targets"])
     else:
         env_path_map = {env: None for env in params["targets"]}
-    run_results = [
-        run_pyright(
-            env,
-            paths=env_path_map[env],
-            rebuild=params["rebuild"],
-            unannotated=params["unannotated"],
-            pinned_deps=params["update_pins"],
+
+    for env in env_path_map:
+        normalize_env(
+            env, params["rebuild"], params["update_pins"], params["venv_python"], params["no_cache"]
         )
-        for env in env_path_map
-    ]
-    merged_result = reduce(merge_pyright_results, run_results)
-    print_output(merged_result, params["json"])
-    sys.exit(merged_result["returncode"])
+    if params["skip_typecheck"]:
+        print("Successfully built environments. Skipping typecheck.")
+    elif len(env_path_map) == 0:
+        print("No paths to analyze. Skipping typecheck.")
+    elif not params["skip_typecheck"]:
+        run_results = [
+            run_pyright(
+                env,
+                paths=env_path_map[env],
+                rebuild=params["rebuild"],
+                unannotated=params["unannotated"],
+                pinned_deps=params["update_pins"],
+                venv_python=params["venv_python"],
+            )
+            for env in env_path_map
+        ]
+        merged_result = reduce(merge_pyright_results, run_results)
+        print_output(merged_result, params["json"])
+        sys.exit(merged_result["returncode"])

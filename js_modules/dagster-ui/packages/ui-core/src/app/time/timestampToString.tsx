@@ -1,7 +1,7 @@
 import memoize from 'lodash/memoize';
 
 import {HourCycle} from './HourCycle';
-import {TimeFormat, DEFAULT_TIME_FORMAT} from './TimestampFormat';
+import {DEFAULT_TIME_FORMAT, TimeFormat} from './TimestampFormat';
 import {browserTimezone} from './browserTimezone';
 
 type Config = {
@@ -51,6 +51,7 @@ export const timestampToString = memoize((config: Config) => {
     hour: 'numeric',
     minute: 'numeric',
     second: timeFormat.showSeconds ? 'numeric' : undefined,
+    fractionalSecondDigits: timeFormat.showMsec ? 3 : undefined,
     hourCycle: hourCycle === 'Automatic' ? undefined : hourCycle,
     timeZone: targetTimezone,
     timeZoneName: timeFormat.showTimezone ? 'short' : undefined,

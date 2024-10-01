@@ -6,6 +6,11 @@ python_logs:
         level: INFO
         stream: ext://sys.stdout
         formatter: myFormatter
+        filters:
+          - myFilter
     formatters:
       myFormatter:
         format: "My formatted message: %(message)s"
+    filters:
+      myFilter:
+        name: dagster

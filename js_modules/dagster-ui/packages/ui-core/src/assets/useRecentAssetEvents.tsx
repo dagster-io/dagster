@@ -1,12 +1,36 @@
-import {gql, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
-
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {gql, useQuery} from '../apollo-client';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+
+/**
+The params behavior on this page is a bit nuanced - there are two main query
+params: ?timestamp= and ?partition= and only one is set at a time. They can
+be undefined, an empty string or a value and all three states are used.
+
+- If both are undefined, we expand the first item in the table by default
+- If one is present, it determines which xAxis is used (partition grouping)
+- If one is present and set to a value, that item in the table is expanded.
+- If one is present but an empty string, no items in the table is expanded.
+ */
+export function getXAxisForParams(
+  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
+  {defaultToPartitions}: {defaultToPartitions: boolean},
+) {
+  const xAxisDefault = defaultToPartitions ? 'partition' : 'time';
+  const xAxis: 'partition' | 'time' =
+    params.partition !== undefined
+      ? 'partition'
+      : params.time !== undefined || params.asOf
+      ? 'time'
+      : xAxisDefault;
+
+  return xAxis;
+}
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -15,48 +39,33 @@ import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAsse
  * limit could cause random partitions to disappear if materializations were out of order.
  */
 export function useRecentAssetEvents(
-  assetKey: AssetKey,
-  params: AssetViewParams,
+  assetKey: AssetKey | undefined,
+  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
-  // The params behavior on this page is a bit nuanced - there are two main query
-  // params: ?timestamp= and ?partition= and only one is set at a time. They can
-  // be undefined, an empty string or a value and all three states are used.
-  //
-  // - If both are undefined, we expand the first item in the table by default
-  // - If one is present, it determines which xAxis is used (partition grouping)
-  // - If one is present and set to a value, that item in the table is expanded.
-  // - If one is present but an empty string, no items in the table is expanded.
-
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
-  const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
-  const xAxis: 'partition' | 'time' =
-    params.partition !== undefined
-      ? 'partition'
-      : params.time !== undefined || before
-      ? 'time'
-      : xAxisDefault;
+  const xAxis = getXAxisForParams(params, {defaultToPartitions: assetHasDefinedPartitions});
 
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
-  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
-    ASSET_EVENTS_QUERY,
-    {
-      variables: loadUsingPartitionKeys
-        ? {
-            assetKey: {path: assetKey.path},
-            before,
-            partitionInLast: 120,
-          }
-        : {
-            assetKey: {path: assetKey.path},
-            before,
-            limit: 100,
-          },
-    },
-  );
+  const queryResult = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(ASSET_EVENTS_QUERY, {
+    skip: !assetKey,
+    fetchPolicy: 'cache-and-network',
+    variables: loadUsingPartitionKeys
+      ? {
+          assetKey: {path: assetKey?.path ?? []},
+          before,
+          partitionInLast: 120,
+        }
+      : {
+          assetKey: {path: assetKey?.path ?? []},
+          before,
+          limit: 100,
+        },
+  });
+  const {data, loading, refetch} = queryResult;
 
-  return React.useMemo(() => {
+  const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
     const materializations = asset?.assetMaterializations || [];
     const observations = asset?.assetObservations || [];
@@ -79,7 +88,11 @@ export function useRecentAssetEvents(
       xAxis,
     };
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
+
+  return value;
 }
+
+export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
 
 export const ASSET_MATERIALIZATION_FRAGMENT = gql`
   fragment AssetMaterializationFragment on MaterializationEvent {

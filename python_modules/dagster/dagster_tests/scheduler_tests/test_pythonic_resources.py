@@ -2,7 +2,6 @@ import os
 import sys
 from typing import Optional, Sequence
 
-import pendulum
 import pytest
 from dagster import (
     DagsterInstance,
@@ -19,19 +18,19 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
 from dagster._core.definitions.schedule_definition import RunRequest
-from dagster._core.scheduler.instigation import (
-    InstigatorTick,
-    TickStatus,
-)
-from dagster._core.test_utils import (
-    create_test_daemon_workspace_context,
-)
+from dagster._core.scheduler.instigation import InstigatorTick, TickStatus
+from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._time import create_datetime, get_current_datetime, get_timezone
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_scheduler_run import evaluate_schedules, validate_tick, wait_for_all_runs_to_start
+from dagster_tests.scheduler_tests.test_scheduler_run import (
+    evaluate_schedules,
+    validate_tick,
+    wait_for_all_runs_to_start,
+)
 
 
 @op
@@ -124,7 +123,7 @@ def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY
     return ModuleTarget(
         module_name="dagster_tests.scheduler_tests.test_pythonic_resources",
         attribute=None,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 
@@ -143,7 +142,7 @@ def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessCo
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
-            .get_workspace_snapshot()
+            .get_code_location_entries()
             .values()
         )
     ).code_location
@@ -177,36 +176,32 @@ def test_resources(
     external_repo_struct_resources,
     schedule_name,
 ) -> None:
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(get_timezone("US/Central"))
 
-    with pendulum.test(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_schedule = external_repo_struct_resources.get_external_schedule(schedule_name)
         instance.start_schedule(external_schedule)
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         assert len(ticks) == 0
-    freeze_datetime = freeze_datetime.add(seconds=30)
+    freeze_datetime = freeze_datetime + relativedelta(seconds=30)
 
-    with pendulum.test(freeze_datetime):
-        evaluate_schedules(workspace_context_struct_resources, None, pendulum.now("UTC"))
+    with freeze_time(freeze_datetime):
+        evaluate_schedules(workspace_context_struct_resources, None, get_current_datetime())
         wait_for_all_runs_to_start(instance)
 
         ticks: Sequence[InstigatorTick] = instance.get_ticks(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
 
         assert len(ticks) == 1
@@ -215,7 +210,7 @@ def test_resources(
         run = next(iter(instance.get_runs()))
         assert ticks[0].run_keys == ["foo"]
 
-        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+        expected_datetime = create_datetime(year=2019, month=2, day=28)
         validate_tick(
             ticks[0],
             external_schedule,

@@ -1,5 +1,4 @@
-import * as React from 'react';
-import styled from 'styled-components';
+import styled, {CSSProperties} from 'styled-components';
 
 import {Button} from './Button';
 import {Icon} from './Icon';
@@ -10,6 +9,7 @@ export interface CursorPaginationProps {
   popCursor: () => void;
   advanceCursor: () => void;
   reset: () => void;
+  style?: CSSProperties;
 }
 
 export const CursorPaginationControls = ({
@@ -17,9 +17,10 @@ export const CursorPaginationControls = ({
   hasNextCursor,
   popCursor,
   advanceCursor,
+  style,
 }: CursorPaginationProps) => {
   return (
-    <CursorControlsContainer>
+    <CursorControlsContainer style={style}>
       <Button disabled={!hasPrevCursor} icon={<Icon name="arrow_back" />} onClick={popCursor}>
         Previous
       </Button>
@@ -39,9 +40,10 @@ export const CursorHistoryControls = ({
   hasNextCursor,
   popCursor,
   advanceCursor,
+  style,
 }: CursorPaginationProps) => {
   return (
-    <CursorControlsContainer>
+    <CursorControlsContainer style={style}>
       <Button icon={<Icon name="arrow_back" />} disabled={!hasPrevCursor} onClick={popCursor}>
         <span className="hideable-button-text">Newer</span>
       </Button>

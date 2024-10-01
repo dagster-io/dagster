@@ -1,5 +1,4 @@
-import {Box, Icon, MiddleTruncate, colorAccentGray} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -15,7 +14,14 @@ export const AssetLink = (props: {
   const linkUrl = url ? url : assetDetailsPathForKey({path});
   const assetPath =
     path
-      .reduce((accum, elem, ii) => [...accum, ii > 0 ? ' / ' : '', elem], [] as string[])
+      .reduce((accum, elem, ii) => {
+        if (ii > 0) {
+          accum.push(' / ');
+        }
+        accum.push(elem);
+        return accum;
+      }, [] as string[])
+
       .join('') + (isGroup ? '/' : '');
 
   return (
@@ -25,7 +31,7 @@ export const AssetLink = (props: {
     >
       {icon ? (
         <Box margin={{right: 8, top: 2}}>
-          <Icon name={icon} color={colorAccentGray()} />
+          <Icon name={icon} color={Colors.accentGray()} />
         </Box>
       ) : null}
       <Link to={linkUrl} style={{overflow: 'hidden'}}>

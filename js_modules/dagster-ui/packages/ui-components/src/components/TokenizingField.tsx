@@ -3,22 +3,9 @@ import {TagInput} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {
-  colorBackgroundDefault,
-  colorBackgroundGray,
-  colorBackgroundGreen,
-  colorBackgroundRed,
-  colorBackgroundYellow,
-  colorBorderDefault,
-  colorFocusRing,
-  colorTextDefault,
-  colorTextGreen,
-  colorTextRed,
-  colorTextYellow,
-} from '../theme/color';
-
 import {Box} from './Box';
-import {MenuItem, Menu} from './Menu';
+import {Colors} from './Color';
+import {Menu, MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
@@ -201,11 +188,12 @@ export const TokenizingField = ({
       // Suggest providers (eg: `pipeline:`) so users can discover the search space
 
       suggestionsArr = filteredSuggestionProviders
-        .reduce(
-          (accum: Suggestion[], s) =>
-            s.token ? [...accum, {text: `${s.token}:`, final: false}] : accum,
-          [],
-        )
+        .reduce((accum: Suggestion[], s) => {
+          if (s.token) {
+            accum.push({text: `${s.token}:`, final: false});
+          }
+          return accum;
+        }, [])
         .filter((s) => matchesTypedText(lastPart, s));
 
       // Suggest value completions so users can type "airline_" without the "pipeline"
@@ -461,18 +449,18 @@ export const TokenizingField = ({
 };
 
 export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
-  background-color: ${colorBackgroundDefault()};
+  background-color: ${Colors.backgroundDefault()};
   border: none;
   border-radius: 8px;
-  box-shadow: ${colorBorderDefault()} inset 0px 0px 0px 1px;
-  color: ${colorTextDefault()};
+  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  color: ${Colors.textDefault()};
   min-width: 400px;
   max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
   input {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     font-size: 14px;
     font-weight: 400;
     padding-left: 4px;
@@ -480,28 +468,28 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
     padding-top: 2px;
   }
 
-  &&.bp4-tag-input.bp4-active {
-    background-color: ${colorBackgroundDefault()};
-    color: ${colorTextDefault()};
+  &&.bp5-tag-input.bp5-active {
+    background-color: ${Colors.backgroundDefault()};
+    color: ${Colors.textDefault()};
     box-shadow:
-      ${colorBorderDefault()} inset 0px 0px 0px 1px,
-      ${colorFocusRing()} 0 0 0 3px;
+      ${Colors.borderDefault()} inset 0px 0px 0px 1px,
+      ${Colors.focusRing()} 0 0 0 3px;
   }
 
-  && .bp4-tag-input-values:first-child .bp4-input-ghost:first-child {
+  && .bp5-tag-input-values:first-child .bp5-input-ghost:first-child {
     padding-left: 8px;
   }
 
-  && .bp4-tag-input-values {
+  && .bp5-tag-input-values {
     margin-right: 4px;
     margin-top: 4px;
   }
 
-  && .bp4-tag-input-values > * {
+  && .bp5-tag-input-values > * {
     margin-bottom: 4px;
   }
 
-  .bp4-tag {
+  .bp5-tag {
     border-radius: 6px;
     display: inline-flex;
     flex-direction: row;
@@ -516,24 +504,24 @@ export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
     user-select: none;
   }
 
-  .bp4-tag.bp4-minimal:not([class*='bp4-intent-']) {
-    background-color: ${colorBackgroundGray()};
-    color: ${colorTextDefault()};
+  .bp5-tag.bp5-minimal:not([class*='bp5-intent-']) {
+    background-color: ${Colors.backgroundGray()};
+    color: ${Colors.textDefault()};
   }
 
-  .bp4-tag.bp4-minimal.bp4-intent-success {
-    background-color: ${colorBackgroundGreen()};
-    color: ${colorTextGreen()};
+  .bp5-tag.bp5-minimal.bp5-intent-success {
+    background-color: ${Colors.backgroundGreen()};
+    color: ${Colors.textGreen()};
   }
 
-  .bp4-tag.bp4-minimal.bp4-intent-warning {
-    background-color: ${colorBackgroundYellow()};
-    color: ${colorTextYellow()};
+  .bp5-tag.bp5-minimal.bp5-intent-warning {
+    background-color: ${Colors.backgroundYellow()};
+    color: ${Colors.textYellow()};
   }
 
-  .bp4-tag.bp4-minimal.bp4-intent-danger {
-    background-color: ${colorBackgroundRed()};
-    color: ${colorTextRed()};
+  .bp5-tag.bp5-minimal.bp5-intent-danger {
+    background-color: ${Colors.backgroundRed()};
+    color: ${Colors.textRed()};
   }
 `;
 

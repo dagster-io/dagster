@@ -1,40 +1,47 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
-import {useParams} from 'react-router-dom';
+import {
+  Box,
+  Colors,
+  FontFamily,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Tag,
+} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
+import {Link, useParams} from 'react-router-dom';
 
+import {Run} from './Run';
+import {RunAssetCheckTags} from './RunAssetCheckTags';
+import {RunAssetTags} from './RunAssetTags';
+import {RUN_PAGE_FRAGMENT} from './RunFragments';
+import {RunHeaderActions} from './RunHeaderActions';
+import {RunStatusTag} from './RunStatusTag';
+import {DagsterTag} from './RunTag';
+import {RunTimingTags} from './RunTimingTags';
+import {getBackfillPath} from './RunsFeedUtils';
+import {TickTagForRun} from './TickTagForRun';
+import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
 import {InstigationSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
-
-import {AssetKeyTagCollection, AssetCheckTagCollection} from './AssetTagCollections';
-import {Run} from './Run';
-import {RUN_PAGE_FRAGMENT} from './RunFragments';
-import {RunHeaderActions} from './RunHeaderActions';
-import {RunRootTrace, useRunRootTrace} from './RunRootTrace';
-import {RunStatusTag} from './RunStatusTag';
-import {DagsterTag} from './RunTag';
-import {RunTimingTags} from './RunTimingTags';
-import {assetKeysForRun} from './RunUtils';
-import {TickTagForRun} from './TickTagForRun';
-import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 
 export const RunRoot = () => {
   useTrackPageView();
 
-  const trace = useRunRootTrace();
   const {runId} = useParams<{runId: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
-  const {data, loading} = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
+  const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
     variables: {runId},
   });
+  const {data, loading} = queryResult;
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
@@ -44,23 +51,22 @@ export const RunRoot = () => {
     ? buildRepoAddress(repoMatch.match.repository.name, repoMatch.match.repositoryLocation.name)
     : null;
 
-  const isJob = React.useMemo(
+  const isJob = useMemo(
     () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
   );
 
-  const automaterializeTag = React.useMemo(
+  const automaterializeTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
     [run],
   );
 
-  React.useLayoutEffect(() => {
-    if (!loading) {
-      trace.onRunLoaded();
-    }
-  }, [loading, trace]);
+  const backfillTag = useMemo(
+    () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
+    [run],
+  );
 
-  const tickDetails = React.useMemo(() => {
+  const tickDetails = useMemo(() => {
     if (repoAddress) {
       const tags = run?.tags || [];
       const tickTag = tags.find((tag) => tag.key === DagsterTag.TickId);
@@ -109,9 +115,25 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '20px'}}>
-              {runId.slice(0, 8)}
-            </Heading>
+            backfillTag ? (
+              <Heading>
+                <Link to="/runs" style={{color: Colors.textLight()}}>
+                  All runs
+                </Link>
+                {' / '}
+                <Link to={getBackfillPath(backfillTag.value)} style={{color: Colors.textLight()}}>
+                  {backfillTag.value}
+                </Link>
+                {' / '}
+                {runId.slice(0, 8)}
+              </Heading>
+            ) : (
+              <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+                <Link to="/runs">Runs</Link>
+                <span>/</span>
+                <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+              </Heading>
+            )
           }
           tags={
             run ? (
@@ -136,15 +158,8 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                <AssetKeyTagCollection
-                  useTags
-                  assetKeys={
-                    isHiddenAssetGroupJob(run.pipelineName)
-                      ? assetKeysForRun(run)
-                      : run.assets.map((a) => a.key)
-                  }
-                />
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
+                <RunAssetTags run={run} />
+                <RunAssetCheckTags run={run} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation
@@ -158,7 +173,7 @@ export const RunRoot = () => {
           right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
         />
       </Box>
-      <RunById data={data} runId={runId} trace={trace} />
+      <RunById data={data} runId={runId} />
     </div>
   );
 };
@@ -167,11 +182,11 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: RunRootTrace}) => {
-  const {data, runId, trace} = props;
+const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
+  const {data, runId} = props;
 
   if (!data || !data.pipelineRunOrError) {
-    return <Run run={undefined} runId={runId} trace={trace} />;
+    return <Run run={undefined} runId={runId} />;
   }
 
   if (data.pipelineRunOrError.__typename !== 'Run') {
@@ -186,7 +201,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: R
     );
   }
 
-  return <Run run={data.pipelineRunOrError} runId={runId} trace={trace} />;
+  return <Run run={data.pipelineRunOrError} runId={runId} />;
 };
 
 const RUN_ROOT_QUERY = gql`

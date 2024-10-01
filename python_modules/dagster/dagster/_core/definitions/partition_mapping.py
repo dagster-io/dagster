@@ -1,8 +1,10 @@
 import collections.abc
 import itertools
+import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import datetime
+from functools import lru_cache
 from typing import (
     Collection,
     Dict,
@@ -24,6 +26,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
 )
 from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
@@ -188,10 +191,19 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        upstream_subset = upstream_partitions_def.subset_with_all_partitions(
-            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        if dynamic_partitions_store is not None and current_time is not None:
+            partitions_subset = AllPartitionsSubset(
+                partitions_def=upstream_partitions_def,
+                dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
+            )
+        else:
+            partitions_subset = upstream_partitions_def.subset_with_all_partitions(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+        return UpstreamPartitionsResult(
+            partitions_subset=partitions_subset, required_but_nonexistent_partition_keys=[]
         )
-        return UpstreamPartitionsResult(upstream_subset, [])
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -201,7 +213,15 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        raise NotImplementedError()
+        if upstream_partitions_subset is None:
+            check.failed("upstream asset is not partitioned")
+
+        if len(upstream_partitions_subset) == 0:
+            return downstream_partitions_def.empty_subset()
+
+        return downstream_partitions_def.subset_with_all_partitions(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
 
     @property
     def description(self) -> str:
@@ -329,8 +349,7 @@ class BaseMultiPartitionMapping(ABC):
         self,
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
-    ) -> Sequence[DimensionDependency]:
-        ...
+    ) -> Sequence[DimensionDependency]: ...
 
     def get_partitions_def(
         self, partitions_def: PartitionsDefinition, dimension_name: Optional[str]
@@ -368,9 +387,9 @@ class BaseMultiPartitionMapping(ABC):
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
         # partition keys in b_partitions_def that are dependencies of that partition
-        dep_b_keys_by_a_dim_and_key: Dict[
-            Optional[str], Dict[Optional[str], List[str]]
-        ] = defaultdict(lambda: defaultdict(list))
+        dep_b_keys_by_a_dim_and_key: Dict[Optional[str], Dict[Optional[str], List[str]]] = (
+            defaultdict(lambda: defaultdict(list))
+        )
         required_but_nonexistent_upstream_partitions = set()
 
         b_dimension_partitions_def_by_name: Dict[Optional[str], PartitionsDefinition] = (
@@ -507,7 +526,7 @@ class BaseMultiPartitionMapping(ABC):
                         }
                     )
                     if len(b_key_values) > 1
-                    else b_key_values[0]
+                    else b_key_values[0]  # type: ignore
                 )
 
         mapped_subset = b_partitions_def.empty_subset().with_partition_keys(b_partition_keys)
@@ -692,7 +711,7 @@ class MultiPartitionMapping(
                 }
             )
 
-            MultiPartitionsMapping(
+            MultiPartitionMapping(
                 {
                     "abc": DimensionPartitionMapping(
                         dimension_name="123",
@@ -725,7 +744,7 @@ class MultiPartitionMapping(
                 }
             )
 
-            MultiPartitionsMapping(
+            MultiPartitionMapping(
                 {
                     "daily": DimensionPartitionMapping(
                         dimension_name="daily",
@@ -881,10 +900,11 @@ class StaticPartitionMapping(
                 self._inverse_mapping[downstream_key].add(upstream_key)
 
     @cached_method
-    def _check_upstream(self, *, upstream_partitions_def: PartitionsDefinition):
+    def _check_upstream(self, *, upstream_partitions_def: StaticPartitionsDefinition):
         """Validate that the mapping from upstream to downstream is only defined on upstream keys."""
-        check.inst(
+        check.inst_param(
             upstream_partitions_def,
+            "upstream_partitions_def",
             StaticPartitionsDefinition,
             "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
         )
@@ -896,10 +916,11 @@ class StaticPartitionMapping(
             )
 
     @cached_method
-    def _check_downstream(self, *, downstream_partitions_def: PartitionsDefinition):
+    def _check_downstream(self, *, downstream_partitions_def: StaticPartitionsDefinition):
         """Validate that the mapping from upstream to downstream only maps to downstream keys."""
-        check.inst(
+        check.inst_param(
             downstream_partitions_def,
+            "downstream_partitions_def",
             StaticPartitionsDefinition,
             "StaticPartitionMapping can only be defined between two StaticPartitionsDefinitions",
         )
@@ -914,8 +935,8 @@ class StaticPartitionMapping(
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
-        upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_def: StaticPartitionsDefinition,
+        downstream_partitions_def: StaticPartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
@@ -931,7 +952,7 @@ class StaticPartitionMapping(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
+        upstream_partitions_def: StaticPartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
@@ -1098,7 +1119,7 @@ def infer_partition_mapping(
     downstream_partitions_def: Optional[PartitionsDefinition],
     upstream_partitions_def: Optional[PartitionsDefinition],
 ) -> PartitionMapping:
-    from .time_window_partition_mapping import TimeWindowPartitionMapping
+    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     if partition_mapping is not None:
         return partition_mapping
@@ -1118,6 +1139,7 @@ def infer_partition_mapping(
         return AllPartitionMapping()
 
 
+@lru_cache(maxsize=1)
 def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
     from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
@@ -1131,3 +1153,19 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         MultiToSingleDimensionPartitionMapping,
         MultiPartitionMapping,
     )
+
+
+def warn_if_partition_mapping_not_builtin(partition_mapping: PartitionMapping) -> None:
+    builtin_partition_mappings = get_builtin_partition_mapping_types()
+    if not isinstance(partition_mapping, builtin_partition_mappings):
+        warnings.warn(
+            f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
+            "are deprecated and will not work with asset reconciliation. The built-in "
+            "partition mappings are "
+            + ", ".join(
+                builtin_partition_mapping.__name__
+                for builtin_partition_mapping in builtin_partition_mappings
+            )
+            + ".",
+            category=DeprecationWarning,
+        )

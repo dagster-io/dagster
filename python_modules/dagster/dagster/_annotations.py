@@ -10,10 +10,7 @@ from dagster._core.decorator_utils import (
     get_decorator_target,
     is_resource_def,
 )
-from dagster._utils.warnings import (
-    deprecation_warning,
-    experimental_warning,
-)
+from dagster._utils.warnings import deprecation_warning, experimental_warning
 
 # For the time being, `Annotatable` is set to `Any` even though it should be set to `Decoratable` to
 # avoid choking the type checker. Choking happens because of a niche scenario where
@@ -85,8 +82,7 @@ def deprecated(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -97,8 +93,7 @@ def deprecated(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated(
@@ -163,11 +158,13 @@ def deprecated(
         )
 
         if emit_runtime_warning:
+            stack_level = _get_warning_stacklevel(__obj)
+            subject = subject or _get_subject(__obj)
             warning_fn = lambda: deprecation_warning(
-                subject or _get_subject(__obj),
+                subject,
                 breaking_version=breaking_version,
                 additional_warn_text=additional_warn_text,
-                stacklevel=_get_warning_stacklevel(__obj),
+                stacklevel=stack_level,
             )
             return apply_pre_call_decorator(__obj, warning_fn)
         else:
@@ -199,8 +196,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -211,8 +207,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def deprecated_param(
@@ -311,8 +306,7 @@ def experimental(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -322,8 +316,7 @@ def experimental(
     additional_warn_text: Optional[str] = ...,
     subject: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def experimental(
@@ -374,10 +367,12 @@ def experimental(
         setattr(target, _EXPERIMENTAL_ATTR_NAME, ExperimentalInfo(additional_warn_text, subject))
 
         if emit_runtime_warning:
+            stack_level = _get_warning_stacklevel(__obj)
+            subject = subject or _get_subject(__obj)
             warning_fn = lambda: experimental_warning(
-                subject or _get_subject(__obj),
+                subject,
                 additional_warn_text=additional_warn_text,
-                stacklevel=_get_warning_stacklevel(__obj),
+                stacklevel=stack_level,
             )
             return apply_pre_call_decorator(__obj, warning_fn)
         else:
@@ -408,8 +403,7 @@ def experimental_param(
     param: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> T_Annotatable:
-    ...
+) -> T_Annotatable: ...
 
 
 @overload
@@ -419,8 +413,7 @@ def experimental_param(
     param: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]:
-    ...
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
 def experimental_param(

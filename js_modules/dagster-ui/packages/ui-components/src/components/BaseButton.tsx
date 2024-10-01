@@ -1,13 +1,6 @@
 import * as React from 'react';
 
-import {
-  colorAccentGray,
-  colorAccentReversed,
-  colorBackgroundDefault,
-  colorBackgroundDefaultHover,
-  colorTextDefault,
-} from '../theme/color';
-
+import {Colors} from './Color';
 import {StyledButton, StyledButtonText} from './StyledButton';
 
 interface CommonButtonProps {
@@ -28,17 +21,17 @@ interface BaseButtonProps extends CommonButtonProps, React.ComponentPropsWithRef
 export const BaseButton = React.forwardRef(
   (props: BaseButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const {
-      fillColor = colorBackgroundDefault(),
-      fillColorHover = colorBackgroundDefaultHover(),
+      fillColor = Colors.backgroundDefault(),
+      fillColorHover = Colors.backgroundDefaultHover(),
       disabled,
       icon,
       label,
       loading,
       rightIcon,
-      iconColor = colorAccentReversed(),
-      textColor = colorTextDefault(),
-      strokeColor = colorAccentGray(),
-      strokeColorHover = colorAccentGray(),
+      iconColor = Colors.accentReversed(),
+      textColor = Colors.textDefault(),
+      strokeColor = Colors.accentGray(),
+      strokeColorHover = Colors.accentGray(),
       ...rest
     } = props;
 

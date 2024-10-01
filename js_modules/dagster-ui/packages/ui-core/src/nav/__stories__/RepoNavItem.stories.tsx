@@ -1,7 +1,7 @@
 import {Box} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+import {useCallback, useState} from 'react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {RepoAddress} from '../../workspace/types';
@@ -126,9 +126,9 @@ const OPTIONS: RepoSelectorOption[] = [
 ];
 
 export const ManyRepos = () => {
-  const [selected, setSelected] = React.useState<RepoSelectorOption[]>([]);
+  const [selected, setSelected] = useState<RepoSelectorOption[]>([]);
 
-  const onToggle = React.useCallback(
+  const onToggle = useCallback(
     (addresses: RepoAddress[]) => {
       addresses.forEach((address) => {
         const option = OPTIONS.find(
@@ -162,9 +162,9 @@ export const ManyRepos = () => {
 const ONE_REPO = [OPTIONS[0]!];
 
 export const OneRepo = () => {
-  const [selected, setSelected] = React.useState<RepoSelectorOption[]>(ONE_REPO);
+  const [selected, setSelected] = useState<RepoSelectorOption[]>(ONE_REPO);
 
-  const onToggle = React.useCallback(
+  const onToggle = useCallback(
     (addresses: RepoAddress[]) => {
       addresses.forEach((address) => {
         const option = OPTIONS.find(

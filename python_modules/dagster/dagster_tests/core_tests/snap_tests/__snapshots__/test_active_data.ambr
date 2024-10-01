@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_external_job_data
   '''
   {
@@ -1131,6 +1132,10 @@
     "external_partition_set_datas": [
       {
         "__class__": "ExternalPartitionSetData",
+        "backfill_policy": {
+          "__class__": "BackfillPolicy",
+          "max_partitions_per_run": 1
+        },
         "external_partitions_data": {
           "__class__": "ExternalTimeWindowPartitionsDefinitionData",
           "cron_schedule": "15 0 * * *",
@@ -2275,15 +2280,18 @@
     "external_schedule_datas": [
       {
         "__class__": "ExternalScheduleData",
+        "asset_selection": null,
         "cron_schedule": "@daily",
         "description": null,
         "environment_vars": {},
         "execution_timezone": "US/Central",
+        "metadata": {},
         "mode": "default",
         "name": "foo_schedule",
         "partition_set_name": null,
         "pipeline_name": "foo_job",
-        "solid_selection": null
+        "solid_selection": null,
+        "tags": {}
       }
     ],
     "external_sensor_datas": [],

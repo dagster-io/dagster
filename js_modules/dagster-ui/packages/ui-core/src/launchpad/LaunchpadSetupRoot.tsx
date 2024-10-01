@@ -1,5 +1,5 @@
 import qs from 'qs';
-import * as React from 'react';
+import {useEffect} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {
@@ -8,9 +8,10 @@ import {
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -18,8 +19,15 @@ export const LaunchpadSetupRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {
     permissions: {canLaunchPipelineExecution},
+    loading,
   } = usePermissionsForLocation(repoAddress.location);
+
+  useBlockTraceUntilTrue('Permissions', loading);
+
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
+  if (loading) {
+    return null;
+  }
 
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
@@ -46,7 +54,7 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
   const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       queryString.config ||
       queryString.mode ||

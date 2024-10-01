@@ -1,17 +1,15 @@
-import {gql} from '@apollo/client';
 import {Box, FontFamily} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import * as React from 'react';
 import styled from 'styled-components';
 
+import {DagsterTypeFragment} from './types/DagsterType.types';
+import {gql} from '../apollo-client';
 import {gqlTypePredicate} from '../app/Util';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchema} from '../metadata/TableSchema';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {Description} from '../pipelines/Description';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
-
-import {DagsterTypeFragment} from './types/DagsterType.types';
 
 export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}) => {
   const tableSchema = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));

@@ -18,9 +18,8 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._config.config_type import Array, ConfigType, ConfigTypeKind
 from dagster._core.errors import DagsterInvalidConfigDefinitionError
-
-from .config_type import Array, ConfigType, ConfigTypeKind
 
 if TYPE_CHECKING:
     from dagster._config import Field
@@ -192,7 +191,7 @@ class Map(ConfigType):
     """
 
     def __init__(self, key_type, inner_type, key_label_name=None):
-        from .field import resolve_to_config_type
+        from dagster._config.field import resolve_to_config_type
 
         self.key_type = resolve_to_config_type(key_type)
         self.inner_type = resolve_to_config_type(inner_type)
@@ -352,7 +351,7 @@ class Selector(_ConfigHasFields):
 
 
 def is_potential_field(potential_field: object) -> bool:
-    from .field import Field, resolve_to_config_type
+    from dagster._config.field import Field, resolve_to_config_type
 
     return isinstance(potential_field, (Field, dict, list)) or bool(
         resolve_to_config_type(potential_field)
@@ -395,9 +394,7 @@ def expand_list(original_root: object, the_list: Sequence[object], stack: List[s
             original_root,
             the_list,
             stack,
-            "List have a single item and contain a valid type i.e. [int]. Got item {}".format(
-                repr(the_list[0])
-            ),
+            f"List have a single item and contain a valid type i.e. [int]. Got item {the_list[0]!r}",
         )
 
     return Array(inner_type)
@@ -411,7 +408,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
 
     key = next(iter(the_dict.keys()))
     key_type = _convert_potential_type(original_root, key, stack)
-    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:
+    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:  # type: ignore
         raise DagsterInvalidConfigDefinitionError(
             original_root,
             the_dict,
@@ -425,9 +422,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
             original_root,
             the_dict,
             stack,
-            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
-                repr(the_dict[key])
-            ),
+            f"Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {the_dict[key]!r}",
         )
 
     return Map(key_type, inner_type)
@@ -438,7 +433,7 @@ def convert_potential_field(potential_field: object) -> "Field":
 
 
 def _convert_potential_type(original_root: object, potential_type, stack: List[str]):
-    from .field import resolve_to_config_type
+    from dagster._config.field import resolve_to_config_type
 
     if isinstance(potential_type, Mapping):
         # A dictionary, containing a single key which is a type (int, str, etc) and not a string is interpreted as a Map
@@ -459,7 +454,7 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
 def _convert_potential_field(
     original_root: object, potential_field: object, stack: List[str]
 ) -> "Field":
-    from .field import Field
+    from dagster._config.field import Field
 
     if potential_field is None:
         raise DagsterInvalidConfigDefinitionError(

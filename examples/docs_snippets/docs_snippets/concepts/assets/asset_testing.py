@@ -45,7 +45,7 @@ def test_more_complex_asset():
 
 @asset
 def uses_context(context: AssetExecutionContext):
-    context.log.info(context.run_id)
+    context.log.info(context.run.run_id)
     return "bar"
 
 

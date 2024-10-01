@@ -1,19 +1,17 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
-import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
+import {useMemo, useState} from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
-import {BulkActionStatus} from '../../graphql/types';
-import {cancelableStatuses} from '../../runs/RunStatuses';
-import {TerminationDialog} from '../../runs/TerminationDialog';
-
-import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
+import {SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY} from './BackfillRow';
+import {BackfillTerminationDialogBackfillFragment} from './types/BackfillFragments.types';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {
   CancelBackfillMutation,
   CancelBackfillMutationVariables,
-  BackfillTerminationDialogBackfillFragment,
 } from './types/BackfillTerminationDialog.types';
+import {gql, useMutation, useQuery} from '../../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
+import {BulkActionStatus} from '../../graphql/types';
+import {TerminationDialog} from '../../runs/TerminationDialog';
 
 interface Props {
   backfill?: BackfillTerminationDialogBackfillFragment;
@@ -26,7 +24,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     CANCEL_BACKFILL_MUTATION,
   );
   const {data} = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
+    SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
     {
       variables: {
         backfillId: backfill?.id || '',
@@ -35,20 +33,20 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
       skip: !backfill,
     },
   );
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const unfinishedMap = React.useMemo(() => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const unfinishedMap = useMemo(() => {
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }
-    const unfinishedPartitions = data.partitionBackfillOrError.partitionStatuses?.results.filter(
-      (partition) =>
-        partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
-    );
     return (
-      unfinishedPartitions?.reduce(
-        (accum, partition) =>
-          partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
-        {},
+      data.partitionBackfillOrError.cancelableRuns?.reduce(
+        (accum, run) => {
+          if (run && run.runId) {
+            accum[run.runId] = true;
+          }
+          return accum;
+        },
+        {} as Record<string, boolean>,
       ) || {}
     );
   }, [backfill, data]);
@@ -101,7 +99,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
           )}
         </DialogFooter>
       </Dialog>
-      {unfinishedMap && (
+      {!backfill.isAssetBackfill && unfinishedMap && (
         <TerminationDialog
           isOpen={
             !!backfill &&
@@ -116,15 +114,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     </>
   );
 };
-
-export const BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT = gql`
-  fragment BackfillTerminationDialogBackfillFragment on PartitionBackfill {
-    id
-    status
-    isAssetBackfill
-    numCancelable
-  }
-`;
 
 const CANCEL_BACKFILL_MUTATION = gql`
   mutation CancelBackfill($backfillId: String!) {

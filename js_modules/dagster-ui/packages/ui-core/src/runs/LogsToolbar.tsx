@@ -1,28 +1,27 @@
 import {
   Box,
+  Button,
   ButtonGroup,
   Checkbox,
-  IconName,
-  Icon,
-  MenuItem,
-  Tooltip,
-  Suggest,
   ExternalAnchorButton,
-  Button,
+  Icon,
+  IconName,
+  MenuItem,
+  Suggest,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
-
-import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
-import {extractLogCaptureStepsFromLegacySteps, IRunMetadataDict} from './RunMetadataProvider';
+import {IRunMetadataDict, extractLogCaptureStepsFromLegacySteps} from './RunMetadataProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
 import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
+import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 export enum LogType {
   structured = 'structured',
@@ -83,9 +82,9 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
       <ButtonGroup
         activeItems={activeItems}
         buttons={[
-          {id: LogType.structured, icon: 'view_list', label: 'Events'},
-          {id: LogType.stdout, icon: 'console', label: 'stdout'},
-          {id: LogType.stderr, icon: 'warning', label: 'stderr'},
+          {id: LogType.structured, icon: 'logs_structured', label: 'Events'},
+          {id: LogType.stdout, icon: 'logs_stdout', label: 'stdout'},
+          {id: LogType.stderr, icon: 'logs_stderr', label: 'stderr'},
         ]}
         onClick={(id) => onSetLogType(id)}
       />
@@ -236,7 +235,7 @@ const StructuredLogToolbar = ({
   onSetFilter: (filter: LogFilter) => void;
   steps: string[];
 }) => {
-  const [copyIcon, setCopyIcon] = React.useState<IconName>('assignment');
+  const [copyIcon, setCopyIcon] = React.useState<IconName>('copy_to_clipboard');
   const logQueryString = logQueryToString(filter.logQuery);
   const [queryString, setQueryString] = React.useState<string>(() => logQueryString);
 
@@ -293,9 +292,9 @@ const StructuredLogToolbar = ({
   // Restore the clipboard icon after a delay.
   React.useEffect(() => {
     let token: any;
-    if (copyIcon === 'assignment_turned_in') {
+    if (copyIcon === 'copy_to_clipboard_done') {
       token = setTimeout(() => {
-        setCopyIcon('assignment');
+        setCopyIcon('copy_to_clipboard');
       }, 2000);
     }
     return () => {

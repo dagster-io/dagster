@@ -1,7 +1,8 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 
-import {AssetKeyInput, AssetCheck} from '../graphql/types';
+import {AppContext} from './AppContext';
+import {AssetCheck, AssetKeyInput} from '../graphql/types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
@@ -10,8 +11,6 @@ import {
 } from '../launchpad/types/LaunchpadAllowedRoot.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-
-import {AppContext} from './AppContext';
 
 // Internal LocalStorage data format and mutation helpers
 
@@ -32,8 +31,22 @@ export interface PipelineRunTag {
 }
 
 export type SessionBase =
-  | {presetName: string; tags: PipelineRunTag[] | null}
-  | {partitionsSetName: string; partitionName: string | null; tags: PipelineRunTag[] | null};
+  | {
+      type: 'preset';
+      presetName: string;
+      tags: PipelineRunTag[] | null;
+    }
+  | {
+      type: 'asset-job-partition';
+      partitionName: string | null;
+      tags: PipelineRunTag[] | null;
+    }
+  | {
+      type: 'op-job-partition-set';
+      partitionsSetName: string;
+      partitionName: string | null;
+      tags: PipelineRunTag[] | null;
+    };
 
 export interface IExecutionSession {
   key: string;
@@ -231,7 +244,7 @@ export const useInitialDataForMode = (
   partitionSets: LaunchpadSessionPartitionSetsFragment,
   rootDefaultYaml: string | undefined,
   shouldPopulateWithDefaults: boolean,
-) => {
+): {base?: SessionBase; runConfigYaml?: string} => {
   const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;
 
@@ -243,14 +256,23 @@ export const useInitialDataForMode = (
     // `default` preset
     if (presetsForMode.length === 1 && (isAssetJob || partitionSetsForMode.length === 0)) {
       return {
-        base: {presetName: presetsForMode[0]!.name, tags: null},
+        base: {
+          type: 'preset',
+          presetName: presetsForMode[0]!.name,
+          tags: null,
+        },
         runConfigYaml: presetsForMode[0]!.runConfigYaml,
       };
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
       return {
-        base: {partitionsSetName: partitionSetsForMode[0]!.name, partitionName: null, tags: null},
+        base: {
+          type: 'op-job-partition-set',
+          partitionsSetName: partitionSetsForMode[0]!.name,
+          partitionName: null,
+          tags: null,
+        },
         runConfigYaml: rootDefaultYaml,
       };
     }
@@ -324,8 +346,7 @@ export const MAX_SESSION_WRITE_ATTEMPTS = 10;
  * write is successful or we run out of retries.
  */
 export const writeLaunchpadSessionToStorage =
-  (setState: React.Dispatch<React.SetStateAction<IStorageData | undefined>>) =>
-  (data: IStorageData) => {
+  (setState: React.Dispatch<React.SetStateAction<IStorageData>>) => (data: IStorageData) => {
     const tryWrite = (data: IStorageData) => {
       try {
         setState(data);

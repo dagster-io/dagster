@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-
+import {gql} from '../apollo-client';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 
 export const SCHEDULE_FRAGMENT = gql`
@@ -16,6 +15,8 @@ export const SCHEDULE_FRAGMENT = gql`
       id
       name
     }
+    defaultStatus
+    canReset
     scheduleState {
       id
       ...InstigationStateFragment

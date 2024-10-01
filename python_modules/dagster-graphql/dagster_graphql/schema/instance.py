@@ -1,26 +1,22 @@
 import sys
-from typing import (
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 import graphene
 import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher.base import RunLauncher
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._daemon.asset_daemon import get_auto_materialize_paused
 from dagster._daemon.types import DaemonStatus
 from dagster._utils.concurrency import (
     ClaimedSlotInfo,
-    ConcurrencyKeyInfo,
     PendingStepInfo,
     get_max_concurrency_limit_value,
 )
 
-from .errors import GraphenePythonError
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.errors import GraphenePythonError
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
@@ -150,30 +146,58 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
     class Meta:
         name = "ConcurrencyKeyInfo"
 
-    def __init__(self, concurrency_key_info: ConcurrencyKeyInfo):
-        self._claimed_slots = concurrency_key_info.claimed_slots
-        self._pending_steps = concurrency_key_info.pending_steps
-        super().__init__(
-            concurrencyKey=concurrency_key_info.concurrency_key,
-            slotCount=concurrency_key_info.slot_count,
-            activeSlotCount=concurrency_key_info.active_slot_count,
-            activeRunIds=list(concurrency_key_info.active_run_ids),
-            pendingStepCount=concurrency_key_info.pending_step_count,
-            pendingStepRunIds=list(concurrency_key_info.pending_run_ids),
-            assignedStepCount=concurrency_key_info.assigned_step_count,
-            assignedStepRunIds=list(concurrency_key_info.assigned_run_ids),
-        )
+    def __init__(self, concurrency_key: str):
+        self._concurrency_key = concurrency_key
+        self._concurrency_key_info = None
+        super().__init__(concurrencyKey=concurrency_key)
 
-    def resolve_claimedSlots(self, _graphene_info: ResolveInfo):
-        return [GrapheneClaimedConcurrencySlot(slot) for slot in self._claimed_slots]
+    def _get_concurrency_key_info(self, graphene_info: ResolveInfo):
+        if not self._concurrency_key_info:
+            self._concurrency_key_info = (
+                graphene_info.context.instance.event_log_storage.get_concurrency_info(
+                    self._concurrency_key
+                )
+            )
+        return self._concurrency_key_info
 
-    def resolve_pendingSteps(self, _graphene_info: ResolveInfo):
-        return [GraphenePendingConcurrencyStep(step) for step in self._pending_steps]
+    def resolve_claimedSlots(self, graphene_info: ResolveInfo):
+        return [
+            GrapheneClaimedConcurrencySlot(slot)
+            for slot in self._get_concurrency_key_info(graphene_info).claimed_slots
+        ]
+
+    def resolve_pendingSteps(self, graphene_info: ResolveInfo):
+        return [
+            GraphenePendingConcurrencyStep(step)
+            for step in self._get_concurrency_key_info(graphene_info).pending_steps
+        ]
+
+    def resolve_slotCount(self, graphene_info: ResolveInfo):
+        return self._get_concurrency_key_info(graphene_info).slot_count
+
+    def resolve_activeSlotCount(self, graphene_info: ResolveInfo):
+        return self._get_concurrency_key_info(graphene_info).active_slot_count
+
+    def resolve_activeRunIds(self, graphene_info: ResolveInfo):
+        return list(self._get_concurrency_key_info(graphene_info).active_run_ids)
+
+    def resolve_pendingStepCount(self, graphene_info: ResolveInfo):
+        return self._get_concurrency_key_info(graphene_info).pending_step_count
+
+    def resolve_pendingStepRunIds(self, graphene_info: ResolveInfo):
+        return list(self._get_concurrency_key_info(graphene_info).pending_run_ids)
+
+    def resolve_assignedStepCount(self, graphene_info: ResolveInfo):
+        return self._get_concurrency_key_info(graphene_info).assigned_step_count
+
+    def resolve_assignedStepRunIds(self, graphene_info: ResolveInfo):
+        return list(self._get_concurrency_key_info(graphene_info).assigned_run_ids)
 
 
 class GrapheneRunQueueConfig(graphene.ObjectType):
     maxConcurrentRuns = graphene.NonNull(graphene.Int)
     tagConcurrencyLimitsYaml = graphene.String()
+    isOpConcurrencyAware = graphene.Boolean()
 
     class Meta:
         name = "RunQueueConfig"
@@ -196,6 +220,9 @@ class GrapheneRunQueueConfig(graphene.ObjectType):
             sort_keys=True,
         )
 
+    def resolve_isOpConcurrencyAware(self, _graphene_info: ResolveInfo):
+        return self._run_queue_config.should_block_op_concurrency_limited_runs
+
 
 class GrapheneInstance(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
@@ -206,7 +233,6 @@ class GrapheneInstance(graphene.ObjectType):
     executablePath = graphene.NonNull(graphene.String)
     daemonHealth = graphene.NonNull(GrapheneDaemonHealth)
     hasInfo = graphene.NonNull(graphene.Boolean)
-    hasCapturedLogManager = graphene.NonNull(graphene.Boolean)
     autoMaterializePaused = graphene.NonNull(graphene.Boolean)
     supportsConcurrencyLimits = graphene.NonNull(graphene.Boolean)
     minConcurrencyLimitValue = graphene.NonNull(graphene.Int)
@@ -216,7 +242,7 @@ class GrapheneInstance(graphene.ObjectType):
         graphene.NonNull(GrapheneConcurrencyKeyInfo),
         concurrencyKey=graphene.Argument(graphene.String),
     )
-    useAutomationPolicySensors = graphene.Field(
+    useAutoMaterializeSensors = graphene.Field(
         graphene.NonNull(graphene.Boolean),
         description="Whether or not the deployment is using automation policy sensors to materialize assets",
     )
@@ -234,8 +260,8 @@ class GrapheneInstance(graphene.ObjectType):
     def resolve_hasInfo(self, graphene_info: ResolveInfo) -> bool:
         return graphene_info.context.show_instance_config
 
-    def resolve_useAutomationPolicySensors(self, _graphene_info: ResolveInfo):
-        return self._instance.auto_materialize_use_automation_policy_sensors
+    def resolve_useAutoMaterializeSensors(self, _graphene_info: ResolveInfo):
+        return self._instance.auto_materialize_use_sensors
 
     def resolve_info(self, graphene_info: ResolveInfo):
         return self._instance.info_str() if graphene_info.context.show_instance_config else None
@@ -266,9 +292,6 @@ class GrapheneInstance(graphene.ObjectType):
     def resolve_daemonHealth(self, _graphene_info: ResolveInfo):
         return GrapheneDaemonHealth(instance=self._instance)
 
-    def resolve_hasCapturedLogManager(self, _graphene_info: ResolveInfo):
-        return isinstance(self._instance.compute_log_manager, CapturedLogManager)
-
     def resolve_autoMaterializePaused(self, _graphene_info: ResolveInfo):
         return get_auto_materialize_paused(self._instance)
 
@@ -278,13 +301,11 @@ class GrapheneInstance(graphene.ObjectType):
     def resolve_concurrencyLimits(self, _graphene_info: ResolveInfo):
         res = []
         for key in self._instance.event_log_storage.get_concurrency_keys():
-            key_info = self._instance.event_log_storage.get_concurrency_info(key)
-            res.append(GrapheneConcurrencyKeyInfo(key_info))
+            res.append(GrapheneConcurrencyKeyInfo(key))
         return res
 
     def resolve_concurrencyLimit(self, _graphene_info: ResolveInfo, concurrencyKey):
-        key_info = self._instance.event_log_storage.get_concurrency_info(concurrencyKey)
-        return GrapheneConcurrencyKeyInfo(key_info)
+        return GrapheneConcurrencyKeyInfo(concurrencyKey)
 
     def resolve_minConcurrencyLimitValue(self, _graphene_info: ResolveInfo):
         if isinstance(

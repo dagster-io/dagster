@@ -16,12 +16,12 @@ from dagster._config import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
-from dagster._core.host_representation.represented import RepresentedJob
+from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._utils.error import SerializableErrorInfo
 from graphene.types.generic import GenericScalar
 
-from ..config_types import GrapheneConfigTypeField
-from ..util import non_null_list
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneEvaluationStackListItemEntry(graphene.ObjectType):

@@ -17,35 +17,33 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental_param, public
-from dagster._core.decorator_utils import format_docstring_for_description
-from dagster._core.definitions.config import is_callable_valid_config_arg
-from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._utils import IHasInternalInit
-
-from ..decorator_utils import (
+from dagster._core.decorator_utils import (
+    format_docstring_for_description,
     get_function_params,
     has_at_least_one_parameter,
     is_required_param,
     positional_arg_name_list,
     validate_expected_params,
 )
-from .definition_config_schema import (
+from dagster._core.definitions.config import is_callable_valid_config_arg
+from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
+from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from .resource_invocation import resource_invocation_result
-from .resource_requirement import (
-    RequiresResources,
+from dagster._core.definitions.resource_invocation import resource_invocation_result
+from dagster._core.definitions.resource_requirement import (
     ResourceDependencyRequirement,
     ResourceRequirement,
 )
-from .scoped_resources_builder import (  # re-exported
+from dagster._core.definitions.scoped_resources_builder import (
     IContainsGenerator as IContainsGenerator,
     Resources as Resources,
     ScopedResourcesBuilder as ScopedResourcesBuilder,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._utils import IHasInternalInit
 
 if TYPE_CHECKING:
     from dagster._core.execution.resources_init import InitResourceContext
@@ -59,7 +57,7 @@ ResourceFunction: TypeAlias = Union[
 
 
 @experimental_param(param="version")
-class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHasInternalInit):
+class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -154,6 +152,11 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
         until all required resources are available.
         """
         return self._required_resource_keys
+
+    def get_required_resource_keys(
+        self, resource_defs: Mapping[str, "ResourceDefinition"]
+    ) -> AbstractSet[str]:
+        return self.required_resource_keys
 
     def _is_dagster_maintained(self) -> bool:
         return self._dagster_maintained
@@ -291,9 +294,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             return resource_invocation_result(self, None)
 
     def get_resource_requirements(
-        self, outer_context: Optional[object] = None
+        self,
+        source_key: Optional[str],
     ) -> Iterator[ResourceRequirement]:
-        source_key = cast(str, outer_context)
         for resource_key in sorted(list(self.required_resource_keys)):
             yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
 
@@ -359,8 +362,7 @@ class _ResourceDecoratorCallable:
 
 
 @overload
-def resource(config_schema: ResourceFunction) -> ResourceDefinition:
-    ...
+def resource(config_schema: ResourceFunction) -> ResourceDefinition: ...
 
 
 @overload
@@ -369,8 +371,7 @@ def resource(
     description: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     version: Optional[str] = ...,
-) -> Callable[[ResourceFunction], "ResourceDefinition"]:
-    ...
+) -> Callable[[ResourceFunction], "ResourceDefinition"]: ...
 
 
 def resource(
@@ -442,5 +443,5 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     """
     return ResourceDefinition(
         resource_fn=lambda init_context: init_context.resource_config,
-        config_schema=kwargs or Any,
+        config_schema=kwargs or None,
     )

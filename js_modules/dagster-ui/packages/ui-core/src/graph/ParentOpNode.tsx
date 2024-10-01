@@ -1,9 +1,6 @@
-import {colorBackgroundYellow, colorKeylineDefault} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors} from '@dagster-io/ui-components';
+import {Fragment} from 'react';
 import styled from 'styled-components';
-
-import {titleOfIO} from '../app/titleOfIO';
-import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
@@ -12,6 +9,8 @@ import {SVGMonospaceText} from './SVGComponents';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './common';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {titleOfIO} from '../app/titleOfIO';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 interface ParentOpNodeProps {
   layout: OpGraphLayout;
@@ -53,7 +52,7 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
       <SVGLabeledParentRect
         {...bounds}
         label={op.definition.name}
-        fill={colorBackgroundYellow()}
+        fill={Colors.backgroundYellow()}
         minified={minified}
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {
@@ -131,7 +130,7 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
         const metadata = metadataForCompositeParentIO(op.definition, input);
         const invocationInput = op.inputs.find((i) => i.definition.name === input.name)!;
         return (
-          <React.Fragment key={idx}>
+          <Fragment key={idx}>
             {invocationInput.dependsOn.map((dependsOn, iidx) => (
               <ExternalConnectionNode
                 {...highlightingProps}
@@ -145,14 +144,14 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
                 onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
               />
             ))}
-          </React.Fragment>
+          </Fragment>
         );
       })}
       {op.definition.outputDefinitions.map((output, idx) => {
         const metadata = metadataForCompositeParentIO(op.definition, output);
         const invocationOutput = op.outputs.find((i) => i.definition.name === output.name)!;
         return (
-          <React.Fragment key={idx}>
+          <Fragment key={idx}>
             {invocationOutput.dependedBy.map((dependedBy, iidx) => (
               <ExternalConnectionNode
                 {...highlightingProps}
@@ -166,7 +165,7 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
                 onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
               />
             ))}
-          </React.Fragment>
+          </Fragment>
         );
       })}
       <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
@@ -217,7 +216,7 @@ const SVGLabeledRect = ({
     <rect
       {...rect}
       fill={fill}
-      stroke={colorKeylineDefault()}
+      stroke={Colors.keylineDefault()}
       strokeWidth={1}
       className={className}
     />

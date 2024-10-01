@@ -1,16 +1,31 @@
 import {
   Box,
+  Button,
+  Colors,
+  ErrorBoundary,
+  Icon,
   NonIdealState,
   SplitPanelContainer,
-  ErrorBoundary,
-  Button,
-  Icon,
+  SplitPanelContainerHandle,
   Tooltip,
-  colorBackgroundDefault,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
 
+import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
+import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
+import {LogsScrollingTable} from './LogsScrollingTable';
+import {LogType, LogsToolbar} from './LogsToolbar';
+import {RunActionButtons} from './RunActionButtons';
+import {RunContext} from './RunContext';
+import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
+import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {
+  matchingComputeLogKeyFromStepKey,
+  useComputeLogFileKeyForSelection,
+} from './useComputeLogFileKeyForSelection';
+import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -21,28 +36,11 @@ import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
-
-import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
-import {ComputeLogPanel} from './ComputeLogPanel';
-import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
-import {LogsScrollingTable} from './LogsScrollingTable';
-import {LogsToolbar, LogType} from './LogsToolbar';
-import {RunActionButtons} from './RunActionButtons';
-import {RunContext} from './RunContext';
-import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunRootTrace} from './RunRootTrace';
-import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
-import {
-  useComputeLogFileKeyForSelection,
-  matchingComputeLogKeyFromStepKey,
-} from './useComputeLogFileKeyForSelection';
-import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
+import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
-  trace: RunRootTrace;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -60,8 +58,8 @@ const runStatusFavicon = (status: RunStatus) => {
   }
 };
 
-export const Run = (props: RunProps) => {
-  const {run, runId, trace} = props;
+export const Run = memo((props: RunProps) => {
+  const {run, runId} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
@@ -98,12 +96,14 @@ export const Run = (props: RunProps) => {
     });
   };
 
+  const logsDependency = useTraceDependency('RunLogs');
+
   return (
     <RunContext.Provider value={run}>
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <>
-            <OnLogsLoaded trace={trace} />
+            <OnLogsLoaded dependency={logsDependency} />
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
                 <RunWithData
@@ -124,12 +124,12 @@ export const Run = (props: RunProps) => {
       </LogsProvider>
     </RunContext.Provider>
   );
-};
+});
 
-const OnLogsLoaded = ({trace}: {trace: RunRootTrace}) => {
+const OnLogsLoaded = ({dependency}: {dependency: ReturnType<typeof useTraceDependency>}) => {
   React.useLayoutEffect(() => {
-    trace.onLogsLoaded();
-  }, [trace]);
+    dependency.completeDependency(CompletionType.SUCCESS);
+  }, [dependency]);
   return null;
 };
 
@@ -199,7 +199,6 @@ const RunWithData = ({
       : [];
   }, [runtimeGraph, selectionQuery]);
 
-  const supportsCapturedLogs = useSupportsCapturedLogs();
   const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
     useComputeLogFileKeyForSelection({
       stepKeys,
@@ -212,7 +211,8 @@ const RunWithData = ({
     ? logsFilter.logQuery
         .filter((v) => v.token && v.token === 'query')
         .reduce((accum, v) => {
-          return [...accum, ...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name)];
+          accum.push(...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name));
+          return accum;
         }, [] as string[])
     : [];
 
@@ -250,35 +250,33 @@ const RunWithData = ({
     onSetSelectionQuery(newSelected.join(', ') || '*');
   };
 
-  const [splitPanelContainer, setSplitPanelContainer] = React.useState<null | SplitPanelContainer>(
-    null,
-  );
-  React.useEffect(() => {
-    const initialSize = splitPanelContainer?.getSize();
-    switch (initialSize) {
-      case 100:
-        setExpandedPanel('top');
-        return;
-      case 0:
-        setExpandedPanel('bottom');
-        return;
-    }
-  }, [splitPanelContainer]);
-
   const [expandedPanel, setExpandedPanel] = React.useState<null | 'top' | 'bottom'>(null);
+  const containerRef = React.useRef<SplitPanelContainerHandle>(null);
+
+  React.useEffect(() => {
+    if (containerRef.current) {
+      const size = containerRef.current.getSize();
+      if (size === 100) {
+        setExpandedPanel('top');
+      } else if (size === 0) {
+        setExpandedPanel('bottom');
+      }
+    }
+  }, []);
+
   const isTopExpanded = expandedPanel === 'top';
   const isBottomExpanded = expandedPanel === 'bottom';
 
   const expandBottomPanel = () => {
-    splitPanelContainer?.onChangeSize(0);
+    containerRef.current?.changeSize(0);
     setExpandedPanel('bottom');
   };
   const expandTopPanel = () => {
-    splitPanelContainer?.onChangeSize(100);
+    containerRef.current?.changeSize(100);
     setExpandedPanel('top');
   };
   const resetPanels = () => {
-    splitPanelContainer?.onChangeSize(50);
+    containerRef.current?.changeSize(50);
     setExpandedPanel(null);
   };
 
@@ -332,14 +330,13 @@ const RunWithData = ({
   return (
     <>
       <SplitPanelContainer
-        ref={(container) => {
-          setSplitPanelContainer(container);
-        }}
+        ref={containerRef}
         axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
         firstMinSize={56}
         first={gantt(metadata)}
+        secondMinSize={56}
         second={
           <ErrorBoundary region="logs">
             <LogsContainer>
@@ -360,19 +357,12 @@ const RunWithData = ({
               {logType !== LogType.structured ? (
                 !computeLogFileKey ? (
                   <NoStepSelectionState type={logType} />
-                ) : supportsCapturedLogs ? (
+                ) : (
                   <CapturedOrExternalLogPanel
                     logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
                     logCaptureInfo={logCaptureInfo}
                     visibleIOType={LogType[logType]}
                     onSetDownloadUrl={setComputeLogUrl}
-                  />
-                ) : (
-                  <ComputeLogPanel
-                    runId={runId}
-                    computeLogFileKey={stepKeys.length ? computeLogFileKey : undefined}
-                    ioType={LogType[logType]}
-                    setComputeLogUrl={setComputeLogUrl}
                   />
                 )
               ) : (
@@ -407,7 +397,7 @@ const NoStepSelectionState = ({type}: {type: LogType}) => {
         alignItems: 'center',
         justifyContent: 'center',
       }}
-      style={{background: colorBackgroundDefault()}}
+      style={{background: Colors.backgroundDefault()}}
     >
       <NonIdealState
         title={`Select a step to view ${type}`}

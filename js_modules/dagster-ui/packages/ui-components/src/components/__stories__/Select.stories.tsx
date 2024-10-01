@@ -1,6 +1,6 @@
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
 import {Button} from '../Button';
 import {Icon} from '../Icon';
@@ -18,9 +18,9 @@ type Product = {
 };
 
 export const Default = () => {
-  const [active, setActive] = React.useState<Product | null>(null);
+  const [active, setActive] = useState<Product | null>(null);
 
-  const items = React.useMemo(() => {
+  const items = useMemo(() => {
     const items = new Array(10).fill(null).map(() => ({productName: faker.commerce.productName()}));
     return Array.from(new Set(items));
   }, []);

@@ -5,10 +5,11 @@ Revises: ec80dd91891a
 Create Date: 2023-12-01 14:35:47.622154
 
 """
+
 import sqlalchemy as db
 from alembic import op
 from dagster._core.storage.migration.utils import has_table
-from dagster._core.storage.sql import MySQLCompatabilityTypes, get_current_timestamp
+from dagster._core.storage.sql import MySQLCompatabilityTypes, get_sql_current_timestamp
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
@@ -32,8 +33,8 @@ def upgrade():
                 "concurrency_key", MySQLCompatabilityTypes.UniqueText, nullable=False, unique=True
             ),
             db.Column("limit", db.Integer, nullable=False),
-            db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
-            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+            db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
         )
 
 

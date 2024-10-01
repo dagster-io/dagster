@@ -1,4 +1,11 @@
-from dagster import Backoff, Jitter, RetryPolicy, RetryRequested, asset
+from dagster import (
+    AssetExecutionContext,
+    Backoff,
+    Jitter,
+    RetryPolicy,
+    RetryRequested,
+    asset,
+)
 
 
 @asset(
@@ -9,5 +16,5 @@ from dagster import Backoff, Jitter, RetryPolicy, RetryRequested, asset
         jitter=Jitter.PLUS_MINUS,
     )
 )
-def retried_asset():
-    return "Retry me!"
+def retried_asset(context: AssetExecutionContext):
+    context.log.info("Retry me!")

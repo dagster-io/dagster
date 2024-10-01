@@ -22,10 +22,10 @@ from dagster._core.storage.sql import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp
 from sqlalchemy.engine import Connection
 
-from ..utils import (
+from dagster_mysql.utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_isolation_level,
@@ -161,13 +161,13 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             conn.execute(
                 db_dialects.mysql.insert(DaemonHeartbeatsTable)
                 .values(
-                    timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                    timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_value(daemon_heartbeat),
                 )
                 .on_duplicate_key_update(
-                    timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                    timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_value(daemon_heartbeat),
                 )

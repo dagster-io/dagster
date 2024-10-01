@@ -1,9 +1,8 @@
 import * as React from 'react';
 
-import {colorAccentGray, colorBackgroundLight, colorTextDefault} from '../theme/color';
-
 import {Box} from './Box';
-import {IconName, Icon} from './Icon';
+import {Colors} from './Color';
+import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 import {Subheading} from './Text';
 
@@ -30,7 +29,7 @@ export const NonIdealState = ({
   return (
     <Box
       flex={{gap: 20, alignItems: singleContentElement ? 'center' : 'flex-start'}}
-      background={colorBackgroundLight()}
+      background={Colors.backgroundLight()}
       padding={24}
       style={{
         margin: 'auto',
@@ -42,9 +41,9 @@ export const NonIdealState = ({
       {icon === 'spinner' ? (
         <Spinner purpose="section" />
       ) : icon === 'no-results' ? (
-        <Icon name="search" size={48} color={colorAccentGray()} />
+        <Icon name="search" size={48} color={Colors.accentGray()} />
       ) : icon ? (
-        <Icon name={icon} size={48} color={colorAccentGray()} />
+        <Icon name={icon} size={48} color={Colors.accentGray()} />
       ) : null}
       <Box
         flex={{
@@ -55,8 +54,8 @@ export const NonIdealState = ({
           grow: 1,
         }}
       >
-        {title && <Subheading style={{color: colorTextDefault()}}>{title}</Subheading>}
-        {description && <div style={{color: colorTextDefault()}}>{description}</div>}
+        {title && <Subheading style={{color: Colors.textDefault()}}>{title}</Subheading>}
+        {description && <div style={{color: Colors.textDefault()}}>{description}</div>}
         {action}
       </Box>
     </Box>

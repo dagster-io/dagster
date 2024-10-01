@@ -1,12 +1,11 @@
-import * as React from 'react';
+import {memo} from 'react';
 import styled from 'styled-components';
-
-import {weakmapMemoize} from '../app/Util';
-import {buildSVGPath} from '../asset-graph/Utils';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {weakmapMemoize} from '../app/Util';
+import {buildSVGPathVertical} from '../asset-graph/Utils';
 
 export type Edge = {a: string; b: string};
 
@@ -37,7 +36,7 @@ const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: stri
       }
       return {
         // can also use from.point for the "Dagre" closest point on node
-        path: buildSVGPath({source: sourceOutput.port, target: targetInput.port}),
+        path: buildSVGPathVertical({source: sourceOutput.port, target: targetInput.port}),
         sourceOutput,
         targetInput,
         from,
@@ -62,7 +61,7 @@ const inputIsDynamicCollect = (
   return inputDef?.isDynamicCollect || false;
 };
 
-export const OpEdges = React.memo(
+export const OpEdges = memo(
   (props: {
     color: string;
     ops: OpGraphOpFragment[];

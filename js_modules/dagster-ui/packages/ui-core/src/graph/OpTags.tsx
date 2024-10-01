@@ -1,92 +1,158 @@
-import {
-  Box,
-  FontFamily,
-  IconWrapper,
-  colorAccentPrimary,
-  colorBackgroundGray,
-  colorLineageNodeBackground,
-} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import airbyte from './optag-images/airbyte.svg';
-import airflow from './optag-images/airflow.svg';
-import airtable from './optag-images/airtable.svg';
-import aws from './optag-images/aws.svg';
-import axioma from './optag-images/axioma.svg';
-import azure from './optag-images/azure.svg';
-import azureml from './optag-images/azureml.svg';
-import bigquery from './optag-images/bigquery.svg';
-import catboost from './optag-images/catboost.svg';
-import census from './optag-images/census.svg';
-import chalk from './optag-images/chalk.svg';
-import cube from './optag-images/cube.svg';
-import dask from './optag-images/dask.svg';
-import databricks from './optag-images/databricks.svg';
-import datadog from './optag-images/datadog.svg';
-import dbt from './optag-images/dbt.svg';
-import delta_lake from './optag-images/delta_lake.svg';
-import dlthub from './optag-images/dlthub.svg';
-import duckdb from './optag-images/duckdb.svg';
-import excel from './optag-images/excel.svg';
-import fivetran from './optag-images/fivetran.svg';
-import github from './optag-images/github.svg';
-import gitlab from './optag-images/gitlab.svg';
-import googlecloud from './optag-images/googlecloud.svg';
-import googlesheets from './optag-images/googlesheets.svg';
-import great_expectations from './optag-images/great_expectations.svg';
-import hackernewsapi from './optag-images/hackernewsapi.svg';
-import hex from './optag-images/hex.svg';
-import hightouch from './optag-images/hightouch.svg';
-import huggingface from './optag-images/huggingface.svg';
-import jax from './optag-images/jax.svg';
-import jupyter from './optag-images/jupyter.svg';
-import k8s from './optag-images/k8s.svg';
-import keras from './optag-images/keras.svg';
-import lightgbm from './optag-images/lightgbm.svg';
-import linear from './optag-images/linear.svg';
-import looker from './optag-images/looker.svg';
-import matplotlib from './optag-images/matplotlib.svg';
-import meltano from './optag-images/meltano.svg';
-import metabase from './optag-images/metabase.svg';
-import mlflow from './optag-images/mlflow.svg';
-import modal from './optag-images/modal.svg';
-import teams from './optag-images/msteams.svg';
-import noteable from './optag-images/noteable.svg';
-import notion from './optag-images/notion.svg';
-import numpy from './optag-images/numpy.svg';
-import omni from './optag-images/omni.svg';
-import openai from './optag-images/openai.svg';
-import optuna from './optag-images/optuna.svg';
-import pandas from './optag-images/pandas.svg';
-import parquet from './optag-images/parquet.svg';
-import plotly from './optag-images/plotly.svg';
-import polars from './optag-images/polars.svg';
-import postgres from './optag-images/postgres.svg';
-import powerbi from './optag-images/powerbi.svg';
-import pyspark from './optag-images/pyspark.svg';
-import python from './optag-images/python.svg';
-import pytorch from './optag-images/pytorch.svg';
-import pytorch_lightning from './optag-images/pytorch_lightning.svg';
-import ray from './optag-images/ray.svg';
-import rockset from './optag-images/rockset.svg';
-import rust from './optag-images/rust.svg';
-import sagemaker from './optag-images/sagemaker.svg';
-import scikitlearn from './optag-images/scikitlearn.svg';
-import scipy from './optag-images/scipy.svg';
-import segment from './optag-images/segment.svg';
-import slack from './optag-images/slack.svg';
-import sling from './optag-images/sling.svg';
-import snowflake from './optag-images/snowflake.svg';
-import sql from './optag-images/sql.svg';
-import stitch from './optag-images/stitch.svg';
-import stripe from './optag-images/stripe.svg';
-import tableau from './optag-images/tableau.svg';
-import tecton from './optag-images/tecton.svg';
-import tensorflow from './optag-images/tensorflow.svg';
-import vercel from './optag-images/vercel.svg';
-import weights_and_biases from './optag-images/weights_and_biases.svg';
-import xgboost from './optag-images/xgboost.svg';
+import csv from './kindtag-images/csv.svg';
+import dag from './kindtag-images/dag.svg';
+import dashboard from './kindtag-images/dashboard.svg';
+import file from './kindtag-images/file.svg';
+import medallion_bronze from './kindtag-images/medallion-bronze-color.svg';
+import medallion_gold from './kindtag-images/medallion-gold-color.svg';
+import medallion_silver from './kindtag-images/medallion-silver-color.svg';
+import notebook from './kindtag-images/notebook.svg';
+import pdf from './kindtag-images/pdf.svg';
+import seed from './kindtag-images/seed.svg';
+import source from './kindtag-images/source.svg';
+import table from './kindtag-images/table.svg';
+import task from './kindtag-images/task.svg';
+import airbyte from './kindtag-images/tool-airbyte-color.svg';
+import airflow from './kindtag-images/tool-airflow-color.svg';
+import airtable from './kindtag-images/tool-airtable-color.svg';
+import atlan from './kindtag-images/tool-atlan-color.svg';
+import aws from './kindtag-images/tool-aws-color.svg';
+import axioma from './kindtag-images/tool-axioma-color.svg';
+import azure from './kindtag-images/tool-azure-color.svg';
+import azureml from './kindtag-images/tool-azureml-color.svg';
+import bigquery from './kindtag-images/tool-bigquery-color.svg';
+import catboost from './kindtag-images/tool-catboost-color.svg';
+import celery from './kindtag-images/tool-celery-color.svg';
+import census from './kindtag-images/tool-census-color.svg';
+import chalk from './kindtag-images/tool-chalk-color.svg';
+import claude from './kindtag-images/tool-claude-color.svg';
+import collibra from './kindtag-images/tool-collibra-color.svg';
+import cplus from './kindtag-images/tool-cplus-color.svg';
+import csharp from './kindtag-images/tool-csharp-color.svg';
+import cube from './kindtag-images/tool-cube-color.svg';
+import dask from './kindtag-images/tool-dask-color.svg';
+import databricks from './kindtag-images/tool-databricks-color.svg';
+import datadog from './kindtag-images/tool-datadog-color.svg';
+import datahub from './kindtag-images/tool-datahub-color.svg';
+import dbt from './kindtag-images/tool-dbt-color.svg';
+import delta_lake from './kindtag-images/tool-deltalake-color.svg';
+import discord from './kindtag-images/tool-discord-color.svg';
+import dlthub from './kindtag-images/tool-dlthub-color.svg';
+import docker from './kindtag-images/tool-docker-color.svg';
+import duckdb from './kindtag-images/tool-duckdb-color.svg';
+import excel from './kindtag-images/tool-excel-color.svg';
+import facebook from './kindtag-images/tool-facebook-color.svg';
+import fivetran from './kindtag-images/tool-fivetran-color.svg';
+import gemini from './kindtag-images/tool-gemini-color.svg';
+import github from './kindtag-images/tool-github-color.svg';
+import gitlab from './kindtag-images/tool-gitlab-color.svg';
+import go from './kindtag-images/tool-go-color.svg';
+import google from './kindtag-images/tool-google-color.svg';
+import googlecloud from './kindtag-images/tool-googlecloud-color.svg';
+import googlesheets from './kindtag-images/tool-googlesheets-color.svg';
+import graphql from './kindtag-images/tool-graphql-color.svg';
+import greatexpectations from './kindtag-images/tool-greatexpectations-color.svg';
+import hackernews from './kindtag-images/tool-hackernews-color.svg';
+import hashicorp from './kindtag-images/tool-hashicorp-color.svg';
+import hex from './kindtag-images/tool-hex-color.svg';
+import hightouch from './kindtag-images/tool-hightouch-color.svg';
+import hudi from './kindtag-images/tool-hudi-color.svg';
+import huggingface from './kindtag-images/tool-huggingface-color.svg';
+import iceberg from './kindtag-images/tool-iceberg-color.svg';
+import instagram from './kindtag-images/tool-instagram-color.svg';
+import java from './kindtag-images/tool-java-color.svg';
+import javascript from './kindtag-images/tool-javascript-color.svg';
+import jupyter from './kindtag-images/tool-jupyter-color.svg';
+import k8s from './kindtag-images/tool-k8s-color.svg';
+import lakefs from './kindtag-images/tool-lakefs-color.svg';
+import lightgbm from './kindtag-images/tool-lightgbm-color.svg';
+import linear from './kindtag-images/tool-linear-color.svg';
+import linkedin from './kindtag-images/tool-linkedin-color.svg';
+import llama from './kindtag-images/tool-llama-color.svg';
+import looker from './kindtag-images/tool-looker-color.svg';
+import matplotlib from './kindtag-images/tool-matplotlib-color.svg';
+import meltano from './kindtag-images/tool-meltano-color.svg';
+import meta from './kindtag-images/tool-meta-color.svg';
+import metabase from './kindtag-images/tool-metabase-color.svg';
+import microsoft from './kindtag-images/tool-microsoft-color.svg';
+import minstral from './kindtag-images/tool-minstral-color.svg';
+import mlflow from './kindtag-images/tool-mlflow-color.svg';
+import modal from './kindtag-images/tool-modal-color.svg';
+import mongodb from './kindtag-images/tool-mongodb-color.svg';
+import montecarlo from './kindtag-images/tool-montecarlo-color.svg';
+import mysql from './kindtag-images/tool-mysql-color.svg';
+import noteable from './kindtag-images/tool-noteable-color.svg';
+import notion from './kindtag-images/tool-notion-color.svg';
+import numpy from './kindtag-images/tool-numpy-color.svg';
+import omni from './kindtag-images/tool-omni-color.svg';
+import openai from './kindtag-images/tool-openai-color.svg';
+import openmetadata from './kindtag-images/tool-openmetadata-color.svg';
+import optuna from './kindtag-images/tool-optuna-color.svg';
+import oracle from './kindtag-images/tool-oracle-color.svg';
+import pagerduty from './kindtag-images/tool-pagerduty-color.svg';
+import pandas from './kindtag-images/tool-pandas-color.svg';
+import pandera from './kindtag-images/tool-pandera-color.svg';
+import papermill from './kindtag-images/tool-papermill-color.svg';
+import papertrail from './kindtag-images/tool-papertrail-color.svg';
+import parquet from './kindtag-images/tool-parquet-color.svg';
+import plotly from './kindtag-images/tool-plotly-color.svg';
+import plural from './kindtag-images/tool-plural-color.svg';
+import polars from './kindtag-images/tool-polars-color.svg';
+import postgres from './kindtag-images/tool-postgres-color.svg';
+import powerbi from './kindtag-images/tool-powerbi-color.svg';
+import prefect from './kindtag-images/tool-prefect-color.svg';
+import python from './kindtag-images/tool-python-color.svg';
+import pytorch from './kindtag-images/tool-pytorch-color.svg';
+import pytorchlightning from './kindtag-images/tool-pytorchlightning-color.svg';
+import r from './kindtag-images/tool-r-color.svg';
+import ray from './kindtag-images/tool-ray-color.svg';
+import react from './kindtag-images/tool-react-color.svg';
+import reddit from './kindtag-images/tool-reddit-color.svg';
+import redshift from './kindtag-images/tool-redshift-color.svg';
+import rockset from './kindtag-images/tool-rockset-color.svg';
+import rust from './kindtag-images/tool-rust-color.svg';
+import s3 from './kindtag-images/tool-s3-color.svg';
+import sagemaker from './kindtag-images/tool-sagemaker-color.svg';
+import salesforce from './kindtag-images/tool-salesforce-color.svg';
+import scala from './kindtag-images/tool-scala-color.svg';
+import scikitlearn from './kindtag-images/tool-scikitlearn-color.svg';
+import scipy from './kindtag-images/tool-scipy-color.svg';
+import sdf from './kindtag-images/tool-sdf-color.svg';
+import secoda from './kindtag-images/tool-secoda-color.svg';
+import segment from './kindtag-images/tool-segment-color.svg';
+import sharepoint from './kindtag-images/tool-sharepoint-color.svg';
+import shell from './kindtag-images/tool-shell-color.svg';
+import shopify from './kindtag-images/tool-shopify-color.svg';
+import slack from './kindtag-images/tool-slack-color.svg';
+import sling from './kindtag-images/tool-sling-color.svg';
+import snowflake from './kindtag-images/tool-snowflake-color.svg';
+import soda from './kindtag-images/tool-soda-color.svg';
+import spark from './kindtag-images/tool-spark-color.svg';
+import sql from './kindtag-images/tool-sql-color.svg';
+import sqlite from './kindtag-images/tool-sqlite-color.svg';
+import sqlmesh from './kindtag-images/tool-sqlmesh-color.svg';
+import sqlserver from './kindtag-images/tool-sqlserver-color.svg';
+import stepfuncitons from './kindtag-images/tool-stepfunctions-color.svg';
+import stitch from './kindtag-images/tool-stitch-color.svg';
+import stripe from './kindtag-images/tool-stripe-color.svg';
+import tableau from './kindtag-images/tool-tableau-color.svg';
+import teams from './kindtag-images/tool-teams-color.svg';
+import tecton from './kindtag-images/tool-tecton-color.svg';
+import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
+import thoughtspot from './kindtag-images/tool-thoughtspot-color.svg';
+import trino from './kindtag-images/tool-trino-color.svg';
+import twilio from './kindtag-images/tool-twilio-color.svg';
+import typescript from './kindtag-images/tool-typescript-color.svg';
+import vercel from './kindtag-images/tool-vercel-color.svg';
+import wandb from './kindtag-images/tool-w&b-color.svg';
+import x from './kindtag-images/tool-x-color.svg';
+import xgboost from './kindtag-images/tool-xgboost-color.svg';
+import youtube from './kindtag-images/tool-youtube-color.svg';
+import view from './kindtag-images/view.svg';
+import yaml from './kindtag-images/yaml.svg';
 
 export interface IOpTag {
   label: string;
@@ -101,499 +167,902 @@ interface OpTagsProps {
   reversed?: boolean;
 }
 
-export const KNOWN_TAGS = {
+type KnownTag = {
+  color?: string | null;
+  icon?: StaticImageData | string;
+  content: string;
+  blackAndWhite?: boolean;
+};
+
+export type KnownTagType =
+  | 'jupyter'
+  | 'ipynb'
+  | 'noteable'
+  | 'airbyte'
+  | 'sling'
+  | 'snowflake'
+  | 'snowpark'
+  | 'python'
+  | 'fivetran'
+  | 'dbt'
+  | 'slack'
+  | 'pytorch'
+  | 'pyspark'
+  | 'spark'
+  | 'duckdb'
+  | 'tensorflow'
+  | 'pandas'
+  | 'googlesheets'
+  | 'sql'
+  | 'wandb'
+  | 'databricks'
+  | 'airflow'
+  | 'airtable'
+  | 'omni'
+  | 'datadog'
+  | 'postgres'
+  | 'postgresql'
+  | 'stripe'
+  | 'hightouch'
+  | 'census'
+  | 'hex'
+  | 'azure'
+  | 'azureml'
+  | 'sagemaker'
+  | 'bigquery'
+  | 'teams'
+  | 'mlflow'
+  | 'mysql'
+  | 'greatexpectations'
+  | 'powerbi'
+  | 'gcp'
+  | 'googlecloud'
+  | 'looker'
+  | 'tableau'
+  | 'segment'
+  | 'athena'
+  | 's3'
+  | 'aws'
+  | 'stitch'
+  | 'openai'
+  | 'vercel'
+  | 'github'
+  | 'gitlab'
+  | 'plotly'
+  | 'modal'
+  | 'meltano'
+  | 'matplotlib'
+  | 'numpy'
+  | 'scipy'
+  | 'scikitlearn'
+  | 'kubernetes'
+  | 'k8s'
+  | 'polars'
+  | 'catboost'
+  | 'rust'
+  | 'pytorchlightning'
+  | 'deltalake'
+  | 'parquet'
+  | 'lightgbm'
+  | 'xgboost'
+  | 'rockset'
+  | 'optuna'
+  | 'chalk'
+  | 'excel'
+  | 'ray'
+  | 'axioma'
+  | 'cube'
+  | 'metabase'
+  | 'linear'
+  | 'notion'
+  | 'hackernewsapi'
+  | 'hackernews'
+  | 'tecton'
+  | 'dask'
+  | 'dlt'
+  | 'dlthub'
+  | 'huggingface'
+  | 'huggingfaceapi'
+  | 'sqlserver'
+  | 'mongodb'
+  | 'atlan'
+  | 'celery'
+  | 'claude'
+  | 'collibra'
+  | 'datahub'
+  | 'discord'
+  | 'docker'
+  | 'facebook'
+  | 'gemini'
+  | 'google'
+  | 'graphql'
+  | 'hashicorp'
+  | 'hudi'
+  | 'iceberg'
+  | 'instagram'
+  | 'lakefs'
+  | 'linkedin'
+  | 'llama'
+  | 'meta'
+  | 'microsoft'
+  | 'minstral'
+  | 'montecarlo'
+  | 'openmetadata'
+  | 'oracle'
+  | 'pagerduty'
+  | 'pandera'
+  | 'papermill'
+  | 'papertrail'
+  | 'plural'
+  | 'prefect'
+  | 'react'
+  | 'reddit'
+  | 'redshift'
+  | 'salesforce'
+  | 'sdf'
+  | 'secoda'
+  | 'shell'
+  | 'shopify'
+  | 'soda'
+  | 'sqlite'
+  | 'sqlmesh'
+  | 'stepfuncitons'
+  | 'awsstepfuncitons'
+  | 'awssetepfunciton'
+  | 'setepfunciton'
+  | 'thoughtspot'
+  | 'trino'
+  | 'twilio'
+  | 'twitter'
+  | 'x'
+  | 'youtube'
+  | 'typescript'
+  | 'javascript'
+  | 'scala'
+  | 'csharp'
+  | 'cplus'
+  | 'cplusplus'
+  | 'java'
+  | 'go'
+  | 'r'
+  | 'net'
+  | 'sharepoint'
+  | 'table'
+  | 'view'
+  | 'dag'
+  | 'task'
+  | 'source'
+  | 'seed'
+  | 'file'
+  | 'dashboard'
+  | 'notebook'
+  | 'csv'
+  | 'pdf'
+  | 'yaml'
+  | 'gold'
+  | 'silver'
+  | 'bronze'
+  | 'expand';
+
+export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   jupyter: {
-    color: '#929292',
     icon: jupyter,
-    content: 'Jupyter',
+    content: 'jupyter',
   },
   ipynb: {
-    color: '#4E4E4E',
     icon: jupyter,
-    content: 'Jupyter',
-    reversed: true,
+    content: 'ipynb',
   },
   noteable: {
-    color: '#00D2D2',
     icon: noteable,
     content: 'Noteable',
   },
   airbyte: {
-    color: '#655CFC',
     icon: airbyte,
     content: 'Airbyte',
   },
   sling: {
-    color: '#2176EA',
     icon: sling,
     content: 'Sling',
   },
   snowflake: {
-    color: '#29B5E8',
     icon: snowflake,
     content: 'Snowflake',
   },
   snowpark: {
-    color: '#29B5E8',
     icon: snowflake,
     content: 'Snowpark',
   },
   python: {
-    color: '#367EF0',
     icon: python,
     content: 'Python',
   },
   fivetran: {
-    color: '#0073FF',
     icon: fivetran,
     content: 'Fivetran',
   },
   dbt: {
-    color: '#FF6B4C',
     icon: dbt,
     content: 'dbt',
   },
   slack: {
-    color: null,
     icon: slack,
     content: 'Slack',
   },
   pytorch: {
-    color: '#EE4C2C',
     icon: pytorch,
     content: 'PyTorch',
   },
   pyspark: {
-    color: '#C74D15',
-    icon: pyspark,
+    icon: spark,
     content: 'PySpark',
   },
   spark: {
-    color: '#C74D15',
-    icon: pyspark,
+    icon: spark,
     content: 'Spark',
   },
   duckdb: {
-    color: '#FCBC41',
     icon: duckdb,
     content: 'DuckDB',
   },
   tensorflow: {
-    color: '#FE9413',
     icon: tensorflow,
     content: 'TensorFlow',
   },
   pandas: {
-    color: '#E40385',
     icon: pandas,
     content: 'pandas',
-    reversed: true,
   },
   googlesheets: {
-    color: '#23A566',
     icon: googlesheets,
     content: 'Google Sheets',
   },
   sql: {
-    color: '#B821FF',
     icon: sql,
     content: 'SQL',
   },
   wandb: {
-    color: '#FFBE00',
-    icon: weights_and_biases,
+    icon: wandb,
     content: 'Weights & Biases',
   },
   databricks: {
-    color: '#FD3820',
     icon: databricks,
     content: 'Databricks',
   },
   airflow: {
-    color: null,
     icon: airflow,
     content: 'Airflow',
   },
   airtable: {
-    color: null,
     icon: airtable,
     content: 'Airtable',
   },
   omni: {
-    color: null,
     icon: omni,
     content: 'Omni',
   },
   datadog: {
-    color: '#7633C8',
     icon: datadog,
     content: 'Datadog',
-    reversed: true,
   },
   postgres: {
-    color: '#136FBA',
     icon: postgres,
     content: 'Postgres',
   },
+  postgresql: {
+    icon: postgres,
+    content: 'PostgreSQL',
+  },
   stripe: {
-    color: '#635BFF',
     icon: stripe,
     content: 'Stripe',
   },
   hightouch: {
-    color: '#4EBB6C',
     icon: hightouch,
     content: 'Hightouch',
   },
   census: {
-    color: '#EF54AC',
     icon: census,
     content: 'Census',
   },
   hex: {
-    color: '#473982',
     icon: hex,
     content: 'Hex',
-    reversed: true,
+    blackAndWhite: true,
   },
   azure: {
-    color: '#39C3F1',
     icon: azure,
     content: 'Azure',
   },
   azureml: {
-    color: '#39C3F1',
     icon: azureml,
     content: 'Azure ML',
   },
   sagemaker: {
-    color: '#A164FD',
     icon: sagemaker,
     content: 'Sagemaker',
   },
   bigquery: {
-    color: '#4485F4',
     icon: bigquery,
     content: 'BigQuery',
   },
   teams: {
-    color: '#5255A9',
     icon: teams,
     content: 'Teams',
   },
   mlflow: {
-    color: '#0194E2',
     icon: mlflow,
     content: 'ML Flow',
   },
+  mysql: {
+    icon: mysql,
+    content: 'MySQL',
+  },
   greatexpectations: {
-    color: '#FF6310',
-    icon: great_expectations,
+    icon: greatexpectations,
     content: 'Great Expectations',
   },
   powerbi: {
-    color: '#EDC947',
     icon: powerbi,
     content: 'Power BI',
   },
   gcp: {
-    color: '#4285F4',
     icon: googlecloud,
     content: 'GCP',
   },
   googlecloud: {
-    color: '#4285F4',
     icon: googlecloud,
     content: 'Google Cloud',
   },
   looker: {
-    color: '#929292',
     icon: looker,
     content: 'Looker',
   },
   tableau: {
-    color: '#2E5EB1',
     icon: tableau,
     content: 'Tableau',
   },
   segment: {
-    color: '#43AF79',
     icon: segment,
     content: 'Segment',
   },
   athena: {
-    color: '#FF9900',
     icon: aws,
     content: 'Athena',
   },
   s3: {
-    color: '#FF9900',
-    icon: aws,
+    icon: s3,
     content: 'S3',
   },
   aws: {
-    color: '#FF9900',
     icon: aws,
     content: 'AWS',
   },
   stitch: {
-    color: '#FFD201',
     icon: stitch,
     content: 'Stitch',
   },
   openai: {
-    color: '#4AA081',
     icon: openai,
     content: 'Open AI',
   },
   vercel: {
-    color: '#787878',
     icon: vercel,
     content: 'Vercel',
-    reversed: true,
+    blackAndWhite: true,
   },
   github: {
-    color: '#A970C1',
     icon: github,
     content: 'Github',
-    reversed: true,
+    blackAndWhite: true,
   },
   gitlab: {
-    color: '#E24329',
     icon: gitlab,
     content: 'Gitlab',
   },
   plotly: {
-    color: '#787AF7',
     icon: plotly,
     content: 'plotly',
   },
   modal: {
-    color: '#4CDE29',
     icon: modal,
     content: 'Modal',
-    reversed: true,
   },
   meltano: {
-    color: '#3537BE',
     icon: meltano,
     content: 'Meltano',
-    reversed: true,
   },
   matplotlib: {
-    color: '#055998',
     icon: matplotlib,
     content: 'matplotlib',
   },
   numpy: {
-    color: '#4D77CF',
     icon: numpy,
     content: 'NumPy',
   },
   scipy: {
-    color: '#0054A6',
     icon: scipy,
     content: 'SciPy',
   },
   scikitlearn: {
-    color: '#F7931E',
     icon: scikitlearn,
     content: 'Scikit Learn',
   },
-  keras: {
-    color: '#D00000',
-    icon: keras,
-    content: 'Keras',
-  },
   kubernetes: {
-    color: '#326CE5',
     icon: k8s,
     content: 'Kubernetes',
   },
   k8s: {
-    color: '#326CE5',
     icon: k8s,
     content: 'K8s',
   },
   polars: {
-    color: '#24292E',
     icon: polars,
     content: 'Polars',
+    blackAndWhite: true,
   },
   catboost: {
-    color: null,
     icon: catboost,
     content: 'CatBoost',
   },
   rust: {
-    color: '#000000',
     icon: rust,
     content: 'Rust',
-    reversed: true,
+    blackAndWhite: true,
   },
   pytorchlightning: {
-    color: null,
-    icon: pytorch_lightning,
+    icon: pytorchlightning,
     content: 'Pytorch Lightning',
   },
   deltalake: {
-    color: '#00ADD4',
     icon: delta_lake,
     content: 'Delta Lake',
   },
   parquet: {
-    color: '#50ABF1',
     icon: parquet,
     content: 'Parquet',
   },
   lightgbm: {
-    color: null,
     icon: lightgbm,
     content: 'lightgbm',
   },
   xgboost: {
-    color: '#1A9EDB',
     icon: xgboost,
     content: 'XGBoost',
   },
-  jax: {
-    color: null,
-    icon: jax,
-    content: 'JAX',
-  },
   rockset: {
-    color: null,
     icon: rockset,
     content: 'Rockset',
   },
   optuna: {
-    color: '#1488C9',
     icon: optuna,
     content: 'Optuna',
   },
   chalk: {
-    color: '#000000',
     icon: chalk,
     content: 'Chalk',
-    reversed: true,
+    blackAndWhite: true,
   },
   excel: {
-    color: '#00A651',
     icon: excel,
     content: 'Excel',
   },
   ray: {
-    color: '#00A2E9',
     icon: ray,
     content: 'Ray',
+    blackAndWhite: true,
   },
   axioma: {
-    color: '#0774B6',
     icon: axioma,
     content: 'Axioma',
   },
   cube: {
-    color: null,
     icon: cube,
     content: 'Cube',
   },
   metabase: {
-    color: '#509EE3',
     icon: metabase,
     content: 'Metabase',
   },
   linear: {
-    color: '#5E6AD2',
     icon: linear,
     content: 'Linear',
   },
   notion: {
-    color: '#000000',
     icon: notion,
     content: 'Notion',
-    reversed: true,
+    blackAndWhite: true,
   },
   hackernewsapi: {
-    color: '#FB651E',
-    icon: hackernewsapi,
+    icon: hackernews,
+    content: 'Hacker News',
+  },
+  hackernews: {
+    icon: hackernews,
     content: 'Hacker News API',
   },
   tecton: {
-    color: '#D30602',
     icon: tecton,
     content: 'Tecton',
   },
   dask: {
-    color: null,
     icon: dask,
     content: 'Dask',
   },
   dlt: {
-    color: null,
     icon: dlthub,
     content: 'dlt',
   },
   dlthub: {
-    color: null,
     icon: dlthub,
     content: 'dlthub',
   },
   huggingface: {
-    color: null,
     icon: huggingface,
     content: 'Hugging Face',
   },
   huggingfaceapi: {
-    color: null,
     icon: huggingface,
     content: 'Hugging Face',
+  },
+  sqlserver: {
+    icon: sqlserver,
+    content: 'Microsoft SQL Server',
+  },
+  mongodb: {
+    icon: mongodb,
+    content: 'MongoDB',
+  },
+  atlan: {
+    icon: atlan,
+    content: 'Atlan',
+  },
+  celery: {
+    icon: celery,
+    content: 'Celery',
+  },
+  claude: {
+    icon: claude,
+    content: 'Claude',
+  },
+  collibra: {
+    icon: collibra,
+    content: 'Collibra',
+  },
+  datahub: {
+    icon: datahub,
+    content: 'Datahub',
+  },
+  discord: {
+    icon: discord,
+    content: 'Discord',
+  },
+  docker: {
+    icon: docker,
+    content: 'Docker',
+  },
+  facebook: {
+    icon: facebook,
+    content: 'Facebook',
+  },
+  gemini: {
+    icon: gemini,
+    content: 'Gemini',
+  },
+  google: {
+    icon: google,
+    content: 'Google',
+  },
+  graphql: {
+    icon: graphql,
+    content: 'GraphQL',
+  },
+  hashicorp: {
+    icon: hashicorp,
+    content: 'Hashicorp',
+  },
+  hudi: {
+    icon: hudi,
+    content: 'Hudi',
+  },
+  iceberg: {
+    icon: iceberg,
+    content: 'Iceberg',
+  },
+  instagram: {
+    icon: instagram,
+    content: 'Instagram',
+  },
+  lakefs: {
+    icon: lakefs,
+    content: 'LakeFS',
+  },
+  linkedin: {
+    icon: linkedin,
+    content: 'LinkedIn',
+  },
+  llama: {
+    icon: llama,
+    content: 'Llama',
+  },
+  meta: {
+    icon: meta,
+    content: 'Meta',
+  },
+  microsoft: {
+    icon: microsoft,
+    content: 'Microsoft',
+  },
+  minstral: {
+    icon: minstral,
+    content: 'Minstral',
+  },
+  montecarlo: {
+    icon: montecarlo,
+    content: 'Monte Carlo',
+  },
+  openmetadata: {
+    icon: openmetadata,
+    content: 'Open Metadata',
+  },
+  oracle: {
+    icon: oracle,
+    content: 'Oracle',
+  },
+  pagerduty: {
+    icon: pagerduty,
+    content: 'PagerDuty',
+  },
+  pandera: {
+    icon: pandera,
+    content: 'Pandera',
+  },
+  papermill: {
+    icon: papermill,
+    content: 'Papermill',
+  },
+  papertrail: {
+    icon: papertrail,
+    content: 'Papertrail',
+  },
+  plural: {
+    icon: plural,
+    content: 'Plural',
+    blackAndWhite: true,
+  },
+  prefect: {
+    icon: prefect,
+    content: 'Prefect',
+  },
+  react: {
+    icon: react,
+    content: 'React',
+  },
+  reddit: {
+    icon: reddit,
+    content: 'Reddit',
+  },
+  redshift: {
+    icon: redshift,
+    content: 'Redshift',
+  },
+  salesforce: {
+    icon: salesforce,
+    content: 'Salesforce',
+  },
+  sdf: {
+    icon: sdf,
+    content: 'SDF',
+  },
+  secoda: {
+    icon: secoda,
+    content: 'Secoda',
+  },
+  shell: {
+    icon: shell,
+    content: 'Shell',
+    blackAndWhite: true,
+  },
+  shopify: {
+    icon: shopify,
+    content: 'Shopify',
+  },
+  soda: {
+    icon: soda,
+    content: 'Soda',
+  },
+  sqlite: {
+    icon: sqlite,
+    content: 'SQLite',
+  },
+  sqlmesh: {
+    icon: sqlmesh,
+    content: 'SQLMesh',
+  },
+  stepfuncitons: {
+    icon: stepfuncitons,
+    content: 'Step Functions',
+  },
+  awsstepfuncitons: {
+    icon: stepfuncitons,
+    content: 'Step Functions',
+  },
+  awssetepfunciton: {
+    icon: stepfuncitons,
+    content: 'Step Functions',
+  },
+  setepfunciton: {
+    icon: stepfuncitons,
+    content: 'Step Functions',
+  },
+  thoughtspot: {
+    icon: thoughtspot,
+    content: 'Thoughtspot',
+    blackAndWhite: true,
+  },
+  trino: {
+    icon: trino,
+    content: 'Trino',
+  },
+  twilio: {
+    icon: twilio,
+    content: 'Twilio',
+  },
+  twitter: {
+    icon: x,
+    content: 'Twitter',
+    blackAndWhite: true,
+  },
+  x: {
+    icon: x,
+    content: ' ',
+    blackAndWhite: true,
+  },
+  youtube: {
+    icon: youtube,
+    content: 'YouTube',
+  },
+  typescript: {
+    icon: typescript,
+    content: 'TypeScript',
+  },
+  javascript: {
+    icon: javascript,
+    content: 'JavaScript',
+  },
+  scala: {
+    icon: scala,
+    content: 'Scala',
+  },
+  csharp: {
+    icon: csharp,
+    content: 'C#',
+  },
+  cplus: {
+    icon: cplus,
+    content: 'C++',
+  },
+  cplusplus: {
+    icon: cplus,
+    content: 'C++',
+  },
+  java: {
+    icon: java,
+    content: 'Java',
+  },
+  go: {
+    icon: go,
+    content: 'Go',
+  },
+  r: {
+    icon: r,
+    content: ' ',
+  },
+  net: {
+    icon: microsoft,
+    content: '.net',
+  },
+  sharepoint: {
+    icon: sharepoint,
+    content: 'Sharepoint',
+  },
+  table: {
+    icon: table,
+    content: 'Table',
+    blackAndWhite: true,
+  },
+  view: {
+    icon: view,
+    content: 'View',
+    blackAndWhite: true,
+  },
+  dag: {
+    icon: dag,
+    content: 'Dag',
+    blackAndWhite: true,
+  },
+  task: {
+    icon: task,
+    content: 'Task',
+    blackAndWhite: true,
+  },
+  source: {
+    icon: source,
+    content: 'Source',
+    blackAndWhite: true,
+  },
+  seed: {
+    icon: seed,
+    content: 'Seed',
+    blackAndWhite: true,
+  },
+  file: {
+    icon: file,
+    content: 'File',
+    blackAndWhite: true,
+  },
+  dashboard: {
+    icon: dashboard,
+    content: 'Dashboard',
+    blackAndWhite: true,
+  },
+  notebook: {
+    icon: notebook,
+    content: 'Notebook',
+    blackAndWhite: true,
+  },
+  csv: {
+    icon: csv,
+    content: ' ',
+    blackAndWhite: true,
+  },
+  pdf: {
+    icon: pdf,
+    content: ' ',
+    blackAndWhite: true,
+  },
+  yaml: {
+    icon: yaml,
+    content: ' ',
+    blackAndWhite: true,
+  },
+  gold: {
+    icon: medallion_gold,
+    content: 'Gold',
+  },
+  silver: {
+    icon: medallion_silver,
+    content: 'Silver',
+  },
+  bronze: {
+    icon: medallion_bronze,
+    content: 'Bronze',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
 
 // google-sheets to googlesheets, Duckdb to duckdb
 function coerceToStandardLabel(label: string) {
-  return label.replace(/[ _-]/g, '').toLowerCase();
+  return label.replace(/[ _.-]/g, '').toLowerCase();
 }
 
-export const AssetComputeKindTag = ({
-  definition,
-  ...rest
-}: {
-  definition: {computeKind: string | null};
-  style: React.CSSProperties;
-  reduceColor?: boolean;
-  reduceText?: boolean;
-  reversed?: boolean;
-}) => {
-  if (!definition.computeKind) {
-    return null;
+export const extractIconSrc = (knownTag: KnownTag | undefined) => {
+  // Storybook imports SVGs are string but nextjs imports them as object.
+  // This is a temporary work around until we can get storybook to import them the same way as nextjs
+  if (typeof knownTag?.icon !== 'undefined') {
+    return typeof knownTag.icon === 'string' ? (knownTag.icon as any) : knownTag.icon?.src;
   }
-  return (
-    <OpTags
-      {...rest}
-      tags={[
-        {
-          label: definition.computeKind,
-          onClick: () => {
-            window.requestAnimationFrame(() => document.dispatchEvent(new Event('show-kind-info')));
-          },
-        },
-      ]}
-    />
-  );
+  return '';
 };
 
 export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTagsProps) => {
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
-        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
+        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as KnownTagType];
+        const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
         const text = known?.content || tag.label;
-        // NULL color means we inherit the color from the svg.
-        // This is useful when the icon requires mulltiple colors. like Airflow.
-        const color = known?.color || null;
-        const reversed = known && 'reversed' in known ? known.reversed : false;
+
         return (
           <Box
             key={tag.label}
@@ -601,16 +1070,16 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
             data-tooltip={reduceText ? text : undefined}
             onClick={tag.onClick}
             style={{
-              background: reduceColor ? colorBackgroundGray() : colorLineageNodeBackground(),
-              fontWeight: reduceColor ? 500 : 700,
+              background: reduceColor ? Colors.backgroundGray() : Colors.lineageNodeBackground(),
+              fontWeight: reduceColor ? 500 : 600,
             }}
           >
             {known && 'icon' in known && (
               <OpTagIconWrapper
                 role="img"
                 $size={16}
-                $img={known.icon.src}
-                $color={reversed ? colorAccentPrimary() : color}
+                $img={extractIconSrc(known)}
+                $color={blackAndWhite ? Colors.accentPrimary() : null}
                 $rotation={null}
                 aria-label={tag.label}
               />
@@ -621,6 +1090,24 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
       })}
     </OpTagsContainer>
   );
+});
+
+export const TagIcon = React.memo(({label}: {label: string}) => {
+  const known = KNOWN_TAGS[coerceToStandardLabel(label) as KnownTagType];
+  const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
+  if (known && 'icon' in known) {
+    return (
+      <OpTagIconWrapper
+        role="img"
+        $size={16}
+        $img={extractIconSrc(known)}
+        $color={blackAndWhite ? Colors.accentPrimary() : null}
+        $rotation={null}
+        aria-label={label}
+      />
+    );
+  }
+  return null;
 });
 
 const OpTagIconWrapper = styled(IconWrapper)`

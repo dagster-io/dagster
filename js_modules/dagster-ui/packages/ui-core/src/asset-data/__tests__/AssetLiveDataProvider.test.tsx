@@ -1,27 +1,33 @@
 jest.useFakeTimers();
 
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {render, act, waitFor} from '@testing-library/react';
+import {act, render, waitFor} from '@testing-library/react';
 import {GraphQLError} from 'graphql/error';
-import React from 'react';
-
-import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
-import {getMockResultFn} from '../../testing/mocking';
-import {
-  AssetLiveDataProvider,
-  SUBSCRIPTION_IDLE_POLL_RATE,
-  _resetLastFetchedOrRequested,
-  useAssetsLiveData,
-  BATCH_SIZE,
-} from '../AssetLiveDataProvider';
 
 import {buildMockedAssetGraphLiveQuery} from './util';
+import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
+import {LiveDataThreadID} from '../../live-data-provider/LiveDataThread';
+import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../../live-data-provider/util';
+import {getMockResultFn} from '../../testing/mocking';
+import {useAssetsBaseData} from '../AssetBaseDataProvider';
+import {AssetLiveDataProvider, __resetForJest} from '../AssetLiveDataProvider';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});
 
 afterEach(() => {
-  _resetLastFetchedOrRequested();
+  __resetForJest();
+});
+
+let mockBatchParallelFetches = 1;
+jest.mock('../../live-data-provider/util', () => {
+  const actual = jest.requireActual('../../live-data-provider/util');
+  return {
+    ...actual,
+    get BATCH_PARALLEL_FETCHES() {
+      return mockBatchParallelFetches;
+    },
+  };
 });
 
 function Test({
@@ -31,24 +37,27 @@ function Test({
   mocks: MockedResponse[];
   hooks: {
     keys: AssetKeyInput[];
-    hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
+    thread?: LiveDataThreadID;
+    hookResult: (data: ReturnType<typeof useAssetsBaseData>['liveDataByNode']) => void;
   }[];
 }) {
   function Hook({
     keys,
+    thread,
     hookResult,
   }: {
     keys: AssetKeyInput[];
-    hookResult: (data: ReturnType<typeof useAssetsLiveData>['liveDataByNode']) => void;
+    thread?: LiveDataThreadID;
+    hookResult: (data: ReturnType<typeof useAssetsBaseData>['liveDataByNode']) => void;
   }) {
-    hookResult(useAssetsLiveData(keys).liveDataByNode);
+    hookResult(useAssetsBaseData(keys, thread).liveDataByNode);
     return <div />;
   }
   return (
     <MockedProvider mocks={mocks}>
       <AssetLiveDataProvider>
-        {hooks.map(({keys, hookResult}, idx) => (
-          <Hook key={idx} keys={keys} hookResult={hookResult} />
+        {hooks.map(({keys, thread, hookResult}, idx) => (
+          <Hook key={idx} keys={keys} hookResult={hookResult} thread={thread} />
         ))}
       </AssetLiveDataProvider>
     </MockedProvider>
@@ -83,6 +92,7 @@ describe('AssetLiveDataProvider', () => {
     await waitFor(() => {
       expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
+
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect the cache to be used this time.
@@ -380,9 +390,6 @@ describe('AssetLiveDataProvider', () => {
     });
 
     expect(resultFn).toHaveBeenCalled();
-    await waitFor(() => {
-      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
-    });
     expect(resultFn2).not.toHaveBeenCalled();
 
     // Re-render with the same asset keys and expect no fetches to be made
@@ -415,5 +422,102 @@ describe('AssetLiveDataProvider', () => {
     });
     expect(resultFn2).toHaveBeenCalled();
     expect(hookResult2.mock.calls[1]).toEqual(hookResult.mock.calls[1]);
+  });
+
+  it('Has multiple threads', async () => {
+    const assetKeys = [buildAssetKey({path: ['key1']})];
+    const assetKeys2 = [buildAssetKey({path: ['key2']})];
+    const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(assetKeys2);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+
+    const hookResult = jest.fn();
+    const hookResult2 = jest.fn();
+
+    render(
+      <Test
+        mocks={[mockedQuery, mockedQuery2]}
+        hooks={[
+          {keys: assetKeys, thread: 'default', hookResult},
+          {keys: assetKeys2, thread: 'context-menu', hookResult: hookResult2},
+        ]}
+      />,
+    );
+
+    // Initially an empty object
+    expect(resultFn).toHaveBeenCalledTimes(0);
+    expect(resultFn2).toHaveBeenCalledTimes(0);
+    expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
+    expect(hookResult2.mock.calls[0]!.value).toEqual(undefined);
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+      expect(hookResult2.mock.calls[1]!.value).not.toEqual({});
+    });
+  });
+
+  it('Supports parallel fetches', async () => {
+    mockBatchParallelFetches = 2;
+    jest.resetModules();
+
+    const assetKeys = [];
+    for (let i = 0; i < 4 * BATCH_SIZE; i++) {
+      assetKeys.push(buildAssetKey({path: [`key${i}`]}));
+    }
+    const chunk1 = assetKeys.slice(0, BATCH_SIZE);
+    const chunk2 = assetKeys.slice(BATCH_SIZE, 2 * BATCH_SIZE);
+    const chunk3 = assetKeys.slice(2 * BATCH_SIZE, 3 * BATCH_SIZE);
+    const chunk4 = assetKeys.slice(3 * BATCH_SIZE, 4 * BATCH_SIZE);
+
+    const mockedQuery = buildMockedAssetGraphLiveQuery(chunk1);
+    const mockedQuery2 = buildMockedAssetGraphLiveQuery(chunk2);
+    const mockedQuery3 = buildMockedAssetGraphLiveQuery(chunk3);
+    const mockedQuery4 = buildMockedAssetGraphLiveQuery(chunk4);
+
+    const resultFn = getMockResultFn(mockedQuery);
+    const resultFn2 = getMockResultFn(mockedQuery2);
+    const resultFn3 = getMockResultFn(mockedQuery3);
+    const resultFn4 = getMockResultFn(mockedQuery4);
+
+    const hookResult = jest.fn();
+
+    render(
+      <Test
+        mocks={[mockedQuery, mockedQuery2, mockedQuery3, mockedQuery4]}
+        hooks={[{keys: assetKeys, hookResult}]}
+      />,
+    );
+
+    // Initially an empty object
+    expect(resultFn).not.toHaveBeenCalled();
+    expect(hookResult.mock.calls[0][0]).toEqual({});
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // 2 batches are sent .
+    expect(resultFn).toHaveBeenCalled();
+    expect(resultFn2).toHaveBeenCalled();
+    expect(resultFn4).not.toHaveBeenCalled();
+    expect(resultFn3).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Second chunk is fetched
+    await waitFor(() => {
+      expect(resultFn3).toHaveBeenCalled();
+      expect(resultFn4).toHaveBeenCalled();
+    });
   });
 });

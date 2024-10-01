@@ -36,11 +36,6 @@ export type RunActionButtonsTestQuery = {
           repositoryLocationName: string;
         } | null;
         tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-        assets: Array<{
-          __typename: 'Asset';
-          id: string;
-          key: {__typename: 'AssetKey'; path: Array<string>};
-        }>;
         assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         assetCheckSelection: Array<{
           __typename: 'AssetCheckhandle';
@@ -80,3 +75,5 @@ export type RunActionButtonsTestQuery = {
       }
     | {__typename: 'RunNotFoundError'};
 };
+
+export const RunActionButtonsTestQueryVersion = 'a10ee12da7843c87453578a2723bd3f9db19215ad9f50ac897d0979ac6187365';

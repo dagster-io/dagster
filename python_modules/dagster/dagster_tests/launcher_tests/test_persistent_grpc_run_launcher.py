@@ -8,6 +8,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarget
 from dagster._grpc.server import GrpcServerProcess
@@ -54,7 +55,7 @@ def test_run_always_finishes():
                 dagster_run = instance.create_run_for_job(
                     job_def=slow_job,
                     run_config=None,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
                 run_id = dagster_run.run_id
@@ -82,6 +83,7 @@ def test_run_always_finishes():
 
 
 def test_run_from_pending_repository():
+    run_id = make_new_run_id()
     with instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -133,7 +135,7 @@ def test_run_from_pending_repository():
                 # pipeline definition
                 dagster_run = instance.create_run(
                     job_name="my_cool_asset_job",
-                    run_id="xyzabc",
+                    run_id=run_id,
                     run_config=None,
                     resolved_op_selection=None,
                     step_keys_to_execute=None,
@@ -144,14 +146,14 @@ def test_run_from_pending_repository():
                     job_snapshot=external_job.job_snapshot,
                     execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
                     parent_job_snapshot=external_job.parent_job_snapshot,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                     asset_selection=None,
                     op_selection=None,
                     asset_check_selection=None,
-                    asset_job_partitions_def=code_location.get_asset_job_partitions_def(
-                        external_job
-                    ),
+                    asset_graph=code_location.get_repository(
+                        external_job.repository_handle.repository_name
+                    ).asset_graph,
                 )
 
                 run_id = dagster_run.run_id
@@ -216,7 +218,7 @@ def test_terminate_after_shutdown():
             dagster_run = instance.create_run_for_job(
                 job_def=sleepy_job,
                 run_config=None,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
@@ -239,7 +241,7 @@ def test_terminate_after_shutdown():
             doomed_to_fail_dagster_run = instance.create_run_for_job(
                 job_def=math_diamond,
                 run_config=None,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
@@ -288,7 +290,7 @@ def test_server_down():
                 dagster_run = instance.create_run_for_job(
                     job_def=sleepy_job,
                     run_config=None,
-                    external_job_origin=external_job.get_external_origin(),
+                    external_job_origin=external_job.get_remote_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
 

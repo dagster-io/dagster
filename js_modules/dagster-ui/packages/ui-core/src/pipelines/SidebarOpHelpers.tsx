@@ -1,26 +1,13 @@
 // eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
-import {
-  Group,
-  Icon,
-  IconWrapper,
-  Code,
-  FontFamily,
-  colorKeylineDefault,
-  colorAccentBlue,
-  colorTextBlue,
-  colorTextLight,
-  colorBackgroundLight,
-  colorAccentGray,
-} from '@dagster-io/ui-components';
+import {Code, Colors, FontFamily, Group, Icon, IconWrapper} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {SectionHeader} from './SidebarComponents';
 import {titleOfIO} from '../app/titleOfIO';
 import {OpColumn, OpColumnContainer} from '../runs/LogsRowComponents';
-
-import {SectionHeader} from './SidebarComponents';
 
 type OpLinkInfo = {
   solid: {name: string};
@@ -39,7 +26,7 @@ export type OpMappingTable = {
 export const ShowAllButton = styled.button`
   background: transparent;
   border: none;
-  color: ${colorAccentBlue()};
+  color: ${Colors.accentBlue()};
   text-decoration: underline;
   padding-top: 10px;
   font-size: 0.9rem;
@@ -70,7 +57,7 @@ export const Invocation = (props: {invocation: SidebarOpInvocationInfo; onClick:
   const handlePath = handleID.split('.');
   return (
     <InvocationContainer onClick={props.onClick}>
-      {pipelineName && <div style={{color: colorTextBlue()}}>{pipelineName}</div>}
+      {pipelineName && <div style={{color: Colors.textBlue()}}>{pipelineName}</div>}
       <OpColumn stepKey={handlePath.join('.')} />
     </InvocationContainer>
   );
@@ -90,8 +77,8 @@ export const DependencyRow = ({
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <OpLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
         <Group direction="row" spacing={2} alignItems="center">
-          {isDynamic && <Icon name="op_dynamic" color={colorAccentGray()} />}
-          <Icon name="arrow_forward" color={colorAccentGray()} />
+          {isDynamic && <Icon name="op_dynamic" color={Colors.accentGray()} />}
+          <Icon name="arrow_forward" color={Colors.accentGray()} />
         </Group>
       </td>
       <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <OpLink {...to} />}</Cell>
@@ -139,21 +126,21 @@ export const DependencyTable = styled.table`
 
 const DependencyHeaderCell = styled.td`
   font-size: 0.7rem;
-  color: ${colorTextLight()};
+  color: ${Colors.textLight()};
 `;
 
 const InvocationContainer = styled.div`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
-  border-bottom: 1px solid ${colorKeylineDefault()};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background: ${colorBackgroundLight()};
+    background: ${Colors.backgroundLight()};
   }
 
   font-family: ${FontFamily.monospace};

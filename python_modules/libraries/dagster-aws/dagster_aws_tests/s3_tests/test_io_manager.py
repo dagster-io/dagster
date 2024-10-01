@@ -12,7 +12,6 @@ from dagster import (
     Out,
     Output,
     StaticPartitionsDefinition,
-    VersionStrategy,
     asset,
     graph,
     job,
@@ -20,9 +19,10 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.test_utils import instance_for_test
-from dagster._legacy import build_assets_job
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+
 from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
@@ -126,33 +126,6 @@ def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
     assert len(list(mock_s3_bucket.objects.all())) == 2
 
 
-def test_memoization_s3_io_manager(mock_s3_bucket):
-    class BasicVersionStrategy(VersionStrategy):
-        def get_op_version(self, _):
-            return "foo"
-
-    @op
-    def basic():
-        return "foo"
-
-    @job(
-        resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_test_resource},
-        version_strategy=BasicVersionStrategy(),
-    )
-    def memoized():
-        basic()
-
-    run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
-    with instance_for_test() as instance:
-        result = memoized.execute_in_process(run_config=run_config, instance=instance)
-        assert result.success
-        assert result.output_for_node("basic") == "foo"
-
-        result = memoized.execute_in_process(run_config=run_config, instance=instance)
-        assert result.success
-        assert len(result.all_node_events) == 0
-
-
 def define_assets_job(bucket):
     @op
     def first_op(first_input):
@@ -183,15 +156,17 @@ def define_assets_job(bucket):
     def partitioned():
         return 8
 
-    return build_assets_job(
-        name="assets",
-        assets=[asset1, asset2, AssetsDefinition.from_graph(graph_asset), partitioned],
-        source_assets=[source1],
-        resource_defs={
+    graph_asset_def = AssetsDefinition.from_graph(graph_asset)
+    target_assets = [asset1, asset2, graph_asset_def, partitioned]
+
+    return Definitions(
+        assets=[*target_assets, source1],
+        jobs=[define_asset_job("assets", target_assets)],
+        resources={
             "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,
         },
-    )
+    ).get_job_def("assets")
 
 
 def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
@@ -221,5 +196,27 @@ def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):
         (
             "test-bucket",
             "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
+        ),
+    }
+
+    # re-execution does not cause issues, overwrites the buckets
+    result2 = inty_job.execute_in_process(partition_key="apple")
+
+    objects = list(mock_s3_bucket.objects.all())
+    assert len(objects) == 8
+    assert {(o.bucket_name, o.key) for o in objects} == {
+        ("test-bucket", "dagster/source1/bar"),
+        ("test-bucket", "dagster/source1/foo"),
+        ("test-bucket", "dagster/asset1"),
+        ("test-bucket", "dagster/asset2"),
+        ("test-bucket", "dagster/asset3"),
+        ("test-bucket", "dagster/partitioned/apple"),
+        (
+            "test-bucket",
+            "/".join(["dagster", "storage", result.run_id, "graph_asset.first_op", "result"]),
+        ),
+        (
+            "test-bucket",
+            "/".join(["dagster", "storage", result2.run_id, "graph_asset.first_op", "result"]),
         ),
     }

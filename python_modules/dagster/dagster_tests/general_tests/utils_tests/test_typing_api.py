@@ -1,6 +1,7 @@
 import typing
 
 from dagster._utils.typing_api import (
+    flatten_unions,
     get_optional_inner_type,
     is_closed_python_dict_type,
     is_closed_python_list_type,
@@ -131,3 +132,21 @@ def test_is_typing_type():
     assert is_typing_type(typing.Tuple[str, typing.List]) is True
     assert is_typing_type(typing.Tuple[str, typing.Optional[typing.Dict]]) is True
     assert is_typing_type(typing.Tuple[str, typing.Tuple]) is True
+
+
+def test_flatten_unions() -> None:
+    assert flatten_unions(str) == {str}
+    assert flatten_unions(typing.Union[str, float]) == {str, float}
+    assert flatten_unions(typing.Union[str, float, int]) == {str, float, int}
+    assert flatten_unions(typing.Optional[str]) == {str, type(None)}
+    assert flatten_unions(typing.Optional[typing.Union[str, float]]) == {
+        str,
+        float,
+        type(None),
+    }
+    assert flatten_unions(typing.Union[typing.Union[str, float], int]) == {
+        str,
+        float,
+        int,
+    }
+    assert flatten_unions(typing.Any) == {typing.Any}  # type: ignore

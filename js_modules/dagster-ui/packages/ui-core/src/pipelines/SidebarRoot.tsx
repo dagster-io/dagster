@@ -1,17 +1,16 @@
-import {Box, Tabs, ErrorBoundary} from '@dagster-io/ui-components';
+import {Box, ErrorBoundary, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
-import {TypeListContainer} from '../typeexplorer/TypeListContainer';
-import {TabLink} from '../ui/TabLink';
-import {RepoAddress} from '../workspace/types';
 
 import {RightInfoPanelContent} from './GraphExplorer';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarContainerOverview} from './SidebarContainerOverview';
 import {SidebarOp} from './SidebarOp';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
+import {TypeListContainer} from '../typeexplorer/TypeListContainer';
+import {TabLink} from '../ui/TabLink';
+import {RepoAddress} from '../workspace/types';
 
 type TabKey = 'types' | 'info';
 

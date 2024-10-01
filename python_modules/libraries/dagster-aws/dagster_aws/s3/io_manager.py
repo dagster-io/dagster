@@ -19,7 +19,7 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from upath import UPath
 
-from .resources import S3Resource
+from dagster_aws.s3.resources import S3Resource
 
 
 class PickledObjectS3IOManager(UPathIOManager):
@@ -44,10 +44,6 @@ class PickledObjectS3IOManager(UPathIOManager):
             raise FileNotFoundError(f"Could not find file {path} in S3 bucket {self.bucket}")
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        if self.path_exists(path):
-            context.log.warning(f"Removing existing S3 object: {path}")
-            self.unlink(path)
-
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         pickled_obj_bytes = io.BytesIO(pickled_obj)
         self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, path.as_posix())

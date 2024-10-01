@@ -21,17 +21,16 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._config import Field
-from dagster._core.definitions import build_assets_job
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
@@ -42,10 +41,7 @@ from dagster._core.snap import (
     create_job_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster._core.storage.partition_status_cache import (
-    AssetPartitionStatus,
-    AssetStatusCacheValue,
-)
+from dagster._core.storage.partition_status_cache import AssetPartitionStatus, AssetStatusCacheValue
 from dagster._core.storage.sqlite_storage import (
     _event_logs_directory,
     _runs_directory,
@@ -74,7 +70,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    run = create_run_for_test(instance, job_name="foo_job", run_id="new_run")
+    run = create_run_for_test(instance, job_name="foo_job")
 
     assert instance.get_runs() == [run]
 
@@ -82,15 +78,13 @@ def test_get_run_by_id():
 
 
 def do_test_single_write_read(instance):
-    run_id = "some_run_id"
-
     @job
     def job_def():
         pass
 
-    instance.create_run_for_job(job_def=job_def, run_id=run_id)
-    run = instance.get_run_by_id(run_id)
-    assert run.run_id == run_id
+    run = instance.create_run_for_job(job_def=job_def)
+    stored_run = instance.get_run_by_id(run.run_id)
+    assert run.run_id == stored_run.run_id
     assert run.job_name == "job_def"
     assert list(instance.get_runs()) == [run]
     instance.wipe()
@@ -260,7 +254,9 @@ def noop_asset():
     pass
 
 
-noop_asset_job = build_assets_job(assets=[noop_asset], name="noop_asset_job")
+noop_asset_job = Definitions(
+    assets=[noop_asset], jobs=[define_asset_job("noop_asset_job", [noop_asset])]
+).get_job_def("noop_asset_job")
 
 
 def test_create_job_snapshot():
@@ -308,15 +304,14 @@ def test_submit_run():
             run = create_run_for_test(
                 instance=instance,
                 job_name=external_job.name,
-                run_id="foo-bar",
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 
             instance.submit_run(run.run_id, workspace)
 
             assert len(instance.run_coordinator.queue()) == 1
-            assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
+            assert instance.run_coordinator.queue()[0].run_id == run.run_id
 
 
 def test_create_run_with_asset_partitions():
@@ -340,7 +335,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
-                asset_job_partitions_def=noop_asset_job.partitions_def,
+                asset_graph=noop_asset_job.asset_layer.asset_graph,
             )
 
         with pytest.raises(
@@ -356,7 +351,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
-                asset_job_partitions_def=noop_asset_job.partitions_def,
+                asset_graph=noop_asset_job.asset_layer.asset_graph,
             )
 
         create_run_for_test(
@@ -365,7 +360,7 @@ def test_create_run_with_asset_partitions():
             execution_plan_snapshot=ep_snapshot,
             job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
-            asset_job_partitions_def=noop_asset_job.partitions_def,
+            asset_graph=noop_asset_job.asset_layer.asset_graph,
         )
 
 
@@ -404,7 +399,7 @@ def test_get_required_daemon_types():
 
     with instance_for_test(
         overrides={
-            "auto_materialize": {"enabled": False},
+            "auto_materialize": {"enabled": False, "use_sensors": False},
         }
     ) as instance:
         assert instance.get_required_daemon_types() == [
@@ -757,13 +752,7 @@ def test_report_runless_asset_event():
         assert mats[my_asset_key]
 
         instance.report_runless_asset_event(AssetObservation(my_asset_key))
-        records = instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_OBSERVATION,
-                asset_key=my_asset_key,
-            ),
-            limit=1,
-        )
+        records = instance.fetch_observations(my_asset_key, limit=1).records
         assert len(records) == 1
 
         my_check = "my_check"
@@ -780,3 +769,12 @@ def test_report_runless_asset_event():
             limit=1,
         )
         assert len(records) == 1
+
+
+def test_invalid_run_id():
+    with instance_for_test() as instance:
+        with pytest.raises(
+            CheckError,
+            match="run_id must be a valid UUID. Got invalid_run_id",
+        ):
+            create_run_for_test(instance, job_name="foo_job", run_id="invalid_run_id")

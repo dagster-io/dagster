@@ -1,11 +1,21 @@
-import {useMutation} from '@apollo/client';
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
+import {DeletionDialog} from './DeletionDialog';
+import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
+import {RunConfigDialog} from './RunConfigDialog';
+import {doneStatuses} from './RunStatuses';
+import {DagsterTag} from './RunTag';
+import {RunsQueryRefetchContext} from './RunUtils';
+import {TerminationDialog} from './TerminationDialog';
+import {RunFragment} from './types/RunFragments.types';
+import {useMutation} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
+import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
 import {
   FreeConcurrencySlotsMutation,
@@ -14,21 +24,23 @@ import {
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
-import {DeletionDialog} from './DeletionDialog';
-import {RunConfigDialog} from './RunConfigDialog';
-import {doneStatuses} from './RunStatuses';
-import {RunsQueryRefetchContext} from './RunUtils';
-import {TerminationDialog} from './TerminationDialog';
-import {RunFragment} from './types/RunFragments.types';
-
-type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
+type VisibleDialog =
+  | 'config'
+  | 'delete'
+  | 'terminate'
+  | 'queue-criteria'
+  | 'free_slots'
+  | 'metrics'
+  | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
   const {runConfigYaml} = run;
-  const [visibleDialog, setVisibleDialog] = React.useState<VisibleDialog>(null);
+  const runMetricsEnabled = run.tags.some((t) => t.key === DagsterTag.RunMetrics);
 
-  const {rootServerURI} = React.useContext(AppContext);
-  const {refetch} = React.useContext(RunsQueryRefetchContext);
+  const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
+
+  const {rootServerURI} = useContext(AppContext);
+  const {refetch} = useContext(RunsQueryRefetchContext);
 
   const copy = useCopyToClipboard();
   const history = useHistory();
@@ -93,14 +105,32 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
               >
                 <MenuItem
                   text="Download debug file"
-                  icon={<Icon name="download_for_offline" />}
+                  icon="download_for_offline"
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
+              {run.status === RunStatus.QUEUED ? (
+                <MenuItem
+                  tagName="button"
+                  icon="history_toggle_off"
+                  text="View queue criteria"
+                  intent="none"
+                  onClick={() => setVisibleDialog('queue-criteria')}
+                />
+              ) : null}
+              {runMetricsEnabled && RunMetricsDialog ? (
+                <MenuItem
+                  tagName="button"
+                  icon="asset_plot"
+                  text="View container metrics"
+                  intent="none"
+                  onClick={() => setVisibleDialog('metrics')}
+                />
+              ) : null}
               {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
                 <MenuItem
                   text="Free concurrency slots"
-                  icon={<Icon name="lock" />}
+                  icon="lock"
                   onClick={freeConcurrencySlots}
                 />
               ) : null}
@@ -127,6 +157,20 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
         tags={run.tags}
         isJob={isJob}
       />
+      {run.status === RunStatus.QUEUED ? (
+        <QueuedRunCriteriaDialog
+          run={run}
+          isOpen={visibleDialog === 'queue-criteria'}
+          onClose={() => setVisibleDialog(null)}
+        />
+      ) : null}
+      {runMetricsEnabled && RunMetricsDialog ? (
+        <RunMetricsDialog
+          runId={run.id}
+          isOpen={visibleDialog === 'metrics'}
+          onClose={() => setVisibleDialog(null)}
+        />
+      ) : null}
       {run.hasDeletePermission ? (
         <DeletionDialog
           isOpen={visibleDialog === 'delete'}

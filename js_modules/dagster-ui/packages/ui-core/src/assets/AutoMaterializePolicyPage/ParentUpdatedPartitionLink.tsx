@@ -1,14 +1,13 @@
-import {ButtonLink, Box, Tag, Caption} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {sortAssetKeys} from '../../asset-graph/Utils';
-import {AssetLink} from '../AssetLink';
-import {AssetKey} from '../types';
+import {Box, ButtonLink, Caption, Tag} from '@dagster-io/ui-components';
+import {useMemo, useState} from 'react';
 
 import {AssetKeysDialog, AssetKeysDialogEmptyState, AssetKeysDialogHeader} from './AssetKeysDialog';
 import {VirtualizedAssetPartitionListForDialog} from './VirtualizedAssetPartitionListForDialog';
 import {AssetDetailType, detailTypeToLabel} from './assetDetailUtils';
 import {useFilterPartitionNames} from './assetFilters';
+import {sortAssetKeys} from '../../asset-graph/Utils';
+import {AssetLink} from '../AssetLink';
+import {AssetKey} from '../types';
 
 interface Props {
   updatedAssetKeys: Record<string, AssetKey[]>;
@@ -16,10 +15,10 @@ interface Props {
 }
 
 export const ParentUpdatedPartitionLink = ({updatedAssetKeys, willUpdateAssetKeys}: Props) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [queryString, setQueryString] = React.useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [queryString, setQueryString] = useState('');
 
-  const partitionNames = React.useMemo(() => {
+  const partitionNames = useMemo(() => {
     return Array.from(
       new Set([...Object.keys(updatedAssetKeys), ...Object.keys(willUpdateAssetKeys)]),
     );
@@ -28,7 +27,7 @@ export const ParentUpdatedPartitionLink = ({updatedAssetKeys, willUpdateAssetKey
   const count = partitionNames.length;
   const filteredPartitionNames = useFilterPartitionNames(partitionNames, queryString);
 
-  const visiblePartitions = React.useMemo(() => {
+  const visiblePartitions = useMemo(() => {
     return Object.fromEntries(
       filteredPartitionNames.map((partitionName) => {
         return [

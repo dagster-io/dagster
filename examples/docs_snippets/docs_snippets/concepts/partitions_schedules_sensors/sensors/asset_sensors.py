@@ -167,7 +167,7 @@ def downstream_daily_asset():
 
 downstream_daily_job = define_asset_job(
     "downstream_daily_job",
-    AssetSelection.keys("downstream_daily_asset"),
+    AssetSelection.assets(downstream_daily_asset),
     partitions_def=daily_partitions_def,
 )
 
@@ -181,7 +181,7 @@ def downstream_weekly_asset():
 
 weekly_asset_job = define_asset_job(
     "weekly_asset_job",
-    AssetSelection.keys("downstream_weekly_asset"),
+    AssetSelection.assets(downstream_weekly_asset),
     partitions_def=weekly_partitions_def,
 )
 

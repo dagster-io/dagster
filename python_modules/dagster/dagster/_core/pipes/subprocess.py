@@ -6,8 +6,8 @@ from typing import Mapping, Optional, Sequence, Union
 from dagster_pipes import PipesExtras
 
 from dagster import _check as check
-from dagster._annotations import experimental, public
-from dagster._core.definitions.resource_annotation import ResourceParam
+from dagster._annotations import public
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
@@ -23,8 +23,7 @@ from dagster._core.pipes.utils import (
 )
 
 
-@experimental
-class _PipesSubprocess(PipesClient):
+class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
     """A pipes client that runs a subprocess with the given command and environment.
 
     By default parameters are injected via environment variables. Context is passed via
@@ -41,7 +40,7 @@ class _PipesSubprocess(PipesClient):
         forward_termination (bool): Whether to send a SIGINT signal to the subprocess
             if the orchestration process is interrupted or canceled. Defaults to True.
         termination_timeout_seconds (float): How long to wait after forwarding termination
-            for the subprocess to exit. Defaults to 2.
+            for the subprocess to exit. Defaults to 20.
     """
 
     def __init__(
@@ -51,7 +50,7 @@ class _PipesSubprocess(PipesClient):
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
         forward_termination: bool = True,
-        termination_timeout_seconds: float = 2,
+        termination_timeout_seconds: float = 20,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.cwd = check.opt_str_param(cwd, "cwd")
@@ -134,6 +133,3 @@ class _PipesSubprocess(PipesClient):
                 raise
 
         return PipesClientCompletedInvocation(pipes_session)
-
-
-PipesSubprocessClient = ResourceParam[_PipesSubprocess]

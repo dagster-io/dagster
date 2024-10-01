@@ -32,7 +32,7 @@ deploy-docker-branch:
     ...
 
     # Add a step to launch the job cloning the prod db
-    - dagster-cloud job launch
+    - dagster-plus job launch
       --url "$DAGSTER_CLOUD_URL/$DEPLOYMENT_NAME"
       --api-token "$DAGSTER_CLOUD_API_TOKEN"
       --location "location_name_containing_clone_prod_job"

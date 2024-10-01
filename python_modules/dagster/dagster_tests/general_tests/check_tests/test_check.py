@@ -3,15 +3,41 @@ import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import dagster._check as check
 import pytest
+from dagster._annotations import PublicAttr
 from dagster._check import (
     CheckError,
     ElementCheckError,
+    EvalContext,
+    ImportFrom,
     NotImplementedCheckError,
     ParameterCheckError,
+    build_check_call_str,
 )
+from typing_extensions import Annotated
+
+if TYPE_CHECKING:
+    from dagster._core.test_utils import TestType  # used in lazy import ForwardRef test case
 
 
 @contextmanager
@@ -1482,6 +1508,7 @@ def test_iterable():
 
 
 def test_opt_iterable():
+    assert check.opt_iterable_param(None, "thisisfine") == []
     assert check.opt_iterable_param([], "thisisfine") == []
     assert check.opt_iterable_param([1], "thisisfine") == [1]
     assert check.opt_iterable_param((i for i in [1, 2]), "thisisfine")
@@ -1507,3 +1534,184 @@ def test_opt_iterable():
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
         check.opt_iterable_param(["atr", None], "nonedoesntcount", of_type=str)
+
+
+def test_is_iterable() -> None:
+    assert check.is_iterable([]) == []
+    assert check.is_iterable((1, 2)) == tuple([1, 2])
+    assert check.is_iterable("foo") == "foo"  # str is iterable
+    assert check.is_iterable({"a": 1}) == {"a": 1}  # dict is iterable
+
+    assert check.is_iterable([1, "str"]) == [1, "str"]
+
+    with pytest.raises(CheckError):
+        check.is_iterable([1, "str"], of_type=int)
+
+    with pytest.raises(CheckError):
+        check.is_iterable([1, "str"], of_type=str)
+
+    with pytest.raises(CheckError):
+        check.is_iterable(None)
+
+    with pytest.raises(CheckError):
+        check.is_iterable(1)
+
+
+def test_is_iterable_typing() -> None:
+    def returns_iterable_of_int_but_typed_any() -> Any:
+        return [1, 2]
+
+    def returns_iterable_of_t() -> Iterable[int]:
+        any_typed = returns_iterable_of_int_but_typed_any()
+        retval = check.is_iterable(any_typed, of_type=str)
+        # That the type: ignore is necessary is proof that
+        # is_iterable flows type information correctly
+        return retval  # type: ignore
+
+    # meaningless assert. The test is show the typechecker working
+    assert returns_iterable_of_t
+
+
+# ###################################################################################################
+# ##### CHECK BUILDER
+# ###################################################################################################
+
+
+def build_check_call(ttype, name, eval_ctx: EvalContext):
+    body = build_check_call_str(ttype, name, eval_ctx)
+    lazy_import_str = "\n    ".join(
+        f"from {module} import {t}" for t, module in eval_ctx.lazy_imports.items()
+    )
+
+    fn = f"""
+def _check({name}):
+    {lazy_import_str}
+    return {body}
+"""
+    return eval_ctx.compile_fn(fn, "_check")
+
+
+class Foo: ...
+
+
+class SubFoo(Foo): ...
+
+
+class Bar: ...
+
+
+T = TypeVar("T")
+
+
+class Gen(Generic[T]): ...
+
+
+class SubGen(Gen[str]): ...
+
+
+BUILD_CASES = [
+    (int, [4], ["4"]),
+    (float, [4.2], ["4.1"]),
+    (str, ["hi"], [Foo()]),
+    (Bar, [Bar()], [Foo()]),
+    (Optional[Bar], [Bar()], [Foo()]),
+    (List[str], [["a", "b"]], [[1, 2]]),
+    (Sequence[str], [["a", "b"]], [[1, 2]]),
+    (Iterable[str], [["a", "b"]], [[1, 2]]),
+    (Set[str], [{"a", "b"}], [{1, 2}]),
+    (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
+    (Optional[AbstractSet[str]], [{"a", "b"}, None], [{1, 2}]),
+    (
+        Mapping[str, AbstractSet[str]],
+        [
+            {"letters": {"a", "b"}},
+            # should fail, but we do not yet handle inner collection types,
+            # check.mapping_param(..., key_type=str, value_type=AbstractSet)
+            {"numbers": {1, 2}},
+        ],
+        [
+            {"letters": ["a", "b"]},
+        ],
+    ),
+    (Dict[str, int], [{"a": 1}], [{1: "a"}]),
+    (Mapping[str, int], [{"a": 1}], [{1: "a"}]),
+    (Optional[int], [None], ["4"]),
+    (Optional[Bar], [None], [Foo()]),
+    (Optional[List[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Sequence[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Iterable[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Set[str]], [{"a", "b"}], [{1, 2}]),
+    (Optional[Dict[str, int]], [{"a": 1}], [{1: "a"}]),
+    (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
+    (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),  # type: ignore  # ignored for update, fix me!
+    (PublicAttr[Bar], [Bar()], [Foo()]),  # type: ignore  # ignored for update, fix me!
+    (Annotated[Bar, None], [Bar()], [Foo()]),
+    (Annotated["Bar", None], [Bar()], [Foo()]),
+    (List[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
+    (
+        List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]],
+        [[]],  # avoid importing TestType
+        [[Foo()]],
+    ),
+    (Union[bool, Foo], [True], [None]),
+    (Union[Foo, "Bar"], [Bar()], [None]),
+    (TypeVar("T", bound=Foo), [Foo(), SubFoo()], [Bar()]),
+    (TypeVar("T", bound=Optional[Foo]), [None], [Bar()]),
+    (TypeVar("T"), [Foo(), None], []),
+    (Literal["apple"], ["apple"], ["banana"]),
+    (Literal["apple", "manzana"], ["apple", "manzana"], ["banana"]),
+    (Callable, [lambda x: x, int], [4]),
+    (Callable[[], int], [lambda x: x, int], [4]),
+    # fwd refs
+    ("Foo", [Foo()], [Bar()]),
+    (Optional["Foo"], [Foo()], [Bar()]),
+    (PublicAttr[Optional["Foo"]], [None], [Bar()]),  # type: ignore  # ignored for update, fix me!
+    (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
+    (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
+    (Gen, [Gen()], [Bar()]),
+    (Gen[str], [Gen()], [Bar()]),
+    (SubGen, [SubGen()], [Bar()]),
+    (Sequence[SubGen], [[SubGen()]], [[Bar()]]),
+    (Sequence[Gen[str]], [[Gen()]], [[Bar()]]),
+]
+
+
+@pytest.mark.parametrize("ttype, should_succeed, should_fail", BUILD_CASES)
+def test_build_check_call(
+    ttype: Type, should_succeed: Sequence[object], should_fail: Sequence[object]
+) -> None:
+    eval_ctx = EvalContext(globals(), locals(), {})
+    check_call = build_check_call(ttype, "test_param", eval_ctx)
+
+    for obj in should_succeed:
+        check_call(obj)
+
+    for obj in should_fail:
+        with pytest.raises(CheckError):
+            check_call(obj)
+
+
+def test_build_check_errors() -> None:
+    with pytest.raises(CheckError, match=r"Unable to resolve ForwardRef\('NoExist'\)"):
+        build_check_call(
+            List["NoExist"],  # type: ignore # noqa
+            "bad",
+            EvalContext(globals(), locals(), {}),
+        )
+
+
+def test_forward_ref_flow() -> None:
+    # original context captured at decl
+    eval_ctx = EvalContext(globals(), locals(), {})
+    ttype = List["Late"]  # class not yet defined
+
+    class Late: ...
+
+    with pytest.raises(CheckError):
+        # can not build call since ctx was captured before definition
+        build_check_call(ttype, "ok", eval_ctx)
+
+    eval_ctx.update_from_frame(0)  # update from callsite frame
+    # now it works
+    call = build_check_call(ttype, "ok", eval_ctx)
+    call([Late()])

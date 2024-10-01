@@ -12,13 +12,11 @@ from dagster import (
 
 
 @asset
-def orders():
-    ...
+def orders(): ...
 
 
 @asset
-def items():
-    ...
+def items(): ...
 
 
 def make_check(check_blob: Mapping[str, str]) -> AssetChecksDefinition:

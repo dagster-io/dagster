@@ -3,13 +3,11 @@ import sys
 import time
 from typing import Iterator, Optional
 
-import pendulum
-
 from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.events import DagsterEventType, EngineEventData
+from dagster._core.events import DagsterEventType, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -18,7 +16,9 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
-from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
+from dagster._daemon.utils import DaemonErrorCapture
+from dagster._time import get_current_timestamp
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -52,7 +52,9 @@ def monitor_starting_run(
 
         logger.info(msg)
 
-        instance.report_run_failed(run, msg)
+        instance.report_run_failed(
+            run, msg, JobFailureData(error=None, failure_reason=RunFailureReason.START_TIMEOUT)
+        )
 
 
 def monitor_canceling_run(
@@ -100,7 +102,7 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
 
 def monitor_started_run(
     instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace: BaseWorkspaceRequestContext,
     run_record: RunRecord,
     logger: logging.Logger,
 ) -> None:
@@ -135,7 +137,10 @@ def monitor_started_run(
                 # Return rather than immediately checking for a timeout, since we only just resumed
                 return
             else:
-                if instance.run_launcher.supports_resume_run:
+                if (
+                    instance.run_launcher.supports_resume_run
+                    and instance.run_monitoring_max_resume_run_attempts > 0
+                ):
                     msg = (
                         f"Detected run worker status {check_health_result}. Marking run"
                         f" {run.run_id} as failed, because it has surpassed the configured maximum"
@@ -151,7 +156,9 @@ def monitor_started_run(
                 instance.report_run_failed(run, msg)
                 # Return rather than immediately checking for a timeout, since we just failed
                 return
-    check_run_timeout(instance, run_record, logger)
+    check_run_timeout(
+        instance, run_record, logger, float(instance.run_monitoring_max_runtime_seconds)
+    )
 
 
 def execute_run_monitoring_iteration(
@@ -193,29 +200,36 @@ def execute_run_monitoring_iteration(
             else:
                 check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                f"Hit error while monitoring run {run_record.dagster_run.run_id}: {error_info}"
+            yield DaemonErrorCapture.on_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"Hit error while monitoring run {run_record.dagster_run.run_id}",
             )
-            yield error_info
         else:
             yield
 
 
 def check_run_timeout(
-    instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
+    instance: DagsterInstance,
+    run_record: RunRecord,
+    logger: logging.Logger,
+    default_timeout_seconds: float,
 ) -> None:
+    # Also allow dagster/max_runtime_seconds to match the global setting
     max_time_str = run_record.dagster_run.tags.get(
-        MAX_RUNTIME_SECONDS_TAG,
+        MAX_RUNTIME_SECONDS_TAG, run_record.dagster_run.tags.get("dagster/max_runtime_seconds")
     )
-    if not max_time_str:
-        return
+    if max_time_str:
+        max_time = float(max_time_str)
+    else:
+        max_time = default_timeout_seconds
 
-    max_time = float(max_time_str)
+    if not max_time:
+        return
 
     if (
         run_record.start_time is not None
-        and pendulum.now("UTC").timestamp() - run_record.start_time > max_time
+        and get_current_timestamp() - run_record.start_time > max_time
     ):
         logger.info(
             f"Run {run_record.dagster_run.run_id} has exceeded maximum runtime of"

@@ -27,9 +27,9 @@ The asset you built should look similar to the following code. Click **View answ
 
 ```python {% obfuscated="true" %}
 @asset(
-	deps=["taxi_zones_file"]
+    deps=["taxi_zones_file"]
 )
-def taxi_zones():
+def taxi_zones() -> None:
     sql_query = f"""
         create or replace table zones as (
             select
@@ -41,6 +41,6 @@ def taxi_zones():
         );
     """
 
-		conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-		conn.execute(sql_query)
+    conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+    conn.execute(sql_query)
 ```

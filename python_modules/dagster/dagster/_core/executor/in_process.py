@@ -10,9 +10,8 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.executor.base import Executor
 from dagster._utils.timing import format_duration, time_execution_scope
-
-from .base import Executor
 
 
 def inprocess_execution_iterator(
@@ -21,7 +20,7 @@ def inprocess_execution_iterator(
     instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
 ) -> Iterator[DagsterEvent]:
     with InstanceConcurrencyContext(
-        job_context.instance, job_context.run_id
+        job_context.instance, job_context.dagster_run
     ) as instance_concurrency_context:
         yield from inner_plan_execution_iterator(
             job_context, execution_plan, instance_concurrency_context
@@ -71,8 +70,6 @@ class InProcessExecutor(Executor):
 
         yield DagsterEvent.engine_event(
             plan_context,
-            "Finished steps in process (pid: {pid}) in {duration_ms}".format(
-                pid=os.getpid(), duration_ms=format_duration(timer_result.millis)
-            ),
+            f"Finished steps in process (pid: {os.getpid()}) in {format_duration(timer_result.millis)}",
             event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute),
         )

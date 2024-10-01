@@ -1,7 +1,7 @@
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
-from .composites_query import (
+from dagster_graphql_tests.graphql.composites_query import (
     COMPOSITES_QUERY,
     COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE,
     NESTED_INPUT_DEPENDS_ON,
@@ -9,7 +9,9 @@ from .composites_query import (
     PARENT_ID_QUERY,
     SOLID_ID_QUERY,
 )
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 # 10 total solids in the composite pipeline:
 #

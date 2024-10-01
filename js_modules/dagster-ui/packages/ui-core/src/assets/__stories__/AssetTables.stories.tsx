@@ -1,10 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {VirtualizedRepoAssetTable} from '../../workspace/VirtualizedRepoAssetTable';
-import {RepoAssetTableFragment} from '../../workspace/types/VirtualizedRepoAssetTable.types';
+import {RepoAssetTableFragment} from '../../workspace/types/WorkspaceAssetsQuery.types';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,

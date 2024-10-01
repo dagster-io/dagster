@@ -29,6 +29,8 @@ export type ScheduleRootQuery = {
         solidSelection: Array<string | null> | null;
         mode: string;
         description: string | null;
+        defaultStatus: Types.InstigationStatus;
+        canReset: boolean;
         partitionSet: {__typename: 'PartitionSet'; id: string; name: string} | null;
         scheduleState: {
           __typename: 'InstigationState';
@@ -50,6 +52,7 @@ export type ScheduleRootQuery = {
             __typename: 'Run';
             id: string;
             status: Types.RunStatus;
+            creationTime: number;
             startTime: number | null;
             endTime: number | null;
             updateTime: number | null;
@@ -113,7 +116,7 @@ export type ScheduleRootQuery = {
 
 export type PreviousRunsForScheduleQueryVariables = Types.Exact<{
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type PreviousRunsForScheduleQuery = {
@@ -138,6 +141,7 @@ export type PreviousRunsForScheduleQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -157,3 +161,7 @@ export type PreviousRunsForScheduleQuery = {
         }>;
       };
 };
+
+export const ScheduleRootQueryVersion = 'b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc';
+
+export const PreviousRunsForScheduleQueryVersion = '7955ced58f846514ce4272707e9682b6bd66f53a26b4f6ff3754f1581f5ef92f';

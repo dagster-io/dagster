@@ -1,13 +1,12 @@
 import {CodeMirrorInDialogStyle, Dialog, DialogHeader} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
+import {LaunchpadAllowedRoot} from './LaunchpadAllowedRoot';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {RepoAddress} from '../workspace/types';
-
-import {LaunchpadAllowedRoot} from './LaunchpadAllowedRoot';
 
 // ########################
 // ##### LAUNCHPAD ROOTS
@@ -53,7 +52,13 @@ export const JobOrAssetLaunchpad = (props: {repoAddress: RepoAddress}) => {
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
   const {
     permissions: {canLaunchPipelineExecution},
+    loading,
   } = usePermissionsForLocation(repoAddress.location);
+  useBlockTraceUntilTrue('Permissions', loading);
+
+  if (loading) {
+    return null;
+  }
 
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;

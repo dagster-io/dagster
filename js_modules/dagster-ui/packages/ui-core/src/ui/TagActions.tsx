@@ -1,11 +1,4 @@
-import {
-  Box,
-  Caption,
-  Popover,
-  colorTooltipBackground,
-  colorTooltipText,
-  colorBorderHover,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, Popover} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -23,7 +16,7 @@ export type TagAction =
     };
 
 export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]}) => (
-  <ActionContainer background={colorTooltipBackground()} flex={{direction: 'row'}}>
+  <ActionContainer background={Colors.tooltipBackground()} flex={{direction: 'row'}}>
     {actions.map((action, ii) =>
       'to' in action ? (
         <Link to={action.to} key={ii}>
@@ -44,16 +37,19 @@ export const TagActionsPopover = ({
   data,
   actions,
   children,
+  childrenMiddleTruncate,
 }: {
   data: TagType;
   actions: TagAction[];
   children: React.ReactNode;
+  childrenMiddleTruncate?: boolean;
 }) => {
   return (
     <Popover
       content={<TagActions actions={actions} data={data} />}
       hoverOpenDelay={100}
       hoverCloseDelay={100}
+      targetProps={childrenMiddleTruncate ? {style: {minWidth: 0, maxWidth: '100%'}} : {}}
       placement="top"
       interactionKind="hover"
     >
@@ -69,8 +65,8 @@ const ActionContainer = styled(Box)`
 
 const TagButton = styled.button`
   border: none;
-  background: ${colorTooltipBackground()};
-  color: ${colorTooltipText()};
+  background: ${Colors.tooltipBackground()};
+  color: ${Colors.tooltipText()};
   cursor: pointer;
   padding: 8px 12px;
   text-align: left;
@@ -78,7 +74,7 @@ const TagButton = styled.button`
   transition: opacity 50ms linear;
 
   :not(:last-child) {
-    box-shadow: -1px 0 0 inset ${colorBorderHover()};
+    box-shadow: -1px 0 0 inset ${Colors.borderHover()};
   }
 
   :focus {

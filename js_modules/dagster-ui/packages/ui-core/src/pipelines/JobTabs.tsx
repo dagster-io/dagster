@@ -1,12 +1,11 @@
 import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo} from 'react';
 
+import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
 import {PermissionResult, PermissionsState, permissionResultForKey} from '../app/Permissions';
 import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
 
 export const DEFAULT_JOB_TAB_ORDER = ['overview', 'playground', 'runs', 'partitions'];
 
@@ -27,7 +26,7 @@ export const JobTabs = (props: Props) => {
     opNames: [],
   });
 
-  const selectedTab = React.useMemo(() => {
+  const selectedTab = useMemo(() => {
     return (
       tabs.find((tab) => tab.pathComponent === matchingTab) ||
       tabs.find((tab) => tab.pathComponent === '')
@@ -80,9 +79,7 @@ export interface JobTabConfig {
 }
 
 /**
- * Define the default set of job tabs. These can then be ordered by the `tabBuilder` supplied
- * via context. We provide a map here instead of an array so that the overriding context can easily
- * define a new tab order without splicing or reordering a prebuilt array.
+ * Define the default set of job tabs.
  */
 export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabConfig> => {
   const {hasLaunchpad, hasPartitionSet} = input;
@@ -112,11 +109,4 @@ export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabC
       isHidden: !hasPartitionSet,
     },
   };
-};
-
-export const buildJobTabs = (input: JobTabConfigInput): JobTabConfig[] => {
-  const tabConfigs = buildJobTabMap(input);
-  return DEFAULT_JOB_TAB_ORDER.map((tabId) => tabConfigs[tabId]).filter(
-    (tab): tab is JobTabConfig => !!tab && !tab.isHidden,
-  );
 };

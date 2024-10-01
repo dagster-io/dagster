@@ -5,10 +5,11 @@ Revises: 5771160a95ad
 Create Date: 2023-08-21 12:05:47.817280
 
 """
+
 import sqlalchemy as db
 from alembic import op
 from dagster._core.storage.migration.utils import has_index, has_table
-from dagster._core.storage.sql import get_current_timestamp
+from dagster._core.storage.sql import get_sql_current_timestamp
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
@@ -49,7 +50,7 @@ def upgrade():
                 "materialization_event_storage_id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
             ),
-            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
         )
 
     if not has_index(TABLE_NAME, INDEX_NAME):

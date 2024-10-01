@@ -1,35 +1,31 @@
 import {
   Box,
-  ButtonLink,
+  Button,
+  Code,
   Group,
+  Heading,
   MetadataTableWIP,
   PageHeader,
   Tag,
-  Code,
-  Heading,
-  Mono,
-  Tooltip,
-  Button,
-  colorTextLight,
-  colorTextDefault,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {useCopyToClipboard} from '../app/browser';
-import {InstigationStatus} from '../graphql/types';
-import {RepositoryLink} from '../nav/RepositoryLink';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
-import {TickStatusTag} from '../ticks/TickStatusTag';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
+import {useState} from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
+import {ScheduleResetButton} from './ScheduleResetButton';
 import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {AutomationTargetList} from '../automation/AutomationTargetList';
+import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
+import {InstigationStatus} from '../graphql/types';
+import {RepositoryLink} from '../nav/RepositoryLink';
+import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
+import {TickStatusTag} from '../ticks/TickStatusTag';
+import {RepoAddress} from '../workspace/types';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
@@ -37,67 +33,31 @@ export const ScheduleDetails = (props: {
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
   refreshState: QueryRefreshState;
+  assetSelection: AutomationAssetSelectionFragment | null;
 }) => {
-  const {repoAddress, schedule, refreshState} = props;
+  const {repoAddress, schedule, refreshState, assetSelection} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
-  const copyToClipboard = useCopyToClipboard();
-
-  const repo = useRepository(repoAddress);
-  const isJob = isThisThingAJob(repo, pipelineName);
-
-  const [copyText, setCopyText] = React.useState('Click to copy');
-
-  // Restore the tooltip text after a delay.
-  React.useEffect(() => {
-    let token: any;
-    if (copyText === 'Copied!') {
-      token = setTimeout(() => {
-        setCopyText('Click to copy');
-      }, 2000);
-    }
-    return () => {
-      token && clearTimeout(token);
-    };
-  }, [copyText]);
-
   const {scheduleState} = schedule;
-  const {status, id, ticks} = scheduleState;
+  const {status, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
-
-  const copyId = () => {
-    copyToClipboard(id);
-    setCopyText('Copied!');
-  };
-
   const running = status === InstigationStatus.RUNNING;
 
-  const [showTestTickDialog, setShowTestTickDialog] = React.useState(false);
+  const [showTestTickDialog, setShowTestTickDialog] = useState(false);
 
   return (
     <>
       <PageHeader
         title={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            <Heading>{name}</Heading>
-            <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-          </Box>
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <Link to="/automation">Automation</Link>
+            <span>/</span>
+            {name}
+          </Heading>
         }
         tags={
-          <>
-            <Tag icon="schedule">
-              Schedule in <RepositoryLink repoAddress={repoAddress} />
-            </Tag>
-            <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
-              <Tooltip content={copyText}>
-                <ButtonLink
-                  color={{link: colorTextLight(), hover: colorTextDefault()}}
-                  onClick={copyId}
-                >
-                  <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
-                </ButtonLink>
-              </Tooltip>
-            </Box>
-          </>
+          <Tag icon="schedule">
+            Schedule in <RepositoryLink repoAddress={repoAddress} />
+          </Tag>
         }
         right={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -159,14 +119,35 @@ export const ScheduleDetails = (props: {
               </td>
             </tr>
           )}
+          {schedule.pipelineName || assetSelection ? (
+            <tr>
+              <td>Target</td>
+              <TargetCell>
+                <AutomationTargetList
+                  targets={schedule.pipelineName ? [{pipelineName: schedule.pipelineName}] : null}
+                  repoAddress={repoAddress}
+                  assetSelection={assetSelection || null}
+                  automationType="schedule"
+                />
+              </TargetCell>
+            </tr>
+          ) : null}
           <tr>
-            <td>{isJob ? 'Job' : 'Pipeline'}</td>
             <td>
-              <PipelineReference
-                pipelineName={pipelineName}
-                pipelineHrefContext={repoAddress}
-                isJob={isJob}
-              />
+              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
+                Running
+              </Box>
+            </td>
+            <td>
+              <Box
+                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+                style={{height: '32px'}}
+              >
+                <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+                {schedule.canReset && (
+                  <ScheduleResetButton repoAddress={repoAddress} schedule={schedule} />
+                )}
+              </Box>
             </td>
           </tr>
           <tr>
@@ -203,3 +184,9 @@ export const ScheduleDetails = (props: {
     </>
   );
 };
+
+const TargetCell = styled.td`
+  button {
+    line-height: 20px;
+  }
+`;

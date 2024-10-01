@@ -1,13 +1,4 @@
-import {
-  Box,
-  Caption,
-  colorTextBlue,
-  colorTextGreen,
-  colorTextLight,
-  colorTextLighter,
-  colorTextRed,
-  colorTextYellow,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {compactNumber} from '../../ui/formatters';
@@ -27,7 +18,9 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numRequested || isPartitionedAsset ? (
       <Caption
         key="requested"
-        color={selected ? colorTextBlue() : numRequested ? colorTextGreen() : colorTextLight()}
+        color={
+          selected ? Colors.textBlue() : numRequested ? Colors.textGreen() : Colors.textLight()
+        }
       >
         {isPartitionedAsset ? `${compactNumber(numRequested)} launched` : 'Launched'}
       </Caption>
@@ -37,7 +30,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numSkipped || isPartitionedAsset ? (
       <Caption
         key="skipped"
-        color={selected ? colorTextBlue() : numSkipped ? colorTextYellow() : colorTextLight()}
+        color={selected ? Colors.textBlue() : numSkipped ? Colors.textYellow() : Colors.textLight()}
       >
         {isPartitionedAsset ? `${compactNumber(numSkipped)} skipped` : 'Skipped'}
       </Caption>
@@ -47,7 +40,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numDiscarded || isPartitionedAsset ? (
       <Caption
         key="discarded"
-        color={selected ? colorTextBlue() : numDiscarded ? colorTextRed() : colorTextLight()}
+        color={selected ? Colors.textBlue() : numDiscarded ? Colors.textRed() : Colors.textLight()}
       >
         {isPartitionedAsset ? `${compactNumber(numDiscarded)} discarded` : 'Discarded'}
       </Caption>
@@ -62,7 +55,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
       {filtered
         .map((element, ii) => [
           element,
-          <Caption key={`spacer-${ii}`} color={selected ? colorTextBlue() : colorTextLighter()}>
+          <Caption key={`spacer-${ii}`} color={selected ? Colors.textBlue() : Colors.textLighter()}>
             /
           </Caption>,
         ])

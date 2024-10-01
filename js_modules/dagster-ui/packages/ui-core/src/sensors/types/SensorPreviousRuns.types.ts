@@ -4,8 +4,8 @@ import * as Types from '../../graphql/types';
 
 export type PreviousRunsForSensorQueryVariables = Types.Exact<{
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type PreviousRunsForSensorQuery = {
@@ -30,6 +30,7 @@ export type PreviousRunsForSensorQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -49,3 +50,5 @@ export type PreviousRunsForSensorQuery = {
         }>;
       };
 };
+
+export const PreviousRunsForSensorQueryVersion = 'f35e444f6c30827ce07db188568d5e62537b0f47e4b7e75d1b442e42c6353552';

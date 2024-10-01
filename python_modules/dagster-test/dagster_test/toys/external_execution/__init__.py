@@ -2,9 +2,7 @@ import os
 import sys
 
 from dagster import AssetExecutionContext, Config, Definitions, asset
-from dagster._core.pipes.subprocess import (
-    PipesSubprocessClient,
-)
+from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import Field
 
 # Add package container to path
@@ -71,7 +69,8 @@ pipes_subprocess_client = PipesSubprocessClient(
 )
 
 defs = Definitions(
-    assets=[number_x, number_y, number_sum], resources={"ext": pipes_subprocess_client}
+    assets=[number_x, number_y, number_sum],
+    resources={"pipes_subprocess_client": pipes_subprocess_client},
 )
 
 if __name__ == "__main__":
@@ -81,5 +80,5 @@ if __name__ == "__main__":
         materialize(
             [number_x, number_y, number_sum],
             instance=instance,
-            resources={"ext": pipes_subprocess_client},
+            resources={"pipes_subprocess_client": pipes_subprocess_client},
         )

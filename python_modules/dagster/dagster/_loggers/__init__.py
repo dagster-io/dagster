@@ -6,7 +6,13 @@ import coloredlogs
 from dagster import _seven
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
+from dagster._core.log_manager import (
+    LOG_RECORD_EVENT_ATTR,
+    LOG_RECORD_METADATA_ATTR,
+    DagsterLogRecordMetadata,
+)
 from dagster._core.utils import coerce_valid_log_level
+from dagster._serdes import pack_value
 from dagster._utils.log import create_console_logger
 
 if TYPE_CHECKING:
@@ -93,7 +99,22 @@ def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
 
     class JsonFormatter(logging.Formatter):
         def format(self, record):
-            return _seven.json.dumps(record.__dict__)
+            dict_to_dump = {}
+            for k, v in record.__dict__.items():
+                if k == LOG_RECORD_EVENT_ATTR:
+                    # Redundant with the "dagster_event" field under "dagster_meta"
+                    continue
+                elif k == LOG_RECORD_METADATA_ATTR:
+                    # Events objects are not always JSON-serializable, so need to pack them first
+                    json_serializable_event = pack_value(v[LOG_RECORD_EVENT_ATTR])
+                    json_serializable_dagster_meta = DagsterLogRecordMetadata(
+                        **{**v, "dagster_event": json_serializable_event}
+                    )
+                    dict_to_dump[LOG_RECORD_METADATA_ATTR] = json_serializable_dagster_meta
+                else:
+                    dict_to_dump[k] = v
+
+            return _seven.json.dumps(dict_to_dump)
 
     handler.setFormatter(JsonFormatter())
     logger_.addHandler(handler)

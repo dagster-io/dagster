@@ -2,16 +2,16 @@ import {GraphQLError} from 'graphql/error';
 
 import {
   AssetKeyInput,
-  buildAssetNode,
   buildAssetKey,
   buildAssetLatestInfo,
+  buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {ASSETS_GRAPH_LIVE_QUERY} from '../AssetLiveDataProvider';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../AssetBaseDataProvider';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
-} from '../types/AssetLiveDataProvider.types';
+} from '../types/AssetBaseDataProvider.types';
 
 export function buildMockedAssetGraphLiveQuery(
   assetKeys: AssetKeyInput[],

@@ -1,12 +1,13 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 
 import {RunRequestTable} from '../DryRunRequestTable';
-import {mockRepository} from '../__fixtures__/DryRunRequestTable.fixtures';
 import {runRequests} from '../__fixtures__/SensorDryRunDialog.fixtures';
 
-jest.mock('../../workspace/WorkspaceContext', () => ({useRepository: () => mockRepository}));
+jest.mock('../../workspace/WorkspaceContext/util', () => ({
+  ...jest.requireActual('../../workspace/WorkspaceContext/util'),
+  useRepository: jest.fn(() => null),
+}));
 
 function TestComponent() {
   return (

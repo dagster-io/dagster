@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type SidebarOpDefinitionFragment_CompositeSolidDefinition_ = {
+export type SidebarOpDefinitionFragment_CompositeSolidDefinition = {
   __typename: 'CompositeSolidDefinition';
   id: string;
   name: string;
@@ -82,7 +82,7 @@ export type SidebarOpDefinitionFragment_CompositeSolidDefinition_ = {
   }>;
 };
 
-export type SidebarOpDefinitionFragment_SolidDefinition_ = {
+export type SidebarOpDefinitionFragment_SolidDefinition = {
   __typename: 'SolidDefinition';
   name: string;
   description: string | null;
@@ -695,5 +695,5 @@ export type SidebarOpDefinitionFragment_SolidDefinition_ = {
 };
 
 export type SidebarOpDefinitionFragment =
-  | SidebarOpDefinitionFragment_CompositeSolidDefinition_
-  | SidebarOpDefinitionFragment_SolidDefinition_;
+  | SidebarOpDefinitionFragment_CompositeSolidDefinition
+  | SidebarOpDefinitionFragment_SolidDefinition;

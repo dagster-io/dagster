@@ -8,8 +8,8 @@ BigQuery
 
 Related Guides:
 
-* `Using Dagster with BigQuery </integrations/bigquery>`_
-* `BigQuery I/O manager reference </integrations/bigquery/reference>`_
+* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/bigquery>`_
+* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/bigquery/reference>`_
 
 
 BigQuery Resource
@@ -41,6 +41,12 @@ BigQuery Ops
 
 .. autofunction:: import_gcs_paths_to_bq
 
+
+Data Freshness 
+^^^^^^^^^^^^^^
+
+.. autofunction:: fetch_last_updated_timestamps
+
 Other
 ^^^^^^^
 
@@ -61,6 +67,12 @@ GCS I/O Manager
 
 .. autoconfigurable:: GCSPickleIOManager
   :annotation: IOManagerDefinition
+
+
+GCS Sensor
+^^^^^^^^^^
+
+.. autofunction:: dagster_gcp.gcs.sensor.get_gcs_keys
 
 
 File Manager (Experimental)

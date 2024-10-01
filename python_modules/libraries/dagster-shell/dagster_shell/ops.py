@@ -12,10 +12,11 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._annotations import deprecated
 from dagster._core.definitions.op_definition import OpDefinition
 from pydantic import Field
 
-from .utils import execute, execute_script_file
+from dagster_shell.utils import execute, execute_script_file
 
 
 class OutputType(Enum):
@@ -91,6 +92,7 @@ def shell_op(context: OpExecutionContext, shell_command: str, config: ShellOpCon
     return output
 
 
+@deprecated(breaking_version="0.25", additional_warn_text="Use PipesSubprocessClient instead.")
 def create_shell_command_op(
     shell_command: str,
     name: str,
@@ -98,7 +100,9 @@ def create_shell_command_op(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> OpDefinition:
-    """This function is a factory that constructs ops to execute a shell command.
+    """DEPRECATED: Use PipesSubprocessClient instead.
+
+    This function is a factory that constructs ops to execute a shell command.
 
     Note that you can only use ``shell_command_op`` if you know the command you'd like to execute
     at job construction time. If you'd like to construct shell commands dynamically during
@@ -164,13 +168,16 @@ def create_shell_command_op(
     return _shell_fn
 
 
+@deprecated(breaking_version="0.25", additional_warn_text="Use PipesSubprocessClient instead.")
 def create_shell_script_op(
     shell_script_path,
     name="create_shell_script_op",
     ins: Optional[Mapping[str, In]] = None,
     **kwargs: Any,
 ) -> OpDefinition:
-    """This function is a factory which constructs an op that will execute a shell command read
+    """DEPRECATED: Use PipesSubprocessClient instead.
+
+    This function is a factory which constructs an op that will execute a shell command read
     from a script file.
 
     Any kwargs passed to this function will be passed along to the underlying :func:`@op
@@ -229,7 +236,9 @@ def create_shell_script_op(
     )
     def _shell_script_fn(context, config: ShellOpConfig):
         output, return_code = execute_script_file(
-            shell_script_path=shell_script_path, log=context.log, **config.to_execute_params()
+            shell_script_path=shell_script_path,
+            log=context.log,
+            **config.to_execute_params(),
         )
 
         if return_code:

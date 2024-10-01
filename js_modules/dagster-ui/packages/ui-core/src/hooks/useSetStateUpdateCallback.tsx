@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 /**
  * Allows you to easily support updating state based on previous state.
@@ -15,7 +15,7 @@ import React from 'react';
 export function useSetStateUpdateCallback<T>(
   currentState: T,
   updateCallback: (next: T) => void,
-): (next: React.SetStateAction<T>) => void {
+): React.Dispatch<React.SetStateAction<T>> {
   const stateRef = React.useRef<T>(currentState);
   stateRef.current = currentState;
 

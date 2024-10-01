@@ -1,5 +1,5 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {OpNameOrPath} from '../../ops/OpNameOrPath';
 import {OpGraph} from '../OpGraph';
@@ -20,7 +20,7 @@ export default {
 } as Meta;
 
 export const Basic = () => {
-  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
+  const [focusOps, setsetFocusOps] = useState<string[]>([]);
   const ops = buildBasicDAG();
 
   return (
@@ -37,7 +37,7 @@ export const Basic = () => {
 };
 
 export const FanOut = () => {
-  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
+  const [focusOps, setsetFocusOps] = useState<string[]>([]);
 
   const ops = buildFanOutDAG();
   return (
@@ -54,7 +54,7 @@ export const FanOut = () => {
 };
 
 export const Tagged = () => {
-  const [focusOps, setsetFocusOps] = React.useState<string[]>([]);
+  const [focusOps, setsetFocusOps] = useState<string[]>([]);
   const ops = buildTaggedDAG();
   return (
     <OpGraph
@@ -70,8 +70,8 @@ export const Tagged = () => {
 };
 
 export const Composite = () => {
-  const [focusOps, setFocusOps] = React.useState<string[]>([]);
-  const [parentOpName, setParentOpName] = React.useState<string | undefined>();
+  const [focusOps, setFocusOps] = useState<string[]>([]);
+  const [parentOpName, setParentOpName] = useState<string | undefined>();
 
   const toName = (s: OpNameOrPath) => ('name' in s ? s.name : s.path.join('.'));
   const {ops, childOps} = buildCompositeDAG();
@@ -101,8 +101,8 @@ export const Composite = () => {
 };
 
 export const CompositeCollapsedIO = () => {
-  const [focusOps, setFocusOps] = React.useState<string[]>([]);
-  const [parentOpName, setParentOpName] = React.useState<string | undefined>();
+  const [focusOps, setFocusOps] = useState<string[]>([]);
+  const [parentOpName, setParentOpName] = useState<string | undefined>();
 
   const toName = (s: OpNameOrPath) => ('name' in s ? s.name : s.path.join('.'));
 

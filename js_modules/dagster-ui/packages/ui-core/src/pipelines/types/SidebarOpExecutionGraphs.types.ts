@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type SidebarOpGraphsQueryVariables = Types.Exact<{
   selector: Types.PipelineSelector;
-  handleID: Types.Scalars['String'];
+  handleID: Types.Scalars['String']['input'];
 }>;
 
 export type SidebarOpGraphsQuery = {
@@ -35,3 +35,5 @@ export type SidebarOpGraphsQuery = {
     | {__typename: 'PipelineNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SidebarOpGraphsQueryVersion = '3feca8de1ac2e1f479a0a6b88b76e731da4162cb717f7174e5f232527cc6ce52';

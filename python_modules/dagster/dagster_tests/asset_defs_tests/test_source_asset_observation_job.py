@@ -2,10 +2,7 @@ from typing import Optional
 
 import pytest
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.data_version import (
-    DataVersion,
-    extract_data_version_from_entry,
-)
+from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -92,24 +89,6 @@ def test_partitioned_observable_source_asset():
         )
 
 
-def test_mixed_source_asset_observation_job():
-    @observable_source_asset
-    def foo(_context) -> DataVersion:
-        return DataVersion("alpha")
-
-    @asset(deps=["foo"])
-    def bar(context):
-        return 1
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match=r"specified both regular assets and source assets"
-    ):
-        Definitions(
-            assets=[foo, bar],
-            jobs=[define_asset_job("mixed_job", [foo, bar])],
-        )
-
-
 @pytest.mark.parametrize(
     "is_valid,resource_defs",
     [(True, {"bar": ResourceDefinition.hardcoded_resource("bar")}), (False, {})],
@@ -193,8 +172,10 @@ def test_source_asset_observation_job_with_pythonic_resource(is_valid, resource_
             DagsterInvalidDefinitionError,
             match="resource with key 'bar' required by op 'foo' was not provided",
         ):
-            Definitions(
-                assets=[foo],
-                jobs=[define_asset_job("source_asset_job", [foo])],
-                resources=resource_defs,
+            Definitions.validate_loadable(
+                Definitions(
+                    assets=[foo],
+                    jobs=[define_asset_job("source_asset_job", [foo])],
+                    resources=resource_defs,
+                )
             )

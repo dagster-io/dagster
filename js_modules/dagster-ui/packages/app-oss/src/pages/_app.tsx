@@ -1,6 +1,5 @@
 import {AppProps} from 'next/app';
 import Head from 'next/head';
-import React from 'react';
 
 // eslint-disable-next-line import/no-default-export
 export default function MyApp({Component, pageProps}: AppProps) {

@@ -1,10 +1,11 @@
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import infer_job_selector
 
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
 from dagster_graphql_tests.graphql.repo import LONG_INT
-
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .utils import sync_execute_get_events
+from dagster_graphql_tests.graphql.utils import sync_execute_get_events
 
 
 class TestMaterializations(ExecutingGraphQLContextTestMatrix):

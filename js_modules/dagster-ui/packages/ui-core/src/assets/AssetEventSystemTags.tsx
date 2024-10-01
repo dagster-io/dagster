@@ -1,11 +1,9 @@
-import {Box, ButtonLink, Caption, Icon, Mono, colorKeylineDefault} from '@dagster-io/ui-components';
-import React from 'react';
+import {Box, ButtonLink, Caption, Colors, Icon, Mono} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
+import {AssetEventGroup} from './groupByPartition';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {DagsterTag} from '../runs/RunTag';
-
-import {AssetEventGroup} from './groupByPartition';
 
 // There can be other keys in the event tags, but we want to show data and code version
 // at the top consistently regardless of their alphabetical / backend ordering.
@@ -86,7 +84,7 @@ const AssetEventSystemTagsTable = styled.table`
     width: 25%;
   }
   tr td {
-    border: 1px solid ${colorKeylineDefault()};
+    border: 1px solid ${Colors.keylineDefault()};
     padding: 8px 12px;
     font-size: 14px;
     vertical-align: top;

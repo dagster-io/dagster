@@ -4,7 +4,17 @@ import uniq from 'lodash/uniq';
 import {DagsterEventType} from '../graphql/types';
 
 const typeValues = memoize(() =>
-  uniq(Object.values(DagsterEventType).map(eventTypeToDisplayType)).sort(),
+  uniq(
+    Object.values(DagsterEventType)
+      .filter(
+        (t) =>
+          ![
+            DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+          ].includes(t),
+      )
+      .map(eventTypeToDisplayType),
+  ).sort(),
 );
 
 export const eventTypeToDisplayType = (eventType: string) => {

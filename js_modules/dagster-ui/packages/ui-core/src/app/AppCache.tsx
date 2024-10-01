@@ -1,5 +1,4 @@
-import {InMemoryCache} from '@apollo/client';
-
+import {InMemoryCache} from '../apollo-client';
 import possibleTypes from '../graphql/possibleTypes.generated.json';
 
 export const createAppCache = () =>

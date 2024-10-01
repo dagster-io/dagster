@@ -1,11 +1,11 @@
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
-import {colorAccentBlue} from '../../theme/color';
+import {Colors} from '../Color';
 import {Group} from '../Group';
-import {Slider, MultiSlider} from '../Slider';
+import {MultiSlider, Slider} from '../Slider';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -14,8 +14,8 @@ export default {
 } as Meta;
 
 export const Sizes = () => {
-  const [value, setValue] = React.useState(2);
-  const [minValue, setMinValue] = React.useState(1);
+  const [value, setValue] = useState(2);
+  const [minValue, setMinValue] = useState(1);
 
   return (
     <Group direction="column" spacing={32}>
@@ -50,7 +50,7 @@ export const Sizes = () => {
         min={0}
         max={10}
         stepSize={0.01}
-        fillColor={colorAccentBlue()}
+        fillColor={Colors.accentBlue()}
         labelRenderer={(value: number) => (
           <span style={{whiteSpace: 'nowrap'}}>Value: {value.toFixed(1)}</span>
         )}

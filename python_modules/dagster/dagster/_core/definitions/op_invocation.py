@@ -1,26 +1,10 @@
 import inspect
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Mapping,
-    NamedTuple,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Set, Tuple, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.errors import (
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-)
-
-from .events import (
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -28,15 +12,21 @@ from .events import (
     ExpectationResult,
     Output,
 )
-from .output import DynamicOutputDefinition, OutputDefinition
-from .result import MaterializeResult
+from dagster._core.definitions.output import DynamicOutputDefinition, OutputDefinition
+from dagster._core.definitions.result import AssetResult
+from dagster._core.errors import (
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+    DagsterTypeCheckDidNotPass,
+)
 
 if TYPE_CHECKING:
-    from ..execution.context.invocation import BoundOpExecutionContext
-    from .assets import AssetsDefinition
-    from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
-    from .op_definition import OpDefinition
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.op_definition import OpDefinition
+    from dagster._core.execution.context.compute import OpExecutionContext
+    from dagster._core.execution.context.invocation import BaseDirectExecutionContext
 
 T = TypeVar("T")
 
@@ -100,6 +90,16 @@ def _separate_args_and_kwargs(
     )
 
 
+def _get_op_context(
+    context,
+) -> "OpExecutionContext":
+    from dagster._core.execution.context.compute import AssetExecutionContext
+
+    if isinstance(context, AssetExecutionContext):
+        return context.op_execution_context
+    return context
+
+
 def direct_invocation_result(
     def_or_invocation: Union[
         "OpDefinition", "PendingNodeInvocation[OpDefinition]", "AssetsDefinition"
@@ -108,16 +108,15 @@ def direct_invocation_result(
     **kwargs,
 ) -> Any:
     from dagster._config.pythonic_config import Config
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.execution.context.invocation import (
-        UnboundOpExecutionContext,
+        BaseDirectExecutionContext,
         build_op_context,
     )
-
-    from ..execution.plan.compute_generator import invoke_compute_fn
-    from .assets import AssetsDefinition
-    from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
-    from .op_definition import OpDefinition
+    from dagster._core.execution.plan.compute_generator import invoke_compute_fn
 
     if isinstance(def_or_invocation, OpDefinition):
         op_def = def_or_invocation
@@ -149,12 +148,12 @@ def direct_invocation_result(
                 " no context was provided when invoking."
             )
         if len(args) > 0:
-            if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
+            if args[0] is not None and not isinstance(args[0], BaseDirectExecutionContext):
                 raise DagsterInvalidInvocationError(
                     f"Decorated function '{compute_fn.name}' has context argument, "
                     "but no context was provided when invoking."
                 )
-            context = cast(UnboundOpExecutionContext, args[0])
+            context = args[0]
             # update args to omit context
             args = args[1:]
         else:  # context argument is provided under kwargs
@@ -165,14 +164,14 @@ def direct_invocation_result(
                     f"'{context_param_name}', but no value for '{context_param_name}' was "
                     f"found when invoking. Provided kwargs: {kwargs}"
                 )
-            context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
+            context = kwargs[context_param_name]
             # update kwargs to remove context
             kwargs = {
                 kwarg: val for kwarg, val in kwargs.items() if not kwarg == context_param_name
             }
     # allow passing context, even if the function doesn't have an arg for it
-    elif len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
-        context = cast(UnboundOpExecutionContext, args[0])
+    elif len(args) > 0 and isinstance(args[0], BaseDirectExecutionContext):
+        context = args[0]
         args = args[1:]
 
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
@@ -206,24 +205,31 @@ def direct_invocation_result(
         ),
     )
 
-    input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)
+    try:
+        # if the compute function fails, we want to ensure we unbind the context. This
+        # try-except handles "vanilla" asset and op invocation (generators and async handled in
+        # _type_check_output_wrapper)
 
-    result = invoke_compute_fn(
-        fn=compute_fn.decorated_fn,
-        context=bound_context,
-        kwargs=input_dict,
-        context_arg_provided=compute_fn.has_context_arg(),
-        config_arg_cls=(
-            compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
-        ),
-        resource_args=resource_arg_mapping,
-    )
+        input_dict = _resolve_inputs(op_def, input_args, input_kwargs, bound_context)  # type: ignore # (pyright bug)
 
-    return _type_check_output_wrapper(op_def, result, bound_context)
+        result = invoke_compute_fn(
+            fn=compute_fn.decorated_fn,
+            context=bound_context,  # type: ignore # (pyright bug)
+            kwargs=input_dict,
+            context_arg_provided=compute_fn.has_context_arg(),
+            config_arg_cls=(
+                compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
+            ),
+            resource_args=resource_arg_mapping,
+        )
+        return _type_check_output_wrapper(op_def, result, bound_context)  # type: ignore # (pyright bug)
+    except Exception:
+        bound_context.unbind()  # type: ignore # (pyright bug)
+        raise
 
 
 def _resolve_inputs(
-    op_def: "OpDefinition", args, kwargs, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition", args, kwargs, context: "BaseDirectExecutionContext"
 ) -> Mapping[str, Any]:
     from dagster._core.execution.plan.execute_step import do_type_check
 
@@ -263,7 +269,7 @@ def _resolve_inputs(
 
         node_label = op_def.node_type_str
         raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for {node_label} '{context.alias}'."
+            f"Too many input arguments were provided for {node_label} '{context.per_invocation_properties.alias}'."
             f" {suggestion}"
         )
 
@@ -302,11 +308,10 @@ def _resolve_inputs(
     unassigned_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
     # If there are unassigned inputs, then they may be intended for use with a variadic keyword argument.
     if unassigned_kwargs and cast("DecoratedOpFunction", op_def.compute_fn).has_var_kwargs():
-        for k, v in unassigned_kwargs.items():
-            input_dict[k] = v
+        input_dict.update(unassigned_kwargs)
 
     # Type check inputs
-    op_label = context.describe_op()
+    op_label = context.per_invocation_properties.step_description
 
     for input_name, val in input_dict.items():
         input_def = input_defs_by_name[input_name]
@@ -326,31 +331,54 @@ def _resolve_inputs(
     return input_dict
 
 
-def _key_for_result(result: MaterializeResult, context: "BoundOpExecutionContext") -> AssetKey:
+def _key_for_result(result: AssetResult, context: "BaseDirectExecutionContext") -> AssetKey:
+    if not context.per_invocation_properties.assets_def:
+        raise DagsterInvariantViolationError(
+            f"Op {context.per_invocation_properties.alias} does not have an assets definition."
+        )
     if result.asset_key:
         return result.asset_key
 
-    if len(context.assets_def.keys) == 1:
-        return next(iter(context.assets_def.keys))
+    if (
+        context.per_invocation_properties.assets_def
+        and len(context.per_invocation_properties.assets_def.keys) == 1
+    ):
+        return next(iter(context.per_invocation_properties.assets_def.keys))
 
     raise DagsterInvariantViolationError(
-        "MaterializeResult did not include asset_key and it can not be inferred. Specify which"
-        f" asset_key, options are: {context.assets_def.keys}"
+        f"{result.__class__.__name__} did not include asset_key and it can not be inferred. Specify which"
+        f" asset_key, options are: {context.per_invocation_properties.assets_def.keys}"
     )
 
 
 def _output_name_for_result_obj(
-    event: MaterializeResult,
-    context: "BoundOpExecutionContext",
+    event: Union[AssetResult, AssetCheckResult],
+    context: "BaseDirectExecutionContext",
 ):
-    asset_key = _key_for_result(event, context)
-    return context.assets_def.get_output_name_for_asset_key(asset_key)
+    if not context.per_invocation_properties.assets_def:
+        raise DagsterInvariantViolationError(
+            f"Op {context.per_invocation_properties.alias} does not have an assets definition."
+        )
+
+    if isinstance(event, AssetResult):
+        asset_key = _key_for_result(event, context)
+        return context.per_invocation_properties.assets_def.get_output_name_for_asset_key(asset_key)
+    elif isinstance(event, AssetCheckResult):
+        check_names_by_asset_key = {}
+        for spec in context.per_invocation_properties.assets_def.check_specs:
+            if spec.asset_key not in check_names_by_asset_key:
+                check_names_by_asset_key[spec.asset_key] = []
+            check_names_by_asset_key[spec.asset_key].append(spec.name)
+
+        return context.per_invocation_properties.assets_def.get_output_name_for_asset_check_key(
+            event.resolve_target_check_key(check_names_by_asset_key)
+        )
 
 
 def _handle_gen_event(
     event: T,
     op_def: "OpDefinition",
-    context: "BoundOpExecutionContext",
+    context: "BaseDirectExecutionContext",
     output_defs: Mapping[str, OutputDefinition],
     outputs_seen: Set[str],
 ) -> T:
@@ -359,7 +387,7 @@ def _handle_gen_event(
         (AssetMaterialization, AssetObservation, ExpectationResult),
     ):
         return event
-    elif isinstance(event, MaterializeResult):
+    elif isinstance(event, (AssetResult, AssetCheckResult)):
         output_name = _output_name_for_result_obj(event, context)
         outputs_seen.add(output_name)
         return event
@@ -376,7 +404,7 @@ def _handle_gen_event(
                 output_def, DynamicOutputDefinition
             ):
                 raise DagsterInvariantViolationError(
-                    f"Invocation of {op_def.node_type_str} '{context.alias}' yielded"
+                    f"Invocation of {op_def.node_type_str} '{context.per_invocation_properties.alias}' yielded"
                     f" an output '{output_def.name}' multiple times."
                 )
             outputs_seen.add(output_def.name)
@@ -384,7 +412,7 @@ def _handle_gen_event(
 
 
 def _type_check_output_wrapper(
-    op_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition", result: Any, context: "BaseDirectExecutionContext"
 ) -> Any:
     """Type checks and returns the result of a op.
 
@@ -399,8 +427,14 @@ def _type_check_output_wrapper(
         async def to_gen(async_gen):
             outputs_seen = set()
 
-            async for event in async_gen:
-                yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            try:
+                # if the compute function fails, we want to ensure we unbind the context. For
+                # async generators, the errors will only be surfaced here
+                async for event in async_gen:
+                    yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            except Exception:
+                context.unbind()
+                raise
 
             for output_def in op_def.output_defs:
                 if (
@@ -408,14 +442,19 @@ def _type_check_output_wrapper(
                     and output_def.is_required
                     and not output_def.is_dynamic
                 ):
-                    if output_def.dagster_type.is_nothing:
+                    # We require explicitly returned/yielded for asset observations
+                    assets_def = context.per_invocation_properties.assets_def
+                    is_observable_asset = assets_def is not None and assets_def.is_observable
+
+                    if output_def.dagster_type.is_nothing and not is_observable_asset:
                         # implicitly yield None as we do in execute_step
                         yield Output(output_name=output_def.name, value=None)
                     else:
                         raise DagsterInvariantViolationError(
-                            f"Invocation of {op_def.node_type_str} '{context.alias}' did not"
+                            f"Invocation of {op_def.node_type_str} '{context.per_invocation_properties.alias}' did not"
                             f" return an output for non-optional output '{output_def.name}'"
                         )
+            context.unbind()
 
         return to_gen(result)
 
@@ -423,7 +462,13 @@ def _type_check_output_wrapper(
     elif inspect.iscoroutine(result):
 
         async def type_check_coroutine(coro):
-            out = await coro
+            try:
+                # if the compute function fails, we want to ensure we unbind the context. For
+                # async, the errors will only be surfaced here
+                out = await coro
+            except Exception:
+                context.unbind()
+                raise
             return _type_check_function_output(op_def, out, context)
 
         return type_check_coroutine(result)
@@ -433,8 +478,14 @@ def _type_check_output_wrapper(
 
         def type_check_gen(gen):
             outputs_seen = set()
-            for event in gen:
-                yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            try:
+                # if the compute function fails, we want to ensure we unbind the context. For
+                # generators, the errors will only be surfaced here
+                for event in gen:
+                    yield _handle_gen_event(event, op_def, context, output_defs, outputs_seen)
+            except Exception:
+                context.unbind()
+                raise
 
             for output_def in op_def.output_defs:
                 if (
@@ -442,14 +493,19 @@ def _type_check_output_wrapper(
                     and output_def.is_required
                     and not output_def.is_dynamic
                 ):
-                    if output_def.dagster_type.is_nothing:
+                    # We require explicitly returned/yielded for asset observations
+                    assets_def = context.per_invocation_properties.assets_def
+                    is_observable_asset = assets_def is not None and assets_def.is_observable
+
+                    if output_def.dagster_type.is_nothing and not is_observable_asset:
                         # implicitly yield None as we do in execute_step
                         yield Output(output_name=output_def.name, value=None)
                     else:
                         raise DagsterInvariantViolationError(
-                            f'Invocation of {op_def.node_type_str} "{context.alias}" did not'
+                            f'Invocation of {op_def.node_type_str} "{context.per_invocation_properties.alias}" did not'
                             f' return an output for non-optional output "{output_def.name}"'
                         )
+            context.unbind()
 
         return type_check_gen(result)
 
@@ -458,37 +514,41 @@ def _type_check_output_wrapper(
 
 
 def _type_check_function_output(
-    op_def: "OpDefinition", result: T, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition", result: T, context: "BaseDirectExecutionContext"
 ) -> T:
-    from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
+    from dagster._core.execution.plan.compute_generator import (
+        validate_and_coerce_op_result_to_iterator,
+    )
 
     output_defs_by_name = {output_def.name: output_def for output_def in op_def.output_defs}
-    for event in validate_and_coerce_op_result_to_iterator(result, context, op_def.output_defs):
+    op_context = _get_op_context(context)
+    for event in validate_and_coerce_op_result_to_iterator(result, op_context, op_def.output_defs):
         if isinstance(event, (Output, DynamicOutput)):
             _type_check_output(output_defs_by_name[event.output_name], event, context)
-        elif isinstance(event, (MaterializeResult)):
+        elif isinstance(event, AssetResult):
             # ensure result objects are contextually valid
             _output_name_for_result_obj(event, context)
 
+    context.unbind()
     return result
 
 
 def _type_check_output(
     output_def: "OutputDefinition",
     output: Union[Output, DynamicOutput],
-    context: "BoundOpExecutionContext",
+    context: "BaseDirectExecutionContext",
 ) -> None:
     """Validates and performs core type check on a provided output.
 
     Args:
         output_def (OutputDefinition): The output definition to validate against.
         output (Any): The output to validate.
-        context (BoundOpExecutionContext): Context containing resources to be used for type
+        context (BaseDirectExecutionContext): Context containing resources to be used for type
             check.
     """
-    from ..execution.plan.execute_step import do_type_check
+    from dagster._core.execution.plan.execute_step import do_type_check
 
-    op_label = context.describe_op()
+    op_label = context.per_invocation_properties.step_description
     dagster_type = output_def.dagster_type
     type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
     if not type_check.success:

@@ -27,8 +27,8 @@ def less_simple_data_frame_type_check(_, value):
         row = value[i]
         if not isinstance(row, dict):
             raise Failure(
-                "LessSimpleDataFrame should be a list of dicts, got {type_} for row"
-                " {idx}".format(type_=type(row), idx=(i + 1))
+                f"LessSimpleDataFrame should be a list of dicts, got {type(row)} for row"
+                f" {i + 1}"
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:

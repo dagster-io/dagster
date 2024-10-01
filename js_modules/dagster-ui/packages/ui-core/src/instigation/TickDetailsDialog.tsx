@@ -1,22 +1,26 @@
-import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
 import {
-  Button,
-  DialogFooter,
-  Dialog,
   Box,
-  Subtitle2,
-  Table,
-  Spinner,
-  DialogHeader,
+  Button,
   ButtonLink,
-  Tag,
+  Dialog,
+  DialogFooter,
+  DialogHeader,
   MiddleTruncate,
-  Tabs,
+  Spinner,
+  Subtitle2,
   Tab,
+  Table,
+  Tabs,
+  Tag,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 
+import {RunList, TargetedRunList} from './InstigationTick';
+import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
+import {HistoryTickFragment} from './types/InstigationUtils.types';
+import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -31,11 +35,6 @@ import {
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {QueryfulTickLogsTable} from '../ticks/TickLogDialog';
-
-import {FailedRunList, RunList} from './InstigationTick';
-import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
-import {HistoryTickFragment} from './types/InstigationUtils.types';
-import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
 
 interface DialogProps extends InnerProps {
   onClose: () => void;
@@ -62,12 +61,12 @@ export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}
 };
 
 interface InnerProps {
-  tickId: number | undefined;
+  tickId: string | undefined;
   instigationSelector: InstigationSelector;
 }
 
 const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
-  const [activeTab, setActiveTab] = React.useState<'result' | 'logs'>('result');
+  const [activeTab, setActiveTab] = useState<'result' | 'logs'>('result');
 
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, tickId: tickId || 0},
@@ -79,7 +78,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       ? data?.instigationStateOrError.tick
       : undefined;
 
-  const [addedPartitions, deletedPartitions] = React.useMemo(() => {
+  const [addedPartitionRequests, deletedPartitionRequests] = useMemo(() => {
     const added = tick?.dynamicPartitionsRequestResults.filter(
       (request) =>
         request.type === DynamicPartitionsRequestType.ADD_PARTITIONS &&
@@ -122,32 +121,30 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       </Box>
       {activeTab === 'result' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
-          {tick.runIds.length || tick.originRunIds.length ? (
+          {tick.runIds.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle2>Requested</Subtitle2>
+                <Subtitle2>Requested Runs</Subtitle2>
               </Box>
-              {tick.runIds.length ? (
-                <RunList runIds={tick.runIds} />
-              ) : (
-                <FailedRunList originRunIds={tick.originRunIds} />
-              )}
+              <RunList runIds={tick.runIds} />
             </>
+          ) : tick.originRunIds.length ? (
+            <TargetedRunList originRunIds={tick.originRunIds} />
           ) : null}
-          {addedPartitions?.length ? (
+          {addedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
                 <Subtitle2>Added partitions</Subtitle2>
               </Box>
-              <PartitionsTable partitions={addedPartitions} />
+              <PartitionsTable partitions={addedPartitionRequests} />
             </>
           ) : null}
-          {deletedPartitions?.length ? (
+          {deletedPartitionRequests?.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
                 <Subtitle2>Deleted partitions</Subtitle2>
               </Box>
-              <PartitionsTable partitions={deletedPartitions} />
+              <PartitionsTable partitions={deletedPartitionRequests} />
             </>
           ) : null}
           {tick.error ? (
@@ -170,7 +167,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
 };
 
 export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) {
-  const intent = React.useMemo(() => {
+  const intent = useMemo(() => {
     switch (tick?.status) {
       case InstigationTickStatus.FAILURE:
         return 'danger';
@@ -268,7 +265,7 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
 }
 
 const JOB_SELECTED_TICK_QUERY = gql`
-  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: Int!) {
+  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id

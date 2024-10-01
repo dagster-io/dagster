@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import cast
 
-import pendulum
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -27,12 +25,14 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
+from dagster._core.test_utils import freeze_time
+from dagster._time import create_datetime, parse_time_string
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(cast(datetime, pendulum.parse(start)), cast(datetime, pendulum.parse(end)))
+    return TimeWindow(parse_time_string(start), parse_time_string(end))
 
 
 def schedule_for_partitioned_config(
@@ -59,7 +59,7 @@ def schedule_for_partitioned_config(
 def test_daily_schedule():
     @daily_partitioned_config(start_date="2021-05-05")
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
 
@@ -101,7 +101,7 @@ def test_daily_schedule():
 def test_daily_schedule_with_offsets():
     @daily_partitioned_config(start_date="2021-05-05", minute_offset=15, hour_offset=2)
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05"
@@ -139,7 +139,7 @@ def test_daily_schedule_with_offsets():
 def test_hourly_schedule():
     @hourly_partitioned_config(start_date=datetime(2021, 5, 5))
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05-00:00"
@@ -177,7 +177,7 @@ def test_hourly_schedule():
 def test_hourly_schedule_with_offsets():
     @hourly_partitioned_config(start_date=datetime(2021, 5, 5), minute_offset=20)
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05-00:20"
@@ -211,7 +211,7 @@ def test_hourly_schedule_with_offsets():
 def test_weekly_schedule():
     @weekly_partitioned_config(start_date="2021-05-05")
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-09"
@@ -249,7 +249,7 @@ def test_weekly_schedule_with_offsets():
         start_date="2021-05-05", minute_offset=10, hour_offset=13, day_offset=3
     )
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-05"
@@ -285,7 +285,7 @@ def test_weekly_schedule_with_offsets():
 def test_monthly_schedule():
     @monthly_partitioned_config(start_date="2021-05-05")
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-06-01"
@@ -323,7 +323,7 @@ def test_monthly_schedule_late_in_month():
         start_date="2021-05-05", minute_offset=15, hour_offset=16, day_offset=31
     )
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-31"
@@ -335,7 +335,7 @@ def test_monthly_schedule_with_offsets():
         start_date="2021-05-05", minute_offset=15, hour_offset=16, day_offset=12
     )
     def my_partitioned_config(start, end):
-        return {"start": str(start), "end": str(end)}
+        return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
     assert keys[0] == "2021-05-12"
@@ -390,11 +390,11 @@ def test_empty_partitions():
 
 
 def test_future_tick():
-    with pendulum.test(pendulum.parse("2022-02-28")):
+    with freeze_time(create_datetime(2022, 2, 28)):
 
         @daily_partitioned_config(start_date="2021-05-05")
         def my_partitioned_config(start, end):
-            return {"start": str(start), "end": str(end)}
+            return {"start": start.isoformat(), "end": end.isoformat()}
 
         my_schedule = schedule_for_partitioned_config(my_partitioned_config)
 

@@ -26,12 +26,12 @@ from ..partitions import weekly_partition
     deps=["taxi_trips"],
     partitions_def=weekly_partition
 )
-def trips_by_week(context, database: DuckDBResource):
+def trips_by_week(context: AssetExecutionContext, database: DuckDBResource) -> None:
     """
-        The number of trips per week, aggregated by week.
+      The number of trips per week, aggregated by week.
     """
 
-    period_to_fetch = context.asset_partition_key_for_output()
+    period_to_fetch = context.partition_key
 
     # get all trips for the week
     query = f"""
@@ -76,11 +76,11 @@ def trips_by_week(context, database: DuckDBResource):
 from dagster import define_asset_job, AssetSelection
 from ..partitions import weekly_partition
 
-trips_by_week = AssetSelection.keys("trips_by_week")
+trips_by_week = AssetSelection.assets("trips_by_week")
 
 weekly_update_job = define_asset_job(
-  name="weekly_update_job",
-  partitions_def=weekly_partition,
-  selection=trips_by_week,
+    name="weekly_update_job",
+    partitions_def=weekly_partition,
+    selection=trips_by_week,
 )
 ```

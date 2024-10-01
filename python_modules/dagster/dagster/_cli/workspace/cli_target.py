@@ -24,16 +24,17 @@ from typing_extensions import Never, TypeAlias
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
     CompositeTarget,
@@ -52,7 +53,7 @@ from dagster._utils.hosted_user_process import recon_repository_from_origin
 if TYPE_CHECKING:
     from dagster._core.workspace.context import WorkspaceProcessContext
 
-from dagster._core.host_representation.external import ExternalJob
+from dagster._core.remote_representation.external import ExternalJob
 
 WORKSPACE_TARGET_WARNING = (
     "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port,"
@@ -100,7 +101,7 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def _has_pyproject_dagster_block(path: str) -> bool:
+def has_pyproject_dagster_block(path: str) -> bool:
     if not os.path.exists(path):
         return False
     with open(path, "rb") as f:
@@ -116,7 +117,7 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
-        if _has_pyproject_dagster_block("pyproject.toml"):
+        if has_pyproject_dagster_block("pyproject.toml"):
             return PyProjectFileTarget("pyproject.toml")
 
         if os.path.exists("workspace.yaml"):
@@ -569,7 +570,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, 
         return {
             cast(
                 RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
+                repository_def_from_target_def(
+                    loadable_target.target_definition, DefinitionsLoadType.INITIALIZATION
+                ),
             ).name: CodePointer.from_python_file(
                 python_file, loadable_target.attribute, working_directory
             )
@@ -582,7 +585,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, 
         return {
             cast(
                 RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
+                repository_def_from_target_def(
+                    loadable_target.target_definition, DefinitionsLoadType.INITIALIZATION
+                ),
             ).name: CodePointer.from_module(
                 module_name, loadable_target.attribute, working_directory
             )
@@ -595,7 +600,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, 
         return {
             cast(
                 RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
+                repository_def_from_target_def(
+                    loadable_target.target_definition, DefinitionsLoadType.INITIALIZATION
+                ),
             ).name: CodePointer.from_python_package(
                 package_name, loadable_target.attribute, working_directory
             )
@@ -709,10 +716,7 @@ def get_code_location_from_workspace(
 
     if workspace.has_code_location_error(provided_location_name):
         raise click.UsageError(
-            'Error loading location "{provided_location_name}": {error_str}'.format(
-                provided_location_name=provided_location_name,
-                error_str=str(workspace.get_code_location_error(provided_location_name)),
-            )
+            f'Error loading location "{provided_location_name}": {workspace.get_code_location_error(provided_location_name)!s}'
         )
 
     return workspace.get_code_location(provided_location_name)
