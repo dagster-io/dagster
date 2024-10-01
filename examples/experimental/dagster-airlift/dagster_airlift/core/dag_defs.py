@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Iterable, Mapping, Union, cast
 
 from dagster import (
     AssetsDefinition,
@@ -7,6 +7,7 @@ from dagster import (
     _check as check,
 )
 
+from dagster_airlift.constants import STANDALONE_DAG_ID_METADATA_KEY
 from dagster_airlift.core.utils import metadata_for_task_mapping
 
 
@@ -56,7 +57,7 @@ def assets_def_with_af_metadata(
     )
 
 
-def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
+def dag_defs(dag_id: str, *defs: Union[TaskDefs, Definitions]) -> Definitions:
     """Construct a Dagster :py:class:`Definitions` object with definitions
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
 
@@ -76,7 +77,17 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
         )
     """
     defs_to_merge = []
-    for task_def in defs:
+    if isinstance(defs[0], Definitions):
+        check.invariant(
+            len(defs) == 1,
+            "When providing a dag-level override, only one definitions object is expected",
+        )
+        dag_def_object = cast(Definitions, next(iter(defs)))
+        return apply_metadata_to_all_specs(
+            defs=dag_def_object,
+            metadata={STANDALONE_DAG_ID_METADATA_KEY: dag_id},
+        )
+    for task_def in cast(Iterable[TaskDefs], defs):
         defs_to_merge.append(
             apply_metadata_to_all_specs(
                 defs=task_def.defs,
