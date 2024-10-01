@@ -1,6 +1,21 @@
 from pathlib import Path
+from typing import Dict
 
 from setuptools import find_packages, setup
+
+NON_EDITABLE_INSTALL_DAGSTER_PIN = ">=1.8.8"
+
+
+def get_version() -> str:
+    version: Dict[str, str] = {}
+    with open(Path(__file__).parent / "dagster_airlift/version.py", encoding="utf8") as fp:
+        exec(fp.read(), version)
+
+    return version["__version__"]
+
+
+ver = get_version()
+pin = "" if ver == "1!0+dev" else NON_EDITABLE_INSTALL_DAGSTER_PIN
 
 airflow_dep_list = [
     "apache-airflow>=2.0.0,<2.8",
@@ -36,7 +51,7 @@ setup(
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
     extras_require={
         "core": [
-            "dagster",
+            f"dagster{pin}",
         ],
         "in-airflow": airflow_dep_list,
         "mwaa": ["boto3"],
