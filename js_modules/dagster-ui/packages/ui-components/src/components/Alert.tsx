@@ -9,7 +9,7 @@ import {Icon, IconName} from './Icon';
 export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
 
 interface Props {
-  intent: AlertIntent;
+  intent?: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
   icon?: React.ReactNode;
@@ -17,7 +17,7 @@ interface Props {
 }
 
 export const Alert = (props: Props) => {
-  const {intent, title, description, onClose} = props;
+  const {intent = 'info', title, description, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
@@ -80,10 +80,6 @@ export const Alert = (props: Props) => {
       </Box>
     </AlertContainer>
   );
-};
-
-Alert.defaultProps = {
-  intent: 'info',
 };
 
 const ButtonWrapper = styled.button`
