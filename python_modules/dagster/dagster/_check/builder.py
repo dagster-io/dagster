@@ -363,26 +363,22 @@ def build_check_call_str(
                     inner_pair_left, inner_pair_right = _container_pair_args(inner_args, eval_ctx)
                     inner_single = _container_single_arg(inner_args, eval_ctx)
                     if inner_origin is list:
-                        return f'check.opt_nullable_list_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else check.opt_nullable_list_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is dict:
-                        return f'check.opt_nullable_dict_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
+                        return f'{name} if {name} is None else check.opt_nullable_dict_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
                     elif inner_origin is set:
-                        return (
-                            f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
-                        )
+                        return f'{name} if {name} is None else check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Sequence:
-                        return f'check.opt_nullable_sequence_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else check.opt_nullable_sequence_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Iterable:
-                        return f'check.opt_nullable_iterable_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else check.opt_nullable_iterable_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Mapping:
-                        return f'check.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
+                        return f'{name} if {name} is None else check.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
                     elif inner_origin is collections.abc.Set:
-                        return (
-                            f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
-                        )
+                        return f'{name} if {name} is None else check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                     elif is_record(inner_origin):
                         it = _name(inner_origin)
-                        return f'{name} if isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
+                        return f'{name} if {name} is None or isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)
