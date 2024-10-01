@@ -40,17 +40,13 @@ def targeted_by_multiple_tasks(
                     Definitions(assets=[other_asset]),
                 ),
             ),
-            Definitions(
-                assets=[
-                    targeted_by_multiple_tasks(
-                        Definitions([scheduled_twice]),
-                        task_handles=[
-                            {"dag_id": "weekly_dag", "task_id": "task1"},
-                            {"dag_id": "daily_dag", "task_id": "task1"},
-                        ],
-                    )
-                ]
-            ),
+            targeted_by_multiple_tasks(
+                Definitions([scheduled_twice]),
+                task_handles=[
+                    {"dag_id": "weekly_dag", "task_id": "task1"},
+                    {"dag_id": "daily_dag", "task_id": "task1"},
+                ],
+            )
         ),
     )
     """
