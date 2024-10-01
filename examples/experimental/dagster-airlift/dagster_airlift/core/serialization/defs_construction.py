@@ -29,15 +29,15 @@ def tags_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, st
 
 def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, Any]:
     mapped_task = tasks[0]
-    task_info, migration_state = mapped_task.task_info, mapped_task.proxied
+    task_info, proxied_state = mapped_task.task_info, mapped_task.proxied
     task_level_metadata = {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
         "Dag ID": task_info.dag_id,
         "Link to DAG": UrlMetadataValue(task_info.dag_url),
     }
-    task_level_metadata[
-        "Computed in Task ID" if not migration_state else "Triggered by Task ID"
-    ] = task_info.task_id
+    task_level_metadata["Computed in Task ID" if not proxied_state else "Triggered by Task ID"] = (
+        task_info.task_id
+    )
     return task_level_metadata
 
 
