@@ -161,7 +161,9 @@ class PipesMessageHandler:
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
         if self._received_closed_msg:
-            self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
+            self._context.log.warning(
+                f"[pipes] unexpected message received after closed: `{message}`"
+            )
 
         method = cast(Method, message["method"])
         if method == "opened":

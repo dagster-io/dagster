@@ -8,7 +8,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import Iterator, Optional, Sequence, TextIO
+from typing import Iterator, Optional, Sequence, TextIO, Tuple, TypeVar
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -32,6 +32,9 @@ from dagster._core.pipes.context import (
     build_external_execution_context_data,
 )
 from dagster._utils import tail_file
+
+TCursor = TypeVar("TCursor")
+
 
 _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
@@ -135,6 +138,9 @@ class PipesFileMessageReader(PipesMessageReader):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
+    def on_launched(self, params: PipesLaunchedData) -> None:
+        self.launched_payload = params
+
     @contextmanager
     def read_messages(
         self,
@@ -236,29 +242,15 @@ WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL = 10
 WAIT_FOR_LOGS_TIMEOUT = 60
 
 
-class PipesBlobStoreMessageReader(PipesMessageReader):
-    """Message reader that reads a sequence of message chunks written by an external process into a
-    blob store such as S3, Azure blob storage, or GCS.
-
-    The reader maintains a counter, starting at 1, that is synchronized with a message writer in
-    some pipes process. The reader starts a thread that periodically attempts to read a chunk
-    indexed by the counter at some location expected to be written by the pipes process. The chunk
-    should be a file with each line corresponding to a JSON-encoded pipes message. When a chunk is
-    successfully read, the messages are processed and the counter is incremented. The
-    :py:class:`PipesBlobStoreMessageWriter` on the other end is expected to similarly increment a
-    counter (starting from 1) on successful write, keeping counters on the read and write end in
-    sync.
-
-    If `log_readers` is passed, the message reader will start the passed log readers when the
-    `opened` message is received from the external process.
+class PipesThreadedMessageReader(PipesMessageReader):
+    """A base class for message readers that read messages and logs in background threads.
 
     Args:
-        interval (float): interval in seconds between attempts to download a chunk
-        log_readers (Optional[Sequence[PipesLogReader]]): A set of readers for logs.
+        interval (float): The interval in seconds at which to poll for messages.
+        log_readers (Optional[Sequence[PipesLogReader]]): A list of log readers to use to read logs.
     """
 
     interval: float
-    counter: int
     log_readers: Sequence["PipesLogReader"]
     opened_payload: Optional[PipesOpenedData]
     launched_payload: Optional[PipesLaunchedData]
@@ -269,11 +261,11 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         log_readers: Optional[Sequence["PipesLogReader"]] = None,
     ):
         self.interval = interval
-        self.counter = 1
         self.log_readers = check.opt_sequence_param(
             log_readers, "log_readers", of_type=PipesLogReader
         )
         self.opened_payload = None
+        self.launched_payload = None
 
     @contextmanager
     def read_messages(
@@ -322,6 +314,9 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         self.launched_payload = launched_payload
 
     @abstractmethod
+    def messages_are_readable(self, params: PipesParams) -> bool: ...
+
+    @abstractmethod
     @contextmanager
     def get_params(self) -> Iterator[PipesParams]:
         """Yield a set of parameters to be passed to a message writer in a pipes process.
@@ -332,7 +327,19 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         """
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
+    def download_messages(
+        self, cursor: Optional[TCursor], params: PipesParams
+    ) -> Optional[Tuple[TCursor, str]]:
+        """Download a chunk of messages from the target location.
+
+        Args:
+            cursor (Optional[Any]): Cursor specifying start location from which to download
+                messages in a stream. The format of the value varies with the message reader
+                implementation. It might be an integer index for a line in a log file, or a
+                timestamp for a message in a time-indexed stream.
+            params (PipesParams): A dict of parameters that specifies where to download messages from.
+        """
+        ...
 
     def _messages_thread(
         self,
@@ -342,27 +349,75 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     ) -> None:
         try:
             start_or_last_download = datetime.datetime.now()
+            session_closed_at = None
+            cursor = None
+            can_read_messages = False
+
+            # main loop to read messages
+            # at every step, we:
+            # - exit early if we have received the closed message
+            # - consume params from the launched_payload if possible
+            # - check if we can start reading messages (e.g. log files are available)
+            # - download a chunk of messages and process them
+            # - if is_session_closed is set, we exit the loop after waiting for WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL
             while True:
+                # if we have the closed message, we can exit
+                # since the message reader has been started and the external process has completed
+                if handler.received_closed_message:
+                    return
+
+                if not can_read_messages:  # this branch will be executed until we can read messages
+                    # check for new params in case they have been updated
+                    params = {**params, **(self.launched_payload or {})}
+                    can_read_messages = self.messages_are_readable(params)
+
                 now = datetime.datetime.now()
                 if (
                     now - start_or_last_download
                 ).seconds > self.interval or is_session_closed.is_set():
-                    start_or_last_download = now
-                    chunk = self.download_messages_chunk(self.counter, params)
-                    if chunk:
-                        for line in chunk.split("\n"):
-                            message = json.loads(line)
-                            handler.handle_message(message)
-                        self.counter += 1
-                    elif is_session_closed.is_set():
-                        break
+                    if can_read_messages:
+                        start_or_last_download = now
+                        result = self.download_messages(cursor, params)
+                        if result is not None:
+                            cursor, chunk = result
+                            for line in chunk.split("\n"):
+                                try:
+                                    message = json.loads(line)
+                                    if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
+                                        handler.handle_message(message)
+                                except json.JSONDecodeError:
+                                    pass
+
                 time.sleep(DEFAULT_SLEEP_INTERVAL)
+
+                if is_session_closed.is_set():
+                    if session_closed_at is None:
+                        session_closed_at = datetime.datetime.now()
+
+                    # After the external process has completed, we don't want to immediately exit
+                    if (
+                        datetime.datetime.now() - session_closed_at
+                    ).seconds > WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL:
+                        if not can_read_messages:
+                            self._log_unstartable_warning(handler, params)
+                        return
+
         except:
             handler.report_pipes_framework_exception(
                 f"{self.__class__.__name__} messages thread",
                 sys.exc_info(),
             )
             raise
+
+    def _log_unstartable_warning(self, handler: PipesMessageHandler, params: PipesParams) -> None:
+        if self.launched_payload is not None:
+            handler._context.log.warning(  # noqa: SLF001
+                f"[pipes] Target of {self.__class__.__name__} is not readable after receiving extra params from the external process (`on_launched` has been called)"
+            )
+        else:
+            handler._context.log.warning(  # noqa: SLF001
+                f"[pipes] Target of {self.__class__.__name__} is not readable."
+            )
 
     def _logs_thread(
         self,
@@ -430,6 +485,54 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
             for log_reader in self.log_readers:
                 if log_reader.is_running():
                     log_reader.stop()
+
+
+class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
+    """Message reader that reads a sequence of message chunks written by an external process into a
+    blob store such as S3, Azure blob storage, or GCS.
+
+    The reader maintains a counter, starting at 1, that is synchronized with a message writer in
+    some pipes process. The reader starts a thread that periodically attempts to read a chunk
+    indexed by the counter at some location expected to be written by the pipes process. The chunk
+    should be a file with each line corresponding to a JSON-encoded pipes message. When a chunk is
+    successfully read, the messages are processed and the counter is incremented. The
+    :py:class:`PipesBlobStoreMessageWriter` on the other end is expected to similarly increment a
+    counter (starting from 1) on successful write, keeping counters on the read and write end in
+    sync.
+
+    If `log_readers` is passed, the message reader will start the passed log readers when the
+    `opened` message is received from the external process.
+
+    Args:
+        interval (float): interval in seconds between attempts to download a chunk
+        log_readers (Optional[Mapping[str, PipesLogReader]]): A mapping of arbitrary names to readers for logs.
+    """
+
+    counter: int
+
+    def __init__(
+        self,
+        interval: float = 10,
+        log_readers: Optional[Sequence["PipesLogReader"]] = None,
+    ):
+        super().__init__(interval=interval, log_readers=log_readers)
+
+        self.counter = 1
+
+    @abstractmethod
+    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
+        ...
+        # historical reasons, keeping the original interface of PipesBlobStoreMessageReader
+
+    def download_messages(
+        self, cursor: Optional[int], params: PipesParams
+    ) -> Optional[Tuple[int, str]]:
+        # mapping new interface to the old one
+        # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
+        chunk = self.download_messages_chunk(self.counter, params)
+        if chunk:
+            self.counter += 1
+            return self.counter, chunk
 
 
 class PipesLogReader(ABC):
