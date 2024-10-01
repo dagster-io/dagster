@@ -93,7 +93,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         Args:
             context (OpExecutionContext): The context of the currently executing Dagster op or asset.
             params (dict): Parameters for the ``start_job_run`` boto3 AWS EMR Serverless client call.
-                See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-serverless/client/start_job_run.html>`_
+                See `Boto3 EMR Serverless API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-serverless/client/start_job_run.html>`_
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:

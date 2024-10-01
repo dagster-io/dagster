@@ -387,6 +387,14 @@
                 "path": "/concepts/dagster-pipes/aws-glue"
               },
               {
+                "title": "Dagster Pipes + AWS EMR",
+                "path": "/concepts/dagster-pipes/aws-emr"
+              },
+              {
+                "title": "Dagster Pipes + AWS EMR Serverless",
+                "path": "/concepts/dagster-pipes/aws-emr-serverless"
+              },
+              {
                 "title": "Dagster Pipes + AWS Lambda",
                 "path": "/concepts/dagster-pipes/aws-lambda"
               },
