@@ -20,14 +20,16 @@ type CacheData<TQuery> = {
 export const KEY_PREFIX = 'indexdbQueryCache:';
 
 export class CacheManager<TQuery> {
-  private cache: ReturnType<typeof cache<string, CacheData<TQuery>>>;
+  private cache: ReturnType<typeof cache<string, CacheData<TQuery>>> | undefined;
   private key: string;
   private current?: CacheData<TQuery>;
   private currentAwaitable?: Promise<TQuery | undefined>;
 
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
-    this.cache = cache<string, CacheData<TQuery>>({dbName: this.key, maxCount: 1});
+    try {
+      this.cache = cache<string, CacheData<TQuery>>({dbName: this.key, maxCount: 1});
+    } catch (e) {}
   }
 
   async get(version: number | string): Promise<TQuery | undefined> {
@@ -36,6 +38,10 @@ export class CacheManager<TQuery> {
     }
     if (!this.currentAwaitable) {
       this.currentAwaitable = new Promise(async (res) => {
+        if (!this.cache) {
+          res(undefined);
+          return;
+        }
         if (await this.cache.has('cache')) {
           const {value} = await this.cache.get('cache');
           if (value && version === value.version) {
@@ -60,10 +66,16 @@ export class CacheManager<TQuery> {
     ) {
       return;
     }
+    if (!this.cache) {
+      return;
+    }
     return this.cache.set('cache', {data, version}, {expiry: new Date('3030-01-01')});
   }
 
   async clear() {
+    if (!this.cache) {
+      return;
+    }
     await this.cache.delete('cache');
   }
 }
