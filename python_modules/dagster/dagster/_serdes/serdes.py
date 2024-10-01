@@ -683,15 +683,22 @@ class ObjectSerializer(Serializer, Generic[T]):
         return self.storage_name or self.klass.__name__
 
 
-T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple, default=NamedTuple)
+T_NamedTuple = TypeVar("T_NamedTuple", default=NamedTuple)
 
 
+# T_NamedTuple previously had a `NamedTuple` bound, but the bound triggers type errors when a `@record`
+# decorated class is bound to the variable. @record actually generates a NamedTuple variant of the
+# class that was passed in, but we haven't found out how to communicate that to the type system.
+# Instead the type signature of the `@record` decorator passes the input class through unmodified.
+# Therefore, we forgo `bound` here so that `NamedTupleSerializer` can be used with `@record`
+# classes.
 class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
     def object_as_mapping(self, value: T_NamedTuple) -> Mapping[str, Any]:
         if is_record(value):
             return as_dict_for_new(value)
 
-        return value._asdict()
+        # Value is always a NamedTuple, we just can't express that in the type of T_NamedTuple.
+        return value._asdict()  # type: ignore
 
     @cached_property
     def constructor_param_names(self) -> Sequence[str]:
@@ -714,6 +721,10 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
 
         return names
 
+
+# Alias for clarity-- see note on `T_NamedTuple` for the relationship between `NamedTuple` and
+# `@record`-decorated classes.
+RecordSerializer = NamedTupleSerializer
 
 T_Dataclass = TypeVar("T_Dataclass", bound="DataclassInstance", default="DataclassInstance")
 
