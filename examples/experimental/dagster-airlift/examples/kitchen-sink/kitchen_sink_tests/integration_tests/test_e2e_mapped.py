@@ -77,7 +77,9 @@ def test_migrated_dagster_print_materializes(
             assert (
                 DAG_RUN_ID_TAG_KEY in dagster_run.tags
             ), f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
-            assert DAG_RUN_ID_TAG_KEY == airflow_run_id, "dagster run tag does not match dag run id"
+            assert (
+                dagster_run.tags[DAG_RUN_ID_TAG_KEY] == airflow_run_id
+            ), "dagster run tag does not match dag run id"
 
 
 RAW_METADATA_KEY = "Run Metadata (raw)"
