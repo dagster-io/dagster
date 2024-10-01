@@ -8,6 +8,7 @@ from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.events.log import EventLogEntry
 from dagster._time import get_current_datetime
+from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 
 from kitchen_sink_tests.integration_tests.conftest import makefile_dir
 
@@ -74,11 +75,9 @@ def test_migrated_dagster_print_materializes(
             run_ids = dagster_instance.get_run_ids()
             assert dagster_run, f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
             assert (
-                "dagster-airlift/dag-run-id" in dagster_run.tags
+                DAG_RUN_ID_TAG_KEY in dagster_run.tags
             ), f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
-            assert (
-                dagster_run.tags["dagster-airlift/dag-run-id"] == airflow_run_id
-            ), "dagster run tag does not match dag run id"
+            assert DAG_RUN_ID_TAG_KEY == airflow_run_id, "dagster run tag does not match dag run id"
 
 
 RAW_METADATA_KEY = "Run Metadata (raw)"

@@ -9,7 +9,7 @@ import requests
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 
-from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_MAPPING_METADATA_KEY
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 
@@ -96,9 +96,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         for (repo_location, repo_name, job_name), asset_keys in assets_to_trigger.items():
             execution_params = {
                 "mode": "default",
-                "executionMetadata": {
-                    "tags": [{"key": "dagster-airlift/dag-run-id", "value": dag_run_id}]
-                },
+                "executionMetadata": {"tags": [{"key": DAG_RUN_ID_TAG_KEY, "value": dag_run_id}]},
                 "runConfigData": "{}",
                 "selector": {
                     "repositoryLocationName": repo_location,
