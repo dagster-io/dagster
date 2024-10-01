@@ -16,6 +16,7 @@ from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor_defs,
+    get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
@@ -51,6 +52,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsD
                 airflow_instance=self.airflow_instance,
                 minimum_interval_seconds=self.sensor_minimum_interval_seconds,
                 airflow_data=airflow_data,
+                event_translation_fn=get_asset_events,
             ),
         )
 
@@ -97,6 +99,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[AirflowDefinitionsDa
                 airflow_instance=self.airflow_instance,
                 minimum_interval_seconds=self.sensor_minimum_interval_seconds,
                 airflow_data=airflow_data,
+                event_translation_fn=get_asset_events,
             ),
         )
 
