@@ -1,5 +1,6 @@
 from dagster_aws.pipes.clients import (
     PipesECSClient,
+    PipesEMRClient,
     PipesEMRServerlessClient,
     PipesGlueClient,
     PipesLambdaClient,
@@ -19,6 +20,7 @@ __all__ = [
     "PipesGlueClient",
     "PipesLambdaClient",
     "PipesECSClient",
+    "PipesEMRClient",
     "PipesS3ContextInjector",
     "PipesLambdaEventContextInjector",
     "PipesS3MessageReader",
