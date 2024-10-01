@@ -3,7 +3,6 @@ import time
 from datetime import timedelta
 from typing import List
 
-from dlt import run
 import pytest
 from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
@@ -74,8 +73,12 @@ def test_migrated_dagster_print_materializes(
             dagster_run = dagster_instance.get_run_by_id(dagster_run_id)
             run_ids = dagster_instance.get_run_ids()
             assert dagster_run, f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
-            assert "dagster-airlift/dag-run_id" in dagster_run.tags, "Could not find dagster run tag"
-            assert dagster_run.tags["dagster-airlift/dag-run-id"] == airflow_run_id, "dagster run tag does not match dag run id"
+            assert (
+                "dagster-airlift/dag-run_id" in dagster_run.tags
+            ), "Could not find dagster run tag"
+            assert (
+                dagster_run.tags["dagster-airlift/dag-run-id"] == airflow_run_id
+            ), "dagster run tag does not match dag run id"
 
 
 RAW_METADATA_KEY = "Run Metadata (raw)"
@@ -115,7 +118,6 @@ def test_dagster_weekly_daily_materializes(
     assert weekly_mat_event.asset_materialization
     assert weekly_mat_event.asset_materialization.asset_key == asset_one
     assert dag_id_of_mat(weekly_mat_event) == "weekly_dag"
-
 
     dag_id = "daily_dag"
     dag_run_id = af_instance.trigger_dag(dag_id=dag_id)
