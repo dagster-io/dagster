@@ -338,12 +338,12 @@ class TaskInstance:
         return f"{self.details_url}&tab=logs"
 
     @property
-    def start_date(self) -> float:
-        return datetime.datetime.fromisoformat(self.metadata["start_date"]).timestamp()
+    def start_date(self) -> datetime.datetime:
+        return datetime.datetime.fromisoformat(self.metadata["start_date"])
 
     @property
-    def end_date(self) -> float:
-        return datetime.datetime.fromisoformat(self.metadata["end_date"]).timestamp()
+    def end_date(self) -> datetime.datetime:
+        return datetime.datetime.fromisoformat(self.metadata["end_date"])
 
 
 @record
@@ -382,17 +382,9 @@ class DagRun:
         return self.metadata["conf"]
 
     @property
-    def start_date(self) -> float:
-        return datetime.datetime.fromisoformat(self.metadata["start_date"]).timestamp()
-
-    @property
-    def start_datetime(self) -> datetime.datetime:
+    def start_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["start_date"])
 
     @property
-    def end_date(self) -> float:
-        return datetime.datetime.fromisoformat(self.metadata["end_date"]).timestamp()
-
-    @property
-    def end_datetime(self) -> datetime.datetime:
+    def end_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["end_date"])
