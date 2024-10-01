@@ -72,7 +72,7 @@ class AssetCheckEvaluation(
 ):
     """Represents the outcome of a evaluating an asset check.
 
-    Attributes:
+    Args:
         asset_key (AssetKey):
             The asset key that was checked.
         check_name (str):

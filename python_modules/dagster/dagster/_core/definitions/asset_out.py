@@ -51,7 +51,7 @@ class AssetOut(
 ):
     """Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`.
 
-    Attributes:
+    Args:
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name. When using ``@multi_asset``, the
             asset name defaults to the key of the "outs" dictionary Only one of the "key_prefix" and

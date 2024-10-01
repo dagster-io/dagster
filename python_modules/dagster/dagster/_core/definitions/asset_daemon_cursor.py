@@ -66,7 +66,7 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
 class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
-    Attributes:
+    Args:
         evaluation_id (int): The ID of the evaluation that produced this cursor.
         previous_evaluation_state (Sequence[AutomationConditionEvaluationState]): (DEPRECATED) The
             evaluation info recorded for each asset on the previous tick.

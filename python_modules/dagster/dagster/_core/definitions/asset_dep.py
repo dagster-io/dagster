@@ -32,7 +32,7 @@ class AssetDep(
 ):
     """Specifies a dependency on an upstream asset.
 
-    Attributes:
+    Args:
         asset (Union[AssetKey, str, AssetSpec, AssetsDefinition, SourceAsset]): The upstream asset to depend on.
         partition_mapping (Optional[PartitionMapping]): Defines what partitions to depend on in
             the upstream asset. If not provided and the upstream asset is partitioned, defaults to

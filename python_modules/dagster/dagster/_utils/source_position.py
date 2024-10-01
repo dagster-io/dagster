@@ -53,7 +53,7 @@ class ValueAndSourcePositionTree(NamedTuple):
 class SourcePositionAndKeyPath(NamedTuple):
     """Represents a source position and key path within a file.
 
-    Attributes:
+    Args:
         key_path (KeyPath): The path of keys that lead to the current object, where each element in
             the path is either a string (for dict keys) or an integer (for list indices).
         source_position (Optional[SourcePosition]): The source position of the object in the

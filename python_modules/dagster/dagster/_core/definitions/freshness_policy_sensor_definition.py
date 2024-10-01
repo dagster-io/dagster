@@ -93,7 +93,7 @@ class FreshnessPolicySensorContext(
 ):
     """The ``context`` object available to a decorated function of ``freshness_policy_sensor``.
 
-    Attributes:
+    Args:
         sensor_name (str): the name of the sensor.
         asset_key (AssetKey): the key of the asset being monitored
         freshness_policy (FreshnessPolicy): the freshness policy of the asset being monitored

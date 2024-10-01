@@ -50,7 +50,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
     of the asset in question. For example, the file path and line number where the
     asset is defined.
 
-    Attributes:
+    Args:
         sources (List[Union[LocalFileCodeReference, SourceControlCodeReference]]):
             A list of code references for the asset, such as file locations or
             references to source control.

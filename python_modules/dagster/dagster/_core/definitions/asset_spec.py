@@ -98,7 +98,7 @@ class AssetSpec(
     An asset spec plus any materialization or observation function for the asset constitutes an
     "asset definition".
 
-    Attributes:
+    Args:
         key (AssetKey): The unique identifier for this asset.
         deps (Optional[AbstractSet[AssetKey]]): The asset keys for the upstream assets that
             materializing this asset depends on.

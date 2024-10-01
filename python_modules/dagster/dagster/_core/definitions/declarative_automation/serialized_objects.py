@@ -172,7 +172,7 @@ class AutomationConditionCursor(Generic[T_EntityKey]):
     """Incremental state calculated during the evaluation of a AutomationCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
-    Attributes:
+    Args:
         previous_requested_subset: The subset that was requested for this asset on the previous tick.
         effective_timestamp: The timestamp at which the evaluation was performed.
         last_event_id: The maximum storage ID over all events used in this evaluation.

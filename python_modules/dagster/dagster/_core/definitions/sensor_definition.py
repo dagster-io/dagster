@@ -127,7 +127,7 @@ class SensorEvaluationContext:
     `SensorEvaluationContext` for testing purposes, use :py:func:`dagster.
     build_sensor_context`.
 
-    Attributes:
+    Args:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest

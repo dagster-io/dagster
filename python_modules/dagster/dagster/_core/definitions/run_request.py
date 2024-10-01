@@ -60,7 +60,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
     """Represents a skipped evaluation, where no runs are requested. May contain a message to indicate
     why no runs were requested.
 
-    Attributes:
+    Args:
         skip_message (Optional[str]): A message displayed in the Dagster UI for why this evaluation resulted
             in no requested runs.
     """
@@ -87,7 +87,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
-    Attributes:
+    Args:
         run_key (Optional[str]): A string key to identify this launched run. For sensors, ensures that
             only one run is created per run key across all sensor evaluations.  For schedules,
             ensures that one run is created per tick, across failure recoveries. Passing in a `None`
@@ -334,7 +334,7 @@ class DagsterRunReaction(
     """Represents a request that reacts to an existing dagster run. If success, it will report logs
     back to the run.
 
-    Attributes:
+    Args:
         dagster_run (Optional[DagsterRun]): The dagster run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
         run_status: (Optional[DagsterRunStatus]): The run status that triggered the reaction.
@@ -383,7 +383,7 @@ class SensorResult(
 ):
     """The result of a sensor evaluation.
 
-    Attributes:
+    Args:
         run_requests (Optional[Sequence[RunRequest]]): A list
             of run requests to be executed.
         skip_reason (Optional[Union[str, SkipReason]]): A skip message indicating why sensor

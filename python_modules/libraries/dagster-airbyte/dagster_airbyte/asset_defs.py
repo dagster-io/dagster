@@ -427,7 +427,7 @@ class AirbyteConnectionMetadata(
 ):
     """Contains information about an Airbyte connection.
 
-    Attributes:
+    Args:
         name (str): The name of the connection.
         stream_prefix (str): A prefix to add to all stream names.
         has_basic_normalization (bool): Whether or not the connection has basic normalization enabled.

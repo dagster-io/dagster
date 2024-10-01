@@ -37,7 +37,7 @@ class AssetCheckResult(
 ):
     """The result of an asset check.
 
-    Attributes:
+    Args:
         asset_key (Optional[AssetKey]):
             The asset key that was checked.
         check_name (Optional[str]):

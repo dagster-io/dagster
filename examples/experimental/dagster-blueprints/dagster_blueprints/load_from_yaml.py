@@ -143,7 +143,7 @@ class YamlBlueprintsLoader(NamedTuple):
     """A loader is responsible for loading a set of Dagster definitions from one or more YAML
     files based on a set of supplied blueprints.
 
-    Attributes:
+    Args:
         path (Path | str): The path to the YAML file or directory of YAML files containing the
             blueprints for Dagster definitions.
         per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type

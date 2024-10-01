@@ -19,7 +19,7 @@ class InitExecutorContext(
 ):
     """Executor-specific initialization context.
 
-    Attributes:
+    Args:
         job (IJob): The job to be executed.
         executor_def (ExecutorDefinition): The definition of the executor currently being
             constructed.

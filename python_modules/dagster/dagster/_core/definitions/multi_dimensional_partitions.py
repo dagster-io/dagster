@@ -188,7 +188,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             A mapping of dimension name to partitions definition. The total set of partitions will
             be the cross-product of the partitions from each PartitionsDefinition.
 
-    Attributes:
+    Args:
         partitions_defs (Sequence[PartitionDimensionDefinition]):
             A sequence of PartitionDimensionDefinition objects, each of which contains a dimension
             name and a PartitionsDefinition. The total set of partitions will be the cross-product

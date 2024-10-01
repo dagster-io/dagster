@@ -146,7 +146,7 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> datetime:
 class TimeWindow(NamedTuple):
     """An interval that is closed at the start and open at the end.
 
-    Attributes:
+    Args:
         start (datetime): A datetime that marks the start of the window.
         end (datetime): A datetime that marks the end of the window.
     """

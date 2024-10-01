@@ -63,7 +63,7 @@ class MaterializeResult(AssetResult):
     @asset and @multi_asset decorated functions to pass metadata or specify specific assets were
     materialized.
 
-    Attributes:
+    Args:
         asset_key (Optional[AssetKey]): Optional in @asset, required in @multi_asset to discern which asset this refers to.
         metadata (Optional[RawMetadataMapping]): Metadata to record with the corresponding AssetMaterialization event.
         check_results (Optional[Sequence[AssetCheckResult]]): Check results to record with the
@@ -79,7 +79,7 @@ class ObserveResult(AssetResult):
     """An object representing a successful observation of an asset. These can be returned from an
     @observable_source_asset decorated function to pass metadata.
 
-    Attributes:
+    Args:
         asset_key (Optional[AssetKey]): The asset key. Optional to include.
         metadata (Optional[RawMetadataMapping]): Metadata to record with the corresponding
             AssetObservation event.

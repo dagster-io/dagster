@@ -396,7 +396,7 @@ class DatabricksClient:
 class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress.
 
-    Attributes:
+    Args:
         host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net.
         token (str): Databricks authentication token.
         poll_interval_sec (float): How often to poll Databricks for run status.

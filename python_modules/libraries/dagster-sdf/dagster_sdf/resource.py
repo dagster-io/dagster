@@ -45,7 +45,7 @@ logging = get_dagster_logger()
 class SdfCliResource(ConfigurableResource):
     """A resource used to execute sdf CLI commands.
 
-    Attributes:
+    Args:
         workspace_dir (str): The path to the sdf workspace directory. This directory should contain a
             `workspace.sdf.yml`.
         global_config_flags (List[str]): A list of global flags configuration to pass to the sdf CLI

@@ -309,7 +309,7 @@ class RunStatusSensorContext:
 class RunFailureSensorContext(RunStatusSensorContext):
     """The ``context`` object available to a decorated function of ``run_failure_sensor``.
 
-    Attributes:
+    Args:
         sensor_name (str): the name of the sensor.
         dagster_run (DagsterRun): the failed run.
     """

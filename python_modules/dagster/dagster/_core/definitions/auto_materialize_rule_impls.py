@@ -232,7 +232,7 @@ class AutoMaterializeAssetPartitionsFilter(
     """A filter that can be applied to an asset partition, during auto-materialize evaluation, and
     returns a boolean for whether it passes.
 
-    Attributes:
+    Args:
         latest_run_required_tags (Optional[Sequence[str]]): `passes` returns
             True if the run responsible for the latest materialization of the asset partition
             has all of these tags.
@@ -687,7 +687,7 @@ class SkipOnNotAllParentsUpdatedRule(
     """An auto-materialize rule that enforces that an asset can only be materialized if all parents
     have been materialized since the asset's last materialization.
 
-    Attributes:
+    Args:
         require_update_for_all_parent_partitions (Optional[bool]): Applies only to an unpartitioned
             asset or an asset partition that depends on more than one partition in any upstream asset.
             If true, requires all upstream partitions in each upstream asset to be materialized since

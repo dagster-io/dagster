@@ -89,7 +89,7 @@ class MultiAssetSensorAssetCursorComponent(
     included in "unevaluated_partitioned_event_ids", because it's after the event that the cursor
     for its partition has advanced to, but trails "latest_evaluated_event_id".
 
-    Attributes:
+    Args:
         latest_consumed_event_partition (Optional[str]): The partition of the latest consumed event
             for this asset.
         latest_consumed_event_id (Optional[int]): The event ID of the latest consumed event for
@@ -191,7 +191,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     To update the cursor to the latest materialization and clear the unconsumed events, call
     `advance_all_cursors`.
 
-    Attributes:
+    Args:
         monitored_assets (Union[Sequence[AssetKey], AssetSelection]): The assets monitored
             by the sensor. If an AssetSelection object is provided, it will only apply to assets
             within the Definitions that this sensor is part of.

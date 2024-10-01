@@ -54,7 +54,7 @@ class OpSelectionData(
 ):
     """The data about op selection.
 
-    Attributes:
+    Args:
         op_selection (List[str]): The queries of op selection.
         resolved_op_selection (AbstractSet[str]): The names of selected ops.
         parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
@@ -83,7 +83,7 @@ class OpSelectionData(
 class AssetSelectionData:
     """The data about asset selection.
 
-    Attributes:
+    Args:
         asset_selection (FrozenSet[AssetKey]): The set of assets to be materialized within the job.
         parent_job_def (JobDefinition): The definition of the full job. This is used for constructing
             pipeline snapshot lineage.

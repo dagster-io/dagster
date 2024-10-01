@@ -176,7 +176,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
 class SourceAsset(ResourceAddable, IHasInternalInit):
     """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
 
-    Attributes:
+    Args:
         key (Union[AssetKey, Sequence[str], str]): The key of the asset.
         metadata (Mapping[str, MetadataValue]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
