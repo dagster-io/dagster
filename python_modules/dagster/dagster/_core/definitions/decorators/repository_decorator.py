@@ -1,5 +1,6 @@
 from functools import update_wrapper
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
     Iterable,
@@ -12,8 +13,6 @@ from typing import (
     Union,
     overload,
 )
-
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
@@ -31,22 +30,26 @@ from dagster._core.definitions.partitioned_schedule import (
 from dagster._core.definitions.repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
-    PendingRepositoryDefinition,
-    PendingRepositoryListDefinition,
     RepositoryData,
     RepositoryDefinition,
-    RepositoryListDefinition,
+    RepositoryListSpec,
 )
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
+from dagster._core.definitions.repository_definition.valid_definitions import RepositoryDictSpec
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-T = TypeVar("T")
+if TYPE_CHECKING:
+    from dagster._core.definitions.cacheable_assets import (
+        AssetsDefinitionCacheableData,
+        CacheableAssetsDefinition,
+    )
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
-RepositoryDictSpec: TypeAlias = Dict[str, Dict[str, RepositoryListDefinition]]
+T = TypeVar("T")
 
 
 def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
@@ -87,46 +90,42 @@ class _Repository:
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
 
-    @overload
     def __call__(
         self,
         fn: Union[
-            Callable[[], Sequence[RepositoryListDefinition]],
+            Callable[[], RepositoryListSpec],
             Callable[[], RepositoryDictSpec],
         ],
-    ) -> RepositoryDefinition: ...
-
-    @overload
-    def __call__(
-        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
-    ) -> PendingRepositoryDefinition: ...
-
-    def __call__(
-        self,
-        fn: Union[
-            Callable[[], Sequence[PendingRepositoryListDefinition]],
-            Callable[[], RepositoryDictSpec],
-        ],
-    ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+    ) -> RepositoryDefinition:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+        from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
         check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
 
-        repository_definitions = fn()
+        cacheable_asset_data: Dict[str, Sequence["AssetsDefinitionCacheableData"]] = {}
+        reconstruction_metadata = {
+            k: v
+            for k, v in self.metadata.items()
+            if isinstance(v, CodeLocationReconstructionMetadataValue)
+        }
 
-        repository_data: Optional[Union[CachingRepositoryData, RepositoryData]]
+        repository_definitions = fn()
+        context = DefinitionsLoadContext.get()
+
         if isinstance(repository_definitions, list):
             bad_defns = []
             repository_defns = []
-
-            has_cacheable_assets_definitions = False
             for i, definition in enumerate(_flatten(repository_definitions)):
                 if isinstance(definition, CacheableAssetsDefinition):
-                    has_cacheable_assets_definitions = True
+                    cacheable_data = _resolve_cacheable_asset_data(definition, context)
+                    cacheable_asset_data[definition.unique_id] = cacheable_data
+                    assets_defs = definition.build_definitions(cacheable_data)
+                    repository_defns.extend(assets_defs)
+
                 elif not isinstance(
                     definition,
                     (
@@ -156,26 +155,20 @@ class _Repository:
                     f"Got {bad_definitions_str}."
                 )
 
-            if has_cacheable_assets_definitions:
-                repository_data = None
-                repository_load_data = None
-            else:
-                repository_data = CachingRepositoryData.from_list(
-                    repository_defns,
-                    default_executor_def=self.default_executor_def,
-                    default_logger_defs=self.default_logger_defs,
-                    top_level_resources=self.top_level_resources,
+            repository_data = CachingRepositoryData.from_list(
+                repository_defns,
+                default_executor_def=self.default_executor_def,
+                default_logger_defs=self.default_logger_defs,
+                top_level_resources=self.top_level_resources,
+            )
+            repository_load_data = (
+                RepositoryLoadData(
+                    cacheable_asset_data=cacheable_asset_data,
+                    reconstruction_metadata=reconstruction_metadata,
                 )
-                reconstruction_metadata = {
-                    k: v
-                    for k, v in self.metadata.items()
-                    if isinstance(v, CodeLocationReconstructionMetadataValue)
-                }
-                repository_load_data = (
-                    RepositoryLoadData(reconstruction_metadata=reconstruction_metadata)
-                    if reconstruction_metadata
-                    else None
-                )
+                if cacheable_asset_data or reconstruction_metadata
+                else None
+            )
 
         elif isinstance(repository_definitions, dict):
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
@@ -204,41 +197,43 @@ class _Repository:
                 "details and examples",
             )
 
-        if isinstance(repository_definitions, list) and repository_data is None:
-            return PendingRepositoryDefinition(
-                self.name,
-                repository_definitions=list(_flatten(repository_definitions)),
-                description=self.description,
-                metadata=self.metadata,
-                default_executor_def=self.default_executor_def,
-                default_logger_defs=self.default_logger_defs,
-                _top_level_resources=self.top_level_resources,
-            )
-        else:
-            repository_def = RepositoryDefinition(
-                name=self.name,
-                description=self.description,
-                metadata=self.metadata,
-                repository_data=check.not_none(repository_data),
-                repository_load_data=repository_load_data,
-            )
+        repository_def = RepositoryDefinition(
+            name=self.name,
+            description=self.description,
+            metadata=self.metadata,
+            repository_data=repository_data,
+            repository_load_data=repository_load_data,
+        )
 
-            update_wrapper(repository_def, fn)
-            return repository_def
+        update_wrapper(repository_def, fn)
+        return repository_def
+
+
+def _resolve_cacheable_asset_data(
+    definition: "CacheableAssetsDefinition", context: "DefinitionsLoadContext"
+) -> Sequence["AssetsDefinitionCacheableData"]:
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
+
+    if (
+        context.load_type == DefinitionsLoadType.RECONSTRUCTION
+        and definition.unique_id in context.cacheable_asset_data
+    ):
+        return context.cacheable_asset_data[definition.unique_id]
+    # Error if some cacheable data is defined but the key is not found. If any
+    # cacheable data is available, we expect all of it to be available. This
+    # is to match previous behavior of PendingRepositoryDefinition.
+    elif context.load_type == DefinitionsLoadType.RECONSTRUCTION and context.cacheable_asset_data:
+        check.failed(
+            f"No metadata found for CacheableAssetsDefinition with unique_id {definition.unique_id}."
+        )
+    else:
+        return definition.compute_cacheable_data()
 
 
 @overload
 def repository(
-    definitions_fn: Union[
-        Callable[[], Sequence[RepositoryListDefinition]], Callable[[], RepositoryDictSpec]
-    ],
+    definitions_fn: Union[Callable[[], RepositoryListSpec], Callable[[], RepositoryDictSpec]],
 ) -> RepositoryDefinition: ...
-
-
-@overload
-def repository(
-    definitions_fn: Callable[..., Sequence[PendingRepositoryListDefinition]],
-) -> PendingRepositoryDefinition: ...
 
 
 @overload
@@ -256,7 +251,7 @@ def repository(
 def repository(
     definitions_fn: Optional[
         Union[
-            Callable[[], Sequence[PendingRepositoryListDefinition]],
+            Callable[[], RepositoryListSpec],
             Callable[[], RepositoryDictSpec],
         ]
     ] = None,
@@ -267,7 +262,7 @@ def repository(
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-) -> Union[RepositoryDefinition, PendingRepositoryDefinition, _Repository]:
+) -> Union[RepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
     In most cases, :py:class:`Definitions` should be used instead.

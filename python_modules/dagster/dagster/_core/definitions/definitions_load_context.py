@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Optional, Sequence, TypeVar, cast
 
+from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes.serdes import PackableValue, deserialize_value, serialize_value
@@ -64,11 +65,24 @@ class DefinitionsLoadContext:
         """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
         return self._load_type
 
+    @property
+    def cacheable_asset_data(self) -> Mapping[str, Sequence[AssetsDefinitionCacheableData]]:
+        """Sequence[AssetDefinitionCacheableData]: A sequence of cacheable asset data created
+        during code location initialization. Accessing this during initialization will raise an
+        error.
+        """
+        if self._load_type == DefinitionsLoadType.INITIALIZATION:
+            raise DagsterInvariantViolationError(
+                "Attempted to access cacheable asset data during code location initialization."
+                " Cacheable asset data is only available during reconstruction of a code location."
+            )
+        return self._repository_load_data.cacheable_asset_data if self._repository_load_data else {}
+
     @cached_property
     def reconstruction_metadata(self) -> Mapping[str, Any]:
         """Mapping[str, Any]: A dictionary containing metadata from the returned Definitions object
-        at initial code location construction. This will be empty in the code server process, but in
-        child processes contain the metadata returned in the code server process.
+        at initial code location initialization. Accessing this during initialization will raise an
+        error.
         """
         if self._load_type == DefinitionsLoadType.INITIALIZATION:
             raise DagsterInvariantViolationError(

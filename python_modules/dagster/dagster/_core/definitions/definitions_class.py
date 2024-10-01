@@ -37,7 +37,6 @@ from dagster._core.definitions.partitioned_schedule import (
 )
 from dagster._core.definitions.repository_definition import (
     SINGLETON_REPOSITORY_NAME,
-    PendingRepositoryDefinition,
     RepositoryDefinition,
 )
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -73,7 +72,7 @@ def create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
-) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+) -> RepositoryDefinition:
     """Create a named repository using the same arguments as :py:class:`Definitions`. In older
     versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
     and jobs. There could be many repositories per code location. This was a complicated ontology but
@@ -264,7 +263,7 @@ def _create_repository_using_definitions_args(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetsDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = None,
-) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+) -> RepositoryDefinition:
     # First, dedupe all definition types.
     sensors = dedupe_object_refs(sensors)
     jobs = dedupe_object_refs(jobs)
@@ -579,23 +578,7 @@ class Definitions(IHaveNew):
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
         """Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
-        in order to access any functionality which is not exposed on Definitions. This method
-        also resolves a PendingRepositoryDefinition to a RepositoryDefinition.
-        """
-        inner_repository = self.get_inner_repository()
-        return (
-            inner_repository.compute_repository_definition()
-            if isinstance(inner_repository, PendingRepositoryDefinition)
-            else inner_repository
-        )
-
-    @cached_method
-    def get_inner_repository(
-        self,
-    ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        """This method is used internally to access the inner repository. We explicitly do not want
-        to resolve the pending repo because the entire point is to defer that resolution until
-        later.
+        in order to access any functionality which is not exposed on Definitions.
         """
         return _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,

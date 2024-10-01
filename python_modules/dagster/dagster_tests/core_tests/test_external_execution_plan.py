@@ -5,8 +5,6 @@ from typing import Optional, Sequence
 
 import pytest
 from dagster import (
-    AssetKey,
-    AssetsDefinition,
     DagsterEventType,
     DagsterExecutionStepNotFoundError,
     DependencyDefinition,
@@ -14,31 +12,30 @@ from dagster import (
     In,
     Int,
     Out,
-    asset,
-    define_asset_job,
-    file_relative_path,
     in_process_executor,
     mem_io_manager,
     op,
     reconstructable,
-    repository,
 )
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.definitions.repository_definition.valid_definitions import (
-    PendingRepositoryListDefinition,
-)
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
+from dagster._utils.test.definitions import lazy_definitions
 
 
 def define_inty_job(using_file_system=False):
@@ -263,9 +260,10 @@ def test_using_file_system_for_subplan_invalid_step():
 def test_using_repository_data() -> None:
     with instance_for_test() as instance:
         # first, we resolve the repository to generate our cached metadata
-        repository_def = pending_repo.compute_repository_definition()
-        job_def = repository_def.get_job("all_asset_job")
-        repository_load_data = repository_def.repository_load_data
+        recon_repo = ReconstructableRepository.for_file(__file__, fn_name="cacheable_asset_defs")
+        repo_def = recon_repo.get_definition()
+        job_def = repo_def.get_job("all_asset_job")
+        repository_load_data = repo_def.repository_load_data
 
         assert (
             instance.run_storage.get_cursor_values({"get_definitions_called"}).get(
@@ -274,10 +272,7 @@ def test_using_repository_data() -> None:
             == "1"
         )
 
-        recon_repo = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_external_execution_plan.py"),
-            fn_name="pending_repo",
-        )
+        recon_repo = ReconstructableRepository.for_file(__file__, fn_name="cacheable_asset_defs")
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
         execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
@@ -334,6 +329,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
             instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0")
         )
         instance.run_storage.set_cursor_values({kvs_key: str(compute_cacheable_data_called + 1)})
+        # Skip the tracking if this is called outside the context of a DagsterInstance
         return [self._cacheable_data]
 
     def build_definitions(self, data):
@@ -357,11 +353,13 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-@asset
-def bar(foo):
-    return foo + 1
+@lazy_definitions
+def cacheable_asset_defs():
+    @asset
+    def bar(foo):
+        return foo + 1
 
-
-@repository
-def pending_repo() -> Sequence[PendingRepositoryListDefinition]:
-    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+    return Definitions(
+        assets=[bar, MyCacheableAssetsDefinition("xyz")],
+        jobs=[define_asset_job("all_asset_job")],
+    )

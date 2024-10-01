@@ -11,5 +11,5 @@ class FooCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 
 @repository
-def single_pending_repository():
+def single_cacheable_asset_repository():
     return [FooCacheableAssetsDefinition("abc")]

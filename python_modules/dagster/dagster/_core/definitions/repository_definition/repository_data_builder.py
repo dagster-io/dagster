@@ -49,7 +49,7 @@ from dagster._core.definitions.partitioned_schedule import (
 from dagster._core.definitions.repository_definition.repository_data import CachingRepositoryData
 from dagster._core.definitions.repository_definition.valid_definitions import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
-    RepositoryListDefinition,
+    RepositoryElementDefinition,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -162,7 +162,7 @@ def _process_resolved_job(
 
 
 def build_caching_repository_data_from_list(
-    repository_definitions: Sequence[RepositoryListDefinition],
+    repository_definitions: Sequence[RepositoryElementDefinition],
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,

@@ -52,7 +52,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
-        PendingRepositoryDefinition,
         RepositoryDefinition,
         RepositoryLoadData,
     )
@@ -571,7 +570,6 @@ def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
 LoadableDefinition: TypeAlias = Union[
     "JobDefinition",
     "RepositoryDefinition",
-    "PendingRepositoryDefinition",
     "GraphDefinition",
     "Sequence[Union[AssetsDefinition, SourceAsset]]",
 ]
@@ -594,10 +592,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.repository_definition import (
-        PendingRepositoryDefinition,
-        RepositoryDefinition,
-    )
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._utils.test.definitions import LazyDefinitions
 
     if not (
@@ -606,7 +601,6 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
             (
                 JobDefinition,
                 RepositoryDefinition,
-                PendingRepositoryDefinition,
                 GraphDefinition,
                 Definitions,
                 LazyDefinitions,
@@ -648,10 +642,7 @@ def def_from_pointer(
 
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.repository_definition import (
-        PendingRepositoryDefinition,
-        RepositoryDefinition,
-    )
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._utils.test.definitions import LazyDefinitions
 
     if isinstance(
@@ -659,7 +650,6 @@ def def_from_pointer(
         (
             GraphDefinition,
             JobDefinition,
-            PendingRepositoryDefinition,
             RepositoryDefinition,
             LazyDefinitions,
         ),
@@ -721,7 +711,6 @@ def repository_def_from_target_def(
     from dagster._core.definitions.repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
-        PendingRepositoryDefinition,
         RepositoryDefinition,
     )
     from dagster._core.definitions.source_asset import SourceAsset
@@ -737,10 +726,10 @@ def repository_def_from_target_def(
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
-        target = target.get_inner_repository()
+        return target.get_repository_def()
 
     # special case - we can wrap a single job in a repository
-    if isinstance(target, (JobDefinition, GraphDefinition)):
+    elif isinstance(target, (JobDefinition, GraphDefinition)):
         # consider including job name in generated repo name
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
@@ -755,12 +744,6 @@ def repository_def_from_target_def(
         )
     elif isinstance(target, RepositoryDefinition):
         return target
-    elif isinstance(target, PendingRepositoryDefinition):
-        # must load repository from scratch
-        if repository_load_data is None:
-            return target.compute_repository_definition()
-        # can use the cached data to more efficiently load data
-        return target.reconstruct_repository_definition(repository_load_data)
     else:
         return None
 

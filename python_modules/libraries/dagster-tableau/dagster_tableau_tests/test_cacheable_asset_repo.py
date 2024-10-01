@@ -3,11 +3,44 @@
 from typing import Callable
 
 import pytest
+from dagster import asset, define_asset_job
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
-from dagster._utils import file_relative_path
+from dagster._utils.test.definitions import lazy_definitions
+from dagster_tableau import TableauCloudWorkspace
+
+from dagster_tableau_tests.conftest import (
+    FAKE_CONNECTED_APP_CLIENT_ID,
+    FAKE_CONNECTED_APP_SECRET_ID,
+    FAKE_CONNECTED_APP_SECRET_VALUE,
+    FAKE_POD_NAME,
+    FAKE_SITE_NAME,
+    FAKE_USERNAME,
+)
+
+resource = TableauCloudWorkspace(
+    connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+    connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+    connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+    username=FAKE_USERNAME,
+    site_name=FAKE_SITE_NAME,
+    pod_name=FAKE_POD_NAME,
+)
+
+
+@lazy_definitions
+def cacheable_asset_defs():
+    @asset
+    def my_materializable_asset():
+        pass
+
+    return Definitions.merge(
+        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
+        resource.build_defs(),
+    )
 
 
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
@@ -15,11 +48,6 @@ def test_using_cached_asset_data(
     workspace_data_api_mocks_fn: Callable,
 ) -> None:
     with instance_for_test() as instance:
-        from dagster_tableau_tests.pending_repo import (
-            pending_repo_from_cached_asset_metadata,
-            resource,
-        )
-
         # Must initialize the resource's client before passing it to the mock response function
         resource.build_client()
         with workspace_data_api_mocks_fn(client=resource._client, include_views=True) as response:
@@ -27,8 +55,11 @@ def test_using_cached_asset_data(
             resource._client = None
             assert len(response.calls) == 0
 
-            # first, we resolve the repository to generate our cached metadata
-            repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+            recon_repo = ReconstructableRepository.for_file(
+                __file__, fn_name="cacheable_asset_defs"
+            )
+            repository_def = recon_repo.get_definition()
+
             # 4 calls to creates the defs
             assert len(response.calls) == 4
 
@@ -39,11 +70,9 @@ def test_using_cached_asset_data(
             repository_load_data = repository_def.repository_load_data
 
             recon_repo = ReconstructableRepository.for_file(
-                file_relative_path(__file__, "pending_repo.py"),
-                fn_name="pending_repo_from_cached_asset_metadata",
+                __file__, fn_name="cacheable_asset_defs"
             )
             recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
-
             execution_plan = create_execution_plan(
                 recon_job, repository_load_data=repository_load_data
             )

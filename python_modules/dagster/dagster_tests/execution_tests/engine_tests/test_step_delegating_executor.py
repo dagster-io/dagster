@@ -8,20 +8,21 @@ import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
-    DagsterInstance,
     asset,
     define_asset_job,
     executor,
     job,
     op,
     reconstructable,
-    repository,
 )
 from dagster._config import Permissive
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.execution.retries import RetryMode
@@ -30,9 +31,11 @@ from dagster._core.executor.step_delegating import (
     StepDelegatingExecutor,
     StepHandler,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.merger import merge_dicts
+from dagster._utils.test.definitions import lazy_definitions, scoped_definitions_load_context
 
 from dagster_tests.execution_tests.engine_tests.retry_jobs import (
     assert_expected_failure_behavior,
@@ -372,53 +375,54 @@ def test_execute_using_repository_data():
     with instance_for_test() as instance:
         recon_repo = ReconstructableRepository.for_module(
             "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
-            fn_name="pending_repo",
+            fn_name="cacheable_asset_defs",
             working_directory=os.path.join(os.path.dirname(__file__), "..", "..", ".."),
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
-        with execute_job(
-            recon_job,
-            instance=instance,
-        ) as result:
-            call_counts = instance.run_storage.get_cursor_values(
-                {"compute_cacheable_data_called", "get_definitions_called"}
-            )
-            assert call_counts.get("compute_cacheable_data_called") == "1"
-            assert call_counts.get("get_definitions_called") == "5"
-            TestStepHandler.wait_for_processes()
+        with scoped_definitions_load_context():
+            with execute_job(
+                recon_job,
+                instance=instance,
+            ) as result:
+                call_counts = instance.run_storage.get_cursor_values(
+                    {"compute_cacheable_data_called", "get_definitions_called"}
+                )
+                assert call_counts.get("compute_cacheable_data_called") == "1"
+                assert call_counts.get("get_definitions_called") == "5"
+                TestStepHandler.wait_for_processes()
 
-            assert any(
-                [
-                    "Starting execution with step handler TestStepHandler" in (event.message or "")
-                    for event in result.all_events
-                ]
-            )
-            assert result.success
-            parent_run_id = result.run_id
+                assert any(
+                    [
+                        "Starting execution with step handler TestStepHandler"
+                        in (event.message or "")
+                        for event in result.all_events
+                    ]
+                )
+                assert result.success
+                parent_run_id = result.run_id
 
-        with execute_job(
-            recon_job,
-            reexecution_options=ReexecutionOptions(parent_run_id=parent_run_id),
-            instance=instance,
-        ) as result:
-            TestStepHandler.wait_for_processes()
+            with execute_job(
+                recon_job,
+                reexecution_options=ReexecutionOptions(parent_run_id=parent_run_id),
+                instance=instance,
+            ) as result:
+                TestStepHandler.wait_for_processes()
 
-            assert any(
-                [
-                    "Starting execution with step handler TestStepHandler" in (event.message or "")
-                    for event in result.all_events
-                ]
-            )
-            assert result.success
-            # we do not attempt to fetch the previous repository load data off of the execution plan
-            # from the previous run, so the reexecution will require us to fetch the metadata again
-            call_counts = instance.run_storage.get_cursor_values(
-                {"compute_cacheable_data_called", "get_definitions_called"}
-            )
-            assert call_counts.get("compute_cacheable_data_called") == "2"
+                assert any(
+                    [
+                        "Starting execution with step handler TestStepHandler"
+                        in (event.message or "")
+                        for event in result.all_events
+                    ]
+                )
+                assert result.success
+                call_counts = instance.run_storage.get_cursor_values(
+                    {"compute_cacheable_data_called", "get_definitions_called"}
+                )
+                assert call_counts.get("compute_cacheable_data_called") == "2"
 
-            assert call_counts.get("get_definitions_called") == "9"
+                assert call_counts.get("get_definitions_called") == "9"
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -450,14 +454,17 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-@asset
-def bar(foo):
-    return foo + 1
+@lazy_definitions
+def cacheable_asset_defs():
+    @asset
+    def bar(foo):
+        return foo + 1
 
-
-@repository(default_executor_def=test_step_delegating_executor)
-def pending_repo():
-    return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+    return Definitions(
+        executor=test_step_delegating_executor,
+        assets=[bar, MyCacheableAssetsDefinition("xyz")],
+        jobs=[define_asset_job("all_asset_job")],
+    )
 
 
 def get_dynamic_resource_init_failure_job():

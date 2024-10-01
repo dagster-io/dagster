@@ -27,7 +27,6 @@ from dagster import (
     multiprocess_executor,
     observable_source_asset,
     op,
-    repository,
     schedule,
     sensor,
     with_resources,
@@ -47,10 +46,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
-from dagster._core.definitions.repository_definition import (
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
-)
+from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
@@ -61,6 +57,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._utils.test.definitions import scoped_definitions_load_context
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -211,7 +208,7 @@ def test_source_asset():
     assert all_assets[0].key.to_user_string() == "a-source-asset"
 
 
-def test_pending_repo():
+def test_cacheable_asset_repo():
     class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         def compute_cacheable_data(self):
             return [
@@ -234,23 +231,15 @@ def test_pending_repo():
                 for cd in data
             ]
 
-    # This section of the test was just to test my understanding of what is happening
-    # here and then it also documents why pending repo resolution is necessary
-    @repository
-    def a_pending_repo():
-        return [MyCacheableAssetsDefinition("foobar")]
-
-    assert isinstance(a_pending_repo, PendingRepositoryDefinition)
-    assert isinstance(a_pending_repo.compute_repository_definition(), RepositoryDefinition)
-
     # now actually test definitions
 
-    defs = Definitions(assets=[MyCacheableAssetsDefinition("foobar")])
-    all_assets = get_all_assets_from_defs(defs)
-    assert len(all_assets) == 1
-    assert all_assets[0].key.to_user_string() == "foobar"
+    with scoped_definitions_load_context():
+        defs = Definitions(assets=[MyCacheableAssetsDefinition("foobar")])
+        all_assets = get_all_assets_from_defs(defs)
+        assert len(all_assets) == 1
+        assert all_assets[0].key.to_user_string() == "foobar"
 
-    assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
+        assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
 
 
 def test_asset_loading():
