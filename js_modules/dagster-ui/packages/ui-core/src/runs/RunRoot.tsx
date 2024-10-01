@@ -129,7 +129,7 @@ export const RunRoot = () => {
               </Heading>
             ) : (
               <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
-                <Link to="/runs">Runs</Link>
+                <Link to="/runs">All Runs</Link>
                 <span>/</span>
                 <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
               </Heading>
