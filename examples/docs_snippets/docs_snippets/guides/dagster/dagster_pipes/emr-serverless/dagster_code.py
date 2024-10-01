@@ -1,10 +1,7 @@
 # start_asset_marker
-import os
-
-import boto3
-from dagster_aws.pipes import PipesEMRServerlessClient
 
 from dagster import AssetExecutionContext, asset
+from dagster_aws.pipes import PipesEMRServerlessClient
 
 
 @asset
@@ -19,9 +16,7 @@ def emr_serverless_asset(
             "executionRoleArn": "<emr-role>",
             "clientToken": context.run_id,  # idempotency identifier for the job run
             "configurationOverrides": {
-                "monitoringConfiguration": {
-                    "cloudWatchLoggingConfiguration": {"enabled": True}
-                }
+                "monitoringConfiguration": {"cloudWatchLoggingConfiguration": {"enabled": True}}
             },
         },
     ).get_results()

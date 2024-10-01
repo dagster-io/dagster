@@ -21,13 +21,10 @@ In the external code, you can access extras via the `PipesContext` object:
 ```python file=/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py lines=2-
 import os
 
-import pandas as pd
 from dagster_pipes import PipesContext, open_dagster_pipes
 
 
 def main():
-    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
-    total_orders = len(orders_df)
     # get the Dagster Pipes context
     context = PipesContext.get()
     # get all extras provided by Dagster asset
@@ -135,7 +132,6 @@ from dagster import (
     AssetCheckExecutionContext,
     AssetCheckResult,
     Definitions,
-    MaterializeResult,
     PipesSubprocessClient,
     asset,
     asset_check,
@@ -206,9 +202,7 @@ def main():
     context.report_asset_materialization(
         asset_key="orders", metadata={"total_orders": total_orders}
     )
-    context.report_asset_materialization(
-        asset_key="users", metadata={"total_users": total_users}
-    )
+    context.report_asset_materialization(asset_key="users", metadata={"total_users": total_users})
 
 
 if __name__ == "__main__":
@@ -308,7 +302,6 @@ In the Dagster code we receive custom messages using `get_custom_messages`.
 import shutil
 
 import pandas as pd
-
 from dagster import (
     AssetExecutionContext,
     Definitions,

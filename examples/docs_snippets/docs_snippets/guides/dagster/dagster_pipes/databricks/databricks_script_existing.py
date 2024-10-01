@@ -1,8 +1,4 @@
-from dagster_pipes import (
-    PipesDbfsContextLoader,
-    PipesDbfsMessageWriter,
-    open_dagster_pipes,
-)
+from dagster_pipes import PipesDbfsContextLoader, PipesDbfsMessageWriter, open_dagster_pipes
 
 # ... existing code
 

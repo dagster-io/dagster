@@ -48,7 +48,7 @@ def main():
     total_orders = len(orders_df)
     # get the Dagster Pipes context
     context = PipesContext.get()
-    print(f"processing total {total_orders} orders")
+    context.log.info(f"processing total {total_orders} orders")
 
 
 if __name__ == "__main__":
@@ -204,9 +204,7 @@ def subprocess_asset(
         shutil.which("python"),
         file_relative_path(__file__, "external_code.py"),
     ]
-    return pipes_subprocess_client.run(
-        command=cmd, context=context
-    ).get_materialize_result()
+    return pipes_subprocess_client.run(command=cmd, context=context).get_materialize_result()
 
 
 defs = Definitions(
@@ -296,9 +294,7 @@ def subprocess_asset(
         shutil.which("python"),
         file_relative_path(__file__, "external_code.py"),
     ]
-    return pipes_subprocess_client.run(
-        command=cmd, context=context
-    ).get_materialize_result()
+    return pipes_subprocess_client.run(command=cmd, context=context).get_materialize_result()
 
 
 defs = Definitions(

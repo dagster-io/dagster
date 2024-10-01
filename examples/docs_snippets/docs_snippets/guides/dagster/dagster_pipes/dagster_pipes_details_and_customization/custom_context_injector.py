@@ -7,9 +7,8 @@ from contextlib import contextmanager
 from typing import Iterator
 
 import cloud_service  # type: ignore
-from dagster_pipes import PipesContextData, PipesParams
-
 from dagster import PipesContextInjector
+from dagster_pipes import PipesContextData, PipesParams
 
 
 class MyCustomCloudServiceContextInjector(PipesContextInjector):

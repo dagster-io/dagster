@@ -57,17 +57,15 @@ In your Dagster project, create a file named `dagster_databricks_pipes.py` and p
 import os
 import sys
 
+from dagster import AssetExecutionContext, Definitions, asset
 from dagster_databricks import PipesDatabricksClient
 
-from dagster import AssetExecutionContext, Definitions, EnvVar, asset
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
 
 @asset
-def databricks_asset(
-    context: AssetExecutionContext, pipes_databricks: PipesDatabricksClient
-):
+def databricks_asset(context: AssetExecutionContext, pipes_databricks: PipesDatabricksClient):
     task = jobs.SubmitTask.from_dict(
         {
             # The cluster settings below are somewhat arbitrary. Dagster Pipes is
@@ -175,11 +173,7 @@ Let's look at the script itself:
 ### dbfs:/my_python_script.py
 
 # `dagster_pipes` must be available in the databricks python environment
-from dagster_pipes import (
-    PipesDbfsContextLoader,
-    PipesDbfsMessageWriter,
-    open_dagster_pipes,
-)
+from dagster_pipes import PipesDbfsContextLoader, PipesDbfsMessageWriter, open_dagster_pipes
 
 # Sets up communication channels and downloads the context data sent from Dagster.
 # Note that while other `context_loader` and `message_writer` settings are
@@ -202,9 +196,7 @@ with open_dagster_pipes(
     # omit the asset key here because there is only one asset in scope, but for
     # multi-assets you can pass an `asset_key` parameter.
     pipes.report_asset_materialization(
-        metadata={
-            "some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}
-        },
+        metadata={"some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}},
         data_version="alpha",
     )
 ```
@@ -228,11 +220,7 @@ For illustrative purposes, we've created a Python script from scratch. However, 
 One approach that can be useful is to wrap the <PyObject object="open_dagster_pipes" module="dagster_pipes" /> context manager around an existing `main` function or entry point. You can either pass the <PyObject object="PipesContext" module="dagster_pipes" /> down through your business logic, or simply report an asset materialization after your business logic is done:
 
 ```python file=/guides/dagster/dagster_pipes/databricks/databricks_script_existing.py
-from dagster_pipes import (
-    PipesDbfsContextLoader,
-    PipesDbfsMessageWriter,
-    open_dagster_pipes,
-)
+from dagster_pipes import PipesDbfsContextLoader, PipesDbfsMessageWriter, open_dagster_pipes
 
 # ... existing code
 
@@ -301,10 +289,10 @@ With either option, once the <PyObject object="open_pipes_session" /> block clos
 import os
 import sys
 
+from dagster import AssetExecutionContext, asset, open_pipes_session
 from dagster_databricks import PipesDbfsContextInjector, PipesDbfsMessageReader
 from dagster_databricks.pipes import PipesDbfsLogReader
 
-from dagster import AssetExecutionContext, asset, open_pipes_session
 from databricks.sdk import WorkspaceClient
 
 

@@ -1,12 +1,8 @@
 # start_asset_marker
-import os
 
 # dagster_glue_pipes.py
-import boto3
-from dagster_aws.pipes import PipesECSClient
-from docutils.nodes import entry
-
 from dagster import AssetExecutionContext, asset
+from dagster_aws.pipes import PipesECSClient
 
 
 @asset
@@ -25,7 +21,6 @@ def ecs_pipes_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSCl
 # start_definitions_marker
 
 from dagster import Definitions  # noqa
-from dagster_aws.pipes import PipesS3MessageReader
 
 
 defs = Definitions(

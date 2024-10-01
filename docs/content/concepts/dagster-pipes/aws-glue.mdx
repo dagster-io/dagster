@@ -44,11 +44,7 @@ Call `open_dagster_pipes` in the Glue job script to create a context that can be
 
 ```python file=/guides/dagster/dagster_pipes/glue/glue_script.py
 import boto3
-from dagster_pipes import (
-    PipesCliArgsParamsLoader,
-    PipesS3ContextLoader,
-    open_dagster_pipes,
-)
+from dagster_pipes import PipesCliArgsParamsLoader, PipesS3ContextLoader, open_dagster_pipes
 
 client = boto3.client("s3")
 context_loader = PipesS3ContextLoader(client)
@@ -81,15 +77,12 @@ In the Dagster asset/op code, use the `PipesGlueClient` resource to launch the j
 import os
 
 import boto3
-from dagster_aws.pipes import PipesGlueClient
-
 from dagster import AssetExecutionContext, asset
+from dagster_aws.pipes import PipesGlueClient
 
 
 @asset
-def glue_pipes_asset(
-    context: AssetExecutionContext, pipes_glue_client: PipesGlueClient
-):
+def glue_pipes_asset(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
     return pipes_glue_client.run(
         context=context,
         start_job_run_params={

@@ -188,13 +188,6 @@ Pipes sessions are represented in the orchestration process by the <PyObject obj
 
 from typing import Iterator
 
-# `third_party_api` is a fictional package representing a third-party library (or user code)
-# providing APIs for launching and polling a process in some external environment.
-from third_party_api import (
-    is_external_process_done,
-    launch_external_process,
-)
-
 from dagster import (
     AssetExecutionContext,
     PipesExecutionResult,
@@ -203,6 +196,10 @@ from dagster import (
     asset,
     open_pipes_session,
 )
+
+# `third_party_api` is a fictional package representing a third-party library (or user code)
+# providing APIs for launching and polling a process in some external environment.
+from third_party_api import is_external_process_done, launch_external_process
 
 
 @asset
@@ -349,9 +346,8 @@ from contextlib import contextmanager
 from typing import Iterator
 
 import cloud_service
-from dagster_pipes import PipesContextData, PipesParams
-
 from dagster import PipesContextInjector
+from dagster_pipes import PipesContextData, PipesParams
 
 
 class MyCustomCloudServiceContextInjector(PipesContextInjector):
@@ -420,9 +416,8 @@ from random import random
 from typing import Iterator, Optional
 
 import cloud_service
-from dagster_pipes import PipesParams
-
 from dagster import PipesBlobStoreMessageReader
+from dagster_pipes import PipesParams
 
 
 class MyCustomCloudServiceMessageReader(PipesBlobStoreMessageReader):
@@ -461,9 +456,7 @@ from dagster_pipes import (
 
 
 class MyCustomCloudServiceMessageWriter(PipesBlobStoreMessageWriter):
-    def make_channel(
-        self, params: PipesParams
-    ) -> "MyCustomCloudServiceMessageWriterChannel":
+    def make_channel(self, params: PipesParams) -> "MyCustomCloudServiceMessageWriterChannel":
         # params were yielded by the above message reader and sourced from the bootstrap payload
         key_prefix = params["key_prefix"]
         return MyCustomCloudServiceMessageWriterChannel(key_prefix=key_prefix)

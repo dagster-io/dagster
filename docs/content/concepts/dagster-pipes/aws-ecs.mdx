@@ -52,11 +52,7 @@ COPY . .
 Call `open_dagster_pipes` in the ECS task script to create a context that can be used to send messages to Dagster:
 
 ```python file=/guides/dagster/dagster_pipes/ecs/task.py
-from dagster_pipes import (
-    PipesEnvVarParamsLoader,
-    PipesS3ContextLoader,
-    open_dagster_pipes,
-)
+from dagster_pipes import open_dagster_pipes
 
 
 def main():
@@ -79,14 +75,9 @@ if __name__ == "__main__":
 In the Dagster asset/op code, use the `PipesECSClient` resource to launch the job:
 
 ```python file=/guides/dagster/dagster_pipes/ecs/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
-import os
-
 # dagster_glue_pipes.py
-import boto3
-from dagster_aws.pipes import PipesECSClient
-from docutils.nodes import entry
-
 from dagster import AssetExecutionContext, asset
+from dagster_aws.pipes import PipesECSClient
 
 
 @asset
@@ -110,7 +101,6 @@ Next, add the `PipesECSClient` resource to your project's <PyObject object="Defi
 
 ```python file=/guides/dagster/dagster_pipes/ecs/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa
-from dagster_aws.pipes import PipesS3MessageReader
 
 
 defs = Definitions(

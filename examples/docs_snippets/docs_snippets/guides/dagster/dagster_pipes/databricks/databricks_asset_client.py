@@ -4,17 +4,15 @@
 import os
 import sys
 
+from dagster import AssetExecutionContext, Definitions, asset
 from dagster_databricks import PipesDatabricksClient
 
-from dagster import AssetExecutionContext, Definitions, EnvVar, asset
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
 
 @asset
-def databricks_asset(
-    context: AssetExecutionContext, pipes_databricks: PipesDatabricksClient
-):
+def databricks_asset(context: AssetExecutionContext, pipes_databricks: PipesDatabricksClient):
     task = jobs.SubmitTask.from_dict(
         {
             # The cluster settings below are somewhat arbitrary. Dagster Pipes is

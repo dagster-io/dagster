@@ -2,13 +2,6 @@
 
 from typing import Iterator
 
-# `third_party_api` is a fictional package representing a third-party library (or user code)
-# providing APIs for launching and polling a process in some external environment.
-from third_party_api import (  # type: ignore
-    is_external_process_done,
-    launch_external_process,
-)
-
 from dagster import (
     AssetExecutionContext,
     PipesExecutionResult,
@@ -17,6 +10,10 @@ from dagster import (
     asset,
     open_pipes_session,
 )
+
+# `third_party_api` is a fictional package representing a third-party library (or user code)
+# providing APIs for launching and polling a process in some external environment.
+from third_party_api import is_external_process_done, launch_external_process  # type: ignore
 
 
 @asset

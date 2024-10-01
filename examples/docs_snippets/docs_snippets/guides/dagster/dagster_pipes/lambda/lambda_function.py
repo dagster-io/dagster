@@ -19,8 +19,6 @@ def lambda_handler(event, _context):
         # multi-assets you can pass an `asset_key` parameter.
 
         pipes.report_asset_materialization(
-            metadata={
-                "some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}
-            },
+            metadata={"some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}},
             data_version="alpha",
         )

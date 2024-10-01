@@ -12,9 +12,7 @@ from dagster_pipes import (
 
 
 class MyCustomCloudServiceMessageWriter(PipesBlobStoreMessageWriter):
-    def make_channel(
-        self, params: PipesParams
-    ) -> "MyCustomCloudServiceMessageWriterChannel":
+    def make_channel(self, params: PipesParams) -> "MyCustomCloudServiceMessageWriterChannel":
         # params were yielded by the above message reader and sourced from the bootstrap payload
         key_prefix = params["key_prefix"]
         return MyCustomCloudServiceMessageWriterChannel(key_prefix=key_prefix)

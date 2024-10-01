@@ -1,9 +1,5 @@
 import boto3
-from dagster_pipes import (
-    PipesCliArgsParamsLoader,
-    PipesS3ContextLoader,
-    open_dagster_pipes,
-)
+from dagster_pipes import PipesCliArgsParamsLoader, PipesS3ContextLoader, open_dagster_pipes
 
 client = boto3.client("s3")
 context_loader = PipesS3ContextLoader(client)

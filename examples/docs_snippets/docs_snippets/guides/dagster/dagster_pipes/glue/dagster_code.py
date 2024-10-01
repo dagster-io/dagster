@@ -2,15 +2,12 @@
 import os
 
 import boto3
-from dagster_aws.pipes import PipesGlueClient
-
 from dagster import AssetExecutionContext, asset
+from dagster_aws.pipes import PipesGlueClient
 
 
 @asset
-def glue_pipes_asset(
-    context: AssetExecutionContext, pipes_glue_client: PipesGlueClient
-):
+def glue_pipes_asset(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
     return pipes_glue_client.run(
         context=context,
         start_job_run_params={

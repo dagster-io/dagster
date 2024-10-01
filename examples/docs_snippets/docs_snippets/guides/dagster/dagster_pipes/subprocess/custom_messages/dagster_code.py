@@ -1,7 +1,6 @@
 import shutil
 
 import pandas as pd
-
 from dagster import (
     AssetExecutionContext,
     Definitions,

@@ -1,11 +1,7 @@
 ### dbfs:/my_python_script.py
 
 # `dagster_pipes` must be available in the databricks python environment
-from dagster_pipes import (
-    PipesDbfsContextLoader,
-    PipesDbfsMessageWriter,
-    open_dagster_pipes,
-)
+from dagster_pipes import PipesDbfsContextLoader, PipesDbfsMessageWriter, open_dagster_pipes
 
 # Sets up communication channels and downloads the context data sent from Dagster.
 # Note that while other `context_loader` and `message_writer` settings are
@@ -28,8 +24,6 @@ with open_dagster_pipes(
     # omit the asset key here because there is only one asset in scope, but for
     # multi-assets you can pass an `asset_key` parameter.
     pipes.report_asset_materialization(
-        metadata={
-            "some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}
-        },
+        metadata={"some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}},
         data_version="alpha",
     )
