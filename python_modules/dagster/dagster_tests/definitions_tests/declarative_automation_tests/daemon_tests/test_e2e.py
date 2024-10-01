@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import AbstractSet, Mapping, Sequence, cast
 
 import dagster._check as check
+import pytest
 from dagster import AssetMaterialization, RunsFilter, instance_for_test
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -420,6 +421,7 @@ def _get_subsets_by_key(
     return {s.key: s for s in target_subset.iterate_asset_subsets(asset_graph)}
 
 
+@pytest.mark.skip("Pending change to in_progress() behavior")
 def test_backfill_creation_simple() -> None:
     with get_workspace_request_context(
         ["backfill_simple"]
@@ -462,6 +464,7 @@ def test_backfill_creation_simple() -> None:
             assert len(runs) == 0
 
 
+@pytest.mark.skip("Pending change to in_progress() behavior")
 def test_backfill_with_runs_and_checks() -> None:
     with get_workspace_request_context(
         ["backfill_with_runs_and_checks"]

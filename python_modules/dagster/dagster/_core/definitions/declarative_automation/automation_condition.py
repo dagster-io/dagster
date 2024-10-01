@@ -325,7 +325,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def in_progress() -> "InProgressAutomationCondition":
         """Returns an AutomationCondition that is true for an asset partition if it is part of an
-        in-progress run or backfill.
+        in-progress run.
         """
         from dagster._core.definitions.declarative_automation.operands import (
             InProgressAutomationCondition,
