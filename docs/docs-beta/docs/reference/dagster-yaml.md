@@ -28,19 +28,21 @@ local_artifact_storage:
   module: dagster.core.storage.root
   class: LocalArtifactStorage
   config:
-    base_dir: "/path/to/dir"
+    base_dir: '/path/to/dir'
 
 compute_logs:
   module: dagster.core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
     base_dir: /path/to/compute/logs
-  # Can use S3, GCS, or Azure Blob Storage for compute logs, e.g.
-  # module: dagster_aws.s3.compute_log_manager
-  # class: S3ComputeLogManager
-  # config:
-  #   bucket: "mycorp-dagster-compute-logs"
-  #   prefix: "dagster-test-"
+
+# Alternatively, logs can be written to cloud storage providers like S3, GCS, and Azure blog storage. For example:
+# compute_logs:
+#   module: dagster_aws.s3.compute_log_manager
+#   class: S3ComputeLogManager
+#   config:
+#     bucket: "mycorp-dagster-compute-logs"
+#    prefix: "dagster-test-"
 
 storage:
   sqlite:
@@ -57,10 +59,10 @@ storage:
 run_queue:
   max_concurrent_runs: 15
   tag_concurrency_limits:
-    - key: "database"
-      value: "redshift"
+    - key: 'database'
+      value: 'redshift'
       limit: 4
-    - key: "dagster/backfill"
+    - key: 'dagster/backfill'
       limit: 10
 
 run_storage:
@@ -109,7 +111,6 @@ run_launcher:
   #   instance_config_map: dagster-instance
   #   postgres_password_secret: dagster-postgresql-secret
 
-
 telemetry:
   enabled: true
 
@@ -150,13 +151,12 @@ auto_materialize:
   enabled: true
   minimum_interval_seconds: 3600
   run_tags:
-    key: "value"
+    key: 'value'
   respect_materialization_data_versions: true
   max_tick_retries: 3
   use_sensors: false
   use_threads: false
   num_workers: 4
-
 ```
 
 ## Configuration Options
@@ -172,6 +172,7 @@ storage:
 ```
 
 Options:
+
 - `sqlite`: Use SQLite for storage
 - `postgres`: Use PostgreSQL for storage (requires `dagster-postgres` library)
 - `mysql`: Use MySQL for storage (requires `dagster-mysql` library)
@@ -187,6 +188,7 @@ run_launcher:
 ```
 
 Options:
+
 - `DefaultRunLauncher`: Spawns a new process on the same node as the job's code location
 - `DockerRunLauncher`: Allocates a Docker container per run
 - `K8sRunLauncher`: Allocates a Kubernetes job per run
@@ -204,6 +206,7 @@ run_coordinator:
 ```
 
 Options:
+
 - `DefaultRunCoordinator`: Immediately sends runs to the run launcher
 - `QueuedRunCoordinator`: Allows setting limits on concurrent runs
 
@@ -220,6 +223,7 @@ compute_logs:
 ```
 
 Options:
+
 - `LocalComputeLogManager`: Writes logs to disk
 - `NoOpComputeLogManager`: Does not store logs
 - `AzureBlobComputeLogManager`: Writes logs to Azure Blob Storage
@@ -300,7 +304,7 @@ auto_materialize:
   enabled: true
   minimum_interval_seconds: 3600
   run_tags:
-    key: "value"
+    key: 'value'
   respect_materialization_data_versions: true
   max_tick_retries: 3
   use_sensors: false
@@ -309,6 +313,7 @@ auto_materialize:
 ```
 
 Options:
+
 - `enabled`: Whether auto-materialization is enabled (boolean)
 - `minimum_interval_seconds`: Minimum interval between materializations (integer)
 - `run_tags`: Tags to apply to auto-materialization runs (dictionary)
@@ -328,6 +333,7 @@ concurrency:
 ```
 
 Options:
+
 - `default_op_concurrency_limit`: The default maximum number of concurrent operations for an unconfigured concurrency key (integer)
 
 ## References
