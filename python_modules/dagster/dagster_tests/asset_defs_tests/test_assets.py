@@ -2290,6 +2290,29 @@ def test_asset_spec_with_tags():
         def assets(): ...
 
 
+def test_asset_decorator_with_kinds() -> None:
+    @asset(kinds={"python"})
+    def asset1():
+        pass
+
+    assert asset1.specs_by_key[AssetKey("asset1")].kinds == {"python"}
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+    ):
+
+        @asset(kinds={"python", "snowflake", "bigquery", "airflow"})
+        def asset2(): ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Cannot specify compute_kind and kinds on the @asset decorator.",
+    ):
+
+        @asset(compute_kind="my_compute_kind", kinds={"python"})
+        def asset3(): ...
+
+
 def test_asset_spec_with_kinds() -> None:
     @multi_asset(specs=[AssetSpec("asset1", kinds={"python"})])
     def assets(): ...
