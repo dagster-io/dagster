@@ -1,6 +1,7 @@
 from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -57,6 +58,11 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
             execution_timezone=time_partitions_def.timezone,
             description=self.description,
         )(_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags))
+
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "UnresolvedPartitionedAssetScheduleDefinition":
+        return self._replace(job=self.job.replace_asset_keys(new_keys_by_old_key))
 
 
 def build_schedule_from_partitioned_job(

@@ -59,7 +59,7 @@ def test_a_couple_specs() -> None:
 def test_two_specs_with_dep() -> None:
     mapped_defs = DefinitionsWithMapAssetMethods(
         assets=[AssetSpec("a1"), AssetSpec("a2", deps=[AssetDep("a1")])]
-    ).map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
+    ).map_asset_keys(lambda spec: spec.key.with_prefix(["prefix"]))
     all_asset_specs = mapped_defs.get_all_asset_specs()
     assert len(all_asset_specs) == 2
 
@@ -75,8 +75,8 @@ def test_two_defs_with_dep() -> None:
     @asset(deps=[a1])
     def a2(): ...
 
-    mapped_defs = DefinitionsWithMapAssetMethods(assets=[a1, a2]).map_asset_specs(
-        lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"]))
+    mapped_defs = DefinitionsWithMapAssetMethods(assets=[a1, a2]).map_asset_keys(
+        lambda spec: spec.key.with_prefix(["prefix"])
     )
     all_asset_specs = mapped_defs.get_all_asset_specs()
     assert len(all_asset_specs) == 2
@@ -100,16 +100,15 @@ def test_independent_asset_check() -> None:
 
     mapped_defs = DefinitionsWithMapAssetMethods(
         assets=[AssetSpec("a1")], asset_checks=[asset_check1]
-    ).map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
+    ).map_asset_keys(lambda spec: spec.key.with_prefix(["prefix"]))
     all_asset_specs = mapped_defs.get_all_asset_specs()
     assert len(all_asset_specs) == 1
-
     assert all_asset_specs[0].key == AssetKey(["prefix", "a1"])
-    assert len(mapped_defs.asset_checks) == 1
-    assert len(mapped_defs.asset_checks[0].check_specs) == 1
-    assert next(iter(mapped_defs.asset_checks[0].check_specs)).asset_key == AssetKey(
-        ["prefix", "a1"]
-    )
+
+    asset_graph = mapped_defs.get_asset_graph()
+    with pytest.raises(KeyError):
+        asset_graph.get(AssetCheckKey(AssetKey(["a1"]), "asset_check1"))
+    assert asset_graph.get(AssetCheckKey(AssetKey(["prefix", "a1"]), "asset_check1"))
 
 
 def test_internal_dep():
@@ -118,8 +117,8 @@ def test_internal_dep():
         yield MaterializeResult(asset_key=AssetKey(["prefix", "a1"]))
         yield MaterializeResult(asset_key=AssetKey(["prefix", "a2"]))
 
-    mapped_defs = DefinitionsWithMapAssetMethods(assets=[assets]).map_asset_specs(
-        lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"]))
+    mapped_defs = DefinitionsWithMapAssetMethods(assets=[assets]).map_asset_keys(
+        lambda spec: spec.key.with_prefix(["prefix"])
     )
     all_asset_specs = mapped_defs.get_all_asset_specs()
     assert len(all_asset_specs) == 2
@@ -144,8 +143,8 @@ def test_asset_and_check_same_op():
         for ck in context.selected_asset_check_keys:
             yield AssetCheckResult(asset_key=ck.asset_key, check_name=ck.name, passed=True)
 
-    mapped_defs = DefinitionsWithMapAssetMethods(assets=[a1]).map_asset_specs(
-        lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"]))
+    mapped_defs = DefinitionsWithMapAssetMethods(assets=[a1]).map_asset_keys(
+        lambda spec: spec.key.with_prefix(["prefix"])
     )
     all_asset_specs = mapped_defs.get_all_asset_specs()
     assert len(all_asset_specs) == 1
@@ -167,7 +166,7 @@ def test_asset_and_check_same_op():
 def test_source_asset():
     mapped_defs = DefinitionsWithMapAssetMethods(
         assets=[SourceAsset("a1", group_name="abc"), AssetSpec("a2", deps=["a1"])]
-    ).map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
+    ).map_asset_keys(lambda spec: spec.key.with_prefix(["prefix"]))
     all_asset_specs = mapped_defs.get_all_asset_specs()
     assert len(all_asset_specs) == 2
 
@@ -191,7 +190,7 @@ def test_cacheable_assets_definition():
         DagsterInvalidDefinitionError,
         match="Can't use map_asset_specs on Definitions objects that contain CacheableAssetsDefinitions.",
     ):
-        defs.map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
+        defs.map_asset_keys(lambda spec: spec.key.with_prefix(["prefix"]))
 
 
 def test_job_def_and_schedule():
@@ -202,6 +201,5 @@ def test_job_def_and_schedule():
     schedule1 = ScheduleDefinition(job=job1, cron_schedule="@daily")
     defs = DefinitionsWithMapAssetMethods(assets=[asset1], jobs=[job1], schedules=[schedule1])
     mapped_defs = defs.map_asset_keys(lambda x: AssetKey("asset2"))
-    breakpoint()
     result = mapped_defs.get_job_def("job1").execute_in_process()
     assert len(result.get_asset_materialization_events())

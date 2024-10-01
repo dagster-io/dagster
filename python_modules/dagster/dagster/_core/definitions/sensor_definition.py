@@ -29,6 +29,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import (
     AssetCheckKeysSelection,
     AssetSelection,
@@ -62,6 +63,7 @@ from dagster._core.definitions.target import (
     AutomationTarget,
     ExecutableDefinition,
 )
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import check_valid_name, normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -83,9 +85,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.definitions.unresolved_asset_job_definition import (
-        UnresolvedAssetJobDefinition,
-    )
     from dagster._core.remote_representation.origin import CodeLocationOrigin
 
 
@@ -1140,6 +1139,21 @@ class SensorDefinition(IHasInternalInit):
     @property
     def has_anonymous_job(self) -> bool:
         return bool(self._target and self._target.job_name.startswith(ANONYMOUS_ASSET_JOB_PREFIX))
+
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "SensorDefinition":
+        if self._targets and isinstance(self._targets[0].resolvable_to_job, str):
+            return self
+        else:
+            return self.with_updated_jobs(
+                [
+                    target.resolvable_to_job.replace_asset_keys(new_keys_by_old_key)
+                    if isinstance(target.resolvable_to_job, UnresolvedAssetJobDefinition)
+                    else check.inst(target.resolvable_to_job, JobDefinition)
+                    for target in self._targets
+                ]
+            )
 
 
 @whitelist_for_serdes(
