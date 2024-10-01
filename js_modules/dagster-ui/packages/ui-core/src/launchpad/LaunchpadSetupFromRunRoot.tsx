@@ -1,5 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
-import {useEffect} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
@@ -8,6 +6,7 @@ import {
   ConfigForRunQuery,
   ConfigForRunQueryVariables,
 } from './types/LaunchpadSetupFromRunRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {
   IExecutionSession,
   applyCreateSession,
@@ -15,9 +14,10 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -25,6 +25,7 @@ export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => 
   const {repoAddress} = props;
   const {
     permissions: {canLaunchPipelineExecution},
+    loading,
   } = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath, runId} = useParams<{
     repoPath: string;
@@ -32,6 +33,10 @@ export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => 
     runId: string;
   }>();
 
+  useBlockTraceUntilTrue('Permissions', loading);
+  if (loading) {
+    return null;
+  }
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
@@ -66,43 +71,51 @@ const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const [storageData, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
+  const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
 
-  const {data, loading} = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
+  const queryResult = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
     CONFIG_FOR_RUN_QUERY,
     {
       variables: {runId},
+      onCompleted: (data: ConfigForRunQuery) => {
+        const runOrError = data?.runOrError;
+        const run = runOrError?.__typename === 'Run' ? runOrError : null;
+        if (!run) {
+          return;
+        }
+
+        const {runConfigYaml, mode, solidSelection} = run;
+        if (!runConfigYaml && !mode && !solidSelection) {
+          return;
+        }
+
+        // Name the session after this run ID.
+        const newSession: Partial<IExecutionSession> = {name: `From run ${run.id.slice(0, 8)}`};
+
+        if (typeof runConfigYaml === 'string') {
+          newSession.runConfigYaml = runConfigYaml;
+        }
+        if (typeof mode === 'string') {
+          newSession.mode = mode;
+        }
+
+        let solidSelectionValue = null;
+        if (solidSelection instanceof Array && solidSelection.length > 0) {
+          solidSelectionValue = solidSelection as string[];
+        } else if (typeof solidSelection === 'string' && solidSelection) {
+          solidSelectionValue = [solidSelection];
+        }
+
+        newSession.solidSelection = solidSelectionValue;
+        newSession.solidSelectionQuery = solidSelectionValue ? solidSelectionValue.join(',') : '*';
+
+        onSave((storageData) => applyCreateSession(storageData, newSession));
+      },
     },
   );
+  const {data, loading} = queryResult;
+
   const runOrError = data?.runOrError;
-  const run = runOrError?.__typename === 'Run' ? runOrError : null;
-
-  useEffect(() => {
-    // Wait until we have a run, then create the session.
-    if (!run) {
-      return;
-    }
-
-    const {runConfigYaml, mode, solidSelection} = run;
-    if (runConfigYaml || mode || solidSelection) {
-      // Name the session after this run ID.
-      const newSession: Partial<IExecutionSession> = {name: `From run ${run.id.slice(0, 8)}`};
-
-      if (typeof runConfigYaml === 'string') {
-        newSession.runConfigYaml = runConfigYaml;
-      }
-      if (typeof mode === 'string') {
-        newSession.mode = mode;
-      }
-      if (solidSelection instanceof Array && solidSelection.length > 0) {
-        newSession.solidSelection = solidSelection as string[];
-      } else if (typeof solidSelection === 'string' && solidSelection) {
-        newSession.solidSelection = [solidSelection];
-      }
-
-      onSave((storageData) => applyCreateSession(storageData, newSession));
-    }
-  }, [run, storageData, onSave]);
 
   if (loading) {
     return <LaunchpadSessionLoading />;

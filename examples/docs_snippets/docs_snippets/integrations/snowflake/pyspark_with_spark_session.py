@@ -1,15 +1,7 @@
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import Definitions, EnvVar, asset
 

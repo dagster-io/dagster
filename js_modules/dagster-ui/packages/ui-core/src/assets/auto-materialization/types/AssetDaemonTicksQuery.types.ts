@@ -30,13 +30,13 @@ export type AssetDaemonTickFragment = {
 };
 
 export type AssetDaemonTicksQueryVariables = Types.Exact<{
-  dayRange?: Types.InputMaybe<Types.Scalars['Int']>;
-  dayOffset?: Types.InputMaybe<Types.Scalars['Int']>;
+  dayRange?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  dayOffset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
   statuses?: Types.InputMaybe<Array<Types.InstigationTickStatus> | Types.InstigationTickStatus>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
-  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
 }>;
 
 export type AssetDaemonTicksQuery = {
@@ -68,3 +68,5 @@ export type AssetDaemonTicksQuery = {
     }>;
   }>;
 };
+
+export const AssetDaemonTicksQueryVersion = '399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788';

@@ -3,9 +3,7 @@ import sys
 from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
@@ -16,9 +14,9 @@ from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .client import DagsterKubernetesClient
-from .container_context import K8sContainerContext
-from .job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -227,21 +225,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_config = container_context.get_k8s_job_config(
             job_image=repository_origin.container_image, run_launcher=self
         )
-        job_image = job_config.job_image
-        if job_image:  # expected to be set
-            self._instance.add_run_tags(
-                run.run_id,
-                {DOCKER_IMAGE_TAG: job_image},
-            )
 
         labels = {
             "dagster/job": job_origin.job_name,
             "dagster/run-id": run.run_id,
         }
         if run.external_job_origin:
-            labels[
-                "dagster/code-location"
-            ] = run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            labels["dagster/code-location"] = (
+                run.external_job_origin.repository_origin.code_location_origin.location_name
+            )
 
         job = construct_dagster_k8s_job(
             job_config=job_config,
@@ -256,8 +248,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     "name": "DAGSTER_RUN_JOB_NAME",
                     "value": job_origin.job_name,
                 },
-                *container_context.env,
             ],
+        )
+
+        # Set docker/image tag here, as it can also be provided by `user_defined_k8s_config`.
+        self._instance.add_run_tags(
+            run.run_id,
+            {DOCKER_IMAGE_TAG: job.spec.template.spec.containers[0].image},
         )
 
         namespace = check.not_none(container_context.namespace)
@@ -320,7 +317,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         check.str_param(run_id, "run_id")
         run = self._instance.get_run_by_id(run_id)
 
-        if not run:
+        if not run or run.is_finished:
             return False
 
         self._instance.report_run_canceling(run)
@@ -343,9 +340,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Run was not terminated successfully; delete_job returned {}".format(
-                        termination_result
-                    ),
+                    message=f"Run was not terminated successfully; delete_job returned {termination_result}",
                     dagster_run=run,
                     cls=self.__class__,
                 )
@@ -431,6 +426,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
+
+        if not status:
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, f"Job {job_name} could not be found")
 
         inactive_job_with_finished_pods = bool(
             (not status.active) and (status.failed or status.succeeded)

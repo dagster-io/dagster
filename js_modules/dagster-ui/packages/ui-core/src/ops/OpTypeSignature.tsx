@@ -1,8 +1,8 @@
-import {gql} from '@apollo/client';
 import {Code} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
+import {gql} from '../apollo-client';
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 
@@ -54,5 +54,6 @@ export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
 const TypeSignature = styled(Code)`
   padding: 4px;
   box-shadow: none;
+  font-size: 12px;
   line-height: 20px;
 `;

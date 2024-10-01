@@ -28,11 +28,18 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_embedded_elt_tests*"]),
-    install_requires=[f"dagster{pin}", "sling>=1.0.20"],
+    include_package_data=True,
+    python_requires=">=3.8,<3.13",
+    install_requires=[f"dagster{pin}", "sling>=1.1.5", "dlt>=0.4"],
     zip_safe=False,
-    extras_require={},
+    extras_require={
+        "test": [
+            "duckdb",
+        ]
+    },
 )

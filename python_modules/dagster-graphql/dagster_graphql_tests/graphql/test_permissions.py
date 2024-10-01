@@ -18,7 +18,9 @@ from dagster_graphql.implementation.utils import (
 from dagster_graphql.schema.util import ResolveInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 PERMISSIONS_QUERY = """
     query PermissionsQuery {
@@ -31,19 +33,32 @@ PERMISSIONS_QUERY = """
 """
 
 WORKSPACE_PERMISSIONS_QUERY = """
-    query WorkspacePermissionsQuery {
-      workspaceOrError {
-        ... on Workspace {
-          locationEntries {
-            permissions {
-              permission
-              value
-              disabledReason
-            }
-          }
+query WorkspacePermissionsQuery {
+  # faster loading option due to avoiding full workspace load
+  locationStatusesOrError {
+    __typename
+    ... on WorkspaceLocationStatusEntries {
+      entries {
+        permissions {
+          permission
+          value
+          disabledReason
         }
       }
     }
+  }
+  workspaceOrError {
+    ... on Workspace {
+      locationEntries {
+        permissions {
+          permission
+          value
+          disabledReason
+        }
+      }
+    }
+  }
+}
 """
 
 
@@ -251,8 +266,15 @@ class TestWorkspacePermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
 
         assert result.data["workspaceOrError"]["locationEntries"]
+        assert result.data["locationStatusesOrError"]["entries"]
 
-        for location in result.data["workspaceOrError"]["locationEntries"]:
+        # ensure both old and new ways to fetch work and return same data
+        assert (
+            result.data["locationStatusesOrError"]["entries"]
+            == result.data["workspaceOrError"]["locationEntries"]
+        )
+
+        for location in result.data["locationStatusesOrError"]["entries"]:
             permissions_map = {
                 permission["permission"]: permission["value"]
                 for permission in location["permissions"]

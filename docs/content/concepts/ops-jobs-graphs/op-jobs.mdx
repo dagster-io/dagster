@@ -7,7 +7,7 @@ description: An op job
 
 <Note>
   Looking to materialize{" "}
-  <a href="/concepts/assets/software-defined-assets">Software-defined Assets</a>{" "}
+  <a href="/concepts/assets/software-defined-assets">asset definitions</a>{" "}
   instead of ops? Check out the{" "}
   <a href="/concepts/assets/asset-jobs">Asset jobs</a> documentation.
 </Note>
@@ -17,7 +17,7 @@ description: An op job
 Op jobs can be launched in a few different ways:
 
 - Manually from the Dagster UI
-- At fixed intervals, by [schedules](/concepts/partitions-schedules-sensors/schedules)
+- At fixed intervals, by [schedules](/concepts/automation/schedules)
 - When external changes occur, using [sensors](/concepts/partitions-schedules-sensors/sensors)
 
 ---
@@ -71,7 +71,7 @@ When defining an op job, you can provide any of the following:
 - [Resources](/concepts/resources)
 - [Configuration](/concepts/configuration/config-schema)
 - [Hooks](/concepts/ops-jobs-graphs/op-hooks)
-- [Tags](/concepts/ops-jobs-graphs/metadata-tags#tags)
+- [Tags](/concepts/metadata-tags/tags) and [other metadata](/concepts/metadata-tags/op-job-metadata)
 - An [executor](/deployment/executors)
 
 ### From a graph
@@ -87,8 +87,7 @@ from dagster import graph, op, ConfigurableResource
 
 
 class Server(ConfigurableResource):
-    def ping_server(self):
-        ...
+    def ping_server(self): ...
 
 
 @op
@@ -222,8 +221,7 @@ from dagster import Definitions, job
 
 
 @job
-def do_it_all():
-    ...
+def do_it_all(): ...
 
 
 defs = Definitions(jobs=[do_it_all])

@@ -6,6 +6,7 @@ from dagster import (
     AssetKey,
     DagsterInstance,
     DagsterInvalidDefinitionError,
+    DataVersion,
     In,
     InputManager,
     IOManager,
@@ -16,6 +17,7 @@ from dagster import (
     io_manager,
     job,
     materialize,
+    observable_source_asset,
     op,
     resource,
 )
@@ -356,8 +358,7 @@ def test_input_manager_with_assets():
 
             return 2
 
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
     materialize([upstream])
     output = materialize(
@@ -366,6 +367,32 @@ def test_input_manager_with_assets():
     )
 
     assert output._get_output_for_handle("downstream", "result") == 3  # noqa: SLF001
+
+
+def test_input_manager_with_observable_source_asset() -> None:
+    fancy_metadata = {"foo": "bar", "baz": 1.23}
+
+    @observable_source_asset(metadata=fancy_metadata)
+    def upstream():
+        return DataVersion("1")
+
+    @asset(ins={"upstream": AssetIn(input_manager_key="special_io_manager")})
+    def downstream(upstream) -> int:
+        return upstream + 1
+
+    class MyIOManager(IOManager):
+        def load_input(self, context) -> int:
+            assert context.upstream_output is not None
+            assert context.upstream_output.asset_key == AssetKey(["upstream"])
+            # the process of converting assets to source assets leaves an extra metadata entry
+            # of dagster/io_manager_key in the dictionary, so we can't use simple equality here
+            for k, v in fancy_metadata.items():
+                assert context.upstream_output.definition_metadata[k] == v
+            return 2
+
+        def handle_output(self, context, obj) -> None: ...
+
+    materialize(assets=[upstream, downstream], resources={"special_io_manager": MyIOManager()})
 
 
 def test_input_manager_with_assets_no_default_io_manager():

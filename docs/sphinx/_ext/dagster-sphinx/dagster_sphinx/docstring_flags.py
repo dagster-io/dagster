@@ -4,6 +4,7 @@ from typing import List, Union
 import dagster._check as check
 import docutils.nodes as nodes
 from dagster._annotations import DeprecatedInfo, ExperimentalInfo
+
 from sphinx.util.docutils import SphinxDirective
 
 # ########################
@@ -95,7 +96,7 @@ def visit_inline_flag(self, node: inline_flag):
 
 
 class flag(nodes.Element):
-    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]  # type: ignore
+    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]
 
 
 def visit_flag(self, node: flag):
@@ -124,8 +125,7 @@ def visit_flag(self, node: flag):
     self.body.append(html)
 
 
-def depart_flag(self, node: flag):
-    ...
+def depart_flag(self, node: flag): ...
 
 
 class FlagDirective(SphinxDirective):

@@ -1,9 +1,12 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
+import React from 'react';
 
-import {AssetLiveDataProvider, factory} from '../../asset-data/AssetLiveDataProvider';
+import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
+import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
+import {AssetStaleStatusData} from '../../asset-data/AssetStaleStatusDataProvider';
 import {KNOWN_TAGS} from '../../graph/OpTags';
-import {buildAssetKey} from '../../graphql/types';
+import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNodeLink} from '../ForeignNode';
 import {tokenForAssetKey} from '../Utils';
@@ -22,7 +25,7 @@ export const LiveStates = () => {
       ...scenario.definition,
       assetKey: {
         ...scenario.definition.assetKey,
-        path: [],
+        path: [] as string[],
       },
     };
     definitionCopy.assetKey.path = scenario.liveData
@@ -32,9 +35,20 @@ export const LiveStates = () => {
     const dimensions = getAssetNodeDimensions(definitionCopy);
 
     function SetCacheEntry() {
-      factory.manager._updateCache({
-        [tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData!,
-      });
+      if (!scenario.liveData) {
+        return null;
+      }
+      const entry = {[tokenForAssetKey(definitionCopy.assetKey)]: scenario.liveData};
+      const {staleStatus, staleCauses} = scenario.liveData;
+      const staleEntry = {
+        [tokenForAssetKey(definitionCopy.assetKey)]: buildAssetNode({
+          assetKey: definitionCopy.assetKey,
+          staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
+          staleStatus,
+        }),
+      };
+      AssetStaleStatusData.manager._updateCache(staleEntry);
+      AssetBaseData.manager._updateCache(entry);
       return null;
     }
 
@@ -52,14 +66,13 @@ export const LiveStates = () => {
           >
             <AssetNode definition={definitionCopy} selected={false} />
           </div>
-          <div style={{position: 'relative', width: dimensions.width, height: 82}}>
-            <div style={{position: 'absolute', width: dimensions.width, height: 82}}>
+          <div style={{position: 'relative', width: dimensions.width, height: 104}}>
+            <div style={{position: 'absolute', width: dimensions.width}}>
               <AssetNodeMinimal definition={definitionCopy} selected={false} height={82} />
             </div>
           </div>
           <code>
             <strong>{scenario.title}</strong>
-            <pre>{JSON.stringify(scenario.liveData, null, 2)}</pre>
           </code>
         </Box>
       </>
@@ -100,9 +113,19 @@ export const PartnerTags = () => {
     const liveData = Mocks.LiveDataForNodeMaterialized;
 
     function SetCacheEntry() {
-      factory.manager._updateCache({
-        [tokenForAssetKey(buildAssetKey({path: [liveData.stepKey]}))]: liveData!,
-      });
+      const assetKey = buildAssetKey({path: [liveData.stepKey]});
+      const key = tokenForAssetKey(assetKey);
+      const entry = {[key]: liveData!};
+      const {staleStatus, staleCauses} = liveData!;
+      const staleEntry = {
+        [key]: buildAssetNode({
+          assetKey,
+          staleCauses: staleCauses.map((cause) => buildStaleCause(cause)),
+          staleStatus,
+        }),
+      };
+      AssetStaleStatusData.manager._updateCache(staleEntry);
+      AssetBaseData.manager._updateCache(entry);
       return null;
     }
 

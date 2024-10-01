@@ -25,7 +25,7 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
 )
 
-from .utils import _wait_k8s_job_to_delete
+from tests.utils import _wait_k8s_job_to_delete
 
 
 def _wait_k8s_job_to_start(

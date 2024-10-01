@@ -96,7 +96,7 @@ from datetime import datetime
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
-def my_partitioned_config(start: datetime, _end: datetime):
+def partitioned_config(start: datetime, _end: datetime):
     return {
         "ops": {
             "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
@@ -107,8 +107,8 @@ def my_partitioned_config(start: datetime, _end: datetime):
 Then you can build a job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job.py startafter=start_partitioned_job endbefore=end_partitioned_job
-@job(config=my_partitioned_config)
-def do_stuff_partitioned():
+@job(config=partitioned_config)
+def partitioned_op_job():
     process_data_for_date()
 ```
 
@@ -157,43 +157,7 @@ def continent_job():
 
 Running a partitioned job on a schedule is a common use case. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-The <PyObject object="build_schedule_from_partitioned_job"/> function allows you to construct a schedule from a date partitioned job. It creates a schedule with an interval which matches the spacing of your partition. If you wanted to create a schedule for `do_stuff_partitioned` job defined above, you could write:
-
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
-from dagster import build_schedule_from_partitioned_job, job
-
-
-@job(config=my_partitioned_config)
-def do_stuff_partitioned():
-    ...
-
-
-do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
-    do_stuff_partitioned,
-)
-```
-
-Schedules can also be made from static partitioned jobs. If you wanted to make a schedule for the `continent_job` above that runs each partition, you could write:
-
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
-from dagster import schedule, RunRequest
-
-
-@schedule(cron_schedule="0 0 * * *", job=continent_job)
-def continent_schedule():
-    for c in CONTINENTS:
-        yield RunRequest(run_key=c, partition_key=c)
-```
-
-Or a schedule that will run a subselection of the partition:
-
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
-@schedule(cron_schedule="0 0 * * *", job=continent_job)
-def antarctica_schedule():
-    return RunRequest(partition_key="Antarctica")
-```
-
-Refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#schedules-from-partitioned-assets-and-jobs) for more info about constructing both schedule types.
+Refer to the [Schedule documentation](/concepts/automation/schedules/partitioned-schedules) for more info about constructing both schedules for asset and op-based jobs.
 
 ---
 

@@ -5,7 +5,7 @@ import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
 import {OpGraphOpFragment} from './types/OpGraph.types';
 import {weakmapMemoize} from '../app/Util';
-import {buildSVGPath} from '../asset-graph/Utils';
+import {buildSVGPathVertical} from '../asset-graph/Utils';
 
 export type Edge = {a: string; b: string};
 
@@ -36,7 +36,7 @@ const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: stri
       }
       return {
         // can also use from.point for the "Dagre" closest point on node
-        path: buildSVGPath({source: sourceOutput.port, target: targetInput.port}),
+        path: buildSVGPathVertical({source: sourceOutput.port, target: targetInput.port}),
         sourceOutput,
         targetInput,
         from,

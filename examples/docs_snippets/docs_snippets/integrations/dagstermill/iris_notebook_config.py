@@ -1,5 +1,6 @@
 from dagster import asset
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
 
 # placeholder so that the test works. this isn't used in the docs

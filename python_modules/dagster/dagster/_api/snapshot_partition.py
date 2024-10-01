@@ -2,15 +2,16 @@ from typing import TYPE_CHECKING, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import (
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
-)
-from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external_data import (
+    PartitionConfigSnap,
+    PartitionExecutionErrorSnap,
+    PartitionNamesSnap,
+    PartitionSetExecutionParamSnap,
+    PartitionTagsSnap,
+    partition_set_snap_name_for_job_name,
+)
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
 from dagster._serdes import deserialize_value
 
@@ -19,24 +20,27 @@ if TYPE_CHECKING:
 
 
 def sync_get_external_partition_names_grpc(
-    api_client: "DagsterGrpcClient", repository_handle: RepositoryHandle, partition_set_name: str
-) -> ExternalPartitionNamesData:
+    api_client: "DagsterGrpcClient",
+    repository_handle: RepositoryHandle,
+    job_name: str,
+) -> PartitionNamesSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.str_param(partition_set_name, "partition_set_name")
-    repository_origin = repository_handle.get_external_origin()
+    check.str_param(job_name, "job_name")
+    repository_origin = repository_handle.get_remote_origin()
     result = deserialize_value(
         api_client.external_partition_names(
             partition_names_args=PartitionNamesArgs(
                 repository_origin=repository_origin,
-                partition_set_name=partition_set_name,
+                job_name=job_name,
+                partition_set_name=partition_set_snap_name_for_job_name(job_name),
             ),
         ),
-        (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
+        (PartitionNamesSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result
@@ -45,29 +49,30 @@ def sync_get_external_partition_names_grpc(
 def sync_get_external_partition_config_grpc(
     api_client: "DagsterGrpcClient",
     repository_handle: RepositoryHandle,
-    partition_set_name: str,
+    job_name: str,
     partition_name: str,
     instance: DagsterInstance,
-) -> ExternalPartitionConfigData:
+) -> PartitionConfigSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.str_param(partition_set_name, "partition_set_name")
+    check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
-    repository_origin = repository_handle.get_external_origin()
+    repository_origin = repository_handle.get_remote_origin()
     result = deserialize_value(
         api_client.external_partition_config(
             partition_args=PartitionArgs(
                 repository_origin=repository_origin,
-                partition_set_name=partition_set_name,
+                job_name=job_name,
+                partition_set_name=partition_set_snap_name_for_job_name(job_name),
                 partition_name=partition_name,
                 instance_ref=instance.get_ref(),
             ),
         ),
-        (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
+        (PartitionConfigSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result
@@ -76,30 +81,31 @@ def sync_get_external_partition_config_grpc(
 def sync_get_external_partition_tags_grpc(
     api_client: "DagsterGrpcClient",
     repository_handle: RepositoryHandle,
-    partition_set_name: str,
+    job_name: str,
     partition_name: str,
     instance: DagsterInstance,
-) -> ExternalPartitionTagsData:
+) -> PartitionTagsSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.str_param(partition_set_name, "partition_set_name")
+    check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
-    repository_origin = repository_handle.get_external_origin()
+    repository_origin = repository_handle.get_remote_origin()
     result = deserialize_value(
         api_client.external_partition_tags(
             partition_args=PartitionArgs(
                 repository_origin=repository_origin,
-                partition_set_name=partition_set_name,
+                job_name=job_name,
+                partition_set_name=partition_set_snap_name_for_job_name(job_name),
                 partition_name=partition_name,
                 instance_ref=instance.get_ref(),
             ),
         ),
-        (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
+        (PartitionTagsSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result
@@ -111,7 +117,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     partition_set_name: str,
     partition_names: Sequence[str],
     instance: DagsterInstance,
-) -> ExternalPartitionSetExecutionParamData:
+) -> PartitionSetExecutionParamSnap:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
@@ -119,7 +125,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     check.str_param(partition_set_name, "partition_set_name")
     check.sequence_param(partition_names, "partition_names", of_type=str)
 
-    repository_origin = repository_handle.get_external_origin()
+    repository_origin = repository_handle.get_remote_origin()
 
     result = deserialize_value(
         api_client.external_partition_set_execution_params(
@@ -130,9 +136,9 @@ def sync_get_external_partition_set_execution_param_data_grpc(
                 instance_ref=instance.get_ref(),
             ),
         ),
-        (ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),
+        (PartitionSetExecutionParamSnap, PartitionExecutionErrorSnap),
     )
-    if isinstance(result, ExternalPartitionExecutionErrorData):
+    if isinstance(result, PartitionExecutionErrorSnap):
         raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return result

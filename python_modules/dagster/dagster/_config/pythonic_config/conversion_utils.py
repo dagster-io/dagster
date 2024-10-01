@@ -1,41 +1,26 @@
 import inspect
 from enum import Enum
-from typing import (
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, List, Literal, Mapping, Optional, Type, TypeVar, Union
 
 from typing_extensions import Annotated, get_args, get_origin
 
 from dagster import (
     Enum as DagsterEnum,
+    EnumValue as DagsterEnumValue,
 )
-from dagster._config.config_type import (
-    Array,
-    ConfigType,
-    Noneable,
-)
+from dagster._config.config_type import Array, ConfigType, Noneable
 from dagster._config.post_process import resolve_defaults
+from dagster._config.pythonic_config.attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import validate_config
-from dagster._core.definitions.definition_config_schema import (
-    DefinitionConfigSchema,
-)
+from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidPythonicConfigDefinitionError,
-)
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 
 try:
@@ -48,14 +33,10 @@ except ImportError:
 
 import dagster._check as check
 from dagster import Field, Selector
-from dagster._config.field_utils import (
-    FIELD_NO_DEFAULT_PROVIDED,
-    Map,
-    convert_potential_field,
-)
-
-from .pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
-from .type_check_utils import is_optional, safe_is_subclass
+from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, convert_potential_field
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
+from dagster._utils.typing_api import is_closed_python_optional_type
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
@@ -120,10 +101,13 @@ def _convert_pydantic_field(
         model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
             used for error messages.
     """
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     if pydantic_field.discriminator:
         return _convert_pydantic_discriminated_union_field(pydantic_field)
+
+    if get_origin(pydantic_field.annotation) == Literal:
+        return _convert_typing_literal_field(pydantic_field)
 
     field_type = pydantic_field.annotation
     if safe_is_subclass(field_type, Config):
@@ -133,20 +117,25 @@ def _convert_pydantic_field(
         )
         return inferred_field
     else:
-        if not pydantic_field.is_required() and not is_optional(field_type):
+        if not pydantic_field.is_required() and not is_closed_python_optional_type(field_type):
             field_type = Optional[field_type]
 
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
+        default_to_pass = (
+            pydantic_field.default
+            if pydantic_field.default is not PydanticUndefined
+            else FIELD_NO_DEFAULT_PROVIDED
+        )
+        if isinstance(default_to_pass, Enum):
+            default_to_pass = default_to_pass.name
+
         return Field(
             config=config_type,
             description=pydantic_field.description,
-            is_required=pydantic_field.is_required() and not is_optional(field_type),
-            default_value=(
-                pydantic_field.default
-                if pydantic_field.default is not PydanticUndefined
-                else FIELD_NO_DEFAULT_PROVIDED
-            ),
+            is_required=pydantic_field.is_required()
+            and not is_closed_python_optional_type(field_type),
+            default_value=default_to_pass,
         )
 
 
@@ -190,7 +179,7 @@ def _config_type_for_type_on_pydantic_field(
     if safe_is_subclass(get_origin(potential_dagster_type), List):
         list_inner_type = get_args(potential_dagster_type)[0]
         return Array(_config_type_for_type_on_pydantic_field(list_inner_type))
-    elif is_optional(potential_dagster_type):
+    elif is_closed_python_optional_type(potential_dagster_type):
         optional_inner_type = next(
             arg for arg in get_args(potential_dagster_type) if arg is not type(None)
         )
@@ -204,7 +193,7 @@ def _config_type_for_type_on_pydantic_field(
             _config_type_for_type_on_pydantic_field(value_type),
         )
 
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     if safe_is_subclass(potential_dagster_type, Config):
         inferred_field = infer_schema_from_config_class(
@@ -251,7 +240,7 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
       })
     })
     """
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     field_type = pydantic_field.annotation
     discriminator = pydantic_field.discriminator if pydantic_field.discriminator else None
@@ -288,9 +277,48 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
     return Field(config=Selector(fields=dagster_config_field_mapping))
 
 
+def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
+    """Builds a Enum config field from a Pydantic field which is a Literal type.
+
+    For example:
+
+    class ConfigWithLiteral(Config):
+        pet: Literal["cat", "dog"]
+
+    Becomes:
+
+    Shape({
+      "pet": Enum(["cat", "dog"])
+      })
+    })
+    """
+    field_type = pydantic_field.annotation
+
+    if not get_origin(field_type) == Literal:
+        raise DagsterInvalidDefinitionError("Must be a Literal type.")
+
+    sub_fields = get_args(field_type)
+
+    default_to_pass = (
+        pydantic_field.default
+        if pydantic_field.default is not PydanticUndefined
+        else FIELD_NO_DEFAULT_PROVIDED
+    )
+
+    return Field(
+        config=DagsterEnum(
+            str(str(field_type).lstrip("typing.")),
+            list(map(DagsterEnumValue, sub_fields)),
+        ),
+        description=pydantic_field.description,
+        is_required=pydantic_field.is_required() and not is_closed_python_optional_type(field_type),
+        default_value=default_to_pass,
+    )
+
+
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
     """Parses a structured config class or primitive type and returns a corresponding Dagster config Field."""
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     if safe_is_subclass(model_cls, Config):
         check.invariant(
@@ -307,6 +335,7 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         raise DagsterInvalidPythonicConfigDefinitionError(
             invalid_type=model_cls, config_class=None, field_name=None
         )
+
     return Field(
         config=inner_config_type,
         default_value=(

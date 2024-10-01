@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -7,13 +6,14 @@ import {
   TypeListContainerQuery,
   TypeListContainerQueryVariables,
 } from './types/TypeListContainer.types';
+import {gql, useQuery} from '../apollo-client';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {
   buildPipelineSelector,
   optionToRepoAddress,
   useRepositoryOptions,
-} from '../workspace/WorkspaceContext';
+} from '../workspace/WorkspaceContext/util';
 import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
 

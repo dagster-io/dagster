@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from ...utils import kubernetes
+from schema.charts.utils import kubernetes
 
 
 class Flower(BaseModel):

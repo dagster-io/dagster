@@ -1,9 +1,16 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import faker from 'faker';
-import {useMemo} from 'react';
 
-import {AssetConditionEvaluationStatus} from '../../../graphql/types';
 import {PartitionSegmentWithPopover} from '../PartitionSegmentWithPopover';
+import {
+  SAMPLE_ASSET_KEY_PATH,
+  SAMPLE_EVALUATION_ID,
+  SAMPLE_MANY_PARTITIONS_COUNT,
+  SAMPLE_NODE_UNIQUE_ID,
+  SAMPLE_PARTITION_KEYS,
+  buildHasFewPartitions,
+  buildHasManyPartitions,
+} from '../__fixtures__/PartitionSegmentWithPopover.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -11,60 +18,40 @@ export default {
   component: PartitionSegmentWithPopover,
 };
 
-const PARTITION_COUNT = 300;
-
-export const TruePartitions = () => {
-  const subset = useMemo(() => {
-    const partitionKeys = new Array(PARTITION_COUNT)
-      .fill(null)
-      .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
-    return {
-      assetKey: {path: ['foo', 'bar']},
-      subsetValue: {
-        boolValue: true,
-        partitionKeys,
-        partitionKeyRanges: null,
-        isPartitioned: true,
-      },
-    };
-  }, []);
-
+export const FewPartitions = () => {
   return (
-    <Box flex={{direction: 'row'}}>
-      <PartitionSegmentWithPopover
-        description="is_missing"
-        status={AssetConditionEvaluationStatus.TRUE}
-        subset={subset}
-        selectPartition={() => {}}
-      />
-    </Box>
+    <MockedProvider mocks={[buildHasFewPartitions(2000)]}>
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{width: '100%'}}>
+        <PartitionSegmentWithPopover
+          description="is_missing"
+          assetKeyPath={SAMPLE_ASSET_KEY_PATH}
+          evaluationId={SAMPLE_EVALUATION_ID}
+          nodeUniqueId={SAMPLE_NODE_UNIQUE_ID}
+          numTrue={SAMPLE_PARTITION_KEYS.length}
+          selectPartition={() => {}}
+        />
+      </Box>
+    </MockedProvider>
   );
 };
 
-export const FewPartitions = () => {
-  const subset = useMemo(() => {
-    const partitionKeys = new Array(2)
-      .fill(null)
-      .map(() => faker.random.words(2).toLowerCase().replace(/ /g, '-'));
-    return {
-      assetKey: {path: ['foo', 'bar']},
-      subsetValue: {
-        boolValue: true,
-        partitionKeys,
-        partitionKeyRanges: null,
-        isPartitioned: true,
-      },
-    };
-  }, []);
-
+export const ManyPartitions = () => {
+  const mocks = buildHasManyPartitions({
+    delayMsec: 2000,
+    partitionCount: SAMPLE_MANY_PARTITIONS_COUNT,
+  });
   return (
-    <Box flex={{direction: 'row'}}>
-      <PartitionSegmentWithPopover
-        description="is_missing"
-        status={AssetConditionEvaluationStatus.TRUE}
-        subset={subset}
-        selectPartition={() => {}}
-      />
-    </Box>
+    <MockedProvider mocks={[mocks]}>
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{width: '100%'}}>
+        <PartitionSegmentWithPopover
+          description="is_missing"
+          assetKeyPath={SAMPLE_ASSET_KEY_PATH}
+          evaluationId={SAMPLE_EVALUATION_ID}
+          nodeUniqueId={SAMPLE_NODE_UNIQUE_ID}
+          numTrue={SAMPLE_MANY_PARTITIONS_COUNT}
+          selectPartition={() => {}}
+        />
+      </Box>
+    </MockedProvider>
   );
 };

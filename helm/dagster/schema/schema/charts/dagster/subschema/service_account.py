@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from ...utils import kubernetes
+from schema.charts.utils import kubernetes
 
 
 class ServiceAccount(BaseModel):

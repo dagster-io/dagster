@@ -1,11 +1,12 @@
 import {Box, Tag} from '@dagster-io/ui-components';
 import {memo} from 'react';
 import {Link} from 'react-router-dom';
+import {UserDisplay} from 'shared/runs/UserDisplay.oss';
+import styled from 'styled-components';
 
 import {DagsterTag} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
-import {RunTagsFragment} from './types/RunTable.types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {RunTagsFragment} from './types/RunTagsFragment.types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -18,11 +19,13 @@ type Props = {
 
 export const CreatedByTagCell = memo(({repoAddress, tags, onAddTag}: Props) => {
   return (
-    <Box flex={{direction: 'column', alignItems: 'flex-start'}}>
+    <CreatedByTagCellWrapper flex={{direction: 'column', alignItems: 'flex-start'}}>
       <CreatedByTag repoAddress={repoAddress} tags={tags} onAddTag={onAddTag} />
-    </Box>
+    </CreatedByTagCellWrapper>
   );
 });
+
+export const CreatedByTagCellWrapper = styled(Box)``;
 
 type TagType =
   | {
@@ -32,6 +35,7 @@ type TagType =
   | {type: 'manual'};
 
 const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
+  // Prefer user/schedule/sensor
   for (const tag of tags) {
     const {key} = tag;
     switch (key) {
@@ -41,6 +45,13 @@ const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
         return {type: 'schedule', tag};
       case DagsterTag.SensorName:
         return {type: 'sensor', tag};
+    }
+  }
+
+  // If none of those, check for AMP
+  for (const tag of tags) {
+    const {key} = tag;
+    switch (key) {
       case DagsterTag.Automaterialize:
         return {type: 'auto-materialize', tag};
       case DagsterTag.CreatedBy: {
@@ -60,8 +71,6 @@ const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
 };
 
 export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
-  const {UserDisplay} = useLaunchPadHooks();
-
   const plucked = pluckTagFromList(tags);
 
   if (plucked.type === 'manual') {

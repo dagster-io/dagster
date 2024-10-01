@@ -3,11 +3,10 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
-
-from ..config import ConfigMapping
-from ..graph_definition import GraphDefinition
-from ..input import GraphIn, InputDefinition
-from ..output import GraphOut, OutputDefinition
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.input import GraphIn, InputDefinition
+from dagster._core.definitions.output import GraphOut, OutputDefinition
 
 
 class _Graph:
@@ -75,7 +74,7 @@ class _Graph:
             node_defs,
             config_mapping,
             positional_inputs,
-            node_input_source_assets,
+            input_assets,
         ) = do_composition(
             decorator_name="@graph",
             graph_name=self.name,
@@ -96,15 +95,15 @@ class _Graph:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
-            node_input_source_assets=node_input_source_assets,
+            input_assets=input_assets,
+            composition_fn=fn,
         )
         update_wrapper(graph_def, fn)
         return graph_def
 
 
 @overload
-def graph(compose_fn: Callable) -> GraphDefinition:
-    ...
+def graph(compose_fn: Callable[..., Any]) -> GraphDefinition: ...
 
 
 @overload
@@ -118,8 +117,7 @@ def graph(
     out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = ...,
-) -> _Graph:
-    ...
+) -> _Graph: ...
 
 
 def graph(

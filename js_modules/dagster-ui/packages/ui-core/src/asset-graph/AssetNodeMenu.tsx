@@ -1,97 +1,98 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {GraphData, GraphNode, tokenForAssetKey} from './Utils';
+import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
-import {showSharedToaster} from '../app/DomUtils';
+import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
+import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
   AssetKeysDialog,
   AssetKeysDialogEmptyState,
   AssetKeysDialogHeader,
 } from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
-import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetKeyInput} from '../graphql/types';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {MenuLink} from '../ui/MenuLink';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 
-type Props = {
-  graphData: GraphData;
-  node: GraphNode;
+export type AssetNodeMenuNode = {
+  id: string;
+  assetKey: AssetKeyInput;
+  definition: {
+    isMaterializable: boolean;
+    isObservable: boolean;
+    isExecutable: boolean;
+    hasMaterializePermission: boolean;
+  };
+};
+
+export type AssetNodeMenuProps = {
+  node: AssetNodeMenuNode;
+  graphData?: GraphData;
   explorerPath?: ExplorerPath;
   onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
 };
+
 export const useAssetNodeMenu = ({
   node,
   selectNode,
   graphData,
   explorerPath,
   onChangeExplorerPath,
-}: Props) => {
-  const upstream = Object.keys(graphData.upstream[node.id] ?? {});
-  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
+}: AssetNodeMenuProps) => {
+  const upstream = graphData ? Object.keys(graphData.upstream[node.id] ?? {}) : [];
+  const downstream = graphData ? Object.keys(graphData.downstream[node.id] ?? {}) : [];
 
-  const {onClick, loading, launchpadElement} = useMaterializationAction();
+  const {executeItem, launchpadElement} = useExecuteAssetMenuItem(
+    node.assetKey.path,
+    node.definition,
+  );
 
   const [showParents, setShowParents] = React.useState(false);
 
-  function showDownstreamGraph() {
+  function showGraph(newQuery: string) {
     if (!explorerPath || !onChangeExplorerPath) {
       return;
     }
-    const path = JSON.parse(node.id);
-    const newQuery = `\"${tokenForAssetKey({path})}\"*`;
     const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
       ? explorerPath.opsQuery
       : newQuery;
-    onChangeExplorerPath(
-      {
-        ...explorerPath,
-        opsQuery: nextOpsQuery,
-      },
-      'push',
-    );
+    onChangeExplorerPath({...explorerPath, opsQuery: nextOpsQuery}, 'push');
   }
 
-  function showUpstreamGraph() {
-    if (!explorerPath || !onChangeExplorerPath) {
-      return;
-    }
-    const path = JSON.parse(node.id);
-    const newQuery = `*\"${tokenForAssetKey({path})}\"`;
-    const nextOpsQuery = explorerPath.opsQuery.includes(newQuery)
-      ? explorerPath.opsQuery
-      : newQuery;
-    onChangeExplorerPath(
-      {
-        ...explorerPath,
-        opsQuery: nextOpsQuery,
-      },
-      'push',
-    );
-  }
+  const {liveData} = useAssetBaseData(node.assetKey, 'context-menu');
+
+  const isObservable = node.definition.isObservable;
+  const lastMaterializationRunID = liveData?.lastMaterialization?.runId;
+  const lastObservationID = liveData?.lastObservation?.runId;
 
   return {
     menu: (
       <Menu>
-        <MenuItem
-          icon="materialization"
-          text={
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-              <span>Materialize</span>
-              {loading ? <Spinner purpose="body-text" /> : null}
-            </Box>
-          }
-          onClick={async (e) => {
-            await showSharedToaster({
-              intent: 'primary',
-              message: 'Initiating materialization',
-              icon: 'materialization',
-            });
-            onClick([node.assetKey], e, false);
-          }}
+        <MenuLink
+          to={assetDetailsPathForKey(node.assetKey)}
+          text="View asset details"
+          icon="asset"
         />
-        {upstream.length || downstream.length ? <MenuDivider /> : null}
-        {upstream.length ? (
+        {node.definition?.isExecutable ? (
+          <MenuLink
+            icon="history"
+            disabled={!lastMaterializationRunID && !lastObservationID}
+            to={`/runs/${lastMaterializationRunID || lastObservationID}`}
+            text={
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                View latest {isObservable ? 'observation' : 'materialization'}
+                {liveData ? null : <Spinner purpose="caption-text" />}
+              </Box>
+            }
+          />
+        ) : null}
+        <MenuDivider />
+        {executeItem}
+        {executeItem && (upstream.length || downstream.length) ? <MenuDivider /> : null}
+        {upstream.length && graphData ? (
           <MenuItem
             text={`View parents (${upstream.length})`}
             icon="list"
@@ -100,28 +101,34 @@ export const useAssetNodeMenu = ({
             }}
           />
         ) : null}
-        {upstream.length ? (
-          <MenuItem text="Show upstream graph" icon="arrow_back" onClick={showUpstreamGraph} />
+        {upstream.length || !graphData ? (
+          <MenuItem
+            text="Show upstream graph"
+            icon="arrow_back"
+            onClick={() => showGraph(`*\"${tokenForAssetKey(node.assetKey)}\"`)}
+          />
         ) : null}
-        {downstream.length ? (
+        {downstream.length || !graphData ? (
           <MenuItem
             text="Show downstream graph"
             icon="arrow_forward"
-            onClick={showDownstreamGraph}
+            onClick={() => showGraph(`\"${tokenForAssetKey(node.assetKey)}\"*`)}
           />
         ) : null}
       </Menu>
     ),
     dialog: (
       <>
-        <UpstreamDownstreamDialog
-          title="Parent assets"
-          graphData={graphData}
-          assetKeys={upstream}
-          isOpen={showParents}
-          setIsOpen={setShowParents}
-          selectNode={selectNode}
-        />
+        {graphData && (
+          <UpstreamDownstreamDialog
+            title="Parent assets"
+            graphData={graphData}
+            assetKeys={upstream}
+            isOpen={showParents}
+            setIsOpen={setShowParents}
+            selectNode={selectNode}
+          />
+        )}
         {launchpadElement}
       </>
     ),

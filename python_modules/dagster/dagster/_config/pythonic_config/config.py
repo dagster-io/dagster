@@ -1,17 +1,8 @@
 import re
 from enum import Enum
-from typing import (
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Type,
-    cast,
-)
+from typing import Any, Dict, List, Mapping, Optional, Set, Type, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
 
 import dagster._check as check
@@ -19,35 +10,31 @@ from dagster import (
     Field as DagsterField,
     Shape,
 )
-from dagster._config.field_utils import (
-    EnvVar,
-    IntEnvVar,
-    Permissive,
+from dagster._config.field_utils import EnvVar, IntEnvVar, Permissive
+from dagster._config.pythonic_config.attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
-from dagster._core.definitions.definition_config_schema import (
-    DefinitionConfigSchema,
+from dagster._config.pythonic_config.conversion_utils import (
+    _convert_pydantic_field,
+    safe_is_subclass,
 )
+from dagster._config.pythonic_config.type_check_utils import is_literal
+from dagster._config.pythonic_config.typing_utils import BaseConfigMeta
+from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-from .conversion_utils import _convert_pydantic_field, safe_is_subclass
-from .pydantic_compat_layer import (
+from dagster._model.pydantic_compat_layer import (
     USING_PYDANTIC_2,
     ModelFieldCompat,
     PydanticUndefined,
     model_config,
     model_fields,
 )
-from .type_check_utils import is_literal
-from .typing_utils import BaseConfigMeta
+from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -65,7 +52,7 @@ def _is_field_internal(name: str) -> bool:
 
 
 # ensure that this ends with the internal marker so we can do a single check
-assert CACHED_METHOD_FIELD_SUFFIX.endswith(INTERNAL_MARKER)
+assert CACHED_METHOD_CACHE_FIELD.endswith(INTERNAL_MARKER)
 
 
 def _is_frozen_pydantic_error(e: Exception) -> bool:
@@ -85,22 +72,22 @@ class MakeConfigCacheable(BaseModel):
     all in one go.
     """
 
-    # Pydantic config for this class
-    # Cannot use kwargs for base class as this is not support for pydnatic<1.8
-    class Config:
-        # Various pydantic model config (https://docs.pydantic.dev/usage/model_config/)
-        # Necessary to allow for caching decorators
-        arbitrary_types_allowed = True
-        # Avoid pydantic reading a cached property class as part of the schema
-        if USING_PYDANTIC_2:
-            ignored_types = (cached_property,)
-        else:
+    # - Frozen, to avoid complexity caused by mutation.
+    # - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
+    # - Avoid pydantic reading a cached property class as part of the schema.
+    if USING_PYDANTIC_2:
+        model_config = ConfigDict(  # type: ignore
+            frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
+        )
+    else:
+
+        class Config:
+            frozen = True
+            arbitrary_types_allowed = True
             keep_untouched = (cached_property,)
-        # Ensure the class is serializable, for caching purposes
-        frozen = True
 
     def __setattr__(self, name: str, value: Any):
-        from .resource import ConfigurableResourceFactory
+        from dagster._config.pythonic_config.resource import ConfigurableResourceFactory
 
         # This is a hack to allow us to set attributes on the class that are not part of the
         # config schema. Pydantic will normally raise an error if you try to set an attribute
@@ -238,13 +225,21 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                     **nested_values,
                     discriminator_key: discriminated_value,
                 }
+
+            # If the passed value matches the name of an expected Enum value, convert it to the value
+            elif (
+                field
+                and safe_is_subclass(field.annotation, Enum)
+                and value in field.annotation.__members__
+                and value not in [member.value for member in field.annotation]  # type: ignore
+            ):
+                modified_data[key] = field.annotation.__members__[value].value
+            elif field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
+                modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
+                    value
+                )
             else:
-                if field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
-                    modified_data[key] = field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
-                        value
-                    )
-                else:
-                    modified_data[key] = value
+                modified_data[key] = value
 
         for key, field in model_fields(self).items():
             if field.is_required() and key not in modified_data:
@@ -392,8 +387,12 @@ class PermissiveConfig(Config):
 
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
-    class Config:
-        extra = "allow"
+    if USING_PYDANTIC_2:
+        model_config = ConfigDict(extra="allow")  # type: ignore
+    else:
+
+        class Config:
+            extra = "allow"
 
 
 def infer_schema_from_config_class(
@@ -401,8 +400,11 @@ def infer_schema_from_config_class(
     description: Optional[str] = None,
     fields_to_omit: Optional[Set[str]] = None,
 ) -> DagsterField:
-    from .config import Config
-    from .resource import ConfigurableResourceFactory, _is_annotated_as_resource_type
+    from dagster._config.pythonic_config.config import Config
+    from dagster._config.pythonic_config.resource import (
+        ConfigurableResourceFactory,
+        _is_annotated_as_resource_type,
+    )
 
     """Parses a structured config class and returns a corresponding Dagster config Field."""
     fields_to_omit = fields_to_omit or set()

@@ -26,7 +26,7 @@ export const AssetLatestRunSpinner = ({
   }
   if (liveData?.unstartedRunIds?.length) {
     return (
-      <Tooltip content="A run has started that will rematerialize this asset soon.">
+      <Tooltip content="A run that targets this asset is queued.">
         <Spinner purpose={purpose} stopped />
       </Tooltip>
     );
@@ -43,7 +43,7 @@ interface AssetRunLinkProps {
 
 export const AssetRunLink = ({assetKey, runId, children, event}: AssetRunLinkProps) => {
   const content = children || (
-    <span style={{fontSize: '1.2em', fontFamily: FontFamily.monospace}}>
+    <span style={{fontSize: '1em', fontFamily: FontFamily.monospace}}>
       {titleForRun({id: runId})}
     </span>
   );

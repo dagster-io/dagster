@@ -4,7 +4,6 @@ import tempfile
 from typing import cast
 from unittest import mock
 
-import pendulum
 import pytest
 from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceType
@@ -15,10 +14,13 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
+from dagster._time import get_current_datetime
 from dagster_gcp.gcs import GCSComputeLogManager
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 from google.cloud import storage
+
+ensure_dagster_tests_import()
+from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -78,14 +80,6 @@ def test_compute_log_manager(gcs_bucket):
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check GCS directly
             stderr_gcs = (
                 storage.Client()
@@ -110,14 +104,6 @@ def test_compute_log_manager(gcs_bucket):
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 @pytest.mark.integration
@@ -170,14 +156,6 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 stdout = log_data.stdout.decode("utf-8")
                 assert stdout == HELLO_WORLD + SEPARATOR
 
-                # legacy API
-                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-                assert stdout.data == HELLO_WORLD + SEPARATOR
-
-                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-                for expected in EXPECTED_LOGS:
-                    assert expected in stderr.data
-
                 # Check GCS directly
                 stderr_gcs = (
                     storage.Client()
@@ -199,14 +177,6 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 log_data = manager.get_log_data(log_key)
                 stdout = log_data.stdout.decode("utf-8")
                 assert stdout == HELLO_WORLD + SEPARATOR
-
-                # legacy API
-                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-                assert stdout.data == HELLO_WORLD + SEPARATOR
-
-                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-                for expected in EXPECTED_LOGS:
-                    assert expected in stderr.data
 
 
 @pytest.mark.integration
@@ -278,7 +248,7 @@ def test_prefix_filter(gcs_bucket):
 
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = GCSComputeLogManager(bucket=gcs_bucket, prefix=gcs_prefix, local_dir=temp_dir)
-        time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
+        time_str = get_current_datetime().strftime("%Y_%m_%d__%H_%M_%S")
         log_key = ["arbitrary", "log", "key", time_str]
         with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
             write_stream.write("hello hello")
@@ -294,10 +264,55 @@ def test_prefix_filter(gcs_bucket):
 
 
 @pytest.mark.integration
+def test_get_log_keys_for_log_key_prefix(gcs_bucket):
+    evaluation_time = get_current_datetime()
+    gcs_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = GCSComputeLogManager(bucket=gcs_bucket, prefix=gcs_prefix, local_dir=temp_dir)
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        def write_log_file(file_id: int, io_type: ComputeIOType):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with manager.open_log_stream(full_log_key, io_type) as f:
+                f.write("foo")
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert len(log_keys) == 0
+
+    for i in range(4):
+        write_log_file(i, ComputeIOType.STDERR)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
+
+    # gcs creates and stores empty files for both IOTYPES when open_log_stream is used, so make the next file
+    # manually so we can test that files with different IOTYPES are not considered
+
+    log_key = [*log_key_prefix, "4"]
+    with manager.local_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as f:
+        f.write("foo")
+    manager.upload_to_cloud_storage(log_key, ComputeIOType.STDOUT)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
+
+
+@pytest.mark.integration
 def test_storage_download_url_fallback(gcs_bucket):
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = GCSComputeLogManager(bucket=gcs_bucket, local_dir=temp_dir)
-        time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
+        time_str = get_current_datetime().strftime("%Y_%m_%d__%H_%M_%S")
         log_key = ["arbitrary", "log", "key", time_str]
 
         orig_blob_fn = manager._bucket.blob  # noqa: SLF001
@@ -322,11 +337,11 @@ def test_storage_download_url_fallback(gcs_bucket):
 
 
 @pytest.mark.integration
-class TestGCSComputeLogManager(TestCapturedLogManager):
+class TestGCSComputeLogManager(TestComputeLogManager):
     __test__ = True
 
-    @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(self, gcs_bucket):
+    @pytest.fixture(name="compute_log_manager")
+    def compute_log_manager(self, gcs_bucket):
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
 

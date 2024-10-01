@@ -25,7 +25,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
+from dagster_celery_k8s.config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 
 
 class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -190,12 +190,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             job_image = job_image_from_executor_config
 
         job_config = self.get_k8s_job_config(job_image, exc_config)
-
-        self._instance.add_run_tags(
-            run.run_id,
-            {DOCKER_IMAGE_TAG: job_config.job_image},
-        )
-
         user_defined_k8s_config = get_user_defined_k8s_config(run.tags)
 
         from dagster._cli.api import ExecuteRunArgs
@@ -212,9 +206,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             "dagster/run-id": run.run_id,
         }
         if run.external_job_origin:
-            labels[
-                "dagster/code-location"
-            ] = run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            labels["dagster/code-location"] = (
+                run.external_job_origin.repository_origin.code_location_origin.location_name
+            )
 
         job = construct_dagster_k8s_job(
             job_config,
@@ -225,6 +219,12 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             user_defined_k8s_config=user_defined_k8s_config,
             labels=labels,
             env_vars=[{"name": "DAGSTER_RUN_JOB_NAME", "value": job_origin.job_name}],
+        )
+
+        # Set docker/image tag here, as it can also be provided by `user_defined_k8s_config`.
+        self._instance.add_run_tags(
+            run.run_id,
+            {DOCKER_IMAGE_TAG: job.spec.template.spec.containers[0].image},
         )
 
         job_namespace = exc_config.get("job_namespace", self.job_namespace)
@@ -276,7 +276,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         check.str_param(run_id, "run_id")
 
         run = self._instance.get_run_by_id(run_id)
-        if not run:
+        if not run or run.is_finished:
             return False
 
         self._instance.report_run_canceling(run)
@@ -298,9 +298,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             else:
                 self._instance.report_engine_event(
                     message=(
-                        "Dagster Job was not terminated successfully; delete_job returned {}".format(
-                            termination_result
-                        )
+                        f"Dagster Job was not terminated successfully; delete_job returned {termination_result}"
                     ),
                     dagster_run=run,
                     cls=self.__class__,
@@ -340,6 +338,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         except Exception:
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+            )
+
+        if not status:
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN, f"K8s job {job_name} could not be found"
             )
         if status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")

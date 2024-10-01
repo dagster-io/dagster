@@ -1,5 +1,6 @@
 import {Box, Colors, Icon, Slider, Tooltip} from '@dagster-io/ui-components';
 import animate from 'amator';
+import throttle from 'lodash/throttle';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -78,7 +79,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     let lastY: number = start.y;
     const travel = {x: 0, y: 0};
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = throttle((e: MouseEvent) => {
       const offset = viewport.getOffsetXY(e);
       if (!offset) {
         return;
@@ -93,7 +94,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       travel.y += Math.abs(delta.y);
       lastX = offset.x;
       lastY = offset.y;
-    };
+    }, 1000 / 60);
 
     viewport.setState({isClickHeld: true});
     const onCancelClick = (e: MouseEvent) => {
@@ -118,7 +119,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     document.addEventListener('click', onCancelClick, {capture: true});
   },
 
-  onWheel(viewport: SVGViewport, event: WheelEvent) {
+  onWheel: throttle((viewport: SVGViewport, event: WheelEvent) => {
     const viewportEl = viewport.element.current;
     if (!viewportEl) {
       return;
@@ -162,7 +163,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     } else {
       viewport.shiftXY(-event.deltaX * panSpeed, -event.deltaY * panSpeed);
     }
-  },
+  }, 1000 / 60),
 
   render(viewport: SVGViewport) {
     return (
@@ -190,7 +191,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
                 viewport.adjustZoomRelativeToScreenPoint(adjusted, {x, y});
               }}
             >
-              <Icon size={24} name="zoom_in" />
+              <Icon name="zoom_in" />
             </IconButton>
           </Tooltip>
           <Box
@@ -228,7 +229,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
                 viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
               }}
             >
-              <Icon size={24} name="zoom_out" />
+              <Icon name="zoom_out" />
             </IconButton>
           </Tooltip>
         </Box>
@@ -237,7 +238,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
           <Box>
             <Tooltip content="Download as SVG">
               <IconButton onClick={() => viewport.onExportToSVG()}>
-                <Icon size={24} name="download_for_offline" />
+                <Icon name="download_for_offline" />
               </IconButton>
             </Tooltip>
           </Box>
@@ -250,8 +251,12 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 const IconButton = styled.button`
   background: ${Colors.backgroundDefault()};
   border: 1px solid ${Colors.borderDefault()};
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 3px;
   position: relative;
   border-radius: 8px;
   transition: background 200ms ease-in-out;
@@ -629,7 +634,7 @@ const SVGViewportStyles: React.CSSProperties = {
   overflow: 'hidden',
   userSelect: 'none',
   outline: 'none',
-  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='${Colors.lineageDots()}' cx='5' cy='5' r='5' /></svg>") repeat`,
+  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='rgba(103, 116, 138, 0.20)' cx='5' cy='5' r='5' /></svg>") repeat`,
 };
 
 const ZoomSliderContainer = styled.div`
@@ -637,7 +642,6 @@ const ZoomSliderContainer = styled.div`
   bottom: 12px;
   right: 12px;
   width: 30px;
-  background: ${Colors.backgroundLight()};
 `;
 
 const SVGExporter = ({

@@ -32,3 +32,12 @@ concurrency:
   default_op_concurrency_limit: 1
 
 # end_default_value
+
+# start_throttle_op_concurrency_limited_runs
+
+run_queue:
+  block_op_concurrency_limited_runs:
+    enabled: true
+    op_concurrency_slot_buffer: 1  # buffer of 1 means 1 run might be started even though there are no slots available
+
+# end_throttle_op_concurrency_limited_runs

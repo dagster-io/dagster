@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster with Airbyte Cloud"
+title: "Airbyte Cloud & Dagster | Dagster Docs"
 description: Integrate your Airbyte Cloud connections into Dagster.
 ---
 
-# Using Airbyte Cloud with Dagster
+# Airbyte Cloud & Dagster
 
 <Note>
   Using self-hosted Airbyte? Check out the{" "}
@@ -27,9 +27,9 @@ This guide focuses on how to work with Airbyte Cloud connections using Dagster's
 
 ---
 
-## Airbyte Cloud connections and Dagster software-defined assets
+## Airbyte Cloud connections and Dagster assets
 
-An [Airbyte Cloud connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as a software-defined asset. This enables you to easily:
+An [Airbyte Cloud connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as an asset. This enables you to easily:
 
 - Visualize the streams involved in an Airbyte Cloud connection and execute a sync from Dagster
 - Define downstream computations which depend on replicas produced by Airbyte
@@ -45,7 +45,7 @@ To get started, you will need to install the `dagster` and `dagster-airbyte` Pyt
 pip install dagster dagster-airbyte
 ```
 
-You'll also need to have an Airbyte Cloud account, and have created an Airbyte API Key. For more information, see the [Airbyte API docs](https://reference.airbyte.com/reference/start).
+You'll also need to have an Airbyte Cloud account, and have created an Airbyte client ID and client secret. For more information, see the [Airbyte API docs](https://reference.airbyte.com/reference/getting-started) and [Airbyte authentication guide](https://reference.airbyte.com/reference/authentication).
 
 ---
 
@@ -58,17 +58,18 @@ from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 ```
 
-Here, the API key is provided using an <PyObject object="EnvVar" />. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
+Here, the client ID and client secret are provided using an <PyObject object="EnvVar" />. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
 
 ---
 
 ## Step 2: Building Airbyte Cloud assets using Dagster
 
-In order to create software-defined assets for your Airbyte Cloud connections, you will first need to determine the connection IDs for each of the connections you would like to build assets for. The connection ID can be seen in the URL of the connection page when viewing the Airbyte Cloud UI, located between `/connections/` and `/status`.
+In order to create asset definitions for your Airbyte Cloud connections, you will first need to determine the connection IDs for each of the connections you would like to build assets for. The connection ID can be seen in the URL of the connection page when viewing the Airbyte Cloud UI, located between `/connections/` and `/status`.
 
 For example, the connection ID for the URL `https://cloud.airbyte.com/workspaces/11f3741b-0b54-45f8-9886-937f96f2ba88/connections/43908042-8399-4a58-82f1-71a45099fff7/status` is `43908042-8399-4a58-82f1-71a45099fff7`.
 
@@ -81,7 +82,7 @@ For example, the connection ID for the URL `https://cloud.airbyte.com/workspaces
   />
 </center>
 
-Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`. This utility will generate a set of software-defined assets corresponding to the tables which Airbyte creates in the destination.
+Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`. This utility will generate a set of f corresponding to the tables which Airbyte creates in the destination.
 
 ```python startafter=start_manually_define_airbyte_assets_cloud endbefore=end_manually_define_airbyte_assets_cloud file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import build_airbyte_assets
@@ -104,14 +105,15 @@ from dagster_airbyte import build_airbyte_assets, AirbyteCloudResource
 from dagster import Definitions, EnvVar
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",
     destination_tables=["releases", "tags", "teams"],
 )
 
-defs = Definitions(assets=[airbyte_assets], resources={"airbyte": airbyte_instance})
+defs = Definitions(assets=airbyte_assets, resources={"airbyte": airbyte_instance})
 ```
 
 ---
@@ -153,7 +155,8 @@ from dagster_snowflake_pandas import SnowflakePandasIOManager
 import pandas as pd
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -168,7 +171,7 @@ def stargazers_file(stargazers: pd.DataFrame):
 # only run the airbyte syncs necessary to materialize stargazers_file
 my_upstream_job = define_asset_job(
     "my_upstream_job",
-    AssetSelection.keys("stargazers_file")
+    AssetSelection.assets(stargazers_file)
     .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
     .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
 )
@@ -207,7 +210,8 @@ from dagster_airbyte import (
 from dagster_snowflake import SnowflakeResource
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -226,7 +230,7 @@ def stargazers_file(snowflake: SnowflakeResource):
 # only run the airbyte syncs necessary to materialize stargazers_file
 my_upstream_job = define_asset_job(
     "my_upstream_job",
-    AssetSelection.keys("stargazers_file")
+    AssetSelection.assets(stargazers_file)
     .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
     .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
 )
@@ -261,7 +265,8 @@ from dagster import (
 )
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -283,7 +288,7 @@ defs = Definitions(
 )
 ```
 
-Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.
+Refer to the [Schedule documentation](/concepts/automation/schedules) for more info on running jobs on a schedule.
 
 ---
 
@@ -319,14 +324,14 @@ If you have questions on using Airbyte with Dagster, we'd love to hear from you:
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/assets/software-defined-assets"
-    title="Software-defined assets"
+    title="Asset definitions"
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/resources"
     title="Resources"
   ></ArticleListItem>
   <ArticleListItem
-    href="/concepts/partitions-schedules-sensors/schedules#running-the-scheduler"
-    title="Scheduling Dagster jobs"
+    href="/concepts/automation/schedules"
+    title="Schedules"
   ></ArticleListItem>
 </ArticleList>

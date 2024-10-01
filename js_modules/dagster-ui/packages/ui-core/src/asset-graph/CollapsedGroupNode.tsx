@@ -9,7 +9,7 @@ import {
   Tooltip,
   ifPlural,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import React, {useContext} from 'react';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
@@ -18,15 +18,20 @@ import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
-import {CalculateChangedAndMissingDialog} from '../assets/CalculateChangedAndMissingDialog';
+import {CalculateUnsyncedDialog} from '../assets/CalculateUnsyncedDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
+import {numberFormatter} from '../ui/formatters';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
-  const name = `${group.groupName} `;
+  const name = group.groupName;
+  const nameWidth = group.bounds.width - 36; // padding and icon
+  const maxLengthAtFontSize = (fontSize: number) => Math.floor(nameWidth / (fontSize * 0.53));
+
   const location = repoAddressAsHumanString({
     name: group.repositoryName,
     location: group.repositoryLocationName,
@@ -38,9 +43,9 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
         <div
           data-tooltip={name}
           data-tooltip-style={GroupNameTooltipStyle}
-          style={{fontSize: 30, fontWeight: 600, lineHeight: '30px'}}
+          style={{fontSize: 24, fontWeight: 600, lineHeight: '24px'}}
         >
-          {withMiddleTruncation(name, {maxLength: 14})}
+          {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(30)})}
         </div>
       </Box>
     );
@@ -51,13 +56,13 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
         <div
           data-tooltip={name}
           data-tooltip-style={GroupNameTooltipStyle}
-          style={{fontSize: 20, fontWeight: 600, lineHeight: '1.1em'}}
+          style={{fontSize: 18, fontWeight: 600, lineHeight: '1.1em'}}
         >
-          {withMiddleTruncation(name, {maxLength: 22})}
+          {withMiddleTruncation(name, {maxLength: maxLengthAtFontSize(20)})}
         </div>
       </Box>
-      <Box style={{lineHeight: '1em', color: Colors.textLight()}}>
-        {withMiddleTruncation(location, {maxLength: 31})}
+      <Box style={{fontSize: 12, lineHeight: '1em', color: Colors.textLight()}}>
+        {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(16)})}
       </Box>
     </Box>
   );
@@ -200,26 +205,34 @@ export const useGroupNodeContextMenu = ({
   preferredJobName?: string;
 }) => {
   const {onClick, launchpadElement} = useMaterializationAction(preferredJobName);
-  const [showCalculatingChangedAndMissingDialog, setShowCalculatingChangedAndMissingDialog] =
+  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
     React.useState<boolean>(false);
+
+  const {
+    featureContext: {canSeeMaterializeAction},
+  } = useContext(CloudOSSContext);
 
   const menu = (
     <Menu>
-      <MenuItem
-        icon="materialization"
-        text={`Materialize assets (${assets.length})`}
-        onClick={(e) => {
-          onClick(
-            assets.map((asset) => asset.assetKey),
-            e,
-          );
-        }}
-      />
-      <MenuItem
-        icon="changes_present"
-        text="Materialize changed and missing"
-        onClick={() => setShowCalculatingChangedAndMissingDialog(true)}
-      />
+      {canSeeMaterializeAction ? (
+        <>
+          <MenuItem
+            icon="materialization"
+            text={`Materialize assets (${numberFormatter.format(assets.length)})`}
+            onClick={(e) => {
+              onClick(
+                assets.map((asset) => asset.assetKey),
+                e,
+              );
+            }}
+          />
+          <MenuItem
+            icon="changes_present"
+            text="Materialize unsynced"
+            onClick={() => setShowCalculatingUnsyncedDialog(true)}
+          />
+        </>
+      ) : null}
       {onFilterToGroup ? (
         <MenuItem text="Filter to this group" onClick={onFilterToGroup} icon="filter_alt" />
       ) : null}
@@ -227,10 +240,10 @@ export const useGroupNodeContextMenu = ({
   );
   const dialog = (
     <div>
-      <CalculateChangedAndMissingDialog
-        isOpen={!!showCalculatingChangedAndMissingDialog}
+      <CalculateUnsyncedDialog
+        isOpen={showCalculatingUnsyncedDialog}
         onClose={() => {
-          setShowCalculatingChangedAndMissingDialog(false);
+          setShowCalculatingUnsyncedDialog(false);
         }}
         assets={assets}
         onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {

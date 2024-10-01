@@ -5,6 +5,7 @@ import pytest
 from syrupy.extensions.amber import AmberSnapshotExtension
 
 if TYPE_CHECKING:
+    from syrupy.location import PyTestLocation
     from syrupy.types import SnapshotIndex
 
 
@@ -19,8 +20,14 @@ def unset_dagster_home():
 
 
 class SharedSnapshotExtension(AmberSnapshotExtension):
-    def get_snapshot_name(self, *, index: "SnapshotIndex") -> str:
-        snapshot_name = self.test_location.snapshot_name
+    @classmethod
+    def get_snapshot_name(
+        cls,
+        *,
+        index: "SnapshotIndex",
+        test_location: "PyTestLocation",
+    ) -> str:
+        snapshot_name = test_location.snapshot_name
 
         # Exclude any of the GraphQLContextVariant suffixes from the snapshot name
         # so that we don't have to re-generate an identical snapshot for each one

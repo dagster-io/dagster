@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
 import {
   Box,
@@ -17,10 +16,11 @@ import {
 } from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
-import {FailedRunList, RunList} from './InstigationTick';
+import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -61,7 +61,7 @@ export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}
 };
 
 interface InnerProps {
-  tickId: number | undefined;
+  tickId: string | undefined;
   instigationSelector: InstigationSelector;
 }
 
@@ -121,17 +121,15 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       </Box>
       {activeTab === 'result' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
-          {tick.runIds.length || tick.originRunIds.length ? (
+          {tick.runIds.length ? (
             <>
               <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle2>Requested</Subtitle2>
+                <Subtitle2>Requested Runs</Subtitle2>
               </Box>
-              {tick.runIds.length ? (
-                <RunList runIds={tick.runIds} />
-              ) : (
-                <FailedRunList originRunIds={tick.originRunIds} />
-              )}
+              <RunList runIds={tick.runIds} />
             </>
+          ) : tick.originRunIds.length ? (
+            <TargetedRunList originRunIds={tick.originRunIds} />
           ) : null}
           {addedPartitionRequests?.length ? (
             <>
@@ -267,7 +265,7 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
 }
 
 const JOB_SELECTED_TICK_QUERY = gql`
-  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: Int!) {
+  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id

@@ -1,13 +1,10 @@
 # ruff: noqa: T201
-
 import argparse
 from random import randint
 from typing import Sequence, Union
 
-from dagster import (
-    StaticPartitionsDefinition,
-    asset,
-)
+from dagster import StaticPartitionsDefinition, asset
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -22,9 +19,8 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._utils.test.data_versions import (
-    materialize_asset,
-)
+from dagster._time import get_current_datetime
+from dagster._utils.test.data_versions import materialize_asset
 
 from dagster_test.utils.benchmark import ProfilingSession
 
@@ -84,9 +80,16 @@ def get_stale_status_resolver(
     instance: DagsterInstance,
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
 ) -> CachingStaleStatusResolver:
+    asset_graph = AssetGraph.from_assets(assets)
+    asset_graph_view = AssetGraphView(
+        temporal_context=TemporalContext(effective_dt=get_current_datetime(), last_event_id=None),
+        instance=instance,
+        asset_graph=asset_graph,
+    )
     return CachingStaleStatusResolver(
         instance=instance,
         asset_graph=AssetGraph.from_assets(assets),
+        loading_context=asset_graph_view,
     )
 
 
@@ -121,12 +124,10 @@ def main(num_partitions: int, override_partition_limit: bool) -> None:
         return {key: randint(0, 100) for key in keys}
 
     @asset
-    def downstream1(root):
-        ...
+    def downstream1(root): ...
 
     @asset
-    def downstream2(downstream1):
-        ...
+    def downstream2(downstream1): ...
 
     all_assets = [root, downstream1, downstream2]
     with instance_for_test() as instance:

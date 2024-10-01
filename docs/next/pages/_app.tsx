@@ -17,6 +17,15 @@ import Sidebar from '../components/Sidebar';
 import {VersionedContentLayout} from '../components/mdx/MDXRenderer';
 import * as gtag from '../util/gtag';
 
+import 'prismjs';
+import 'prismjs/components/prism-bash.min';
+import 'prismjs/components/prism-python.min';
+import 'prismjs/components/prism-yaml.min';
+import 'prismjs/components/prism-json.min';
+import 'prismjs/components/prism-toml.min';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.min';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+
 const BASE_URL = 'https://docs.dagster.io';
 const DEFAULT_SEO = {
   title: 'Dagster Docs',
@@ -66,8 +75,11 @@ const Layout = ({asPath, children, pageProps}: Props) => {
     setOpenFeedback(!isFeedbackOpen);
   };
 
+  // construct link to GitHub for doc page unless at root path of `asPath` being `/`
   const githubLink = new URL(
-    path.join('dagster-io/dagster/tree/master/docs/content', '/', asPath + '.mdx'),
+    asPath === '/'
+      ? 'dagster-io/dagster/tree/master/docs/content'
+      : path.join('dagster-io/dagster/tree/master/docs/content/', asPath + '.mdx'),
     'https://github.com',
   ).href;
 
@@ -83,6 +95,9 @@ const Layout = ({asPath, children, pageProps}: Props) => {
       navigationItems = tableOfContents.items.filter((item) => item?.items);
     }
   }
+
+  // handle API docs pages (they are HTML pages generated from Sphinx, not Markdown pages)
+  const isHTMLPage = pageProps?.type === 'HTML';
 
   return (
     <>
@@ -105,16 +120,23 @@ const Layout = ({asPath, children, pageProps}: Props) => {
             />
             <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
             <div className="lg:pl-80 flex w-full">
-              <VersionedContentLayout asPath={asPath}>
-                <div className="DocSearch-content prose dark:prose-dark max-w-none">{children}</div>
-              </VersionedContentLayout>
-
-              <RightSidebar
-                markdownHeadings={markdownHeadings}
-                navigationItemsForMDX={navigationItems}
-                githubLink={githubLink}
-                toggleFeedback={toggleFeedback}
-              />
+              {isHTMLPage ? (
+                children
+              ) : (
+                <>
+                  <VersionedContentLayout asPath={asPath}>
+                    <div className="DocSearch-content prose dark:prose-dark max-w-none">
+                      {children}
+                    </div>
+                  </VersionedContentLayout>
+                  <RightSidebar
+                    markdownHeadings={markdownHeadings}
+                    navigationItemsForMDX={navigationItems}
+                    githubLink={githubLink}
+                    toggleFeedback={toggleFeedback}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>

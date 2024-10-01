@@ -5,8 +5,7 @@ from typing import Dict, List
 
 
 class Engine:
-    def execute(self, query: str):
-        ...
+    def execute(self, query: str): ...
 
 
 def get_engine(connection_url: str) -> Engine:
@@ -123,8 +122,7 @@ def basic_data_structures_config() -> None:
         user_scores: Dict[str, int]
 
     @asset
-    def scoreboard(config: MyDataStructuresConfig):
-        ...
+    def scoreboard(config: MyDataStructuresConfig): ...
 
     result = materialize(
         [scoreboard],
@@ -155,8 +153,7 @@ def nested_schema_config() -> None:
         user_data: Dict[str, UserData]
 
     @asset
-    def average_age(config: MyNestedConfig):
-        ...
+    def average_age(config: MyNestedConfig): ...
 
     result = materialize(
         [average_age],
@@ -167,12 +164,12 @@ def nested_schema_config() -> None:
                         "Alice": UserData(
                             age=10,
                             email="alice@gmail.com",
-                            profile_picture_url=...,  # type: ignore
+                            profile_picture_url=...,
                         ),
                         "Bob": UserData(
                             age=20,
                             email="bob@gmail.com",
-                            profile_picture_url=...,  # type: ignore
+                            profile_picture_url=...,
                         ),
                     }
                 )
@@ -403,7 +400,7 @@ def required_config() -> None:
     class MyAssetConfig(Config):
         # ellipsis indicates that even though the type is Optional,
         # an input is required
-        person_first_name: Optional[str] = ...  # type: ignore
+        person_first_name: Optional[str] = ...
 
         # ellipsis can also be used with pydantic.Field to attach metadata
         person_last_name: Optional[Callable] = Field(

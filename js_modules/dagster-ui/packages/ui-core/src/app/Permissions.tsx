@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {
@@ -6,6 +5,7 @@ import {
   PermissionsQuery,
   PermissionsQueryVariables,
 } from './types/Permissions.types';
+import {gql, useQuery} from '../apollo-client';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -27,6 +27,7 @@ export const EXPECTED_PERMISSIONS = {
   edit_dynamic_partitions: true,
   toggle_auto_materialize: true,
   edit_concurrency_limit: true,
+  edit_workspace: true,
 };
 
 export type PermissionResult = {
@@ -51,6 +52,7 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: PermissionResult;
   toggle_auto_materialize?: PermissionResult;
   edit_concurrency_limit?: PermissionResult;
+  edit_workspace?: PermissionResult;
 };
 
 export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
@@ -101,6 +103,8 @@ export const extractPermissions = (
     canCancelPartitionBackfill: permissionOrFallback('cancel_partition_backfill'),
     canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
     canEditConcurrencyLimit: permissionOrFallback('edit_concurrency_limit'),
+    canEditWorkspace: permissionOrFallback('edit_workspace'),
+    canUpdateSensorCursor: permissionOrFallback('update_sensor_cursor'),
   };
 };
 
@@ -130,17 +134,19 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 });
 
 export const PermissionsProvider = (props: {children: React.ReactNode}) => {
-  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
+  const queryResult = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
+
+  const {data, loading} = queryResult;
 
   const value = React.useMemo(() => {
     const unscopedPermissionsRaw = data?.unscopedPermissions || [];
     const unscopedPermissions = extractPermissions(unscopedPermissionsRaw);
 
     const locationEntries =
-      data?.workspaceOrError.__typename === 'Workspace'
-        ? data.workspaceOrError.locationEntries
+      data?.locationStatusesOrError.__typename === 'WorkspaceLocationStatusEntries'
+        ? data.locationStatusesOrError.entries
         : [];
 
     const locationPermissions: Record<string, PermissionsMap> = {};
@@ -235,10 +241,10 @@ export const PERMISSIONS_QUERY = gql`
     unscopedPermissions: permissions {
       ...PermissionFragment
     }
-    workspaceOrError {
-      ... on Workspace {
-        id
-        locationEntries {
+    locationStatusesOrError {
+      __typename
+      ... on WorkspaceLocationStatusEntries {
+        entries {
           id
           name
           permissions {

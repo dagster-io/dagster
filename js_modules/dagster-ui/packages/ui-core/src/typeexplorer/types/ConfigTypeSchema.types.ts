@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type ConfigTypeSchemaFragment_ArrayConfigType_ = {
+export type ConfigTypeSchemaFragment_ArrayConfigType = {
   __typename: 'ArrayConfigType';
   key: string;
   description: string | null;
@@ -10,7 +10,7 @@ export type ConfigTypeSchemaFragment_ArrayConfigType_ = {
   typeParamKeys: Array<string>;
 };
 
-export type ConfigTypeSchemaFragment_CompositeConfigType_ = {
+export type ConfigTypeSchemaFragment_CompositeConfigType = {
   __typename: 'CompositeConfigType';
   key: string;
   description: string | null;
@@ -26,7 +26,7 @@ export type ConfigTypeSchemaFragment_CompositeConfigType_ = {
   }>;
 };
 
-export type ConfigTypeSchemaFragment_EnumConfigType_ = {
+export type ConfigTypeSchemaFragment_EnumConfigType = {
   __typename: 'EnumConfigType';
   givenName: string;
   key: string;
@@ -36,7 +36,7 @@ export type ConfigTypeSchemaFragment_EnumConfigType_ = {
   values: Array<{__typename: 'EnumConfigValue'; value: string; description: string | null}>;
 };
 
-export type ConfigTypeSchemaFragment_MapConfigType_ = {
+export type ConfigTypeSchemaFragment_MapConfigType = {
   __typename: 'MapConfigType';
   keyLabelName: string | null;
   key: string;
@@ -45,7 +45,7 @@ export type ConfigTypeSchemaFragment_MapConfigType_ = {
   typeParamKeys: Array<string>;
 };
 
-export type ConfigTypeSchemaFragment_NullableConfigType_ = {
+export type ConfigTypeSchemaFragment_NullableConfigType = {
   __typename: 'NullableConfigType';
   key: string;
   description: string | null;
@@ -53,7 +53,7 @@ export type ConfigTypeSchemaFragment_NullableConfigType_ = {
   typeParamKeys: Array<string>;
 };
 
-export type ConfigTypeSchemaFragment_RegularConfigType_ = {
+export type ConfigTypeSchemaFragment_RegularConfigType = {
   __typename: 'RegularConfigType';
   givenName: string;
   key: string;
@@ -62,7 +62,7 @@ export type ConfigTypeSchemaFragment_RegularConfigType_ = {
   typeParamKeys: Array<string>;
 };
 
-export type ConfigTypeSchemaFragment_ScalarUnionConfigType_ = {
+export type ConfigTypeSchemaFragment_ScalarUnionConfigType = {
   __typename: 'ScalarUnionConfigType';
   scalarTypeKey: string;
   nonScalarTypeKey: string;
@@ -73,10 +73,10 @@ export type ConfigTypeSchemaFragment_ScalarUnionConfigType_ = {
 };
 
 export type ConfigTypeSchemaFragment =
-  | ConfigTypeSchemaFragment_ArrayConfigType_
-  | ConfigTypeSchemaFragment_CompositeConfigType_
-  | ConfigTypeSchemaFragment_EnumConfigType_
-  | ConfigTypeSchemaFragment_MapConfigType_
-  | ConfigTypeSchemaFragment_NullableConfigType_
-  | ConfigTypeSchemaFragment_RegularConfigType_
-  | ConfigTypeSchemaFragment_ScalarUnionConfigType_;
+  | ConfigTypeSchemaFragment_ArrayConfigType
+  | ConfigTypeSchemaFragment_CompositeConfigType
+  | ConfigTypeSchemaFragment_EnumConfigType
+  | ConfigTypeSchemaFragment_MapConfigType
+  | ConfigTypeSchemaFragment_NullableConfigType
+  | ConfigTypeSchemaFragment_RegularConfigType
+  | ConfigTypeSchemaFragment_ScalarUnionConfigType;

@@ -1,20 +1,25 @@
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
+  GlobalGeistMono,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
+  GlobalThemeStyle,
   Colors,
+  GlobalGeist,
 } from '../src';
+
+import {withThemeByClassName} from '@storybook/addon-themes';
 
 import {MemoryRouter} from 'react-router-dom';
 
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
-import './blueprint.css';
+import '@blueprintjs/core/lib/css/blueprint.css';
+import '@blueprintjs/select/lib/css/blueprint-select.css';
+import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -51,7 +56,8 @@ const GlobalStyle = createGlobalStyle`
 
   code, pre {
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
+    font-variant-ligatures: none;
   }
 
   input::placeholder {
@@ -64,8 +70,9 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
-      <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalThemeStyle />
+      <GlobalGeist />
+      <GlobalGeistMono />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
@@ -74,10 +81,15 @@ export const decorators = [
       <Story />
     </MemoryRouter>
   ),
+  withThemeByClassName({
+    themes: {
+      light: 'themeLight',
+      dark: 'themeDark',
+      system: 'themeSystem',
+    },
+    defaultTheme: 'system',
+    parentSelector: 'body',
+  }),
 ];
 
-export const parameters = {
-  parameters: {
-    actions: {argTypesRegex: '^on[A-Z].*'},
-  },
-};
+export const parameters = {};

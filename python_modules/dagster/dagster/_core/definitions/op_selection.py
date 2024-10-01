@@ -5,6 +5,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -14,6 +15,7 @@ from typing import (
     cast,
 )
 
+from dagster import _check as check
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
     DependencyDefinition,
@@ -100,14 +102,30 @@ def _validate_selection_tree(selection_tree: OpSelectionNode, graph_def: GraphDe
 def get_graph_subset(
     graph: GraphDefinition,
     op_selection: Iterable[str],
+    selected_outputs_by_op_handle: Mapping[NodeHandle, AbstractSet[str]],
 ) -> SubselectedGraphDefinition:
+    """Returns a subsetted version of the given graph.
+
+    Args:
+        selected_outputs_by_op_handle: A mapping of op handles to the set of output names that are
+            selected within that op. If an op handle isn't included in this dict, it means that
+            _all_ its outputs are selected.
+    """
     node_paths = OpSelection(op_selection).resolve(graph)
     selection_tree = _node_paths_to_tree(node_paths)
-    return _get_graph_subset(graph, selection_tree, parent_handle=None)
+    return _get_graph_subset(
+        graph,
+        selection_tree,
+        parent_handle=None,
+        selected_outputs_by_op_handle=selected_outputs_by_op_handle,
+    )
 
 
 def _get_graph_subset(
-    graph: GraphDefinition, selection_tree: OpSelectionNode, parent_handle: Optional[NodeHandle]
+    graph: GraphDefinition,
+    selection_tree: OpSelectionNode,
+    parent_handle: Optional[NodeHandle],
+    selected_outputs_by_op_handle: Mapping[NodeHandle, AbstractSet[str]],
 ) -> SubselectedGraphDefinition:
     subgraph_deps: Dict[
         NodeInvocation,
@@ -131,9 +149,24 @@ def _get_graph_subset(
                 node.definition,
                 node_selection_tree,
                 parent_handle=node_handle,
+                selected_outputs_by_op_handle=selected_outputs_by_op_handle,
             )
 
         subgraph_nodes[node.name] = node_def
+
+        def is_output_selected(node_output: NodeOutput) -> bool:
+            if not selection_tree.has_child(node_output.node_name):
+                return False
+
+            output_def, op_handle = graph.node_named(
+                node_output.node_name
+            ).definition.resolve_output_to_origin(
+                node_output.output_name, NodeHandle(node_output.node_name, parent_handle)
+            )
+            return (
+                op_handle not in selected_outputs_by_op_handle
+                or output_def.name in selected_outputs_by_op_handle[check.not_none(op_handle)]
+            )
 
         # build dependencies for the node. we do it for both cases because nested graphs can have
         # inputs and outputs too
@@ -141,13 +174,13 @@ def _get_graph_subset(
         for node_input in node.inputs():
             if graph.dependency_structure.has_direct_dep(node_input):
                 node_output = graph.dependency_structure.get_direct_dep(node_input)
-                if selection_tree.has_child(node_output.node_name):
+                if is_output_selected(node_output):
                     node_deps[node_input.input_name] = DependencyDefinition(
                         node=node_output.node.name, output=node_output.output_name
                     )
             elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
                 node_output = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
-                if selection_tree.has_child(node_output.node_name):
+                if is_output_selected(node_output):
                     node_deps[node_input.input_name] = DynamicCollectDependencyDefinition(
                         node_name=node_output.node_name,
                         output_name=node_output.output_name,
@@ -159,10 +192,7 @@ def _get_graph_subset(
                         node=output_handle.node.name, output=output_handle.output_def.name
                     )
                     for output_handle in outputs
-                    if (
-                        isinstance(output_handle, NodeOutput)
-                        and selection_tree.has_child(output_handle.node_name)
-                    )
+                    if (isinstance(output_handle, NodeOutput) and is_output_selected(output_handle))
                 ]
                 node_deps[node_input.input_name] = MultiDependencyDefinition(
                     cast(

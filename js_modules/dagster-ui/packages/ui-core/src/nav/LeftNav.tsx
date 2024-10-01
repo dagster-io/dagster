@@ -1,5 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
-import {useContext} from 'react';
+import {useContext, useRef} from 'react';
 import styled from 'styled-components';
 
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
@@ -8,9 +8,14 @@ import {LayoutContext} from '../app/LayoutProvider';
 export const LeftNav = () => {
   const {nav} = useContext(LayoutContext);
 
+  const wasEverOpen = useRef(nav.isOpen);
+  if (nav.isOpen) {
+    wasEverOpen.current = true;
+  }
+
   return (
     <LeftNavContainer $open={nav.isOpen} $smallScreen={nav.isSmallScreen}>
-      <LeftNavRepositorySection />
+      {wasEverOpen.current ? <LeftNavRepositorySection /> : null}
     </LeftNavContainer>
   );
 };

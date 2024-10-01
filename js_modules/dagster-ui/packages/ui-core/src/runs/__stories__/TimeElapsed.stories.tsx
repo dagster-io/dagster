@@ -1,4 +1,4 @@
-import {Meta, Story} from '@storybook/react';
+import {Meta, StoryFn} from '@storybook/react';
 
 import {Props, TimeElapsed} from '../TimeElapsed';
 
@@ -8,7 +8,7 @@ export default {
   component: TimeElapsed,
 } as Meta;
 
-const Template: Story<Props> = (props) => <TimeElapsed {...props} />;
+const Template: StoryFn<Props> = (props) => <TimeElapsed {...props} />;
 
 const now = Date.now() / 1000;
 const startUnix = now - 60;

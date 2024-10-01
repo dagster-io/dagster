@@ -1,22 +1,26 @@
 import warnings
 
 from dagster import ExperimentalWarning
+from dagster._time import get_current_timestamp
 
 # squelch experimental warnings since we often include experimental things in toys for development
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
-import pendulum
-from dagster import (
-    AssetMaterialization,
-    Output,
-    graph,
-    load_assets_from_modules,
-    op,
-    repository,
-)
+from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
+from dagster_test.toys.asset_checks import get_checks_and_assets
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo
+from dagster_test.toys.auto_materializing.large_graph import (
+    auto_materialize_large_static_graph as auto_materialize_large_static_graph,
+    auto_materialize_large_time_graph as auto_materialize_large_time_graph,
+)
+from dagster_test.toys.auto_materializing.repo_1 import (
+    auto_materialize_repo_1 as auto_materialize_repo_1,
+)
+from dagster_test.toys.auto_materializing.repo_2 import (
+    auto_materialize_repo_2 as auto_materialize_repo_2,
+)
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.cross_repo_assets import (
@@ -25,10 +29,8 @@ from dagster_test.toys.cross_repo_assets import (
     upstream_repo_assets,
 )
 from dagster_test.toys.dynamic import dynamic_job
-from dagster_test.toys.error_monster import (
-    error_monster_failing_job,
-    error_monster_passing_job,
-)
+from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
+from dagster_test.toys.freshness_checks import get_freshness_defs_pile
 from dagster_test.toys.graph_backed_assets import graph_backed_asset
 from dagster_test.toys.hammer import hammer_default_executor_job
 from dagster_test.toys.input_managers import df_stats_job
@@ -59,28 +61,16 @@ from dagster_test.toys.run_status_sensors import (
     yield_multi_run_request_success_sensor,
     yield_run_request_succeeds_sensor,
 )
+from dagster_test.toys.schedules import get_toys_schedules
+from dagster_test.toys.sensors import get_toys_sensors
 from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
 
-from .asset_checks import get_checks_and_assets
-from .auto_materializing.large_graph import (
-    auto_materialize_large_static_graph as auto_materialize_large_static_graph,
-    auto_materialize_large_time_graph as auto_materialize_large_time_graph,
-)
-from .auto_materializing.repo_1 import (
-    auto_materialize_repo_1 as auto_materialize_repo_1,
-)
-from .auto_materializing.repo_2 import (
-    auto_materialize_repo_2 as auto_materialize_repo_2,
-)
-from .schedules import get_toys_schedules
-from .sensors import get_toys_sensors
-
 
 @op
 def materialization_op():
-    timestamp = pendulum.now("UTC").timestamp()
+    timestamp = get_current_timestamp()
     yield AssetMaterialization(asset_key="model", metadata={"timestamp": timestamp})
     yield Output(1)
 
@@ -139,19 +129,20 @@ def toys_repository():
         + get_toys_schedules()
         + get_toys_sensors()
         + get_checks_and_assets()
+        + get_freshness_defs_pile()
     )
 
 
 @repository
 def basic_assets_repository():
-    from . import basic_assets
+    from dagster_test.toys import basic_assets
 
     return [load_assets_from_modules([basic_assets]), basic_assets.basic_assets_job]
 
 
 @repository
 def partitioned_assets_repository():
-    from . import partitioned_assets
+    from dagster_test.toys import partitioned_assets
 
     return [
         load_assets_from_modules([partitioned_assets]),
@@ -163,15 +154,22 @@ def partitioned_assets_repository():
 
 
 @repository
+def column_schema_repository():
+    from dagster_test.toys import column_schema
+
+    return [load_assets_from_modules([column_schema])]
+
+
+@repository
 def table_metadata_repository():
-    from . import table_metadata
+    from dagster_test.toys import table_metadata
 
     return load_assets_from_modules([table_metadata])
 
 
 @repository
 def long_asset_keys_repository():
-    from . import long_asset_keys
+    from dagster_test.toys import long_asset_keys
 
     return load_assets_from_modules([long_asset_keys])
 
@@ -208,13 +206,13 @@ def assets_with_sensors_repository():
 
 @repository
 def conditional_assets_repository():
-    from . import conditional_assets
+    from dagster_test.toys import conditional_assets
 
     return load_assets_from_modules([conditional_assets])
 
 
 @repository
 def data_versions_repository():
-    from . import data_versions
+    from dagster_test.toys import data_versions
 
     return load_assets_from_modules([data_versions])

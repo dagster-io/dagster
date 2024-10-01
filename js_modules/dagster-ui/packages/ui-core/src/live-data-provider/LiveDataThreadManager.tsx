@@ -1,12 +1,11 @@
 import {LiveDataThread, LiveDataThreadID} from './LiveDataThread';
-import {BATCH_SIZE} from './util';
 import {isDocumentVisible} from '../hooks/useDocumentVisibility';
 
 type Listener<T> = (stringKey: string, data?: T | undefined) => void;
 
 export class LiveDataThreadManager<T> {
   protected static _instance: LiveDataThreadManager<any>;
-  private threads: Partial<Record<LiveDataThreadID, LiveDataThread<T>>>;
+  private threads: Record<LiveDataThreadID, LiveDataThread<T>>;
   private lastFetchedOrRequested: Record<
     string,
     {fetched: number; requested?: undefined} | {requested: number; fetched?: undefined} | null
@@ -55,7 +54,7 @@ export class LiveDataThreadManager<T> {
   public subscribe(key: string, listener: Listener<T>, threadID: LiveDataThreadID = 'default') {
     let _thread = this.threads[threadID];
     if (!_thread) {
-      _thread = new LiveDataThread(this, this.queryKeys);
+      _thread = new LiveDataThread(threadID, this, this.queryKeys);
       if (!this.isPaused) {
         _thread.startFetchLoop();
       }
@@ -101,10 +100,10 @@ export class LiveDataThreadManager<T> {
   }
 
   // Function used by threads.
-  public determineKeysToFetch(keys: string[]) {
+  public determineKeysToFetch(keys: string[], batchSize: number) {
     const keysToFetch: string[] = [];
     const keysWithoutData: string[] = [];
-    while (keys.length && keysWithoutData.length < BATCH_SIZE) {
+    while (keys.length && keysWithoutData.length < batchSize) {
       const key = keys.shift()!;
       const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
       if (isRequested) {
@@ -122,7 +121,7 @@ export class LiveDataThreadManager<T> {
     }
 
     // Prioritize fetching keys for which there is no data in the cache
-    return keysWithoutData.concat(keysToFetch).slice(0, BATCH_SIZE);
+    return keysWithoutData.concat(keysToFetch).slice(0, batchSize);
   }
 
   public areKeysRefreshing(keys: string[]) {

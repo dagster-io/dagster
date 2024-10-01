@@ -67,9 +67,10 @@ export const LogsFilterInput = (props: Props) => {
     const perProvider = suggestionProviders.reduce(
       (accum, provider) => {
         const values = provider.values();
-        return provider.token
-          ? {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}}
-          : accum;
+        if (provider.token) {
+          accum[provider.token] = {fuse: new Fuse(values, fuseOptions), all: values};
+        }
+        return accum;
       },
       {} as {[token: string]: {fuse: Fuse<string>; all: string[]}},
     );

@@ -16,10 +16,20 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
+    PartitionsDefinition,
+    PartitionsSubset,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -30,15 +40,7 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
-
-from .partition import (
-    DefaultPartitionsSubset,
-    DynamicPartitionsDefinition,
-    PartitionsDefinition,
-    PartitionsSubset,
-    StaticPartitionsDefinition,
-)
-from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
+from dagster._time import get_current_datetime
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
@@ -219,6 +221,32 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
+    def get_partition_keys_in_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[str]:
+        start: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.start)
+        end: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.end)
+
+        partition_key_sequences = [
+            partition_dim.partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(
+                    start.keys_by_dimension[partition_dim.name],
+                    end.keys_by_dimension[partition_dim.name],
+                ),
+                dynamic_partitions_store=dynamic_partitions_store,
+            )
+            for partition_dim in self._partitions_defs
+        ]
+
+        return [
+            MultiPartitionKey(
+                {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
+            )
+            for partition_key_tuple in itertools.product(*partition_key_sequences)
+        ]
+
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
@@ -314,7 +342,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             Sequence[MultiPartitionKey]
         """
         return self._get_partition_keys(
-            current_time or pendulum.now("UTC"), dynamic_partitions_store
+            current_time or get_current_datetime(), dynamic_partitions_store
         )
 
     def filter_valid_partition_keys(
@@ -395,11 +423,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         # the selection of primary/secondary dimension, will need to also update the
         # serialization of MultiPartitionsSubsets
 
-        time_dimensions = [
-            dim
-            for dim in self.partitions_defs
-            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
-        ]
+        time_dimensions = self._get_time_window_dims()
         if len(time_dimensions) == 1:
             primary_dimension, secondary_dimension = (
                 time_dimensions[0],
@@ -429,15 +453,30 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
     @property
     def time_window_dimension(self) -> PartitionDimensionDefinition:
-        time_window_dims = [
-            dim
-            for dim in self.partitions_defs
-            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
-        ]
+        time_window_dims = self._get_time_window_dims()
         check.invariant(
             len(time_window_dims) == 1, "Expected exactly one time window partitioned dimension"
         )
         return next(iter(time_window_dims))
+
+    def _get_time_window_dims(self) -> List[PartitionDimensionDefinition]:
+        return [
+            dim
+            for dim in self.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+
+    @property
+    def has_time_window_dimension(self) -> bool:
+        return bool(self._get_time_window_dims())
+
+    @property
+    def time_window_partitions_def(self) -> TimeWindowPartitionsDefinition:
+        check.invariant(self.has_time_window_dimension, "Must have time window dimension")
+        return cast(
+            TimeWindowPartitionsDefinition,
+            check.inst(self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition),
+        )
 
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         if not isinstance(partition_key, MultiPartitionKey):

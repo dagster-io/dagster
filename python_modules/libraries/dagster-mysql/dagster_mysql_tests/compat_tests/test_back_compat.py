@@ -7,16 +7,8 @@ from urllib.parse import urlparse
 
 import pytest
 import sqlalchemy as db
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    DagsterEventType,
-    EventRecordsFilter,
-    Output,
-    job,
-    op,
-)
+from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
@@ -258,7 +250,7 @@ def test_add_kvs_table(conn_string):
 def test_add_asset_event_tags_table(conn_string):
     @op
     def yields_materialization_w_tags(_):
-        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={DATA_VERSION_TAG: "bar"})
         yield Output(1)
 
     @job
@@ -287,42 +279,11 @@ def test_add_asset_event_tags_table(conn_string):
             ):
                 instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"]))
 
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "bar"},
-                        )
-                    )
-                )
-                == 1
-            )
-            # test version that doesn't support intersect:
-            mysql_version = instance._event_storage._mysql_version
-            try:
-                instance._event_storage._mysql_version = "8.0.30"
-                assert (
-                    len(
-                        instance.get_event_records(
-                            EventRecordsFilter(
-                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                                asset_key=AssetKey("a"),
-                                tags={"dagster/foo": "bar"},
-                            )
-                        )
-                    )
-                    == 1
-                )
-            finally:
-                instance._event_storage._mysql_version = mysql_version
-
             instance.upgrade()
             assert "asset_event_tags" in get_tables(instance)
             asset_job.execute_in_process(instance=instance)
             assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
-                {"dagster/foo": "bar"}
+                {DATA_VERSION_TAG: "bar"}
             ]
 
             indexes = get_indexes(instance, "asset_event_tags")
@@ -476,6 +437,14 @@ def test_bigint_migration(conn_string):
                 integer_tables.add(table)
         return integer_tables
 
+    def _assert_autoincrement_id(conn):
+        inspector = db.inspect(conn)
+        for table in inspector.get_table_names():
+            id_cols = [col for col in inspector.get_columns(table) if col["name"] == "id"]
+            if id_cols:
+                id_col = id_cols[0]
+                assert id_col["autoincrement"]
+
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
@@ -487,16 +456,22 @@ def test_bigint_migration(conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             with instance.run_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
             with instance.event_log_storage.index_connection() as conn:
                 assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
             with instance.schedule_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) > 0
+                _assert_autoincrement_id(conn)
 
             run_bigint_migration(instance)
 
             with instance.run_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)
             with instance.event_log_storage.index_connection() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)
             with instance.schedule_storage.connect() as conn:
                 assert len(_get_integer_id_tables(conn)) == 0
+                _assert_autoincrement_id(conn)

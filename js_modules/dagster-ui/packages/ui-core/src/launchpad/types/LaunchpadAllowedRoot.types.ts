@@ -3,9 +3,9 @@
 import * as Types from '../../graphql/types';
 
 export type LaunchpadRootQueryVariables = Types.Exact<{
-  pipelineName: Types.Scalars['String'];
-  repositoryName: Types.Scalars['String'];
-  repositoryLocationName: Types.Scalars['String'];
+  pipelineName: Types.Scalars['String']['input'];
+  repositoryName: Types.Scalars['String']['input'];
+  repositoryLocationName: Types.Scalars['String']['input'];
 }>;
 
 export type LaunchpadRootQuery = {
@@ -98,3 +98,5 @@ export type LaunchpadSessionPipelineFragment = {
   }>;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
+
+export const LaunchpadRootQueryVersion = '0ce31bd283202c8126b2d0a64ceda9eceeb212f56f0fd3a0af255026121b4f6e';

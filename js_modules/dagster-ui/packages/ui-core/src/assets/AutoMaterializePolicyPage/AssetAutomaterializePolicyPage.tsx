@@ -5,7 +5,10 @@ import styled from 'styled-components';
 
 import {AutoMaterializeExperimentalBanner} from './AutoMaterializeExperimentalBanner';
 import {AutomaterializeLeftPanel} from './AutomaterializeLeftPanel';
-import {AutomaterializeMiddlePanel} from './AutomaterializeMiddlePanel';
+import {
+  AutomaterializeMiddlePanel,
+  SELECTED_PARTITION_QUERY_STRING_KEY,
+} from './AutomaterializeMiddlePanel';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
@@ -46,6 +49,10 @@ export const AssetAutomaterializePolicyPage = ({
     decode: (raw) => {
       const value = parseInt(raw.evaluation);
       return isNaN(value) ? undefined : value;
+    },
+    encode: (raw) => {
+      // Reset the selected partition
+      return {evaluation: raw, [SELECTED_PARTITION_QUERY_STRING_KEY]: undefined};
     },
   });
 

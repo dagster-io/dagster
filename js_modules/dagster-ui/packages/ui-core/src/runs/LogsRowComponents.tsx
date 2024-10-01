@@ -1,4 +1,4 @@
-import {Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui-components';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
@@ -11,6 +11,7 @@ import {formatElapsedTimeWithMsec} from '../app/Util';
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserHourCycle, browserTimezone} from '../app/time/browserTimezone';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
@@ -22,15 +23,18 @@ const bgcolorForLevel = (level: LogLevel) =>
     [LogLevel.CRITICAL]: Colors.backgroundRed(),
   })[level];
 
+export const MAX_ROW_HEIGHT_PX = 200;
+
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
-  font-size: 0.9em;
+  font-size: 12px;
   width: 100%;
   height: 100%;
-  max-height: 17em;
+  max-height: ${MAX_ROW_HEIGHT_PX}px;
   word-break: break-word;
   white-space: pre-wrap;
   color: ${Colors.textDefault()};
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   display: flex;
   flex-direction: row;
   align-items: baseline;
@@ -56,6 +60,7 @@ export const StructuredContent = styled.div`
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   flex: 1;
   align-self: stretch;
   display: flex;
@@ -103,7 +108,7 @@ export const OpColumnContainer = styled.div`
 `;
 
 const OpColumnTooltipStyle = JSON.stringify({
-  fontSize: '0.9em',
+  fontSize: '12px',
   fontFamily: FontFamily.monospace,
   color: Colors.textDefault(),
   background: Colors.backgroundDefault(),
@@ -162,37 +167,49 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
       <Tooltip
         canShow={canShowTooltip}
         content={
-          <MetadataTable
-            spacing={0}
-            rows={[
-              {
-                key: 'Since start of run',
-                value: (
-                  <div
-                    style={{textAlign: 'right', fontFamily: FontFamily.monospace, fontSize: '13px'}}
-                  >
-                    {runElapsedTime}
-                  </div>
-                ),
-              },
-              stepStartTime
-                ? {
-                    key: 'Since start of step',
-                    value: (
-                      <div
-                        style={{
-                          textAlign: 'right',
-                          fontFamily: FontFamily.monospace,
-                          fontSize: '13px',
-                        }}
-                      >
-                        {stepElapsedTime}
-                      </div>
-                    ),
-                  }
-                : null,
-            ]}
-          />
+          <div>
+            <Box margin={{bottom: 8}}>
+              <TimestampDisplay
+                timestamp={Number(time) / 1000}
+                timeFormat={{showSeconds: true, showMsec: true, showTimezone: false}}
+              />
+            </Box>
+            <MetadataTable
+              spacing={0}
+              rows={[
+                {
+                  key: 'Since start of run',
+                  value: (
+                    <div
+                      style={{
+                        textAlign: 'right',
+                        fontFamily: FontFamily.monospace,
+                        fontSize: '13px',
+                      }}
+                    >
+                      {runElapsedTime}
+                    </div>
+                  ),
+                },
+                stepStartTime
+                  ? {
+                      key: 'Since start of step',
+                      value: (
+                        <div
+                          style={{
+                            textAlign: 'right',
+                            fontFamily: FontFamily.monospace,
+                            fontSize: '13px',
+                          }}
+                        >
+                          {stepElapsedTime}
+                        </div>
+                      ),
+                    }
+                  : null,
+              ]}
+            />
+          </div>
         }
         placement="left"
       >

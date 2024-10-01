@@ -3,7 +3,7 @@ import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {RunStatus, buildRun} from '../../graphql/types';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {RunActionButtons} from '../RunActionButtons';
 import {buildMockRootWorkspaceQuery} from '../__fixtures__/RunActionsMenu.fixtures';
 import {RunPageFragment} from '../types/RunFragments.types';
@@ -26,7 +26,7 @@ describe('RunActionButtons', () => {
 
   const Test = ({run}: {run: RunPageFragment}) => {
     return (
-      <MockedProvider mocks={[buildMockRootWorkspaceQuery()]}>
+      <MockedProvider mocks={buildMockRootWorkspaceQuery()}>
         <MemoryRouter>
           <WorkspaceProvider>
             <RunActionButtons {...props} run={run} />

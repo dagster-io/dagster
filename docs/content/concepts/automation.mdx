@@ -5,11 +5,11 @@ description: "Learn to automatically run your Dagster pipelines."
 
 # Automation
 
-Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. Automating your Dagster pipelines can boost efficiency and ensure that data is produced consistently and reliably.
+Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers. Automating your Dagster pipelines can boost efficiency and ensure that data is produced consistently and reliably.
 
 When one of Dagster's automation methods is triggered, a **tick** is created, which indicates that a **run** should occur. The tick will kick off a run, which is a single instance of a pipeline being executed.
 
-In this guide, we'll cover the available automation methods Dagser provides and when to use each one.
+In this guide, we'll cover the available automation methods Dagster provides and when to use each one.
 
 ---
 
@@ -17,7 +17,7 @@ In this guide, we'll cover the available automation methods Dagser provides and 
 
 Before continuing, you should be familiar with:
 
-- [Software-defined Assets][assets]
+- [Asset definitions][assets]
 - [Jobs][jobs] (_optional_)
 - [Ops][ops] (_optional; advanced_)
 
@@ -41,18 +41,16 @@ You can use sensors to run a job or materialize an asset in response to specific
 
 You can also use sensors to act on the status of a job run. Refer to the [Sensors documentation][sensors] to learn more.
 
-### Auto-materialize policies <Experimental />
+### Declarative Automation <Experimental />
 
-If you want a declarative approach to automating your pipelines, Auto-materialize policies (AMP) may be a good fit. AMPs allow you to assign policies to assets and let Dagster determine the best approach to keeping assets up-to-date while adhering to those policies.
+Declarative Automation allows you to automatically materialize assets when specified criteria are met. Using Declarative Automation, you could update assets:
 
-For example, with AMPs, you can update assets based on:
+- When the asset hasn't yet been materialized
+- When an asset's upstream dependency has been updated
+- After an asset's parents have been updated since a cron tick
+- ... based on your own custom conditions
 
-- Whether an upstream dependency has been updated
-- Whether an upstream dependency has the latest data from its dependencies
-- Whether a materialization has occured since the last tick of a cron schedule
-- ... and more
-
-AMPs are declared on an asset-by-asset basis, but can be applied to multiple assets at once. Refer to the [Auto-materializing Assets documentation][auto-materialize-policies] to learn more.
+Materialization conditions are declared on an asset-by-asset basis. Refer to the [Declarative Automation documentation][declarative-automation] to learn more.
 
 ### Asset Sensors <Experimental />
 
@@ -83,7 +81,7 @@ The following cheatsheet contains high-level details about each of the automatio
     <tr>
       <th
         style={{
-          width: "20%",
+          width: "15%",
         }}
       >
         Method
@@ -108,7 +106,7 @@ The following cheatsheet contains high-level details about each of the automatio
   <tbody>
     <tr>
       <td>
-        <a href="/concepts/partitions-schedules-sensors/schedules">Schedules</a>
+        <a href="/concepts/automation/schedules">Schedules</a>
       </td>
       <td>Starts a job at a specified time</td>
       <td>
@@ -175,13 +173,13 @@ The following cheatsheet contains high-level details about each of the automatio
     </tr>
     <tr>
       <td>
-        <a href="/concepts/assets/asset-auto-execution">
-          Auto-materialize policies
+        <a href="/concepts/automation/declarative-automation">
+          Declarative Automation
         </a>
       </td>
       <td>
-        Automatically materializes an asset or selection of assets when
-        specified criteria (ex: upstream changes) are met
+        Automatically materializes an asset when specified criteria (ex:
+        upstream changes) are met
       </td>
       <td>
         <ul
@@ -245,10 +243,10 @@ The following cheatsheet contains high-level details about each of the automatio
 
 [op-jobs]: /concepts/ops-jobs-graphs/op-jobs
 
-[schedules]: /concepts/partitions-schedules-sensors/schedules
+[schedules]: /concepts/automation/schedules
 
 [sensors]: /concepts/partitions-schedules-sensors/sensors
 
 [asset-sensors]: /concepts/partitions-schedules-sensors/asset-sensors
 
-[auto-materialize-policies]: /concepts/assets/asset-auto-execution
+[declarative-automation]: /concepts/automation/declarative-automation

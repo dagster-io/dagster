@@ -7,8 +7,7 @@ def partconf(partition):
 
 
 @op(config_schema={"letter": str})
-def op1():
-    ...
+def op1(): ...
 
 
 @job(config=partconf)

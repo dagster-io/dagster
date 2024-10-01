@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, IconName} from '@dagster-io/ui-components';
+import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -6,16 +6,16 @@ export type ConditionType = 'group' | 'leaf';
 
 interface Props {
   depth: number;
-  icon: IconName;
+  icon: React.ReactNode;
   label: React.ReactNode;
   type: ConditionType;
   skipped?: boolean;
-  isCollapsed: boolean;
+  isExpanded: boolean;
   hasChildren: boolean;
 }
 
 export const PolicyEvaluationCondition = (props: Props) => {
-  const {depth, icon, label, type, skipped = false, isCollapsed, hasChildren} = props;
+  const {depth, icon, label, type, skipped = false, isExpanded, hasChildren} = props;
   const depthLines = React.useMemo(() => {
     return new Array(depth).fill(null).map((_, ii) => <DepthLine key={ii} />);
   }, [depth]);
@@ -24,17 +24,16 @@ export const PolicyEvaluationCondition = (props: Props) => {
     <Box
       padding={{vertical: 2, horizontal: 8}}
       flex={{direction: 'row', alignItems: 'center', gap: 8}}
-      style={{height: '48px'}}
     >
       {depthLines}
-
       {hasChildren ? (
         <Icon
           name="arrow_drop_down"
-          style={{transform: isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)'}}
+          size={20}
+          style={{transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'}}
         />
       ) : null}
-      <Icon name={icon} color={Colors.accentPrimary()} />
+      {hasChildren ? icon : <div style={{marginLeft: 28}}>{icon}</div>}
       <ConditionLabel $type={type} $skipped={skipped}>
         {label}
       </ConditionLabel>
@@ -44,7 +43,7 @@ export const PolicyEvaluationCondition = (props: Props) => {
 
 const DepthLine = styled.div`
   background-color: ${Colors.keylineDefault()};
-  height: 100%;
+  align-self: stretch;
   margin: 0 4px 0 7px; /* 7px to align with center of icon in row above */
   width: 2px;
 `;

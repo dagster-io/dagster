@@ -1026,7 +1026,7 @@ def test_args_kwargs_op():
             pass
 
     @op(ins={"the_in": In()})
-    def the_op(**kwargs):  # noqa: F811
+    def the_op(**kwargs):
         return kwargs["the_in"]
 
     @op
@@ -1628,8 +1628,7 @@ def test_none_annotated_input():
     with pytest.raises(DagsterInvalidDefinitionError, match="is annotated with Nothing"):
 
         @op
-        def op1(input1: None):
-            ...
+        def op1(input1: None): ...
 
 
 def test_default_code_version():

@@ -1,7 +1,8 @@
 import {act, renderHook, waitFor} from '@testing-library/react';
 import * as React from 'react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {MemoryRouter} from 'react-router-dom';
 
+import {Route} from '../../app/Route';
 import {useQueryAndLocalStoragePersistedState} from '../useQueryAndLocalStoragePersistedState';
 
 // Mock local storage
@@ -62,7 +63,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             </MemoryRouter>
           );
         },
-      },
+      } as any,
     );
 
     let state, setter: any;
@@ -122,7 +123,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             </MemoryRouter>
           );
         },
-      },
+      } as any,
     );
 
     const [state] = hookResult.result.current;

@@ -1,8 +1,13 @@
 import {Colors} from '@dagster-io/ui-components';
-import {ActiveElement, ChartEvent} from 'chart.js';
+import {ActiveElement, ChartEvent, ChartOptions} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
+import {useContext} from 'react';
 import {Line} from 'react-chartjs-2';
+
+import {TimeContext} from '../app/time/TimeContext';
+import {timestampToString} from '../app/time/timestampToString';
+import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 
 export interface AssetValueGraphData {
   minY: number;
@@ -20,11 +25,20 @@ export interface AssetValueGraphData {
 export const AssetValueGraph = (props: {
   label: string;
   width: string;
+  height?: number;
   yAxisLabel?: string;
   data: AssetValueGraphData;
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
 }) => {
+  const {
+    timezone: [userTimezone],
+    hourCycle: [hourCycle],
+  } = useContext(TimeContext);
+
+  const locale = navigator.language;
+
+  const rgbColors = useRGBColorsForTheme();
   // Note: To get partitions on the X axis, we pass the partition names in as the `labels`,
   // and pass the partition index as the x value. This prevents ChartJS from auto-coercing
   // ISO date partition names to dates and then re-formatting the labels away from 2020-01-01.
@@ -40,6 +54,11 @@ export const AssetValueGraph = (props: {
     xHover = xHover ? labels.indexOf(xHover) : null;
   }
 
+  const borderColor = rgbColors[Colors.accentBlue()];
+  const backgroundColor = rgbColors[Colors.backgroundBlue()];
+  const pointHoverBorderColor = rgbColors[Colors.accentBlue()];
+  const tickColor = rgbColors[Colors.textLighter()];
+
   const graphData = {
     labels,
     datasets: [
@@ -47,17 +66,17 @@ export const AssetValueGraph = (props: {
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: Colors.accentBlue(),
-        backgroundColor: Colors.backgroundBlue(),
+        borderColor,
+        backgroundColor,
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: Colors.accentBlue(),
+        pointHoverBorderColor,
       },
     ],
   };
 
-  const options = {
+  const options: ChartOptions<'line'> = {
     animation: {
       duration: 0,
     },
@@ -69,14 +88,29 @@ export const AssetValueGraph = (props: {
     },
     scales: {
       x: {
-        id: 'x',
         display: true,
         ...(props.data.xAxis === 'time'
           ? {
               type: 'time',
+              ticks: {
+                color: tickColor,
+                autoSkip: true,
+                autoSkipPadding: 12,
+                callback: (label, index, ticks) => {
+                  const ms = ticks[index]?.value || 0;
+                  return timestampToString({
+                    timestamp: {ms},
+                    locale,
+                    timezone: userTimezone,
+                    timeFormat: {},
+                    hourCycle,
+                  });
+                },
+              },
               title: {
                 display: true,
                 text: 'Timestamp',
+                color: tickColor,
               },
             }
           : {
@@ -84,12 +118,37 @@ export const AssetValueGraph = (props: {
               title: {
                 display: true,
                 text: 'Partition',
+                color: tickColor,
               },
             }),
       },
-      y: {id: 'y', display: true, title: {display: true, text: props.yAxisLabel || 'Value'}},
+      y: {
+        display: true,
+        ticks: {
+          color: tickColor,
+        },
+        title: {display: true, color: tickColor, text: props.yAxisLabel || 'Value'},
+      },
     },
     plugins: {
+      tooltip: {
+        callbacks: {
+          title: (points) => {
+            return points.map(({parsed}) => {
+              if (props.data.xAxis === 'time') {
+                return timestampToString({
+                  timestamp: {ms: parsed.x},
+                  locale,
+                  timezone: userTimezone,
+                  timeFormat: {},
+                  hourCycle,
+                });
+              }
+              return `${parsed.x}`;
+            });
+          },
+        },
+      },
       legend: {
         display: false,
       },
@@ -109,5 +168,12 @@ export const AssetValueGraph = (props: {
     },
   };
 
-  return <Line data={graphData} height={100} options={options as any} key={props.width} />;
+  return (
+    <Line
+      data={graphData}
+      height={props.height || 100}
+      options={options as any}
+      key={props.width}
+    />
+  );
 };

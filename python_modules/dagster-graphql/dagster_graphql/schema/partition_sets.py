@@ -1,15 +1,19 @@
-from typing import Optional, cast
+from typing import AbstractSet, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
 from dagster import MultiPartitionsDefinition
-from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster._core.host_representation.external_data import (
-    ExternalDynamicPartitionsDefinitionData,
-    ExternalMultiPartitionsDefinitionData,
-    ExternalPartitionsDefinitionData,
-    ExternalStaticPartitionsDefinitionData,
-    ExternalTimeWindowPartitionsDefinitionData,
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.remote_representation import ExternalJob, ExternalPartitionSet, RepositoryHandle
+from dagster._core.remote_representation.external_data import (
+    DynamicPartitionsSnap,
+    MultiPartitionsSnap,
+    PartitionExecutionErrorSnap,
+    PartitionsSnap,
+    StaticPartitionsSnap,
+    TimeWindowPartitionsSnap,
+    job_name_for_partition_set_snap_name,
 )
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -25,22 +29,21 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.utils import capture_error
-
-from .asset_key import GrapheneAssetKey
-from .backfill import GraphenePartitionBackfill
-from .errors import (
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.backfill import GraphenePartitionBackfill
+from dagster_graphql.schema.errors import (
     GrapheneDuplicateDynamicPartitionError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
     GrapheneUnauthorizedError,
 )
-from .inputs import GrapheneRunsFilter
-from .pipelines.pipeline import GrapheneRun
-from .pipelines.status import GrapheneRunStatus
-from .repository_origin import GrapheneRepositoryOrigin
-from .tags import GraphenePipelineTag
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.inputs import GrapheneRunsFilter
+from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.repository_origin import GrapheneRepositoryOrigin
+from dagster_graphql.schema.tags import GraphenePipelineTag
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):
@@ -60,6 +63,23 @@ class GrapheneAddDynamicPartitionResult(graphene.Union):
             GrapheneDuplicateDynamicPartitionError,
         )
         name = "AddDynamicPartitionResult"
+
+
+class GrapheneDeleteDynamicPartitionsSuccess(graphene.ObjectType):
+    partitionsDefName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DeleteDynamicPartitionsSuccess"
+
+
+class GrapheneDeleteDynamicPartitionsResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneDeleteDynamicPartitionsSuccess,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+        )
+        name = "DeleteDynamicPartitionsResult"
 
 
 class GraphenePartitionTags(graphene.ObjectType):
@@ -164,6 +184,48 @@ class GraphenePartitionTagsOrError(graphene.Union):
         name = "PartitionTagsOrError"
 
 
+class GrapheneJobSelectionPartition(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    job_name = graphene.NonNull(graphene.String)
+    runConfigOrError = graphene.NonNull(GraphenePartitionRunConfigOrError)
+    tagsOrError = graphene.NonNull(GraphenePartitionTagsOrError)
+
+    class Meta:
+        name = "PartitionTagsAndConfig"
+
+    def __init__(
+        self,
+        external_job: ExternalJob,
+        partition_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ):
+        self._external_job = external_job
+        self._partition_name = partition_name
+        self._selected_asset_keys = selected_asset_keys
+
+        super().__init__(name=partition_name, job_name=external_job.name)
+
+    @capture_error
+    def resolve_runConfigOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionRunConfig:
+        return get_partition_config(
+            graphene_info,
+            self._external_job.repository_handle,
+            self._external_job.name,
+            self._partition_name,
+            selected_asset_keys=self._selected_asset_keys,
+        )
+
+    @capture_error
+    def resolve_tagsOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionTags:
+        return get_partition_tags(
+            graphene_info,
+            self._external_job.repository_handle,
+            self._external_job.name,
+            self._partition_name,
+            selected_asset_keys=self._selected_asset_keys,
+        )
+
+
 class GraphenePartition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     partition_set_name = graphene.NonNull(graphene.String)
@@ -208,8 +270,9 @@ class GraphenePartition(graphene.ObjectType):
         return get_partition_config(
             graphene_info,
             self._external_repository_handle,
-            self._external_partition_set.name,
+            job_name_for_partition_set_snap_name(self._external_partition_set.name),
             self._partition_name,
+            selected_asset_keys=None,
         )
 
     @capture_error
@@ -217,8 +280,9 @@ class GraphenePartition(graphene.ObjectType):
         return get_partition_tags(
             graphene_info,
             self._external_repository_handle,
-            self._external_partition_set.name,
+            job_name_for_partition_set_snap_name(self._external_partition_set.name),
             self._partition_name,
+            selected_asset_keys=None,
         )
 
     def resolve_runs(
@@ -295,6 +359,7 @@ class GraphenePartitionSet(graphene.ObjectType):
         self._external_partition_set = check.inst_param(
             external_partition_set, "external_partition_set", ExternalPartitionSet
         )
+        self._partition_names = None
 
         super().__init__(
             name=external_partition_set.name,
@@ -303,8 +368,23 @@ class GraphenePartitionSet(graphene.ObjectType):
             mode=external_partition_set.mode,
         )
 
+    def _get_partition_names(self, graphene_info: ResolveInfo) -> Sequence[str]:
+        if self._partition_names is None:
+            result = graphene_info.context.get_external_partition_names(
+                repository_handle=self._external_repository_handle,
+                job_name=self._external_partition_set.job_name,
+                instance=graphene_info.context.instance,
+                selected_asset_keys=None,
+            )
+            if isinstance(result, PartitionExecutionErrorSnap):
+                raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+            self._partition_names = result.partition_names
+
+        return self._partition_names
+
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_partition_set.get_external_origin_id()
+        return self._external_partition_set.get_remote_origin_id()
 
     @capture_error
     def resolve_partitionsOrError(
@@ -315,9 +395,9 @@ class GraphenePartitionSet(graphene.ObjectType):
         reverse: Optional[bool] = None,
     ):
         return get_partitions(
-            graphene_info,
             self._external_repository_handle,
             self._external_partition_set,
+            self._get_partition_names(graphene_info),
             cursor=cursor,
             limit=limit,
             reverse=reverse or False,
@@ -332,17 +412,22 @@ class GraphenePartitionSet(graphene.ObjectType):
         )
 
     def resolve_partitionRuns(self, graphene_info: ResolveInfo):
-        return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
+        return get_partition_set_partition_runs(
+            graphene_info,
+            self._external_partition_set,
+            self._get_partition_names(graphene_info),
+        )
 
     @capture_error
     def resolve_partitionStatusesOrError(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_statuses(
             graphene_info,
             self._external_partition_set,
+            self._get_partition_names(graphene_info),
         )
 
     def resolve_repositoryOrigin(self, _):
-        origin = self._external_partition_set.get_external_origin().external_repository_origin
+        origin = self._external_partition_set.get_remote_origin().repository_origin
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_backfills(
@@ -356,7 +441,7 @@ class GraphenePartitionSet(graphene.ObjectType):
             if backfill.partition_set_origin
             and backfill.partition_set_origin.partition_set_name
             == self._external_partition_set.name
-            and backfill.partition_set_origin.external_repository_origin.repository_name
+            and backfill.partition_set_origin.repository_origin.repository_name
             == self._external_repository_handle.repository_name
         ]
         return [GraphenePartitionBackfill(backfill) for backfill in matching[:limit]]
@@ -392,14 +477,14 @@ class GraphenePartitionDefinitionType(graphene.Enum):
 
     @classmethod
     def from_partition_def_data(cls, partition_def_data):
-        check.inst_param(partition_def_data, "partition_def_data", ExternalPartitionsDefinitionData)
-        if isinstance(partition_def_data, ExternalStaticPartitionsDefinitionData):
+        check.inst_param(partition_def_data, "partition_def_data", PartitionsSnap)
+        if isinstance(partition_def_data, StaticPartitionsSnap):
             return GraphenePartitionDefinitionType.STATIC
-        elif isinstance(partition_def_data, ExternalTimeWindowPartitionsDefinitionData):
+        elif isinstance(partition_def_data, TimeWindowPartitionsSnap):
             return GraphenePartitionDefinitionType.TIME_WINDOW
-        elif isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData):
+        elif isinstance(partition_def_data, MultiPartitionsSnap):
             return GraphenePartitionDefinitionType.MULTIPARTITIONED
-        elif isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData):
+        elif isinstance(partition_def_data, DynamicPartitionsSnap):
             return GraphenePartitionDefinitionType.DYNAMIC
         else:
             check.failed(
@@ -433,26 +518,24 @@ class GraphenePartitionDefinition(graphene.ObjectType):
             [
                 GrapheneDimensionDefinitionType(
                     name=dim.name,
-                    description=str(dim.external_partitions_def_data.get_partitions_definition()),
-                    type=GraphenePartitionDefinitionType.from_partition_def_data(
-                        dim.external_partitions_def_data
-                    ),
+                    description=str(dim.partitions.get_partitions_definition()),
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(dim.partitions),
                     isPrimaryDimension=dim.name
                     == cast(
                         MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
                     ).primary_dimension.name,
                     dynamicPartitionsDefinitionName=(
-                        dim.external_partitions_def_data.name
+                        dim.partitions.name
                         if isinstance(
-                            dim.external_partitions_def_data,
-                            ExternalDynamicPartitionsDefinitionData,
+                            dim.partitions,
+                            DynamicPartitionsSnap,
                         )
                         else None
                     ),
                 )
-                for dim in partition_def_data.external_partition_dimension_definitions
+                for dim in partition_def_data.partition_dimensions
             ]
-            if isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData)
+            if isinstance(partition_def_data, MultiPartitionsSnap)
             else [
                 GrapheneDimensionDefinitionType(
                     name="default",
@@ -463,21 +546,21 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     isPrimaryDimension=True,
                     dynamicPartitionsDefinitionName=(
                         partition_def_data.name
-                        if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                        if isinstance(partition_def_data, DynamicPartitionsSnap)
                         else None
                     ),
                 )
             ]
         )
 
-    def __init__(self, partition_def_data: ExternalPartitionsDefinitionData):
+    def __init__(self, partition_def_data: PartitionsSnap):
         self._partition_def_data = partition_def_data
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
             name=(
                 partition_def_data.name
-                if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                if isinstance(partition_def_data, DynamicPartitionsSnap)
                 else None
             ),
         )

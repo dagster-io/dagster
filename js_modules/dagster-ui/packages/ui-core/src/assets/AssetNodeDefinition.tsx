@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Body,
   Box,
@@ -18,16 +17,14 @@ import {
   AssetMetadataTable,
   metadataForAssetNode,
 } from './AssetMetadata';
+import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeList} from './AssetNodeList';
-import {
-  AutomaterializePolicyTag,
-  automaterializePolicyDescription,
-} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {Version} from './Version';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {gql} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -115,22 +112,6 @@ export const AssetNodeDefinition = ({
               </Box>
             </>
           )}
-          {assetNode.autoMaterializePolicy && (
-            <>
-              <Box padding={{vertical: 16, horizontal: 24}} border="top-and-bottom">
-                <Subheading>Auto-materialize policy</Subheading>
-              </Box>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                flex={{gap: 12, alignItems: 'flex-start'}}
-              >
-                <Body style={{flex: 1}}>
-                  {automaterializePolicyDescription(assetNode.autoMaterializePolicy)}
-                </Body>
-                <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
-              </Box>
-            </>
-          )}
 
           {assetNode.backfillPolicy && (
             <>
@@ -161,7 +142,11 @@ export const AssetNodeDefinition = ({
               </Box>
             </Link>
           </Box>
-          {dependsOnSelf && <DependsOnSelfBanner />}
+          {dependsOnSelf && (
+            <Box padding={{vertical: 16, left: 24, right: 12}} border="bottom">
+              <DependsOnSelfBanner />
+            </Box>
+          )}
           <AssetNodeList items={upstream} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -171,12 +156,6 @@ export const AssetNodeDefinition = ({
             <Subheading>
               Downstream assets{downstream?.length ? ` (${downstream.length})` : ''}
             </Subheading>
-            <Link to="?view=lineage&lineageScope=downstream">
-              <Box flex={{gap: 4, alignItems: 'center'}}>
-                View downstream graph
-                <Icon name="open_in_new" color={Colors.linkDefault()} />
-              </Box>
-            </Link>
           </Box>
           <AssetNodeList items={downstream} />
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
@@ -317,9 +296,7 @@ const DescriptionAnnotations = ({
         </Mono>
       ))}
     <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
-    {assetNode.isSource ? (
-      <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
-    ) : !assetNode.isExecutable ? (
+    {!assetNode.isMaterializable ? (
       <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
@@ -329,19 +306,35 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     description
+    groupName
     graphName
     opNames
     opVersion
     jobNames
-    isSource
+    isMaterializable
     isExecutable
+    tags {
+      key
+      value
+    }
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
     autoMaterializePolicy {
-      policyType
       rules {
         className
         description
         decisionType
       }
+    }
+    automationCondition {
+      label
+      expandedLabel
     }
     freshnessPolicy {
       maximumLagMinutes
@@ -369,9 +362,11 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
+    ...AssetNodeInstigatorsFragment
   }
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
 `;

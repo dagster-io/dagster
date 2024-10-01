@@ -19,7 +19,7 @@ def generate_plot(context: OpExecutionContext, trips):
     bin_edges = np.histogram_bin_edges(minute_lengths, 15)
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.set(title="Trip lengths", xlabel="Minutes", ylabel="Count")
-    ax.hist(minute_lengths, bins=bin_edges)
+    ax.hist(minute_lengths, bins=list(bin_edges))
     fig.savefig("trip_lengths.png")
     context.log_event(
         AssetMaterialization(

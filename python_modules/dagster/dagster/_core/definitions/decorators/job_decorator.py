@@ -2,23 +2,21 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Union, overload
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
 from dagster._core.decorator_utils import format_docstring_for_description
-
-from ..config import ConfigMapping
-from ..graph_definition import GraphDefinition
-from ..hook_definition import HookDefinition
-from ..job_definition import JobDefinition
-from ..logger_definition import LoggerDefinition
-from ..metadata import RawMetadataValue
-from ..policy import RetryPolicy
-from ..resource_definition import ResourceDefinition
-from ..version_strategy import VersionStrategy
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.utils import normalize_tags
 
 if TYPE_CHECKING:
-    from ..executor_definition import ExecutorDefinition
-    from ..partition import PartitionedConfig, PartitionsDefinition
-    from ..run_config import RunConfig
+    from dagster._core.definitions.executor_definition import ExecutorDefinition
+    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+    from dagster._core.definitions.run_config import RunConfig
 
 
 class _Job:
@@ -27,6 +25,7 @@ class _Job:
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
+        run_tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[
@@ -36,7 +35,6 @@ class _Job:
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
-        version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ):
@@ -44,7 +42,8 @@ class _Job:
 
         self.name = name
         self.description = description
-        self.tags = tags
+        self.tags = normalize_tags(tags, warning_stacklevel=4)
+        self.run_tags = run_tags
         self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = convert_config_input(config)
@@ -52,7 +51,6 @@ class _Job:
         self.executor_def = executor_def
         self.hooks = hooks
         self.op_retry_policy = op_retry_policy
-        self.version_strategy = version_strategy
         self.partitions_def = partitions_def
         self.input_values = input_values
 
@@ -71,7 +69,7 @@ class _Job:
             node_defs,
             config_mapping,
             positional_inputs,
-            node_input_source_assets,
+            input_assets,
         ) = do_composition(
             decorator_name="@job",
             graph_name=self.name,
@@ -91,8 +89,8 @@ class _Job:
             output_mappings=output_mappings,
             config=config_mapping,
             positional_inputs=positional_inputs,
-            tags=self.tags,
-            node_input_source_assets=node_input_source_assets,
+            tags=self.run_tags,
+            input_assets=input_assets,
         )
 
         job_def = graph_def.to_job(
@@ -100,12 +98,12 @@ class _Job:
             resource_defs=self.resource_defs,
             config=self.config,
             tags=self.tags,
+            run_tags=self.run_tags,
             metadata=self.metadata,
             logger_defs=self.logger_defs,
             executor_def=self.executor_def,
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,
-            version_strategy=self.version_strategy,
             partitions_def=self.partitions_def,
             input_values=self.input_values,
         )
@@ -114,8 +112,7 @@ class _Job:
 
 
 @overload
-def job(compose_fn: Callable[..., Any]) -> JobDefinition:
-    ...
+def job(compose_fn: Callable[..., Any]) -> JobDefinition: ...
 
 
 @overload
@@ -126,23 +123,17 @@ def job(
     resource_defs: Optional[Mapping[str, object]] = ...,
     config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
+    run_tags: Optional[Mapping[str, Any]] = ...,
     metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
     op_retry_policy: Optional[RetryPolicy] = ...,
-    version_strategy: Optional[VersionStrategy] = ...,
     partitions_def: Optional["PartitionsDefinition"] = ...,
     input_values: Optional[Mapping[str, object]] = ...,
-) -> _Job:
-    ...
+) -> _Job: ...
 
 
-@deprecated_param(
-    param="version_strategy",
-    breaking_version="2.0",
-    additional_warn_text="Use asset versioning instead.",
-)
 def job(
     compose_fn: Optional[Callable[..., Any]] = None,
     *,
@@ -152,13 +143,13 @@ def job(
     config: Optional[
         Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
     ] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional[RetryPolicy] = None,
-    version_strategy: Optional[VersionStrategy] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     input_values: Optional[Mapping[str, object]] = None,
 ) -> Union[JobDefinition, _Job]:
@@ -198,11 +189,15 @@ def job(
             values that can parameterize the job, as well as a function for mapping those
             values to the base config. The values provided will be viewable and editable in the
             Dagster UI, so be careful with secrets.
-        tags (Optional[Dict[str, Any]]):
-            Arbitrary information that will be attached to the execution of the Job.
-            Values that are not strings will be json encoded and must meet the criteria that
-            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
-            values provided at invocation time.
+        tags (Optional[Mapping[str, object]]): A set of key-value tags that annotate the job and can
+            be used for searching and filtering in the UI. Values that are not already strings will
+            be serialized as JSON. If `run_tags` is not set, then the content of `tags` will also be
+            automatically appended to the tags of any runs of this job.
+        run_tags (Optional[Mapping[str, object]]):
+            A set of key-value tags that will be automatically attached to runs launched by this
+            job. Values that are not already strings will be serialized as JSON. These tag values
+            may be overwritten by tag values provided at invocation time. If `run_tags` is set, then
+            `tags` are not automatically appended to the tags of any runs of this job.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI.
             Keys must be strings, and values must be python primitive types or one of the provided
@@ -213,9 +208,6 @@ def job(
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
             Only used if retry policy is not defined on the op definition or op invocation.
-        version_strategy (Optional[VersionStrategy]):
-            Defines how each op (and optionally, resource) in the job can be versioned. If
-            provided, memoization will be enabled for this job.
         partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
             that can parameterize the job. If this argument is supplied, the config argument
             can't also be supplied.
@@ -249,12 +241,12 @@ def job(
         resource_defs=wrap_resources_for_execution(resource_defs),
         config=config,
         tags=tags,
+        run_tags=run_tags,
         metadata=metadata,
         logger_defs=logger_defs,
         executor_def=executor_def,
         hooks=hooks,
         op_retry_policy=op_retry_policy,
-        version_strategy=version_strategy,
         partitions_def=partitions_def,
         input_values=input_values,
     )

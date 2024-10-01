@@ -2,11 +2,12 @@ import json
 from datetime import datetime
 from unittest import mock
 
+import kubernetes
 import pytest
 from dagster import DagsterRunStatus, job, reconstructable
-from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
+from dagster._core.remote_representation import RepositoryHandle
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._core.test_utils import (
     create_run_for_test,
@@ -191,7 +192,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.register_instance(instance)
@@ -255,7 +256,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -274,7 +275,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -360,7 +361,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=python_origin,
                 tags=run_tags,
             )
@@ -418,12 +419,13 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     )
 
     # Construct Dagster run tags with user defined k8s config.
+    expected_image = "different_image:tag"
     expected_resources = {
         "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
     }
     user_defined_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"resources": expected_resources},
+        container_config={"image": expected_image, "resources": expected_resources},
         pod_spec_config={"scheduler_name": "test-scheduler-2"},
     )
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
@@ -454,14 +456,14 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 tags=tags,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake_job_image"
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == expected_image
 
         # Check that user defined k8s config was passed down to the k8s job.
         mock_method_calls = mock_k8s_client_batch_api.method_calls
@@ -534,7 +536,7 @@ def test_raise_on_error(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
@@ -595,7 +597,7 @@ def test_no_postgres(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
@@ -662,14 +664,14 @@ def test_check_run_health(kubeconfig_file):
             started_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.STARTED,
             )
             finished_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.FAILURE,
             )
@@ -704,6 +706,19 @@ def test_check_run_health(kubeconfig_file):
 
             health = k8s_run_launcher.check_run_worker_health(finished_run)
             assert health.status == WorkerStatus.FAILED, health.msg
+
+            mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = (
+                kubernetes.client.rest.ApiException(reason="Not Found")
+            )
+
+            finished_k8s_job_name = get_job_name_from_run_id(finished_run.run_id)
+
+            health = k8s_run_launcher.check_run_worker_health(finished_run)
+
+            assert (
+                health.status == WorkerStatus.UNKNOWN
+                and health.msg == f"Job {finished_k8s_job_name} could not be found"
+            )
 
 
 def test_get_run_worker_debug_info(kubeconfig_file):
@@ -783,7 +798,7 @@ def test_get_run_worker_debug_info(kubeconfig_file):
             started_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
                 status=DagsterRunStatus.STARTING,
             )

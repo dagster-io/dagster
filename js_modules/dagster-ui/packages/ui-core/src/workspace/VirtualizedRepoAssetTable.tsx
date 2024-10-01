@@ -1,18 +1,14 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, Icon, IconWrapper, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {useCallback, useContext, useMemo, useRef} from 'react';
+import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {VirtualizedAssetHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
-import {repoAddressAsHumanString} from './repoAddressAsString';
 import {RepoAddress} from './types';
-import {RepoAssetTableFragment} from './types/VirtualizedRepoAssetTable.types';
+import {RepoAssetTableFragment} from './types/WorkspaceAssetsQuery.types';
+import {useFlattenedGroupedAssetList} from './useFlattenedGroupedAssetList';
 import {workspacePathFromAddress} from './workspacePath';
-import {AppContext} from '../app/AppContext';
-import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 type Asset = RepoAssetTableFragment;
@@ -27,37 +23,10 @@ type RowType =
   | {type: 'asset'; id: string; definition: Asset};
 
 const UNGROUPED_NAME = 'UNGROUPED';
-const ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY = 'assets-virtualized-expansion-state';
 
 export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
-  const repoKey = repoAddressAsHumanString(repoAddress);
-  const {expandedKeys, onToggle} = useAssetGroupExpansionState(
-    `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
-  );
-
-  const grouped: Record<string, Asset[]> = useMemo(() => {
-    const groups: Record<string, Asset[]> = {};
-    for (const asset of assets) {
-      const groupName = asset.groupName || UNGROUPED_NAME;
-      const assetsForGroup = groups[groupName] || [];
-      groups[groupName] = [...assetsForGroup, asset];
-    }
-    return groups;
-  }, [assets]);
-
-  const flattened: RowType[] = useMemo(() => {
-    const flat: RowType[] = [];
-    Object.entries(grouped).forEach(([groupName, assetsForGroup]) => {
-      flat.push({type: 'group', name: groupName, assetCount: assetsForGroup.length});
-      if (expandedKeys.includes(groupName)) {
-        assetsForGroup.forEach((asset) => {
-          flat.push({type: 'asset', id: asset.id, definition: asset});
-        });
-      }
-    });
-    return flat;
-  }, [grouped, expandedKeys]);
+  const {flattened, expandedKeys, onToggle} = useFlattenedGroupedAssetList({repoAddress, assets});
 
   const rowVirtualizer = useVirtualizer({
     count: flattened.length,
@@ -73,46 +42,44 @@ export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <VirtualizedAssetHeader nameLabel="Asset name" />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const row: RowType = flattened[index]!;
-              const type = row!.type;
-              return type === 'group' ? (
-                <GroupNameRow
-                  repoAddress={repoAddress}
-                  groupName={row.name}
-                  assetCount={row.assetCount}
-                  expanded={expandedKeys.includes(row.name)}
-                  key={key}
-                  height={size}
-                  start={start}
-                  onToggle={onToggle}
-                />
-              ) : (
-                <VirtualizedAssetRow
-                  showCheckboxColumn={false}
-                  definition={row.definition}
-                  path={row.definition.assetKey.path}
-                  key={key}
-                  type="asset"
-                  repoAddress={repoAddress}
-                  showRepoColumn={false}
-                  height={size}
-                  start={start}
-                  checked={false}
-                  onToggleChecked={() => {}}
-                  onWipe={() => {}}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <VirtualizedAssetHeader nameLabel="Asset name" />
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const row: RowType = flattened[index]!;
+            const type = row!.type;
+            return type === 'group' ? (
+              <GroupNameRow
+                repoAddress={repoAddress}
+                groupName={row.name}
+                assetCount={row.assetCount}
+                expanded={expandedKeys.has(row.name)}
+                key={key}
+                height={size}
+                start={start}
+                onToggle={onToggle}
+              />
+            ) : (
+              <VirtualizedAssetRow
+                showCheckboxColumn={false}
+                definition={row.definition}
+                path={row.definition.assetKey.path}
+                key={key}
+                type="asset"
+                repoAddress={repoAddress}
+                showRepoColumn={false}
+                height={size}
+                start={start}
+                checked={false}
+                onToggleChecked={() => {}}
+                onRefresh={() => {}}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };
 
@@ -195,53 +162,4 @@ const ClickableRow = styled(Row)<{$open: boolean}>`
     transition: transform 100ms linear;
     ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
   }
-`;
-
-const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
-
-/**
- * Use localStorage to persist the expanded/collapsed visual state of asset groups.
- */
-const useAssetGroupExpansionState = (storageKey: string) => {
-  const {basePath} = useContext(AppContext);
-  const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
-    `${basePath}:dagster.${storageKey}`,
-    validateExpandedKeys,
-  );
-
-  const onToggle = useCallback(
-    (groupName: string) => {
-      setExpandedKeys((current) => {
-        const nextExpandedKeys = new Set(current || []);
-        if (nextExpandedKeys.has(groupName)) {
-          nextExpandedKeys.delete(groupName);
-        } else {
-          nextExpandedKeys.add(groupName);
-        }
-        return Array.from(nextExpandedKeys);
-      });
-    },
-    [setExpandedKeys],
-  );
-
-  return useMemo(
-    () => ({
-      expandedKeys,
-      onToggle,
-    }),
-    [expandedKeys, onToggle],
-  );
-};
-
-export const REPO_ASSET_TABLE_FRAGMENT = gql`
-  fragment RepoAssetTableFragment on AssetNode {
-    id
-    assetKey {
-      path
-    }
-    groupName
-    ...AssetTableDefinitionFragment
-  }
-
-  ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;

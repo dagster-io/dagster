@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
-    from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
+    from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 
     return "<br>".join(
         [
@@ -30,7 +30,7 @@ def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
     )
 
 
-def _default_failure_email_subject(context) -> str:
+def _default_failure_email_subject(context: "RunFailureSensorContext") -> str:
     return f"Dagster Run Failed: {context.dagster_run.job_name}"
 
 
@@ -54,10 +54,11 @@ def send_email_via_ssl(
     message: str,
     smtp_host: str,
     smtp_port: int,
-):
+    smtp_user: str,
+) -> None:
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
-        server.login(email_from, email_password)
+        server.login(smtp_user, email_password)
         server.sendmail(email_from, email_to, message)
 
 
@@ -68,11 +69,12 @@ def send_email_via_starttls(
     message: str,
     smtp_host: str,
     smtp_port: int,
-):
+    smtp_user: str,
+) -> None:
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls(context=context)
-        server.login(email_from, email_password)
+        server.login(smtp_user, email_password)
         server.sendmail(email_from, email_to, message)
 
 
@@ -80,6 +82,11 @@ def send_email_via_starttls(
     param="job_selection",
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
+)
+@deprecated_param(
+    param="monitor_all_repositories",
+    breaking_version="2.0",
+    additional_warn_text="Use `monitor_all_code_locations` instead.",
 )
 def make_email_on_run_failure_sensor(
     email_from: str,
@@ -90,6 +97,7 @@ def make_email_on_run_failure_sensor(
     smtp_host: str = "smtp.gmail.com",
     smtp_type: str = "SSL",
     smtp_port: Optional[int] = None,
+    smtp_user: Optional[str] = None,
     name: Optional[str] = None,
     webserver_base_url: Optional[str] = None,
     monitored_jobs: Optional[
@@ -114,8 +122,9 @@ def make_email_on_run_failure_sensor(
             ]
         ]
     ] = None,
-    monitor_all_repositories: bool = False,
+    monitor_all_code_locations: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    monitor_all_repositories: bool = False,
 ) -> SensorDefinition:
     """Create a job failure sensor that sends email via the SMTP protocol.
 
@@ -132,6 +141,7 @@ def make_email_on_run_failure_sensor(
         smtp_host (str): The hostname of the SMTP server. Defaults to "smtp.gmail.com".
         smtp_type (str): The protocol; either "SSL" or "STARTTLS". Defaults to SSL.
         smtp_port (Optional[int]): The SMTP port. Defaults to 465 for SSL, 587 for STARTTLS.
+        smtp_user (Optional[str]): The SMTP user for authenticatication in the SMTP server. Defaults to the value of email_from.
         name: (Optional[str]): The name of the sensor. Defaults to "email_on_job_failure".
         webserver_base_url: (Optional[str]): The base url of your dagster-webserver instance. Specify this to allow
             messages to include deeplinks to the failed run.
@@ -139,14 +149,17 @@ def make_email_on_run_failure_sensor(
             The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails. To monitor jobs in external repositories,
             use RepositorySelector and JobSelector.
-        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+        monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, JobDefinition,  RepositorySelector, JobSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
             sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
+        monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
+            Dagster instance. If set to True, an error will be raised if you also specify
+            monitored_jobs or job_selection. Defaults to False.
 
     Examples:
         .. code-block:: python
@@ -186,12 +199,13 @@ def make_email_on_run_failure_sensor(
     )
 
     jobs = monitored_jobs if monitored_jobs else job_selection
+    monitor_all = monitor_all_code_locations or monitor_all_repositories
 
     @run_failure_sensor(
         name=name,
         monitored_jobs=jobs,
         default_status=default_status,
-        monitor_all_repositories=monitor_all_repositories,
+        monitor_all_code_locations=monitor_all,
     )
     def email_on_run_failure(context: RunFailureSensorContext):
         email_body = email_body_fn(context)
@@ -211,11 +225,23 @@ def make_email_on_run_failure_sensor(
 
         if smtp_type == "SSL":
             send_email_via_ssl(
-                email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 465
+                email_from,
+                email_password,
+                email_to,
+                message,
+                smtp_host,
+                smtp_port=smtp_port or 465,
+                smtp_user=smtp_user or email_from,
             )
         elif smtp_type == "STARTTLS":
             send_email_via_starttls(
-                email_from, email_password, email_to, message, smtp_host, smtp_port=smtp_port or 587
+                email_from,
+                email_password,
+                email_to,
+                message,
+                smtp_host,
+                smtp_port=smtp_port or 587,
+                smtp_user=smtp_user or email_from,
             )
         else:
             raise DagsterInvalidDefinitionError(f'smtp_type "{smtp_type}" is not supported.')

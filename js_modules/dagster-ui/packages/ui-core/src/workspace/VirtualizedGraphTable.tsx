@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
@@ -9,7 +8,8 @@ import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';
 import {workspacePathFromAddress} from './workspacePath';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {gql, useLazyQuery} from '../apollo-client';
+import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 export type Graph = {name: string; path: string; description: string | null};
 
@@ -32,40 +32,29 @@ export const VirtualizedGraphTable = ({repoAddress, graphs}: Props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <Box
-        border="top-and-bottom"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '100%',
-          height: '32px',
-          fontSize: '12px',
-          color: Colors.textLight(),
-        }}
-      >
-        <HeaderCell>Graph</HeaderCell>
-      </Box>
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const row: Graph = graphs[index]!;
-              return (
-                <GraphRow
-                  key={key}
-                  name={row.name}
-                  description={row.description}
-                  path={row.path}
-                  repoAddress={repoAddress}
-                  height={size}
-                  start={start}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <HeaderRow templateColumns="100%" sticky>
+          <HeaderCell>Graph</HeaderCell>
+        </HeaderRow>
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const row: Graph = graphs[index]!;
+            return (
+              <GraphRow
+                key={key}
+                name={row.name}
+                description={row.description}
+                path={row.path}
+                repoAddress={repoAddress}
+                height={size}
+                start={start}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };
 

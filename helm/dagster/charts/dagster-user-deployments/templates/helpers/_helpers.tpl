@@ -130,20 +130,23 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if .schedulerName }}
     scheduler_name: {{ .schedulerName }}
     {{- end }}
-    namespace: {{ $.Release.Namespace }}
+    namespace: {{ coalesce .deploymentNamespace $.Release.Namespace }}
     service_account_name: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
     {{- if and (.env) (kindIs "slice" .env) }}
     env: {{- .env | toYaml | nindent 6 }}
     {{- end }}
-    {{- if or .sidecarContainers .initContainers }}
     run_k8s_config:
       pod_spec_config:
+        automount_service_account_token: true
         {{- if .sidecarContainers }}
         containers: {{- toYaml .sidecarContainers | nindent 10 }}
         {{- end }}
         {{- if .initContainers }}
         init_containers: {{- toYaml .initContainers | nindent 10 }}
         {{- end }}
-    {{- end }}
+      {{- if .annotations }}
+      pod_template_spec_metadata:
+        annotations: {{- toYaml .annotations | nindent 10 }}
+      {{- end }}
   {{- end }}
 {{- end -}}

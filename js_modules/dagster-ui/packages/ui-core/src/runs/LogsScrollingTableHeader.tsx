@@ -22,14 +22,14 @@ export const ColumnWidthsContext = React.createContext({
 });
 
 export class ColumnWidthsProvider extends React.Component<
-  {children: React.ReactNode; onWidthsChanged: (widths: typeof ColumnWidths) => void},
+  {children: React.ReactNode; onWidthsChanged?: (widths: typeof ColumnWidths) => void},
   typeof ColumnWidths
 > {
   state = ColumnWidths;
 
   onWidthsChangedFromContext = (columnWidths: typeof ColumnWidths) => {
     window.localStorage.setItem(ColumnWidthsStorageKey, JSON.stringify(columnWidths));
-    this.props.onWidthsChanged(columnWidths);
+    this.props.onWidthsChanged && this.props.onWidthsChanged(columnWidths);
     this.setState(columnWidths);
   };
 

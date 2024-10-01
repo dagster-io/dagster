@@ -1,4 +1,3 @@
-import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import keyBy from 'lodash/keyBy';
 import {useEffect, useMemo, useState} from 'react';
@@ -11,10 +10,12 @@ import {
   PartitionHealthQuery,
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
+import {gql, useApolloClient} from '../apollo-client';
 import {assertUnreachable} from '../app/Util';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
 import {assembleIntoSpans} from '../partitions/SpanRepresentation';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 type PartitionHealthMaterializedPartitions = Extract<
   PartitionHealthQuery['assetNodeOrError'],
@@ -593,7 +594,7 @@ export function usePartitionHealthData(
     run();
   }, [client, missingKeyJSON, cacheKey]);
 
-  return useMemo(() => {
+  const data = useMemo(() => {
     const assetKeyJSONs = JSON.parse(assetKeyJSON);
     return result.filter(
       (r) =>
@@ -601,6 +602,8 @@ export function usePartitionHealthData(
         (r.fetchedAt === cacheKey || cacheClearStrategy === 'background'),
     );
   }, [assetKeyJSON, result, cacheKey, cacheClearStrategy]);
+  useBlockTraceUntilTrue('usePartitionHealthData', data.length === assetKeys.length);
+  return data;
 }
 
 // This function returns a string value that changes when the partition health bar

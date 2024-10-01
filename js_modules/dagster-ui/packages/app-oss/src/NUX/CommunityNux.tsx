@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Body,
   Box,
@@ -12,6 +11,7 @@ import {
   Spinner,
   TextInput,
 } from '@dagster-io/ui-components';
+import {gql, useMutation, useSuspenseQuery} from '@dagster-io/ui-core/apollo-client';
 import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage';
 import * as React from 'react';
 import isEmail from 'validator/lib/isEmail';
@@ -21,14 +21,18 @@ export const CommunityNux = () => {
     'communityNux',
     (data) => data,
   );
-  const {data, loading} = useQuery(GET_SHOULD_SHOW_NUX_QUERY);
+  const {data} = useSuspenseQuery(GET_SHOULD_SHOW_NUX_QUERY);
   const [dismissOnServer] = useMutation(SET_NUX_SEEN_MUTATION);
 
   if (!isLocalhost()) {
     // Yes, we only want to show this on localhost for now.
     return null;
   }
-  if (didDismissCommunityNux || loading || (data && !data.shouldShowNux)) {
+  if (
+    didDismissCommunityNux ||
+    !data ||
+    (typeof data === 'object' && 'shouldShowNux' in data && !data.shouldShowNux)
+  ) {
     return null;
   }
   return (
@@ -199,11 +203,17 @@ const RecaptchaIFrame = ({dismiss, newsletter, email}: RecaptchaIFrameProps) => 
     };
   }, [dismiss]);
 
+  const iframeSrc = new URL(`${window.location.protocol}${IFRAME_SRC}`);
+  iframeSrc.searchParams.append('email', email);
+  if (newsletter) {
+    iframeSrc.searchParams.append('newsletter', '1');
+  }
+
   return (
     <Box padding={32} flex={{justifyContent: 'center', alignItems: 'center'}}>
       {iframeLoaded ? null : <Spinner purpose="section" />}
       <iframe
-        src={`${IFRAME_SRC}?email=${email}${newsletter ? '&newsletter=1' : ''}`}
+        src={iframeSrc.toString()}
         width={width}
         height={height}
         style={{

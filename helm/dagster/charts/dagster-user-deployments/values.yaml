@@ -40,9 +40,9 @@ deployments:
     #   - "-a"
     #   - "define_demo_execution_repo"
     # The `dagsterApiGrpcArgs` key can also be replaced with `codeServerArgs` to use a new
-    # experimental `dagster code-server start` command instead of `dagster api grpc`, which takes
-    # identical arguments but can reload its definitions from within the Dagster UI without
-    # needing to restart the user code deployment pod.
+    # experimental `dagster code-server start` command instead of `dagster api grpc`, which
+    # can reload its definitions from within the Dagster UI without needing to restart the
+    # user code deployment pod.
     dagsterApiGrpcArgs:
       - "-f"
       - "/example_project/example_repo/repo.py"

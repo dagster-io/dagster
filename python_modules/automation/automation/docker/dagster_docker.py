@@ -1,18 +1,18 @@
 import contextlib
 import os
-from typing import Callable, Dict, Iterator, List, NamedTuple, Optional
+from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional
 
 import dagster._check as check
 import yaml
 
-from ..git import git_repo_root
-from .ecr import ecr_image, get_aws_account_id, get_aws_region
-from .utils import (
+from automation.docker.ecr import ecr_image, get_aws_account_id, get_aws_region
+from automation.docker.utils import (
     execute_docker_build,
     execute_docker_push,
     execute_docker_tag,
     python_version_image_tag,
 )
+from automation.git import git_repo_root
 
 # Default repository prefix used for local images
 DEFAULT_LOCAL_PREFIX = "dagster"
@@ -60,7 +60,7 @@ class DagsterDockerImage(
         cls,
         image: str,
         images_path: Optional[str] = None,
-        build_cm: Callable = do_nothing,
+        build_cm: Callable[..., Any] = do_nothing,
     ):
         return super(DagsterDockerImage, cls).__new__(
             cls,

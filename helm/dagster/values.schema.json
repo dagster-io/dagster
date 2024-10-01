@@ -613,6 +613,10 @@
                 "includeConfigInLaunchedRuns": {
                     "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
+                "deploymentNamespace": {
+                    "title": "Deploymentnamespace",
+                    "type": "string"
+                },
                 "port": {
                     "title": "Port",
                     "type": "integer"
@@ -2525,6 +2529,24 @@
             ],
             "additionalProperties": false
         },
+        "BlockOpConcurrencyLimitedRuns": {
+            "title": "BlockOpConcurrencyLimitedRuns",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "opConcurrencySlotBuffer": {
+                    "title": "Opconcurrencyslotbuffer",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "enabled",
+                "opConcurrencySlotBuffer"
+            ]
+        },
         "QueuedRunCoordinatorConfig": {
             "title": "QueuedRunCoordinatorConfig",
             "type": "object",
@@ -2590,6 +2612,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "blockOpConcurrencyLimitedRuns": {
+                    "title": "BlockOpConcurrencyLimitedRuns",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/BlockOpConcurrencyLimitedRuns"
                         },
                         {
                             "type": "null"
@@ -2685,6 +2718,41 @@
                         }
                     }
                 }
+            ]
+        },
+        "RunRetries": {
+            "title": "RunRetries",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "maxRetries": {
+                    "title": "Maxretries",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "retryOnAssetOrOpFailure": {
+                    "title": "Retryonassetoropfailure",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "enabled"
             ]
         },
         "Sensors": {
@@ -2855,8 +2923,7 @@
                     "type": "object"
                 },
                 "runRetries": {
-                    "title": "Runretries",
-                    "type": "object"
+                    "$ref": "#/definitions/RunRetries"
                 },
                 "sensors": {
                     "$ref": "#/definitions/Sensors"

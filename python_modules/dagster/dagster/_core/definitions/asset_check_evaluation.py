@@ -66,6 +66,7 @@ class AssetCheckEvaluation(
                 Optional[AssetCheckEvaluationTargetMaterializationData],
             ),
             ("severity", AssetCheckSeverity),
+            ("description", Optional[str]),
         ],
     )
 ):
@@ -86,6 +87,8 @@ class AssetCheckEvaluation(
             The latest materialization at execution time of the check.
         severity (AssetCheckSeverity):
             Severity of the check result.
+        description (Optional[str]):
+            A text description of the result of the check evaluation.
     """
 
     def __new__(
@@ -96,6 +99,7 @@ class AssetCheckEvaluation(
         metadata: Mapping[str, MetadataValue],
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
+        description: Optional[str] = None,
     ):
         return super(AssetCheckEvaluation, cls).__new__(
             cls,
@@ -109,6 +113,7 @@ class AssetCheckEvaluation(
                 AssetCheckEvaluationTargetMaterializationData,
             ),
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
+            description=check.opt_str_param(description, "description"),
         )
 
     @property

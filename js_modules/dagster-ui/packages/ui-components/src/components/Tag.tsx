@@ -7,7 +7,9 @@ import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 
-const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+export type TagIntent = React.ComponentProps<typeof BlueprintTag>['intent'];
+
+const intentToFillColor = (intent: TagIntent) => {
   switch (intent) {
     case 'primary':
       return Colors.backgroundBlue();
@@ -23,7 +25,7 @@ const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['in
   }
 };
 
-const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+const intentToTextColor = (intent: TagIntent) => {
   switch (intent) {
     case 'primary':
       return Colors.textBlue();
@@ -39,7 +41,7 @@ const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintTag>['in
   }
 };
 
-const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+const intentToIconColor = (intent: TagIntent) => {
   switch (intent) {
     case 'primary':
       return Colors.accentBlue();

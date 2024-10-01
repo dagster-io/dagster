@@ -16,7 +16,7 @@ import {
   sensorOregonCurrentlyRunning,
 } from '../__fixtures__/SensorState.fixtures';
 
-jest.mock('../..//runs/NavigationBlock', () => ({
+jest.mock('../../runs/NavigationBlock', () => ({
   NavigationBlock: () => <div />,
 }));
 

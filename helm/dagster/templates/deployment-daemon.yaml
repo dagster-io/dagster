@@ -45,6 +45,7 @@ spec:
       imagePullSecrets:
         {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
       serviceAccountName: {{ include "dagster.serviceAccountName" $ }}
+      automountServiceAccountToken: true
       securityContext:
         {{- toYaml .Values.dagsterDaemon.podSecurityContext | nindent 8 }}
       initContainers:

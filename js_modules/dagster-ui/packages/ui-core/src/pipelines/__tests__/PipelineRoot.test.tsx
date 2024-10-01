@@ -1,10 +1,10 @@
 import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../../workspace/repoAddressAsString';
-import {JobFeatureProvider} from '../JobFeatureContext';
 import {PipelineRoot} from '../PipelineRoot';
 
 jest.mock('../../launchpad/LaunchpadAllowedRoot', () => ({
@@ -51,11 +51,11 @@ describe('PipelineRoot', () => {
 
   it('renders overview by default', async () => {
     render(
-      <JobFeatureProvider>
+      <RecoilRoot>
         <MemoryRouter initialEntries={[path]}>
           <PipelineRoot repoAddress={repoAddress} />
         </MemoryRouter>
-      </JobFeatureProvider>,
+      </RecoilRoot>,
     );
 
     const overviewDummy = await screen.findByText(/pipeline overview placeholder/i);
@@ -70,13 +70,13 @@ describe('PipelineRoot', () => {
     };
 
     render(
-      <JobFeatureProvider>
+      <RecoilRoot>
         <TestPermissionsProvider locationOverrides={locationPermissions}>
           <MemoryRouter initialEntries={[`${path}/playground`]}>
             <PipelineRoot repoAddress={repoAddress} />
           </MemoryRouter>
         </TestPermissionsProvider>
-      </JobFeatureProvider>,
+      </RecoilRoot>,
     );
 
     const playgroundDummy = await screen.findByText(/launchpad allowed placeholder/i);
@@ -91,13 +91,13 @@ describe('PipelineRoot', () => {
     };
 
     render(
-      <JobFeatureProvider>
+      <RecoilRoot>
         <TestPermissionsProvider locationOverrides={locationPermissions}>
           <MemoryRouter initialEntries={[`${path}/playground`]}>
             <PipelineRoot repoAddress={repoAddress} />
           </MemoryRouter>
         </TestPermissionsProvider>
-      </JobFeatureProvider>,
+      </RecoilRoot>,
     );
 
     const overviewDummy = await screen.findByText(/pipeline or job disambiguation placeholder/i);

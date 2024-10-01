@@ -2,10 +2,13 @@ import typing
 
 import dagster._check as check
 from dagster._config import Permissive
-from dagster._core.types.dagster_type import String
-
-from .config_schema import DagsterTypeLoader, dagster_type_loader
-from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
+from dagster._core.types.config_schema import DagsterTypeLoader, dagster_type_loader
+from dagster._core.types.dagster_type import (
+    DagsterType,
+    PythonObjectDagsterType,
+    String,
+    resolve_dagster_type,
+)
 
 
 @dagster_type_loader(Permissive())
@@ -23,7 +26,7 @@ PythonDict = PythonObjectDagsterType(
 
 class TypedDictLoader(DagsterTypeLoader):
     def __init__(self, key_dagster_type, value_dagster_type):
-        from ..._config import ConfigTypeKind, Map, ScalarUnion
+        from dagster._config import ConfigTypeKind, Map, ScalarUnion
 
         self._key_dagster_type = check.inst_param(key_dagster_type, "key_dagster_type", DagsterType)
         check.param_invariant(self._key_dagster_type.loader, "key_dagster_type")

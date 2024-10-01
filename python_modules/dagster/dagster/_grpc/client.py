@@ -1,8 +1,20 @@
 import os
 import sys
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from threading import Event
-from typing import Any, Dict, Iterator, NoReturn, Optional, Sequence, Tuple, Type, cast
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    NoReturn,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    cast,
+)
 
 import google.protobuf.message
 import grpc
@@ -13,15 +25,12 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
-from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import serialize_value
-from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .__generated__ import DagsterApiStub, api_pb2
-from .server import GrpcServerProcess
-from .types import (
+from dagster._grpc.__generated__ import DagsterApiStub, api_pb2
+from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
     ExecuteExternalJobArgs,
@@ -33,7 +42,7 @@ from .types import (
     PartitionSetExecutionParamArgs,
     SensorExecutionArgs,
 )
-from .utils import (
+from dagster._grpc.utils import (
     default_grpc_timeout,
     default_repository_grpc_timeout,
     default_schedule_grpc_timeout,
@@ -41,6 +50,8 @@ from .utils import (
     max_rx_bytes,
     max_send_bytes,
 )
+from dagster._serdes import serialize_value
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 
@@ -130,6 +141,28 @@ class DagsterGrpcClient:
         ) as channel:
             yield channel
 
+    @asynccontextmanager
+    async def _async_channel(self) -> AsyncIterator[grpc.Channel]:
+        options = [
+            ("grpc.max_receive_message_length", max_rx_bytes()),
+            ("grpc.max_send_message_length", max_send_bytes()),
+        ]
+        async with (
+            grpc.aio.secure_channel(
+                self._server_address,
+                self._ssl_creds,
+                options=options,
+                compression=grpc.Compression.Gzip,
+            )
+            if self._use_ssl
+            else grpc.aio.insecure_channel(
+                self._server_address,
+                options=options,
+                compression=grpc.Compression.Gzip,
+            )
+        ) as channel:
+            yield channel
+
     def _get_response(
         self,
         method: str,
@@ -139,6 +172,16 @@ class DagsterGrpcClient:
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             return getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
+
+    async def _gen_response(
+        self,
+        method: str,
+        request: google.protobuf.message.Message,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+    ):
+        async with self._async_channel() as channel:
+            stub = DagsterApiStub(channel)
+            return await getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
 
     def _raise_grpc_exception(
         self,
@@ -174,6 +217,21 @@ class DagsterGrpcClient:
                 e, timeout=timeout, custom_timeout_message=custom_timeout_message
             )
 
+    async def _gen_query(
+        self,
+        method: str,
+        request_type: Type[google.protobuf.message.Message],
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+        custom_timeout_message: Optional[str] = None,
+        **kwargs,
+    ):
+        try:
+            return await self._gen_response(method, request=request_type(**kwargs), timeout=timeout)
+        except Exception as e:
+            self._raise_grpc_exception(
+                e, timeout=timeout, custom_timeout_message=custom_timeout_message
+            )
+
     def _get_streaming_response(
         self,
         method: str,
@@ -183,6 +241,19 @@ class DagsterGrpcClient:
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             yield from getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
+
+    async def _gen_streaming_response(
+        self,
+        method: str,
+        request: google.protobuf.message.Message,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+    ) -> AsyncIterator[Any]:
+        async with self._async_channel() as channel:
+            stub = DagsterApiStub(channel)
+            async for response in getattr(stub, method)(
+                request, metadata=self._metadata, timeout=timeout
+            ):
+                yield response
 
     def _streaming_query(
         self,
@@ -196,6 +267,24 @@ class DagsterGrpcClient:
             yield from self._get_streaming_response(
                 method, request=request_type(**kwargs), timeout=timeout
             )
+        except Exception as e:
+            self._raise_grpc_exception(
+                e, timeout=timeout, custom_timeout_message=custom_timeout_message
+            )
+
+    async def _gen_streaming_query(
+        self,
+        method: str,
+        request_type: Type[google.protobuf.message.Message],
+        timeout=DEFAULT_GRPC_TIMEOUT,
+        custom_timeout_message=None,
+        **kwargs,
+    ) -> AsyncIterable[Any]:
+        try:
+            async for response in self._gen_streaming_response(
+                method, request=request_type(**kwargs), timeout=timeout
+            ):
+                yield response
         except Exception as e:
             self._raise_grpc_exception(
                 e, timeout=timeout, custom_timeout_message=custom_timeout_message
@@ -248,6 +337,10 @@ class DagsterGrpcClient:
 
     def list_repositories(self) -> str:
         res = self._query("ListRepositories", api_pb2.ListRepositoriesRequest)
+        return res.serialized_list_repositories_response_or_error
+
+    async def gen_list_repositories(self) -> str:
+        res = await self._gen_query("ListRepositories", api_pb2.ListRepositoriesRequest)
         return res.serialized_list_repositories_response_or_error
 
     def external_partition_names(self, partition_names_args: PartitionNamesArgs) -> str:
@@ -324,13 +417,13 @@ class DagsterGrpcClient:
 
     def external_repository(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
     ) -> str:
         check.inst_param(
             external_repository_origin,
             "external_repository_origin",
-            ExternalRepositoryOrigin,
+            RemoteRepositoryOrigin,
         )
 
         res = self._query(
@@ -345,13 +438,13 @@ class DagsterGrpcClient:
 
     def external_job(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         job_name: str,
     ) -> api_pb2.ExternalJobReply:
         check.inst_param(
             external_repository_origin,
             "external_repository_origin",
-            ExternalRepositoryOrigin,
+            RemoteRepositoryOrigin,
         )
 
         return self._query(
@@ -363,11 +456,30 @@ class DagsterGrpcClient:
 
     def streaming_external_repository(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
         timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
     ) -> Iterator[dict]:
         for res in self._streaming_query(
+            "StreamingExternalRepository",
+            api_pb2.ExternalRepositoryRequest,
+            # Rename parameter
+            serialized_repository_python_origin=serialize_value(external_repository_origin),
+            defer_snapshots=defer_snapshots,
+            timeout=timeout,
+        ):
+            yield {
+                "sequence_number": res.sequence_number,
+                "serialized_external_repository_chunk": res.serialized_external_repository_chunk,
+            }
+
+    async def gen_streaming_external_repository(
+        self,
+        external_repository_origin: RemoteRepositoryOrigin,
+        defer_snapshots: bool = False,
+        timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
+    ) -> AsyncIterable[dict]:
+        async for res in self._gen_streaming_query(
             "StreamingExternalRepository",
             api_pb2.ExternalRepositoryRequest,
             # Rename parameter

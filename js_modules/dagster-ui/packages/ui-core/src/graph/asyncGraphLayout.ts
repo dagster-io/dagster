@@ -1,11 +1,13 @@
 import memoize from 'lodash/memoize';
-import {useEffect, useMemo, useReducer} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useReducer, useRef} from 'react';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -61,9 +63,12 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
   }
 
   return `${JSON.stringify(opts)}${JSON.stringify({
+    version: 2,
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
-    nodes: Object.keys(graphData.nodes).sort(),
+    nodes: Object.keys(graphData.nodes)
+      .sort()
+      .map((key) => graphData.nodes[key]),
     expandedGroups: graphData.expandedGroups,
   })}`;
 };
@@ -168,6 +173,18 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
     }
   }, [cacheKey, ops, parentOp, runAsync]);
 
+  const uid = useRef(0);
+  useDangerousRenderEffect(() => {
+    uid.current++;
+  }, [cacheKey, ops, parentOp, runAsync]);
+
+  const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
+
+  // Add a UID to create a new dependency whenever the layout inputs change
+  useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
+    uid: uid.current.toString(),
+  });
+
   return {
     loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
     async: runAsync,
@@ -175,18 +192,22 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   };
 }
 
-export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) {
+export function useAssetLayout(
+  _graphData: GraphData,
+  expandedGroups: string[],
+  opts: LayoutAssetGraphOptions,
+) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const flags = useFeatureFlags();
 
   const graphData = useMemo(() => ({..._graphData, expandedGroups}), [expandedGroups, _graphData]);
 
-  const opts = useMemo(() => ({horizontalDAGs: true}), []);
   const cacheKey = _assetLayoutCacheKey(graphData, opts);
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    let canceled = false;
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
@@ -194,6 +215,9 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
         layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
+      }
+      if (canceled) {
+        return;
       }
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     }
@@ -204,10 +228,26 @@ export function useAssetLayout(_graphData: GraphData, expandedGroups: string[]) 
     } else {
       void runAsyncLayout();
     }
+
+    return () => {
+      canceled = true;
+    };
   }, [cacheKey, graphData, runAsync, flags, opts]);
 
+  const uid = useRef(0);
+  useDangerousRenderEffect(() => {
+    uid.current++;
+  }, [cacheKey, graphData, runAsync, flags, opts]);
+
+  const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
+
+  // Add a UID to create a new dependency whenever the layout inputs change
+  useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
+    uid: uid.current.toString(),
+  });
+
   return {
-    loading: state.loading || !state.layout || state.cacheKey !== cacheKey,
+    loading,
     async: runAsync,
     layout: state.layout as AssetGraphLayout | null,
   };

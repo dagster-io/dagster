@@ -1,6 +1,9 @@
-from typing import NamedTuple, Optional, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Iterator, NamedTuple, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -47,3 +50,28 @@ class LoadableTargetOrigin(
         )
 
         return args
+
+    @staticmethod
+    def get() -> "LoadableTargetOrigin":
+        ctx = _current_loadable_target_origin.get(None)
+        if ctx is None:
+            raise DagsterInvariantViolationError(
+                "No LoadableTargetOrigin is currently being loaded."
+            )
+        return ctx
+
+
+_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = ContextVar(
+    "_current_loadable_target_origin", default=None
+)
+
+
+@contextmanager
+def enter_loadable_target_origin_load_context(
+    loadable_target_origin: LoadableTargetOrigin,
+) -> Iterator[None]:
+    token = _current_loadable_target_origin.set(loadable_target_origin)
+    try:
+        yield
+    finally:
+        _current_loadable_target_origin.reset(token)

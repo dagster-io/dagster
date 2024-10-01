@@ -10,7 +10,7 @@ import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {
   LogsRowStructuredFragment,
-  LogsRowStructuredFragment_AssetCheckEvaluationEvent_,
+  LogsRowStructuredFragment_AssetCheckEvaluationEvent,
 } from './types/LogsRow.types';
 import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
@@ -26,7 +26,7 @@ import {
   MetadataEntries,
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
@@ -184,6 +184,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
     case 'AlertFailureEvent':
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
     case 'ResourceInitFailureEvent':
+    case 'RunCanceledEvent':
     case 'RunFailureEvent':
       if (node.error) {
         return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
@@ -201,11 +202,16 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
     case 'StepWorkerStartedEvent':
     case 'StepWorkerStartingEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
-    case 'RunCanceledEvent':
-      return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
       if (node.error) {
-        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
+        return (
+          <FailureContent
+            message={node.message}
+            error={node.error}
+            metadataEntries={node.metadataEntries}
+            eventType={eventType}
+          />
+        );
       }
       return (
         <DefaultContent
@@ -285,12 +291,12 @@ const DefaultContent = ({
             style={
               eventColor
                 ? {
-                    fontSize: '0.9em',
+                    fontSize: '12px',
                     color: 'black',
                     background: eventColor,
                   }
                 : {
-                    fontSize: '0.9em',
+                    fontSize: '12px',
                   }
             }
           >
@@ -451,7 +457,7 @@ const AssetCheckEvaluationContent = ({
   node,
   eventType,
 }: {
-  node: LogsRowStructuredFragment_AssetCheckEvaluationEvent_;
+  node: LogsRowStructuredFragment_AssetCheckEvaluationEvent;
   eventType: string;
 }) => {
   const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;

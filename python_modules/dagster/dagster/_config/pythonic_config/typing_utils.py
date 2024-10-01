@@ -1,18 +1,17 @@
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, cast
 
 from pydantic import Field
-from typing_extensions import Annotated, dataclass_transform, get_origin
+from typing_extensions import Annotated, Self, dataclass_transform, get_origin
 
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 
-from .type_check_utils import safe_is_subclass
-
 try:
-    # Pydantic 2.x
-    from pydantic.main import ModelMetaclass
-except ImportError:
     # Pydantic 1.x
     from pydantic._internal._model_construction import ModelMetaclass  # type: ignore
+except ImportError:
+    # Pydantic 2.x
+    from pydantic.main import ModelMetaclass
 
 if TYPE_CHECKING:
     from dagster._config.pythonic_config import PartialResource
@@ -111,6 +110,7 @@ class BaseResourceMeta(BaseConfigMeta):
         for field in annotations:
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
+
                 if (
                     get_origin(annotations[field])
                     == LateBoundTypesForResourceTypeChecking.get_resource_rep_type()
@@ -136,9 +136,6 @@ class BaseResourceMeta(BaseConfigMeta):
 
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces, **kwargs)
-
-
-T_Self = TypeVar("T_Self", bound="TypecheckAllowPartialResourceInitParams")
 
 
 class TypecheckAllowPartialResourceInitParams:
@@ -176,12 +173,21 @@ class TypecheckAllowPartialResourceInitParams:
     def __set_name__(self, _owner, name):
         self._assigned_name = name
 
-    def __get__(self: "T_Self", obj: Any, __owner: Any) -> "T_Self":
+    def __get__(self: Self, obj: Any, owner: Any) -> Self:
         # no-op implementation (only used to affect type signature)
-        return cast(T_Self, getattr(obj, self._assigned_name))
+        return cast(Self, getattr(obj, self._assigned_name))
 
-    def __set__(
-        self: "T_Self", obj: Optional[object], value: Union["T_Self", "PartialResource[T_Self]"]
-    ) -> None:
+    # The annotation her has been temporarily changed from:
+    #     value: Union[Self, "PartialResource[Self]"]
+    # to:
+    #     value: Union[Any, "PartialResource[Any]"]
+    # This is because of a bug in mypy that is incorrectly interpreting the
+    # signature and can cause a false positive type error for users. This only
+    # started being detected in our test_type_signatures.py tests on 2024-02-02
+    # when some annotations elsewhere were added, likely causing mypy to
+    # analyze code it was previously skipping. The annotation should be
+    # reverted when the bug is fixed or another solution that surface as type
+    # errors for mypy users is found.
+    def __set__(self, obj: Optional[object], value: Union[Any, "PartialResource[Any]"]) -> None:
         # no-op implementation (only used to affect type signature)
         setattr(obj, self._assigned_name, value)

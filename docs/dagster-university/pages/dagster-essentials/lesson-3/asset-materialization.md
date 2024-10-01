@@ -12,7 +12,7 @@ To better understand how materialization works, let’s take another look at the
 
 ```python file=/dagster-university/lesson_3.py startafter=start_taxi_trips_file_asset endbefore=end_taxi_trips_file_asset
 @asset
-def taxi_trips_file():
+def taxi_trips_file() -> None:
     """The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal."""
     month_to_fetch = "2023-03"
     raw_trips = requests.get(

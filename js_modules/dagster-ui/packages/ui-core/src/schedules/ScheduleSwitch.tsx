@@ -1,5 +1,5 @@
-import {gql, useMutation} from '@apollo/client';
-import {Checkbox, Tooltip} from '@dagster-io/ui-components';
+import {Box, Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
 import {
   START_SCHEDULE_MUTATION,
@@ -12,9 +12,15 @@ import {
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
-import {ScheduleSwitchFragment} from './types/ScheduleSwitch.types';
+import {
+  ScheduleStateQuery,
+  ScheduleStateQueryVariables,
+  ScheduleSwitchFragment,
+} from './types/ScheduleSwitch.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus} from '../graphql/types';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -27,42 +33,86 @@ interface Props {
 export const ScheduleSwitch = (props: Props) => {
   const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
-  const {status, id, selectorId} = scheduleState;
+  const {id} = scheduleState;
 
   const {
     permissions: {canStartSchedule, canStopRunningSchedule},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
+  const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
+
+  const variables = {
+    id: schedule.id,
+    selector: {
+      ...repoAddressSelector,
+      name,
+    },
+  };
+
+  const {data, loading} = useQuery<ScheduleStateQuery, ScheduleStateQueryVariables>(
+    SCHEDULE_STATE_QUERY,
+    {variables},
+  );
+
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
     StartThisScheduleMutation,
     StartThisScheduleMutationVariables
   >(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
+    refetchQueries: [{variables, query: SCHEDULE_STATE_QUERY}],
+    awaitRefetchQueries: true,
   });
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
     StopScheduleMutation,
     StopScheduleMutationVariables
   >(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
+    refetchQueries: [{variables, query: SCHEDULE_STATE_QUERY}],
+    awaitRefetchQueries: true,
   });
-
-  const scheduleSelector = {
-    ...repoAddressToSelector(repoAddress),
-    scheduleName: name,
-  };
 
   const onStatusChange = () => {
     if (status === InstigationStatus.RUNNING) {
       stopSchedule({
-        variables: {scheduleOriginId: id, scheduleSelectorId: selectorId},
+        variables: {id},
       });
     } else {
       startSchedule({
-        variables: {scheduleSelector},
+        variables: {
+          scheduleSelector: {
+            ...repoAddressSelector,
+            scheduleName: name,
+          },
+        },
       });
     }
   };
+
+  // Status according to schedule object passed in (may be outdated if its from the workspace snapshot)
+  let status = schedule.scheduleState.status;
+
+  if (!data && loading) {
+    return (
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{width: '30px'}}>
+        <Spinner purpose="body-text" />
+      </Box>
+    );
+  }
+  if (
+    !['InstigationState', 'InstigationStateNotFoundError'].includes(
+      data?.instigationStateOrError.__typename as any,
+    )
+  ) {
+    return (
+      <Tooltip content="Error loading schedule state">
+        <Icon name="error" color={Colors.accentRed()} />;
+      </Tooltip>
+    );
+  } else if (data?.instigationStateOrError.__typename === 'InstigationState') {
+    // status according to latest data
+    status = data?.instigationStateOrError.status;
+  }
 
   const running = status === InstigationStatus.RUNNING;
 
@@ -118,4 +168,16 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
       status
     }
   }
+`;
+
+const SCHEDULE_STATE_QUERY = gql`
+  query ScheduleStateQuery($id: String!, $selector: InstigationSelector!) {
+    instigationStateOrError(id: $id, instigationSelector: $selector) {
+      ... on InstigationState {
+        id
+        ...InstigationStateBaseFragment
+      }
+    }
+  }
+  ${INSTIGATION_STATE_BASE_FRAGMENT}
 `;

@@ -16,19 +16,21 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 - [Transitioning data pipelines from development to production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) - Learn how to seamlessly transition your Dagster pipelines from local development to production
 
-- [Testing against production with Dagster Cloud Branch Deployments](/guides/dagster/branch_deployments) - Use Dagster Cloud Branch Deployments to quickly iterate on your Dagster code without impacting production data
+- [Testing against production with Dagster+ Branch Deployments](/guides/dagster/branch_deployments) - Use Dagster+ Branch Deployments to quickly iterate on your Dagster code without impacting production data
 
 ---
 
 ## Working with data assets
 
-- [Understanding how assets relate to ops and graphs](/guides/dagster/how-assets-relate-to-ops-and-graphs) - Learn how software-defined assets relate to ops and graphs, and when to use one over the other
+- [Understanding how assets relate to ops and graphs](/guides/dagster/how-assets-relate-to-ops-and-graphs) - Learn how asset definitions relate to ops and graphs, and when to use one over the other
 
-- [Moving to Software-defined Assets](/guides/dagster/enriching-with-software-defined-assets) - Already using ops and graphs, but not Software-defined Assets? Learn why and how to use Software-defined Assets
+- [Moving to asset definitions](/guides/dagster/enriching-with-software-defined-assets) - Already using ops and graphs, but not asset definitions? Learn why and how to use asset definitions
 
-- [Using Software-defined assets with Pandas and PySpark](/guides/dagster/software-defined-assets) - A quick introduction to Software-defined Assets, featuring Pandas and PySpark
+- [Using asset checks to check data freshness](/concepts/assets/asset-checks/checking-for-data-freshness) - Use freshness checks, a type of [asset check](/concepts/assets/asset-checks) to identify the data assets that are overdue for an update
 
-- [Testing assets](/guides/dagster/testing-assets) - Learn to test your Software-defined Assets
+- [Using asset definitions with Pandas and PySpark](/guides/dagster/software-defined-assets) - A quick introduction to asset definitions, featuring Pandas and PySpark
+
+- [Testing assets](/guides/dagster/testing-assets) - Learn to test your asset definitions
 
 - [Migrating to Pythonic resources and config](/guides/dagster/migrating-to-pythonic-resources-and-config) - Incrementally migrate existing Dagster codebases to Pythonic resources and config
 
@@ -44,19 +46,9 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 ---
 
-## Dagster Pipes (Experimental)
-
-- [Dagster Pipes](/guides/dagster-pipes) - A high-level look at Dagster Pipes, a toolkit for building integrations between Dagster and external execution environments
-
-- [Dagster Pipes tutorial](/guides/dagster-pipes/subprocess) - Get started using Dagster Pipes with this tutorial, where you'll use a subprocess to execute code in an external environment
-
-- [Dagster Pipes details and customization](/guides/dagster-pipes/dagster-pipes-details-and-customization) - Learn about Dagster Pipes APIs and how to compose them to create a custom solution for your data platform
-
----
-
 ## Migrating to Dagster
 
-- [Migrating from Airflow to Dagster](/integrations/airflow/migrating-to-dagster) - Perform a lift-and-shift migration from Airflow to Dagster
+- [Migrating Airflow to Dagster](/guides/migrations/migrating-airflow-to-dagster) - Learn how to migrate your pipelines from Airflow to Dagster
 
 ---
 
@@ -85,5 +77,7 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 ### Experimental features
 
 - [Asset versioning and caching](/guides/dagster/asset-versioning-and-caching) - Memoize assets using Dagster's data versioning system
+
+- [Linking to asset definition code with code references](/guides/dagster/code-references) - Attach code references to your Dagster assets to easily navigate to the code that backs the asset
 
 [def]: /guides/dagster/

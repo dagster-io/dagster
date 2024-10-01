@@ -9,6 +9,8 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
 import {ScheduleResetButton} from './ScheduleResetButton';
@@ -17,12 +19,12 @@ import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {AutomationTargetList} from '../automation/AutomationTargetList';
+import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {PipelineReference} from '../pipelines/PipelineReference';
 import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
@@ -31,23 +33,27 @@ export const ScheduleDetails = (props: {
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
   refreshState: QueryRefreshState;
+  assetSelection: AutomationAssetSelectionFragment | null;
 }) => {
-  const {repoAddress, schedule, refreshState} = props;
+  const {repoAddress, schedule, refreshState, assetSelection} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
   const {scheduleState} = schedule;
   const {status, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const running = status === InstigationStatus.RUNNING;
 
-  const repo = useRepository(repoAddress);
-  const isJob = isThisThingAJob(repo, pipelineName);
-
   const [showTestTickDialog, setShowTestTickDialog] = useState(false);
 
   return (
     <>
       <PageHeader
-        title={<Heading>{name}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <Link to="/automation">Automation</Link>
+            <span>/</span>
+            {name}
+          </Heading>
+        }
         tags={
           <Tag icon="schedule">
             Schedule in <RepositoryLink repoAddress={repoAddress} />
@@ -113,16 +119,19 @@ export const ScheduleDetails = (props: {
               </td>
             </tr>
           )}
-          <tr>
-            <td>{isJob ? 'Job' : 'Pipeline'}</td>
-            <td>
-              <PipelineReference
-                pipelineName={pipelineName}
-                pipelineHrefContext={repoAddress}
-                isJob={isJob}
-              />
-            </td>
-          </tr>
+          {schedule.pipelineName || assetSelection ? (
+            <tr>
+              <td>Target</td>
+              <TargetCell>
+                <AutomationTargetList
+                  targets={schedule.pipelineName ? [{pipelineName: schedule.pipelineName}] : null}
+                  repoAddress={repoAddress}
+                  assetSelection={assetSelection || null}
+                  automationType="schedule"
+                />
+              </TargetCell>
+            </tr>
+          ) : null}
           <tr>
             <td>
               <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
@@ -130,7 +139,10 @@ export const ScheduleDetails = (props: {
               </Box>
             </td>
             <td>
-              <Box flex={{direction: 'row', alignItems: 'center'}}>
+              <Box
+                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+                style={{height: '32px'}}
+              >
                 <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
                 {schedule.canReset && (
                   <ScheduleResetButton repoAddress={repoAddress} schedule={schedule} />
@@ -172,3 +184,9 @@ export const ScheduleDetails = (props: {
     </>
   );
 };
+
+const TargetCell = styled.td`
+  button {
+    line-height: 20px;
+  }
+`;

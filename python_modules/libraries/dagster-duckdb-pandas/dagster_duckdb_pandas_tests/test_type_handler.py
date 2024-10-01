@@ -1,4 +1,5 @@
 import os
+from typing import cast
 
 import duckdb
 import pandas as pd
@@ -8,7 +9,9 @@ from dagster import (
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
+    Definitions,
     DynamicPartitionsDefinition,
+    MetadataValue,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
@@ -21,6 +24,7 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
 
 
@@ -99,6 +103,31 @@ def test_duckdb_io_manager_with_assets(tmp_path, io_managers):
             assert out_df["a"].tolist() == [2, 3, 4]
 
             duckdb_conn.close()
+
+
+def test_io_manager_asset_metadata(tmp_path) -> None:
+    @asset
+    def my_pandas_df() -> pd.DataFrame:
+        return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    db_file = os.path.join(tmp_path, "unit_test.duckdb")
+    defs = Definitions(
+        assets=[my_pandas_df],
+        resources={
+            "io_manager": DuckDBPandasIOManager(database=db_file, schema="custom_schema"),
+        },
+    )
+
+    res = defs.get_implicit_global_asset_job_def().execute_in_process()
+    assert res.success
+
+    mats = res.get_asset_materialization_events()
+    assert len(mats) == 1
+    mat = mats[0]
+
+    assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+        f"{db_file}.custom_schema.my_pandas_df"
+    )
 
 
 def test_duckdb_io_manager_with_schema(tmp_path):
@@ -211,12 +240,19 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
     for io_manager in io_managers:
         resource_defs = {"io_manager": io_manager}
 
-        materialize(
+        result = materialize(
             [daily_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
         )
+        materialization = next(
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        )
+        meta = materialization.materialization.metadata["dagster/partition_row_count"]
+        assert cast(IntMetadataValue, meta).value == 3
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
@@ -324,7 +360,7 @@ def test_static_partitioned_asset(tmp_path, io_managers):
         }
     ),
     key_prefix=["my_schema"],
-    metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+    metadata={"partition_expr": {"time": "CAST(time as DATE)", "color": "color"}},
     config_schema={"value": str},
 )
 def multi_partitioned(context) -> pd.DataFrame:

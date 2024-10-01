@@ -1,7 +1,7 @@
 import os
 import uuid
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping
+from typing import Any, Iterator, Mapping, cast
 from unittest.mock import MagicMock, patch
 
 import pandas
@@ -11,6 +11,7 @@ from dagster import (
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
+    Definitions,
     DynamicPartitionsDefinition,
     IOManagerDefinition,
     MetadataValue,
@@ -30,6 +31,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
@@ -111,7 +113,7 @@ def test_handle_output():
         "dataframe_columns": MetadataValue.table_schema(
             TableSchema(columns=[TableColumn("col1", "object"), TableColumn("col2", "int64")])
         ),
-        "row_count": 1,
+        "dagster/row_count": 1,
     }
 
 
@@ -205,6 +207,34 @@ def test_io_manager_with_snowflake_pandas(io_manager):
 
         res = io_manager_test_job.execute_in_process()
         assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.integration
+def test_io_manager_asset_metadata() -> None:
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+
+        @asset(key_prefix=SCHEMA, name=table_name)
+        def my_pandas_df():
+            return pandas.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+
+        defs = Definitions(
+            assets=[my_pandas_df], resources={"io_manager": pythonic_snowflake_io_manager}
+        )
+
+        res = defs.get_implicit_global_asset_job_def().execute_in_process()
+        assert res.success
+
+        mats = res.get_asset_materialization_events()
+        assert len(mats) == 1
+        mat = mats[0]
+
+        assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+            f"{DATABASE}.{SCHEMA}.{table_name}"
+        )
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -323,12 +353,19 @@ def test_time_window_partitioned_asset(io_manager):
         snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
-        materialize(
+        result = materialize(
             [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
+        materialization = next(
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        )
+        meta = materialization.materialization.metadata["dagster/partition_row_count"]
+        assert cast(IntMetadataValue, meta).value == 3
 
         with snowflake_conn.get_connection() as conn:
             out_df = (
@@ -748,3 +785,37 @@ def test_self_dependent_asset(io_manager):
                 conn.cursor().execute(f"SELECT * FROM {snowflake_table_path}").fetch_pandas_all()
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_quoted_identifiers_asset(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+
+        @asset(
+            key_prefix=SCHEMA,
+            name=table_name,
+        )
+        def illegal_column_name(context: AssetExecutionContext) -> DataFrame:
+            return DataFrame(
+                {
+                    "5foo": [1, 2, 3],  # columns that start with numbers need to be quoted
+                    "column with a space": [1, 2, 3],
+                    "column_with_punctuation!": [1, 2, 3],
+                    "by": [1, 2, 3],  # reserved
+                }
+            )
+
+        resource_defs = {"io_manager": io_manager}
+        res = materialize(
+            [illegal_column_name],
+            resources=resource_defs,
+        )
+
+        assert res.success

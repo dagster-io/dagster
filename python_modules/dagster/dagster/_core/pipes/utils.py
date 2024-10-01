@@ -24,12 +24,8 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
-from dagster._core.pipes.client import (
-    PipesContextInjector,
-    PipesMessageReader,
-)
+from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
 from dagster._core.pipes.context import (
     PipesMessageHandler,
     PipesSession,
@@ -41,7 +37,6 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
-@experimental
 class PipesFileContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by writing it to a
     specified file.
@@ -78,7 +73,6 @@ class PipesFileContextInjector(PipesContextInjector):
         return f"Attempted to inject context via file {self._path}"
 
 
-@experimental
 class PipesTempFileContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by writing it to an
     automatically-generated temporary file.
@@ -130,7 +124,6 @@ class PipesEnvContextInjector(PipesContextInjector):
         return "Attempted to inject context directly, typically as an environment variable."
 
 
-@experimental
 class PipesFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing a specified file.
 
@@ -162,7 +155,9 @@ class PipesFileMessageReader(PipesMessageReader):
         try:
             open(self._path, "w").close()  # create file
             thread = Thread(
-                target=self._reader_thread, args=(handler, is_session_closed), daemon=True
+                target=self._reader_thread,
+                args=(handler, is_session_closed),
+                daemon=True,
             )
             thread.start()
             yield {PipesDefaultMessageWriter.FILE_PATH_KEY: self._path}
@@ -189,7 +184,6 @@ class PipesFileMessageReader(PipesMessageReader):
         return f"Attempted to read messages from file {self._path}."
 
 
-@experimental
 class PipesTempFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing an automatically-generated temporary file."""
 
@@ -242,7 +236,6 @@ WAIT_FOR_LOGS_AFTER_EXECUTION_INTERVAL = 10
 WAIT_FOR_LOGS_TIMEOUT = 60
 
 
-@experimental
 class PipesBlobStoreMessageReader(PipesMessageReader):
     """Message reader that reads a sequence of message chunks written by an external process into a
     blob store such as S3, Azure blob storage, or GCS.
@@ -335,8 +328,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
         """
 
     @abstractmethod
-    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
-        ...
+    def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
 
     def _messages_thread(
         self,
@@ -438,20 +430,16 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
 class PipesLogReader(ABC):
     @abstractmethod
-    def start(self, params: PipesParams, is_session_closed: Event) -> None:
-        ...
+    def start(self, params: PipesParams, is_session_closed: Event) -> None: ...
 
     @abstractmethod
-    def stop(self) -> None:
-        ...
+    def stop(self) -> None: ...
 
     @abstractmethod
-    def is_running(self) -> bool:
-        ...
+    def is_running(self) -> bool: ...
 
     @abstractmethod
-    def target_is_readable(self, params: PipesParams) -> bool:
-        ...
+    def target_is_readable(self, params: PipesParams) -> bool: ...
 
     @property
     def name(self) -> str:
@@ -459,7 +447,6 @@ class PipesLogReader(ABC):
         return self.__class__.__name__
 
 
-@experimental
 class PipesChunkedLogReader(PipesLogReader):
     """Reader for reading stdout/stderr logs from a blob store such as S3, Azure blob storage, or GCS.
 
@@ -474,8 +461,7 @@ class PipesChunkedLogReader(PipesLogReader):
         self.thread: Optional[Thread] = None
 
     @abstractmethod
-    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
-        ...
+    def download_log_chunk(self, params: PipesParams) -> Optional[str]: ...
 
     def start(self, params: PipesParams, is_session_closed: Event) -> None:
         self.thread = Thread(target=self._reader_thread, args=(params, is_session_closed))
@@ -526,17 +512,21 @@ def _join_thread(thread: Thread, thread_name: str) -> None:
         raise DagsterPipesExecutionError(f"Timed out waiting for {thread_name} thread to finish.")
 
 
-def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
+def extract_message_or_forward_to_file(handler: "PipesMessageHandler", log_line: str, file: TextIO):
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
         if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
         else:
-            sys.stdout.writelines((log_line, "\n"))
+            file.writelines((log_line, "\n"))
     except Exception:
         # move non-message logs in to stdout for compute log capture
-        sys.stdout.writelines((log_line, "\n"))
+        file.writelines((log_line, "\n"))
+
+
+def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
+    extract_message_or_forward_to_file(handler=handler, log_line=log_line, file=sys.stdout)
 
 
 _FAIL_TO_YIELD_ERROR_MESSAGE = (
@@ -549,7 +539,6 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 )
 
 
-@experimental
 @contextmanager
 def open_pipes_session(
     context: OpExecutionContext,
@@ -592,8 +581,8 @@ def open_pipes_session(
             with open_pipes_session(
                 context=context,
                 extras={"foo": "bar"},
-                context_injector=ExtTempFileContextInjector(),
-                message_reader=ExtTempFileMessageReader(),
+                context_injector=PipesTempFileContextInjector(),
+                message_reader=PipesTempFileMessageReader(),
             ) as pipes_session:
                 subprocess.Popen(
                     ["/bin/python", "/path/to/script.py"],

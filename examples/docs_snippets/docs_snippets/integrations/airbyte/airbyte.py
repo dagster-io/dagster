@@ -22,7 +22,8 @@ def scope_define_cloud_instance() -> None:
     from dagster_airbyte import AirbyteCloudResource
 
     airbyte_instance = AirbyteCloudResource(
-        api_key=EnvVar("AIRBYTE_API_KEY"),
+        client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+        client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
     )
     # end_define_cloud_instance
 
@@ -126,14 +127,15 @@ def scope_airbyte_cloud_manual_config():
     from dagster import Definitions, EnvVar
 
     airbyte_instance = AirbyteCloudResource(
-        api_key=EnvVar("AIRBYTE_API_KEY"),
+        client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+        client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
     )
     airbyte_assets = build_airbyte_assets(
         connection_id="43908042-8399-4a58-82f1-71a45099fff7",
         destination_tables=["releases", "tags", "teams"],
     )
 
-    defs = Definitions(assets=[airbyte_assets], resources={"airbyte": airbyte_instance})
+    defs = Definitions(assets=airbyte_assets, resources={"airbyte": airbyte_instance})
     # end_airbyte_cloud_manual_config
 
 
@@ -171,7 +173,7 @@ def scope_add_downstream_assets():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
@@ -222,7 +224,7 @@ def scope_add_downstream_assets_w_deps():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
@@ -257,7 +259,8 @@ def scope_add_downstream_assets_cloud():
         import pandas as pd
 
         airbyte_instance = AirbyteCloudResource(
-            api_key=EnvVar("AIRBYTE_API_KEY"),
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
         airbyte_assets = build_airbyte_assets(
             connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -272,7 +275,7 @@ def scope_add_downstream_assets_cloud():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
@@ -310,7 +313,8 @@ def scope_add_downstream_assets_cloud_with_deps():
         from dagster_snowflake import SnowflakeResource
 
         airbyte_instance = AirbyteCloudResource(
-            api_key=EnvVar("AIRBYTE_API_KEY"),
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
         airbyte_assets = build_airbyte_assets(
             connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -329,7 +333,7 @@ def scope_add_downstream_assets_cloud_with_deps():
         # only run the airbyte syncs necessary to materialize stargazers_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("stargazers_file")
+            AssetSelection.assets(stargazers_file)
             .upstream()  # all upstream assets (in this case, just the stargazers Airbyte asset)
             .required_multi_asset_neighbors(),  # all Airbyte assets linked to the same connection
         )
@@ -400,7 +404,8 @@ def scope_schedule_assets_cloud():
     )
 
     airbyte_instance = AirbyteCloudResource(
-        api_key=EnvVar("AIRBYTE_API_KEY"),
+        client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+        client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
     )
     airbyte_assets = build_airbyte_assets(
         connection_id="43908042-8399-4a58-82f1-71a45099fff7",

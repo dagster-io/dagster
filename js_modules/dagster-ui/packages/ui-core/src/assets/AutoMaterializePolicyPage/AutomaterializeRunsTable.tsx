@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Body2, Box, Colors, Mono, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
@@ -6,23 +5,25 @@ import {
   AutomaterializeRunsQuery,
   AutomaterializeRunsQueryVariables,
 } from './types/AutomaterializeRunsTable.types';
+import {gql, useQuery} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {RunStatusTagWithStats} from '../../runs/RunStatusTag';
 import {RUN_TIME_FRAGMENT, RunStateSummary, RunTime, titleForRun} from '../../runs/RunUtils';
 
 export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
-  const {data, loading, error} = useQuery<
-    AutomaterializeRunsQuery,
-    AutomaterializeRunsQueryVariables
-  >(AUTOMATERIALIZE_RUNS_QUERY, {
-    variables: {
-      filter: {
-        runIds,
+  const queryResult = useQuery<AutomaterializeRunsQuery, AutomaterializeRunsQueryVariables>(
+    AUTOMATERIALIZE_RUNS_QUERY,
+    {
+      variables: {
+        filter: {
+          runIds,
+        },
       },
+      skip: !runIds.length,
     },
-    skip: !runIds.length,
-  });
+  );
+  const {data, loading, error} = queryResult;
 
   if (!runIds.length) {
     return (

@@ -10,8 +10,7 @@ def test_coerce_asset_key():
 
 def test_asset_def():
     @asset
-    def foo():
-        ...
+    def foo(): ...
 
     assert AssetCheckSpec(asset=foo, name="check1").asset_key == AssetKey("foo")
 
@@ -30,3 +29,11 @@ def test_additional_deps():
         ),
     ):
         AssetCheckSpec(asset="foo", name="check1", additional_deps=["foo"])
+
+
+def test_unserializable_metadata():
+    class SomeObject: ...
+
+    obj = SomeObject()
+
+    assert AssetCheckSpec(asset="foo", name="check1", metadata={"foo": obj}).metadata["foo"] == obj

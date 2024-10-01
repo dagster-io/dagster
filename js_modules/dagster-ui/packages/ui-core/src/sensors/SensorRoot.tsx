@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
@@ -8,11 +7,18 @@ import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPageAutomaterialize} from './SensorPageAutomaterialize';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
-import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRoot.types';
+import {
+  SensorAssetSelectionQuery,
+  SensorAssetSelectionQueryVariables,
+  SensorRootQuery,
+  SensorRootQueryVariables,
+} from './types/SensorRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {AUTOMATION_ASSET_SELECTION_FRAGMENT} from '../automation/AutomationAssetSelectionFragment';
 import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -63,7 +69,18 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const selectionQueryResult = useQuery<
+    SensorAssetSelectionQuery,
+    SensorAssetSelectionQueryVariables
+  >(SENSOR_ASSET_SELECTIONS_QUERY, {
+    variables: {sensorSelector},
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);
+  const refreshState = useMergedRefresh(refreshState1, refreshState2);
+
   const {data, loading} = queryResult;
 
   const tabs = (
@@ -112,8 +129,15 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   }
 
   const {instance} = data;
+  const assetSelection =
+    selectionQueryResult.data?.sensorOrError.__typename === 'Sensor'
+      ? selectionQueryResult.data.sensorOrError.assetSelection
+      : null;
 
-  if (sensorOrError.sensorType === SensorType.AUTOMATION_POLICY) {
+  if (
+    sensorOrError.sensorType === SensorType.AUTO_MATERIALIZE ||
+    sensorOrError.sensorType === SensorType.AUTOMATION
+  ) {
     const assetDaemonStatus = instance.daemonHealth.ampDaemonStatus;
     return (
       <Page>
@@ -122,6 +146,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           sensor={sensorOrError}
           daemonHealth={assetDaemonStatus.healthy}
           refreshState={refreshState}
+          assetSelection={assetSelection || null}
         />
         <SensorPageAutomaterialize
           repoAddress={repoAddress}
@@ -142,6 +167,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         sensor={sensorOrError}
         daemonHealth={sensorDaemonStatus.healthy}
         refreshState={refreshState}
+        assetSelection={assetSelection || null}
       />
       <SensorInfo
         sensorDaemonStatus={sensorDaemonStatus}
@@ -196,4 +222,21 @@ const SENSOR_ROOT_QUERY = gql`
   ${SENSOR_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
+`;
+
+export const SENSOR_ASSET_SELECTIONS_QUERY = gql`
+  query SensorAssetSelectionQuery($sensorSelector: SensorSelector!) {
+    sensorOrError(sensorSelector: $sensorSelector) {
+      ... on Sensor {
+        id
+        assetSelection {
+          ...AutomationAssetSelectionFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${AUTOMATION_ASSET_SELECTION_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -3,10 +3,9 @@ from typing import List
 
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.package_spec import PackageSpec
-
-from ..python_version import AvailablePythonVersion
-from ..step_builder import CommandStepBuilder
-from ..utils import CommandStep, is_feature_branch
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import CommandStepBuilder
+from dagster_buildkite.utils import CommandStep, is_feature_branch
 
 
 def skip_if_no_dagster_ui_components_changes():
@@ -28,6 +27,7 @@ def build_dagster_ui_components_steps() -> List[CommandStep]:
         CommandStepBuilder(":typescript: dagster-ui-components")
         .run(
             "cd js_modules/dagster-ui/packages/ui-components",
+            "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .on_test_image(AvailablePythonVersion.get_default())
@@ -57,6 +57,7 @@ def build_dagster_ui_core_steps() -> List[CommandStep]:
         CommandStepBuilder(":typescript: dagster-ui-core")
         .run(
             "cd js_modules/dagster-ui",
+            "pip install -U uv",
             f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .on_test_image(AvailablePythonVersion.get_default())

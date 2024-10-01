@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster import _check as check
 
@@ -85,3 +85,10 @@ class TagConcurrencyLimitsCounter:
 
             if key in self._unique_value_limits:
                 self._unique_value_counts[tag_tuple] += 1
+
+
+def get_boolean_tag_value(tag_value: Optional[str], default_value: bool = False) -> bool:
+    if tag_value is None:
+        return default_value
+
+    return tag_value.lower() not in {"false", "none", "0", ""}

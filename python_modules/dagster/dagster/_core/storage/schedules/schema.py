@@ -1,7 +1,7 @@
 import sqlalchemy as db
 from sqlalchemy.dialects import sqlite
 
-from ..sql import MySQLCompatabilityTypes, get_current_timestamp
+from dagster._core.storage.sql import MySQLCompatabilityTypes, get_sql_current_timestamp
 
 ScheduleStorageSqlMetadata = db.MetaData()
 
@@ -20,8 +20,8 @@ JobTable = db.Table(
     db.Column("status", db.String(63)),
     db.Column("job_type", db.String(63), index=True),
     db.Column("job_body", db.Text),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 InstigatorsTable = db.Table(
@@ -38,8 +38,8 @@ InstigatorsTable = db.Table(
     db.Column("status", db.String(63)),
     db.Column("instigator_type", db.String(63), index=True),
     db.Column("instigator_body", db.Text),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 JobTickTable = db.Table(
@@ -57,8 +57,8 @@ JobTickTable = db.Table(
     db.Column("type", db.String(63)),
     db.Column("timestamp", db.types.TIMESTAMP),
     db.Column("tick_body", db.Text),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 AssetDaemonAssetEvaluationsTable = db.Table(
@@ -78,7 +78,7 @@ AssetDaemonAssetEvaluationsTable = db.Table(
     db.Column("num_requested", db.Integer),
     db.Column("num_skipped", db.Integer),
     db.Column("num_discarded", db.Integer),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 
@@ -94,7 +94,7 @@ SecondaryIndexMigrationTable = db.Table(
         autoincrement=True,
     ),
     db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
 )
 

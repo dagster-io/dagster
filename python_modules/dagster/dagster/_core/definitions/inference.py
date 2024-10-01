@@ -1,17 +1,9 @@
 from inspect import Parameter, Signature, isgeneratorfunction, signature
-from typing import (
-    Any,
-    Callable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-)
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence
 
 from dagster._core.decorator_utils import get_type_hints
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._seven import is_module_available
-
-from .utils import NoValueSentinel
 
 IS_DOCSTRING_PARSER_AVAILABLE = is_module_available("docstring_parser")
 
@@ -32,7 +24,7 @@ class InferredOutputProps(NamedTuple):
     description: Optional[str]
 
 
-def _infer_input_description_from_docstring(fn: Callable) -> Mapping[str, Optional[str]]:
+def _infer_input_description_from_docstring(fn: Callable[..., Any]) -> Mapping[str, Optional[str]]:
     doc_str = fn.__doc__
     if not IS_DOCSTRING_PARSER_AVAILABLE or doc_str is None:
         return {}
@@ -46,7 +38,7 @@ def _infer_input_description_from_docstring(fn: Callable) -> Mapping[str, Option
         return {}
 
 
-def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
+def _infer_output_description_from_docstring(fn: Callable[..., Any]) -> Optional[str]:
     doc_str = fn.__doc__
     if not IS_DOCSTRING_PARSER_AVAILABLE or doc_str is None:
         return None
@@ -62,7 +54,7 @@ def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
         return None
 
 
-def infer_output_props(fn: Callable) -> InferredOutputProps:
+def infer_output_props(fn: Callable[..., Any]) -> InferredOutputProps:
     type_hints = get_type_hints(fn)
     annotation = (
         type_hints["return"]
@@ -76,7 +68,7 @@ def infer_output_props(fn: Callable) -> InferredOutputProps:
     )
 
 
-def has_explicit_return_type(fn: Callable) -> bool:
+def has_explicit_return_type(fn: Callable[..., Any]) -> bool:
     sig = signature(fn)
     return sig.return_annotation is not Signature.empty
 
@@ -108,7 +100,9 @@ def _infer_inputs_from_params(
     return input_defs
 
 
-def infer_input_props(fn: Callable, context_arg_provided: bool) -> Sequence[InferredInputProps]:
+def infer_input_props(
+    fn: Callable[..., Any], context_arg_provided: bool
+) -> Sequence[InferredInputProps]:
     sig = signature(fn)
     params = list(sig.parameters.values())
     type_hints = get_type_hints(fn)

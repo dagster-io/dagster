@@ -1,15 +1,11 @@
-import functools
+import dataclasses
 import json
-from typing import (
-    TYPE_CHECKING,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-)
+from dataclasses import dataclass
+from functools import cached_property
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -23,23 +19,21 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .asset_graph import AssetGraph
-
 if TYPE_CHECKING:
-    from .asset_condition import (
-        AssetConditionEvaluation,
-        AssetConditionEvaluationState,
-        AssetConditionSnapshot,
+    from dagster._core.definitions.declarative_automation.serialized_objects import (
+        AutomationConditionCursor,
+        AutomationConditionEvaluationState,
+        AutomationConditionNodeSnapshot,
     )
 
 
-@whitelist_for_serdes
-class AssetConditionCursorExtras(NamedTuple):
-    """Represents additional state that may be optionally saved by an AssetCondition between
+@whitelist_for_serdes(storage_name="AssetConditionCursorExtras")
+class AutomationConditionCursorExtras(NamedTuple):
+    """Represents additional state that may be optionally saved by an AutomationCondition between
     evaluations.
     """
 
-    condition_snapshot: "AssetConditionSnapshot"
+    condition_snapshot: "AutomationConditionNodeSnapshot"
     extras: Mapping[str, PackableValue]
 
 
@@ -66,62 +60,80 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
         "last_observe_request_timestamp_by_asset_key": ObserveRequestTimestampSerializer
     }
 )
-class AssetDaemonCursor(NamedTuple):
+@dataclass(frozen=True)
+# TODO: rename to scheduling cursor or something
+# 2024-05-16 -- schrockn
+class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
     Attributes:
         evaluation_id (int): The ID of the evaluation that produced this cursor.
-        previous_evaluation_state (Sequence[AssetConditionEvaluationInfo]): The evaluation info
-            recorded for each asset on the previous tick.
+        previous_evaluation_state (Sequence[AutomationConditionEvaluationState]): (DEPRECATED) The
+            evaluation info recorded for each asset on the previous tick.
+        previous_cursors (Sequence[AutomationConditionCursor]): The cursor objects for each asset
+            recorded on the previous tick.
     """
 
     evaluation_id: int
-    previous_evaluation_state: Sequence["AssetConditionEvaluationState"]
-
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
+
+    previous_evaluation_state: Optional[Sequence["AutomationConditionEvaluationState"]]
+    previous_condition_cursors: Optional[Sequence["AutomationConditionCursor"]] = None
 
     @staticmethod
     def empty(evaluation_id: int = 0) -> "AssetDaemonCursor":
         return AssetDaemonCursor(
             evaluation_id=evaluation_id,
-            previous_evaluation_state=[],
+            previous_evaluation_state=None,
+            previous_condition_cursors=[],
             last_observe_request_timestamp_by_asset_key={},
         )
 
-    @property
-    @functools.lru_cache(maxsize=1)
-    def previous_evaluation_state_by_key(
+    @cached_property
+    def previous_condition_cursors_by_key(
         self,
-    ) -> Mapping[AssetKey, "AssetConditionEvaluationState"]:
-        """Efficient lookup of previous evaluation info by asset key."""
-        return {
-            evaluation_state.asset_key: evaluation_state
-            for evaluation_state in self.previous_evaluation_state
-        }
+    ) -> Mapping[EntityKey, "AutomationConditionCursor"]:
+        """Efficient lookup of previous cursor by asset key."""
+        from dagster._core.definitions.declarative_automation.serialized_objects import (
+            AutomationConditionCursor,
+        )
 
-    def get_previous_evaluation_state(
-        self, asset_key: AssetKey
-    ) -> Optional["AssetConditionEvaluationState"]:
-        """Returns the AssetConditionCursor associated with the given asset key. If no stored
+        if self.previous_condition_cursors is None:
+            # automatically convert AutomationConditionEvaluationState objects to AutomationConditionCursor
+            return {
+                evaluation_state.asset_key: AutomationConditionCursor.backcompat_from_evaluation_state(
+                    evaluation_state
+                )
+                for evaluation_state in self.previous_evaluation_state or []
+            }
+        else:
+            return {cursor.key: cursor for cursor in self.previous_condition_cursors}
+
+    def get_previous_condition_cursor(
+        self, key: T_EntityKey
+    ) -> Optional["AutomationConditionCursor[T_EntityKey]"]:
+        """Returns the AutomationConditionCursor associated with the given asset key. If no stored
         cursor exists, returns an empty cursor.
         """
-        return self.previous_evaluation_state_by_key.get(asset_key)
-
-    def get_previous_evaluation(self, asset_key: AssetKey) -> Optional["AssetConditionEvaluation"]:
-        """Returns the previous AssetConditionEvaluation for a given asset key, if it exists."""
-        previous_evaluation_state = self.get_previous_evaluation_state(asset_key)
-        return previous_evaluation_state.previous_evaluation if previous_evaluation_state else None
+        return self.previous_condition_cursors_by_key.get(key)
 
     def with_updates(
         self,
         evaluation_id: int,
         evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
-        evaluation_state: Sequence["AssetConditionEvaluationState"],
+        condition_cursors: Sequence["AutomationConditionCursor"],
     ) -> "AssetDaemonCursor":
-        return self._replace(
+        # do not "forget" about values for non-evaluated assets
+        new_condition_cursors = dict(self.previous_condition_cursors_by_key)
+        for cursor in condition_cursors:
+            new_condition_cursors[cursor.key] = cursor
+
+        return dataclasses.replace(
+            self,
             evaluation_id=evaluation_id,
-            previous_evaluation_state=evaluation_state,
+            previous_evaluation_state=[],
+            previous_condition_cursors=list(new_condition_cursors.values()),
             last_observe_request_timestamp_by_asset_key={
                 **self.last_observe_request_timestamp_by_asset_key,
                 **{
@@ -138,43 +150,12 @@ class AssetDaemonCursor(NamedTuple):
 # BACKCOMPAT
 
 
-def get_backcompat_asset_condition_evaluation_state(
-    latest_evaluation: "AssetConditionEvaluation",
-    latest_storage_id: Optional[int],
-    latest_timestamp: Optional[float],
-    handled_root_subset: Optional[AssetSubset],
-) -> "AssetConditionEvaluationState":
-    """Generates an AssetDaemonCursor from information available on the old cursor format."""
-    from dagster._core.definitions.asset_condition import (
-        AssetConditionEvaluationState,
-        RuleCondition,
-    )
-    from dagster._core.definitions.auto_materialize_rule import MaterializeOnMissingRule
-
-    return AssetConditionEvaluationState(
-        previous_evaluation=latest_evaluation,
-        previous_tick_evaluation_timestamp=latest_timestamp,
-        max_storage_id=latest_storage_id,
-        # the only information we need to preserve from the previous cursor is the handled subset
-        extra_state_by_unique_id={
-            RuleCondition(MaterializeOnMissingRule()).unique_id: handled_root_subset,
-        }
-        if handled_root_subset and handled_root_subset.size > 0
-        else {},
-    )
-
-
 def backcompat_deserialize_asset_daemon_cursor_str(
-    cursor_str: str, asset_graph: Optional[AssetGraph], default_evaluation_id: int
+    cursor_str: str, asset_graph: Optional[BaseAssetGraph], default_evaluation_id: int
 ) -> AssetDaemonCursor:
-    """This serves as a backcompat layer for deserializing the old cursor format. Some information
-    is impossible to fully recover, this will recover enough to continue operating as normal.
+    """This serves as a backcompat layer for deserializing the old cursor format. Will only recover
+    the previous evaluation id.
     """
-    from .asset_condition import AssetConditionEvaluation, AssetConditionSnapshot
-    from .auto_materialize_rule_evaluation import (
-        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
-    )
-
     data = json.loads(cursor_str)
 
     if isinstance(data, list):
@@ -185,81 +166,11 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     elif asset_graph is None:
         return AssetDaemonCursor.empty(data.get("evaluation_id", default_evaluation_id))
 
-    serialized_last_observe_request_timestamp_by_asset_key = data.get(
-        "last_observe_request_timestamp_by_asset_key", {}
-    )
-    last_observe_request_timestamp_by_asset_key = {
-        AssetKey.from_user_string(key_str): timestamp
-        for key_str, timestamp in serialized_last_observe_request_timestamp_by_asset_key.items()
-    }
-
-    partition_subsets_by_asset_key = {}
-    for key_str, serialized_str in data.get("handled_root_partitions_by_asset_key", {}).items():
-        asset_key = AssetKey.from_user_string(key_str)
-        partitions_def = asset_graph.get_partitions_def(asset_key) if asset_graph else None
-        if not partitions_def:
-            continue
-        try:
-            partition_subsets_by_asset_key[asset_key] = partitions_def.deserialize_subset(
-                serialized_str
-            )
-        except:
-            continue
-
-    handled_root_asset_graph_subset = AssetGraphSubset(
-        non_partitioned_asset_keys={
-            AssetKey.from_user_string(key_str)
-            for key_str in data.get("handled_root_asset_keys", set())
-        },
-        partitions_subsets_by_asset_key=partition_subsets_by_asset_key,
-    )
-
-    serialized_latest_evaluation_by_asset_key = data.get("latest_evaluation_by_asset_key", {})
-    latest_evaluation_by_asset_key = {}
-    for key_str, serialized_evaluation in serialized_latest_evaluation_by_asset_key.items():
-        key = AssetKey.from_user_string(key_str)
-        partitions_def = asset_graph.get_partitions_def(key) if asset_graph else None
-
-        evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            serialized_evaluation, partitions_def
-        ).evaluation
-
-        latest_evaluation_by_asset_key[key] = evaluation
-
-    previous_evaluation_state = []
-    cursor_keys = (
-        asset_graph.auto_materialize_policies_by_key.keys()
-        if asset_graph
-        else latest_evaluation_by_asset_key.keys()
-    )
-    for asset_key in cursor_keys:
-        latest_evaluation_result = latest_evaluation_by_asset_key.get(asset_key)
-        # create a placeholder evaluation result if we don't have one
-        if not latest_evaluation_result:
-            partitions_def = asset_graph.get_partitions_def(asset_key) if asset_graph else None
-            latest_evaluation_result = AssetConditionEvaluation(
-                condition_snapshot=AssetConditionSnapshot("", "", ""),
-                true_subset=AssetSubset.empty(asset_key, partitions_def),
-                candidate_subset=AssetSubset.empty(asset_key, partitions_def),
-                start_timestamp=None,
-                end_timestamp=None,
-                subsets_with_metadata=[],
-                child_evaluations=[],
-            )
-        backcompat_evaluation_state = get_backcompat_asset_condition_evaluation_state(
-            latest_evaluation_result,
-            data.get("latest_storage_id"),
-            data.get("latest_evaluation_timestamp"),
-            handled_root_asset_graph_subset.get_asset_subset(asset_key, asset_graph)
-            if asset_graph
-            else None,
-        )
-        previous_evaluation_state.append(backcompat_evaluation_state)
-
     return AssetDaemonCursor(
         evaluation_id=data.get("evaluation_id") or default_evaluation_id,
-        previous_evaluation_state=previous_evaluation_state,
-        last_observe_request_timestamp_by_asset_key=last_observe_request_timestamp_by_asset_key,
+        previous_evaluation_state=[],
+        previous_condition_cursors=[],
+        last_observe_request_timestamp_by_asset_key={},
     )
 
 
@@ -269,7 +180,7 @@ class LegacyAssetDaemonCursorWrapper(NamedTuple):
 
     serialized_cursor: str
 
-    def get_asset_daemon_cursor(self, asset_graph: Optional[AssetGraph]) -> AssetDaemonCursor:
+    def get_asset_daemon_cursor(self, asset_graph: Optional[BaseAssetGraph]) -> AssetDaemonCursor:
         return backcompat_deserialize_asset_daemon_cursor_str(
             self.serialized_cursor, asset_graph, 0
         )

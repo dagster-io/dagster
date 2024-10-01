@@ -9,11 +9,12 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildRunTagKeys,
-  buildWorkspace,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
+import {calculateTimeRanges} from '../../ui/BaseFilters/useTimeRangeFilter';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DagsterTag} from '../RunTag';
 import {
   RUN_TAG_KEYS_QUERY,
@@ -24,11 +25,27 @@ import {
   useRunsFilterInput,
   useTagDataFilterValues,
 } from '../RunsFilterInput';
-import {
-  buildRunTagValuesQueryMockedResponse,
-  buildWorkspaceContextMockedResponse,
-} from '../__fixtures__/RunsFilterInput.fixtures';
+import {buildRunTagValuesQueryMockedResponse} from '../__fixtures__/RunsFilterInput.fixtures';
 import {RunTagKeysQuery} from '../types/RunsFilterInput.types';
+
+const workspaceMocks = buildWorkspaceMocks([
+  buildWorkspaceLocationEntry({
+    name: 'some_workspace',
+    locationOrLoadError: buildRepositoryLocation({
+      name: 'some_location',
+      repositories: [
+        buildRepository({
+          name: 'some_repo',
+          pipelines: [
+            buildPipeline({
+              name: 'some_job',
+            }),
+          ],
+        }),
+      ],
+    }),
+  }),
+]);
 
 const runTagKeysMock: MockedResponse<RunTagKeysQuery> = {
   request: {
@@ -49,17 +66,12 @@ const backfillRunTagsValuesMock = buildRunTagValuesQueryMockedResponse(DagsterTa
   'value2',
 ]);
 
-let nativeGBRC: any;
-
 beforeAll(() => {
-  nativeGBRC = window.Element.prototype.getBoundingClientRect;
-  window.Element.prototype.getBoundingClientRect = jest
-    .fn()
-    .mockReturnValue({height: 400, width: 400});
+  mockViewportClientRect();
 });
 
 afterAll(() => {
-  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  restoreViewportClientRect();
 });
 
 describe('useTagDataFilterValues', () => {
@@ -86,6 +98,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value1',
           },
           match: ['value1'],
+          final: true,
         },
         {
           label: 'value2',
@@ -95,6 +108,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value2',
           },
           match: ['value2'],
+          final: true,
         },
       ]);
     });
@@ -143,7 +157,7 @@ function TestRunsFilterInput({
     );
   }
   return (
-    <MockedProvider mocks={mocks}>
+    <MockedProvider mocks={mocks?.length ? [...workspaceMocks, ...mocks] : workspaceMocks}>
       <WorkspaceProvider>
         <RunsFilterInput tokens={tokens} onChange={onChange} enabledFilters={enabledFilters} />
       </WorkspaceProvider>
@@ -163,8 +177,8 @@ describe('<RunFilterInput  />', () => {
     const {getByText} = render(<TestRunsFilterInput tokens={tokens} onChange={onChange} />);
 
     expect(onChange).toHaveBeenCalledWith([
-      {token: 'created_date_before', value: '1609459200'},
       {token: 'created_date_after', value: '1577836800'},
+      {token: 'created_date_before', value: '1609459200'},
     ]);
 
     onChange.mockClear();
@@ -194,30 +208,7 @@ describe('<RunFilterInput  />', () => {
         tokens={tokens}
         onChange={onChange}
         enabledFilters={['job']}
-        mocks={[
-          buildWorkspaceContextMockedResponse(
-            buildWorkspace({
-              locationEntries: [
-                buildWorkspaceLocationEntry({
-                  name: 'some_workspace',
-                  locationOrLoadError: buildRepositoryLocation({
-                    name: 'some_location',
-                    repositories: [
-                      buildRepository({
-                        name: 'some_repo',
-                        pipelines: [
-                          buildPipeline({
-                            name: 'some_job',
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-                }),
-              ],
-            }),
-          ),
-        ]}
+        mocks={workspaceMocks}
       />,
     );
 
@@ -266,7 +257,7 @@ describe('<RunFilterInput  />', () => {
         onChange={onChange}
         mocks={[
           runTagKeysMock,
-          buildRunTagValuesQueryMockedResponse(DagsterTag.Partition, ['partition1', 'partition2']),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.PartitionSet, ['set1', 'set2']),
         ]}
       />,
     );
@@ -277,15 +268,15 @@ describe('<RunFilterInput  />', () => {
     await userEvent.click(getByText('Tag'));
 
     await waitFor(async () => {
-      await userEvent.click(getByText(DagsterTag.Partition));
+      await userEvent.click(getByText(DagsterTag.PartitionSet));
     });
 
     await waitFor(async () => {
-      await userEvent.click(getByText('partition1'));
+      await userEvent.click(getByText('set1'));
     });
 
     expect(onChange).toHaveBeenCalledWith([
-      {token: 'tag', value: `${DagsterTag.Partition}=partition1`},
+      {token: 'tag', value: `${DagsterTag.PartitionSet}=set1`},
     ]);
   });
 });

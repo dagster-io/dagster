@@ -10,8 +10,7 @@ from dagster import (
 from dagster._config import EvaluateValueResult
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
-
-from .definition_config_schema import (
+from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
     ConfiguredDefinitionConfigSchema,
     IDefinitionConfigSchema,
@@ -156,8 +155,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-    ) -> Self:
-        ...
+    ) -> Self: ...
 
 
 def _check_configurable_param(configurable: ConfigurableDefinition) -> None:

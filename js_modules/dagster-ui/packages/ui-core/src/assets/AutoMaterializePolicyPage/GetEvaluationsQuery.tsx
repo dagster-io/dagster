@@ -1,19 +1,5 @@
-import {gql} from '@apollo/client';
-
-import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
-
-const AssetSubsetFragment = gql`
-  fragment AssetSubsetFragment on AssetSubset {
-    subsetValue {
-      isPartitioned
-      partitionKeys
-      partitionKeyRanges {
-        start
-        end
-      }
-    }
-  }
-`;
+import {gql} from '../../apollo-client';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 
 const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
   fragment SpecificPartitionAssetConditionEvaluationNodeFragment on SpecificPartitionAssetConditionEvaluationNode {
@@ -48,18 +34,25 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     startTimestamp
     endTimestamp
     numTrue
-    numFalse
-    numSkipped
-    trueSubset {
-      ...AssetSubsetFragment
-    }
-    candidateSubset {
-      ...AssetSubsetFragment
-    }
     uniqueId
     childUniqueIds
+    numTrue
+    numCandidates
   }
-  ${AssetSubsetFragment}
+`;
+
+const NEW_EVALUATION_NODE_FRAGMENT = gql`
+  fragment NewEvaluationNodeFragment on AutomationConditionEvaluationNode {
+    uniqueId
+    expandedLabel
+    userLabel
+    startTimestamp
+    endTimestamp
+    numCandidates
+    numTrue
+    isPartitioned
+    childUniqueIds
+  }
 `;
 
 const AssetConditionEvaluationRecordFragment = gql`
@@ -74,6 +67,7 @@ const AssetConditionEvaluationRecordFragment = gql`
     timestamp
     startTimestamp
     endTimestamp
+    isLegacy
     evaluation {
       rootUniqueId
       evaluationNodes {
@@ -82,10 +76,15 @@ const AssetConditionEvaluationRecordFragment = gql`
         ...SpecificPartitionAssetConditionEvaluationNodeFragment
       }
     }
+    evaluationNodes {
+      ...NewEvaluationNodeFragment
+    }
   }
+
   ${UnpartitionedAssetConditionEvaluationNodeFragment}
   ${PartitionedAssetConditionEvaluationNodeFragment}
   ${SpecificPartitionAssetConditionEvaluationNodeFragment}
+  ${NEW_EVALUATION_NODE_FRAGMENT}
 `;
 
 export const GET_EVALUATIONS_QUERY = gql`

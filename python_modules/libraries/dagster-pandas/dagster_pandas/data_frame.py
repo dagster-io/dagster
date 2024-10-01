@@ -107,10 +107,7 @@ def create_dagster_pandas_dataframe_description(description, columns):
     title = "\n".join([description, "### Columns", ""])
     buildme = title
     for column in columns:
-        buildme += "{}\n{}\n".format(
-            _build_column_header(column.name, column.constraints),
-            _construct_constraint_list(column.constraints),
-        )
+        buildme += f"{_build_column_header(column.name, column.constraints)}\n{_construct_constraint_list(column.constraints)}\n"
     return buildme
 
 
@@ -125,7 +122,9 @@ def create_table_schema_metadata_from_dataframe(
     Returns:
         TableSchemaMetadataValue: returns an object with the TableSchema for the DataFrame.
     """
-    check.inst(pandas_df, pd.DataFrame, "Input must be a pandas DataFrame object")
+    check.inst_param(
+        pandas_df, "pandas_df", pd.DataFrame, "Input must be a pandas DataFrame object"
+    )
     return MetadataValue.table_schema(
         TableSchema(
             columns=[

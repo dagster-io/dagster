@@ -12,7 +12,7 @@ type QueryListener = {
   listener: (response: QueryResponse) => void;
 };
 
-type QueryResponse = {queryString: string; results: Fuse.FuseResult<SearchResult>[]};
+export type QueryResponse = {queryString: string; results: Fuse.FuseResult<SearchResult>[]};
 
 export type WorkerSearchResult = {
   update: (results: SearchResult[]) => void;

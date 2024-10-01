@@ -1,18 +1,18 @@
 import warnings
 from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Callable, Iterator, Optional, TypeVar
 
 import dagster._check as check
-from dagster._core.decorator_utils import (
-    Decoratable,
-    apply_context_manager_decorator,
-)
+from dagster._core.decorator_utils import Decoratable, apply_context_manager_decorator
 
 T = TypeVar("T")
 
 # ########################
 # ##### DEPRECATED
 # ########################
+
+_warnings_on = ContextVar("_warnings_on", default=True)
 
 
 def normalize_renamed_param(
@@ -59,6 +59,9 @@ def deprecation_warning(
     additional_warn_text: Optional[str] = None,
     stacklevel: int = 3,
 ):
+    if not _warnings_on.get():
+        return
+
     warnings.warn(
         f"{subject} is deprecated and will be removed in {breaking_version}."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
@@ -86,6 +89,9 @@ class ExperimentalWarning(Warning):
 def experimental_warning(
     subject: str, additional_warn_text: Optional[str] = None, stacklevel: int = 3
 ) -> None:
+    if not _warnings_on.get():
+        return
+
     extra_text = f" {additional_warn_text}" if additional_warn_text else ""
     warnings.warn(
         f"{subject} is experimental. It may break in future versions, even between dot"
@@ -128,10 +134,22 @@ def config_argument_warning(param_name: str, function_name: str) -> None:
 
 @contextmanager
 def disable_dagster_warnings() -> Iterator[None]:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
+    # If warnings are already disabled, do nothing. Nested resets of the token in finally blocks
+    # have occasionally had inconsistent ordering in the past, which can lead to `_warnings_on`
+    # being permanently turned off. By instantly returning, we prevent this nesting.
+    if not _warnings_on.get():
         yield
+    else:
+        token = None
+        try:
+            token = _warnings_on.set(False)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+                yield
+        finally:
+            if token is not None:
+                _warnings_on.reset(token)
 
 
 T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)

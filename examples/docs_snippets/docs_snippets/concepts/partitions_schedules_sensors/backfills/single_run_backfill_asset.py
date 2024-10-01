@@ -13,7 +13,7 @@ from dagster import (
     backfill_policy=BackfillPolicy.single_run(),
     deps=[AssetKey("raw_events")],
 )
-def events(context: AssetExecutionContext):
+def events(context: AssetExecutionContext) -> None:
     start_datetime, end_datetime = context.partition_time_window
 
     input_data = read_data_in_datetime_range(start_datetime, end_datetime)
@@ -25,13 +25,10 @@ def events(context: AssetExecutionContext):
 # end_marker
 
 
-def compute_events_from_raw_events(*args):
-    ...
+def compute_events_from_raw_events(*args): ...
 
 
-def read_data_in_datetime_range(*args):
-    ...
+def read_data_in_datetime_range(*args): ...
 
 
-def overwrite_data_in_datetime_range(*args):
-    ...
+def overwrite_data_in_datetime_range(*args): ...

@@ -1,0 +1,763 @@
+---
+title: "External assets REST API reference | Dagster Docs"
+---
+
+# External assets REST API reference
+
+As Dagster doesn't control scheduling or materializing [external assets](/concepts/assets/external-assets), it's up to you to keep their metadata updated. Use the endpoints described in this reference to report updates for external assets back to Dagster.
+
+---
+
+## API functionality
+
+Using the External Asset APIs, you can:
+
+- Report an <PyObject object="AssetMaterialization" /> event for an external asset to Dagster
+- Report an <PyObject object="asset_check" /> evaluation for an external asset to Dagster
+- Report an <PyObject object="AssetObservation" /> event for an external asset to Dagster
+
+---
+
+## Authentication
+
+Authentication is required only if requests are being made against a [Dagster+ instance](/dagster-plus). To authenticate, provide a valid [Dagster+ user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens) using the `Dagster-Cloud-Api-Token` header:
+
+```bash
+curl --request POST \
+    --url https://{ORGANIZATION}.dagster.cloud/{deployment_name}/report_asset_materialization/ \
+    --header 'Content-Type: application/json' \
+    --header 'Dagster-Cloud-Api-Token: {TOKEN}' \
+    --data '{
+        "asset_key": "{ASSET_KEY}",
+        "metadata": {
+            "rows": 10
+        },
+    }'
+```
+
+---
+
+## Constructing request URLs
+
+The full URL you send requests to will vary depending on how you access your Dagster instance:
+
+| Location               | URL                                             | Example request URL                                   |
+| ---------------------- | ----------------------------------------------- | ----------------------------------------------------- |
+| Local webserver        | Defaults to `localhost:3000`                    | `localhost:3000/report_asset_check`                   |
+| Dagster+               | `{ORGANIZATION}.dagster.plus/{DEPLOYMENT_NAME}` | `https://my-org.dagster.plus/prod/report_asset_check` |
+| Open source deployment | URL of the Dagster webserver                    | `https://dagster.my-org.com/report_asset_check`       |
+
+---
+
+## Available APIs
+
+| Endpoint                                                                  | Description                                                                        |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [`POST /report_asset_materialization/`](#report-an-asset-materialization) | Records an <PyObject object="AssetMaterialization" /> event for an external asset. |
+| [`POST /report_asset_check/`](#report-an-asset-check-evaluation)          | Records an <PyObject object="asset_check" /> evaluation for an external asset.     |
+| [`POST /report_asset_observation/`](#report-an-asset-observation)         | Records an <PyObject object="AssetObservation" /> event for an external asset.     |
+
+### Report an asset materialization
+
+Records an <PyObject object="AssetMaterialization" /> event for an external asset. This event type notifies the Dagster framework that a materialized value has been produced for an asset.
+
+Using this endpoint, you could report to Dagster that an [external asset](/concepts/assets/external-assets) has been updated and include [metadata about the materialization](/concepts/metadata-tags/asset-metadata). For example, the number of updated rows, the time the update occurred, and so on.
+
+#### Resources
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Method</strong>
+      </td>
+      <td>POST</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Resource URL</strong>
+      </td>
+      <td>
+        <code>/report_asset_materialization/</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Authentication</strong>
+      </td>
+      <td>
+        <strong>Required only for Dagster+.</strong> The request header must
+        contain the <code>Dagster-Cloud-Api-Token</code> header and a valid user
+        token.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Request header</strong>
+      </td>
+      <td>
+        The request header must specify the following:
+        <ul>
+          <li>
+            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+,
+            e.g. <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
+          </li>
+          <li>
+            <code>Content-Type</code> - Required if the request contains a JSON
+            body, specified as <code>Content-Type: application/json</code>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Request body</strong>
+      </td>
+      <td>If included, the request body must be valid JSON.</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Parameters
+
+Parameters can be passed in multiple ways and will be considered in the following order:
+
+1. URL (`asset_key` only)
+2. Request body, which must be valid JSON
+3. Query parameter
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Name
+      </th>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Required/Optional
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>asset_key</td>
+      <td>Required</td>
+      <td>
+        The key of the materialized asset. May be passed as:
+        <ul>
+          <li>
+            <strong>URL path</strong> - Specified as path components after{" "}
+            <code>/report_asset_materialization/</code>, where each{" "}
+            <code>/</code> delimits parts of a multipart{" "}
+            <PyObject object="AssetKey" />.
+          </li>
+          <li>
+            <strong>JSON body</strong> - Value is passed to the{" "}
+            <PyObject object="AssetKey" /> constructor.
+          </li>
+          <li>
+            <strong>Query parameter</strong> - Accepts string or JSON encoded
+            array for multipart keys.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>metadata</td>
+      <td>Optional</td>
+      <td>
+        Arbitrary metadata about the asset, specified as key-value pairs. May be
+        passed as:
+        <ul>
+          <li>
+            <strong>JSON body</strong> - Value is passed to the{" "}
+            <PyObject object="AssetMaterialization" /> constructor.
+          </li>
+          <li>
+            <strong>Query parameter</strong> - Accepts a JSON encoded object.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>data_version</td>
+      <td>Optional</td>
+      <td>
+        The data version of the asset associated with the materialization. May
+        be passed in JSON body or as a query parameter; value is passed to{" "}
+        <PyObject object="AssetMaterialization" /> via <code>tags</code>.
+      </td>
+    </tr>
+    <tr>
+      <td>description</td>
+      <td>Optional</td>
+      <td>
+        A human-readable description of the materialized value. May be passed in
+        JSON body or as a query parameter; value is passed to the{" "}
+        <PyObject object="AssetMaterialization" /> constructor.
+      </td>
+    </tr>
+    <tr>
+      <td>partition</td>
+      <td>Optional</td>
+      <td>
+        The name of the partition that was materialized. May be passed in JSON
+        body or as a query parameter; value is passed to the{" "}
+        <PyObject object="AssetMaterialization" /> constructor.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+#### Returns
+
+The API will return JSON, whether the request succeeds or fails.
+
+- `200 OK` - Response body contains an empty object: `{}`
+- `400 Bad request` - Response body contains an `error` object: `{"error": ...}`
+
+#### Examples
+
+<TabGroup>
+<TabItem name="Local webserver">
+
+##### Local webserver
+
+Report an asset materialization against locally running webserver:
+
+```bash
+curl -X POST localhost:3000/report_asset_materialization/{ASSET_KEY}
+```
+
+</TabItem>
+<TabItem name="Dagster+">
+
+##### Dagster+
+
+Report an asset materialization against Dagster+ with a JSON body via cURL:
+
+```bash
+curl --request POST \
+    --url https://{ORGANIZATION}.dagster.cloud/{DEPLOYMENT_NAME}/report_asset_materialization/ \
+    --header 'Content-Type: application/json' \
+    --header 'Dagster-Cloud-Api-Token: {TOKEN}' \
+    --data '{
+        "asset_key": "{ASSET_KEY}",
+        "metadata": {
+            "rows": 10
+        },
+    }'
+```
+
+Report an asset materialization against Dagster+ in Python using `requests`:
+
+```python
+import requests
+
+url = "https://{ORGANIZATION}.dagster.cloud/{DEPLOYMENT_NAME}/report_asset_materialization/"
+
+payload = {
+    "asset_key": "ASSET_KEY",
+    "metadata": {"rows": 10},
+}
+headers = {
+    "Content-Type": "application/json",
+    "Dagster-Cloud-Api-Token": "TOKEN"
+}
+
+response = requests.request("POST", url, json=payload, headers=headers)
+response.raise_for_status()
+```
+
+</TabItem>
+<TabItem name="Open source deployment">
+
+##### Open source deployment
+
+Report an asset materialization against an open source deployment (hosted at `DAGSTER_WEBSERVER_HOST`) in Python using `requests`:
+
+```python
+import requests
+
+url = f"{DAGSTER_WEBSERVER_HOST}/report_asset_materialization/{ASSET_KEY}"
+response = requests.request("POST", url)
+response.raise_for_status()
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+### Report an asset check evaluation
+
+Records an <code>AssetCheckEvaluation</code> event for an external asset. This event type notifies the Dagster framework of the results of an executed check.
+
+Using this endpoint, you could report to Dagster that an [asset check](/concepts/assets/asset-checks) has been executed and include metadata about the check. For example, if the check looks for `null` values in an `id` column, you could include the number of records with `null` IDs.
+
+#### Resources
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Method</strong>
+      </td>
+      <td>POST</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Resource URL</strong>
+      </td>
+      <td>
+        <code>/report_asset_check/</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Authentication</strong>
+      </td>
+      <td>
+        <strong>Required only for Dagster+.</strong> The request header must
+        contain the <code>Dagster-Cloud-Api-Token</code> header and a valid user
+        token.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Request header</strong>
+      </td>
+      <td>
+        The request header must specify the following:
+        <ul>
+          <li>
+            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+,
+            e.g. <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
+          </li>
+          <li>
+            <code>Content-Type</code> - Required if the request contains a JSON
+            body, specified as <code>Content-Type: application/json</code>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Request body</strong>
+      </td>
+      <td>If included, the request body must be valid JSON.</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Parameters
+
+Parameters can be passed in multiple ways and will be considered in the following order:
+
+1. URL (`asset_key` only)
+2. Request body, which must be valid JSON
+3. Query parameter
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Name
+      </th>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Required/Optional
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>asset_key</td>
+      <td>Required</td>
+      <td>
+        The key of the checked asset. May be passed as:
+        <ul>
+          <li>
+            <strong>URL path</strong> - Specified as path components after{" "}
+            <code>/report_asset_check/</code>, where each <code>/</code>{" "}
+            delimits parts of a multipart <PyObject object="AssetKey" />.
+          </li>
+          <li>
+            <strong>JSON body</strong> - Value is passed to the{" "}
+            <PyObject object="AssetKey" /> constructor.
+          </li>
+          <li>
+            <strong>Query parameter</strong> - Accepts string or JSON encoded
+            array for multipart keys.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>passed</td>
+      <td>Required</td>
+      <td>
+        The pass/fail result of the check. May be passed as:
+        <ul>
+          <li>
+            <strong>JSON body</strong> - Value is passed to the{" "}
+            <code>AssetCheckEvaluation</code> constructor.
+          </li>
+          <li>
+            <strong>Query parameter</strong> - Accepts a JSON encoded boolean:{" "}
+            <code>true</code> or <code>false</code>.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>check_name</td>
+      <td>Required</td>
+      <td>
+        The name of the check. May be passed in JSON body or as a query
+        parameter; value is passed to the <code>AssetCheckEvaluation</code>{" "}
+        constructor.
+      </td>
+    </tr>
+    <tr>
+      <td>metadata</td>
+      <td>Optional</td>
+      <td>
+        Arbitrary metadata about the check, specified as key-value pairs. May be
+        passed as:
+        <ul>
+          <li>
+            <strong>JSON body</strong> - Value is passed to the{" "}
+            <code>AssetCheckEvaluation</code> constructor.
+          </li>
+          <li>
+            <strong>Query parameter</strong> - Accepts a JSON encoded object.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>severity</td>
+      <td>Optional</td>
+      <td>
+        The severity of the check. Accepted values are:
+        <ul>
+          <li>
+            <code>WARN</code>
+          </li>
+          <li>
+            <code>ERROR</code> (default)
+          </li>
+        </ul>
+        May be passed in JSON body or as a query parameter; value is passed to
+        the <code>AssetCheckEvaluation</code> constructor.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+#### Returns
+
+The API will return JSON, whether the request succeeds or fails.
+
+- `200 OK` - Response body contains an empty object: `{}`
+- `400 Bad request` - Response body contains an `error` object: `{"error": ...}`
+
+#### Examples
+
+<TabGroup>
+<TabItem name="Local webserver">
+
+##### Local webserver
+
+Report a successful asset check (`check_null_ids`) against a locally running webserver:
+
+```bash
+curl -X POST localhost:3000/report_asset_check/{ASSET_KEY}?check_name=check_null_ids&passed=true
+```
+
+</TabItem>
+<TabItem name="Dagster+">
+
+##### Dagster+
+
+Report a failed asset check (`check_null_ids`) against Dagster+ with a JSON body via cURL:
+
+```bash
+curl --request POST \
+    --url https://{ORGANIZATION}.dagster.cloud/{DEPLOYMENT_NAME}/report_asset_check/ \
+    --header 'Content-Type: application/json' \
+    --header 'Dagster-Cloud-Api-Token: {TOKEN}' \
+    --data '{
+        "asset_key": "{ASSET_KEY},
+        "check_name": "check_null_ids",
+        "passed": false,
+        "metadata": {
+            "null_rows": 3
+        },
+    }'
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+### Report an asset observation
+
+Records an <PyObject object="AssetObservation" /> event for an external asset. This event type captures metadata about an asset at a point in time and provides it to the Dagster framework. Refer to the [Asset observation](/concepts/assets/asset-observations) documentation for more information.
+
+#### Resources
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Method</strong>
+      </td>
+      <td>POST</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Resource URL</strong>
+      </td>
+      <td>
+        <code>/report_asset_observation/</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Authentication</strong>
+      </td>
+      <td>
+        <strong>Required only for Dagster+.</strong> The request header must
+        contain the <code>Dagster-Cloud-Api-Token</code> header and a valid user
+        token.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Request header</strong>
+      </td>
+      <td>
+        The request header must specify the following:
+        <ul>
+          <li>
+            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+,
+            e.g. <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
+          </li>
+          <li>
+            <code>Content-Type</code> - Required if the request contains a JSON
+            body, specified as <code>Content-Type: application/json</code>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Request body</strong>
+      </td>
+      <td>If included, the request body must be valid JSON.</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Parameters
+
+Parameters can be passed in multiple ways and will be considered in the following order:
+
+1. URL (`asset_key` only)
+2. Request body, which must be valid JSON
+3. Query parameter
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Name
+      </th>
+      <th
+        style={{
+          width: "15%",
+        }}
+      >
+        Required/Optional
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>asset_key</td>
+      <td>Required</td>
+      <td>
+        The key of the observed asset. May be passed as:
+        <ul>
+          <li>
+            <strong>URL path</strong> - Specified as path components after{" "}
+            <code>/report_asset_observation/</code>, where each <code>/</code>{" "}
+            delimits parts of a multipart <PyObject object="AssetKey" />.
+          </li>
+          <li>
+            <strong>JSON body</strong> - Value is passed to the{" "}
+            <PyObject object="AssetKey" /> constructor.
+          </li>
+          <li>
+            <strong>Query parameter</strong> - Accepts string or JSON encoded
+            array for multipart keys.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>metadata</td>
+      <td>Optional</td>
+      <td>
+        Arbitrary metadata about the asset, specified as key-value pairs. May be
+        passed as:
+        <ul>
+          <li>
+            <strong>JSON body</strong> - Value is passed to the{" "}
+            <PyObject object="AssetObservation" /> constructor.
+          </li>
+          <li>
+            <strong>Query parameter</strong> - Accepts a JSON encoded object.
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>data_version</td>
+      <td>Optional</td>
+      <td>
+        The data version of the observed asset. May be passed in JSON body or as
+        a query parameter; value is passed to{" "}
+        <PyObject object="AssetObservation" /> via <code>tags</code>.
+      </td>
+    </tr>
+    <tr>
+      <td>description</td>
+      <td>Optional</td>
+      <td>
+        A human-readable description of the asset or observation. May be passed
+        in JSON body or as a query parameter; value is passed to the{" "}
+        <PyObject object="AssetObservation" /> constructor.
+      </td>
+    </tr>
+    <tr>
+      <td>partition</td>
+      <td>Optional</td>
+      <td>
+        The name of the partition that was observed. May be passed in JSON body
+        or as a query parameter; value is passed to the{" "}
+        <PyObject object="AssetObservation" /> constructor.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+#### Returns
+
+The API will return JSON, whether the request succeeds or fails.
+
+- `200 OK` - Response body contains an empty object: `{}`
+- `400 Bad request` - Response body contains an `error` object: `{"error": ...}`
+
+#### Examples
+
+<TabGroup>
+<TabItem name="Local webserver">
+
+##### Local webserver
+
+Report an asset observation with a data version against a locally running webserver:
+
+```bash
+curl -X POST localhost:3000/report_asset_observation/{ASSET_KEY}?data_version={VERSION}
+```
+
+</TabItem>
+<TabItem name="Dagster+">
+
+##### Dagster+
+
+Report an asset observation against Dagster+ with a JSON body via cURL:
+
+```bash
+curl --request POST \
+    --url https://{ORGANIZATION}.dagster.cloud/{DEPLOYMENT_NAME}/report_asset_observation/ \
+    --header 'Content-Type: application/json' \
+    --header 'Dagster-Cloud-Api-Token: {TOKEN}' \
+    --data '{
+        "asset_key": "{ASSET_KEY}",
+        "metadata": {
+            "rows": 10
+        },
+        "data_version": "{VERSION}",
+    }'
+```
+
+</TabItem>
+</TabGroup>

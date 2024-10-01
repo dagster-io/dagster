@@ -1,24 +1,29 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import {useLayoutEffect, useMemo} from 'react';
+import {useMemo} from 'react';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
+import {useRepository} from './WorkspaceContext/util';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {WorkspaceJobsQuery, WorkspaceJobsQueryVariables} from './types/WorkspaceJobsRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useStartTrace} from '../performance';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
+
+const NO_REPOS_EMPTY_ARR: any[] = [];
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
-  const trace = useStartTrace('WorkspaceJobsRoot');
   useTrackPageView();
+
+  const repo = useRepository(repoAddress);
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Jobs: ${repoName}`);
@@ -37,13 +42,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
       variables: {selector},
     },
   );
-  const {data, loading} = queryResultOverview;
-
-  useLayoutEffect(() => {
-    if (!loading) {
-      trace.endTrace();
-    }
-  }, [loading, trace]);
+  const {data, loading: queryLoading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -54,8 +53,15 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.pipelines;
     }
-    return [];
-  }, [data]);
+    if (repo) {
+      return repo.repository.pipelines;
+    }
+    return NO_REPOS_EMPTY_ARR;
+  }, [data, repo]);
+
+  const loading = jobs === NO_REPOS_EMPTY_ARR;
+
+  useBlockTraceUntilTrue('WorkspaceJobs', !loading);
 
   const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
@@ -107,14 +113,11 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     return <VirtualizedJobTable repoAddress={repoAddress} jobs={filteredBySearch} />;
   };
 
+  const showSearchSpinner = !data && queryLoading;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="jobs"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="jobs" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
@@ -122,6 +125,9 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Filter by job name…"
           style={{width: '340px'}}
+          rightElement={
+            showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+          }
         />
       </Box>
       {loading && !data ? (

@@ -25,7 +25,7 @@ For the assets in the `raw_files` and `ingested` groups, your assets should look
 
 ```python {% obfuscated="true" %}
 @asset(
-  group_name="GROUP_NAME"
+    group_name="GROUP_NAME"
 )
 def name_of_asset():
 ```
@@ -36,8 +36,8 @@ For the `adhoc_request` asset, your code should look like this:
 
 ```python {% obfuscated="true" %}
 request_assets = load_assets_from_modules(
-  modules=[requests],
-  group_name="requests",
+    modules=[requests],
+    group_name="requests",
 )
 ```
 

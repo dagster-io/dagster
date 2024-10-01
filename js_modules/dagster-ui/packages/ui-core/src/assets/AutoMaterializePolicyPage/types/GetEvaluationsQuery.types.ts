@@ -2,16 +2,6 @@
 
 import * as Types from '../../../graphql/types';
 
-export type AssetSubsetFragment = {
-  __typename: 'AssetSubset';
-  subsetValue: {
-    __typename: 'AssetSubsetValue';
-    isPartitioned: boolean;
-    partitionKeys: Array<string> | null;
-    partitionKeyRanges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
-  };
-};
-
 export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
   description: string;
@@ -30,6 +20,20 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -81,6 +85,20 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -127,6 +145,12 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -153,6 +177,20 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -202,6 +240,20 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -248,6 +300,12 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
@@ -258,36 +316,22 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
   startTimestamp: number | null;
   endTimestamp: number | null;
   numTrue: number;
-  numFalse: number | null;
-  numSkipped: number | null;
   uniqueId: string;
   childUniqueIds: Array<string>;
-  trueSubset: {
-    __typename: 'AssetSubset';
-    subsetValue: {
-      __typename: 'AssetSubsetValue';
-      isPartitioned: boolean;
-      partitionKeys: Array<string> | null;
-      partitionKeyRanges: Array<{
-        __typename: 'PartitionKeyRange';
-        start: string;
-        end: string;
-      }> | null;
-    };
-  };
-  candidateSubset: {
-    __typename: 'AssetSubset';
-    subsetValue: {
-      __typename: 'AssetSubsetValue';
-      isPartitioned: boolean;
-      partitionKeys: Array<string> | null;
-      partitionKeyRanges: Array<{
-        __typename: 'PartitionKeyRange';
-        start: string;
-        end: string;
-      }> | null;
-    };
-  } | null;
+  numCandidates: number | null;
+};
+
+export type NewEvaluationNodeFragment = {
+  __typename: 'AutomationConditionEvaluationNode';
+  uniqueId: string;
+  expandedLabel: Array<string>;
+  userLabel: string | null;
+  startTimestamp: number | null;
+  endTimestamp: number | null;
+  numCandidates: number | null;
+  numTrue: number;
+  isPartitioned: boolean;
+  childUniqueIds: Array<string>;
 };
 
 export type AssetConditionEvaluationRecordFragment = {
@@ -299,6 +343,7 @@ export type AssetConditionEvaluationRecordFragment = {
   timestamp: number;
   startTimestamp: number | null;
   endTimestamp: number | null;
+  isLegacy: boolean;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   evaluation: {
     __typename: 'AssetConditionEvaluation';
@@ -310,36 +355,9 @@ export type AssetConditionEvaluationRecordFragment = {
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
-          numFalse: number | null;
-          numSkipped: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
-          trueSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          };
-          candidateSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          } | null;
+          numCandidates: number | null;
         }
       | {
           __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -359,6 +377,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -420,6 +452,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -468,6 +514,12 @@ export type AssetConditionEvaluationRecordFragment = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -501,6 +553,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -560,6 +626,20 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -612,6 +692,12 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -621,12 +707,24 @@ export type AssetConditionEvaluationRecordFragment = {
         }
     >;
   };
+  evaluationNodes: Array<{
+    __typename: 'AutomationConditionEvaluationNode';
+    uniqueId: string;
+    expandedLabel: Array<string>;
+    userLabel: string | null;
+    startTimestamp: number | null;
+    endTimestamp: number | null;
+    numCandidates: number | null;
+    numTrue: number;
+    isPartitioned: boolean;
+    childUniqueIds: Array<string>;
+  }>;
 };
 
 export type GetEvaluationsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  limit: Types.Scalars['Int'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type GetEvaluationsQuery = {
@@ -659,6 +757,7 @@ export type GetEvaluationsQuery = {
           timestamp: number;
           startTimestamp: number | null;
           endTimestamp: number | null;
+          isLegacy: boolean;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           evaluation: {
             __typename: 'AssetConditionEvaluation';
@@ -670,36 +769,9 @@ export type GetEvaluationsQuery = {
                   startTimestamp: number | null;
                   endTimestamp: number | null;
                   numTrue: number;
-                  numFalse: number | null;
-                  numSkipped: number | null;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
-                  trueSubset: {
-                    __typename: 'AssetSubset';
-                    subsetValue: {
-                      __typename: 'AssetSubsetValue';
-                      isPartitioned: boolean;
-                      partitionKeys: Array<string> | null;
-                      partitionKeyRanges: Array<{
-                        __typename: 'PartitionKeyRange';
-                        start: string;
-                        end: string;
-                      }> | null;
-                    };
-                  };
-                  candidateSubset: {
-                    __typename: 'AssetSubset';
-                    subsetValue: {
-                      __typename: 'AssetSubsetValue';
-                      isPartitioned: boolean;
-                      partitionKeys: Array<string> | null;
-                      partitionKeyRanges: Array<{
-                        __typename: 'PartitionKeyRange';
-                        start: string;
-                        end: string;
-                      }> | null;
-                    };
-                  } | null;
+                  numCandidates: number | null;
                 }
               | {
                   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -719,6 +791,20 @@ export type GetEvaluationsQuery = {
                         boolValue: boolean | null;
                         label: string;
                         description: string | null;
+                      }
+                    | {
+                        __typename: 'CodeReferencesMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        codeReferences: Array<
+                          | {
+                              __typename: 'LocalFileCodeReference';
+                              filePath: string;
+                              lineNumber: number | null;
+                              label: string | null;
+                            }
+                          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                        >;
                       }
                     | {
                         __typename: 'FloatMetadataEntry';
@@ -780,6 +866,20 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'TableColumnLineageMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        lineage: Array<{
+                          __typename: 'TableColumnLineageEntry';
+                          columnName: string;
+                          columnDeps: Array<{
+                            __typename: 'TableColumnDep';
+                            columnName: string;
+                            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                          }>;
+                        }>;
+                      }
+                    | {
                         __typename: 'TableMetadataEntry';
                         label: string;
                         description: string | null;
@@ -834,6 +934,12 @@ export type GetEvaluationsQuery = {
                     | {
                         __typename: 'TextMetadataEntry';
                         text: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number;
                         label: string;
                         description: string | null;
                       }
@@ -867,6 +973,20 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'CodeReferencesMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        codeReferences: Array<
+                          | {
+                              __typename: 'LocalFileCodeReference';
+                              filePath: string;
+                              lineNumber: number | null;
+                              label: string | null;
+                            }
+                          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                        >;
+                      }
+                    | {
                         __typename: 'FloatMetadataEntry';
                         floatValue: number | null;
                         label: string;
@@ -924,6 +1044,20 @@ export type GetEvaluationsQuery = {
                         name: string;
                         label: string;
                         description: string | null;
+                      }
+                    | {
+                        __typename: 'TableColumnLineageMetadataEntry';
+                        label: string;
+                        description: string | null;
+                        lineage: Array<{
+                          __typename: 'TableColumnLineageEntry';
+                          columnName: string;
+                          columnDeps: Array<{
+                            __typename: 'TableColumnDep';
+                            columnName: string;
+                            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                          }>;
+                        }>;
                       }
                     | {
                         __typename: 'TableMetadataEntry';
@@ -984,6 +1118,12 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'TimestampMetadataEntry';
+                        timestamp: number;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'UrlMetadataEntry';
                         url: string;
                         label: string;
@@ -993,6 +1133,18 @@ export type GetEvaluationsQuery = {
                 }
             >;
           };
+          evaluationNodes: Array<{
+            __typename: 'AutomationConditionEvaluationNode';
+            uniqueId: string;
+            expandedLabel: Array<string>;
+            userLabel: string | null;
+            startTimestamp: number | null;
+            endTimestamp: number | null;
+            numCandidates: number | null;
+            numTrue: number;
+            isPartitioned: boolean;
+            childUniqueIds: Array<string>;
+          }>;
         }>;
       }
     | {__typename: 'AutoMaterializeAssetEvaluationNeedsMigrationError'; message: string}
@@ -1001,8 +1153,8 @@ export type GetEvaluationsQuery = {
 
 export type GetEvaluationsSpecificPartitionQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  evaluationId: Types.Scalars['Int'];
-  partition: Types.Scalars['String'];
+  evaluationId: Types.Scalars['Int']['input'];
+  partition: Types.Scalars['String']['input'];
 }>;
 
 export type GetEvaluationsSpecificPartitionQuery = {
@@ -1017,36 +1169,9 @@ export type GetEvaluationsSpecificPartitionQuery = {
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
-          numFalse: number | null;
-          numSkipped: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
-          trueSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          };
-          candidateSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          } | null;
+          numCandidates: number | null;
         }
       | {
           __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -1066,6 +1191,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -1127,6 +1266,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -1175,6 +1328,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -1208,6 +1367,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -1267,6 +1440,20 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -1319,6 +1506,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -1329,3 +1522,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
     >;
   } | null;
 };
+
+export const GetEvaluationsQueryVersion = '7245007702d5b47f77048aa7fb61a01c5b139974f96b562b89f06c42af68c924';
+
+export const GetEvaluationsSpecificPartitionQueryVersion = '12b4456c4cf6852a8dc9f7e2ec0a46b4272e10558de5512695c40cdc7de1ff0f';

@@ -1,13 +1,13 @@
-import {gql} from '@apollo/client';
-
 import {
   ResetScheduleMutation,
   StartThisScheduleMutation,
   StopScheduleMutation,
 } from './types/ScheduleMutations.types';
+import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 
 export const START_SCHEDULE_MUTATION = gql`
   mutation StartThisSchedule($scheduleSelector: ScheduleSelector!) {
@@ -15,8 +15,7 @@ export const START_SCHEDULE_MUTATION = gql`
       ... on ScheduleStateResult {
         scheduleState {
           id
-          status
-          runningCount
+          ...InstigationStateBaseFragment
         }
       }
       ... on UnauthorizedError {
@@ -26,15 +25,13 @@ export const START_SCHEDULE_MUTATION = gql`
     }
   }
 
+  ${INSTIGATION_STATE_BASE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const STOP_SCHEDULE_MUTATION = gql`
-  mutation StopSchedule($scheduleOriginId: String!, $scheduleSelectorId: String!) {
-    stopRunningSchedule(
-      scheduleOriginId: $scheduleOriginId
-      scheduleSelectorId: $scheduleSelectorId
-    ) {
+  mutation StopSchedule($id: String!) {
+    stopRunningSchedule(id: $id) {
       ... on ScheduleStateResult {
         scheduleState {
           id

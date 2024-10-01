@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
 
 import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetKeyInput} from '../graphql/types';
 
 const useSanitizedAssetSearch = (searchValue: string) => {
   return useMemo(() => {
@@ -11,33 +12,21 @@ const useSanitizedAssetSearch = (searchValue: string) => {
   }, [searchValue]);
 };
 
-export const useAssetSearch = <A extends {key: {path: string[]}}>(
+export const useAssetSearch = <A extends {key: AssetKeyInput} | {assetKey: AssetKeyInput}>(
   searchValue: string,
   assets: A[],
 ): A[] => {
   const sanitizedSearch = useSanitizedAssetSearch(searchValue);
+
   return useMemo(() => {
     // If there is no search value, match everything.
     if (!sanitizedSearch) {
       return assets;
     }
-    return assets.filter((a) => tokenForAssetKey(a.key).toLowerCase().includes(sanitizedSearch));
-  }, [assets, sanitizedSearch]);
-};
-
-export const useAssetNodeSearch = <A extends {assetKey: {path: string[]}}>(
-  searchValue: string,
-  assetNodes: A[],
-): A[] => {
-  const sanitizedSearch = useSanitizedAssetSearch(searchValue);
-
-  return useMemo(() => {
-    // If there is no search value, match everything.
-    if (!sanitizedSearch) {
-      return assetNodes;
-    }
-    return assetNodes.filter((a) =>
-      tokenForAssetKey(a.assetKey).toLowerCase().includes(sanitizedSearch),
+    return assets.filter((a) =>
+      tokenForAssetKey('assetKey' in a ? a.assetKey : a.key)
+        .toLowerCase()
+        .includes(sanitizedSearch),
     );
-  }, [assetNodes, sanitizedSearch]);
+  }, [assets, sanitizedSearch]);
 };

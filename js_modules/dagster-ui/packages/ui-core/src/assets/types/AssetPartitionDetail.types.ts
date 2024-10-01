@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type AssetPartitionDetailQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  partitionKey: Types.Scalars['String'];
+  partitionKey: Types.Scalars['String']['input'];
 }>;
 
 export type AssetPartitionDetailQuery = {
@@ -58,6 +58,20 @@ export type AssetPartitionDetailQuery = {
                 boolValue: boolean | null;
                 label: string;
                 description: string | null;
+              }
+            | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -119,6 +133,20 @@ export type AssetPartitionDetailQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -167,6 +195,12 @@ export type AssetPartitionDetailQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -223,6 +257,20 @@ export type AssetPartitionDetailQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -282,6 +330,20 @@ export type AssetPartitionDetailQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -334,6 +396,12 @@ export type AssetPartitionDetailQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'UrlMetadataEntry';
                 url: string;
                 label: string;
@@ -354,7 +422,7 @@ export type AssetPartitionLatestRunFragment = {
 
 export type AssetPartitionStaleQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  partitionKey: Types.Scalars['String'];
+  partitionKey: Types.Scalars['String']['input'];
 }>;
 
 export type AssetPartitionStaleQuery = {
@@ -374,3 +442,7 @@ export type AssetPartitionStaleQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const AssetPartitionDetailQueryVersion = 'b49c58aafc8743640c067d5897b931ad98adcc3584193afad7fb96424a1ee010';
+
+export const AssetPartitionStaleQueryVersion = '4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764';

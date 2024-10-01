@@ -1,21 +1,23 @@
-from typing import Iterable, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Iterable, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.partition_mapping import (
+    PartitionMapping,
+    warn_if_partition_mapping_not_builtin,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from .events import (
-    AssetKey,
-    CoercibleToAssetKey,
-)
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+
 
 CoercibleToAssetDep = Union[
-    CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset, "AssetDep"
+    CoercibleToAssetKey, AssetSpec, "AssetsDefinition", SourceAsset, "AssetDep"
 ]
 
 
@@ -54,10 +56,12 @@ class AssetDep(
 
     def __new__(
         cls,
-        asset: Union[CoercibleToAssetKey, AssetSpec, AssetsDefinition, SourceAsset],
+        asset: Union[CoercibleToAssetKey, AssetSpec, "AssetsDefinition", SourceAsset],
         *,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
+        from dagster._core.definitions.assets import AssetsDefinition
+
         if isinstance(asset, list):
             check.list_param(asset, "asset", of_type=str)
         else:
@@ -74,6 +78,9 @@ class AssetDep(
             )
 
         asset_key = _get_asset_key(asset)
+
+        if partition_mapping:
+            warn_if_partition_mapping_not_builtin(partition_mapping)
 
         return super().__new__(
             cls,
@@ -92,6 +99,8 @@ class AssetDep(
 
 
 def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
+    from dagster._core.definitions.assets import AssetsDefinition
+
     if isinstance(arg, (AssetsDefinition, SourceAsset, AssetSpec)):
         return arg.key
     elif isinstance(arg, AssetDep):

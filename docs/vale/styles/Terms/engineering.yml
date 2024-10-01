@@ -1,0 +1,24 @@
+## This rule finds incorrectly formatting programming languages and software names and suggests a correction.
+
+extends: substitution
+message: "Use '%s' instead of '%s'."
+level: warning
+ignorecase: true
+action:
+  name: replace
+swap:
+
+# General
+  HTTPs: HTTPS
+  "[Ss]cim": "SCIM"
+  ui: "UI"
+  web server: "webserver"
+
+# Languages
+  "[Gg]raphql": "GraphQL"
+  javascript: "JavaScript"
+  "[Nn]ode[.]?[Jj][Ss]": "Node.js"
+  python: "Python"
+  pythonic: "Pythonic"
+  sql: "SQL"
+  "[Tt]ypescript": "TypeScript"

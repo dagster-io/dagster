@@ -1,5 +1,4 @@
 # ruff: noqa: SLF001
-
 import datetime
 import os
 import re
@@ -12,13 +11,12 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    DagsterEventType,
-    EventRecordsFilter,
     Output,
     job,
     op,
     reconstructable,
 )
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
@@ -660,7 +658,7 @@ def test_add_asset_event_tags_table(hostname, conn_string):
     @op
     def yields_materialization_w_tags():
         yield AssetMaterialization(asset_key=AssetKey(["a"]))
-        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={DATA_VERSION_TAG: "bar"})
         yield Output(1)
 
     @job
@@ -689,56 +687,6 @@ def test_add_asset_event_tags_table(hostname, conn_string):
             assert "asset_event_tags" not in get_tables(instance)
 
             asset_job.execute_in_process(instance=instance)
-
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "bar"},
-                        )
-                    )
-                )
-                == 1
-            )
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "baz"},
-                        )
-                    )
-                )
-                == 0
-            )
-            assert (
-                len(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                            asset_key=AssetKey("a"),
-                            tags={"dagster/foo": "bar", "other": "otherr"},
-                        )
-                    )
-                )
-                == 0
-            )
-
-            with pytest.raises(
-                DagsterInvalidInvocationError, match="Cannot filter events on tags with a limit"
-            ):
-                instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=AssetKey("a"),
-                        tags={"dagster/foo": "bar", "other": "otherr"},
-                    ),
-                    limit=5,
-                )
-
             with pytest.raises(
                 DagsterInvalidInvocationError, match="In order to search for asset event tags"
             ):
@@ -748,7 +696,7 @@ def test_add_asset_event_tags_table(hostname, conn_string):
             assert "asset_event_tags" in get_tables(instance)
             asset_job.execute_in_process(instance=instance)
             assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
-                {"dagster/foo": "bar"}
+                {DATA_VERSION_TAG: "bar"}
             ]
 
             indexes = get_indexes(instance, "asset_event_tags")
@@ -776,11 +724,11 @@ def test_add_cached_status_data_column(hostname, conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-            assert instance.can_cache_asset_status_data() is False
+            assert instance.can_read_asset_status_cache() is False
             assert {"cached_status_data"} & get_columns(instance, "asset_keys") == set()
 
             instance.upgrade()
-            assert instance.can_cache_asset_status_data() is True
+            assert instance.can_read_asset_status_cache() is True
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")
 
 

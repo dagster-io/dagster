@@ -3,9 +3,12 @@ import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {RunTable} from '../../runs/RunTable';
-import {RUNS_ROOT_QUERY} from '../../runs/RunsRoot';
-import {RunsRootQuery, RunsRootQueryVariables} from '../../runs/types/RunsRoot.types';
+import {
+  RunsRootQuery,
+  RunsRootQueryVariables,
+} from '../../runs/types/usePaginatedRunsTableRuns.types';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
+import {RUNS_ROOT_QUERY} from '../../runs/usePaginatedRunsTableRuns';
 
 const PAGE_SIZE = 15;
 

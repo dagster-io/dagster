@@ -1,7 +1,7 @@
 import graphene
 
-from .schedules import GrapheneSchedule
-from .sensors import GrapheneSensor
+from dagster_graphql.schema.schedules import GrapheneSchedule
+from dagster_graphql.schema.sensors import GrapheneSensor
 
 
 class GrapheneInstigator(graphene.Union):

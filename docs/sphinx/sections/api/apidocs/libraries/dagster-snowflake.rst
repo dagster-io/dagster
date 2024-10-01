@@ -10,10 +10,10 @@ your data warehouse.
 
 Related Guides:
 
-* `Using Dagster with Snowflake </integrations/snowflake>`_
-* `Snowflake I/O manager reference </integrations/snowflake/reference>`_
-* `Transitioning Data Pipelines from Development to Production </guides/dagster/transitioning-data-pipelines-from-development-to-production>`_
-* `Testing Against Production with Dagster Cloud Branch Deployments </guides/dagster/branch_deployments>`_
+* `Using Dagster with Snowflake <https://docs.dagster.io/integrations/snowflake>`_
+* `Snowflake I/O manager reference <https://docs.dagster.io/integrations/snowflake/reference>`_
+* `Transitioning data pipelines from development to production <https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production>`_
+* `Testing against production with Dagster+ Branch Deployments <https://docs.dagster.io/guides/dagster/branch_deployments>`_
 
 
 .. currentmodule:: dagster_snowflake
@@ -31,6 +31,11 @@ Resource
 
 .. autoclass:: SnowflakeConnection
   :members:
+
+Data Freshness 
+==============
+
+.. autofunction:: fetch_last_updated_timestamps
 
 Ops
 ===

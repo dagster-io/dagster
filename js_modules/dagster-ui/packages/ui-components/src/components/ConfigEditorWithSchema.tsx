@@ -4,7 +4,7 @@ import {createGlobalStyle} from 'styled-components';
 import {Box} from './Box';
 import {ConfigEditorHandle, ConfigSchema, NewConfigEditor} from './NewConfigEditor';
 import {Spinner} from './Spinner';
-import {SplitPanelContainer} from './SplitPanelContainer';
+import {SplitPanelContainer, SplitPanelContainerHandle} from './SplitPanelContainer';
 import {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
 import {isHelpContextEqual} from './configeditor/isHelpContextEqual';
 import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
@@ -32,7 +32,7 @@ export const ConfigEditorWithSchema = ({
   onConfigChange,
   configSchema,
 }: Props) => {
-  const editorSplitPanelContainer = useRef<SplitPanelContainer | null>(null);
+  const editorSplitPanelContainer = useRef<SplitPanelContainerHandle | null>(null);
   const [editorHelpContext, setEditorHelpContext] = useState<ConfigEditorHelpContext | null>(null);
   const editor = useRef<ConfigEditorHandle | null>(null);
 

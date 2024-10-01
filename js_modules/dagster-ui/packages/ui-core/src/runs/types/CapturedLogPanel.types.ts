@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type CapturedLogsSubscriptionVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']> | Types.Scalars['String'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type CapturedLogsSubscription = {
@@ -25,7 +25,7 @@ export type CapturedLogFragment = {
 };
 
 export type CapturedLogsMetadataQueryVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']> | Types.Scalars['String'];
+  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
 }>;
 
 export type CapturedLogsMetadataQuery = {
@@ -40,9 +40,9 @@ export type CapturedLogsMetadataQuery = {
 };
 
 export type CapturedLogsQueryVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']> | Types.Scalars['String'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type CapturedLogsQuery = {
@@ -54,3 +54,9 @@ export type CapturedLogsQuery = {
     cursor: string | null;
   };
 };
+
+export const CapturedLogsSubscriptionVersion = 'fa5e55b59e9d8632ae71a8387c54230ba71e6f57849a974225ba039808acfa93';
+
+export const CapturedLogsMetadataQueryVersion = 'b59ada7585593473002a7b044f09daa85f160445cbc9a4e8ffe0b46d51875cb1';
+
+export const CapturedLogsQueryVersion = '872b617b4f33ee5f6feeba9a4c76ec986fca357695a114e3d7b63172e4600b57';

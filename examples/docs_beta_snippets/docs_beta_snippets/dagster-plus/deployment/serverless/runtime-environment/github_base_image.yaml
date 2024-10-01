@@ -1,0 +1,6 @@
+env:
+  DAGSTER_CLOUD_URL: "http://jamie-test-1.canary.dagster.cloud"
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  # highlight-start
+  SERVERLESS_BASE_IMAGE_TAG: "sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6"
+  # highlight-end

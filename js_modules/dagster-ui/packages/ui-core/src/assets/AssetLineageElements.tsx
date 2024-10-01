@@ -1,10 +1,10 @@
-import {gql} from '@apollo/client';
 import {Box, ButtonLink, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetLineageFragment} from './types/AssetLineageElements.types';
+import {gql} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 
 const AssetLineageInfoElement = ({
@@ -42,16 +42,15 @@ const AssetLineageInfoElement = ({
           <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
             {lineage_info.assetKey.path
               .map((p, i) => <span key={i}>{p}</span>)
-              .reduce(
-                (accum, curr, ii) => [
-                  ...accum,
-                  ii > 0 ? (
-                    <React.Fragment key={`${ii}-space`}>&nbsp;{'>'}&nbsp;</React.Fragment>
-                  ) : null,
-                  curr,
-                ],
-                [] as React.ReactNode[],
-              )}
+              .reduce((accum, curr, ii) => {
+                if (ii > 0) {
+                  accum.push(
+                    <React.Fragment key={`${ii}-space`}>&nbsp;{'>'}&nbsp;</React.Fragment>,
+                  );
+                }
+                accum.push(curr);
+                return accum;
+              }, [] as React.ReactNode[])}
           </Box>
         </Link>
       </Tooltip>

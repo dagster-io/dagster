@@ -15,7 +15,7 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
     }
   }
 
-  .CodeMirror-cursor {
+  .CodeMirror-cursor.CodeMirror-cursor {
     border-color: ${Colors.textLight()};
   }
 
@@ -25,15 +25,22 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   .CodeMirror-lint-message-error,
   .CodeMirror-lint-message-warning {
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
+    font-variant-ligatures: none;
   }
+
 
   .CodeMirror.cm-s-dagster {
     background-color: ${Colors.backgroundLight()};
     color: ${Colors.textDefault()};
 
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
+    font-variant-ligatures: none;
+
+    .CodeMirror-code .CodeMirror-line {
+      font-variant-ligatures: none;
+    }
 
     /* Note: Theme overrides */
     &.cm-s-default .cm-comment {
@@ -117,11 +124,14 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   div.CodeMirror-lint-tooltip {
     background: ${Colors.backgroundDefault()};
     border: 1px solid ${Colors.borderDefault()};
+    color: ${Colors.textDefault()};
+    font-family: ${FontFamily.monospace};
   }
 
   .CodeMirror-lint-message {
     background: transparent;
   }
+
   .CodeMirror-lint-message.CodeMirror-lint-message-error {
     background: transparent;
   }

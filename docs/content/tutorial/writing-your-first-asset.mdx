@@ -1,6 +1,6 @@
 ---
 title: "Tutorial, part three: Writing your first asset | Dagster Docs"
-description: Software-defined assets can depend on other software-defined assets
+description: Asset definitions can depend on other asset definitions
 ---
 
 # Tutorial, part three: Writing your first asset
@@ -46,7 +46,7 @@ with open("data/topstory_ids.json", "w") as f:
 
 This code creates a list of integers representing the IDs for the current top stories on Hacker News and stores them in a file called `data/topstory_ids.json`.
 
-Next, you will work towards making this code into a software-defined asset. The first step is turning it into a function:
+Next, you will work towards making this code into an asset definition. The first step is turning it into a function:
 
 ```python
 import json
@@ -114,7 +114,7 @@ Observe that Dagster has detected your `topstory_ids` asset, but it says that th
 
 ## Step 2: Materialize your asset
 
-To **materialize** a Software-defined asset means to create or update it. Dagster materializes assets by executing the asset's function or triggering an integration.
+To **materialize** an asset means to create or update it. Dagster materializes assets by executing the asset's function or triggering an integration.
 
 To manually materialize an asset in the UI, click the **Materialize** button in the upper right corner of the screen. This will create a Dagster run that will materialize your assets.
 

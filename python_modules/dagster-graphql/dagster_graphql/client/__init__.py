@@ -1,5 +1,5 @@
-from .client import DagsterGraphQLClient as DagsterGraphQLClient
-from .utils import (
+from dagster_graphql.client.client import DagsterGraphQLClient as DagsterGraphQLClient
+from dagster_graphql.client.utils import (
     DagsterGraphQLClientError as DagsterGraphQLClientError,
     InvalidOutputErrorInfo as InvalidOutputErrorInfo,
     ReloadRepositoryLocationInfo as ReloadRepositoryLocationInfo,

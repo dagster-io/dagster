@@ -1,19 +1,27 @@
+from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Generic,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
-import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
-from dagster._core.definitions.asset_condition import (
-    AssetConditionEvaluationWithRunIds,
-)
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+from dagster._core.definitions.asset_key import T_EntityKey, entity_key_from_db_string
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition
 
 # re-export
 from dagster._core.definitions.run_request import (
@@ -22,15 +30,11 @@ from dagster._core.definitions.run_request import (
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.host_representation.origin import ExternalInstigatorOrigin
+from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import (
-    EnumSerializer,
-    deserialize_value,
-    whitelist_for_serdes,
-)
-from dagster._utils import datetime_as_float, xor
+from dagster._serdes.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
+from dagster._time import get_current_timestamp, utc_datetime_from_naive
+from dagster._utils import xor
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -112,6 +116,9 @@ class SensorInstigatorData(
             # the last time the sensor was started
             ("last_sensor_start_timestamp", Optional[float]),
             ("sensor_type", Optional[SensorType]),
+            # the last time the tick completed evaluation, used to detect cases where ticks are
+            # interrupted part way through
+            ("last_tick_success_timestamp", Optional[float]),
         ],
     )
 ):
@@ -124,6 +131,7 @@ class SensorInstigatorData(
         last_tick_start_timestamp: Optional[float] = None,
         last_sensor_start_timestamp: Optional[float] = None,
         sensor_type: Optional[SensorType] = None,
+        last_tick_success_timestamp: Optional[float] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -134,6 +142,7 @@ class SensorInstigatorData(
             check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
             check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
             check.opt_inst_param(sensor_type, "sensor_type", SensorType),
+            check.opt_float_param(last_tick_success_timestamp, "last_tick_success_timestamp"),
         )
 
     def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
@@ -146,6 +155,7 @@ class SensorInstigatorData(
             self.last_tick_start_timestamp,
             start_timestamp,
             self.sensor_type,
+            self.last_tick_success_timestamp,
         )
 
 
@@ -212,7 +222,7 @@ class InstigatorState(
     NamedTuple(
         "_InstigationState",
         [
-            ("origin", ExternalInstigatorOrigin),
+            ("origin", RemoteInstigatorOrigin),
             ("instigator_type", InstigatorType),
             ("status", InstigatorStatus),
             ("instigator_data", Optional[InstigatorData]),
@@ -221,14 +231,14 @@ class InstigatorState(
 ):
     def __new__(
         cls,
-        origin: ExternalInstigatorOrigin,
+        origin: RemoteInstigatorOrigin,
         instigator_type: InstigatorType,
         status: InstigatorStatus,
         instigator_data: Optional[InstigatorData] = None,
     ):
         return super(InstigatorState, cls).__new__(
             cls,
-            check.inst_param(origin, "origin", ExternalInstigatorOrigin),
+            check.inst_param(origin, "origin", RemoteInstigatorOrigin),
             check.inst_param(instigator_type, "instigator_type", InstigatorType),
             check.inst_param(status, "status", InstigatorStatus),
             check_instigator_data(instigator_type, instigator_data),
@@ -248,13 +258,13 @@ class InstigatorState(
 
     @property
     def repository_origin_id(self) -> str:
-        return self.origin.external_repository_origin.get_id()
+        return self.origin.repository_origin.get_id()
 
     @property
     def repository_selector(self) -> RepositorySelector:
         return RepositorySelector(
-            self.origin.external_repository_origin.code_location_origin.location_name,
-            self.origin.external_repository_origin.repository_name,
+            location_name=self.origin.repository_origin.code_location_origin.location_name,
+            repository_name=self.origin.repository_origin.repository_name,
         )
 
     @property
@@ -269,9 +279,9 @@ class InstigatorState(
     def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
-                self.origin.external_repository_origin.code_location_origin.location_name,
-                self.origin.external_repository_origin.repository_name,
-                self.origin.instigator_name,
+                location_name=self.origin.repository_origin.code_location_origin.location_name,
+                repository_name=self.origin.repository_origin.repository_name,
+                name=self.origin.instigator_name,
             )
         )
 
@@ -292,6 +302,12 @@ class InstigatorState(
             status=self.status,
             instigator_data=instigator_data,
         )
+
+    @property
+    def sensor_instigator_data(self) -> Optional["SensorInstigatorData"]:
+        if isinstance(self.instigator_data, SensorInstigatorData):
+            return self.instigator_data
+        return None
 
 
 @whitelist_for_serdes(old_storage_names={"JobTickStatus"})
@@ -315,7 +331,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
-        end_timestamp = pendulum.now("UTC").timestamp() if status != TickStatus.STARTED else None
+        end_timestamp = get_current_timestamp() if status != TickStatus.STARTED else None
         kwargs["end_timestamp"] = end_timestamp
         return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
 
@@ -437,11 +453,27 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         if self.tick_data.status != TickStatus.SUCCESS:
             return 0
 
-        asset_partitions = set()
+        asset_partitions_from_single_runs = set()
+        num_assets_requested_from_backfill_runs = 0
+        num_requested_checks = 0
         for run_request in self.tick_data.run_requests or []:
-            for asset_key in run_request.asset_selection or []:
-                asset_partitions.add(AssetKeyPartitionKey(asset_key, run_request.partition_key))
-        return len(asset_partitions)
+            if run_request.requires_backfill_daemon():
+                asset_graph_subset = check.not_none(run_request.asset_graph_subset)
+                num_assets_requested_from_backfill_runs += (
+                    asset_graph_subset.num_partitions_and_non_partitioned_assets
+                )
+            else:
+                for asset_key in run_request.asset_selection or []:
+                    asset_partitions_from_single_runs.add(
+                        AssetKeyPartitionKey(asset_key, run_request.partition_key)
+                    )
+                for asset_check_key in run_request.asset_check_keys or []:
+                    num_requested_checks += 1
+        return (
+            len(asset_partitions_from_single_runs)
+            + num_assets_requested_from_backfill_runs
+            + num_requested_checks
+        )
 
     @property
     def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
@@ -450,12 +482,28 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
         partitions_by_asset_key = {}
         for run_request in self.tick_data.run_requests or []:
-            for asset_key in run_request.asset_selection or []:
-                if asset_key not in partitions_by_asset_key:
-                    partitions_by_asset_key[asset_key] = set()
+            if run_request.requires_backfill_daemon():
+                asset_graph_subset = check.not_none(run_request.asset_graph_subset)
+                for asset_key_partition_key in asset_graph_subset.iterate_asset_partitions():
+                    if asset_key_partition_key.asset_key not in partitions_by_asset_key:
+                        partitions_by_asset_key[asset_key_partition_key.asset_key] = set()
+                    if asset_key_partition_key.partition_key:
+                        partitions_by_asset_key[asset_key_partition_key.asset_key].add(
+                            asset_key_partition_key.partition_key
+                        )
+            else:
+                for asset_key in run_request.asset_selection or []:
+                    if asset_key not in partitions_by_asset_key:
+                        partitions_by_asset_key[asset_key] = set()
 
-                if run_request.partition_key:
-                    partitions_by_asset_key[asset_key].add(run_request.partition_key)
+                    if run_request.partition_key:
+                        partitions_by_asset_key[asset_key].add(run_request.partition_key)
+                for asset_check_key in run_request.asset_check_keys or []:
+                    asset_key = asset_check_key.asset_key
+                    if asset_key not in partitions_by_asset_key:
+                        partitions_by_asset_key[asset_key] = set()
+
+                    partitions_by_asset_key[asset_key].add(asset_check_key.name)
 
         return partitions_by_asset_key
 
@@ -469,6 +517,16 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def run_requests(self) -> Optional[Sequence[RunRequest]]:
         return self.tick_data.run_requests
+
+    @property
+    def unsubmitted_run_ids_with_requests(self) -> Sequence[Tuple[str, RunRequest]]:
+        reserved_run_ids = self.tick_data.reserved_run_ids or []
+        unrequested_run_ids = set(reserved_run_ids) - set(self.tick_data.run_ids)
+        return [
+            (run_id, run_request)
+            for run_id, run_request in zip(reserved_run_ids, self.run_requests or [])
+            if run_id in unrequested_run_ids
+        ]
 
 
 @whitelist_for_serdes(
@@ -728,35 +786,25 @@ def _validate_tick_args(
         )
 
 
-class AutoMaterializeAssetEvaluationRecord(NamedTuple):
+@dataclass
+class AutoMaterializeAssetEvaluationRecord(Generic[T_EntityKey]):
     id: int
     serialized_evaluation_body: str
     evaluation_id: int
     timestamp: float
-    asset_key: AssetKey
+    key: T_EntityKey
 
     @classmethod
     def from_db_row(cls, row) -> "AutoMaterializeAssetEvaluationRecord":
-        return cls(
+        return AutoMaterializeAssetEvaluationRecord(
             id=row["id"],
             serialized_evaluation_body=row["asset_evaluation_body"],
             evaluation_id=row["evaluation_id"],
-            timestamp=datetime_as_float(row["create_timestamp"]),
-            asset_key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
+            timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
+            key=entity_key_from_db_string(row["asset_key"]),
         )
 
-    def get_evaluation_with_run_ids(
-        self, partitions_def: Optional[PartitionsDefinition]
-    ) -> AssetConditionEvaluationWithRunIds:
-        try:
-            # If this was serialized as an AssetConditionEvaluationWithRunIds, we can deserialize
-            # this directly
-            return deserialize_value(
-                self.serialized_evaluation_body, AssetConditionEvaluationWithRunIds
-            )
-        except DeserializationError:
-            # If this is a legacy AutoMaterializeAssetEvaluation, we need to pass in the partitions
-            # definition in order to be able to deserialize the evaluation properly
-            return deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-                self.serialized_evaluation_body, partitions_def
-            )
+    def get_evaluation_with_run_ids(self) -> AutomationConditionEvaluationWithRunIds[T_EntityKey]:
+        return deserialize_value(
+            self.serialized_evaluation_body, AutomationConditionEvaluationWithRunIds
+        )

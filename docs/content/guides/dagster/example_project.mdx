@@ -46,7 +46,7 @@ This example shows useful patterns for many Dagster concepts, including:
 
 ### Organizing your assets in groups
 
-[Software-defined assets](/concepts/assets/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
+[Asset definitions](/concepts/assets/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
 
 This example contains [three asset groups](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/\__init\_\_.py):
 
@@ -81,7 +81,7 @@ The way we model resources helps separate the business logic in code from enviro
 
 ### Scheduling and triggering jobs
 
-[Schedules](/concepts/partitions-schedules-sensors/schedules) - A schedule allows you to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. This example includes an [hourly schedule](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py) that materializes the `core` asset group every hour.
+[Schedules](/concepts/automation/schedules) - A schedule allows you to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. This example includes an [hourly schedule](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py) that materializes the `core` asset group every hour.
 
 [Sensors](/concepts/partitions-schedules-sensors/sensors) - A sensor allows you to instigate runs based on some external state change. In this example, we have sensors to react to different state changes:
 

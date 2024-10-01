@@ -21,11 +21,12 @@ from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
@@ -33,10 +34,10 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
-from .compat import ExecutionError
-from .engine import DagstermillEngine
-from .errors import DagstermillError
-from .translator import DagsterTranslator
+from dagstermill.compat import ExecutionError
+from dagstermill.engine import DagstermillEngine
+from dagstermill.errors import DagstermillError
+from dagstermill.translator import DagsterTranslator
 
 
 def _clean_path_for_windows(notebook_path: str) -> str:
@@ -199,9 +200,7 @@ def execute_notebook(
 
         except Exception as ex:
             step_context.log.warn(
-                "Error when attempting to materialize executed notebook: {exc}".format(
-                    exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                )
+                f"Error when attempting to materialize executed notebook: {serializable_error_info_from_exc_info(sys.exc_info())!s}"
             )
 
             if isinstance(ex, ExecutionError):
@@ -414,7 +413,7 @@ def define_dagstermill_op(
     default_description = f"This op is backed by the notebook at {notebook_path}"
     description = check.opt_str_param(description, "description", default=default_description)
 
-    user_tags = validate_tags(tags)
+    user_tags = normalize_tags(tags).tags
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
@@ -422,11 +421,14 @@ def define_dagstermill_op(
             " is reserved for use by Dagster",
         )
         check.invariant(
-            "kind" not in tags,
+            COMPUTE_KIND_TAG not in tags,
             "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
             " use by Dagster",
         )
-    default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
+    default_tags = {
+        "notebook_path": _clean_path_for_windows(notebook_path),
+        COMPUTE_KIND_TAG: "ipynb",
+    }
 
     if safe_is_subclass(config_schema, Config):
         config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))

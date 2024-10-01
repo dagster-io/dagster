@@ -1,13 +1,14 @@
-import {gql} from '@apollo/client';
 import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {COMPUTE_KIND_TAG} from './KindTags';
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {IOpTag, OpTags} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
 import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
+import {gql} from '../apollo-client';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
@@ -99,7 +100,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
 
     const tags: IOpTag[] = [];
 
-    const kind = metadata.find((m) => m.key === 'kind');
+    const kind = metadata.find((m) => m.key === COMPUTE_KIND_TAG);
     const composite = definition.__typename === 'CompositeSolidDefinition';
 
     if (kind) {

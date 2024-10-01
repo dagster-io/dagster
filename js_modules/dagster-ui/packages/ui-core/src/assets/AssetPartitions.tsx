@@ -49,6 +49,7 @@ interface Props {
 
   repository?: RepositorySelector;
   opName?: string | null;
+  isLoadingDefinition: boolean;
 }
 
 const DISPLAYED_STATUSES = [
@@ -71,6 +72,7 @@ export const AssetPartitions = ({
   params,
   setParams,
   dataRefreshHint,
+  isLoadingDefinition,
 }: Props) => {
   const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
   const [selections, setSelections] = usePartitionDimensionSelections({
@@ -185,11 +187,23 @@ export const AssetPartitions = ({
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
   const countsFiltered = statusFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
 
+  if (isLoadingDefinition) {
+    return (
+      <Box
+        style={{height: 390}}
+        flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+      >
+        <Spinner purpose="page" />
+      </Box>
+    );
+  }
+
   return (
     <>
       {timeDimensionIdx !== -1 && (
         <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
+            dimensionType={selections[timeDimensionIdx]!.dimension.type}
             partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
             health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
             selected={selections[timeDimensionIdx]!.selectedKeys}
@@ -198,7 +212,6 @@ export const AssetPartitions = ({
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
-            dimensionType={selections[timeDimensionIdx]!.dimension.type}
           />
         </Box>
       )}

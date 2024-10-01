@@ -4,12 +4,12 @@ from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy,
     AutoMaterializePolicyType,
 )
-from dagster._core.definitions.auto_materialize_rule import (
+from dagster._core.definitions.auto_materialize_rule_impls import (
     AutoMaterializeDecisionType,
     DiscardOnMaxMaterializationsExceededRule,
 )
 
-from .util import non_null_list
+from dagster_graphql.schema.util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
 

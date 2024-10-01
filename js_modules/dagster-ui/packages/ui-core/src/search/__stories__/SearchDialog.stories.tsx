@@ -19,7 +19,7 @@ export default {
 export const BasicSearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
     <MockedProvider mocks={[buildPrimarySearchStatic(), buildSecondarySearchStatic()]}>
-      <SearchDialog searchPlaceholder="" />
+      <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
 );
@@ -27,7 +27,7 @@ export const BasicSearch = () => (
 export const SlowSecondaryQuerySearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
     <MockedProvider mocks={[buildPrimarySearchStatic(), buildSecondarySearchStatic(10000)]}>
-      <SearchDialog searchPlaceholder="" />
+      <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
 );
@@ -35,7 +35,7 @@ export const SlowSecondaryQuerySearch = () => (
 export const LotsOfAssetsSearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
     <MockedProvider mocks={[buildPrimarySearch(), buildSecondarySearch(10000)]}>
-      <SearchDialog searchPlaceholder="" />
+      <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
 );

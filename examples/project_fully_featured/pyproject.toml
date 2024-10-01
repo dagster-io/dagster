@@ -3,4 +3,5 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "project_fully_featured"
+module_name = "project_fully_featured.definitions"
+code_location_name = "project_fully_featured"

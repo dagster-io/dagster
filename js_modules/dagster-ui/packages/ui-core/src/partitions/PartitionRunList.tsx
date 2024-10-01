@@ -1,12 +1,13 @@
-import {gql, useQuery} from '@apollo/client';
 import {NonIdealState, Spinner} from '@dagster-io/ui-components';
 
 import {
   PartitionRunListQuery,
   PartitionRunListQueryVariables,
 } from './types/PartitionRunList.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
 
 interface PartitionRunListProps {
@@ -15,7 +16,7 @@ interface PartitionRunListProps {
 }
 
 export const PartitionRunList = (props: PartitionRunListProps) => {
-  const {data, loading} = useQuery<PartitionRunListQuery, PartitionRunListQueryVariables>(
+  const queryResult = useQuery<PartitionRunListQuery, PartitionRunListQueryVariables>(
     PARTITION_RUN_LIST_QUERY,
     {
       variables: {
@@ -26,6 +27,8 @@ export const PartitionRunList = (props: PartitionRunListProps) => {
       },
     },
   );
+
+  const {data, loading} = queryResult;
 
   if (loading || !data) {
     return <Spinner purpose="section" />;

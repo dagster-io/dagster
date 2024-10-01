@@ -34,19 +34,3 @@ my_second_job_with_metadata = my_graph.to_job(
 )
 
 # end_metadata_on_graph_to_job
-
-# start_tags_on_job
-
-
-@job(tags={"foo": "bar"})
-def my_job_with_tags():
-    my_op()
-
-
-# end_tags_on_job
-
-# start_tags_on_graph_to_job
-
-my_second_job_with_tags = my_graph.to_job(tags={"foo": "bar"})
-
-# end_tags_on_graph_to_job

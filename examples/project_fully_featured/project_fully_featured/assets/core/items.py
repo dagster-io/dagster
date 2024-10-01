@@ -1,14 +1,7 @@
 from dagster import AssetExecutionContext, Output, asset
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql.types import (
-    ArrayType,
-    DoubleType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
 from project_fully_featured.partitions import hourly_partitions
 from project_fully_featured.resources.hn_resource import HNClient

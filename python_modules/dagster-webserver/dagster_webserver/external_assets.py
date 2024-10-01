@@ -12,9 +12,7 @@ from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._seven import json
 from starlette.requests import Request
-from starlette.responses import (
-    JSONResponse,
-)
+from starlette.responses import JSONResponse
 
 
 def _asset_key_from_request(key: str, request: Request, json_body):
@@ -208,7 +206,7 @@ async def handle_report_asset_check_request(
     except Exception as exc:
         return JSONResponse(
             {
-                "error": f"Error constructing AssetMaterialization: {exc}",
+                "error": f"Error constructing AssetCheckEvaluation: {exc}",
             },
             status_code=400,
         )

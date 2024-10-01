@@ -1,10 +1,7 @@
 from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._core.definitions import (
-    AssetMaterialization,
-    NodeHandle,
-)
+from dagster._core.definitions import AssetMaterialization, NodeHandle
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
@@ -12,10 +9,9 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
+from dagster._core.execution.plan.handle import UnresolvedStepHandle
+from dagster._core.execution.plan.objects import TypeCheckData
 from dagster._serdes import whitelist_for_serdes
-
-from .handle import UnresolvedStepHandle
-from .objects import TypeCheckData
 
 
 @whitelist_for_serdes

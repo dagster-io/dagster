@@ -1,0 +1,107 @@
+:root {
+  //***LIGHT THEME***
+  --theme-color-background-default: var(--dagster-white);
+  --theme-color-background-light: var(--dagster-gray-10);
+  --theme-color-background-lighter: var(--dagster-gray-100);
+  --theme-color-background-red: var(--dagster-red-translucent-12);
+  --theme-color-background-green: var(--dagster-green-translucent-12);
+  --theme-color-background-blue: var(--dagster-blue-translucent-12);
+  --theme-color-background-yellow: var(--dagster-yellow-translucent-12);
+  --theme-color-background-cyan: var(--dagster-cyan-translucent-12);
+  --theme-color-background-gray: var(--dagster-gray-translucent-12);
+
+  --theme-color-link-default: var(--dagster-blue-700);
+  --theme-color-link-hover: var(--dagster-blue-500);
+
+  --theme-color-text-default: var(--dagster-gray-990);
+  --theme-color-text-light: var(--dagster-gray-700);
+  --theme-color-text-lighter: var(--dagster-gray-550);
+  --theme-color-text-disabled: var(--dagster-gray-400);
+  --theme-color-text-red: var(--dagster-red-700);
+  --theme-color-text-green: var(--dagster-green-700);
+  --theme-color-text-blue: var(--dagster-blue-700);
+  --theme-color-text-yellow: var(--dagster-yellow-700);
+  --theme-color-text-cyan: var(--dagster-cyan-700);
+
+  --theme-color-keyline: var(--dagster-gray-translucent-12);
+  --theme-color-border-default: var(--dagster-gray-200);
+  --theme-color-border-hover: var(--dagster-gray-300);
+
+  --theme-color-accent-primary: var(--dagster-gray-950);
+  --theme-color-accent-primary-hover: var(--dagster-gray-800);
+  --theme-color-accent-reversed: var(--dagster-gray-10);
+  --theme-color-accent-reversed-hover: var(--dagster-white);
+  --theme-color-accent-red: var(--dagster-red-500);
+  --theme-color-accent-red-hover: var(--dagster-red-400);
+  --theme-color-accent-green: var(--dagster-green-500);
+  --theme-color-accent-green-hover: var(--dagster-green-400);
+  --theme-color-accent-blue: var(--dagster-blue-500);
+  --theme-color-accent-blue-hover: var(--dagster-blue-400);
+  --theme-color-accent-yellow: var(--dagster-yellow-500);
+  --theme-color-accent-yellow-hover: var(--dagster-yellow-400);
+  --theme-color-accent-cyan: var(--dagster-cyan-500);
+  --theme-color-accent-cyan-hover: var(--dagster-cyan-400);
+  --theme-color-accent-gray: var(--dagster-gray-500);
+  --theme-color-accent-gray-hover: var(--dagster-gray-400);
+  --theme-color-accent-lavendar: var(--dagster-blue-200);
+  --theme-color-accent-lavendar-hover: var(--dagster-blue-100);
+
+  // modified base colors
+  --ifm-color-primary: var(--theme-color-accent-primary);
+  --ifm-color-primary-dark: var(--dagster-gray-850);
+  --ifm-color-primary-darker: var(--dagster-gray-900);
+  --ifm-color-primary-darkest: var(--dagster-gray-990);
+  --ifm-color-primary-light: var(--dagster-gray-100);
+  --ifm-color-primary-lighter: var(--dagster-gray-50);
+  --ifm-color-primary-lightest: var(--dagster-white);
+
+  //App
+  --ifm-background-color: var(--theme-color-background-default);
+  --ifm-link-color: var(--theme-color-link-default);
+  --ifm-toc-link-color: var(--theme-color-text-light);
+  --ifm-toc-border-color: var(--theme-color-keyline);
+  --ifm-navbar-padding-horizontal: 20px;
+  --ifm-navbar-link-color: var(--theme-color-text-light);
+  --ifm-navbar-link-hover-color: var(--theme-color-text-default);
+
+  //Top Navbar
+  --ifm-navbar-height: 60px;
+  --ifm-navbar-background-color: var(--theme-color-background-default);
+
+  //Left Menu
+  --ifm-menu-color: var(--theme-color-text-light);
+  --ifm-hover-overlay: var(--theme-color-background-blue);
+  --ifm-menu-color-active: var(--theme-color-background-blue);
+
+  //hr
+  --ifm-hr-background-color: var(--theme-color-background-light);
+
+  // docusaurus
+  --docusaurus-highlighted-code-line-bg: var(--theme-color-background-gray);
+
+  // infima shadow levels
+  // generated from https://www.joshwcomeau.com/shadow-palette/
+  --shadow-color: 0deg 0% 63%;
+  --shadow-elevation-low: 0px 1px 1px hsl(var(--shadow-color) / 0.07),
+    0px 1.4px 1.4px -1.8px hsl(var(--shadow-color) / 0.06),
+    -0.1px 3px 2.9px -3.5px hsl(var(--shadow-color) / 0.04);
+  --shadow-elevation-medium: 0px 1px 1px hsl(var(--shadow-color) / 0.06),
+    0px 1.8px 1.7px -0.9px hsl(var(--shadow-color) / 0.05),
+    -0.1px 3.5px 3.4px -1.8px hsl(var(--shadow-color) / 0.05),
+    -0.1px 7.5px 7.3px -2.7px hsl(var(--shadow-color) / 0.04),
+    -0.3px 15px 14.5px -3.5px hsl(var(--shadow-color) / 0.03);
+  --shadow-elevation-high: 0px 1px 1px hsl(var(--shadow-color) / 0.06),
+    0px 2.1px 2px -0.4px hsl(var(--shadow-color) / 0.05),
+    -0.1px 3.4px 3.3px -0.8px hsl(var(--shadow-color) / 0.05),
+    -0.1px 5.2px 5px -1.2px hsl(var(--shadow-color) / 0.05),
+    -0.1px 7.9px 7.6px -1.6px hsl(var(--shadow-color) / 0.04),
+    -0.2px 12px 11.6px -2px hsl(var(--shadow-color) / 0.04),
+    -0.3px 17.9px 17.3px -2.4px hsl(var(--shadow-color) / 0.04),
+    -0.5px 25.9px 25.1px -2.8px hsl(var(--shadow-color) / 0.03),
+    -0.7px 36.5px 35.3px -3.2px hsl(var(--shadow-color) / 0.03),
+    -0.9px 50px 48.4px -3.5px hsl(var(--shadow-color) / 0.03);
+
+  --ifm-global-shadow-lw: var(--shadow-elevation-low);
+  --ifm-global-shadow-md: var(--shadow-elevation-medium);
+  --ifm-global-shadow-tl: var(--shadow-elevation-high);
+}

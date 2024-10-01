@@ -30,6 +30,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
     ResourceDefinition,
@@ -49,16 +50,14 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
+from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
+from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import deprecation_warning
-
-from .compute import AssetExecutionContext, OpExecutionContext
-from .system import StepExecutionContext, TypeCheckContext
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
@@ -188,6 +187,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         partition_key: Optional[str],
         partition_key_range: Optional[PartitionKeyRange],
         mapping_key: Optional[str],
+        run_tags: Mapping[str, str],
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_job import initialize_console_manager
@@ -222,6 +222,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         )
         self._partition_key = partition_key
         self._partition_key_range = partition_key_range
+        self._run_tags = run_tags
 
         # Maintains the properties on the context that are bound to a particular invocation
         # of an op
@@ -446,6 +447,10 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("job_def", "property"))
 
     @property
+    def repository_def(self) -> RepositoryDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("repository_def", "property"))
+
+    @property
     def job_name(self) -> str:
         raise DagsterInvalidPropertyError(_property_msg("job_name", "property"))
 
@@ -520,16 +525,14 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         return self.partition_key
 
     def has_tag(self, key: str) -> bool:
-        per_invocation_properties = self._check_bound_to_invocation(
-            fn_name="has_tag", fn_type="method"
-        )
-        return key in per_invocation_properties.tags
+        return key in self._run_tags
 
     def get_tag(self, key: str) -> Optional[str]:
-        per_invocation_properties = self._check_bound_to_invocation(
-            fn_name="get_tag", fn_type="method"
-        )
-        return per_invocation_properties.tags.get(key)
+        return self._run_tags.get(key)
+
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        return self._run_tags
 
     @property
     def alias(self) -> str:
@@ -839,7 +842,10 @@ def _validate_resource_requirements(
 ) -> None:
     """Validate correctness of resources against required resource keys."""
     if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
-        for requirement in op_def.get_resource_requirements():
+        for requirement in op_def.get_resource_requirements(
+            asset_layer=None,
+            handle=None,
+        ):
             if not requirement.is_io_manager_requirement:
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
@@ -853,7 +859,7 @@ def build_op_context(
     partition_key: Optional[str] = None,
     partition_key_range: Optional[PartitionKeyRange] = None,
     mapping_key: Optional[str] = None,
-    _assets_def: Optional[AssetsDefinition] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
 ) -> DirectOpExecutionContext:
     """Builds op execution context from provided parameters.
 
@@ -873,8 +879,7 @@ def build_op_context(
             output. Can be accessed using ``context.get_mapping_key()``.
         partition_key (Optional[str]): String value representing partition key to execute with.
         partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
-        _assets_def (Optional[AssetsDefinition]): Internal argument that populates the op's assets
-            definition, not meant to be populated by users.
+        run_tags: Optional[Mapping[str, str]]: The tags for the executing run.
 
     Examples:
         .. code-block:: python
@@ -891,16 +896,6 @@ def build_op_context(
             "legacy version, ``config``. Please provide one or the other."
         )
 
-    if _assets_def:
-        deprecation_warning(
-            subject="build_op_context",
-            additional_warn_text=(
-                "Parameter '_assets_def' was passed to build_op_context. This parameter was intended for internal use only, and has been deprecated "
-            ),
-            breaking_version="1.8.0",
-            stacklevel=1,
-        )
-
     op_config = op_config if op_config else config
     return DirectOpExecutionContext(
         resources_dict=check.opt_mapping_param(resources, "resources", key_type=str),
@@ -914,6 +909,7 @@ def build_op_context(
             partition_key_range, "partition_key_range", PartitionKeyRange
         ),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
+        run_tags=check.opt_mapping_param(run_tags, "run_tags", key_type=str),
     )
 
 
@@ -924,6 +920,7 @@ def build_asset_context(
     instance: Optional[DagsterInstance] = None,
     partition_key: Optional[str] = None,
     partition_key_range: Optional[PartitionKeyRange] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
 ) -> DirectAssetExecutionContext:
     """Builds asset execution context from provided parameters.
 
@@ -941,6 +938,7 @@ def build_asset_context(
             Defaults to DagsterInstance.ephemeral().
         partition_key (Optional[str]): String value representing partition key to execute with.
         partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
+        run_tags: Optional[Mapping[str, str]]: The tags for the executing run.
 
     Examples:
         .. code-block:: python
@@ -958,6 +956,7 @@ def build_asset_context(
         partition_key=partition_key,
         partition_key_range=partition_key_range,
         instance=instance,
+        run_tags=run_tags,
     )
 
     return DirectAssetExecutionContext(op_execution_context=op_context)

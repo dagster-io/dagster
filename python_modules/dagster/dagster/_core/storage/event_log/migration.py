@@ -7,7 +7,7 @@ from dagster._core.assets import AssetDetails
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log
 ASSET_KEY_INDEX_COLS = "asset_key_index_columns"  # extracts index columns from the asset_keys table
@@ -41,9 +41,8 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
     from dagster._core.definitions.events import AssetKey
+    from dagster._core.storage.event_log.schema import AssetKeyTable, SqlEventLogStorageTable
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
-
-    from .schema import AssetKeyTable, SqlEventLogStorageTable
 
     if not isinstance(event_log_storage, SqlEventLogStorage):
         return
@@ -75,10 +74,9 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
 
 def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
     from dagster._core.definitions.events import AssetKey
+    from dagster._core.storage.event_log.schema import AssetKeyTable, SqlEventLogStorageTable
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
     from dagster._serdes import serialize_value
-
-    from .schema import AssetKeyTable, SqlEventLogStorageTable
 
     if not isinstance(event_log_storage, SqlEventLogStorage):
         return
@@ -138,7 +136,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         last_materialization=None,
                         last_materialization_timestamp=None,
                         wipe_timestamp=(
-                            utc_datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
+                            datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
                         ),
                     )
                     .where(
@@ -150,9 +148,9 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     AssetKeyTable.update()
                     .values(
                         last_materialization=serialize_value(event),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                        last_materialization_timestamp=datetime_from_timestamp(event.timestamp),
                         wipe_timestamp=(
-                            utc_datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
+                            datetime_from_timestamp(wipe_timestamp) if wipe_timestamp else None
                         ),
                     )
                     .where(
@@ -162,7 +160,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
 
 
 def sql_asset_event_generator(conn, cursor=None, batch_size=1000):
-    from .schema import SqlEventLogStorageTable
+    from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
 
     while True:
         query = db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(

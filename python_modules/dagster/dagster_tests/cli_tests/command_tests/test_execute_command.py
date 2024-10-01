@@ -11,7 +11,7 @@ from dagster._core.test_utils import instance_for_test, new_cwd
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 
-from .test_cli_commands import (
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     job_python_origin_contexts,
     non_existant_python_origin_target_args,
     runner_job_execute,
@@ -290,7 +290,7 @@ def test_attribute_is_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a JobDefinition, GraphDefinition,"
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions,"
                 " or RepositoryDefinition. Got 123."
             ),
         ):
@@ -311,7 +311,7 @@ def test_attribute_fn_returns_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a JobDefinition, GraphDefinition,"
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions,"
                 " or RepositoryDefinition."
             ),
         ):

@@ -11,7 +11,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ, instance_for_test
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from .utils import start_celery_worker
+from dagster_celery_tests.utils import start_celery_worker
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -89,8 +89,8 @@ def dagster_docker_image():
             client = docker.from_env()
             client.images.get(docker_image)
             print(  # noqa: T201
-                "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-                "docker rmi {image}".format(image=docker_image)
+                f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
+                f"docker rmi {docker_image}"
             )
         except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)

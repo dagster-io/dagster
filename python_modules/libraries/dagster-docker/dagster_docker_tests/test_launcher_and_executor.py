@@ -17,7 +17,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_job,
 )
 
-from . import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
 
 
 @pytest.mark.flaky(reruns=1)
@@ -94,7 +94,7 @@ def test_image_on_job(monkeypatch, aws_env, from_pending_repository, asset_selec
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
                 repository_load_data=repository_load_data,
                 asset_selection=frozenset(asset_selection) if asset_selection else None,
@@ -169,7 +169,7 @@ def test_container_context_on_job(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
 
@@ -236,7 +236,7 @@ def test_recovery(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
 

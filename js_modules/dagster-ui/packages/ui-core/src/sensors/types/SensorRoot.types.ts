@@ -22,7 +22,6 @@ export type SensorRootQuery = {
     | {
         __typename: 'Sensor';
         id: string;
-        jobOriginId: string;
         name: string;
         description: string | null;
         minIntervalSeconds: number;
@@ -50,6 +49,7 @@ export type SensorRootQuery = {
             __typename: 'Run';
             id: string;
             status: Types.RunStatus;
+            creationTime: number;
             startTime: number | null;
             endTime: number | null;
             updateTime: number | null;
@@ -128,3 +128,60 @@ export type SensorRootQuery = {
     };
   };
 };
+
+export type SensorAssetSelectionQueryVariables = Types.Exact<{
+  sensorSelector: Types.SensorSelector;
+}>;
+
+export type SensorAssetSelectionQuery = {
+  __typename: 'Query';
+  sensorOrError:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        assetSelection: {
+          __typename: 'AssetSelection';
+          assetSelectionString: string | null;
+          assetsOrError:
+            | {
+                __typename: 'AssetConnection';
+                nodes: Array<{
+                  __typename: 'Asset';
+                  id: string;
+                  key: {__typename: 'AssetKey'; path: Array<string>};
+                  definition: {
+                    __typename: 'AssetNode';
+                    id: string;
+                    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
+                  } | null;
+                }>;
+              }
+            | {
+                __typename: 'PythonError';
+                message: string;
+                stack: Array<string>;
+                errorChain: Array<{
+                  __typename: 'ErrorChainLink';
+                  isExplicitLink: boolean;
+                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                }>;
+              };
+        } | null;
+      }
+    | {__typename: 'SensorNotFoundError'}
+    | {__typename: 'UnauthorizedError'};
+};
+
+export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
+
+export const SensorAssetSelectionQueryVersion = 'a3410d20906553473a54e9045ecb19e92d08defefc17c2d9f1802338147ed470';

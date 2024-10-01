@@ -10,6 +10,7 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
+from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 
@@ -367,6 +368,122 @@ def test_daily_to_daily_many_to_one():
         upstream_partitions_def,
         downstream_partitions_def,
     ).get_partition_keys() == ["2022-07-04", "2022-07-05"]
+
+
+def test_hourly_upstream_daily_downstream_start_offset():
+    upstream_partitions_def = HourlyPartitionsDefinition(start_date="2021-05-05-00:00")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
+    mapping = TimeWindowPartitionMapping(start_offset=-1)
+
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2022-07-04"]),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange("2022-07-03-00:00", "2022-07-04-23:00")
+    )
+
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2022-07-04", "2022-07-05"]),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange("2022-07-03-00:00", "2022-07-05-23:00")
+    )
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-03-00:00"]),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2022-07-03", "2022-07-04"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-03-23:00"]),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2022-07-03", "2022-07-04"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(
+            upstream_partitions_def,
+            upstream_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange("2022-07-03-00:00", "2022-07-04-23:00")
+            ),
+        ),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2022-07-03", "2022-07-04", "2022-07-05"]
+
+
+def test_hourly_upstream_daily_downstream_start_and_end_offset():
+    upstream_partitions_def = HourlyPartitionsDefinition(start_date="2021-05-05-00:00")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
+    mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2022-07-04"]),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange("2022-07-03-00:00", "2022-07-03-23:00")
+    )
+
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2022-07-04", "2022-07-05"]),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange("2022-07-03-00:00", "2022-07-04-23:00")
+    )
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-03-00:00"]),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2022-07-04"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-03-23:00"]),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2022-07-04"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(
+            upstream_partitions_def,
+            upstream_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange("2022-07-03-00:00", "2022-07-04-23:00")
+            ),
+        ),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == ["2022-07-04", "2022-07-05"]
+
+
+def test_daily_upstream_hourly_downstream_start_and_end_offset():
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-06")
+    downstream_partitions_def = HourlyPartitionsDefinition(start_date="2021-05-05-00:00")
+    mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2022-07-04-00:00"]),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == ["2022-07-03"]
+
+    assert mapping.get_upstream_mapped_partitions_result_for_partitions(
+        subset_with_keys(downstream_partitions_def, ["2022-07-04-01:00"]),
+        downstream_partitions_def,
+        upstream_partitions_def,
+    ).partitions_subset.get_partition_keys() == ["2022-07-04"]
+
+    assert mapping.get_downstream_partitions_for_partitions(
+        subset_with_keys(upstream_partitions_def, ["2022-07-04"]),
+        upstream_partitions_def,
+        downstream_partitions_def,
+    ).get_partition_keys() == downstream_partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange("2022-07-04-01:00", "2022-07-05-00:00")
+    )
 
 
 @pytest.mark.parametrize(
@@ -803,3 +920,75 @@ def test_nov_2023_dst_transition_with_hourly_partitions():
             subset, partitions_def, partitions_def, current_time=current_time
         )
         assert downstream.get_partition_keys() == [downstream_key]
+
+
+def test_partition_mapping_output_has_no_overlap_ranges() -> None:
+    partitions_def = DailyPartitionsDefinition("2023-01-01")
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-29, end_offset=0)
+    current_time = datetime(2024, 12, 1, 9)
+
+    partitions_subset = subset_with_keys(
+        partitions_def,
+        [
+            *partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange("2023-09-27", "2023-12-04")
+            ),
+            *partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange("2023-12-21", "2024-02-05")
+            ),
+        ],
+    )
+    downstream_partitions = partition_mapping.get_downstream_partitions_for_partitions(
+        partitions_subset,
+        partitions_def,
+        partitions_def,
+        current_time=current_time,
+    )
+    assert downstream_partitions.get_partition_key_ranges(partitions_def) == [
+        PartitionKeyRange(start="2023-09-27", end="2024-03-05")
+    ]
+
+
+def test_get_upstream_partitions_for_all_partitions_subset() -> None:
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-10")
+    current_time = datetime(2021, 5, 31, hour=1)
+    downstream_subset = AllPartitionsSubset(
+        partitions_def=downstream_partitions_def,
+        dynamic_partitions_store=None,  # type: ignore
+        current_time=current_time,
+    )
+    result = TimeWindowPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_subset,
+        downstream_partitions_def=downstream_partitions_def,
+        upstream_partitions_def=upstream_partitions_def,
+        current_time=current_time,
+    )
+    assert (
+        result.partitions_subset.get_partition_keys()
+        == upstream_partitions_def.get_partition_keys_in_range(
+            # don't include 05-05 through 05-09
+            PartitionKeyRange("2021-05-10", "2021-05-30")
+        )
+    )
+
+
+def test_get_downstream_partitions_for_all_partitions_subset() -> None:
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-10")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+    current_time = datetime(2021, 5, 31, hour=1)
+    upstream_subset = AllPartitionsSubset(
+        partitions_def=upstream_partitions_def,
+        dynamic_partitions_store=None,  # type: ignore
+        current_time=current_time,
+    )
+    result = TimeWindowPartitionMapping().get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_subset,
+        upstream_partitions_def=upstream_partitions_def,
+        downstream_partitions_def=downstream_partitions_def,
+        current_time=current_time,
+    )
+    assert result.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
+        # don't include 05-05 through 05-09
+        PartitionKeyRange("2021-05-10", "2021-05-30")
+    )

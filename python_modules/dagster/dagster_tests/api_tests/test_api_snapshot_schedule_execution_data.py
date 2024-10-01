@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Optional
 from unittest import mock
 
@@ -8,15 +9,16 @@ from dagster._api.snapshot_schedule import (
     sync_get_external_schedule_execution_data_grpc,
 )
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation.external_data import ExternalScheduleExecutionErrorData
+from dagster._core.remote_representation.external_data import ScheduleExecutionErrorSnap
 from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._serdes import deserialize_value
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 
-from .utils import get_bar_repo_handle
+from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 
 def test_external_schedule_execution_data_api_grpc():
@@ -53,7 +55,7 @@ def test_external_schedule_client_timeout(instance, env_var_default_val: Optiona
 def test_external_schedule_execution_data_api_grpc_fallback_to_streaming():
     with instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
-            origin = repository_handle.get_external_origin()
+            origin = repository_handle.get_remote_origin()
             with ephemeral_grpc_api_client(
                 origin.code_location_origin.loadable_target_origin
             ) as api_client:
@@ -97,7 +99,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
 def test_external_schedule_execution_deserialize_error():
     with instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
-            origin = repository_handle.get_external_origin()
+            origin = repository_handle.get_remote_origin()
             with ephemeral_grpc_api_client(
                 origin.code_location_origin.loadable_target_origin
             ) as api_client:
@@ -111,18 +113,19 @@ def test_external_schedule_execution_deserialize_error():
                         )._replace(repository_origin="INVALID")
                     )
                 )
-                assert isinstance(result, ExternalScheduleExecutionErrorData)
+                assert isinstance(result, ScheduleExecutionErrorSnap)
 
 
 def test_include_execution_time_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
-            execution_time = get_current_datetime_in_utc()
+            execution_time = get_current_datetime()
+
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,
                 repository_handle,
                 "foo_schedule_echo_time",
-                execution_time,
+                TimestampWithTimezone(execution_time.timestamp(), "UTC"),
                 None,
             )
 
@@ -136,12 +139,11 @@ def test_include_execution_time_grpc():
 def test_run_request_partition_key_schedule_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
-            execution_time = get_current_datetime_in_utc()
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,
                 repository_handle,
                 "partitioned_run_request_schedule",
-                execution_time,
+                TimestampWithTimezone(time.time(), "UTC"),
                 None,
             )
 

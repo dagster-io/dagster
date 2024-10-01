@@ -35,7 +35,7 @@ In computationally expensive data pipelining, this approach can yield tremendous
 
 ## Step one: Understanding data versions
 
-By default, Dagster automatically computes a data version for each materialization of a software-defined asset. It does this by hashing a code version together with the data versions of any input assets.
+By default, Dagster automatically computes a data version for each materialization of an asset. It does this by hashing a code version together with the data versions of any input assets.
 
 Let's start with a trivial asset that returns a hardcoded number:
 

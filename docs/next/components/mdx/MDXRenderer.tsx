@@ -4,13 +4,11 @@ import {SHOW_VERSION_NOTICE} from 'util/version';
 
 import cx from 'classnames';
 import Icons from 'components/Icons';
-import {RightSidebar} from 'components/SidebarNavigation';
 import VersionDropdown from 'components/VersionDropdown';
 import MDXComponents, {SearchIndexContext} from 'components/mdx/MDXComponents';
 import hydrate from 'next-mdx-remote/hydrate';
 import {MdxRemote} from 'next-mdx-remote/types';
 import {NextSeo} from 'next-seo';
-import {useRouter} from 'next/router';
 import React from 'react';
 
 // The next-mdx-remote types are outdated.
@@ -153,64 +151,6 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
     </div>
   );
 };
-
-export function UnversionedMDXRenderer({
-  data,
-  toggleFeedback,
-  bottomContent,
-}: {
-  data: MDXData;
-  toggleFeedback: any;
-  bottomContent?: React.ReactNode | null;
-}) {
-  const {mdxSource, frontMatter, searchIndex, tableOfContents, githubLink, asPath} = data;
-
-  const content = hydrate(mdxSource, {
-    components,
-    provider: {
-      component: searchProvider,
-      props: {value: searchIndex},
-    },
-  });
-  const navigationItemsForMDX = tableOfContents.items.filter((item) => item?.items);
-
-  return (
-    <>
-      <NextSeo
-        title={frontMatter.title}
-        description={frontMatter.description}
-        openGraph={{
-          title: frontMatter.title,
-          description: frontMatter.description,
-        }}
-      />
-      <div className="flex-1 min-w-0 relative z-0 focus:outline-none pt-4" tabIndex={0}>
-        <div className="pl-4 sm:pl-6 lg:pl-8 ">
-          <BreadcrumbNav asPath={asPath} />
-        </div>
-        <div
-          className="flex flex-row pb-8 max-w-7xl"
-          style={{marginLeft: 'auto', marginRight: 'auto'}}
-        >
-          {/* Start main area*/}
-
-          <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
-            <div className="DocSearch-content prose dark:prose-dark max-w-none">{content}</div>
-            {bottomContent ?? null}
-          </div>
-          {/* End main area */}
-        </div>
-      </div>
-
-      <RightSidebar
-        navigationItemsForMDX={navigationItemsForMDX}
-        markdownHeadings={null}
-        githubLink={githubLink}
-        toggleFeedback={toggleFeedback}
-      />
-    </>
-  );
-}
 
 function VersionedMDXRenderer({data}: {data: MDXData}) {
   const {mdxSource, frontMatter, searchIndex} = data;

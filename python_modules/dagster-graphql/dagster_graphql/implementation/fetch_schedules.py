@@ -1,3 +1,4 @@
+import time
 from typing import TYPE_CHECKING, Optional, Sequence, Set
 
 import dagster._check as check
@@ -9,20 +10,18 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
-from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
-from dagster_graphql.schema.util import ResolveInfo
-
-from .loader import RepositoryScopedBatchLoader
-from .utils import (
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     assert_permission,
     assert_permission_for_location,
 )
+from dagster_graphql.schema.util import ResolveInfo
 
 if TYPE_CHECKING:
-    from ..schema.instigation import GrapheneDryRunInstigationTick
-    from ..schema.schedules import (
+    from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
+    from dagster_graphql.schema.schedules import (
         GrapheneSchedule,
         GrapheneScheduler,
         GrapheneSchedules,
@@ -33,8 +32,8 @@ if TYPE_CHECKING:
 def start_schedule(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneScheduleStateResult":
-    from ..schema.instigation import GrapheneInstigationState
-    from ..schema.schedules import GrapheneScheduleStateResult
+    from dagster_graphql.schema.instigation import GrapheneInstigationState
+    from dagster_graphql.schema.schedules import GrapheneScheduleStateResult
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
     location = graphene_info.context.get_code_location(schedule_selector.location_name)
@@ -50,16 +49,16 @@ def start_schedule(
 def stop_schedule(
     graphene_info: ResolveInfo, schedule_origin_id: str, schedule_selector_id: str
 ) -> "GrapheneScheduleStateResult":
-    from ..schema.instigation import GrapheneInstigationState
-    from ..schema.schedules import GrapheneScheduleStateResult
+    from dagster_graphql.schema.instigation import GrapheneInstigationState
+    from dagster_graphql.schema.schedules import GrapheneScheduleStateResult
 
     instance = graphene_info.context.instance
 
     external_schedules = {
-        job.get_external_origin_id(): job
+        schedule.get_remote_origin_id(): schedule
         for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
-        for job in repository.get_external_schedules()
+        for schedule in repository.get_external_schedules()
     }
 
     external_schedule = external_schedules.get(schedule_origin_id)
@@ -85,8 +84,8 @@ def stop_schedule(
 def reset_schedule(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneScheduleStateResult":
-    from ..schema.instigation import GrapheneInstigationState
-    from ..schema.schedules import GrapheneScheduleStateResult
+    from dagster_graphql.schema.instigation import GrapheneInstigationState
+    from dagster_graphql.schema.schedules import GrapheneScheduleStateResult
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
 
@@ -101,8 +100,8 @@ def reset_schedule(
 
 
 def get_scheduler_or_error(graphene_info: ResolveInfo) -> "GrapheneScheduler":
-    from ..schema.errors import GrapheneSchedulerNotDefinedError
-    from ..schema.schedules import GrapheneScheduler
+    from dagster_graphql.schema.errors import GrapheneSchedulerNotDefinedError
+    from dagster_graphql.schema.schedules import GrapheneScheduler
 
     instance = graphene_info.context.instance
 
@@ -117,7 +116,7 @@ def get_schedules_or_error(
     repository_selector: RepositorySelector,
     instigator_statuses: Optional[Set[InstigatorStatus]] = None,
 ) -> "GrapheneSchedules":
-    from ..schema.schedules import GrapheneSchedule, GrapheneSchedules
+    from dagster_graphql.schema.schedules import GrapheneSchedule, GrapheneSchedules
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
@@ -126,7 +125,7 @@ def get_schedules_or_error(
     batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     external_schedules = repository.get_external_schedules()
     schedule_states = graphene_info.context.instance.all_instigator_state(
-        repository_origin_id=repository.get_external_origin_id(),
+        repository_origin_id=repository.get_remote_origin_id(),
         repository_selector_id=repository_selector.selector_id,
         instigator_type=InstigatorType.SCHEDULE,
         instigator_statuses=instigator_statuses,
@@ -146,7 +145,9 @@ def get_schedules_or_error(
         filtered = external_schedules
 
     results = [
-        GrapheneSchedule(schedule, schedule_states_by_name.get(schedule.name), batch_loader)
+        GrapheneSchedule(
+            schedule, repository, schedule_states_by_name.get(schedule.name), batch_loader
+        )
         for schedule in filtered
     ]
 
@@ -156,7 +157,7 @@ def get_schedules_or_error(
 def get_schedules_for_pipeline(
     graphene_info: ResolveInfo, pipeline_selector: JobSubsetSelector
 ) -> Sequence["GrapheneSchedule"]:
-    from ..schema.schedules import GrapheneSchedule
+    from dagster_graphql.schema.schedules import GrapheneSchedule
 
     check.inst_param(pipeline_selector, "pipeline_selector", JobSubsetSelector)
 
@@ -170,10 +171,10 @@ def get_schedules_for_pipeline(
             continue
 
         schedule_state = graphene_info.context.instance.get_instigator_state(
-            external_schedule.get_external_origin_id(),
+            external_schedule.get_remote_origin_id(),
             external_schedule.selector_id,
         )
-        results.append(GrapheneSchedule(external_schedule, schedule_state))
+        results.append(GrapheneSchedule(external_schedule, repository, schedule_state))
 
     return results
 
@@ -181,8 +182,8 @@ def get_schedules_for_pipeline(
 def get_schedule_or_error(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneSchedule":
-    from ..schema.errors import GrapheneScheduleNotFoundError
-    from ..schema.schedules import GrapheneSchedule
+    from dagster_graphql.schema.errors import GrapheneScheduleNotFoundError
+    from dagster_graphql.schema.schedules import GrapheneSchedule
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
     location = graphene_info.context.get_code_location(schedule_selector.location_name)
@@ -196,20 +197,20 @@ def get_schedule_or_error(
     external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
 
     schedule_state = graphene_info.context.instance.get_instigator_state(
-        external_schedule.get_external_origin_id(), external_schedule.selector_id
+        external_schedule.get_remote_origin_id(), external_schedule.selector_id
     )
-    return GrapheneSchedule(external_schedule, schedule_state)
+    return GrapheneSchedule(external_schedule, repository, schedule_state)
 
 
 def get_schedule_next_tick(
     graphene_info: ResolveInfo, schedule_state: InstigatorState
 ) -> Optional["GrapheneDryRunInstigationTick"]:
-    from ..schema.instigation import GrapheneDryRunInstigationTick
+    from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
 
     if not schedule_state.is_running:
         return None
 
-    repository_origin = schedule_state.origin.external_repository_origin
+    repository_origin = schedule_state.origin.repository_origin
     if not graphene_info.context.has_code_location(
         repository_origin.code_location_origin.location_name
     ):
@@ -226,9 +227,7 @@ def get_schedule_next_tick(
         return None
 
     external_schedule = repository.get_external_schedule(schedule_state.name)
-    time_iter = external_schedule.execution_time_iterator(
-        get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
-    )
+    time_iter = external_schedule.execution_time_iterator(time.time())
 
     next_timestamp = next(time_iter).timestamp()
     return GrapheneDryRunInstigationTick(external_schedule.schedule_selector, next_timestamp)

@@ -1,7 +1,12 @@
 import graphene
 
-from .asset_key import GrapheneAssetKey
-from .table import GrapheneTable, GrapheneTableSchema
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.table import (
+    GrapheneTable,
+    GrapheneTableColumnLineageEntry,
+    GrapheneTableSchema,
+)
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneMetadataItemDefinition(graphene.ObjectType):
@@ -50,6 +55,14 @@ class GrapheneTableSchemaMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
         name = "TableSchemaMetadataEntry"
+
+
+class GrapheneTableColumnLineageMetadataEntry(graphene.ObjectType):
+    lineage = non_null_list(GrapheneTableColumnLineageEntry)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "TableColumnLineageMetadataEntry"
 
 
 class GrapheneJsonMetadataEntry(graphene.ObjectType):
@@ -149,15 +162,55 @@ class GrapheneJobMetadataEntry(graphene.ObjectType):
         name = "JobMetadataEntry"
 
 
+class GrapheneLocalFileCodeReference(graphene.ObjectType):
+    filePath = graphene.NonNull(graphene.String)
+    lineNumber = graphene.Int()
+    label = graphene.String()
+
+    class Meta:
+        name = "LocalFileCodeReference"
+
+
+class GrapheneUrlCodeReference(graphene.ObjectType):
+    url = graphene.NonNull(graphene.String)
+    label = graphene.String()
+
+    class Meta:
+        name = "UrlCodeReference"
+
+
+class GrapheneSourceLocation(graphene.Union):
+    class Meta:
+        types = (GrapheneLocalFileCodeReference, GrapheneUrlCodeReference)
+        name = "SourceLocation"
+
+
+class GrapheneCodeReferencesMetadataEntry(graphene.ObjectType):
+    codeReferences = non_null_list(GrapheneSourceLocation)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "CodeReferencesMetadataEntry"
+
+
 class GrapheneNullMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
         name = "NullMetadataEntry"
 
 
+class GrapheneTimestampMetadataEntry(graphene.ObjectType):
+    timestamp = graphene.NonNull(graphene.Float)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "TimestampMetadataEntry"
+
+
 def types():
     return [
         GrapheneMetadataEntry,
+        GrapheneTableColumnLineageMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
         GrapheneTableMetadataEntry,
         GrapheneFloatMetadataEntry,
@@ -174,5 +227,7 @@ def types():
         GraphenePipelineRunMetadataEntry,
         GrapheneAssetMetadataEntry,
         GrapheneJobMetadataEntry,
+        GrapheneCodeReferencesMetadataEntry,
         GrapheneNullMetadataEntry,
+        GrapheneTimestampMetadataEntry,
     ]

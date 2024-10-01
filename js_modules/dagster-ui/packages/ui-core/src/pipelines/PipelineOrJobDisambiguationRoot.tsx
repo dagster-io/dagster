@@ -1,7 +1,11 @@
+import {useContext} from 'react';
 import {Redirect, useLocation, useParams} from 'react-router-dom';
 
 import {explorerPathFromString} from './PipelinePathUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {PermissionsContext} from '../app/Permissions';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 interface Props {
@@ -13,8 +17,17 @@ export const PipelineOrJobDisambiguationRoot = (props: Props) => {
   const location = useLocation();
   const {pipelinePath} = useParams<{pipelinePath: string}>();
 
-  const {pipelineName: pipelineOrJobName} = explorerPathFromString(pipelinePath);
+  const {loading} = useContext(WorkspaceContext);
+  const {loading: permissionsLoading} = useContext(PermissionsContext);
   const repo = useRepository(repoAddress);
+
+  useBlockTraceUntilTrue('Workspace', loading);
+  useBlockTraceUntilTrue('Permissions', permissionsLoading);
+  if (loading || permissionsLoading) {
+    return null;
+  }
+
+  const {pipelineName: pipelineOrJobName} = explorerPathFromString(pipelinePath);
   const isJob = isThisThingAJob(repo, pipelineOrJobName);
   const {pathname, search} = location;
 

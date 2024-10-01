@@ -30,10 +30,14 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_ge_tests*"]),
+    include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
+        # Pin numpy pending update of great_expectations
+        "numpy<2",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, <0.17.12",
     ],
     zip_safe=False,

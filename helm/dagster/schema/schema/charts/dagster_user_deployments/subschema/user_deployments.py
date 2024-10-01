@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, create_model
 
-from ...utils import kubernetes
+from schema.charts.utils import kubernetes
 
 
 class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
@@ -20,6 +20,7 @@ class UserDeployment(BaseModel):
     dagsterApiGrpcArgs: Optional[List[str]]
     codeServerArgs: Optional[List[str]]
     includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns]
+    deploymentNamespace: Optional[str]
     port: int
     env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]]
     envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]]

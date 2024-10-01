@@ -7,10 +7,9 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.dagster_run import DagsterRun
-
-from .execution_result import ExecutionResult
 
 
 class ExecuteInProcessResult(ExecutionResult):

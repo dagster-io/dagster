@@ -18,11 +18,6 @@ run_this_last = DummyOperator(
     dag=simple_dag,
 )
 
-also_run_this_last = DummyOperator(
-    task_id="sink_task_bar",
-    dag=simple_dag,
-)
-
 
 get_date = BashOperator(
     task_id="get_date",
@@ -31,7 +26,6 @@ get_date = BashOperator(
 )
 
 get_date >> run_this_last
-get_date >> also_run_this_last
 
 
 for i in range(3):

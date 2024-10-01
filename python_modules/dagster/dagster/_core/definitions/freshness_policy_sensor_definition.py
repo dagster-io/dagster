@@ -1,32 +1,17 @@
 from typing import Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    FreshnessPolicySensorExecutionError,
-    user_code_error_boundary,
-)
-from dagster._core.instance import DagsterInstance
-from dagster._serdes import (
-    serialize_value,
-    whitelist_for_serdes,
-)
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_value
-from dagster._seven import JSONDecodeError
-
-from .sensor_definition import (
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
+    RawSensorEvaluationFunctionReturn,
     SensorDefinition,
     SensorEvaluationContext,
     SensorType,
@@ -35,6 +20,18 @@ from .sensor_definition import (
     get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
 )
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    FreshnessPolicySensorExecutionError,
+    user_code_error_boundary,
+)
+from dagster._core.instance import DagsterInstance
+from dagster._serdes import serialize_value, whitelist_for_serdes
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
+from dagster._seven import JSONDecodeError
+from dagster._time import get_current_datetime
 
 
 @whitelist_for_serdes
@@ -200,7 +197,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_selection: AssetSelection,
-        freshness_policy_sensor_fn: Callable[..., None],
+        freshness_policy_sensor_fn: Callable[..., RawSensorEvaluationFunctionReturn],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -242,10 +239,15 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                 yield SkipReason(f"Initializing {name}.")
                 return
 
-            evaluation_time = pendulum.now("UTC")
+            evaluation_time = get_current_datetime()
             asset_graph = context.repository_def.asset_graph
+            asset_graph_view = AssetGraphView(
+                temporal_context=TemporalContext(effective_dt=evaluation_time, last_event_id=None),
+                instance=context.instance,
+                asset_graph=asset_graph,
+            )
             instance_queryer = CachingInstanceQueryer(
-                context.instance, asset_graph, evaluation_time
+                context.instance, asset_graph, asset_graph_view, evaluation_time
             )
             data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
             monitored_keys = asset_selection.resolve(asset_graph)
@@ -257,7 +259,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             minutes_late_by_key: Dict[AssetKey, Optional[float]] = {}
             for asset_key in monitored_keys:
-                freshness_policy = asset_graph.freshness_policies_by_key.get(asset_key)
+                freshness_policy = asset_graph.get(asset_key).freshness_policy
                 if freshness_policy is None:
                     continue
 
@@ -312,7 +314,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             required_resource_keys=combined_required_resource_keys,
         )
 
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
         context_param_name = get_context_param_name(self._freshness_policy_sensor_fn)
 
         sensor_context = get_sensor_context_from_args_or_kwargs(
@@ -347,7 +349,7 @@ def freshness_policy_sensor(
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
-    [Callable[..., None]],
+    [Callable[..., RawSensorEvaluationFunctionReturn]],
     FreshnessPolicySensorDefinition,
 ]:
     """Define a sensor that reacts to the status of a given set of asset freshness policies, where the
@@ -370,7 +372,9 @@ def freshness_policy_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
     """
 
-    def inner(fn: Callable[..., None]) -> FreshnessPolicySensorDefinition:
+    def inner(
+        fn: Callable[..., RawSensorEvaluationFunctionReturn],
+    ) -> FreshnessPolicySensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 

@@ -78,19 +78,6 @@ mutation DeleteRun($runId: String!) {
 }
 """
 
-ALL_TAGS_QUERY = """
-{
-  runTagsOrError {
-    ... on RunTags {
-      tags {
-        key
-        values
-      }
-    }
-  }
-}
-"""
-
 ALL_TAG_KEYS_QUERY = """
 {
   runTagKeysOrError {
@@ -248,9 +235,41 @@ RUN_CONCURRENCY_QUERY = """
         runId
         status
         hasConcurrencyKeySlots
+        rootConcurrencyKeys
       }
     }
   }
+}
+"""
+
+RUN_LOGS_QUERY = """
+query RunLogsQuery($afterCursor:String, $limit:Int, $runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        eventConnection(limit: $limit, afterCursor: $afterCursor) {
+          cursor
+          hasMore
+          events {
+            ... on ExecutionStepFailureEvent {
+              stepKey
+              eventType
+              errorSource
+              error {
+                message
+                stack
+                causes {
+
+                  className
+                  stack
+                  message
+                }
+              }
+            }
+          }
+        }
+      }
+    }
 }
 """
 
@@ -292,7 +311,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_runs_over_graphql(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
         # other code in this file which reads itself to load a repo
-        from .utils import sync_execute_get_run_log_data
+        from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
         selector = infer_job_selector(graphql_context, "required_resource_job")
 
@@ -352,12 +371,6 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         assert "fruit" in tag_keys
         assert "veggie" in tag_keys
 
-        all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
-        tags = all_tags_result.data["runTagsOrError"]["tags"]
-        tags_dict = {item["key"]: item["values"] for item in tags}
-        assert tags_dict["fruit"] == ["apple"]
-        assert tags_dict["veggie"] == ["carrot"]
-
         filtered_tags_result = execute_dagster_graphql(
             read_context, FILTERED_TAGS_QUERY, variables={"tagKeys": ["fruit"]}
         )
@@ -365,6 +378,24 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         tags_dict = {item["key"]: item["values"] for item in tags}
         assert len(tags_dict) == 1
         assert tags_dict["fruit"] == ["apple"]
+
+        run_logs_result = execute_dagster_graphql(
+            read_context, RUN_LOGS_QUERY, variables={"runId": run_id_one, "limit": 5}
+        )
+        run_log_events = run_logs_result.data["pipelineRunOrError"]["eventConnection"]["events"]
+        assert len(run_log_events) == 5
+        assert run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
+
+        cursor = run_logs_result.data["pipelineRunOrError"]["eventConnection"]["cursor"]
+        assert cursor
+
+        run_logs_result = execute_dagster_graphql(
+            read_context,
+            RUN_LOGS_QUERY,
+            variables={"runId": run_id_one, "limit": 5000, "afterCursor": cursor},
+        )
+
+        assert not run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
 
         # delete the second run
         result = execute_dagster_graphql(
@@ -395,7 +426,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_run_config(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
         # other code in this file which reads itself to load a repo
-        from .utils import sync_execute_get_run_log_data
+        from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
         selector = infer_job_selector(graphql_context, "required_resource_job")
 
@@ -473,7 +504,7 @@ def get_repo_at_time_2():
 
 
 def get_asset_repo():
-    @op
+    @op(tags={"dagster/concurrency_key": "foo"})
     def foo():
         yield AssetMaterialization(asset_key="foo", description="foo")
         yield Output(None)
@@ -886,6 +917,7 @@ def test_run_has_concurrency_slots():
                 assert not result.data["pipelineRunsOrError"]["results"][0][
                     "hasConcurrencyKeySlots"
                 ]
+                assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
 
             claim = instance.event_log_storage.claim_concurrency_slot(
                 "foo", run_id, "fake_step_key"
@@ -898,3 +930,4 @@ def test_run_has_concurrency_slots():
                 assert len(result.data["pipelineRunsOrError"]["results"]) == 1
                 assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
                 assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]
+                assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]

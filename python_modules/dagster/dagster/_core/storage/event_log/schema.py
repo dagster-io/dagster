@@ -1,7 +1,7 @@
 import sqlalchemy as db
 from sqlalchemy.dialects import sqlite
 
-from ..sql import MySQLCompatabilityTypes, get_current_timestamp
+from dagster._core.storage.sql import MySQLCompatabilityTypes, get_sql_current_timestamp
 
 SqlEventLogStorageMetadata = db.MetaData()
 
@@ -33,7 +33,7 @@ SecondaryIndexMigrationTable = db.Table(
         autoincrement=True,
     ),
     db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
 )
 
@@ -65,7 +65,7 @@ AssetKeyTable = db.Table(
         "last_materialization_timestamp", db.types.TIMESTAMP
     ),  # guarded by secondary index check
     db.Column("tags", db.TEXT),  # guarded by secondary index check
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("cached_status_data", db.TEXT),
 )
 
@@ -100,7 +100,7 @@ DynamicPartitionsTable = db.Table(
     ),
     db.Column("partitions_def_name", db.Text, nullable=False),
     db.Column("partition", db.Text, nullable=False),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 ConcurrencyLimitsTable = db.Table(
@@ -114,8 +114,8 @@ ConcurrencyLimitsTable = db.Table(
     ),
     db.Column("concurrency_key", MySQLCompatabilityTypes.UniqueText, nullable=False, unique=True),
     db.Column("limit", db.Integer, nullable=False),
-    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 ConcurrencySlotsTable = db.Table(
@@ -131,7 +131,7 @@ ConcurrencySlotsTable = db.Table(
     db.Column("run_id", db.Text),
     db.Column("step_key", db.Text),
     db.Column("deleted", db.Boolean, nullable=False, default=False),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 PendingStepsTable = db.Table(
@@ -148,7 +148,7 @@ PendingStepsTable = db.Table(
     db.Column("step_key", db.Text),
     db.Column("priority", db.Integer),
     db.Column("assigned_timestamp", db.DateTime),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 AssetCheckExecutionsTable = db.Table(
@@ -177,7 +177,7 @@ AssetCheckExecutionsTable = db.Table(
         "materialization_event_storage_id",
         db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
     ),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
 db.Index(
@@ -193,6 +193,8 @@ db.Index(
     },
 )
 
+# This index doesn't enforce the uniqueness how we want it to because partition and run_id can be
+# null. Postgres and other dbms's consider each null value distinct.
 db.Index(
     "idx_asset_check_executions_unique",
     AssetCheckExecutionsTable.c.asset_key,

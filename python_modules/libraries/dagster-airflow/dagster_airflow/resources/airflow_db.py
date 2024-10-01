@@ -11,9 +11,7 @@ from dagster import (
 )
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
 
-from dagster_airflow.utils import (
-    is_airflow_2_loaded_in_environment,
-)
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 if is_airflow_2_loaded_in_environment():
     from airflow.utils.state import DagRunState

@@ -38,7 +38,7 @@ As you might have noticed while defining assets and resources, Dagster’s best 
 To select only the assets you want to include, you’ll use the `AssetSelection` class. This class lets you look up and reference assets across your code location. In particular, there will be two methods that you’ll be using:
 
 - `AssetSelection.all()` gives you a list of all asset definitions in the code location
-- `AssetSelection.keys([<string>, ...])` which gives you a list of assets that match the asset keys provided
+- `AssetSelection.assets([<string>, ...])` which gives you a list of assets that match the asset keys provided
 
 For more info on asset selection, refer to the [asset selection syntax guide in the Dagster docs](https://docs.dagster.io/concepts/assets/asset-selection-syntax).
 
@@ -47,7 +47,7 @@ For more info on asset selection, refer to the [asset selection syntax guide in 
    ```python
    from dagster import AssetSelection
 
-   trips_by_week = AssetSelection.keys("trips_by_week")
+   trips_by_week = AssetSelection.assets("trips_by_week")
    ```
 
    This uses the `AssetSelection` utility to reference a single asset, `trips_by_week`. We’ll isolate this specifically because we won’t want to run it with the rest of our pipeline and it should be run more frequently.
@@ -74,7 +74,7 @@ Your final code in `jobs/__init__.py` should look like the following:
 ```python
 from dagster import AssetSelection, define_asset_job
 
-trips_by_week = AssetSelection.keys("trips_by_week")
+trips_by_week = AssetSelection.assets("trips_by_week")
 
 trip_update_job = define_asset_job(
     name="trip_update_job",

@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const SCHEDULE_FUTURE_TICKS_FRAGMENT = gql`
   fragment ScheduleFutureTicksFragment on Schedule {

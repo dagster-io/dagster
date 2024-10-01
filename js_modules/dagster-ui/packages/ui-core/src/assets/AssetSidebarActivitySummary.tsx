@@ -1,32 +1,28 @@
-import {Body, Box, Colors, Icon, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
+import {Body, Box, Colors, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
-import {
-  AutomaterializePolicyTag,
-  automaterializePolicyDescription,
-} from './AutomaterializePolicyTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {AssetCheckStatusTag} from './asset-checks/AssetCheckStatusTag';
 import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
-import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
-import {isRunlessEvent} from './isRunlessEvent';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
-import {LiveDataForNode} from '../asset-graph/Utils';
+import {RecentAssetEvents} from './useRecentAssetEvents';
+import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
 interface Props {
   asset: SidebarAssetFragment;
-  liveData?: LiveDataForNode;
-  isSourceAsset: boolean;
+  liveData?: LiveDataForNodeWithStaleData;
+  isObservable: boolean;
   stepKey: string;
+  recentEvents: RecentAssetEvents;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
@@ -36,19 +32,16 @@ interface Props {
 export const AssetSidebarActivitySummary = ({
   asset,
   assetLastMaterializedAt,
-  isSourceAsset,
+  isObservable,
   liveData,
   stepKey,
+  recentEvents,
 }: Props) => {
-  const {materializations, observations, loadedPartitionKeys, loading, refetch, xAxis} =
-    useRecentAssetEvents(
-      asset.assetKey,
-      {},
-      {assetHasDefinedPartitions: !!asset.partitionDefinition},
-    );
+  const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
+    recentEvents;
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
-  const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
+  const displayedEvent = isObservable ? observations[0] : materializations[0];
 
   useEffect(() => {
     refetch();
@@ -76,26 +69,6 @@ export const AssetSidebarActivitySummary = ({
         </SidebarSection>
       )}
 
-      {asset.autoMaterializePolicy && (
-        <SidebarSection title="Auto-materialize policy">
-          <Box
-            padding={{horizontal: 24, vertical: 12}}
-            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-          >
-            <Link to={assetDetailsPathForKey(asset.assetKey, {view: 'automation'})}>
-              View automation history
-            </Link>
-            <Icon name="open_in_new" color={Colors.linkDefault()} />
-          </Box>
-          <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1, marginBottom: 12}}>
-              {automaterializePolicyDescription(asset.autoMaterializePolicy)}
-            </Body>
-            <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />
-          </Box>
-        </SidebarSection>
-      )}
-
       {asset.backfillPolicy && (
         <SidebarSection title="Backfill policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
@@ -106,21 +79,14 @@ export const AssetSidebarActivitySummary = ({
 
       {loadedPartitionKeys.length > 1 ? null : (
         <>
-          <SidebarSection
-            title={
-              !isSourceAsset
-                ? displayedEvent && isRunlessEvent(displayedEvent)
-                  ? 'Last reported materialization'
-                  : 'Materialization in last run'
-                : 'Observation in last run'
-            }
-          >
+          <SidebarSection title={!isObservable ? 'Latest materialization' : 'Latest observation'}>
             {displayedEvent ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
                 <LatestMaterializationMetadata
                   assetKey={asset.assetKey}
                   latest={displayedEvent}
                   liveData={liveData}
+                  definition={asset}
                 />
               </div>
             ) : loading ? (
@@ -132,12 +98,12 @@ export const AssetSidebarActivitySummary = ({
                 margin={{horizontal: 24, vertical: 12}}
                 style={{color: Colors.textLight(), fontSize: '0.8rem'}}
               >
-                {!isSourceAsset ? `No materializations found` : `No observations found`}
+                {!isObservable ? `No materializations found` : `No observations found`}
               </Box>
             )}
           </SidebarSection>
           <SidebarSection
-            title={!isSourceAsset ? 'Materialization system tags' : 'Observation system tags'}
+            title={!isObservable ? 'Materialization tags' : 'Observation tags'}
             collapsedByDefault
           >
             {displayedEvent ? (
@@ -153,7 +119,7 @@ export const AssetSidebarActivitySummary = ({
                 margin={{horizontal: 24, vertical: 12}}
                 style={{color: Colors.textLight(), fontSize: '0.8rem'}}
               >
-                {!isSourceAsset ? `No materializations found` : `No observations found`}
+                {!isObservable ? `No materializations found` : `No observations found`}
               </Box>
             )}
           </SidebarSection>
@@ -196,7 +162,15 @@ export const AssetSidebarActivitySummary = ({
                     justifyContent: 'space-between',
                   }}
                 >
-                  <MiddleTruncate text={`${check.name}`} />
+                  <Link
+                    style={{display: 'flex', flex: 1, overflow: 'hidden'}}
+                    to={assetDetailsPathForAssetCheck({
+                      name: check.name,
+                      assetKey: asset.assetKey,
+                    })}
+                  >
+                    <MiddleTruncate text={check.name} />
+                  </Link>
                   {execution ? (
                     <AssetCheckStatusTag execution={execution} />
                   ) : (

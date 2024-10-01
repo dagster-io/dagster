@@ -6,8 +6,8 @@ description: "Define configuration options for your Dagster instance."
 # Dagster instance
 
 <Note>
-  This guide is applicable to Dagster Open Source (OSS) deployments. For Dagster
-  Cloud, refer to the <a href="/dagster-cloud">Dagster Cloud documentation</a>.
+  This guide is applicable to Dagster Open Source (OSS) deployments. For
+  Dagster+, refer to the <a href="/dagster-plus">Dagster+ documentation</a>.
 </Note>
 
 The Dagster instance defines the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
@@ -323,7 +323,7 @@ storage:
 
 <Note>
   To use MySQL storage, you'll need to install the{" "}
-  <a href="/_apidocs/libraries/dagster-mysql">dagster-postgres</a> library.
+  <a href="/_apidocs/libraries/dagster-mysql">dagster-mysql</a> library.
 </Note>
 
 To use a MySQL database (<PyObject module="dagster_mysql" object="DagsterMySQLStorage" />) for storage, configure `storage.mysql` in `dagster.yaml`:
@@ -732,15 +732,15 @@ Refer to the [Telemetry documentation](/about/telemetry) for more info.
 
 The `code_servers` key allows you to configure how Dagster loads the code in a [code location](/concepts/code-locations/workspace-files).
 
-When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), the webserver and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
+When you aren't [running your own gRPC server](/concepts/code-locations/workspace-files#running-your-own-grpc-server), the webserver and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 180 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
 
-If you expect that your code will take longer than 60 seconds to load, set the `code_servers.local_startup_timeout` key. The value should be an integer that indicates the maximum timeout, in seconds.
+If you expect that your code will take longer than 180 seconds to load, set the `code_servers.local_startup_timeout` key. The value should be an integer that indicates the maximum timeout, in seconds.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_code_servers endbefore=end_marker_code_servers
 # Configures how long Dagster waits for code locations
 # to load before timing out.
 code_servers:
-  local_startup_timeout: 120
+  local_startup_timeout: 360
 ```
 
 ### Data retention
@@ -791,13 +791,3 @@ schedules:
 ```
 
 You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same schedule tick in parallel, which can help decrease latency when a single schedule tick returns many run requests.
-
-### Auto-materialize
-
-The `auto_materialize` key allows you to adjust configuration related to [auto-materializing assets](/concepts/assets/asset-auto-execution).
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_auto_materialize endbefore=end_marker_auto_materialize
-auto_materialize:
-  run_tags:
-    key: value
-```

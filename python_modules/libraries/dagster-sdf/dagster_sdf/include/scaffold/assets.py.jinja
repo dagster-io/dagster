@@ -1,0 +1,13 @@
+from dagster import AssetExecutionContext
+from dagster_sdf import SdfCliResource, SdfWorkspace, sdf_assets
+
+from .constants import sdf_workspace_dir
+
+target_dir = sdf_workspace_dir.joinpath("sdf_dagster_out")
+environment = "dbg"
+workspace = SdfWorkspace(workspace_dir=sdf_workspace_dir, target_dir=target_dir, environment=environment)
+
+
+@sdf_assets(workspace=workspace)
+def {{ sdf_assets_name }}(context: AssetExecutionContext, sdf: SdfCliResource):
+    yield from sdf.cli(["run", "--save", "info-schema"], target_dir=target_dir, environment=environment, context=context).stream()

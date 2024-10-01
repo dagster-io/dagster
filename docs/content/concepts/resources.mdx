@@ -23,7 +23,7 @@ In data engineering, resources are the external services, tools, and storage you
 - The Snowflake/Databricks/BigQuery account the data is ingested into
 - The BI tool the dashboard was made in
 
-Using Dagster resources, you can standardize connections and integrations to these tools across Dagster definitions like [Software-defined Assets](/concepts/assets/software-defined-assets), [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), [ops](/concepts/ops-jobs-graphs/ops), and [jobs](/concepts/ops-jobs-graphs/jobs).
+Using Dagster resources, you can standardize connections and integrations to these tools across Dagster definitions like [asset definitions](/concepts/assets/software-defined-assets), [schedules](/concepts/automation/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), [ops](/concepts/ops-jobs-graphs/ops), and [jobs](/concepts/ops-jobs-graphs/jobs).
 
 So, why use resources?
 
@@ -44,7 +44,7 @@ So, why use resources?
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resources, config, and other run information.                                                                                            |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                               |
-| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of Software-defined Assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
+| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of asset definitions, overriding those provided to <PyObject object="Definitions"/>.                                                                                             |
 
 ---
 
@@ -58,7 +58,7 @@ The configuration system has a few advantages over plain Python parameter passin
 2. Displayed in the Dagster UI
 3. Set dynamically using environment variables, resolved at runtime
 
-### With Software-defined Assets
+### With asset definitions
 
 The following example demonstrates defining a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 
@@ -102,9 +102,9 @@ To specify resource dependencies on a sensor, annotate the resource type as a pa
 
 ### With schedules
 
-[Schedules](/concepts/partitions-schedules-sensors/schedules) can use resources in case your schedule logic needs to interface with an external tool or to make your schedule logic more testable.
+[Schedules](/concepts/automation/schedules) can use resources in case your schedule logic needs to interface with an external tool or to make your schedule logic more testable.
 
-To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information and examples, refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#using-resources-in-schedules).
+To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. Refer to the [Schedule examples reference](/concepts/automation/schedules/examples#using-resources-in-schedules) for more info.
 
 ### With ops and jobs
 
@@ -154,7 +154,7 @@ There are many supported config types that can be used when defining resources. 
 
 ### Using environment variables with resources
 
-Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster Cloud](/dagster-cloud), environment variables can be [configured directly in the UI](/dagster-cloud/managing-deployments/environment-variables-and-secrets).
+Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster+](/dagster-plus), environment variables can be [configured directly in the UI](/dagster-plus/managing-deployments/environment-variables-and-secrets).
 
 To use environment variables, pass an <PyObject object="EnvVar" /> when constructing the resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated when a run is launched.
 
@@ -186,7 +186,7 @@ For more information on using environment variables with Dagster, refer to the [
 
 ### Configuring resources at launch time
 
-In some cases, you may want to specify configuration for a resource at launch time, in the Launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
+In some cases, you may want to specify configuration for a resource at launch time, in the Launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/concepts/automation/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
 
 You can use the `configure_at_launch()` method to defer the construction of a configurable resource until launch time:
 
@@ -196,8 +196,7 @@ from dagster import ConfigurableResource, Definitions, asset
 class DatabaseResource(ConfigurableResource):
     table: str
 
-    def read(self):
-        ...
+    def read(self): ...
 
 @asset
 def data_from_database(db_conn: DatabaseResource):
@@ -348,12 +347,10 @@ from pydantic import PrivateAttr
 class DBConnection:
     ...
 
-    def query(self, body: str):
-        ...
+    def query(self, body: str): ...
 
 @contextmanager
-def get_database_connection(username: str, password: str):
-    ...
+def get_database_connection(username: str, password: str): ...
 
 class MyClientResource(ConfigurableResource):
     username: str

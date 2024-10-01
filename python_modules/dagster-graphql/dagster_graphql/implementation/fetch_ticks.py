@@ -1,15 +1,13 @@
 import warnings
+from datetime import timedelta
 from typing import TYPE_CHECKING, Optional, Sequence
 
-import pendulum
-from dagster._core.scheduler.instigation import (
-    InstigatorType,
-    TickStatus,
-)
+from dagster._core.scheduler.instigation import InstigatorType, TickStatus
+from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
-    from ..schema.util import ResolveInfo
-    from .loader import RepositoryScopedBatchLoader
+    from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def get_instigation_ticks(
@@ -26,11 +24,11 @@ def get_instigation_ticks(
     before: Optional[float],
     after: Optional[float],
 ):
-    from ..schema.instigation import GrapheneInstigationTick
+    from dagster_graphql.schema.instigation import GrapheneInstigationTick
 
     if before is None:
         if dayOffset:
-            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
+            before = (get_current_datetime() - timedelta(days=dayOffset)).timestamp()
         elif cursor:
             parts = cursor.split(":")
             if parts:
@@ -41,14 +39,14 @@ def get_instigation_ticks(
 
     if after is None:
         after = (
-            pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
+            (get_current_datetime() - timedelta(days=dayRange + (dayOffset or 0))).timestamp()
             if dayRange
             else None
         )
 
     statuses = [TickStatus(status) for status in status_strings] if status_strings else None
 
-    if batch_loader and limit and not cursor and not before and not after:
+    if batch_loader and limit and not cursor and not before and not after and not statuses:
         if instigator_type == InstigatorType.SENSOR:
             ticks = batch_loader.get_sensor_ticks(
                 instigator_origin_id,

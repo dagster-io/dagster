@@ -42,39 +42,32 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
     user_code_error_boundary,
 )
-from dagster._core.host_representation.external_data import (
-    ExternalJobSubsetResult,
-    ExternalPartitionExecutionErrorData,
-    ExternalRepositoryErrorData,
-    ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionErrorData,
-    external_job_data_from_def,
-    external_repository_data_from_def,
-)
-from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.remote_representation.external_data import (
+    ExternalJobSubsetResult,
+    PartitionExecutionErrorSnap,
+    RepositoryErrorSnap,
+    ScheduleExecutionErrorSnap,
+    SensorExecutionErrorSnap,
+    external_job_data_from_def,
+    external_repository_data_from_def,
+)
+from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
+from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
+from dagster._core.types.loadable_target_origin import (
+    LoadableTargetOrigin,
+    enter_loadable_target_origin_load_context,
+)
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
-from dagster._utils import (
-    find_free_port,
-    get_run_crash_explanation,
-    safe_tempfile_path_unmanaged,
+from dagster._grpc.__generated__ import api_pb2
+from dagster._grpc.__generated__.api_pb2_grpc import (
+    DagsterApiServicer,
+    add_DagsterApiServicer_to_server,
 )
-from dagster._utils.container import (
-    ContainerUtilizationMetrics,
-    retrieve_containerized_utilization_metrics,
-)
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.typed_dict import init_optional_typeddict
-
-from .__generated__ import api_pb2
-from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
-from .impl import (
+from dagster._grpc.impl import (
     RunInSubprocessComplete,
     StartRunInSubprocessSuccessful,
     get_external_execution_plan_snapshot,
@@ -88,7 +81,7 @@ from .impl import (
     get_partition_tags,
     start_run_in_subprocess,
 )
-from .types import (
+from dagster._grpc.types import (
     CanCancelExecutionRequest,
     CanCancelExecutionResult,
     CancelExecutionRequest,
@@ -108,12 +101,21 @@ from .types import (
     ShutdownServerResult,
     StartRunResult,
 )
-from .utils import (
+from dagster._grpc.utils import (
     default_grpc_server_shutdown_grace_period,
     get_loadable_targets,
     max_rx_bytes,
     max_send_bytes,
 )
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
+from dagster._utils import find_free_port, get_run_crash_explanation, safe_tempfile_path_unmanaged
+from dagster._utils.container import (
+    ContainerUtilizationMetrics,
+    retrieve_containerized_utilization_metrics,
+)
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.typed_dict import init_optional_typeddict
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent
@@ -153,6 +155,13 @@ def _update_threadpool_metrics(executor: FuturesAwareThreadPoolExecutor) -> None
         )
 
 
+def _maybe_log_exception(logger: logging.Logger, call_name: str):
+    if not os.getenv("DAGSTER_CODE_SERVER_LOG_EXCEPTIONS"):
+        return
+
+    logger.exception(f"Exception during {call_name} code server call")
+
+
 def _record_utilization_metrics(logger: logging.Logger) -> None:
     with _METRICS_LOCK:
         last_cpu_measurement_time = _UTILIZATION_METRICS["container_utilization"][
@@ -184,7 +193,7 @@ def _set_request_count(api_name: str, value: Any) -> None:
 
 def retrieve_metrics():
     class _MetricsRetriever:
-        def __call__(self, fn: Callable) -> Callable:
+        def __call__(self, fn: Callable[..., Any]) -> Callable:
             api_call = fn.__name__
             METRICS_RETRIEVAL_FUNCTIONS.add(api_call)
 
@@ -231,49 +240,53 @@ class LoadedRepositories:
         if not loadable_target_origin:
             # empty workspace
             return
-
-        with user_code_error_boundary(
-            DagsterUserCodeLoadError,
-            lambda: "Error occurred during the loading of Dagster definitions in\n"
-            + ", ".join(
-                [f"{k}={v}" for k, v in loadable_target_origin._asdict().items() if v is not None]
-            ),
-        ):
-            loadable_targets = get_loadable_targets(
-                loadable_target_origin.python_file,
-                loadable_target_origin.module_name,
-                loadable_target_origin.package_name,
-                loadable_target_origin.working_directory,
-                loadable_target_origin.attribute,
-            )
-        for loadable_target in loadable_targets:
-            pointer = _get_code_pointer(loadable_target_origin, loadable_target)
-            recon_repo = ReconstructableRepository(
-                pointer,
-                container_image,
-                sys.executable,
-                entry_point=entry_point,
-            )
+        with enter_loadable_target_origin_load_context(loadable_target_origin):
             with user_code_error_boundary(
                 DagsterUserCodeLoadError,
-                lambda: "Error occurred during the loading of Dagster definitions in "
-                + pointer.describe(),
+                lambda: "Error occurred during the loading of Dagster definitions in\n"
+                + ", ".join(
+                    [
+                        f"{k}={v}"
+                        for k, v in loadable_target_origin._asdict().items()
+                        if v is not None
+                    ]
+                ),
             ):
-                repo_def = recon_repo.get_definition()
-                # force load of all lazy constructed code artifacts to prevent
-                # any thread-safety issues loading them later on when serving
-                # definitions from multiple threads
-                repo_def.load_all_definitions()
-
-            self._code_pointers_by_repo_name[repo_def.name] = pointer
-            self._recon_repos_by_name[repo_def.name] = recon_repo
-            self._repo_defs_by_name[repo_def.name] = repo_def
-            self._loadable_repository_symbols.append(
-                LoadableRepositorySymbol(
-                    attribute=loadable_target.attribute,
-                    repository_name=repo_def.name,
+                loadable_targets = get_loadable_targets(
+                    loadable_target_origin.python_file,
+                    loadable_target_origin.module_name,
+                    loadable_target_origin.package_name,
+                    loadable_target_origin.working_directory,
+                    loadable_target_origin.attribute,
                 )
-            )
+            for loadable_target in loadable_targets:
+                pointer = _get_code_pointer(loadable_target_origin, loadable_target)
+                recon_repo = ReconstructableRepository(
+                    pointer,
+                    container_image,
+                    sys.executable,
+                    entry_point=entry_point,
+                )
+                with user_code_error_boundary(
+                    DagsterUserCodeLoadError,
+                    lambda: "Error occurred during the loading of Dagster definitions in "
+                    + pointer.describe(),
+                ):
+                    repo_def = recon_repo.get_definition()
+                    # force load of all lazy constructed code artifacts to prevent
+                    # any thread-safety issues loading them later on when serving
+                    # definitions from multiple threads
+                    repo_def.load_all_definitions()
+
+                self._code_pointers_by_repo_name[repo_def.name] = pointer
+                self._recon_repos_by_name[repo_def.name] = recon_repo
+                self._repo_defs_by_name[repo_def.name] = repo_def
+                self._loadable_repository_symbols.append(
+                    LoadableRepositorySymbol(
+                        attribute=loadable_target.attribute,
+                        repository_name=repo_def.name,
+                    )
+                )
 
     @property
     def loadable_repository_symbols(self) -> Sequence[LoadableRepositorySymbol]:
@@ -502,7 +515,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _get_repo_for_origin(
         self,
-        external_repo_origin: ExternalRepositoryOrigin,
+        external_repo_origin: RemoteRepositoryOrigin,
     ) -> RepositoryDefinition:
         loaded_repos = check.not_none(self._loaded_repositories)
         if external_repo_origin.repository_name not in loaded_repos.definitions_by_name:
@@ -561,11 +574,17 @@ class DagsterApiServer(DagsterApiServicer):
             ExecutionPlanSnapshotArgs,
         )
 
-        execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
-            self._get_repo_for_origin(execution_plan_args.job_origin.external_repository_origin),
-            execution_plan_args.job_origin.job_name,
-            execution_plan_args,
-        )
+        try:
+            execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
+                self._get_repo_for_origin(execution_plan_args.job_origin.repository_origin),
+                execution_plan_args.job_origin.job_name,
+                execution_plan_args,
+            )
+        except Exception:
+            _maybe_log_exception(self._logger, "ExecutionPlanSnapshot")
+            execution_plan_snapshot_or_error = ExecutionPlanSnapshotErrorData(
+                error=serializable_error_info_from_exc_info(sys.exc_info())
+            )
         return api_pb2.ExecutionPlanSnapshotReply(
             serialized_execution_plan_snapshot=serialize_value(execution_plan_snapshot_or_error)
         )
@@ -597,6 +616,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "ListRepositories")
             serialized_response = serialize_value(
                 serializable_error_info_from_exc_info(sys.exc_info())
             )
@@ -610,19 +630,20 @@ class DagsterApiServer(DagsterApiServicer):
     ) -> api_pb2.ExternalPartitionNamesReply:
         try:
             partition_names_args = deserialize_value(
-                request.serialized_partition_names_args,
-                PartitionNamesArgs,
+                request.serialized_partition_names_args, PartitionNamesArgs
             )
+
             serialized_response = serialize_value(
                 get_partition_names(
                     self._get_repo_for_origin(partition_names_args.repository_origin),
-                    partition_names_args.partition_set_name,
+                    job_name=partition_names_args.get_job_name(),
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "PartitionNames")
             serialized_response = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                PartitionExecutionErrorSnap(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -659,9 +680,10 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "PartitionSetExecutionParams")
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                PartitionExecutionErrorSnap(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -678,15 +700,16 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_data = serialize_value(
                 get_partition_config(
                     self._get_repo_for_origin(args.repository_origin),
-                    args.partition_set_name,
-                    args.partition_name,
+                    job_name=args.get_job_name(),
+                    partition_key=args.partition_name,
                     instance_ref=instance_ref,
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "ExternalPartitionConfig")
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                PartitionExecutionErrorSnap(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -707,15 +730,16 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_data = serialize_value(
                 get_partition_tags(
                     self._get_repo_for_origin(partition_args.repository_origin),
-                    partition_args.partition_set_name,
-                    partition_args.partition_name,
+                    job_name=partition_args.get_job_name(),
+                    partition_name=partition_args.partition_name,
                     instance_ref=instance_ref,
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "ExternalPartitionTags")
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                PartitionExecutionErrorSnap(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -734,15 +758,17 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_pipeline_subset_result = serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
-                        job_subset_snapshot_args.job_origin.external_repository_origin
+                        job_subset_snapshot_args.job_origin.repository_origin
                     ),
                     job_subset_snapshot_args.job_origin.job_name,
                     job_subset_snapshot_args.op_selection,
                     job_subset_snapshot_args.asset_selection,
                     job_subset_snapshot_args.asset_check_selection,
+                    job_subset_snapshot_args.include_parent_snapshot,
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "JobSubset")
             serialized_external_pipeline_subset_result = serialize_value(
                 ExternalJobSubsetResult(
                     success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
@@ -759,7 +785,7 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             repository_origin = deserialize_value(
                 request.serialized_repository_python_origin,
-                ExternalRepositoryOrigin,
+                RemoteRepositoryOrigin,
             )
 
             return serialize_value(
@@ -769,8 +795,9 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "Repository")
             return serialize_value(
-                ExternalRepositoryErrorData(serializable_error_info_from_exc_info(sys.exc_info()))
+                RepositoryErrorSnap(error=serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
     def ExternalRepository(
@@ -788,13 +815,16 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             repository_origin = deserialize_value(
                 request.serialized_repository_origin,
-                ExternalRepositoryOrigin,
+                RemoteRepositoryOrigin,
             )
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
-            ser_job_data = serialize_value(external_job_data_from_def(job_def))
+            ser_job_data = serialize_value(
+                external_job_data_from_def(job_def, include_parent_snapshot=True)
+            )
             return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:
+            _maybe_log_exception(self._logger, "Job")
             return api_pb2.ExternalJobReply(
                 serialized_error=serialize_value(
                     serializable_error_info_from_exc_info(sys.exc_info())
@@ -871,9 +901,10 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "ScheduleExecution")
             return serialize_value(
-                ExternalScheduleExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                ScheduleExecutionErrorSnap(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -887,6 +918,7 @@ class DagsterApiServer(DagsterApiServicer):
             return serialize_value(
                 get_external_sensor_execution(
                     self._get_repo_for_origin(args.repository_origin),
+                    args.repository_origin.code_location_origin,
                     args.instance_ref,
                     args.sensor_name,
                     args.last_tick_completion_time,
@@ -897,9 +929,10 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         except Exception:
+            _maybe_log_exception(self._logger, "SensorExecution")
             return serialize_value(
-                ExternalSensorExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                SensorExecutionErrorSnap(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -1014,7 +1047,7 @@ class DagsterApiServer(DagsterApiServicer):
 
             # reconstructable required for handing execution off to subprocess
             recon_repo = check.not_none(self._loaded_repositories).reconstructables_by_name[
-                execute_external_job_args.job_origin.external_repository_origin.repository_name
+                execute_external_job_args.job_origin.repository_origin.repository_name
             ]
             recon_job = recon_repo.get_reconstructable_job(
                 execute_external_job_args.job_origin.job_name
@@ -1492,7 +1525,7 @@ class GrpcServerProcess:
     def wait(self, timeout=30):
         self._waited = True
         if self.server_process.poll() is None:
-            seven.wait_for_process(self.server_process, timeout=timeout)
+            self.server_process.wait(timeout=timeout)
 
     def __enter__(self):
         return self

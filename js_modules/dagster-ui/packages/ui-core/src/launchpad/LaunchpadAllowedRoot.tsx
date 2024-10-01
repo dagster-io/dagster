@@ -1,5 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
-import {Suspense, lazy, useEffect, useMemo} from 'react';
+import {useMemo} from 'react';
 import * as yaml from 'yaml';
 
 import {
@@ -11,13 +10,14 @@ import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {LaunchpadType} from './types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
-import {useStartTrace} from '../performance';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {lazy} from '../util/lazy';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 const LaunchpadStoredSessionsContainer = lazy(() => import('./LaunchpadStoredSessionsContainer'));
@@ -48,7 +48,6 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
 
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
-  const trace = useStartTrace('LaunchpadAllowedRoot');
 
   const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
@@ -85,12 +84,6 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     const opNames = new Set(opNameList);
     return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
   }, [runConfigSchemaOrError, sessionPresets]);
-
-  useEffect(() => {
-    if (!result.loading) {
-      trace.endTrace();
-    }
-  }, [trace, result.loading]);
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
@@ -157,19 +150,17 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   } else {
     // job
     return (
-      <Suspense fallback={<div />}>
-        <LaunchpadStoredSessionsContainer
-          launchpadType={launchpadType}
-          pipeline={pipelineOrError}
-          partitionSets={partitionSetsOrError}
-          repoAddress={repoAddress}
-          rootDefaultYaml={
-            result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
-              ? result.data.runConfigSchemaOrError.rootDefaultYaml
-              : undefined
-          }
-        />
-      </Suspense>
+      <LaunchpadStoredSessionsContainer
+        launchpadType={launchpadType}
+        pipeline={pipelineOrError}
+        partitionSets={partitionSetsOrError}
+        repoAddress={repoAddress}
+        rootDefaultYaml={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError.rootDefaultYaml
+            : undefined
+        }
+      />
     );
   }
 };

@@ -1,7 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Meta, Story} from '@storybook/react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {Meta, StoryFn} from '@storybook/react';
+import {MemoryRouter} from 'react-router-dom';
 
+import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
@@ -20,7 +21,7 @@ export default {
   component: BackfillPage,
 } as Meta;
 
-const Template: Story = ({mocks}) => (
+const Template: StoryFn = ({mocks}) => (
   <AnalyticsContext.Provider value={{page: () => {}} as any}>
     <MemoryRouter initialEntries={['/backfill/1']}>
       <MockedProvider mocks={mocks}>

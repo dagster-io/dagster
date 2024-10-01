@@ -6,6 +6,7 @@ import {GroupNodeNameAndRepo, useGroupNodeContextMenu} from './CollapsedGroupNod
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
+import {SVGRelativeContainerForSafari} from '../graph/SVGComponents';
 
 export const ExpandedGroupNode = ({
   group,
@@ -30,7 +31,7 @@ export const ExpandedGroupNode = ({
     preferredJobName,
   });
   return (
-    <div style={{position: 'relative', width: '100%', height: '100%'}}>
+    <SVGRelativeContainerForSafari>
       <ContextMenuWrapper menu={menu} stopPropagation>
         <GroupNodeHeaderBox
           $minimal={minimal}
@@ -53,13 +54,18 @@ export const ExpandedGroupNode = ({
           )}
         </GroupNodeHeaderBox>
       </ContextMenuWrapper>
-      <GroupOutline $minimal={minimal} />
       {dialog}
-    </div>
+    </SVGRelativeContainerForSafari>
   );
 };
 
-const GroupOutline = styled.div<{$minimal: boolean}>`
+export const GroupOutline = ({minimal}: {minimal: boolean}) => (
+  <SVGRelativeContainerForSafari>
+    <GroupOutlineBox $minimal={minimal} />
+  </SVGRelativeContainerForSafari>
+);
+
+const GroupOutlineBox = styled.div<{$minimal: boolean}>`
   inset: 0;
   top: 60px;
   position: absolute;
@@ -71,6 +77,7 @@ const GroupOutline = styled.div<{$minimal: boolean}>`
   pointer-events: none;
 
   border: ${(p) => (p.$minimal ? '4px' : '2px')} solid ${Colors.lineageGroupNodeBorder()};
+  border-top: 0;
 `;
 
 const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
@@ -85,7 +92,6 @@ const GroupNodeHeaderBox = styled.div<{$minimal: boolean}>`
   border-radius: 8px;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  border-bottom: 0;
   position: relative;
   transition:
     background 100ms linear,

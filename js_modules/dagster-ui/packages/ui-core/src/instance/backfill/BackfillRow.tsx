@@ -1,35 +1,24 @@
-import {QueryResult, gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
 import * as React from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {
-  PartitionStatusesForBackfillFragment,
-  SingleBackfillCountsQuery,
-  SingleBackfillCountsQueryVariables,
-  SingleBackfillQuery,
-  SingleBackfillQueryVariables,
-} from './types/BackfillRow.types';
+import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
-import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {QueryResult, gql, useLazyQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
-import {inProgressStatuses} from '../../runs/RunStatuses';
-import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
@@ -50,70 +39,48 @@ export const BackfillRow = (props: BackfillRowProps) => {
     props.backfill.isAssetBackfill;
 
   if (statusUnsupported) {
-    return <BackfillRowContent {...props} counts={null} statuses={null} statusQueryResult={null} />;
+    return <BackfillRowContent {...props} hasCancelableRuns={false} statusQueryResult={null} />;
   }
   return (
-    <BackfillRowLoader backfillId={props.backfill.id} numPartitions={props.backfill.numPartitions}>
+    <BackfillRowLoader backfillId={props.backfill.id}>
       {(data) => <BackfillRowContent {...props} {...data} />}
     </BackfillRowLoader>
   );
 };
 
 interface LoadResult {
-  counts: {[runStatus: string]: number} | null;
+  hasCancelableRuns: boolean;
   statusQueryResult: QueryResult<any, any> | null;
-  statuses: PartitionStatusesForBackfillFragment['results'] | null;
 }
 
 export const BackfillRowLoader = (props: {
   backfillId: string;
-  numPartitions: number | null;
   children: (data: LoadResult) => React.ReactNode;
 }) => {
-  const {backfillId, numPartitions} = props;
+  const {backfillId} = props;
 
-  const statusDetails = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
+  const cancelableRuns = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
+    SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
     {
       variables: {backfillId},
       notifyOnNetworkStatusChange: true,
     },
   );
 
-  const statusCounts = useLazyQuery<SingleBackfillCountsQuery, SingleBackfillCountsQueryVariables>(
-    SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
-    {
-      variables: {backfillId},
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-
-  // Note: We switch queries based on how many partitions there are to display,
-  // because the detail is nice for small backfills but breaks for 100k+ partitions.
-  //
-  const [statusQueryFn, statusQueryResult] =
-    (numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? statusCounts : statusDetails;
+  const [statusQueryFn, statusQueryResult] = cancelableRuns;
 
   useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
   const {data} = statusQueryResult;
-  const {counts, statuses} = React.useMemo(() => {
-    if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
-      return {counts: null, statuses: null};
+  const {hasCancelableRuns} = React.useMemo(() => {
+    if (data?.partitionBackfillOrError.__typename === 'PartitionBackfill') {
+      return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
     }
-    if ('partitionStatusCounts' in data.partitionBackfillOrError) {
-      const counts = Object.fromEntries(
-        data.partitionBackfillOrError.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
-      );
-      return {counts, statuses: null};
-    }
-    const statuses = data.partitionBackfillOrError.partitionStatuses?.results || null;
-    const counts = countBy(statuses, (k) => k.runStatus);
-    return {counts, statuses};
+    return {hasCancelableRuns: false};
   }, [data]);
 
-  return props.children({counts, statuses, statusQueryResult});
+  return props.children({hasCancelableRuns, statusQueryResult});
 };
 
 export const BackfillRowContent = ({
@@ -122,8 +89,7 @@ export const BackfillRowContent = ({
   showBackfillTarget,
   onShowPartitionsRequested,
   refetch,
-  counts,
-  statuses,
+  hasCancelableRuns,
   statusQueryResult,
 }: BackfillRowProps & LoadResult) => {
   const repoAddress = backfill.partitionSet
@@ -137,27 +103,13 @@ export const BackfillRowContent = ({
     statusQueryResult?.loading ? (
       <div style={{color: Colors.textLight()}}>Loading</div>
     ) : (
-      <BackfillStatusTag backfill={backfill} counts={counts} />
+      <BackfillStatusTagForPage backfill={backfill} />
     );
-
-  const renderRunStatus = () => {
-    if (!backfill.isValidSerialization) {
-      return <p>A partitions definition has changed since this backfill ran.</p>;
-    }
-    if (statusQueryResult?.loading) {
-      return <div style={{color: Colors.textLight()}}>Loading</div>;
-    }
-    return counts ? (
-      <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
-    ) : (
-      <div style={{color: Colors.textLight()}}>{'\u2013'}</div>
-    );
-  };
 
   return (
     <tr>
       <td style={{width: 120}}>
-        <Mono style={{fontSize: '16px', lineHeight: '18px'}}>
+        <Mono>
           <Link
             to={
               backfill.isAssetBackfill
@@ -193,11 +145,10 @@ export const BackfillRowContent = ({
         <CreatedByTagCell tags={backfill.tags} repoAddress={repoAddress} />
       </td>
       <td style={{width: 140}}>{renderBackfillStatus()}</td>
-      <td>{renderRunStatus()}</td>
       <td>
         <BackfillActionsMenu
           backfill={backfill}
-          canCancelRuns={backfillCanCancelRuns(backfill, counts)}
+          canCancelRuns={backfillCanCancelRuns(backfill, hasCancelableRuns)}
           refetch={refetch}
         />
       </td>
@@ -205,60 +156,11 @@ export const BackfillRowContent = ({
   );
 };
 
-const BACKFILL_PARTITIONS_COUNTS_THRESHOLD = 1000;
-
-const BackfillRunStatus = ({
-  backfill,
-  statuses,
-  counts,
-}: {
-  backfill: BackfillTableFragment;
-  statuses: PartitionStatusesForBackfillFragment['results'] | null;
-  counts: {[status: string]: number};
-}) => {
-  const history = useHistory();
-  const partitionCounts = Object.entries(counts).reduce(
-    (partitionCounts, [runStatus, count]) => {
-      partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
-      return partitionCounts;
-    },
-    {} as {[status: string]: number},
-  );
-
-  const health: PartitionStatusHealthSourceOps = React.useMemo(
-    () => ({
-      runStatusForPartitionKey: (key: string) =>
-        statuses?.filter((s) => s.partitionName === key)[0]?.runStatus || RunStatus.NOT_STARTED,
-    }),
-    [statuses],
-  );
-
-  return statuses && backfill.partitionNames ? (
-    <PartitionStatus
-      partitionNames={backfill.partitionNames}
-      health={health}
-      splitPartitions
-      onClick={(partitionName) => {
-        const entry = statuses.find((r) => r.partitionName === partitionName);
-        if (entry?.runId) {
-          history.push(`/runs/${entry.runId}`);
-        }
-      }}
-    />
-  ) : (
-    <RunStatusTagsWithCounts
-      succeededCount={partitionCounts[RunStatus.SUCCESS] || 0}
-      inProgressCount={partitionCounts[RunStatus.STARTED] || 0}
-      failedCount={partitionCounts[RunStatus.FAILURE] || 0}
-    />
-  );
-};
-
-const BackfillTarget = ({
+export const BackfillTarget = ({
   backfill,
   repoAddress,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: Pick<BackfillTableFragment, 'assetSelection' | 'partitionSet' | 'partitionSetName'>;
   repoAddress: RepoAddress | null;
 }) => {
   const repo = useRepository(repoAddress);
@@ -323,13 +225,17 @@ const BackfillTarget = ({
     return null;
   };
 
+  const repoLink = buildRepoLink();
+  const pipelineOrAssets = buildPipelineOrAssets();
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       {buildHeader()}
-      <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-        {buildRepoLink()}
-        {buildPipelineOrAssets()}
-      </Box>
+      {(pipelineOrAssets || repoLink) && (
+        <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
+          {repoLink}
+          {pipelineOrAssets}
+        </Box>
+      )}
     </Box>
   );
 };
@@ -383,55 +289,6 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
 
-export const BackfillStatusTag = ({
-  backfill,
-  counts,
-}: {
-  backfill: BackfillTableFragment;
-  counts: {[status: string]: number} | null;
-}) => {
-  if (backfill.isAssetBackfill) {
-    return <BackfillStatusTagForPage backfill={backfill} />;
-  }
-
-  switch (backfill.status) {
-    case BulkActionStatus.REQUESTED:
-      return <Tag>In progress</Tag>;
-    case BulkActionStatus.FAILED:
-      return (
-        <Box margin={{bottom: 12}}>
-          <TagButton
-            onClick={() =>
-              backfill.error &&
-              showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-            }
-          >
-            <Tag intent="danger">Failed</Tag>
-          </TagButton>
-        </Box>
-      );
-    case BulkActionStatus.COMPLETED:
-      if (backfill.partitionNames === null) {
-        return <Tag intent="success">Completed</Tag>;
-      }
-      if (!counts) {
-        return <div style={{color: Colors.textLight()}}>None</div>;
-      }
-      if (counts[RunStatus.SUCCESS] === backfill.partitionNames.length) {
-        return <Tag intent="success">Completed</Tag>;
-      }
-      if (Array.from(inProgressStatuses).some((status) => counts[status])) {
-        return <Tag intent="primary">In progress</Tag>;
-      }
-      return <Tag intent="warning">Incomplete</Tag>;
-    case BulkActionStatus.CANCELING:
-      return <Tag>Canceling</Tag>;
-    case BulkActionStatus.CANCELED:
-      return <Tag>Canceled</Tag>;
-  }
-  return <span />;
-};
-
 const TagButton = styled.button`
   border: none;
   background: none;
@@ -444,38 +301,17 @@ const TagButton = styled.button`
   }
 `;
 
-export const SINGLE_BACKFILL_STATUS_COUNTS_QUERY = gql`
-  query SingleBackfillCountsQuery($backfillId: String!) {
-    partitionBackfillOrError(backfillId: $backfillId) {
-      ... on PartitionBackfill {
-        id
-        partitionStatusCounts {
-          runStatus
-          count
-        }
-      }
-    }
-  }
-`;
-
-export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
+export const SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         id
-        partitionStatuses {
-          ...PartitionStatusesForBackfill
+        cancelableRuns {
+          id
+          runId
+          status
         }
       }
-    }
-  }
-
-  fragment PartitionStatusesForBackfill on PartitionStatuses {
-    results {
-      id
-      partitionName
-      runId
-      runStatus
     }
   }
 `;

@@ -1,0 +1,9 @@
+table:
+  name: source
+  meta:
+    dagster-asset-key: build_upstream_source
+---
+table:
+  name: depend_on_upstream
+  meta:
+    dagster-depends-on-asset-key: build_upstream_depend_on

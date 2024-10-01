@@ -588,3 +588,38 @@ pre[class="noop"] {
     margin: 0 !important;
     border-radius: 0 !important;
 }
+
+.n {
+  font-weight: 700;
+}
+
+.prose img {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.prose strong {
+  font-weight: 700;
+}
+
+.prose p {
+  line-height: 1.75em;
+}
+
+dl, dl * {
+  overflow-wrap: break-word;
+}
+
+td {
+  word-break:break-word
+}
+
+/* These classes make sure the .prose p margins don't make the admonition look bad. */
+
+.admonition > :first-child {
+  margin-top: 0;
+}
+
+.admonition > :last-child {
+  margin-bottom: 0;
+}

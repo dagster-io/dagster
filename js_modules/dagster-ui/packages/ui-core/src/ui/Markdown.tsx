@@ -1,6 +1,7 @@
 import {Colors, FontFamily} from '@dagster-io/ui-components';
-import {Suspense, lazy} from 'react';
 import styled from 'styled-components';
+
+import {lazy} from '../util/lazy';
 
 const MarkdownWithPlugins = lazy(() => import('./MarkdownWithPlugins'));
 
@@ -11,9 +12,7 @@ interface Props {
 export const Markdown = (props: Props) => {
   return (
     <Container>
-      <Suspense fallback={<div />}>
-        <MarkdownWithPlugins {...props} />
-      </Suspense>
+      <MarkdownWithPlugins {...props} />
     </Container>
   );
 };
@@ -22,7 +21,7 @@ const Container = styled.div`
   &&& table {
     border: none;
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
   }
 
   &&& table tr th {
@@ -38,6 +37,7 @@ const Container = styled.div`
   &&& table tr td {
     box-shadow: none !important;
     padding: 2px 8px;
+    font-variant-ligatures: none;
   }
 
   &&& table tr th:last-child,

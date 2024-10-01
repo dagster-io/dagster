@@ -1,7 +1,9 @@
 """Structured representations of system events."""
+
 import logging
 import os
 import sys
+import uuid
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -46,13 +48,10 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.captured_log_manager import CapturedLogContext
+from dagster._core.storage.compute_log_manager import CapturedLogContext
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._serdes import (
-    NamedTupleSerializer,
-    whitelist_for_serdes,
-)
-from dagster._serdes.serdes import UnpackContext, is_whitelisted_for_serdes_object
+from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -158,15 +157,15 @@ class DagsterEventType(str, Enum):
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
 
-EVENT_TYPE_VALUE_TO_DISPLAY_STRING = {
-    "PIPELINE_ENQUEUED": "RUN_ENQUEUED",
-    "PIPELINE_DEQUEUED": "RUN_DEQUEUED",
-    "PIPELINE_STARTING": "RUN_STARTING",
-    "PIPELINE_START": "RUN_START",
-    "PIPELINE_SUCCESS": "RUN_SUCCESS",
-    "PIPELINE_FAILURE": "RUN_FAILURE",
-    "PIPELINE_CANCELING": "RUN_CANCELING",
-    "PIPELINE_CANCELED": "RUN_CANCELED",
+EVENT_TYPE_TO_DISPLAY_STRING = {
+    DagsterEventType.PIPELINE_ENQUEUED: "RUN_ENQUEUED",
+    DagsterEventType.PIPELINE_DEQUEUED: "RUN_DEQUEUED",
+    DagsterEventType.PIPELINE_STARTING: "RUN_STARTING",
+    DagsterEventType.PIPELINE_START: "RUN_START",
+    DagsterEventType.PIPELINE_SUCCESS: "RUN_SUCCESS",
+    DagsterEventType.PIPELINE_FAILURE: "RUN_FAILURE",
+    DagsterEventType.PIPELINE_CANCELING: "RUN_CANCELING",
+    DagsterEventType.PIPELINE_CANCELED: "RUN_CANCELED",
 }
 
 STEP_EVENTS = {
@@ -238,6 +237,12 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
 
+# These are the only events currently supported in `EventLogStorage.store_event_batch`
+BATCH_WRITABLE_EVENTS = {
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.ASSET_OBSERVATION,
+}
+
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
@@ -248,6 +253,27 @@ ASSET_CHECK_EVENTS = {
     DagsterEventType.ASSET_CHECK_EVALUATION,
     DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
 }
+
+
+class RunFailureReasonSerializer(EnumSerializer):
+    def unpack(self, value: str):
+        try:
+            RunFailureReason(value)
+        except ValueError:
+            return RunFailureReason.UNKNOWN
+
+        return super().unpack(value)
+
+
+@whitelist_for_serdes(serializer=RunFailureReasonSerializer)
+class RunFailureReason(Enum):
+    UNEXPECTED_TERMINATION = "UNEXPECTED_TERMINATION"
+    RUN_EXCEPTION = "RUN_EXCEPTION"
+    STEP_FAILURE = "STEP_FAILURE"
+    JOB_INITIALIZATION_FAILURE = "JOB_INITIALIZATION_FAILURE"
+    START_TIMEOUT = "START_TIMEOUT"
+    RUN_WORKER_RESTART = "RUN_WORKER_RESTART"
+    UNKNOWN = "UNKNOWN"
 
 
 def _assert_type(
@@ -303,7 +329,15 @@ def _validate_event_specific_data(
     return event_specific_data
 
 
-def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
+def generate_event_batch_id():
+    return str(uuid.uuid4())
+
+
+def log_step_event(
+    step_context: IStepContext,
+    event: "DagsterEvent",
+    batch_metadata: Optional["DagsterEventBatchMetadata"],
+) -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
@@ -311,6 +345,7 @@ def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
         level=log_level,
         msg=event.message or f"{event_type} for step {step_context.step.key}",
         dagster_event=event,
+        batch_metadata=batch_metadata,
     )
 
 
@@ -369,6 +404,11 @@ class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
         )
 
 
+class DagsterEventBatchMetadata(NamedTuple):
+    id: str
+    is_end: bool
+
+
 @whitelist_for_serdes(
     serializer=DagsterEventSerializer,
     storage_field_names={
@@ -415,6 +455,7 @@ class DagsterEvent(
         step_context: IStepContext,
         event_specific_data: Optional["EventSpecificData"] = None,
         message: Optional[str] = None,
+        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
     ) -> "DagsterEvent":
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
@@ -428,7 +469,7 @@ class DagsterEvent(
             pid=os.getpid(),
         )
 
-        log_step_event(step_context, event)
+        log_step_event(step_context, event, batch_metadata)
 
         return event
 
@@ -786,6 +827,11 @@ class DagsterEvent(
         return cast(JobFailureData, self.event_specific_data)
 
     @property
+    def job_canceled_data(self) -> "JobCanceledData":
+        _assert_type("job_canceled_data", DagsterEventType.RUN_CANCELED, self.event_type)
+        return cast(JobCanceledData, self.event_specific_data)
+
+    @property
     def engine_event_data(self) -> "EngineEventData":
         _assert_type(
             "engine_event_data",
@@ -927,9 +973,7 @@ class DagsterEvent(
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_RESTARTED,
             step_context=step_context,
-            message='Started re-execution (attempt # {n}) of step "{step_key}".'.format(
-                step_key=step_context.step.key, n=previous_attempts + 1
-            ),
+            message=f'Started re-execution (attempt # {previous_attempts + 1}) of step "{step_context.step.key}".',
         )
 
     @staticmethod
@@ -940,10 +984,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_SUCCESS,
             step_context=step_context,
             event_specific_data=success,
-            message='Finished execution of step "{step_key}" in {duration}.'.format(
-                step_key=step_context.step.key,
-                duration=format_duration(success.duration_ms),
-            ),
+            message=f'Finished execution of step "{step_context.step.key}" in {format_duration(success.duration_ms)}.',
         )
 
     @staticmethod
@@ -958,6 +999,7 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: AssetMaterialization,
+        batch_metadata: Optional[DagsterEventBatchMetadata] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -970,16 +1012,20 @@ class DagsterEvent(
                     label_clause=f" {materialization.label}" if materialization.label else ""
                 )
             ),
+            batch_metadata=batch_metadata,
         )
 
     @staticmethod
     def asset_observation(
-        step_context: IStepContext, observation: AssetObservation
+        step_context: IStepContext,
+        observation: AssetObservation,
+        batch_metadata: Optional[DagsterEventBatchMetadata] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_OBSERVATION,
             step_context=step_context,
             event_specific_data=AssetObservationData(observation),
+            batch_metadata=batch_metadata,
         )
 
     @staticmethod
@@ -1048,7 +1094,9 @@ class DagsterEvent(
     def job_failure(
         job_context_or_name: Union[IPlanContext, str],
         context_msg: str,
+        failure_reason: RunFailureReason,
         error_info: Optional[SerializableErrorInfo] = None,
+        first_step_failure_event: Optional["DagsterEvent"] = None,
     ) -> "DagsterEvent":
         check.str_param(context_msg, "context_msg")
         if isinstance(job_context_or_name, IPlanContext):
@@ -1058,7 +1106,11 @@ class DagsterEvent(
                 message=(
                     f'Execution of run for "{job_context_or_name.job_name}" failed. {context_msg}'
                 ),
-                event_specific_data=JobFailureData(error_info),
+                event_specific_data=JobFailureData(
+                    error_info,
+                    failure_reason=failure_reason,
+                    first_step_failure_event=first_step_failure_event,
+                ),
             )
         else:
             # when the failure happens trying to bring up context, the job_context hasn't been
@@ -1067,7 +1119,7 @@ class DagsterEvent(
             event = DagsterEvent(
                 event_type_value=DagsterEventType.RUN_FAILURE.value,
                 job_name=job_context_or_name,
-                event_specific_data=JobFailureData(error_info),
+                event_specific_data=JobFailureData(error_info, failure_reason=failure_reason),
                 message=f'Execution of run for "{job_context_or_name}" failed. {context_msg}',
                 pid=os.getpid(),
             )
@@ -1075,12 +1127,14 @@ class DagsterEvent(
 
     @staticmethod
     def job_canceled(
-        job_context: IPlanContext, error_info: Optional[SerializableErrorInfo] = None
+        job_context: IPlanContext,
+        error_info: Optional[SerializableErrorInfo] = None,
+        message: Optional[str] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_job(
             DagsterEventType.RUN_CANCELED,
             job_context,
-            message=f'Execution of run for "{job_context.job_name}" canceled.',
+            message=message or f'Execution of run for "{job_context.job_name}" canceled.',
             event_specific_data=JobCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
             ),
@@ -1090,7 +1144,7 @@ class DagsterEvent(
     def step_worker_starting(
         step_context: IStepContext,
         message: str,
-        metadata: Mapping[str, MetadataValue],
+        metadata: Mapping[str, RawMetadataValue],
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             DagsterEventType.STEP_WORKER_STARTING,
@@ -1106,7 +1160,7 @@ class DagsterEvent(
         log_manager: DagsterLogManager,
         job_name: str,
         message: str,
-        metadata: Mapping[str, MetadataValue],
+        metadata: Mapping[str, RawMetadataValue],
         step_key: Optional[str],
     ) -> "DagsterEvent":
         event = DagsterEvent(
@@ -1271,13 +1325,7 @@ class DagsterEvent(
             ObjectStoreOperationType(object_store_operation_result.op)
             == ObjectStoreOperationType.CP_OBJECT
         ):
-            message = (
-                "Copied intermediate object for input {value_name} from {key} to {dest_key}"
-            ).format(
-                value_name=value_name,
-                key=object_store_operation_result.key,
-                dest_key=object_store_operation_result.dest_key,
-            )
+            message = f"Copied intermediate object for input {value_name} from {object_store_operation_result.key} to {object_store_operation_result.dest_key}"
         else:
             message = ""
 
@@ -1702,12 +1750,24 @@ class JobFailureData(
         "_JobFailureData",
         [
             ("error", Optional[SerializableErrorInfo]),
+            ("failure_reason", Optional[RunFailureReason]),
+            ("first_step_failure_event", Optional["DagsterEvent"]),
         ],
     )
 ):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
+    def __new__(
+        cls,
+        error: Optional[SerializableErrorInfo],
+        failure_reason: Optional[RunFailureReason] = None,
+        first_step_failure_event: Optional["DagsterEvent"] = None,
+    ):
         return super(JobFailureData, cls).__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            failure_reason=check.opt_inst_param(failure_reason, "failure_reason", RunFailureReason),
+            first_step_failure_event=check.opt_inst_param(
+                first_step_failure_event, "first_step_failure_event", DagsterEvent
+            ),
         )
 
 

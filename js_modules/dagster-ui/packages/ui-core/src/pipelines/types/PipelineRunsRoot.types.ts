@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type PipelineRunsRootQueryVariables = Types.Exact<{
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
   filter: Types.RunsFilter;
 }>;
 
@@ -39,6 +39,7 @@ export type PipelineRunsRootQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -58,3 +59,5 @@ export type PipelineRunsRootQuery = {
         }>;
       };
 };
+
+export const PipelineRunsRootQueryVersion = '1bd4f2bf438e93ad548322f890922479027e7636517b360fd8910a12600c5f95';

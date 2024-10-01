@@ -12,8 +12,8 @@ from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes import pack_value
 
-from .config import DEFAULT_CONFIG, dict_wrapper
-from .defaults import broker_url, result_backend
+from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
+from dagster_celery.defaults import broker_url, result_backend
 
 CELERY_CONFIG = {
     "broker": Field(
@@ -105,7 +105,7 @@ def celery_executor(init_context):
 
 
 def _submit_task(app, plan_context, step, queue, priority, known_state):
-    from .tasks import create_task
+    from dagster_celery.tasks import create_task
 
     execute_step_args = ExecuteStepArgs(
         job_origin=plan_context.reconstructable_job.get_python_origin(),
@@ -151,7 +151,7 @@ class CeleryExecutor(Executor):
         return self._retries
 
     def execute(self, plan_context, execution_plan):
-        from .core_execution_loop import core_celery_execution_loop
+        from dagster_celery.core_execution_loop import core_celery_execution_loop
 
         return core_celery_execution_loop(
             plan_context, execution_plan, step_execution_fn=_submit_task

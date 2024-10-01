@@ -63,7 +63,13 @@ export const decodeRunPageFilters = (qs: {[key: string]: string}) => {
     levels: levelsValues
       .map((level) => level.toUpperCase())
       .filter((level) => LogLevel.hasOwnProperty(level))
-      .reduce((accum, level) => ({...accum, [level]: true}), {}),
+      .reduce(
+        (accum, level) => {
+          accum[level] = true;
+          return accum;
+        },
+        {} as Record<string, boolean>,
+      ),
   } as LogFilter;
 };
 

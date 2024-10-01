@@ -1,5 +1,6 @@
 import gzip
 import io
+import mimetypes
 import uuid
 from os import path, walk
 from typing import Generic, List, Optional, TypeVar
@@ -11,6 +12,7 @@ from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._seven import json
 from dagster._utils import Counter, traced_counter
@@ -32,18 +34,23 @@ from starlette.responses import (
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
 
-from .external_assets import (
+from dagster_webserver.external_assets import (
     handle_report_asset_check_request,
     handle_report_asset_materialization_request,
     handle_report_asset_observation_request,
 )
-from .graphql import GraphQLServer
-from .version import __version__
+from dagster_webserver.graphql import GraphQLServer
+from dagster_webserver.version import __version__
+
+mimetypes.init()
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
-class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
+class DagsterWebserver(
+    GraphQLServer[BaseWorkspaceRequestContext],
+    Generic[T_IWorkspaceProcessContext],
+):
     _process_context: T_IWorkspaceProcessContext
     _uses_app_path_prefix: bool
 
@@ -150,30 +157,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         (body, resources) = html_exporter.from_notebook_node(notebook)
         return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
 
-    async def download_compute_logs_endpoint(self, request: Request):
-        run_id = request.path_params["run_id"]
-        step_key = request.path_params["step_key"]
-        file_type = request.path_params["file_type"]
-        context = self.make_request_context(request)
-
-        file = context.instance.compute_log_manager.get_local_path(
-            run_id,
-            step_key,
-            ComputeIOType(file_type),
-        )
-
-        if not path.exists(file):
-            raise HTTPException(404, detail="No log files available for download")
-
-        return FileResponse(
-            context.instance.compute_log_manager.get_local_path(
-                run_id,
-                step_key,
-                ComputeIOType(file_type),
-            ),
-            filename=f"{run_id}_{step_key}.{file_type}",
-        )
-
     async def download_captured_logs_endpoint(self, request: Request):
         [*log_key, file_extension] = request.path_params["path"].split("/")
         context = self.make_request_context(request)
@@ -222,6 +205,10 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
         context = self.make_request_context(request)
 
+        run_storage_id = None
+        if isinstance(context.instance.run_storage, SqlRunStorage):
+            run_storage_id = context.instance.run_storage.get_run_storage_id()
+
         try:
             with open(index_path, encoding="utf8") as f:
                 rendered_template = f.read()
@@ -235,6 +222,7 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                         "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
                     )
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
+                    .replace("__INSTANCE_ID__", run_storage_id or "")
                     .replace(
                         '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
                     )
@@ -264,6 +252,10 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                 name="root_static",
             )
 
+        mimetypes.add_type("application/javascript", ".js")
+        mimetypes.add_type("text/css", ".css")
+        mimetypes.add_type("image/svg+xml", ".svg")
+
         routes = []
         base_dir = self.relative_path("webapp/build/")
         for subdir, _, files in walk(base_dir):
@@ -280,8 +272,8 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             return [
                 Route("/favicon.png", lambda _: FileResponse(path="/favicon")),
                 Route(
-                    "/vendor/graphql-playground/index.css",
-                    lambda _: FileResponse(path="/vendor/graphql-playground/index.css"),
+                    "/vendor/graphiql/graphiql.min.css",
+                    lambda _: FileResponse(path="/vendor/graphiql/graphiql.min.css"),
                 ),
             ]
 
@@ -312,10 +304,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             + self.build_static_routes()
             + [
                 # download file endpoints
-                Route(
-                    "/download/{run_id:str}/{step_key:str}/{file_type:str}",
-                    self.download_compute_logs_endpoint,
-                ),
                 Route(
                     "/logs/{path:path}",
                     self.download_captured_logs_endpoint,

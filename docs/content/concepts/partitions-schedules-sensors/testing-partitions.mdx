@@ -7,8 +7,8 @@ description: Test your partition configuration and jobs.
 
 <Note>
   This guide is applicable to both{" "}
-  <a href="/concepts/assets/software-defined-assets">Software-defined Assets</a>{" "}
-  and <a href="/concepts/ops-jobs-graphs/ops">ops</a>.{" "}
+  <a href="/concepts/assets/software-defined-assets">asset definitions</a> and{" "}
+  <a href="/concepts/ops-jobs-graphs/ops">ops</a>.{" "}
 </Note>
 
 In this guide, we'll cover a few ways to test your partitioned config and jobs.
@@ -52,8 +52,8 @@ def test_my_partitioned_config():
     }
 
     # assert that the output of the decorated function is valid configuration for the
-    # do_stuff_partitioned job
-    assert validate_run_config(do_stuff_partitioned, run_config)
+    # partitioned_op_job job
+    assert validate_run_config(partitioned_op_job, run_config)
 ```
 
 If you want to test that a <PyObject object="PartitionedConfig" /> creates the partitions you expect, use the `get_partition_keys` or `get_run_config_for_partition_key` functions:
@@ -99,7 +99,7 @@ def test_my_offset_partitioned_config():
     assert keys[0] == "2020-01-01"
     assert keys[1] == "2020-01-02"
 
-    # test that the run_config for a partition is valid for do_stuff_partitioned
+    # test that the run_config for a partition is valid for partitioned_op_job
     run_config = my_offset_partitioned_config.get_run_config_for_partition_key(keys[0])
     assert validate_run_config(do_more_stuff_partitioned, run_config)
 
@@ -120,8 +120,8 @@ def test_my_offset_partitioned_config():
 To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of <PyObject object="JobDefinition" method="execute_in_process" />. For example:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job_test.py startafter=start endbefore=end
-def test_do_stuff_partitioned():
-    assert do_stuff_partitioned.execute_in_process(partition_key="2020-01-01").success
+def test_partitioned_op_job():
+    assert partitioned_op_job.execute_in_process(partition_key="2020-01-01").success
 ```
 
 ---
@@ -143,6 +143,6 @@ def test_do_stuff_partitioned():
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/assets/software-defined-assets"
-    title="Software-defined Assets"
+    title="Asset definitions"
   ></ArticleListItem>
 </ArticleList>

@@ -8,14 +8,17 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
-from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
-from dagster._core.host_representation.origin import (
-    CodeLocationOrigin,
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
-)
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
+from dagster._core.remote_representation.external_data import (
+    DEFAULT_MODE_NAME,
+    job_name_for_partition_set_snap_name,
+)
+from dagster._core.remote_representation.origin import (
+    CodeLocationOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.serdes import SetToSequenceFieldSerializer
 from dagster._utils.error import SerializableErrorInfo
@@ -32,7 +35,7 @@ class ExecutionPlanSnapshotArgs(
     NamedTuple(
         "_ExecutionPlanSnapshotArgs",
         [
-            ("job_origin", ExternalJobOrigin),
+            ("job_origin", RemoteJobOrigin),
             ("op_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
@@ -47,7 +50,7 @@ class ExecutionPlanSnapshotArgs(
 ):
     def __new__(
         cls,
-        job_origin: ExternalJobOrigin,
+        job_origin: RemoteJobOrigin,
         op_selection: Sequence[str],
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
@@ -60,7 +63,7 @@ class ExecutionPlanSnapshotArgs(
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
-            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
+            job_origin=check.inst_param(job_origin, "job_origin", RemoteJobOrigin),
             op_selection=check.opt_sequence_param(op_selection, "op_selection", of_type=str),
             run_config=check.mapping_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
@@ -130,7 +133,8 @@ class ExecuteRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.job_origin) + [
+        return [
+            *_get_entry_point(self.job_origin),
             "api",
             "execute_run",
             serialize_value(self),
@@ -180,7 +184,8 @@ class ResumeRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.job_origin) + [
+        return [
+            *_get_entry_point(self.job_origin),
             "api",
             "resume_run",
             serialize_value(self),
@@ -198,7 +203,7 @@ class ExecuteExternalJobArgs(
     NamedTuple(
         "_ExecuteExternalJobArgs",
         [
-            ("job_origin", ExternalJobOrigin),
+            ("job_origin", RemoteJobOrigin),
             ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
         ],
@@ -206,7 +211,7 @@ class ExecuteExternalJobArgs(
 ):
     def __new__(
         cls,
-        job_origin: ExternalJobOrigin,
+        job_origin: RemoteJobOrigin,
         run_id: str,
         instance_ref: Optional[InstanceRef],
     ):
@@ -215,7 +220,7 @@ class ExecuteExternalJobArgs(
             job_origin=check.inst_param(
                 job_origin,
                 "job_origin",
-                ExternalJobOrigin,
+                RemoteJobOrigin,
             ),
             run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -281,15 +286,16 @@ class ExecuteStepArgs(
         """Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
-        return (
-            _get_entry_point(self.job_origin)
-            + ["api", "execute_step"]
-            + (
+        return [
+            *_get_entry_point(self.job_origin),
+            "api",
+            "execute_step",
+            *(
                 ["--compressed-input-json", self._get_compressed_args()]
                 if not skip_serialized_namedtuple
                 else []
-            )
-        )
+            ),
+        ]
 
     def get_command_env(self) -> Sequence[Mapping[str, str]]:
         """Get the env vars for overriding the Click args of this step. Used in conjuction with
@@ -401,18 +407,21 @@ class PartitionArgs(
     NamedTuple(
         "_PartitionArgs",
         [
-            ("repository_origin", ExternalRepositoryOrigin),
+            ("repository_origin", RemoteRepositoryOrigin),
+            # This is here for backcompat. it's expected to always be f"{job_name}_partition_set".
             ("partition_set_name", str),
             ("partition_name", str),
+            ("job_name", Optional[str]),
             ("instance_ref", Optional[InstanceRef]),
         ],
     )
 ):
     def __new__(
         cls,
-        repository_origin: ExternalRepositoryOrigin,
+        repository_origin: RemoteRepositoryOrigin,
         partition_set_name: str,
         partition_name: str,
+        job_name: Optional[str] = None,
         instance_ref: Optional[InstanceRef] = None,
     ):
         return super(PartitionArgs, cls).__new__(
@@ -420,29 +429,57 @@ class PartitionArgs(
             repository_origin=check.inst_param(
                 repository_origin,
                 "repository_origin",
-                ExternalRepositoryOrigin,
+                RemoteRepositoryOrigin,
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
+            job_name=check.opt_str_param(job_name, "job_name"),
             partition_name=check.str_param(partition_name, "partition_name"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
+
+    def get_job_name(self) -> str:
+        if self.job_name:
+            return self.job_name
+        else:
+            return job_name_for_partition_set_snap_name(self.partition_set_name)
 
 
 @whitelist_for_serdes
 class PartitionNamesArgs(
     NamedTuple(
         "_PartitionNamesArgs",
-        [("repository_origin", ExternalRepositoryOrigin), ("partition_set_name", str)],
+        [
+            ("repository_origin", RemoteRepositoryOrigin),
+            # This is here for backcompat. it's expected to always be f"{job_name}_partition_set".
+            ("partition_set_name", str),
+            # This is introduced in the same release that we're making it possible for an asset job
+            # to target assets with different PartitionsDefinitions. Prior user code versions can
+            # (and do) safely ignore this parameter, because, in those versions, the job name on its
+            # own is enough to specify which PartitionsDefinition to use.
+            ("job_name", Optional[str]),
+        ],
     )
 ):
-    def __new__(cls, repository_origin: ExternalRepositoryOrigin, partition_set_name: str):
+    def __new__(
+        cls,
+        repository_origin: RemoteRepositoryOrigin,
+        partition_set_name: str,
+        job_name: Optional[str] = None,
+    ):
         return super(PartitionNamesArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", ExternalRepositoryOrigin
+                repository_origin, "repository_origin", RemoteRepositoryOrigin
             ),
+            job_name=check.opt_str_param(job_name, "job_name"),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
         )
+
+    def get_job_name(self) -> str:
+        if self.job_name:
+            return self.job_name
+        else:
+            return job_name_for_partition_set_snap_name(self.partition_set_name)
 
 
 @whitelist_for_serdes
@@ -450,7 +487,7 @@ class PartitionSetExecutionParamArgs(
     NamedTuple(
         "_PartitionSetExecutionParamArgs",
         [
-            ("repository_origin", ExternalRepositoryOrigin),
+            ("repository_origin", RemoteRepositoryOrigin),
             ("partition_set_name", str),
             ("partition_names", Sequence[str]),
             ("instance_ref", Optional[InstanceRef]),
@@ -459,7 +496,7 @@ class PartitionSetExecutionParamArgs(
 ):
     def __new__(
         cls,
-        repository_origin: ExternalRepositoryOrigin,
+        repository_origin: RemoteRepositoryOrigin,
         partition_set_name: str,
         partition_names: Sequence[str],
         instance_ref: Optional[InstanceRef] = None,
@@ -467,7 +504,7 @@ class PartitionSetExecutionParamArgs(
         return super(PartitionSetExecutionParamArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", ExternalRepositoryOrigin
+                repository_origin, "repository_origin", RemoteRepositoryOrigin
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_names=check.sequence_param(partition_names, "partition_names", of_type=str),
@@ -488,29 +525,34 @@ class JobSubsetSnapshotArgs(
     NamedTuple(
         "_JobSubsetSnapshotArgs",
         [
-            ("job_origin", ExternalJobOrigin),
+            ("job_origin", RemoteJobOrigin),
             ("op_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
             ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
+            ("include_parent_snapshot", bool),
         ],
     )
 ):
     def __new__(
         cls,
-        job_origin: ExternalJobOrigin,
+        job_origin: RemoteJobOrigin,
         op_selection: Optional[Sequence[str]],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+        include_parent_snapshot: Optional[bool] = None,
     ):
         return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
-            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
+            job_origin=check.inst_param(job_origin, "job_origin", RemoteJobOrigin),
             op_selection=check.opt_nullable_sequence_param(
                 op_selection, "op_selection", of_type=str
             ),
             asset_selection=check.opt_nullable_set_param(asset_selection, "asset_selection"),
             asset_check_selection=check.opt_nullable_set_param(
                 asset_check_selection, "asset_check_selection"
+            ),
+            include_parent_snapshot=(
+                include_parent_snapshot if include_parent_snapshot is not None else True
             ),
         )
 
@@ -538,7 +580,7 @@ class ExternalScheduleExecutionArgs(
     NamedTuple(
         "_ExternalScheduleExecutionArgs",
         [
-            ("repository_origin", ExternalRepositoryOrigin),
+            ("repository_origin", RemoteRepositoryOrigin),
             ("instance_ref", Optional[InstanceRef]),
             ("schedule_name", str),
             ("scheduled_execution_timestamp", Optional[float]),
@@ -550,7 +592,7 @@ class ExternalScheduleExecutionArgs(
 ):
     def __new__(
         cls,
-        repository_origin: ExternalRepositoryOrigin,
+        repository_origin: RemoteRepositoryOrigin,
         instance_ref: Optional[InstanceRef],
         schedule_name: str,
         scheduled_execution_timestamp: Optional[float] = None,
@@ -561,7 +603,7 @@ class ExternalScheduleExecutionArgs(
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", ExternalRepositoryOrigin
+                repository_origin, "repository_origin", RemoteRepositoryOrigin
             ),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             schedule_name=check.str_param(schedule_name, "schedule_name"),
@@ -582,7 +624,7 @@ class SensorExecutionArgs(
     NamedTuple(
         "_SensorExecutionArgs",
         [
-            ("repository_origin", ExternalRepositoryOrigin),
+            ("repository_origin", RemoteRepositoryOrigin),
             ("instance_ref", Optional[InstanceRef]),
             ("sensor_name", str),
             ("last_tick_completion_time", Optional[float]),
@@ -598,7 +640,7 @@ class SensorExecutionArgs(
 ):
     def __new__(
         cls,
-        repository_origin: ExternalRepositoryOrigin,
+        repository_origin: RemoteRepositoryOrigin,
         instance_ref: Optional[InstanceRef],
         sensor_name: str,
         last_tick_completion_time: Optional[float] = None,
@@ -620,7 +662,7 @@ class SensorExecutionArgs(
         return super(SensorExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", ExternalRepositoryOrigin
+                repository_origin, "repository_origin", RemoteRepositoryOrigin
             ),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             sensor_name=check.str_param(sensor_name, "sensor_name"),
@@ -641,19 +683,19 @@ class ExternalJobArgs(
     NamedTuple(
         "_ExternalJobArgs",
         [
-            ("repository_origin", ExternalRepositoryOrigin),
+            ("repository_origin", RemoteRepositoryOrigin),
             ("instance_ref", InstanceRef),
             ("name", str),
         ],
     )
 ):
     def __new__(
-        cls, repository_origin: ExternalRepositoryOrigin, instance_ref: InstanceRef, name: str
+        cls, repository_origin: RemoteRepositoryOrigin, instance_ref: InstanceRef, name: str
     ):
         return super(ExternalJobArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", ExternalRepositoryOrigin
+                repository_origin, "repository_origin", RemoteRepositoryOrigin
             ),
             instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
             name=check.str_param(name, "name"),

@@ -1,14 +1,23 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
-import {Suspense, lazy, memo, useEffect, useRef} from 'react';
-import {Route, Switch, useLocation} from 'react-router-dom';
+import {memo, useEffect, useRef} from 'react';
+import {Switch, useLocation} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
+import {featureEnabled} from './Flags';
+import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
+import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
+import RunsFeedRoot from '../runs/RunsFeedRoot';
+import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
-const FallthroughRoot = lazy(() => import('./FallthroughRoot'));
-const AssetsCatalogRoot = lazy(() => import('../assets/AssetsCatalogRoot'));
-const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
+const MergedAutomationRoot = lazy(() => import('../automation/MergedAutomationRoot'));
+const FallthroughRoot = lazy(() =>
+  import('shared/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
+);
+const AssetsGlobalGraphRoot = lazy(() => import('../assets/AssetsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
 const InstanceConcurrencyPage = lazy(() => import('../instance/InstanceConcurrency'));
@@ -18,6 +27,8 @@ const RunsRoot = lazy(() => import('../runs/RunsRoot'));
 const ScheduledRunListRoot = lazy(() => import('../runs/ScheduledRunListRoot'));
 const SnapshotRoot = lazy(() => import('../snapshots/SnapshotRoot'));
 const GuessJobLocationRoot = lazy(() => import('../workspace/GuessJobLocationRoot'));
+const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
+const JobsRoot = lazy(() => import('../jobs/JobsRoot'));
 
 export const ContentRoot = memo(() => {
   const {pathname} = useLocation();
@@ -32,76 +43,79 @@ export const ContentRoot = memo(() => {
       <ErrorBoundary region="page" resetErrorOnChange={[pathname]}>
         <Switch>
           <Route path="/asset-groups(/?.*)">
-            <Suspense fallback={<div />}>
-              <AssetsGroupsGlobalGraphRoot />
-            </Suspense>
+            <AssetsGlobalGraphRoot />
           </Route>
           <Route path="/assets(/?.*)">
-            <Suspense fallback={<div />}>
-              <AssetFeatureProvider>
-                <AssetsCatalogRoot />
-              </AssetFeatureProvider>
-            </Suspense>
+            <AssetFeatureProvider>
+              <AssetsOverviewRoot
+                headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
+                documentTitlePrefix="Assets"
+              />
+            </AssetFeatureProvider>
           </Route>
-          <Route path="/runs" exact>
-            <Suspense fallback={<div />}>
-              <RunsRoot />
-            </Suspense>
-          </Route>
-          <Route path="/runs/scheduled" exact>
-            <Suspense fallback={<div />}>
-              <ScheduledRunListRoot />
-            </Suspense>
-          </Route>
+          {featureEnabled(FeatureFlag.flagRunsFeed)
+            ? // This is somewhat hacky but the Routes can't be wrapped by a fragment otherwise the Switch statement
+              // stops working
+              [
+                <Route path="/runs/b/:backfillId" key="1">
+                  <RunsFeedBackfillPage />
+                </Route>,
+                <Route path={['/runs', '/runs/scheduled']} exact key="2">
+                  <RunsFeedRoot />
+                </Route>,
+              ]
+            : [
+                <Route path="/runs-feed/b/:backfillId" key="3">
+                  <RunsFeedBackfillPage />
+                </Route>,
+                <Route path={['/runs-feed', '/runs-feed/scheduled']} exact key="4">
+                  <RunsFeedRoot />
+                </Route>,
+                <Route path="/runs" exact key="5">
+                  <RunsRoot />
+                </Route>,
+                <Route path="/runs/scheduled" exact key="6">
+                  <ScheduledRunListRoot />
+                </Route>,
+              ]}
           <Route path="/runs/:runId" exact>
-            <Suspense fallback={<div />}>
-              <RunRoot />
-            </Suspense>
+            <RunRoot />
           </Route>
           <Route path="/snapshots/:pipelinePath/:tab?">
-            <Suspense fallback={<div />}>
-              <SnapshotRoot />
-            </Suspense>
+            <SnapshotRoot />
           </Route>
           <Route path="/health">
-            <Suspense fallback={<div />}>
-              <InstanceHealthPage />
-            </Suspense>
+            <InstanceHealthPage />
           </Route>
           <Route path="/concurrency">
-            <Suspense fallback={<div />}>
-              <InstanceConcurrencyPage />
-            </Suspense>
+            <InstanceConcurrencyPage />
           </Route>
           <Route path="/config">
-            <Suspense fallback={<div />}>
-              <InstanceConfig />
-            </Suspense>
+            <InstanceConfig />
           </Route>
           <Route path="/locations" exact>
-            <Suspense fallback={<div />}>
-              <CodeLocationsPage />
-            </Suspense>
+            <CodeLocationsPage />
           </Route>
           <Route path="/locations">
-            <Suspense fallback={<div />}>
-              <WorkspaceRoot />
-            </Suspense>
+            <WorkspaceRoot />
           </Route>
           <Route path="/guess/:jobPath">
-            <Suspense fallback={<div />}>
-              <GuessJobLocationRoot />
-            </Suspense>
+            <GuessJobLocationRoot />
           </Route>
           <Route path="/overview">
-            <Suspense fallback={<div />}>
-              <OverviewRoot />
-            </Suspense>
+            <OverviewRoot />
           </Route>
-          <Route path="*">
-            <Suspense fallback={<div />}>
-              <FallthroughRoot />
-            </Suspense>
+          <Route path="/jobs">
+            <JobsRoot />
+          </Route>
+          <Route path="/automation">
+            <MergedAutomationRoot />
+          </Route>
+          <Route path="/deployment">
+            <SettingsRoot />
+          </Route>
+          <Route path="*" isNestingRoute>
+            <FallthroughRoot />
           </Route>
         </Switch>
       </ErrorBoundary>

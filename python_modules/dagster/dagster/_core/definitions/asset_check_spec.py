@@ -2,21 +2,19 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.events import (
-    AssetKey,
-    CoercibleToAssetKey,
-    CoercibleToAssetKeyPrefix,
-)
+from dagster._annotations import PublicAttr
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.source_asset import SourceAsset
 
 
-@experimental
 @whitelist_for_serdes
 class AssetCheckSeverity(Enum):
     """Severity level for an AssetCheckResult.
@@ -31,28 +29,6 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-@experimental(emit_runtime_warning=False)
-@whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
-class AssetCheckKey(NamedTuple):
-    """Check names are expected to be unique per-asset. Thus, this combination of asset key and
-    check name uniquely identifies an asset check within a deployment.
-    """
-
-    asset_key: PublicAttr[AssetKey]
-    name: PublicAttr[str]
-
-    @staticmethod
-    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
-        return AssetCheckKey(
-            asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
-            name=graphql_input["name"],
-        )
-
-    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
-        return self._replace(asset_key=self.asset_key.with_prefix(prefix))
-
-
-@experimental
 class AssetCheckSpec(
     NamedTuple(
         "_AssetCheckSpec",
@@ -60,8 +36,13 @@ class AssetCheckSpec(
             ("name", PublicAttr[str]),
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("additional_deps", PublicAttr[Optional[Iterable["AssetDep"]]]),
-            ("blocking", PublicAttr[bool]),
+            ("additional_deps", PublicAttr[Iterable["AssetDep"]]),
+            (
+                "blocking",  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
+                bool,
+            ),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("automation_condition", Optional["AutomationCondition[AssetCheckKey]"]),
         ],
     )
 ):
@@ -81,10 +62,7 @@ class AssetCheckSpec(
             the asset specified by `asset`. For example, the check may test that `asset` has
             matching data with an asset in `additional_deps`. This field holds both `additional_deps`
             and `additional_ins` passed to @asset_check.
-        blocking (bool): When enabled, runs that include this check and any downstream assets that
-            depend on `asset` will wait for this check to complete before starting the downstream
-            assets. If the check fails with severity `AssetCheckSeverity.ERROR`, then the downstream
-            assets won't execute.
+        metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
     """
 
     def __new__(
@@ -95,8 +73,13 @@ class AssetCheckSpec(
         description: Optional[str] = None,
         additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         blocking: bool = False,
+        metadata: Optional[Mapping[str, Any]] = None,
+        automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationCondition,
+        )
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
@@ -118,17 +101,18 @@ class AssetCheckSpec(
             description=check.opt_str_param(description, "description"),
             additional_deps=additional_asset_deps,
             blocking=check.bool_param(blocking, "blocking"),
+            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+            automation_condition=check.opt_inst_param(
+                automation_condition, "automation_condition", AutomationCondition
+            ),
         )
 
     def get_python_identifier(self) -> str:
         """Returns a string uniquely identifying the asset check, that uses only the characters
         allowed in a Python identifier.
         """
-        return f"{self.asset_key.to_python_identifier()}_{self.name}"
+        return f"{self.asset_key.to_python_identifier()}_{self.name}".replace(".", "_")
 
     @property
     def key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.name)
-
-    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckSpec":
-        return self._replace(asset_key=self.asset_key.with_prefix(prefix))

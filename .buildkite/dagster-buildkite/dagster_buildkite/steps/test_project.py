@@ -1,14 +1,14 @@
 import os
 from typing import List, Optional, Set
 
-from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
-from ..images.versions import (
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
+from dagster_buildkite.images.versions import (
     BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
     TEST_PROJECT_BASE_IMAGE_VERSION,
 )
-from ..python_version import AvailablePythonVersion
-from ..step_builder import CommandStepBuilder
-from ..utils import BuildkiteLeafStep, GroupStep
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import CommandStepBuilder
+from dagster_buildkite.utils import BuildkiteLeafStep, GroupStep
 
 # Some python packages depend on these images but we don't explicitly define that dependency anywhere other
 # than when we construct said package's Buildkite steps. Until we more explicitly define those dependencies
@@ -66,10 +66,8 @@ def build_test_project_steps() -> List[GroupStep]:
                 "docker push $${TEST_PROJECT_IMAGE}",
             )
             .on_python_image(
-                "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
-                    python_version=AvailablePythonVersion.V3_8,  # py version can be bumped when rebuilt
-                    image_version=BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
-                ),
+                # py version can be bumped when rebuilt
+                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_8}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
                 [
                     "AIRFLOW_HOME",
                     "AWS_ACCOUNT_ID",

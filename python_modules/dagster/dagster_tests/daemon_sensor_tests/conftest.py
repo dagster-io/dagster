@@ -3,12 +3,13 @@ import sys
 from typing import Iterator, Optional
 
 import pytest
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
     instance_for_test,
+    load_external_repo,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -54,7 +55,7 @@ def create_workspace_load_target(attribute: Optional[str] = "the_repo") -> Modul
     return ModuleTarget(
         module_name="dagster_tests.daemon_sensor_tests.test_sensor_run",
         attribute=attribute,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 
@@ -70,11 +71,7 @@ def workspace_fixture(instance_module_scoped: DagsterInstance) -> Iterator[Works
 
 @pytest.fixture(name="external_repo", scope="module")
 def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> ExternalRepository:
-    code_location = next(
-        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-    ).code_location
-    assert code_location
-    return code_location.get_repository("the_repo")
+    return load_external_repo(workspace_context, "the_repo")
 
 
 def loadable_target_origin() -> LoadableTargetOrigin:

@@ -7,15 +7,15 @@ import boto3
 import moto
 import pytest
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils.warnings import disable_dagster_warnings
 
-from . import repo
+from dagster_aws_tests.ecs_tests.launcher_tests import repo
 
 Secret = namedtuple("Secret", ["name", "arn"])
 
@@ -70,6 +70,7 @@ def task_definition(ecs, image, environment):
                         "condition": "SUCCESS",
                     },
                 ],
+                "healthCheck": {"command": ["HELLO"]},
             },
             {
                 "name": "other",
@@ -281,7 +282,7 @@ def other_external_job(other_workspace: WorkspaceRequestContext) -> ExternalJob:
 def run(instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob) -> DagsterRun:
     return instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -292,7 +293,7 @@ def other_run(
 ) -> DagsterRun:
     return instance.create_run_for_job(
         job,
-        external_job_origin=other_external_job.get_external_origin(),
+        external_job_origin=other_external_job.get_remote_origin(),
         job_code_origin=other_external_job.get_python_origin(),
     )
 
@@ -304,7 +305,7 @@ def launch_run(
     def _launch_run(instance: DagsterInstance) -> None:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, workspace)
@@ -358,7 +359,7 @@ def custom_run(
 ) -> DagsterRun:
     return custom_instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -477,6 +478,9 @@ def container_context_config(configured_secret: Secret) -> Mapping[str, Any]:
             ],
             "run_ecs_tags": [{"key": "ABC", "value": "DEF"}],  # with value
             "repository_credentials": "fake-secret-arn",
+            "server_health_check": {
+                "command": ["HELLO"],
+            },
         },
     }
 
@@ -501,6 +505,7 @@ def other_container_context_config(other_configured_secret):
             "server_resources": {
                 "cpu": "2048",
                 "memory": "4096",
+                "replica_count": 2,
             },
             "task_role_arn": "other-task-role",
             "execution_role_arn": "other-fake-execution-role",
@@ -539,6 +544,13 @@ def other_container_context_config(other_configured_secret):
                 }
             ],
             "repository_credentials": "fake-secret-arn",
+            "server_health_check": {
+                "command": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 0,
+            },
         },
     }
 
@@ -560,7 +572,7 @@ def launch_run_with_container_context(
 
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=python_origin,
         )
         instance.launch_run(run.run_id, workspace)

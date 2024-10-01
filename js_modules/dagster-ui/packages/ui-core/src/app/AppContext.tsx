@@ -8,6 +8,7 @@ export type AppContextValue = {
   rootServerURI: string;
   telemetryEnabled: boolean;
   statusPolling?: Set<DeploymentStatusType>;
+  localCacheIdPrefix?: string;
 };
 
 export const AppContext = createContext<AppContextValue>({

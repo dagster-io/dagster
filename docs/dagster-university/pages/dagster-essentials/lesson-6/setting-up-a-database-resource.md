@@ -10,9 +10,9 @@ Throughout this module, you’ve used DuckDB to store and transform your data. E
 
 ```python
 @asset(
-	deps=["taxi_trips_file"],
+    deps=["taxi_trips_file"],
 )
-def taxi_trips():
+def taxi_trips() -> None:
     ...
     conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
     ...

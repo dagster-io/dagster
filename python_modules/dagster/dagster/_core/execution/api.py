@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -23,8 +24,16 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.context_creation_job import (
+    ExecutionContextManager,
+    PlanExecutionContextManager,
+    PlanOrchestrationContextManager,
+    orchestration_context_event_generator,
+    scoped_job_context,
+)
+from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -37,15 +46,6 @@ from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
-
-from .context_creation_job import (
-    ExecutionContextManager,
-    PlanExecutionContextManager,
-    PlanOrchestrationContextManager,
-    orchestration_context_event_generator,
-    scoped_job_context,
-)
-from .job_execution_result import JobExecutionResult
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -119,7 +119,12 @@ def execute_run_iterator(
                         " and is restarted by the cluster. Marking the run as failed.",
                         dagster_run,
                     )
-                    yield instance.report_run_failed(dagster_run)
+                    yield instance.report_run_failed(
+                        dagster_run,
+                        job_failure_data=JobFailureData(
+                            error=None, failure_reason=RunFailureReason.RUN_WORKER_RESTART
+                        ),
+                    )
 
                 return gen_fail_restarted_run_worker()
 
@@ -128,10 +133,8 @@ def execute_run_iterator(
             dagster_run.status == DagsterRunStatus.STARTED
             or dagster_run.status == DagsterRunStatus.STARTING,
             desc=(
-                "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
-                "resuming from a run worker failure".format(
-                    dagster_run.job_name, dagster_run.run_id, dagster_run.status
-                )
+                f"Run of {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected STARTED or STARTING because it's "
+                "resuming from a run worker failure"
             ),
         )
 
@@ -220,9 +223,7 @@ def execute_run(
     check.invariant(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
-        desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.job_name, dagster_run.run_id, dagster_run.status
-        ),
+        desc=f"Run {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected NOT_STARTED or STARTING",
     )
     if (
         dagster_run.resolved_op_selection
@@ -671,24 +672,12 @@ def _get_execution_plan_from_run(
         else None
     )
 
-    # Rebuild from snapshot if able and selection has not changed
-    if (
-        execution_plan_snapshot is not None
-        and execution_plan_snapshot.can_reconstruct_plan
-        and job.resolved_op_selection == dagster_run.resolved_op_selection
-        and job.asset_selection == dagster_run.asset_selection
-        and job.asset_check_selection == dagster_run.asset_check_selection
-    ):
-        return ExecutionPlan.rebuild_from_snapshot(
-            dagster_run.job_name,
-            execution_plan_snapshot,
-        )
-
     return create_execution_plan(
         job,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
+        tags=dagster_run.tags,
         repository_load_data=(
             execution_plan_snapshot.repository_load_data if execution_plan_snapshot else None
         ),
@@ -758,14 +747,16 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
-    failed_steps = []
+    failed_steps: List[
+        DagsterEvent
+    ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
     try:
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
             elif event.is_resource_init_failure and event.step_key:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
 
             # Telemetry
             log_dagster_event(event, job_context)
@@ -818,19 +809,41 @@ def job_execution_iterator(
                     job_context,
                     "Execution was interrupted unexpectedly. "
                     "No user initiated termination request was found, treating as failure.",
-                    job_canceled_info,
+                    failure_reason=RunFailureReason.UNEXPECTED_TERMINATION,
+                    error_info=job_canceled_info,
                 )
         elif job_exception_info:
-            event = DagsterEvent.job_failure(
-                job_context,
-                "An exception was thrown during execution.",
-                job_exception_info,
-            )
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
+                event = DagsterEvent.job_canceled(
+                    job_context,
+                    error_info=job_exception_info,
+                    message="Run failed after it was requested to be terminated.",
+                )
+            else:
+                event = DagsterEvent.job_failure(
+                    job_context,
+                    "An exception was thrown during execution.",
+                    failure_reason=RunFailureReason.RUN_EXCEPTION,
+                    error_info=job_exception_info,
+                )
         elif failed_steps:
-            event = DagsterEvent.job_failure(
-                job_context,
-                f"Steps failed: {failed_steps}.",
-            )
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
+            failed_step_keys = [event.step_key for event in failed_steps]
+
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
+                event = DagsterEvent.job_canceled(
+                    job_context,
+                    error_info=None,
+                    message=f"Run was canceled. Failed steps: {failed_step_keys}.",
+                )
+            else:
+                event = DagsterEvent.job_failure(
+                    job_context,
+                    f"Steps failed: {failed_step_keys}.",
+                    failure_reason=RunFailureReason.STEP_FAILURE,
+                    first_step_failure_event=failed_steps[0],
+                )
         else:
             event = DagsterEvent.job_success(job_context)
         if not generator_closed:
@@ -907,7 +920,7 @@ def _check_execute_job_args(
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(op_selection, "op_selection", of_type=str)
 
-    tags = merge_dicts(job_def.tags, tags)
+    tags = merge_dicts(job_def.run_tags, tags)
 
     # generate job subset from the given op_selection
     if op_selection:

@@ -1,6 +1,6 @@
 from dagster_celery.make_app import make_app_with_task_routes
 
-from .executor import create_k8s_job_task
+from dagster_celery_k8s.executor import create_k8s_job_task
 
 app = make_app_with_task_routes(
     task_routes={

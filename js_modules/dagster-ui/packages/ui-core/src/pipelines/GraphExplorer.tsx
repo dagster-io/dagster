@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
 import {
@@ -8,10 +7,8 @@ import {
   SplitPanelContainer,
   TextInput,
 } from '@dagster-io/ui-components';
-import ColorLib from 'color';
 import qs from 'qs';
 import {useEffect, useMemo, useState} from 'react';
-import {Route} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
@@ -19,7 +16,9 @@ import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
 import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
+import {gql} from '../apollo-client';
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {Route} from '../app/Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {OP_GRAPH_OP_FRAGMENT, OpGraph} from '../graph/OpGraph';
 import {useOpLayout} from '../graph/asyncGraphLayout';
@@ -359,7 +358,7 @@ export const RightInfoPanelContent = styled.div`
 `;
 
 export const OptionsOverlay = styled.div`
-  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
+  background-color: ${Colors.popoverBackground()};
   z-index: 2;
   padding: 15px 20px;
   display: inline-flex;
@@ -372,7 +371,7 @@ export const OptionsOverlay = styled.div`
 `;
 
 const HighlightOverlay = styled.div`
-  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
+  background-color: ${Colors.popoverBackground()};
   z-index: 2;
   padding: 8px 12px 0 0;
   display: inline-flex;
@@ -393,7 +392,7 @@ export const QueryOverlay = styled.div`
 `;
 
 const BreadcrumbsOverlay = styled.div`
-  background-color: ${ColorLib(Colors.backgroundDefault()).fade(0.6).toString()};
+  background-color: ${Colors.popoverBackground()};
   z-index: 2;
   padding: 12px 0 0 20px;
   height: 42px;

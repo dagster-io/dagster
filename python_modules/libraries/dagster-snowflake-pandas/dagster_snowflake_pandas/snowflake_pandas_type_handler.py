@@ -3,7 +3,7 @@ from typing import Mapping, Optional, Sequence, Type
 import numpy as np
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
@@ -118,18 +118,24 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             conn=connection,
             df=with_uppercase_cols,
             # originally we used pd.to_sql with pd_writer method to write the df to snowflake. pd_writer
-            # forced the table name to be uppercase, so we mimic that behavior here for feature parity
-            # in the future we could allow non-uppercase table names
+            # forced the database, schema, and table name to be uppercase, so we mimic that behavior here for feature parity
+            # in the future we could allow non-uppercase names
             table_name=table_slice.table.upper(),
-            schema=table_slice.schema,
-            database=table_slice.database,
+            schema=table_slice.schema.upper(),
+            database=table_slice.database.upper() if table_slice.database else None,
             auto_create_table=True,
             use_logical_type=True,
-            quote_identifiers=False,  # In the future we can set this to True to allow lowercase identifiers
+            quote_identifiers=True,
         )
 
         return {
-            "row_count": obj.shape[0],
+            # output object may be a slice/partition, so we output different metadata keys based on
+            # whether this output represents an entire table or just a slice/partition
+            **(
+                TableMetadataSet(partition_row_count=obj.shape[0])
+                if context.has_partition_key
+                else TableMetadataSet(row_count=obj.shape[0])
+            ),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(
                     columns=[

@@ -16,10 +16,7 @@ from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
-from dagster._serdes import (
-    serialize_pp,
-    serialize_value,
-)
+from dagster._serdes import serialize_pp, serialize_value
 from dagster._serdes.serdes import deserialize_value
 
 
@@ -49,6 +46,7 @@ def test_empty_job_snap_props(snapshot):
     assert job_snapshot.name == "noop_job"
     assert job_snapshot.description is None
     assert job_snapshot.tags == {}
+    assert job_snapshot.run_tags is None
 
     assert job_snapshot == serialize_rt(job_snapshot)
 

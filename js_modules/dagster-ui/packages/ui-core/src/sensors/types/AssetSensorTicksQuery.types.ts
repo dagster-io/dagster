@@ -4,13 +4,13 @@ import * as Types from '../../graphql/types';
 
 export type AssetSensorTicksQueryVariables = Types.Exact<{
   sensorSelector: Types.SensorSelector;
-  dayRange?: Types.InputMaybe<Types.Scalars['Int']>;
-  dayOffset?: Types.InputMaybe<Types.Scalars['Int']>;
+  dayRange?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  dayOffset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
   statuses?: Types.InputMaybe<Array<Types.InstigationTickStatus> | Types.InstigationTickStatus>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
-  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
 }>;
 
 export type AssetSensorTicksQuery = {
@@ -63,3 +63,5 @@ export type AssetSensorTicksQuery = {
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
 };
+
+export const AssetSensorTicksQueryVersion = 'ee952c7c0076a23f9d5940ad472a6b580989c0d241dc598dbefa5bf3734673d0';

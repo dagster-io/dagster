@@ -1,8 +1,7 @@
-import warnings
-
 import pytest
 from dagster import AssetExecutionContext, OpExecutionContext, asset, materialize
-from dagster._core.execution.context.compute import _get_deprecation_kwargs
+from dagster._core.execution.context.asset_execution_context import _get_deprecation_kwargs
+from dagster._core.test_utils import raise_exception_on_warnings
 
 
 def test_doc_strings():
@@ -65,6 +64,7 @@ def test_deprecation_warnings():
         "get_output_metadata",
         "has_asset_checks_def",
         "has_partition_key",
+        "has_partition_key_range",
         "instance",
         "job_name",
         "output_for_asset_key",
@@ -90,6 +90,8 @@ def test_deprecation_warnings():
         "is_subset",
         "partition_keys",
         "retry_number",
+        "op_execution_context",
+        "repository_def",
     ]
 
     other_ignores = [
@@ -136,9 +138,7 @@ def test_deprecation_warnings():
 
 
 def test_instance_check():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
     @asset
     def test_op_context_instance_check(context: AssetExecutionContext):

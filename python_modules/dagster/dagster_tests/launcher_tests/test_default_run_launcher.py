@@ -8,15 +8,20 @@ from typing import Any, Mapping
 
 import pytest
 from dagster import (
+    Config,
+    DagsterEvent,
     DagsterEventType,
     DefaultRunLauncher,
+    Output,
+    RetryPolicy,
     _check as check,
     _seven,
     file_relative_path,
     repository,
 )
 from dagster._core.definitions import op
-from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterLaunchFailedError
+from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -27,6 +32,7 @@ from dagster._core.test_utils import (
     poll_for_finished_run,
     poll_for_step_start,
 )
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.client import DagsterGrpcClient
@@ -46,7 +52,11 @@ def noop_job():
     pass
 
 
-@op
+@op(
+    retry_policy=RetryPolicy(
+        max_retries=2,
+    )
+)
 def crashy_op(_):
     os._exit(1)
 
@@ -66,10 +76,29 @@ def exity_job():
     exity_op()
 
 
+class SleepyOpConfig(Config):
+    raise_keyboard_interrupt: bool = False
+    crash_after_termination: bool = False
+
+
 @op
-def sleepy_op(_):
+def sleepy_op(config: SleepyOpConfig):
+    assert not (config.raise_keyboard_interrupt and config.crash_after_termination)
+
     while True:
-        time.sleep(0.1)
+        try:
+            time.sleep(0.1)
+
+        except DagsterExecutionInterruptedError:
+            if config.raise_keyboard_interrupt:
+                # simulates a custom signal handler that has overridden ours
+                # to raise a normal KeyboardInterrupt
+                raise KeyboardInterrupt
+            elif config.crash_after_termination:
+                # simulates a crash after termination was initiated
+                os._exit(1)
+            else:
+                raise
 
 
 @job
@@ -107,6 +136,27 @@ def add(_, num1, num2):
     return num1 + num2
 
 
+@op
+def op_that_emits_duplicate_step_success_event(context):
+    # emits a duplicate step success event which will mess up the execution
+    # machinery and fail the run worker
+
+    # Wait for the other op to start so that it will be terminated mid-execution
+    poll_for_step_start(context.instance, context.dagster_run.run_id, message="sleepy_op")
+
+    yield DagsterEvent.step_success_event(
+        context._step_execution_context,  # noqa
+        StepSuccessData(duration_ms=50.0),
+    )
+    yield Output(5)
+
+
+@job
+def job_that_fails_run_worker():
+    sleepy_op()
+    op_that_emits_duplicate_step_success_event()
+
+
 @job
 def math_diamond():
     one = return_one()
@@ -122,6 +172,7 @@ def nope():
         sleepy_job,
         slow_job,
         math_diamond,
+        job_that_fails_run_worker,
     ]
 
 
@@ -159,7 +210,7 @@ def test_successful_run(
     dagster_run = instance.create_run_for_job(
         job_def=noop_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = dagster_run.run_id
@@ -181,6 +232,7 @@ def test_successful_run(
 def test_successful_run_from_pending(
     instance: DagsterInstance, pending_workspace: WorkspaceRequestContext
 ):
+    run_id = make_new_run_id()
     code_location = pending_workspace.get_code_location("test2")
     external_job = code_location.get_repository("pending").get_full_external_job(
         "my_cool_asset_job"
@@ -207,7 +259,7 @@ def test_successful_run_from_pending(
 
     created_run = instance.create_run(
         job_name="my_cool_asset_job",
-        run_id="xyzabc",
+        run_id=run_id,
         run_config=None,
         resolved_op_selection=None,
         step_keys_to_execute=None,
@@ -218,12 +270,14 @@ def test_successful_run_from_pending(
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         op_selection=None,
         asset_check_selection=None,
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
+        asset_graph=code_location.get_repository(
+            external_job.repository_handle.repository_name
+        ).asset_graph,
     )
 
     run_id = created_run.run_id
@@ -294,7 +348,7 @@ def test_invalid_instance_run():
 
                         run = instance.create_run_for_job(
                             job_def=noop_job,
-                            external_job_origin=external_job.get_external_origin(),
+                            external_job_origin=external_job.get_remote_origin(),
                             job_code_origin=external_job.get_python_origin(),
                         )
                         with pytest.raises(
@@ -331,7 +385,7 @@ def test_crashy_run(
     run = instance.create_run_for_job(
         job_def=crashy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -360,6 +414,39 @@ def test_crashy_run(
 
     assert _message_exists(event_records, message)
 
+    if run_config is None:
+        # verify the step retried once before failing
+        run_logs = instance.all_logs(run_id)
+        _check_event_log_contains(
+            run_logs,
+            [
+                (
+                    "STEP_UP_FOR_RETRY",
+                    'Execution of step "crashy_op" failed and has requested a retry.',
+                ),
+                (
+                    "STEP_RESTARTED",
+                    'Started re-execution (attempt # 2) of step "crashy_op"',
+                ),
+                (
+                    "ENGINE_EVENT",
+                    "Multiprocess executor: child process for step crashy_op unexpectedly exited",
+                ),
+                (
+                    "STEP_UP_FOR_RETRY",
+                    'Execution of step "crashy_op" failed and has requested a retry.',
+                ),
+                (
+                    "STEP_RESTARTED",
+                    'Started re-execution (attempt # 3) of step "crashy_op"',
+                ),
+                (
+                    "STEP_FAILURE",
+                    'Execution of step "crashy_op" failed.',
+                ),
+            ],
+        )
+
 
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
@@ -380,7 +467,7 @@ def test_exity_run(
     run = instance.create_run_for_job(
         job_def=exity_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -411,7 +498,21 @@ def test_exity_run(
 
 @pytest.mark.parametrize(
     "run_config",
-    run_configs(),
+    [
+        None,  # multiprocess
+        {"execution": {"config": {"in_process": {}}}},  # in-process
+        {  # raise KeyboardInterrupt on termination
+            "ops": {"sleepy_op": {"config": {"raise_keyboard_interrupt": True}}}
+        },
+        pytest.param(
+            {  # crash on termination
+                "ops": {"sleepy_op": {"config": {"crash_after_termination": True}}}
+            },
+            marks=pytest.mark.skipif(
+                _seven.IS_WINDOWS, reason="Crashes manifest differently on windows"
+            ),
+        ),
+    ],
 )
 def test_terminated_run(
     instance: DagsterInstance,
@@ -426,7 +527,7 @@ def test_terminated_run(
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -445,6 +546,9 @@ def test_terminated_run(
     terminated_run = poll_for_finished_run(instance, run_id, timeout=30)
     terminated_run = instance.get_run_by_id(run_id)
     assert terminated_run and terminated_run.status == DagsterRunStatus.CANCELED
+
+    # termination is a no-op once run is finished
+    assert not launcher.terminate(run_id)
 
     poll_for_event(
         instance,
@@ -479,6 +583,24 @@ def test_terminated_run(
                 ("ENGINE_EVENT", "Process for run exited"),
             ],
         )
+    elif (
+        run_config.get("ops", {})
+        .get("sleepy_op", {})
+        .get("config", {})
+        .get("crash_after_termination")
+    ):
+        _check_event_log_contains(
+            run_logs,
+            [
+                ("PIPELINE_CANCELING", "Sending run termination request."),
+                ("STEP_FAILURE", 'Execution of step "sleepy_op" failed.'),
+                (
+                    "PIPELINE_CANCELED",
+                    "Run failed after it was requested to be terminated.",
+                ),
+                ("ENGINE_EVENT", "Process for run exited"),
+            ],
+        )
     else:
         _check_event_log_contains(
             run_logs,
@@ -508,7 +630,7 @@ def test_cleanup_after_force_terminate(
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -609,7 +731,7 @@ def test_single_op_selection_execution(
         job_def=math_diamond,
         run_config=run_config,
         op_selection=["return_one"],
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
@@ -648,7 +770,7 @@ def test_multi_op_selection_execution(
         job_def=math_diamond,
         run_config=run_config,
         op_selection=["return_one", "multiply_by_2"],
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
@@ -671,6 +793,54 @@ def test_multi_op_selection_execution(
     }
 
 
+@pytest.mark.skipif(
+    _seven.IS_WINDOWS,
+    reason="Failure sequence manifests differently on windows",
+)
+def test_job_that_fails_run_worker(
+    instance: DagsterInstance,
+    workspace: WorkspaceRequestContext,
+):
+    external_job = (
+        workspace.get_code_location("test")
+        .get_repository("nope")
+        .get_full_external_job("job_that_fails_run_worker")
+    )
+    run = instance.create_run_for_job(
+        job_def=job_that_fails_run_worker,
+        run_config={},
+        external_job_origin=external_job.get_remote_origin(),
+        job_code_origin=external_job.get_python_origin(),
+    )
+    run_id = run.run_id
+
+    run = instance.get_run_by_id(run_id)
+    assert run and run.status == DagsterRunStatus.NOT_STARTED
+
+    instance.launch_run(run.run_id, workspace)
+    finished_run = poll_for_finished_run(instance, run_id)
+    assert finished_run.status == DagsterRunStatus.FAILURE
+
+    run_logs = instance.all_logs(run_id)
+    _check_event_log_contains(
+        run_logs,
+        [
+            (
+                "ENGINE_EVENT",
+                "Unexpected exception while steps were still in-progress - terminating running steps:",
+            ),
+            (
+                "STEP_FAILURE",
+                'Execution of step "sleepy_op" failed.',
+            ),
+            (
+                "PIPELINE_FAILURE",
+                'Execution of run for "job_that_fails_run_worker" failed. An exception was thrown during execution.',
+            ),
+        ],
+    )
+
+
 @pytest.mark.parametrize(
     "run_config",
     run_configs(),
@@ -688,7 +858,7 @@ def test_engine_events(
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
@@ -757,7 +927,7 @@ def test_engine_events(
 
 def test_not_initialized():
     run_launcher = DefaultRunLauncher()
-    run_id = "dummy"
+    run_id = make_new_run_id()
 
     assert run_launcher.join() is None
     assert run_launcher.terminate(run_id) is False

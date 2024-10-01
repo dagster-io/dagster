@@ -12,13 +12,11 @@ from dagster import (
     ResourceDependency,
     ResourceParam,
     asset,
+    job,
     resource,
 )
-from dagster._check import CheckError
-from dagster._config.pythonic_config import (
-    ConfigurableIOManager,
-    ConfigurableResourceFactory,
-)
+from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResourceFactory
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager
 
@@ -158,12 +156,15 @@ def test_nested_resources_runtime_config() -> None:
         completed["yes"] = True
 
     aws_credentials = AWSCredentialsResource.configure_at_launch()
+    s3_resource = S3Resource(bucket_name="my_bucket", aws_credentials=aws_credentials)
+    ec2_resource = EC2Resource(aws_credentials=aws_credentials)
+
     defs = Definitions(
         assets=[my_asset],
         resources={
             "aws_credentials": aws_credentials,
-            "s3": S3Resource(bucket_name="my_bucket", aws_credentials=aws_credentials),
-            "ec2": EC2Resource(aws_credentials=aws_credentials),
+            "s3": s3_resource,
+            "ec2": ec2_resource,
         },
     )
 
@@ -184,6 +185,29 @@ def test_nested_resources_runtime_config() -> None:
         .success
     )
     assert completed["yes"]
+
+    @job(
+        resource_defs={
+            "random_key": aws_credentials,
+            "s3": s3_resource,
+            "ec2": ec2_resource,
+        }
+    )
+    def my_job():
+        my_asset()
+
+    assert my_job.execute_in_process(
+        {
+            "resources": {
+                "random_key": {
+                    "config": {
+                        "username": "foo",
+                        "password": "bar",
+                    }
+                }
+            }
+        }
+    ).success
 
 
 def test_nested_resources_runtime_config_complex() -> None:
@@ -393,16 +417,18 @@ def test_nested_function_resource_runtime_config() -> None:
         writer("bar")
 
     with pytest.raises(
-        CheckError,
-        match="Any partially configured, nested resources must be provided to Definitions",
+        DagsterInvalidDefinitionError,
+        match="Any partially configured, nested resources must be provided as a top level resource.",
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions
-        defs = Definitions(
-            assets=[my_asset],
-            resources={
-                "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
-            },
+        Definitions.validate_loadable(
+            Definitions(
+                assets=[my_asset],
+                resources={
+                    "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
+                },
+            )
         )
 
     defs = Definitions(
@@ -869,3 +895,73 @@ def test_multiple_nested_optional_resources_complex() -> None:
     )
     assert executed["my_asset"] == "bar"
     executed.clear()
+
+
+def test_nested_resource_setup_teardown_inner() -> None:
+    log = []
+
+    class MyBoringOuterResource(ConfigurableResource):
+        more_interesting_inner_resource: ResourceDependency["SetupTeardownInnerResource"]
+
+    class SetupTeardownInnerResource(ConfigurableResource):
+        def setup_for_execution(self, context: InitResourceContext) -> None:
+            log.append("SetupTeardownInnerResource setup_for_execution")
+
+        def teardown_after_execution(self, context: InitResourceContext) -> None:
+            log.append("SetupTeardownInnerResource teardown_after_execution")
+
+    @asset
+    def my_asset(outer: MyBoringOuterResource) -> str:
+        log.append("my_asset")
+        return "foo"
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "outer": MyBoringOuterResource(
+                more_interesting_inner_resource=SetupTeardownInnerResource()
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert log == [
+        "SetupTeardownInnerResource setup_for_execution",
+        "my_asset",
+        "SetupTeardownInnerResource teardown_after_execution",
+    ]
+
+
+def test_nested_resource_yield_inner() -> None:
+    log = []
+
+    class MyBoringOuterResource(ConfigurableResource):
+        more_interesting_inner_resource: ResourceDependency["SetupTeardownInnerResource"]
+
+    class SetupTeardownInnerResource(ConfigurableResource):
+        @contextlib.contextmanager
+        def yield_for_execution(self, context: InitResourceContext):
+            log.append("SetupTeardownInnerResource yield_for_execution")
+            yield self
+            log.append("SetupTeardownInnerResource yield_for_execution done")
+
+    @asset
+    def my_asset(outer: MyBoringOuterResource) -> str:
+        log.append("my_asset")
+        return "foo"
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "outer": MyBoringOuterResource(
+                more_interesting_inner_resource=SetupTeardownInnerResource()
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert log == [
+        "SetupTeardownInnerResource yield_for_execution",
+        "my_asset",
+        "SetupTeardownInnerResource yield_for_execution done",
+    ]

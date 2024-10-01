@@ -7,7 +7,7 @@ export const PAGE_SIZE = 30;
 
 // This function exists mostly to use the return type later
 export function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
-  return useCursorPaginatedQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>({
+  const result = useCursorPaginatedQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>({
     nextCursorForResult: (data) => {
       if (
         data.assetConditionEvaluationRecordsOrError?.__typename ===
@@ -34,4 +34,5 @@ export function useEvaluationsQueryResult({assetKey}: {assetKey: AssetKey}) {
     query: GET_EVALUATIONS_QUERY,
     pageSize: PAGE_SIZE,
   });
+  return result;
 }

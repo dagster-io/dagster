@@ -2,6 +2,7 @@ import sys
 from abc import abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast
 
 from dagster import OutputContext
@@ -26,7 +27,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import NotRequired
 
-from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
+from dagster_deltalake.config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 
 DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DELTA_DATE_FORMAT = "%Y-%m-%d"
@@ -46,11 +47,28 @@ class _StorageOptionsConfig(TypedDict, total=False):
     gcs: Dict[str, str]
 
 
+class WriteMode(str, Enum):
+    error = "error"
+    append = "append"
+    overwrite = "overwrite"
+    ignore = "ignore"
+
+
+class WriterEngine(str, Enum):
+    pyarrow = "pyarrow"
+    rust = "rust"
+
+
 class _DeltaTableIOManagerResourceConfig(TypedDict):
     root_uri: str
+    mode: WriteMode
+    overwrite_schema: bool
+    writer_engine: WriterEngine
     storage_options: _StorageOptionsConfig
     client_options: NotRequired[Dict[str, str]]
     table_config: NotRequired[Dict[str, str]]
+    custom_metadata: NotRequired[Dict[str, str]]
+    writer_properties: NotRequired[Dict[str, str]]
 
 
 class DeltaLakeIOManager(ConfigurableIOManagerFactory):
@@ -106,6 +124,13 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     """
 
     root_uri: str = Field(description="Storage location where Delta tables are stored.")
+    mode: WriteMode = Field(
+        default=WriteMode.overwrite.value, description="The write mode passed to save the output."
+    )
+    overwrite_schema: bool = Field(default=False)
+    writer_engine: WriterEngine = Field(
+        default=WriterEngine.pyarrow.value, description="Engine passed to write_deltalake."
+    )
 
     storage_options: Union[AzureConfig, S3Config, LocalConfig, GcsConfig] = Field(
         discriminator="provider",
@@ -125,10 +150,16 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
 
+    custom_metadata: Optional[Dict[str, str]] = Field(
+        default=None, description="Custom metadata that is added to transaction commit."
+    )
+    writer_properties: Optional[Dict[str, str]] = Field(
+        default=None, description="Writer properties passed to the rust engine writer."
+    )
+
     @staticmethod
     @abstractmethod
-    def type_handlers() -> Sequence[DbTypeHandler]:
-        ...
+    def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
     def default_load_type() -> Optional[Type]:
@@ -166,7 +197,7 @@ class DeltaLakeDbClient(DbClient):
     def get_select_statement(table_slice: TableSlice) -> str:
         # The select statement here is just for illustrative purposes,
         # and is never actually executed. It does however logically correspond
-        # the the operation being executed.
+        # the operation being executed.
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
         if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:

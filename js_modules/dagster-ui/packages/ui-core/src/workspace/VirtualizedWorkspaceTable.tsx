@@ -1,11 +1,27 @@
-import {LazyQueryExecFunction, QueryResult} from '@apollo/client';
 import {Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {forwardRef} from 'react';
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';
+import {QueryResult} from '../apollo-client';
+import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {Row} from '../ui/VirtualizedTable';
+
+interface RepoRowProps {
+  repoAddress: RepoAddress;
+  showLocation: boolean;
+  rightElement: React.ReactNode;
+  expanded: boolean;
+  onToggle: (repoAddress: RepoAddress) => void;
+  onToggleAll: (expanded: boolean) => void;
+}
+
+interface StaticRepoRowProps extends RepoRowProps {
+  height: number;
+  start: number;
+}
 
 export const RepoRow = ({
   repoAddress,
@@ -16,16 +32,7 @@ export const RepoRow = ({
   onToggleAll,
   showLocation,
   rightElement,
-}: {
-  repoAddress: RepoAddress;
-  height: number;
-  start: number;
-  showLocation: boolean;
-  rightElement: React.ReactNode;
-  expanded: boolean;
-  onToggle: (repoAddress: RepoAddress) => void;
-  onToggleAll: (expanded: boolean) => void;
-}) => {
+}: StaticRepoRowProps) => {
   return (
     <Row $height={height} $start={start}>
       <RepoSectionHeader
@@ -41,6 +48,30 @@ export const RepoRow = ({
     </Row>
   );
 };
+
+interface DynamicRepoRowProps extends RepoRowProps {
+  index: number;
+}
+
+export const DynamicRepoRow = forwardRef(
+  (props: DynamicRepoRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
+    const {index, repoAddress, expanded, onToggle, onToggleAll, showLocation, rightElement} = props;
+    return (
+      <div ref={ref} data-index={index}>
+        <RepoSectionHeader
+          repoName={repoAddress.name}
+          repoLocation={repoAddress.location}
+          expanded={expanded}
+          onClick={(e: React.MouseEvent) =>
+            e.getModifierState('Shift') ? onToggleAll(!expanded) : onToggle(repoAddress)
+          }
+          showLocation={showLocation}
+          rightElement={rightElement}
+        />
+      </div>
+    );
+  },
+);
 
 export const LoadingOrNone = ({
   queryResult,
@@ -78,12 +109,16 @@ const CaptionTextContainer = styled.div`
 
 const JOB_QUERY_DELAY = 100;
 
-export const useDelayedRowQuery = (lazyQueryFn: LazyQueryExecFunction<any, any>) => {
+export const useDelayedRowQuery = (lazyQueryFn: () => void) => {
+  const dependency = useTraceDependency('DelayedRowQuery');
   React.useEffect(() => {
     const timer = setTimeout(() => {
       lazyQueryFn();
+      dependency.completeDependency(CompletionType.SUCCESS);
     }, JOB_QUERY_DELAY);
 
-    return () => clearTimeout(timer);
-  }, [lazyQueryFn]);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [lazyQueryFn, dependency]);
 };

@@ -1,42 +1,55 @@
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Redirect, Switch} from 'react-router-dom';
 
 import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewJobsRoot} from './OverviewJobsRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
+import {useFeatureFlags} from '../app/Flags';
+import {Route} from '../app/Route';
+import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
-import {InstanceBackfills} from '../instance/InstanceBackfills';
+import {InstanceBackfillsRoot} from '../instance/InstanceBackfillsRoot';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const OverviewRoot = () => {
+  const {flagSettingsPage} = useFeatureFlags();
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   return (
     <Switch>
-      <Route path="/overview/activity">
+      <Route path="/overview/activity" isNestingRoute>
         <OverviewActivityRoot />
       </Route>
-      <Route path="/overview/jobs">
-        <OverviewJobsRoot />
-      </Route>
-      <Route path="/overview/schedules">
-        <OverviewSchedulesRoot />
-      </Route>
-      <Route path="/overview/sensors">
-        <OverviewSensorsRoot />
-      </Route>
-      <Route path="/overview/automation">
-        <AutomaterializationRoot />
-      </Route>
-      <Route path="/overview/backfills/:backfillId">
-        <BackfillPage />
-      </Route>
-      <Route path="/overview/backfills" exact>
-        <InstanceBackfills />
-      </Route>
+      <Route
+        path="/overview/jobs"
+        render={() => (flagSettingsPage ? <Redirect to="/jobs" /> : <OverviewJobsRoot />)}
+      />
+      <Route
+        path="/overview/schedules"
+        render={() =>
+          flagSettingsPage ? <Redirect to="/automation" /> : <OverviewSchedulesRoot />
+        }
+      />
+      <Route
+        path="/overview/sensors"
+        render={() => (flagSettingsPage ? <Redirect to="/automation" /> : <OverviewSensorsRoot />)}
+      />
+      <Route
+        path="/overview/automation"
+        render={() =>
+          flagSettingsPage && automaterializeSensorsFlagState !== 'has-global-amp' ? (
+            <Redirect to="/automation" />
+          ) : (
+            <AutomaterializationRoot />
+          )
+        }
+      />
+      <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
+      <Route path="/overview/backfills" exact render={() => <InstanceBackfillsRoot />} />
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
       </Route>
-      <Route path="*" render={() => <Redirect to="/overview/activity" />} />
+      <Route path="*" isNestingRoute render={() => <Redirect to="/overview/activity" />} />
     </Switch>
   );
 };

@@ -3,6 +3,7 @@ import {Meta} from '@storybook/react';
 import {CoreColors} from '../../palettes/CoreColors';
 import {BaseButton} from '../BaseButton';
 import {Box} from '../Box';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
 
@@ -31,35 +32,35 @@ export const Default = () => {
 export const Fill = () => {
   return (
     <Group direction="column" spacing={8}>
-      <BaseButton label="Button" fillColor={CoreColors.Gray900} textColor={CoreColors.White} />
+      <BaseButton label="Button" fillColor={Colors.accentGray()} textColor={Colors.alwaysWhite()} />
       <BaseButton
         label="Button"
-        fillColor={CoreColors.Blue500}
-        textColor={CoreColors.White}
+        fillColor={Colors.accentBlue()}
+        textColor={Colors.alwaysWhite()}
         icon={<Icon name="star" />}
       />
       <BaseButton
         label="Button"
-        fillColor={CoreColors.Green500}
-        textColor={CoreColors.White}
+        fillColor={Colors.accentGreen()}
+        textColor={Colors.alwaysWhite()}
         rightIcon={<Icon name="close" />}
       />
       <BaseButton
         label="Button"
-        fillColor={CoreColors.Red500}
-        textColor={CoreColors.White}
+        fillColor={Colors.accentRed()}
+        textColor={Colors.alwaysWhite()}
         icon={<Icon name="source" />}
         rightIcon={<Icon name="expand_more" />}
       />
       <BaseButton
         label="Button"
-        fillColor={CoreColors.Olive500}
-        textColor={CoreColors.White}
+        fillColor={Colors.accentOlive()}
+        textColor={Colors.alwaysWhite()}
         icon={<Icon name="folder_open" />}
       />
       <BaseButton
-        fillColor={CoreColors.Yellow500}
-        textColor={CoreColors.White}
+        fillColor={Colors.accentYellow()}
+        textColor={Colors.alwaysWhite()}
         icon={<Icon name="cached" />}
       />
     </Group>
@@ -68,30 +69,30 @@ export const Fill = () => {
 
 export const Transparent = () => {
   return (
-    <Box padding={12} background={CoreColors.Gray200}>
+    <Box padding={12} background={Colors.backgroundGray()}>
       <Group direction="column" spacing={8}>
-        <BaseButton textColor={CoreColors.Gray900} label="Button" fillColor="transparent" />
+        <BaseButton textColor={Colors.accentGray()} label="Button" fillColor="transparent" />
         <BaseButton
-          textColor={CoreColors.Gray900}
+          textColor={Colors.accentGray()}
           label="Button"
           fillColor="transparent"
           icon={<Icon name="star" />}
         />
         <BaseButton
-          textColor={CoreColors.Gray900}
+          textColor={Colors.accentGray()}
           label="Button"
           fillColor="transparent"
           rightIcon={<Icon name="close" />}
         />
         <BaseButton
-          textColor={CoreColors.Gray900}
+          textColor={Colors.accentGray()}
           label="Button"
           fillColor="transparent"
           icon={<Icon name="source" />}
           rightIcon={<Icon name="expand_more" />}
         />
         <BaseButton
-          textColor={CoreColors.Gray900}
+          textColor={Colors.accentGray()}
           fillColor="transparent"
           icon={<Icon name="cached" />}
         />

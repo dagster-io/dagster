@@ -1,20 +1,25 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useDeferredValue, useMemo} from 'react';
 
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
+import {groupRunsByAutomation} from './groupRunsByAutomation';
+import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
+import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {useStartTrace} from '../performance';
 import {RunTimeline} from '../runs/RunTimeline';
 import {HourWindow, useHourWindow} from '../runs/useHourWindow';
-import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {useRunsForTimeline} from '../runs/useRunsForTimeline';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
-const POLL_INTERVAL = 60 * 1000;
+const POLL_INTERVAL = 30 * 1000;
 
 const hourWindowToOffset = (hourWindow: HourWindow) => {
   switch (hourWindow) {
@@ -30,35 +35,42 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
 };
 
 type Props = {
-  Header: React.ComponentType<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
+  Header: React.ComponentType<{refreshState: RefreshState}>;
   TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 
-export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
-  useTrackPageView();
-  useDocumentTitle('Overview | Timeline');
-  const trace = useStartTrace('OverviewTimelineRoot');
-
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
-
-  const [hourWindow, setHourWindow] = useHourWindow('12');
-  const [now, setNow] = React.useState(() => Date.now());
+export function useTimelineRange({
+  maxNowMs,
+  hourWindowStorageKey,
+  hourWindowDefault = '12',
+  lookaheadHours = LOOKAHEAD_HOURS,
+}: {
+  maxNowMs?: number;
+  hourWindowStorageKey?: string;
+  hourWindowDefault?: HourWindow;
+  lookaheadHours?: number;
+}) {
+  const [hourWindow, setHourWindow] = useHourWindow(hourWindowDefault, hourWindowStorageKey);
+  const [now, setNow] = React.useState(() => maxNowMs || Date.now());
   const [offsetMsec, setOffsetMsec] = React.useState(() => 0);
-  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
-    queryKey: 'search',
-    defaults: {search: ''},
-  });
+
+  const rangeMs: [number, number] = React.useMemo(
+    () => [
+      now - Number(hourWindow) * ONE_HOUR + offsetMsec,
+      now + lookaheadHours * ONE_HOUR + offsetMsec,
+    ],
+    [hourWindow, now, lookaheadHours, offsetMsec],
+  );
 
   React.useEffect(() => {
-    setNow(Date.now());
     const timer = setInterval(() => {
-      setNow(Date.now());
+      setNow(maxNowMs ? Math.min(maxNowMs, Date.now()) : Date.now());
     }, POLL_INTERVAL);
 
     return () => {
       clearInterval(timer);
     };
-  }, [hourWindow]);
+  }, [hourWindow, maxNowMs]);
 
   const onPageEarlier = React.useCallback(() => {
     setOffsetMsec((current) => current - hourWindowToOffset(hourWindow));
@@ -72,58 +84,80 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     setOffsetMsec(0);
   }, []);
 
-  const range: [number, number] = React.useMemo(
-    () => [
-      now - Number(hourWindow) * ONE_HOUR + offsetMsec,
-      now + LOOKAHEAD_HOURS * ONE_HOUR + offsetMsec,
-    ],
-    [hourWindow, now, offsetMsec],
-  );
+  return {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow};
+}
 
-  const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
-  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
+export const OverviewTimelineRoot = ({Header}: Props) => {
+  useTrackPageView();
+  useDocumentTitle('Overview | Timeline');
 
-  React.useEffect(() => {
-    if (!initialLoading) {
-      trace.endTrace();
-    }
-  }, [initialLoading, trace]);
+  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
+    useTimelineRange({});
 
-  const visibleJobKeys = React.useMemo(() => {
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
+  const [groupRunsBy, setGroupRunsBy] = useGroupTimelineRunsBy();
+
+  const runsForTimelineRet = useRunsForTimeline({rangeMs});
+
+  // Use deferred value to allow paginating quickly with the UI feeling more responsive.
+  const {jobs, loading, refreshState} = useDeferredValue(runsForTimelineRet);
+
+  const rows = useMemo(() => {
+    return groupRunsBy === 'automation' ? groupRunsByAutomation(jobs) : jobs;
+  }, [groupRunsBy, jobs]);
+
+  const visibleRepoKeys = useMemo(() => {
+    return new Set(
+      visibleRepos.map((option) => {
+        const repoAddress = buildRepoAddress(
+          option.repository.name,
+          option.repositoryLocation.name,
+        );
+        return repoAddressAsHumanString(repoAddress);
+      }),
+    );
+  }, [visibleRepos]);
+
+  const visibleObjectKeys = React.useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase().trim();
-    const flat = visibleRepos.flatMap((repo) => {
-      const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
-      return repo.repository.pipelines
-        .filter(({name}) => name.toLocaleLowerCase().includes(searchLower))
-        .map((job) => makeJobKey(repoAddress, job.name));
-    });
-    return new Set(flat);
-  }, [visibleRepos, searchValue]);
+    const keys = rows
+      .filter(({repoAddress}) => visibleRepoKeys.has(repoAddressAsHumanString(repoAddress)))
+      .map(({key}) => key)
+      .filter((key) => key.toLocaleLowerCase().includes(searchLower));
+    return new Set(keys);
+  }, [searchValue, rows, visibleRepoKeys]);
 
-  const visibleJobs = React.useMemo(
-    () => jobs.filter(({key}) => visibleJobKeys.has(key)),
-    [jobs, visibleJobKeys],
+  const visibleRows = React.useMemo(
+    () => rows.filter(({key}) => visibleObjectKeys.has(key)),
+    [rows, visibleObjectKeys],
   );
 
   return (
     <>
       <Header refreshState={refreshState} />
       <Box
-        padding={{horizontal: 24, vertical: 16}}
-        flex={{alignItems: 'center', justifyContent: 'space-between'}}
+        padding={{horizontal: 24, vertical: 12}}
+        flex={{alignItems: 'center', justifyContent: 'space-between', gap: 16}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>
-          <TabButton selected="timeline" />
           {allRepos.length > 1 && <RepoFilterButton />}
           <TextInput
             icon="search"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Filter by job name…"
+            placeholder="Filter by name…"
             style={{width: '200px'}}
           />
         </Box>
         <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <div style={{whiteSpace: 'nowrap'}}>Group by</div>
+            <GroupTimelineRunsBySelect value={groupRunsBy} onSelect={setGroupRunsBy} />
+          </Box>
           <ButtonGroup<HourWindow>
             activeItems={new Set([hourWindow])}
             buttons={[
@@ -142,7 +176,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
         </Box>
       </Box>
       <ErrorBoundary region="timeline">
-        <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
+        <RunTimeline loading={loading} rangeMs={rangeMs} rows={visibleRows} />
       </ErrorBoundary>
     </>
   );

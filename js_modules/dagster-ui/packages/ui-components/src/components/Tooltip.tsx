@@ -8,7 +8,7 @@ import {Colors} from './Color';
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
-  .dagster-tooltip .bp4-popover2-content {
+  .dagster-tooltip .bp5-popover-content {
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
@@ -17,11 +17,11 @@ export const GlobalTooltipStyle = createGlobalStyle`
       padding: 8px 16px;
   }
 
-  .block-tooltip.bp4-popover2-target {
+  .block-tooltip.bp5-popover-target {
     display: block;
   }
 
-  .dagster-tooltip-bare .bp4-popover2-content {
+  .dagster-tooltip-bare .bp5-popover-content {
     padding: 0;
   }
 `;

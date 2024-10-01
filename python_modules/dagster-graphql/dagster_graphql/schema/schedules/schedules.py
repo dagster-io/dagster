@@ -1,26 +1,31 @@
-from typing import List, Optional
+import time
+from typing import List, Optional, Sequence
 
 import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
-from dagster._core.host_representation import ExternalSchedule
+from dagster._core.remote_representation import ExternalSchedule
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
-from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster._time import get_current_timestamp
 
+from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-
-from ..errors import (
+from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
+from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
 )
-from ..instigation import (
+from dagster_graphql.schema.instigation import (
     GrapheneDryRunInstigationTick,
     GrapheneDryRunInstigationTicks,
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
-from ..util import ResolveInfo, non_null_list
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneSchedule(graphene.ObjectType):
@@ -51,6 +56,9 @@ class GrapheneSchedule(graphene.ObjectType):
         upper_limit=graphene.Int(),
         lower_limit=graphene.Int(),
     )
+    assetSelection = graphene.Field(GrapheneAssetSelection)
+    tags = non_null_list(GrapheneDefinitionTag)
+    metadataEntries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "Schedule"
@@ -58,12 +66,14 @@ class GrapheneSchedule(graphene.ObjectType):
     def __init__(
         self,
         external_schedule: ExternalSchedule,
+        external_repository: ExternalRepository,
         schedule_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
+        self._external_repository = external_repository
 
         # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
         # that instantiates multiple schedules
@@ -88,10 +98,16 @@ class GrapheneSchedule(graphene.ObjectType):
                 else "UTC"
             ),
             description=external_schedule.description,
+            assetSelection=GrapheneAssetSelection(
+                asset_selection=external_schedule.asset_selection,
+                external_repository=self._external_repository,
+            )
+            if external_schedule.asset_selection
+            else None,
         )
 
-    def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_schedule.get_external_origin_id()
+    def resolve_id(self, _graphene_info: ResolveInfo) -> str:
+        return self._external_schedule.get_compound_id().to_string()
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
         default_schedule_status = self._external_schedule.default_status
@@ -111,7 +127,7 @@ class GrapheneSchedule(graphene.ObjectType):
         return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
     def resolve_partition_set(self, graphene_info: ResolveInfo):
-        from ..partition_sets import GraphenePartitionSet
+        from dagster_graphql.schema.partition_sets import GraphenePartitionSet
 
         if self._external_schedule.partition_set_name is None:
             return None
@@ -135,7 +151,7 @@ class GrapheneSchedule(graphene.ObjectType):
         limit: Optional[int] = None,
         until: Optional[float] = None,
     ):
-        cursor = cursor or get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+        cursor = cursor or time.time()
 
         tick_times: List[float] = []
         time_iter = self._external_schedule.execution_time_iterator(cursor)
@@ -180,9 +196,7 @@ class GrapheneSchedule(graphene.ObjectType):
 
         upper_limit defines how many ticks will be retrieved after the current timestamp, and lower_limit defines how many ticks will be retrieved before the current timestamp.
         """
-        start_timestamp = start_timestamp or get_timestamp_from_utc_datetime(
-            get_current_datetime_in_utc()
-        )
+        start_timestamp = start_timestamp or get_current_timestamp()
         upper_limit = upper_limit or 10
         lower_limit = lower_limit or 10
 
@@ -212,6 +226,15 @@ class GrapheneSchedule(graphene.ObjectType):
         ]
 
         return tick_times
+
+    def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        return [
+            GrapheneDefinitionTag(key, value)
+            for key, value in (self._external_schedule.tags or {}).items()
+        ]
+
+    def resolve_metadataEntries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
+        return list(iterate_metadata_entries(self._external_schedule.metadata))
 
 
 class GrapheneScheduleOrError(graphene.Union):

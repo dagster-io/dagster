@@ -1,19 +1,30 @@
+from typing import Any, cast
+
+import celery
+from celery import Celery
 from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._cli.api import _execute_run_command_body, _resume_run_command_body
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster._grpc.types import ExecuteStepArgs
+from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import serialize_value, unpack_value
+from dagster._serdes.serdes import JsonSerializableValue
 
-from .core_execution_loop import DELEGATE_MARKER
-from .executor import CeleryExecutor
+from dagster_celery.config import (
+    TASK_EXECUTE_JOB_NAME,
+    TASK_EXECUTE_PLAN_NAME,
+    TASK_RESUME_JOB_NAME,
+)
+from dagster_celery.core_execution_loop import DELEGATE_MARKER
+from dagster_celery.executor import CeleryExecutor
 
 
 def create_task(celery_app, **task_kwargs):
-    @celery_app.task(bind=True, name="execute_plan", **task_kwargs)
+    @celery_app.task(bind=True, name=TASK_EXECUTE_PLAN_NAME, **task_kwargs)
     def _execute_plan(self, execute_step_args_packed, executable_dict):
         execute_step_args = unpack_value(
             check.dict_param(
@@ -71,3 +82,61 @@ def create_task(celery_app, **task_kwargs):
         return serialized_events
 
     return _execute_plan
+
+
+def _send_to_null(_event: Any) -> None:
+    pass
+
+
+def create_execute_job_task(celery: Celery, **task_kwargs: dict) -> celery.Task:
+    """Create a Celery task that executes a run and registers status updates with the
+    Dagster instance.
+    """
+
+    @celery.task(bind=True, name=TASK_EXECUTE_JOB_NAME, track_started=True, **task_kwargs)
+    def _execute_job(_self: Any, execute_job_args_packed: JsonSerializableValue) -> int:
+        args: ExecuteRunArgs = unpack_value(
+            val=execute_job_args_packed,
+            as_type=ExecuteRunArgs,
+        )
+
+        with DagsterInstance.get() as instance:
+            return _execute_run_command_body(
+                instance=instance,
+                run_id=args.run_id,
+                write_stream_fn=_send_to_null,
+                set_exit_code_on_failure=(
+                    args.set_exit_code_on_failure
+                    if args.set_exit_code_on_failure is not None
+                    else True
+                ),
+            )
+
+    return cast(celery.Task, _execute_job)  # type: ignore # ignored for update, fix me!
+
+
+def create_resume_job_task(celery: Celery, **task_kwargs: dict) -> celery.Task:
+    """Create a Celery task that resumes a run and registers status updates with the
+    Dagster instance.
+    """
+
+    @celery.task(bind=True, name=TASK_RESUME_JOB_NAME, track_started=True, **task_kwargs)
+    def _resume_job(_self: Any, resume_job_args_packed: JsonSerializableValue) -> int:
+        args: ResumeRunArgs = unpack_value(
+            val=resume_job_args_packed,
+            as_type=ResumeRunArgs,
+        )
+
+        with DagsterInstance.get() as instance:
+            return _resume_run_command_body(
+                instance=instance,
+                run_id=args.run_id,
+                write_stream_fn=_send_to_null,
+                set_exit_code_on_failure=(
+                    args.set_exit_code_on_failure
+                    if args.set_exit_code_on_failure is not None
+                    else True
+                ),
+            )
+
+    return cast(celery.Task, _resume_job)  # type: ignore # ignored for update, fix me!

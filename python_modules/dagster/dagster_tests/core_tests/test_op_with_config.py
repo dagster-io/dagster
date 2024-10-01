@@ -1,14 +1,5 @@
 import pytest
-from dagster import (
-    ConfigMapping,
-    DagsterInvalidConfigError,
-    Field,
-    In,
-    String,
-    graph,
-    job,
-    op,
-)
+from dagster import ConfigMapping, DagsterInvalidConfigError, Field, In, String, graph, job, op
 from dagster._core.storage.input_manager import input_manager
 
 

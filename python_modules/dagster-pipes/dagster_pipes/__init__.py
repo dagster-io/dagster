@@ -1,3 +1,4 @@
+import argparse
 import base64
 import datetime
 import json
@@ -363,7 +364,7 @@ def _normalize_param_metadata(
     return new_metadata
 
 
-def encode_env_var(value: Any) -> str:
+def encode_param(value: Any) -> str:
     """Encode value by serializing to JSON, compressing with zlib, and finally encoding with base64.
     `base64_encode(compress(to_json(value)))` in function notation.
 
@@ -373,13 +374,13 @@ def encode_env_var(value: Any) -> str:
     Returns:
         str: The encoded value.
     """
-    serialized = _json_serialize_param(value, "encode_env_var", "value")
+    serialized = _json_serialize_param(value, "encode_param", "value")
     compressed = zlib.compress(serialized.encode("utf-8"))
     encoded = base64.b64encode(compressed)
     return encoded.decode("utf-8")  # as string
 
 
-def decode_env_var(value: str) -> Any:
+def decode_param(value: str) -> Any:
     """Decode a value by decoding from base64, decompressing with zlib, and finally deserializing from
     JSON. `from_json(decompress(base64_decode(value)))` in function notation.
 
@@ -392,6 +393,11 @@ def decode_env_var(value: str) -> Any:
     decoded = base64.b64decode(value)
     decompressed = zlib.decompress(decoded)
     return json.loads(decompressed.decode("utf-8"))
+
+
+# these aliases are deprecated and will be removed in 2.0
+encode_env_var = encode_param
+decode_env_var = decode_param
 
 
 def _emit_orchestration_inactive_warning() -> None:
@@ -483,7 +489,7 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
     @final
     def get_opened_payload(self) -> PipesOpenedData:
         """Return a payload containing information about the external process to be passed back to
-        the the orchestration process. This should contain information that cannot be known before
+        the orchestration process. This should contain information that cannot be known before
         the external process is launched.
 
         This method should not be overridden by users. Instead, users should
@@ -501,7 +507,7 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
         return {}
 
 
-class PipesMessageWriterChannel(ABC, Generic[T_MessageChannel]):
+class PipesMessageWriterChannel(ABC):
     """Object that writes messages back to the Dagster orchestration process."""
 
     @abstractmethod
@@ -562,8 +568,7 @@ class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterCha
             yield channel
 
     @abstractmethod
-    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel:
-        ...
+    def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel: ...
 
 
 class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
@@ -584,8 +589,7 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
         return items
 
     @abstractmethod
-    def upload_messages_chunk(self, payload: StringIO, index: int) -> None:
-        ...
+    def upload_messages_chunk(self, payload: StringIO, index: int) -> None: ...
 
     @contextmanager
     def buffered_upload_loop(self) -> Iterator[None]:
@@ -778,11 +782,11 @@ class PipesMappingParamsLoader(PipesParamsLoader):
 
     def load_context_params(self) -> PipesParams:
         raw_value = self._mapping[DAGSTER_PIPES_CONTEXT_ENV_VAR]
-        return decode_env_var(raw_value)
+        return decode_param(raw_value)
 
     def load_messages_params(self) -> PipesParams:
         raw_value = self._mapping[DAGSTER_PIPES_MESSAGES_ENV_VAR]
-        return decode_env_var(raw_value)
+        return decode_param(raw_value)
 
 
 class PipesEnvVarParamsLoader(PipesMappingParamsLoader):
@@ -790,6 +794,45 @@ class PipesEnvVarParamsLoader(PipesMappingParamsLoader):
 
     def __init__(self):
         super().__init__(mapping=os.environ)
+
+
+def _env_var_to_cli_argument(env_var: str) -> str:
+    return f"--{env_var}".lower().replace("_", "-")
+
+
+DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT = _env_var_to_cli_argument(DAGSTER_PIPES_CONTEXT_ENV_VAR)
+DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT = _env_var_to_cli_argument(DAGSTER_PIPES_MESSAGES_ENV_VAR)
+
+DAGSTER_PIPES_CLI_PARSER = argparse.ArgumentParser(description="Dagster Pipes CLI interface")
+DAGSTER_PIPES_CLI_PARSER.add_argument(
+    DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT,
+    type=str,
+    help="Argument with base64 encoded and zlib-compressed JSON string containing the Pipes context",
+)
+DAGSTER_PIPES_CLI_PARSER.add_argument(
+    DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT,
+    type=str,
+    help="Argument with base64 encoded and zlib-compressed JSON string containing the Pipes messages",
+)
+
+
+class PipesCliArgsParamsLoader(PipesParamsLoader):
+    """Params loader that extracts params from known CLI arguments."""
+
+    def __init__(self):
+        self.parser = DAGSTER_PIPES_CLI_PARSER
+
+    def is_dagster_pipes_process(self) -> bool:
+        # use the presence of --dagster-pipes-context to discern if we are in a pipes process
+        return DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT in sys.argv
+
+    def load_context_params(self) -> PipesParams:
+        args, _ = self.parser.parse_known_args()
+        return decode_param(args.dagster_pipes_context)
+
+    def load_messages_params(self) -> PipesParams:
+        args, _ = self.parser.parse_known_args()
+        return decode_param(args.dagster_pipes_messages)
 
 
 # ########################

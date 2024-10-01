@@ -19,10 +19,6 @@ export type AssetEventGroup = {
 
 const sortByEventTimestamp = (a: Event, b: Event) => Number(b?.timestamp) - Number(a?.timestamp);
 
-/**
- * A hook that can bucket a list of materializations by partition, if any, with the `latest`
- * materialization separated from predecessor materializations.
- */
 const groupByPartition = (events: Event[], definedPartitionKeys: string[]): AssetEventGroup[] => {
   const grouped = groupBy(events, (m) => m.partition || NO_PARTITION_KEY);
   const orderedPartitionKeys = [...definedPartitionKeys].reverse();
@@ -47,6 +43,10 @@ const groupByPartition = (events: Event[], definedPartitionKeys: string[]): Asse
     });
 };
 
+/**
+ * A hook that can bucket a list of materializations by partition, if any, with the `latest`
+ * materialization separated from predecessor materializations.
+ */
 export function useGroupedEvents(
   xAxis: 'partition' | 'time',
   materializations: Event[],

@@ -25,13 +25,13 @@ from dagster import (
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    asset,
     define_asset_job,
     graph,
     instance_for_test,
     materialize,
     op,
 )
-from dagster._core.definitions import asset, build_assets_job
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -117,12 +117,11 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         assert upstream_asset is None
         assert context.asset_partitions_def_for_input("upstream_asset") == upstream_partitions_def
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[upstream_asset, downstream_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="2",
     )
-    result = my_job.execute_in_process(partition_key="2")
 
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream_asset"),
@@ -166,8 +165,7 @@ def test_from_graph():
             assert context.asset_partition_key == "a"
             assert context.has_asset_partitions
 
-    my_job = build_assets_job(
-        "my_job",
+    assert materialize(
         assets=[
             AssetsDefinition.from_graph(upstream_asset, partitions_def=partitions_def),
             AssetsDefinition.from_graph(
@@ -176,9 +174,9 @@ def test_from_graph():
                 partition_mappings={"upstream_asset": IdentityPartitionMapping()},
             ),
         ],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
-    )
-    assert my_job.execute_in_process(partition_key="a").success
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="a",
+    ).success
 
 
 def test_non_partitioned_depends_on_last_partition():
@@ -202,12 +200,11 @@ def test_non_partitioned_depends_on_last_partition():
             assert context.has_asset_partitions
             assert context.asset_partition_key == "d"
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[upstream, downstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
     )
-    result = my_job.execute_in_process(partition_key="b")
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream"),
         [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
@@ -311,12 +308,11 @@ def test_non_partitioned_depends_on_all_partitions():
             assert context.has_asset_partitions
             assert context.asset_partition_key_range == PartitionKeyRange("a", "d")
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[upstream, downstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
     )
-    result = my_job.execute_in_process(partition_key="b")
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream"),
         [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
@@ -361,20 +357,18 @@ def test_partition_keys_in_range():
             assert context.has_asset_partitions
             assert context.asset_partition_keys == daily_partition_keys_for_week_2022_09_11
 
-    upstream_job = build_assets_job(
-        "upstream_job",
+    assert materialize(
         assets=[upstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
-    )
-    upstream_job.execute_in_process(partition_key="2022-09-11")
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="2022-09-11",
+    ).success
 
-    downstream_job = build_assets_job(
-        "downstream_job",
-        assets=[downstream],
-        source_assets=[upstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
-    )
-    downstream_job.execute_in_process(partition_key="2022-09-11")
+    assert materialize(
+        assets=[downstream, upstream],
+        selection=["upstream"],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="2022-09-11",
+    ).success
 
 
 def test_dependency_resolution_partition_mapping():
@@ -400,8 +394,7 @@ def test_dependency_resolution_partition_mapping():
         return upstream
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
         def load_input(self, context):
             assert context.asset_key.path == ["staging", "upstream"]
@@ -604,9 +597,9 @@ def test_partition_mapping_with_asset_deps():
 
     materialize([upstream, downstream], partition_key="2023-08-20")
 
-    assert downstream.partition_mappings == {
-        AssetKey("upstream"): TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
-    }
+    assert downstream.get_partition_mapping(AssetKey("upstream")) == TimeWindowPartitionMapping(
+        start_offset=-1, end_offset=-1
+    )
 
     ### With @multi_asset and AssetSpec
     asset_1 = AssetSpec(key="asset_1")
@@ -663,10 +656,8 @@ def test_partition_mapping_with_asset_deps():
 
     materialize([multi_asset_1, multi_asset_2], partition_key="2023-08-20")
 
-    assert multi_asset_2.partition_mappings == {
-        AssetKey("asset_1"): asset_1_partition_mapping,
-        AssetKey("asset_2"): asset_2_partition_mapping,
-    }
+    assert multi_asset_2.get_partition_mapping(AssetKey("asset_1")) == asset_1_partition_mapping
+    assert multi_asset_2.get_partition_mapping(AssetKey("asset_2")) == asset_2_partition_mapping
 
 
 def test_conflicting_mappings_with_asset_deps():
@@ -763,9 +754,9 @@ def test_self_dependent_partition_mapping_with_asset_deps():
 
     materialize([self_dependent], partition_key="2023-08-20")
 
-    assert self_dependent.partition_mappings == {
-        AssetKey("self_dependent"): TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
-    }
+    assert self_dependent.get_partition_mapping(
+        AssetKey("self_dependent")
+    ) == TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
 
     ### With @multi_asset and AssetSpec
     asset_1 = AssetSpec(

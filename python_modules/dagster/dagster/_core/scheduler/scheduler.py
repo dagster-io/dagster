@@ -8,8 +8,8 @@ import dagster._check as check
 from dagster._config import Field, IntSource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation import ExternalSchedule
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalSchedule
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -17,7 +17,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_timestamp
 from dagster._utils import mkdir_p
 
 
@@ -79,7 +79,7 @@ class Scheduler(abc.ABC):
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
         stored_state = instance.get_instigator_state(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
         computed_state = external_schedule.get_current_instigator_state(stored_state)
         if computed_state.is_running:
@@ -87,12 +87,12 @@ class Scheduler(abc.ABC):
 
         new_instigator_data = ScheduleInstigatorData(
             external_schedule.cron_schedule,
-            get_current_datetime_in_utc().timestamp(),
+            get_current_timestamp(),
         )
 
         if not stored_state:
             started_state = InstigatorState(
-                external_schedule.get_external_origin(),
+                external_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
                 new_instigator_data,
@@ -135,7 +135,7 @@ class Scheduler(abc.ABC):
         if not stored_state:
             assert external_schedule
             stopped_state = InstigatorState(
-                external_schedule.get_external_origin(),
+                external_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(
@@ -169,18 +169,19 @@ class Scheduler(abc.ABC):
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
         stored_state = instance.get_instigator_state(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            external_schedule.get_remote_origin_id(), external_schedule.selector_id
         )
-        new_instigator_data = ScheduleInstigatorData(
-            external_schedule.cron_schedule,
-            start_timestamp=None,
-        )
+
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
+            new_instigator_data = ScheduleInstigatorData(
+                external_schedule.cron_schedule,
+                start_timestamp=None,
+            )
             reset_state = instance.add_instigator_state(
                 state=InstigatorState(
-                    external_schedule.get_external_origin(),
+                    external_schedule.get_remote_origin(),
                     InstigatorType.SCHEDULE,
                     new_status,
                     new_instigator_data,
@@ -188,7 +189,7 @@ class Scheduler(abc.ABC):
             )
         else:
             reset_state = instance.update_instigator_state(
-                state=stored_state.with_status(new_status).with_data(new_instigator_data)
+                state=stored_state.with_status(new_status)
             )
 
         return reset_state
@@ -210,9 +211,9 @@ DEFAULT_MAX_CATCHUP_RUNS = 5
 
 
 class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
-    """Default scheduler implementation that submits runs from the `dagster-daemon`
-    long-lived process. Periodically checks each running schedule for execution times that don't
-    have runs yet and launches them.
+    """Default scheduler implementation that submits runs from the long-lived ``dagster-daemon``
+    process. Periodically checks each running schedule for execution times that don't yet
+    have runs and launches them.
     """
 
     def __init__(
@@ -242,12 +243,11 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
             partitions for each schedule that will be considered when looking for missing
             runs . Generally this parameter will only come into play if the scheduler
             falls behind or launches after experiencing downtime. This parameter will not be checked for
-            schedules without partition sets (for example, schedules created using the @schedule
-            decorator) - only the most recent execution time will be considered for those schedules.
+            schedules without partition sets (for example, schedules created using the :py:func:`@schedule <dagster.schedule>` decorator) - only the most recent execution time will be considered for those schedules.
 
-            Note that no matter what this value is, the scheduler will never launch a run from a time
-            before the schedule was turned on (even if the start_date on the schedule is earlier) - if
-            you want to launch runs for earlier partitions, launch a backfill.
+            Note: No matter what this value is, the scheduler will never launch a run from a time
+            before the schedule was turned on, even if the schedule's ``start_date`` is earlier. If
+            you want to launch runs for earlier partitions, `launch a backfill </concepts/partitions-schedules-sensors/backfills>`_.
             """,
             ),
             "max_tick_retries": Field(
@@ -255,7 +255,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
                 default_value=0,
                 is_required=False,
                 description=(
-                    "For each schedule tick that raises an error, how many times to retry that tick"
+                    "For each schedule tick that raises an error, the number of times to retry the tick."
                 ),
             ),
         }

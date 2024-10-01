@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type PartitionsStatusQueryVariables = Types.Exact<{
-  partitionSetName: Types.Scalars['String'];
+  partitionSetName: Types.Scalars['String']['input'];
   repositorySelector: Types.RepositorySelector;
 }>;
 
@@ -109,3 +109,5 @@ export type OpJobPartitionStatusFragment = {
   runStatus: Types.RunStatus | null;
   runDuration: number | null;
 };
+
+export const PartitionsStatusQueryVersion = 'b51624d0ee6d3afd7bfd67307b3391318d53e7e3d977d3605f8a405d38c5969e';

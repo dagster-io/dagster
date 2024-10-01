@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -11,9 +10,10 @@ import {
   TimeSinceWithOverdueColor,
 } from './AssetMaterializationUpstreamData';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
+import {gql, useQuery} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
-import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
@@ -45,7 +45,7 @@ export const OverdueTag = ({
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
 }) => {
-  const {liveData} = useAssetLiveData(assetKey);
+  const {liveData} = useAssetBaseData(assetKey);
 
   if (!liveData?.freshnessInfo) {
     return null;
@@ -124,7 +124,7 @@ const OverdueLineagePopoverContent = ({
 }) => {
   const result = useQuery<OverduePopoverQuery, OverduePopoverQueryVariables>(
     OVERDUE_POPOVER_QUERY,
-    {variables: {assetKey: {path: assetKey.path}, timestamp}},
+    {variables: {assetKey: {path: assetKey.path}, timestamp}, blocking: false},
   );
 
   const data =

@@ -4,8 +4,8 @@ from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, res
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
-from .file_manager import S3FileManager
-from .utils import construct_s3_client
+from dagster_aws.s3.file_manager import S3FileManager
+from dagster_aws.s3.utils import construct_s3_client
 
 T = TypeVar("T")
 
@@ -33,12 +33,10 @@ class ResourceWithS3Configuration(ConfigurableResource):
     use_ssl: bool = Field(
         default=True, description="Whether or not to use SSL. By default, SSL is used."
     )
-    verify: Optional[str] = Field(
+    verify: Optional[bool] = Field(
         default=None,
         description=(
             "Whether or not to verify SSL certificates. By default SSL certificates are verified."
-            " You can also specify this argument if you want to use a different CA cert bundle than"
-            " the one used by botocore."
         ),
     )
     aws_access_key_id: Optional[str] = Field(

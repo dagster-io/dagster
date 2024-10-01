@@ -20,7 +20,7 @@ This reference page provides information for working with [`dagster-bigquery`](/
 
 ## Providing credentials as configuration
 
-In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster Cloud Serverless](/dagster-cloud/deployment/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
+In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster+ Serverless](/dagster-plus/deployment/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
 
 You can provide credentials directly to the BigQuery I/O manager by using the `gcp_credentials` configuration value. The BigQuery I/O manager will create a temporary file to store the credential and will set `GOOGLE_APPLICATION_CREDENTIALS` to point to this file. When the Dagster run is completed, the temporary file is deleted and `GOOGLE_APPLICATION_CREDENTIALS` is unset.
 
@@ -273,7 +273,7 @@ You can specify the default dataset where data will be stored as configuration t
 If you want to store assets in different datasets, you can specify the dataset as metadata:
 
 ```python file=/integrations/bigquery/reference/dataset.py startafter=start_metadata endbefore=end_metadata dedent=4
-daffodil_data = SourceAsset(key=["daffodil_data"], metadata={"schema": "daffodil"})
+daffodil_data = AssetSpec(key=["daffodil_data"], metadata={"schema": "daffodil"})
 
 @asset(metadata={"schema": "iris"})
 def iris_data() -> pd.DataFrame:
@@ -292,7 +292,7 @@ def iris_data() -> pd.DataFrame:
 You can also specify the dataset as part of the asset's asset key:
 
 ```python file=/integrations/bigquery/reference/dataset.py startafter=start_asset_key endbefore=end_asset_key dedent=4
-daffodil_data = SourceAsset(key=["gcp", "bigquery", "daffodil", "daffodil_data"])
+daffodil_data = AssetSpec(key=["gcp", "bigquery", "daffodil", "daffodil_data"])
 
 @asset(key_prefix=["gcp", "bigquery", "iris"])
 def iris_data() -> pd.DataFrame:
@@ -430,16 +430,8 @@ The `BigQueryPySparkIOManager` requires that a `SparkSession` be active and conf
 from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import AssetExecutionContext, Definitions, asset
 
@@ -486,16 +478,8 @@ defs = Definitions(
 ```python file=/integrations/bigquery/reference/pyspark_with_spark_session.py
 from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import Definitions, asset
 

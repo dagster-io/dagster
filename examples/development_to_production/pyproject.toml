@@ -3,4 +3,5 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "development_to_production"
+module_name = "development_to_production.definitions"
+code_location_name = "development_to_production"

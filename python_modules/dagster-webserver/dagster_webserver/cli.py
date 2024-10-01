@@ -1,9 +1,10 @@
 import asyncio
+import contextlib
 import logging
 import os
 import sys
 import textwrap
-from typing import Optional
+from typing import AsyncIterator, Optional
 
 import click
 import dagster._check as check
@@ -18,15 +19,13 @@ from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArg
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
-from dagster._core.workspace.context import (
-    IWorkspaceProcessContext,
-)
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
 
-from .app import create_app_from_workspace_process_context
-from .version import __version__
+from dagster_webserver.app import create_app_from_workspace_process_context
+from dagster_webserver.version import __version__
 
 
 def create_dagster_webserver_cli():
@@ -234,7 +233,8 @@ def dagster_webserver(
             )
 
 
-async def _lifespan(app):
+@contextlib.asynccontextmanager
+async def _lifespan(app) -> AsyncIterator:
     # workaround from https://github.com/encode/uvicorn/issues/1160 for termination
     try:
         yield

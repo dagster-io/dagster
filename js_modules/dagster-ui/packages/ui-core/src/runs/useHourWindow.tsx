@@ -8,6 +8,7 @@ export type HourWindow = '1' | '6' | '12' | '24';
 
 export const useHourWindow = (
   defaultValue: HourWindow,
+  storageKey = HOUR_WINDOW_KEY,
 ): [HourWindow, (value: HourWindow) => void] => {
   const validate = useCallback(
     (value: string) => {
@@ -24,7 +25,7 @@ export const useHourWindow = (
     [defaultValue],
   );
 
-  const [hourWindow, setHourWindow] = useStateWithStorage(HOUR_WINDOW_KEY, validate);
+  const [hourWindow, setHourWindow] = useStateWithStorage(storageKey, validate);
   const setHourWindowWithDefault = useCallback(
     (value: HourWindow) => {
       setHourWindow(value || defaultValue);

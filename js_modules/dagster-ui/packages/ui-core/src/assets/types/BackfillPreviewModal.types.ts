@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type BackfillPreviewQueryVariables = Types.Exact<{
-  partitionNames: Array<Types.Scalars['String']> | Types.Scalars['String'];
+  partitionNames: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 
@@ -19,3 +19,5 @@ export type BackfillPreviewQuery = {
     } | null;
   }>;
 };
+
+export const BackfillPreviewQueryVersion = '21a636242bab27144e5627361658207b708cc3e60c149f8901e476c3d9d0b021';

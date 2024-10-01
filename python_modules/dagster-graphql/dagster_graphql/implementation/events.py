@@ -18,13 +18,17 @@ from dagster import (
     TableMetadataValue,
     TableSchemaMetadataValue,
     TextMetadataValue,
+    TimestampMetadataValue,
     UrlMetadataValue,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.metadata import (
+    CodeReferencesMetadataValue,
     DagsterRunMetadataValue,
     MetadataValue,
+    TableColumnLineageMetadataValue,
 )
+from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.events import (
     DagsterEventType,
     HandledOutputData,
@@ -40,25 +44,31 @@ MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[Any]:
-    from ..schema.metadata import (
+    from dagster_graphql.schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
+        GrapheneCodeReferencesMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJobMetadataEntry,
         GrapheneJsonMetadataEntry,
+        GrapheneLocalFileCodeReference,
         GrapheneMarkdownMetadataEntry,
         GrapheneNotebookMetadataEntry,
         GrapheneNullMetadataEntry,
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
+        GrapheneTableColumnLineageEntry,
+        GrapheneTableColumnLineageMetadataEntry,
         GrapheneTableMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
         GrapheneTextMetadataEntry,
+        GrapheneTimestampMetadataEntry,
+        GrapheneUrlCodeReference,
         GrapheneUrlMetadataEntry,
     )
-    from ..schema.table import GrapheneTable, GrapheneTableSchema
+    from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
     check.mapping_param(metadata, "metadata", key_type=str)
     for key, value in metadata.items():
@@ -147,6 +157,23 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                 repositoryName=value.repository_name,
                 locationName=value.location_name,
             )
+        elif isinstance(value, CodeReferencesMetadataValue):
+            yield GrapheneCodeReferencesMetadataEntry(
+                label=key,
+                codeReferences=[
+                    GrapheneLocalFileCodeReference(
+                        filePath=reference.file_path,
+                        lineNumber=reference.line_number,
+                        label=reference.label,
+                    )
+                    if isinstance(reference, LocalFileCodeReference)
+                    else GrapheneUrlCodeReference(
+                        url=reference.url,
+                        label=reference.label,
+                    )
+                    for reference in value.code_references
+                ],
+            )
         elif isinstance(value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(
                 label=key,
@@ -163,6 +190,18 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                     columns=value.schema.columns,
                 ),
             )
+        elif isinstance(value, TableColumnLineageMetadataValue):
+            yield GrapheneTableColumnLineageMetadataEntry(
+                label=key,
+                lineage=[
+                    GrapheneTableColumnLineageEntry(
+                        column_name=column_name, column_deps=column_deps
+                    )
+                    for column_name, column_deps in value.column_lineage.deps_by_column.items()
+                ],
+            )
+        elif isinstance(value, TimestampMetadataValue):
+            yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")
@@ -176,8 +215,8 @@ def _to_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Sequence[Any]
 # non-type-checker legible relationship between `event_type` and the class of `event_specific_data`.
 @no_type_check
 def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
-    from ..schema.errors import GraphenePythonError
-    from ..schema.logs.events import (
+    from dagster_graphql.schema.errors import GraphenePythonError
+    from dagster_graphql.schema.logs.events import (
         GrapheneAlertFailureEvent,
         GrapheneAlertStartEvent,
         GrapheneAlertSuccessEvent,
@@ -302,7 +341,12 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         DagsterEventType.RUN_CANCELED,
         DagsterEventType.PIPELINE_CANCELED,
     ):
-        return GrapheneRunCanceledEvent(pipelineName=pipeline_name, **basic_params)
+        data = dagster_event.job_canceled_data
+        return GrapheneRunCanceledEvent(
+            pipelineName=pipeline_name,
+            error=GraphenePythonError(data.error) if (data and data.error) else None,
+            **basic_params,
+        )
     elif dagster_event.event_type in (
         DagsterEventType.RUN_START,
         DagsterEventType.PIPELINE_START,
@@ -335,9 +379,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneHandledOutputEvent(
             output_name=data.output_name,
             manager_key=data.manager_key,
-            metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata  # type: ignore
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.event_specific_data.metadata),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.LOADED_INPUT:
@@ -433,7 +475,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             assetKey=data.asset_key, checkName=data.check_name, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
-        from ..schema.asset_checks import GrapheneAssetCheckEvaluation
+        from dagster_graphql.schema.asset_checks import GrapheneAssetCheckEvaluation
 
         evaluation = GrapheneAssetCheckEvaluation(event_record)
         return GrapheneAssetCheckEvaluationEvent(evaluation=evaluation, **basic_params)
@@ -443,7 +485,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
 
 
 def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
-    from ..schema.logs.events import GrapheneLogMessageEvent
+    from dagster_graphql.schema.logs.events import GrapheneLogMessageEvent
 
     check.inst_param(event_record, "event_record", EventLogEntry)
     check.str_param(pipeline_name, "pipeline_name")
@@ -455,7 +497,7 @@ def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
 
 
 def construct_basic_params(event_record: EventLogEntry) -> Any:
-    from ..schema.logs.log_level import GrapheneLogLevel
+    from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 
     check.inst_param(event_record, "event_record", EventLogEntry)
     dagster_event = event_record.dagster_event
@@ -469,7 +511,7 @@ def construct_basic_params(event_record: EventLogEntry) -> Any:
         ),
         "stepKey": event_record.step_key,
         "solidHandleID": (
-            event_record.dagster_event.node_handle.to_string()  # type: ignore
+            str(event_record.dagster_event.node_handle)  # type: ignore
             if dagster_event and dagster_event.node_handle
             else None
         ),

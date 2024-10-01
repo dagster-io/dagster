@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors, FontFamily, Group, Icon} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
@@ -9,6 +8,7 @@ import {
   RunGroupPanelQueryVariables,
   RunGroupPanelRunFragment,
 } from './types/RunGroupPanel.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -175,7 +175,7 @@ const RunGroupRun = styled(Link)<{selected: boolean}>`
   background: ${({selected}) => (selected ? Colors.backgroundLight() : Colors.backgroundDefault())};
   padding: 4px 6px 4px 24px;
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
   line-height: 20px;
   display: flex;
   position: relative;

@@ -1,6 +1,6 @@
-# pyright: reportGeneralTypeIssues=none
+# pyright: reportInvalidTypeForm=none
 
-# Disable reportGeneralTypeIssues here due to use of Dagster types in annotations
+# Disable reportInvalidTypeForm here due to use of Dagster types in annotations
 
 import typing
 

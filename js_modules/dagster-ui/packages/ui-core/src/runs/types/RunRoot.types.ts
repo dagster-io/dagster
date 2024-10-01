@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type RunRootQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
+  runId: Types.Scalars['ID']['input'];
 }>;
 
 export type RunRootQuery = {
@@ -77,3 +77,5 @@ export type RunRootQuery = {
       }
     | {__typename: 'RunNotFoundError'};
 };
+
+export const RunRootQueryVersion = 'b6d9cd067c92c1608b185d8386a54867378dfdbc4caea5e7e1799699031e40b0';

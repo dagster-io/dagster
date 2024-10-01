@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type TickLogEventsQueryVariables = Types.Exact<{
   instigationSelector: Types.InstigationSelector;
-  tickId: Types.Scalars['Int'];
+  tickId: Types.Scalars['BigInt']['input'];
 }>;
 
 export type TickLogEventsQuery = {
@@ -34,9 +34,4 @@ export type TickLogEventsQuery = {
     | {__typename: 'PythonError'};
 };
 
-export type TickLogEventFragment = {
-  __typename: 'InstigationEvent';
-  message: string;
-  timestamp: string;
-  level: Types.LogLevel;
-};
+export const TickLogEventsQueryVersion = '6936bcc874ba79150ed1164ccd1afabdab836920b9c98b07cc22b0775443d1b7';

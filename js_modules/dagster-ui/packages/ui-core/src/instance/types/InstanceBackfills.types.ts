@@ -2,43 +2,10 @@
 
 import * as Types from '../../graphql/types';
 
-export type InstanceHealthForBackfillsQueryVariables = Types.Exact<{[key: string]: never}>;
-
-export type InstanceHealthForBackfillsQuery = {
-  __typename: 'Query';
-  instance: {
-    __typename: 'Instance';
-    id: string;
-    hasInfo: boolean;
-    daemonHealth: {
-      __typename: 'DaemonHealth';
-      id: string;
-      allDaemonStatuses: Array<{
-        __typename: 'DaemonStatus';
-        id: string;
-        daemonType: string;
-        required: boolean;
-        healthy: boolean | null;
-        lastHeartbeatTime: number | null;
-        lastHeartbeatErrors: Array<{
-          __typename: 'PythonError';
-          message: string;
-          stack: Array<string>;
-          errorChain: Array<{
-            __typename: 'ErrorChainLink';
-            isExplicitLink: boolean;
-            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-          }>;
-        }>;
-      }>;
-    };
-  };
-};
-
 export type InstanceBackfillsQueryVariables = Types.Exact<{
   status?: Types.InputMaybe<Types.BulkActionStatus>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type InstanceBackfillsQuery = {
@@ -97,3 +64,5 @@ export type InstanceBackfillsQuery = {
         }>;
       };
 };
+
+export const InstanceBackfillsQueryVersion = 'e9baee9c4eabc561ffe1ffcb06430969883c1d1cfb469438f98d821b90d3d06a';

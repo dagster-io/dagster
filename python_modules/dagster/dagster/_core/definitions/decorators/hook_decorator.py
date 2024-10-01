@@ -12,11 +12,10 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.decorator_utils import get_function_params, validate_expected_params
+from dagster._core.definitions.events import HookExecutionResult
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-
-from ...decorator_utils import get_function_params, validate_expected_params
-from ..events import HookExecutionResult
-from ..hook_definition import HookDefinition
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
@@ -70,7 +69,7 @@ class _Hook:
 
 @overload
 def event_list_hook(
-    hook_fn: Callable,
+    hook_fn: Callable[..., Any],
 ) -> HookDefinition:
     pass
 
@@ -138,8 +137,7 @@ SuccessOrFailureHookFn = Callable[["HookContext"], Any]
 
 
 @overload
-def success_hook(hook_fn: SuccessOrFailureHookFn) -> HookDefinition:
-    ...
+def success_hook(hook_fn: SuccessOrFailureHookFn) -> HookDefinition: ...
 
 
 @overload
@@ -147,8 +145,7 @@ def success_hook(
     *,
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
-    ...
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
 def success_hook(
@@ -213,16 +210,14 @@ def success_hook(
 
 
 @overload
-def failure_hook(name: SuccessOrFailureHookFn) -> HookDefinition:
-    ...
+def failure_hook(name: SuccessOrFailureHookFn) -> HookDefinition: ...
 
 
 @overload
 def failure_hook(
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
-    ...
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
 def failure_hook(

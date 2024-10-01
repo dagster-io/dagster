@@ -1,21 +1,21 @@
 import sys
 import time
 
-import pendulum
 import pytest
 
 from dagster import StaticPartitionsDefinition
-from dagster._core.definitions.asset_condition import (
-    AssetConditionEvaluation,
-    AssetConditionSnapshot,
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_key import AssetCheckKey
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
+    AutomationConditionEvaluation,
+    AutomationConditionNodeSnapshot,
 )
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.host_representation import (
-    ExternalRepositoryOrigin,
+from dagster._core.remote_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -25,10 +25,11 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._seven import get_current_datetime_in_utc
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._time import get_current_datetime
 from dagster._utils.error import SerializableErrorInfo
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 
 class TestScheduleStorage:
@@ -70,7 +71,7 @@ class TestScheduleStorage:
 
     @staticmethod
     def fake_repo_target():
-        return ExternalRepositoryOrigin(
+        return RemoteRepositoryOrigin(
             ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
@@ -207,7 +208,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(schedule)
 
-        now_time = get_current_datetime_in_utc().timestamp()
+        now_time = time.time()
 
         new_schedule = schedule.with_status(InstigatorStatus.RUNNING).with_data(
             ScheduleInstigatorData(
@@ -326,9 +327,9 @@ class TestScheduleStorage:
 
         assert not tick.end_timestamp
 
-        freeze_datetime = pendulum.now("UTC")
+        freeze_datetime = get_current_datetime()
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
             assert updated_tick.status == TickStatus.SUCCESS
             assert updated_tick.end_timestamp == freeze_datetime.timestamp()
@@ -351,9 +352,9 @@ class TestScheduleStorage:
         tick = storage.create_tick(self.build_schedule_tick(current_time))
         assert not tick.end_timestamp
 
-        freeze_datetime = pendulum.now("UTC")
+        freeze_datetime = get_current_datetime()
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SKIPPED)
             assert updated_tick.status == TickStatus.SKIPPED
             assert updated_tick.end_timestamp == freeze_datetime.timestamp()
@@ -375,9 +376,9 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        freeze_datetime = pendulum.now("UTC")
+        freeze_datetime = get_current_datetime()
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(
                 TickStatus.FAILURE,
                 error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
@@ -551,10 +552,10 @@ class TestScheduleStorage:
 
     def test_get_sensor_tick(self, storage):
         assert storage
-        now = pendulum.now()
-        five_days_ago = now.subtract(days=5).timestamp()
-        four_days_ago = now.subtract(days=4).timestamp()
-        one_day_ago = now.subtract(days=1).timestamp()
+        now = get_current_datetime()
+        five_days_ago = (now - relativedelta(days=5)).timestamp()
+        four_days_ago = (now - relativedelta(days=4)).timestamp()
+        one_day_ago = (now - relativedelta(days=1)).timestamp()
 
         five_days_ago_tick = storage.create_tick(
             self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED)
@@ -646,10 +647,10 @@ class TestScheduleStorage:
         if not self.can_purge():
             pytest.skip("Storage cannot purge")
 
-        now = pendulum.now()
-        five_minutes_ago = now.subtract(minutes=5).timestamp()
-        four_minutes_ago = now.subtract(minutes=4).timestamp()
-        one_minute_ago = now.subtract(minutes=1).timestamp()
+        now = get_current_datetime()
+        five_minutes_ago = (now - relativedelta(minutes=5)).timestamp()
+        four_minutes_ago = (now - relativedelta(minutes=4)).timestamp()
+        one_minute_ago = (now - relativedelta(minutes=1)).timestamp()
         storage.create_tick(self.build_sensor_tick(five_minutes_ago, TickStatus.SKIPPED))
         storage.create_tick(
             self.build_sensor_tick(four_minutes_ago, TickStatus.SUCCESS, run_id="fake_run_id")
@@ -664,7 +665,10 @@ class TestScheduleStorage:
         assert latest_tick.tick_id == one_minute_tick.tick_id
 
         storage.purge_ticks(
-            "my_sensor", "my_sensor", now.subtract(minutes=2).timestamp(), [TickStatus.SKIPPED]
+            "my_sensor",
+            "my_sensor",
+            (now - relativedelta(minutes=2)).timestamp(),
+            [TickStatus.SKIPPED],
         )
 
         ticks = storage.get_ticks("my_sensor", "my_sensor")
@@ -732,31 +736,41 @@ class TestScheduleStorage:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
-        condition_snapshot = AssetConditionSnapshot("foo", "bar", "")
+        condition_snapshot = AutomationConditionNodeSnapshot(
+            class_name="foo", description="bar", unique_id=""
+        )
 
         for _ in range(2):  # test idempotency
             storage.add_auto_materialize_asset_evaluations(
                 evaluation_id=10,
                 asset_evaluations=[
-                    AssetConditionEvaluation(
+                    AutomationConditionEvaluation(
                         condition_snapshot=condition_snapshot,
-                        true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
-                        candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
+                        true_subset=SerializableEntitySubset(
+                            key=AssetKey("asset_one"), value=False
+                        ),
+                        candidate_subset=SerializableEntitySubset(
+                            key=AssetKey("asset_one"), value=False
+                        ),
                         start_timestamp=0,
                         end_timestamp=1,
                         subsets_with_metadata=[],
                         child_evaluations=[],
                     ).with_run_ids(set()),
-                    AssetConditionEvaluation(
+                    AutomationConditionEvaluation(
                         condition_snapshot=condition_snapshot,
-                        true_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
-                        candidate_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
+                        true_subset=SerializableEntitySubset(key=AssetKey("asset_two"), value=True),
+                        candidate_subset=SerializableEntitySubset(
+                            key=AssetKey("asset_two"), value=True
+                        ),
                         start_timestamp=0,
                         end_timestamp=1,
                         subsets_with_metadata=[
                             AssetSubsetWithMetadata(
-                                AssetSubset(asset_key=AssetKey("asset_two"), value=True),
-                                {"foo": MetadataValue.text("bar")},
+                                subset=SerializableEntitySubset(
+                                    key=AssetKey("asset_two"), value=True
+                                ),
+                                metadata={"foo": MetadataValue.text("bar")},
                             )
                         ],
                         child_evaluations=[],
@@ -765,92 +779,86 @@ class TestScheduleStorage:
             )
 
             res = storage.get_auto_materialize_asset_evaluations(
-                asset_key=AssetKey("asset_one"), limit=100
+                key=AssetKey("asset_one"), limit=100
             )
             assert len(res) == 1
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-                "asset_one"
-            )
+            assert res[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("asset_one")
             assert res[0].evaluation_id == 10
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 0
+            assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 0
 
             res = storage.get_auto_materialize_asset_evaluations(
-                asset_key=AssetKey("asset_two"), limit=100
+                key=AssetKey("asset_two"), limit=100
             )
             assert len(res) == 1
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-                "asset_two"
-            )
+            assert res[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("asset_two")
             assert res[0].evaluation_id == 10
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+            assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 1
 
             res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
 
             assert len(res) == 2
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-                "asset_one"
-            )
+            assert res[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("asset_one")
             assert res[0].evaluation_id == 10
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 0
+            assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 0
 
-            assert res[1].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-                "asset_two"
-            )
+            assert res[1].get_evaluation_with_run_ids().evaluation.key == AssetKey("asset_two")
             assert res[1].evaluation_id == 10
-            assert res[1].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+            assert res[1].get_evaluation_with_run_ids().evaluation.true_subset.size == 1
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[
-                AssetConditionEvaluation(
+                AutomationConditionEvaluation(
                     condition_snapshot=condition_snapshot,
                     start_timestamp=0,
                     end_timestamp=1,
-                    true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
-                    candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    true_subset=SerializableEntitySubset(key=AssetKey("asset_one"), value=True),
+                    candidate_subset=SerializableEntitySubset(
+                        key=AssetKey("asset_one"), value=True
+                    ),
                     subsets_with_metadata=[],
                     child_evaluations=[],
                 ).with_run_ids(set()),
             ],
         )
 
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_one"), limit=100
-        )
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_one"), limit=100)
         assert len(res) == 2
         assert res[0].evaluation_id == 11
         assert res[1].evaluation_id == 10
 
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_one"), limit=1
-        )
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_one"), limit=1)
         assert len(res) == 1
         assert res[0].evaluation_id == 11
 
         res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_one"), limit=1, cursor=11
+            key=AssetKey("asset_one"), limit=1, cursor=11
         )
         assert len(res) == 1
         assert res[0].evaluation_id == 10
 
         # add a mix of keys - one that already is using the unique index and one that is not
 
-        eval_one = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+        eval_one = AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionNodeSnapshot(
+                class_name="foo", description="bar", unique_id=""
+            ),
             start_timestamp=0,
             end_timestamp=1,
-            true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
-            candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+            true_subset=SerializableEntitySubset(key=AssetKey("asset_one"), value=True),
+            candidate_subset=SerializableEntitySubset(key=AssetKey("asset_one"), value=True),
             subsets_with_metadata=[],
             child_evaluations=[],
         ).with_run_ids(set())
 
-        eval_asset_three = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+        eval_asset_three = AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionNodeSnapshot(
+                class_name="foo", description="bar", unique_id=""
+            ),
             start_timestamp=0,
             end_timestamp=1,
-            true_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
-            candidate_subset=AssetSubset(asset_key=AssetKey("asset_three"), value=True),
+            true_subset=SerializableEntitySubset(key=AssetKey("asset_three"), value=True),
+            candidate_subset=SerializableEntitySubset(key=AssetKey("asset_three"), value=True),
             subsets_with_metadata=[],
             child_evaluations=[],
         ).with_run_ids(set())
@@ -863,20 +871,16 @@ class TestScheduleStorage:
             ],
         )
 
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_one"), limit=100
-        )
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_one"), limit=100)
         assert len(res) == 2
         assert res[0].evaluation_id == 11
-        assert res[0].get_evaluation_with_run_ids(None).evaluation == eval_one.evaluation
+        assert res[0].get_evaluation_with_run_ids().evaluation == eval_one.evaluation
 
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_three"), limit=100
-        )
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_three"), limit=100)
 
         assert len(res) == 1
         assert res[0].evaluation_id == 11
-        assert res[0].get_evaluation_with_run_ids(None).evaluation == eval_asset_three.evaluation
+        assert res[0].get_evaluation_with_run_ids().evaluation == eval_asset_three.evaluation
 
     def test_auto_materialize_asset_evaluations_with_partitions(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
@@ -884,17 +888,22 @@ class TestScheduleStorage:
 
         partitions_def = StaticPartitionsDefinition(["a", "b"])
         subset = partitions_def.empty_subset().with_partition_keys(["a"])
-        asset_subset = AssetSubset(asset_key=AssetKey("asset_two"), value=subset)
+        asset_subset = SerializableEntitySubset(key=AssetKey("asset_two"), value=subset)
         asset_subset_with_metadata = AssetSubsetWithMetadata(
-            asset_subset,
-            {"foo": MetadataValue.text("bar"), "baz": MetadataValue.asset(AssetKey("asset_one"))},
+            subset=asset_subset,
+            metadata={
+                "foo": MetadataValue.text("bar"),
+                "baz": MetadataValue.asset(AssetKey("asset_one")),
+            },
         )
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
-                AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                AutomationConditionEvaluation(
+                    condition_snapshot=AutomationConditionNodeSnapshot(
+                        class_name="foo", description="bar", unique_id=""
+                    ),
                     start_timestamp=0,
                     end_timestamp=1,
                     true_subset=asset_subset,
@@ -905,20 +914,52 @@ class TestScheduleStorage:
             ],
         )
 
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_two"), limit=100
-        )
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_two"), limit=100)
         assert len(res) == 1
-        assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-            "asset_two"
-        )
+        assert res[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("asset_two")
         assert res[0].evaluation_id == 10
-        assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+        assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 1
 
         assert (
-            res[0].get_evaluation_with_run_ids(None).evaluation.subsets_with_metadata[0]
+            res[0].get_evaluation_with_run_ids().evaluation.subsets_with_metadata[0]
             == asset_subset_with_metadata
         )
+
+    def test_automation_condition_evaluations_check_key(self, storage) -> None:
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        check_key = AssetCheckKey(AssetKey("asset_two"), "check_one")
+        entity_subset = SerializableEntitySubset(key=check_key, value=True)
+
+        storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AutomationConditionEvaluation(
+                    condition_snapshot=AutomationConditionNodeSnapshot(
+                        class_name="foo", description="bar", unique_id=""
+                    ),
+                    start_timestamp=0,
+                    end_timestamp=1,
+                    true_subset=entity_subset,
+                    candidate_subset=entity_subset,
+                    subsets_with_metadata=[],
+                    child_evaluations=[],
+                ).with_run_ids(set()),
+            ],
+        )
+
+        res = storage.get_auto_materialize_asset_evaluations(key=check_key.asset_key, limit=100)
+        assert len(res) == 0  # stored for the check key, not the asset key
+
+        # this is expected to fail until the next PR in the stack
+        res = storage.get_auto_materialize_asset_evaluations(key=check_key, limit=100)
+        assert len(res) == 1
+
+        assert res[0].key == check_key
+        assert res[0].get_evaluation_with_run_ids().evaluation.key == check_key
+        assert res[0].evaluation_id == 10
+        assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 1
 
     def test_purge_asset_evaluations(self, storage) -> None:
         if not self.can_purge():
@@ -927,28 +968,32 @@ class TestScheduleStorage:
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[
-                AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot("foo", "bar", ""),
+                AutomationConditionEvaluation(
+                    condition_snapshot=AutomationConditionNodeSnapshot(
+                        class_name="foo", description="bar", unique_id=""
+                    ),
                     start_timestamp=0,
                     end_timestamp=1,
-                    true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
-                    candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=True),
+                    true_subset=SerializableEntitySubset(key=AssetKey("asset_one"), value=True),
+                    candidate_subset=SerializableEntitySubset(
+                        key=AssetKey("asset_one"), value=True
+                    ),
                     subsets_with_metadata=[],
                     child_evaluations=[],
                 ).with_run_ids(set()),
             ],
         )
 
-        storage.purge_asset_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
-
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_one"), limit=100
+        storage.purge_asset_evaluations(
+            before=(get_current_datetime() - relativedelta(hours=10)).timestamp()
         )
+
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_one"), limit=100)
         assert len(res) == 1
 
-        storage.purge_asset_evaluations(before=pendulum.now().add(minutes=10).timestamp())
-
-        res = storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset_one"), limit=100
+        storage.purge_asset_evaluations(
+            before=(get_current_datetime() + relativedelta(minutes=10)).timestamp()
         )
+
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_one"), limit=100)
         assert len(res) == 0

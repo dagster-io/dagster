@@ -1,10 +1,10 @@
 import dagster._check as check
 import graphene
-from dagster._core.host_representation import ExternalExecutionPlan
+from dagster._core.remote_representation import ExternalExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
-from .metadata import GrapheneMetadataItemDefinition
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.metadata import GrapheneMetadataItemDefinition
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneExecutionStepOutput(graphene.ObjectType):

@@ -7,9 +7,7 @@ from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame as SparkDF
 
 from project_fully_featured.partitions import hourly_partitions
-from project_fully_featured.resources.parquet_io_manager import (
-    LocalPartitionedParquetIOManager,
-)
+from project_fully_featured.resources.parquet_io_manager import LocalPartitionedParquetIOManager
 
 
 def test_io_manager():

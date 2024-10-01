@@ -5,6 +5,7 @@ Revises: 6e1f65d78b92
 Create Date: 2021-03-11 14:59:25.755063
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from dagster._core.storage.migration.utils import has_table

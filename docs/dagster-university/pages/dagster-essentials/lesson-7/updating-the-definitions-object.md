@@ -53,11 +53,11 @@ metric_assets = load_assets_from_modules([metrics])
 all_jobs = [trip_update_job, weekly_update_job]
 
 defs = Definitions(
-  assets=[*trip_assets, *metric_assets],
-  resources={
-      "database": database_resource,
-  },
-  jobs=all_jobs,
+    assets=[*trip_assets, *metric_assets],
+    resources={
+        "database": database_resource,
+    },
+    jobs=all_jobs,
 )
 ```
 
@@ -107,11 +107,11 @@ all_schedules = [trip_update_schedule, weekly_update_schedule]
 
 
 defs = Definitions(
-  assets=[*trip_assets, *metric_assets],
-  resources={
-      "database": database_resource,
-  },
-  jobs=all_jobs,
-  schedules=all_schedules,
+    assets=[*trip_assets, *metric_assets],
+    resources={
+        "database": database_resource,
+    },
+    jobs=all_jobs,
+    schedules=all_schedules,
 )
 ```

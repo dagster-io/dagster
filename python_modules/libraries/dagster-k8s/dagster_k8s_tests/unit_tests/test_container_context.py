@@ -1,9 +1,12 @@
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import hash_collection
-from dagster._utils.merger import deep_merge_dicts
 from dagster_k8s.container_context import K8sConfigMergeBehavior, K8sContainerContext
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from dagster_k8s.job import (
+    DagsterK8sJobConfig,
+    UserDefinedDagsterK8sConfig,
+    construct_dagster_k8s_job,
+)
 
 
 @pytest.fixture
@@ -18,7 +21,7 @@ def container_context_config():
             "service_account_name": "my_service_account",
             "env_config_maps": ["my_config_map"],
             "env_secrets": ["my_secret"],
-            "env_vars": ["MY_ENV_VAR"],
+            "env_vars": ["MY_ENV_VAR=my_val"],
             "volume_mounts": [
                 {
                     "mount_path": "my_mount_path",
@@ -85,7 +88,7 @@ def other_container_context_config():
             "service_account_name": "your_service_account",
             "env_config_maps": ["your_config_map"],
             "env_secrets": ["your_secret"],
-            "env_vars": ["YOUR_ENV_VAR"],
+            "env_vars": ["YOUR_ENV_VAR=your_val"],
             "volume_mounts": [
                 {
                     "mount_path": "your_mount_path",
@@ -142,7 +145,7 @@ def container_context_config_camel_case_volumes():
             "service_account_name": "my_service_account",
             "env_config_maps": ["my_config_map"],
             "env_secrets": ["my_secret"],
-            "env_vars": ["MY_ENV_VAR"],
+            "env_vars": ["MY_ENV_VAR=my_val"],
             "volume_mounts": [
                 {
                     "mountPath": "my_mount_path",
@@ -184,33 +187,130 @@ def container_context_camel_case_volumes_fixture(container_context_config_camel_
 
 
 def test_empty_container_context(empty_container_context):
-    assert empty_container_context.image_pull_policy is None
-    assert empty_container_context.image_pull_secrets == []
-    assert empty_container_context.service_account_name is None
-    assert empty_container_context.env_config_maps == []
-    assert empty_container_context.env_secrets == []
-    assert empty_container_context.env_vars == []
-    assert empty_container_context.volume_mounts == []
-    assert empty_container_context.volumes == []
-    assert empty_container_context.labels == {}
     assert empty_container_context.namespace is None
-    assert empty_container_context.resources == {}
-    assert empty_container_context.scheduler_name is None
 
-    server_k8s_config_dict = empty_container_context.server_k8s_config.to_dict()
-
-    assert all(
-        server_k8s_config_dict[key] == {}
-        for key in server_k8s_config_dict
-        if key != "merge_behavior"
+    assert empty_container_context.run_k8s_config == UserDefinedDagsterK8sConfig(
+        container_config={},
+        pod_template_spec_metadata={},
+        pod_spec_config={},
+        job_config={},
+        job_metadata={},
+        job_spec_config={},
+        merge_behavior=K8sConfigMergeBehavior.DEEP,
+    )
+    assert empty_container_context.server_k8s_config == UserDefinedDagsterK8sConfig(
+        container_config={},
+        pod_template_spec_metadata={},
+        pod_spec_config={},
+        job_config={},
+        job_metadata={},
+        job_spec_config={},
+        merge_behavior=K8sConfigMergeBehavior.DEEP,
     )
 
-    run_k8s_config_dict = empty_container_context.run_k8s_config.to_dict()
+    assert empty_container_context.labels == {}
 
-    assert all(
-        run_k8s_config_dict[key] == {} for key in run_k8s_config_dict if key != "merge_behavior"
+
+def test_container_context(container_context):
+    assert container_context.run_k8s_config == UserDefinedDagsterK8sConfig(
+        container_config={
+            "env": [
+                {"name": "SHARED_KEY", "value": "SHARED_VAL"},
+                {"name": "MY_ENV_VAR", "value": "my_val"},
+                {
+                    "name": "DD_AGENT_HOST",
+                    "value_from": {"field_ref": {"field_path": "status.hostIP"}},
+                },
+            ],
+            "volume_mounts": [
+                {
+                    "name": "a_volume_mount_one",
+                    "mount_path": "my_mount_path",
+                    "mount_propagation": "my_mount_propagation",
+                    "read_only": False,
+                    "sub_path": "path/",
+                }
+            ],
+            "resources": {
+                "limits": {"memory": "128Mi", "cpu": "500m"},
+                "requests": {"memory": "64Mi", "cpu": "250m"},
+            },
+            "image_pull_policy": "Always",
+            "env_from": [
+                {"config_map_ref": {"name": "my_config_map"}},
+                {"secret_ref": {"name": "my_secret"}},
+            ],
+            "command": ["echo", "RUN"],
+            "tty": True,
+        },
+        pod_template_spec_metadata={
+            "labels": {"foo_label": "bar_value", "baz": "quux", "norm": "boo"},
+            "namespace": "my_pod_namespace",
+        },
+        pod_spec_config={
+            "image_pull_secrets": [
+                {"name": "my_secret"},
+                {"name": "image-secret-1"},
+                {"name": "image-secret-2"},
+            ],
+            "volumes": [{"name": "foo", "config_map": {"name": "settings-cm"}}],
+            "service_account_name": "my_service_account",
+            "scheduler_name": "my_scheduler",
+            "dns_policy": "value",
+            "security_context": {"supplemental_groups": [1234]},
+        },
+        job_config={},
+        job_metadata={"labels": {"foo_label": "bar_value"}, "namespace": "my_job_value"},
+        job_spec_config={"backoff_limit": 120},
+        merge_behavior=K8sConfigMergeBehavior.DEEP,
     )
-    assert empty_container_context.env == []
+
+    assert container_context.server_k8s_config == UserDefinedDagsterK8sConfig(
+        container_config={
+            "env": [
+                {"name": "SHARED_KEY", "value": "SHARED_VAL"},
+                {"name": "MY_ENV_VAR", "value": "my_val"},
+                {
+                    "name": "DD_AGENT_HOST",
+                    "value_from": {"field_ref": {"field_path": "status.hostIP"}},
+                },
+            ],
+            "volume_mounts": [
+                {
+                    "name": "a_volume_mount_one",
+                    "mount_path": "my_mount_path",
+                    "mount_propagation": "my_mount_propagation",
+                    "read_only": False,
+                    "sub_path": "path/",
+                }
+            ],
+            "resources": {
+                "limits": {"memory": "128Mi", "cpu": "500m"},
+                "requests": {"memory": "64Mi", "cpu": "250m"},
+            },
+            "image_pull_policy": "Always",
+            "env_from": [
+                {"config_map_ref": {"name": "my_config_map"}},
+                {"secret_ref": {"name": "my_secret"}},
+            ],
+            "command": ["echo", "SERVER"],
+        },
+        pod_template_spec_metadata={
+            "labels": {"foo_label": "bar_value"},
+            "namespace": "my_pod_server_amespace",
+        },
+        pod_spec_config={
+            "image_pull_secrets": [{"name": "my_secret"}],
+            "volumes": [{"name": "foo", "config_map": {"name": "settings-cm"}}],
+            "service_account_name": "my_service_account",
+            "scheduler_name": "my_scheduler",
+        },
+        job_config={},
+        job_metadata={"labels": {"foo_label": "bar_value"}},
+        job_spec_config={},
+        merge_behavior=K8sConfigMergeBehavior.DEEP,
+    )
+    assert container_context.labels == {"foo_label": "bar_value"}
 
 
 def test_invalid_config():
@@ -230,189 +330,179 @@ def _check_same_sorted(list1, list2):
 
 
 def test_camel_case_volumes(container_context_camel_case_volumes, container_context):
-    assert container_context.volume_mounts == container_context_camel_case_volumes.volume_mounts
-    assert container_context.volumes == container_context_camel_case_volumes.volumes
+    assert container_context.run_k8s_config.pod_spec_config["volumes"]
+    assert container_context.run_k8s_config.container_config["volume_mounts"]
+
+    assert (
+        container_context.run_k8s_config.pod_spec_config["volumes"]
+        == container_context_camel_case_volumes.run_k8s_config.pod_spec_config["volumes"]
+    )
+    assert (
+        container_context.run_k8s_config.container_config["volume_mounts"]
+        == container_context_camel_case_volumes.run_k8s_config.container_config["volume_mounts"]
+    )
 
 
 def test_merge(empty_container_context, container_context, other_container_context):
-    assert container_context.image_pull_policy == "Always"
-    assert container_context.image_pull_secrets == [{"name": "my_secret"}]
-    assert container_context.service_account_name == "my_service_account"
-    assert container_context.env_config_maps == ["my_config_map"]
-    assert container_context.env_secrets == ["my_secret"]
-    _check_same_sorted(
-        container_context.env_vars,
-        [
-            "MY_ENV_VAR",
-            "SHARED_KEY=SHARED_VAL",
-        ],
-    )
-    assert container_context.volume_mounts == [
-        {
-            "mount_path": "my_mount_path",
-            "mount_propagation": "my_mount_propagation",
-            "name": "a_volume_mount_one",
-            "read_only": False,
-            "sub_path": "path/",
-        }
-    ]
-    assert container_context.volumes == [{"name": "foo", "config_map": {"name": "settings-cm"}}]
-    assert container_context.labels == {"foo_label": "bar_value"}
-    assert container_context.namespace == "my_namespace"
-    assert container_context.resources == {
-        "requests": {"memory": "64Mi", "cpu": "250m"},
-        "limits": {"memory": "128Mi", "cpu": "500m"},
-    }
-    assert container_context.scheduler_name == "my_scheduler"
-
     merged = container_context.merge(other_container_context)
 
-    assert merged.image_pull_policy == "Never"
-    _check_same_sorted(
-        merged.image_pull_secrets,
-        [
-            {"name": "your_secret"},
-            {"name": "my_secret"},
-        ],
-    )
-    assert merged.service_account_name == "your_service_account"
-    _check_same_sorted(
-        merged.env_config_maps,
-        [
-            "your_config_map",
-            "my_config_map",
-        ],
-    )
-    _check_same_sorted(
-        merged.env_secrets,
-        [
-            "your_secret",
-            "my_secret",
-        ],
-    )
-    _check_same_sorted(
-        merged.env_vars,
-        [
-            "YOUR_ENV_VAR",
-            "MY_ENV_VAR",
-            "SHARED_OTHER_KEY=SHARED_OTHER_VAL",
-            "SHARED_KEY=SHARED_VAL",
-        ],
-    )
-    _check_same_sorted(
-        merged.volume_mounts,
-        [
-            {
-                "mount_path": "your_mount_path",
-                "mount_propagation": "your_mount_propagation",
-                "name": "b_volume_mount_one",
-                "read_only": True,
-                "sub_path": "your_path/",
+    assert merged.run_k8s_config == UserDefinedDagsterK8sConfig(
+        container_config={
+            "env": [
+                {"name": "SHARED_KEY", "value": "SHARED_VAL"},
+                {"name": "MY_ENV_VAR", "value": "my_val"},
+                {
+                    "name": "DD_AGENT_HOST",
+                    "value_from": {"field_ref": {"field_path": "status.hostIP"}},
+                },
+                {"name": "SHARED_OTHER_KEY", "value": "SHARED_OTHER_VAL"},
+                {"name": "YOUR_ENV_VAR", "value": "your_val"},
+                {"name": "FOO", "value": "BAR"},
+            ],
+            "volume_mounts": [
+                {
+                    "name": "a_volume_mount_one",
+                    "mount_path": "my_mount_path",
+                    "mount_propagation": "my_mount_propagation",
+                    "read_only": False,
+                    "sub_path": "path/",
+                },
+                {
+                    "name": "b_volume_mount_one",
+                    "mount_path": "your_mount_path",
+                    "mount_propagation": "your_mount_propagation",
+                    "read_only": True,
+                    "sub_path": "your_path/",
+                },
+            ],
+            "resources": {
+                "limits": {"memory": "64Mi", "cpu": "250m"},
+                "requests": {"memory": "64Mi", "cpu": "250m"},
             },
-            {
-                "mount_path": "my_mount_path",
-                "mount_propagation": "my_mount_propagation",
-                "name": "a_volume_mount_one",
-                "read_only": False,
-                "sub_path": "path/",
-            },
-        ],
-    )
-    _check_same_sorted(
-        merged.volumes,
-        [
-            {"name": "bar", "config_map": {"name": "your-settings-cm"}},
-            {"name": "foo", "config_map": {"name": "settings-cm"}},
-        ],
-    )
-    assert merged.labels == {"foo_label": "override_value", "bar_label": "baz_value"}
-    assert merged.namespace == "your_namespace"
-    assert merged.resources == {
-        "limits": {"memory": "64Mi", "cpu": "250m"},
-    }
-    assert merged.scheduler_name == "my_other_scheduler"
-
-    assert merged.run_k8s_config.to_dict() == {
-        "container_config": {
+            "image_pull_policy": "Never",
+            "env_from": [
+                {"config_map_ref": {"name": "my_config_map"}},
+                {"secret_ref": {"name": "my_secret"}},
+                {"config_map_ref": {"name": "your_config_map"}},
+                {"secret_ref": {"name": "your_secret"}},
+            ],
             "command": ["REPLACED"],
-            "stdin": True,
             "tty": True,
+            "stdin": True,
         },
-        "pod_template_spec_metadata": {
-            "namespace": "my_other_namespace",
-            "labels": {  # Replaced
-                "foo": "bar",
+        pod_template_spec_metadata={
+            "labels": {
+                "foo_label": "override_value",
+                "baz": "quux",
                 "norm": "abc",
+                "bar_label": "baz_value",
+                "foo": "bar",
             },
+            "namespace": "my_other_namespace",
         },
-        "pod_spec_config": {
-            "dns_policy": "other_value",
+        pod_spec_config={
             "image_pull_secrets": [
+                {"name": "my_secret"},
+                {"name": "image-secret-1"},
                 {"name": "image-secret-2"},
+                {"name": "your_secret"},
                 {"name": "image-secret-3"},
             ],
-            "security_context": {
-                "supplemental_groups": [
-                    5678,
-                ]
-            },
+            "volumes": [
+                {"name": "foo", "config_map": {"name": "settings-cm"}},
+                {"name": "bar", "config_map": {"name": "your-settings-cm"}},
+            ],
+            "service_account_name": "your_service_account",
+            "scheduler_name": "my_other_scheduler",
+            "dns_policy": "other_value",
+            "security_context": {"supplemental_groups": [1234, 5678]},
         },
-        "job_metadata": {
+        job_config={},
+        job_metadata={
+            "labels": {"foo_label": "override_value", "bar_label": "baz_value"},
             "namespace": "my_other_job_value",
         },
-        "job_spec_config": {"backoff_limit": 240},
-        "job_config": {},
-        "merge_behavior": K8sConfigMergeBehavior.SHALLOW.value,
-    }
-    _check_same_sorted(
-        merged.env,
-        [
-            {"name": "FOO", "value": "BAR"},
-            {"name": "DD_AGENT_HOST", "value_from": {"field_ref": {"field_path": "status.hostIP"}}},
-        ],
+        job_spec_config={"backoff_limit": 240},
+        merge_behavior=K8sConfigMergeBehavior.DEEP,
     )
+
+    assert merged.labels == {"bar_label": "baz_value", "foo_label": "override_value"}
 
     assert container_context.merge(empty_container_context) == container_context
     assert empty_container_context.merge(container_context) == container_context
     assert other_container_context.merge(empty_container_context) == other_container_context
 
-    deep_merged_container_context = container_context.merge(
+    shallow_merged_container_context = container_context.merge(
         other_container_context._replace(
             run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
                 {
                     **other_container_context.run_k8s_config.to_dict(),
-                    "merge_behavior": K8sConfigMergeBehavior.DEEP.value,
+                    "merge_behavior": K8sConfigMergeBehavior.SHALLOW.value,
                 }
             )
         ),
     )
 
-    assert deep_merged_container_context.run_k8s_config.to_dict() == deep_merge_dicts(
-        merged.run_k8s_config.to_dict(),
-        {
-            "pod_template_spec_metadata": {
-                "labels": {
-                    "baz": "quux",  # other wins ties
-                    "foo": "bar",  # old values included
-                    "norm": "abc",  # new values merged in
+    assert shallow_merged_container_context.run_k8s_config == UserDefinedDagsterK8sConfig(
+        container_config={
+            "env": [
+                {"name": "SHARED_OTHER_KEY", "value": "SHARED_OTHER_VAL"},
+                {"name": "YOUR_ENV_VAR", "value": "your_val"},
+                {"name": "FOO", "value": "BAR"},
+            ],
+            "volume_mounts": [
+                {
+                    "name": "b_volume_mount_one",
+                    "mount_path": "your_mount_path",
+                    "mount_propagation": "your_mount_propagation",
+                    "read_only": True,
+                    "sub_path": "your_path/",
                 }
-            },
-            "pod_spec_config": {
-                "image_pull_secrets": [
-                    {"name": "image-secret-1"},
-                    {"name": "image-secret-2"},
-                    {"name": "image-secret-3"},
-                ],
-                "security_context": {
-                    "supplemental_groups": [
-                        1234,
-                        5678,
-                    ]
-                },
-            },
-            "merge_behavior": K8sConfigMergeBehavior.DEEP.value,
+            ],
+            "resources": {"limits": {"memory": "64Mi", "cpu": "250m"}},
+            "image_pull_policy": "Never",
+            "env_from": [
+                {"config_map_ref": {"name": "your_config_map"}},
+                {"secret_ref": {"name": "your_secret"}},
+            ],
+            "command": ["REPLACED"],
+            "tty": True,
+            "stdin": True,
         },
+        pod_template_spec_metadata={
+            "labels": {
+                "bar_label": "baz_value",
+                "foo_label": "override_value",
+                "foo": "bar",
+                "norm": "abc",
+            },
+            "namespace": "my_other_namespace",
+        },
+        pod_spec_config={
+            "image_pull_secrets": [
+                {"name": "your_secret"},
+                {"name": "image-secret-2"},
+                {"name": "image-secret-3"},
+            ],
+            "volumes": [{"name": "bar", "config_map": {"name": "your-settings-cm"}}],
+            "service_account_name": "your_service_account",
+            "scheduler_name": "my_other_scheduler",
+            "dns_policy": "other_value",
+            "security_context": {"supplemental_groups": [5678]},
+        },
+        job_config={},
+        job_metadata={
+            "labels": {"bar_label": "baz_value", "foo_label": "override_value"},
+            "namespace": "my_other_job_value",
+        },
+        job_spec_config={"backoff_limit": 240},
+        merge_behavior=K8sConfigMergeBehavior.SHALLOW,
     )
+
+    assert shallow_merged_container_context.labels == {
+        "bar_label": "baz_value",
+        "foo_label": "override_value",
+    }
 
 
 @pytest.mark.parametrize(
@@ -431,7 +521,7 @@ def test_only_allow_pod_spec_config(only_allow_user_defined_k8s_config_fields):
     ).validate_user_k8s_config(only_allow_user_defined_k8s_config_fields, None)
 
     # can set image_pull_secrets as top-level field on K8sContainerContext
-    K8sContainerContext(image_pull_secrets=["foo"]).validate_user_k8s_config(
+    K8sContainerContext(image_pull_secrets=[{"name": "foo"}]).validate_user_k8s_config(
         only_allow_user_defined_k8s_config_fields, None
     )
 
@@ -582,7 +672,7 @@ def test_only_allows_pod_template_spec_metadata():
         ),
         (
             K8sContainerContext(
-                env_vars=["YOUR_ENV_VAR"],
+                env_vars=["YOUR_ENV_VAR=your_val"],
             ),
             "container_config.env",
         ),
@@ -670,15 +760,17 @@ def test_only_allow_user_defined_env_vars():
     allowed_env_vars = ["foo"]
 
     validated_context = K8sContainerContext(
-        env_vars=["foo", "bar"],
+        env_vars=["foo=foo_val", "bar=bar_val"],
         env=[
             {"name": "foo", "value": "baz"},
             {"name": "zup", "value": "quul"},
         ],
     ).validate_user_k8s_config(None, allowed_env_vars)
 
-    assert validated_context.env_vars == ["foo"]
-    assert validated_context.env == [{"name": "foo", "value": "baz"}]
+    assert validated_context.run_k8s_config.container_config["env"] == [
+        {"name": "foo", "value": "foo_val"},
+        {"name": "foo", "value": "baz"},
+    ]
 
     validated_context = K8sContainerContext(
         server_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
@@ -721,3 +813,37 @@ def test_only_allow_user_defined_env_vars():
             }
         }
     )
+
+
+def test_env_var_precedence():
+    outer_container_context = K8sContainerContext(
+        run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+            {"container_config": {"env": [{"name": "FOO", "value": "outercontainerconfig"}]}}
+        )
+    )
+
+    inner_container_context = K8sContainerContext(
+        env_vars=["FOO=innerenvvars"],
+    )
+
+    merged = outer_container_context.merge(inner_container_context)
+
+    k8s_job_config = DagsterK8sJobConfig(
+        job_image="my_image",
+        dagster_home=None,
+    )
+
+    job = construct_dagster_k8s_job(
+        job_config=k8s_job_config,
+        args=[],
+        job_name="job_name",
+        pod_name="pod_name",
+        component="unit_test",
+        user_defined_k8s_config=merged.run_k8s_config,
+    ).to_dict()
+
+    # Inner env var is applied after the outer
+    assert job["spec"]["template"]["spec"]["containers"][0]["env"] == [
+        {"name": "FOO", "value": "outercontainerconfig", "value_from": None},
+        {"name": "FOO", "value": "innerenvvars", "value_from": None},
+    ]

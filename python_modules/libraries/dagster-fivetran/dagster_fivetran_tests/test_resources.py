@@ -6,7 +6,7 @@ import responses
 from dagster import Failure, build_init_resource_context
 from dagster_fivetran import FivetranOutput, fivetran_resource
 
-from .utils import (
+from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,
     get_sample_connector_response,

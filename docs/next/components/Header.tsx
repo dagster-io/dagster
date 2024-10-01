@@ -1,5 +1,6 @@
 import cx from 'classnames';
 import {JoinSlackButton} from 'components/JoinSlackButton';
+import Image from 'next/image';
 import * as React from 'react';
 import {useState} from 'react';
 
@@ -34,12 +35,7 @@ const Header = ({openMobileDocsMenu}) => {
       }
 
       lastScrollY.current = window.scrollY;
-
-      if (window.scrollY > 0) {
-        setIsCollapsed(true);
-      } else {
-        setIsCollapsed(false);
-      }
+      setIsCollapsed(window.scrollY > 0);
     };
 
     document.addEventListener('scroll', handler);
@@ -78,7 +74,9 @@ const Header = ({openMobileDocsMenu}) => {
           href="https://dagster.io"
           className="flex-shrink-0 flex items-center z-50 w-9/12 justify-center lg:justify-start lg:w-3/12"
         >
-          <img
+          <Image
+            width={152}
+            height={32}
             className={cx('block h-14 py-3 sm:py-0 transition-all', {
               'sm:h-6': isCollapsed,
               'sm:h-8': !isCollapsed,
@@ -97,46 +95,34 @@ const Header = ({openMobileDocsMenu}) => {
           )}
         >
           <a
-            href="https://dagster.io/platform"
-            className="whitespace-nowrap py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
-          >
-            Platform
-          </a>
-          <a
-            href="https://dagster.io/cloud"
-            className="whitespace-nowrap py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
-          >
-            Cloud{' '}
-            <div
-              className="inline-block text-sm border border-dotted border-gray-700 rounded-xl p-1"
-              style={{lineHeight: 1, transform: 'translate(5px, -2px)'}}
-            >
-              New
-            </div>
-          </a>
-          <a
-            href="https://dagster.io/pricing"
-            className="py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
-          >
-            Pricing
-          </a>
-          <a
-            href="https://dagster.io/blog"
-            className="py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
-          >
-            Blog
-          </a>
-          <a
-            href="https://dagster.io/community"
-            className="hidden xl:block py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
-          >
-            Community
-          </a>
-          <a
             href="/"
             className="py-2 rounded-xl px-4 hover:text-gable-green-darker hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent bg-lavender bg-opacity-100"
           >
             Docs
+          </a>
+          <a
+            target="_blank"
+            href="https://dagster.io/blog"
+            className="py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            rel="noreferrer"
+          >
+            Blog
+          </a>
+          <a
+            target="_blank"
+            href="https://dagster.io/community"
+            className="hidden xl:block py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            rel="noreferrer"
+          >
+            Community
+          </a>
+          <a
+            target="_blank"
+            href="https://courses.dagster.io/"
+            className="hidden xl:block py-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent"
+            rel="noreferrer"
+          >
+            University
           </a>
         </div>
         <div
@@ -149,15 +135,20 @@ const Header = ({openMobileDocsMenu}) => {
           )}
         >
           <SignInButton />
-
-          <JoinSlackButton icon={true} />
-
+          <JoinSlackButton icon />
           <div className="self-center">
             <a
               href="https://github.com/dagster-io/dagster"
               className="px-4 py-1 border border-gable-green cursor-pointer bg-lavender bg-opacity-0 hover:bg-opacity-50 hover:border-opacity-0 inline-flex gap-2 leading-8 items-center rounded-full whitespace-nowrap transition"
             >
-              <img className="w-6" src="/assets/logos/github.svg" /> Star us
+              <Image
+                height={24}
+                width={24}
+                className="w-6"
+                src="/assets/logos/github.svg"
+                alt="Star us"
+              />{' '}
+              Star us
             </a>
           </div>
           <div className="self-center">
@@ -165,7 +156,7 @@ const Header = ({openMobileDocsMenu}) => {
               href="https://dagster.cloud/signup"
               className="hidden 3xl:inline-flex px-4 py-1 border border-blurple bg-blurple cursor-pointer hover:bg-blurple-darker text-white gap-2 leading-8 items-center rounded-full whitespace-nowrap transition"
             >
-              Try Dagster Cloud
+              Try Dagster+
             </a>
           </div>
         </div>
@@ -211,46 +202,34 @@ const Header = ({openMobileDocsMenu}) => {
         >
           <div className="pt-2 pb-3">
             <a
-              href="https://dagster.io/platform"
-              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
-            >
-              Platform
-            </a>
-            <a
-              href="https://dagster.io/cloud"
-              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
-            >
-              Cloud
-            </a>
-            <a
-              href="https://dagster.io/pricing"
-              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
-            >
-              Pricing
-            </a>
-            <a
-              href="https://dagster.io/blog"
-              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
-            >
-              Blog
-            </a>
-            <a
-              href="https://dagster.io/community"
-              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
-            >
-              Community
-            </a>
-            <a
               href="/"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
               Docs
             </a>
             <a
-              href="https://dagster.io/contact"
-              className="my-0 block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
+              target="_blank"
+              href="https://dagster.io/blog"
+              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
+              rel="noreferrer"
             >
-              Contact Sales
+              Blog
+            </a>
+            <a
+              target="_blank"
+              href="https://dagster.io/community"
+              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
+              rel="noreferrer"
+            >
+              Community
+            </a>
+            <a
+              target="_blank"
+              href="https://courses.dagster.io/"
+              className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
+              rel="noreferrer"
+            >
+              University
             </a>
             <hr className="my-2" />
             <a
@@ -263,7 +242,7 @@ const Header = ({openMobileDocsMenu}) => {
               href="https://dagster.cloud/signup"
               className="px-6 py-2 border text-lg border-gable-green cursor-pointer bg-transparent hover:bg-gable-green hover:text-white inline-flex gap-2 leading-8 items-center rounded-full whitespace-nowrap transition"
             >
-              Try Dagster Cloud
+              Try Dagster+
             </a>
           </div>
         </div>

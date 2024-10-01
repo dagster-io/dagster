@@ -21,6 +21,7 @@ import {globalAssetGraphPathForAssetsAndDescendants} from '../assets/globalAsset
 import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
+import {numberFormatter} from '../ui/formatters';
 
 const renderItemAssetKey = (assetKey: AssetKey) => (
   <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
@@ -86,37 +87,35 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
     // parent is a flexbox.
     const assetKey = assetKeys[0]!;
     return (
-      <span style={useTags ? {} : {marginBottom: -4}}>
-        <TagActionsPopover
-          data={{key: '', value: ''}}
-          actions={[
-            {
-              label: 'View asset',
-              to: assetDetailsPathForKey(assetKey),
-            },
-            {
-              label: 'View downstream lineage',
-              to: assetDetailsPathForKey(assetKey, {
-                view: 'lineage',
-                lineageScope: 'downstream',
-              }),
-            },
-          ]}
-        >
-          {useTags ? (
-            <Tag intent="none" interactive icon="asset">
+      <TagActionsPopover
+        data={{key: '', value: ''}}
+        actions={[
+          {
+            label: 'View asset',
+            to: assetDetailsPathForKey(assetKey),
+          },
+          {
+            label: 'View lineage',
+            to: assetDetailsPathForKey(assetKey, {
+              view: 'lineage',
+              lineageScope: 'downstream',
+            }),
+          },
+        ]}
+      >
+        {useTags ? (
+          <Tag intent="none" interactive icon="asset">
+            {displayNameForAssetKey(assetKey)}
+          </Tag>
+        ) : (
+          <Link to={assetDetailsPathForKey(assetKey)}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              <Icon color={Colors.accentGray()} name="asset" size={16} />
               {displayNameForAssetKey(assetKey)}
-            </Tag>
-          ) : (
-            <Link to={assetDetailsPathForKey(assetKey)}>
-              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <Icon color={Colors.accentGray()} name="asset" size={16} />
-                {displayNameForAssetKey(assetKey)}
-              </Box>
-            </Link>
-          )}
-        </TagActionsPopover>
-      </span>
+            </Box>
+          </Link>
+        )}
+      </TagActionsPopover>
     );
   }
 
@@ -130,20 +129,20 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
             onClick: () => setShowMore(true),
           },
           {
-            label: 'View downstream lineage',
+            label: 'View lineage',
             to: globalAssetGraphPathForAssetsAndDescendants(assetKeys),
           },
         ]}
       >
         {useTags ? (
           <Tag intent="none" icon="asset">
-            {assetKeys.length} assets
+            {numberFormatter.format(assetKeys.length)} assets
           </Tag>
         ) : (
           <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
               <Icon color={Colors.accentGray()} name="asset" size={16} />
-              {`${assetKeys.length} assets`}
+              {`${numberFormatter.format(assetKeys.length)} assets`}
             </Box>
           </ButtonLink>
         )}
@@ -174,30 +173,28 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
     // parent is a flexbox.
     const check = assetChecks[0]!;
     return (
-      <span style={useTags ? {} : {marginBottom: -4}}>
-        <TagActionsPopover
-          data={{key: '', value: ''}}
-          actions={[{label: 'View asset check', to: assetDetailsPathForAssetCheck(check)}]}
-        >
-          {useTags ? (
-            <Tag intent="none" interactive icon="asset_check">
+      <TagActionsPopover
+        data={{key: '', value: ''}}
+        actions={[{label: 'View asset check', to: assetDetailsPathForAssetCheck(check)}]}
+      >
+        {useTags ? (
+          <Tag intent="none" interactive icon="asset_check">
+            {labelForAssetCheck(check)}
+          </Tag>
+        ) : (
+          <Link to={assetDetailsPathForAssetCheck(check)}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              <Icon color={Colors.accentGray()} name="asset_check" size={16} />
               {labelForAssetCheck(check)}
-            </Tag>
-          ) : (
-            <Link to={assetDetailsPathForAssetCheck(check)}>
-              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-                {labelForAssetCheck(check)}
-              </Box>
-            </Link>
-          )}
-        </TagActionsPopover>
-      </span>
+            </Box>
+          </Link>
+        )}
+      </TagActionsPopover>
     );
   }
 
   return (
-    <span style={useTags ? {} : {marginBottom: -4}}>
+    <>
       <TagActionsPopover
         data={{key: '', value: ''}}
         actions={[
@@ -209,18 +206,18 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
       >
         {useTags ? (
           <Tag intent="none" icon="asset_check">
-            {assetChecks.length} asset checks
+            {numberFormatter.format(assetChecks.length)} asset checks
           </Tag>
         ) : (
           <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
               <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-              {`${assetChecks.length} asset checks`}
+              {`${numberFormatter.format(assetChecks.length)} asset checks`}
             </Box>
           </ButtonLink>
         )}
       </TagActionsPopover>
       {dialog}
-    </span>
+    </>
   );
 });

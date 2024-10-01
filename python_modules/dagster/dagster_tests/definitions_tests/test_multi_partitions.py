@@ -1,16 +1,12 @@
 from datetime import datetime
 
-import pendulum
 import pytest
 from dagster import (
     AssetExecutionContext,
     AssetIn,
-    AssetKey,
-    DagsterEventType,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
     DynamicPartitionsDefinition,
-    EventRecordsFilter,
     IdentityPartitionMapping,
     IOManager,
     MultiPartitionKey,
@@ -27,6 +23,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindow, get_tim
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
+from dagster._time import create_datetime
 
 DATE_FORMAT = "%Y-%m-%d"
 
@@ -122,8 +119,10 @@ def test_tags_multi_dimensional_partitions():
         assert result.dagster_run.tags[get_multidimensional_partition_tag("abc")] == "a"
         assert result.dagster_run.tags[get_multidimensional_partition_tag("date")] == "2021-06-01"
 
+        asset1_records = instance.fetch_materializations(asset1.key, limit=1000).records
+        asset2_records = instance.fetch_materializations(asset2.key, limit=1000).records
         materializations = sorted(
-            instance.get_event_records(EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)),
+            [*asset1_records, *asset2_records],
             key=lambda x: x.event_log_entry.dagster_event.asset_key,
         )
         assert len(materializations) == 2
@@ -132,49 +131,6 @@ def test_tags_multi_dimensional_partitions():
             assert materialization.event_log_entry.dagster_event.partition == MultiPartitionKey(
                 {"abc": "a", "date": "2021-06-01"}
             )
-
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset1"),
-                    tags={get_multidimensional_partition_tag("abc"): "a"},
-                )
-            )
-        )
-        assert len(materializations) == 1
-
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset1"),
-                    tags={get_multidimensional_partition_tag("abc"): "nonexistent"},
-                )
-            )
-        )
-        assert len(materializations) == 0
-
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset1"),
-                    tags={get_multidimensional_partition_tag("date"): "2021-06-01"},
-                )
-            )
-        )
-        assert len(materializations) == 1
-        materializations = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset2"),
-                    tags={get_multidimensional_partition_tag("date"): "2021-06-01"},
-                )
-            )
-        )
-        assert len(materializations) == 1
 
 
 multipartitions_def = MultiPartitionsDefinition(
@@ -524,14 +480,8 @@ def test_context_partition_time_window():
             assert False, "expected a time component in the partitions definition"
 
         time_window = TimeWindow(
-            start=pendulum.instance(
-                datetime(year=2020, month=1, day=1),
-                tz=time_partition.timezone,
-            ),
-            end=pendulum.instance(
-                datetime(year=2020, month=1, day=2),
-                tz=time_partition.timezone,
-            ),
+            start=create_datetime(year=2020, month=1, day=1, tz=time_partition.timezone),
+            end=create_datetime(year=2020, month=1, day=2, tz=time_partition.timezone),
         )
         assert context.partition_time_window == time_window
         return 1
@@ -601,8 +551,7 @@ def test_multipartitions_self_dependency():
     second_partition_key = MultiPartitionKey({"time": "2020-01-02", "abc": "a"})
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            ...
+        def handle_output(self, context, obj): ...
 
         def load_input(self, context):
             assert context.asset_key.path[-1] == "a"
@@ -654,3 +603,81 @@ def test_context_returns_multipartition_keys():
         assert isinstance(output.end, MultiPartitionKey)
 
     materialize([upstream, downstream], partition_key="1|a")
+
+
+def test_multipartitions_range_cartesian_single_key_in_secondary():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
+    ]
+
+
+def test_multipartitions_range_cartesian_single_key_in_primary():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+    ]
+
+
+def test_multipartitions_range_cartesian_multiple_keys_in_both_ranges():
+    from dagster import PartitionKeyRange
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "a": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "b": StaticPartitionsDefinition(["1", "2", "3", "4", "5"]),
+        }
+    )
+
+    partition_range = partitions_def.get_partition_keys_in_range(
+        PartitionKeyRange(
+            MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+            MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
+        )
+    )
+
+    assert partition_range == [
+        MultiPartitionKey({"a": "2024-01-01", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-01", "b": "4"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-02", "b": "4"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "2"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "3"}),
+        MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
+    ]

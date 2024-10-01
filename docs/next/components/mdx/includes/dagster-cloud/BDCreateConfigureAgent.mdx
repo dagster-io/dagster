@@ -8,7 +8,7 @@ Using the tabs, select your agent type to view instructions.
 </TabItem>
 <TabItem name="Amazon ECS">
 
-1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-cloud/deployment/agents#amazon-ecs) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/agents#amazon-ecs) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/agents/amazon-ecs/upgrading-cloudformation-template) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -40,7 +40,7 @@ Using the tabs, select your agent type to view instructions.
 </TabItem>
 <TabItem name="Docker">
 
-1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-cloud/deployment/agents/docker) for instructions.
+1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-plus/deployment/agents/docker) for instructions.
 2. After the agent is set up, modify the `dagster.yaml` file as follows:
 
    - Set the `dagster_cloud_api.branch_deployments` field to `true`
@@ -73,7 +73,7 @@ Using the tabs, select your agent type to view instructions.
 </TabItem>
 <TabItem name="Kubernetes">
 
-1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for instructions.
+1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for instructions.
 
 2. After the agent is set up, modify your Helm values file to include the following:
 

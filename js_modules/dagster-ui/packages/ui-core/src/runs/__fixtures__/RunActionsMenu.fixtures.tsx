@@ -7,11 +7,9 @@ import {
   buildRepositoryLocation,
   buildRepositoryOrigin,
   buildRun,
-  buildWorkspace,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {ROOT_WORKSPACE_QUERY} from '../../workspace/WorkspaceContext';
-import {RootWorkspaceQuery} from '../../workspace/types/WorkspaceContext.types';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {PIPELINE_ENVIRONMENT_QUERY} from '../RunActionsMenu';
 import {
   PipelineEnvironmentQuery,
@@ -57,41 +55,28 @@ export const buildRunActionsMenuFragment = ({hasReExecutePermission}: RunConfigI
   });
 };
 
-export const buildMockRootWorkspaceQuery = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          id: 'workspace',
-          locationEntries: [
-            buildWorkspaceLocationEntry({
-              id: LOCATION_NAME,
-              locationOrLoadError: buildRepositoryLocation({
-                id: LOCATION_NAME,
-                repositories: [
-                  buildRepository({
-                    id: REPO_NAME,
-                    name: REPO_NAME,
-                    pipelines: [
-                      buildPipeline({
-                        id: JOB_NAME,
-                        name: JOB_NAME,
-                        pipelineSnapshotId: SNAPSHOT_ID,
-                      }),
-                    ],
-                  }),
-                ],
+export const buildMockRootWorkspaceQuery = () => {
+  return buildWorkspaceMocks([
+    buildWorkspaceLocationEntry({
+      id: LOCATION_NAME,
+      locationOrLoadError: buildRepositoryLocation({
+        id: LOCATION_NAME,
+        repositories: [
+          buildRepository({
+            id: REPO_NAME,
+            name: REPO_NAME,
+            pipelines: [
+              buildPipeline({
+                id: JOB_NAME,
+                name: JOB_NAME,
+                pipelineSnapshotId: SNAPSHOT_ID,
               }),
-            }),
-          ],
-        }),
-      },
-    },
-  };
+            ],
+          }),
+        ],
+      }),
+    }),
+  ]);
 };
 
 export const buildPipelineEnvironmentQuery = (

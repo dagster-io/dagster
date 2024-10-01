@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import pytest
 import responses
@@ -12,7 +12,6 @@ from dagster import (
     FreshnessPolicy,
     MetadataValue,
     asset,
-    build_init_resource_context,
     define_asset_job,
     file_relative_path,
 )
@@ -22,65 +21,27 @@ from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
     DagsterDbtCloudJobInvariantViolationError,
     DbtCloudClientResource,
-    dbt_cloud_resource,
     load_assets_from_dbt_cloud_job,
 )
 from dagster_dbt.cloud.asset_defs import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
 from dagster_dbt.cloud.resources import DbtCloudClient
 
-from ..utils import assert_assets_match_project
-from .utils import sample_get_environment_variables
+from dagster_dbt_tests.cloud.utils import (
+    DBT_CLOUD_ACCOUNT_ID,
+    DBT_CLOUD_API_TOKEN,
+    assert_assets_match_project,
+    sample_get_environment_variables,
+)
 
-DBT_CLOUD_API_TOKEN = "abc"
-DBT_CLOUD_ACCOUNT_ID = 1
 DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
 
-with open(file_relative_path(__file__, "../sample_manifest.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_manifest.json"), "r", encoding="utf8") as f:
     MANIFEST_JSON = json.load(f)
 
-with open(file_relative_path(__file__, "../sample_run_results.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_run_results.json"), "r", encoding="utf8") as f:
     RUN_RESULTS_JSON = json.load(f)
-
-
-@pytest.fixture(params=["pythonic", "legacy"])
-def resource_type(request):
-    return request.param
-
-
-@pytest.fixture(name="dbt_cloud")
-def dbt_cloud_fixture(resource_type) -> Any:
-    if resource_type == "pythonic":
-        yield DbtCloudClientResource(
-            auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID
-        )
-    else:
-        yield dbt_cloud_resource.configured(
-            {
-                "auth_token": DBT_CLOUD_API_TOKEN,
-                "account_id": DBT_CLOUD_ACCOUNT_ID,
-            }
-        )
-
-
-@pytest.fixture(name="dbt_cloud_service")
-def dbt_cloud_service_fixture(resource_type) -> Any:
-    if resource_type == "pythonic":
-        yield (
-            DbtCloudClientResource(auth_token=DBT_CLOUD_API_TOKEN, account_id=DBT_CLOUD_ACCOUNT_ID)
-            .with_replaced_resource_context(build_init_resource_context())
-            .get_dbt_client()
-        )
-    else:
-        yield dbt_cloud_resource(
-            build_init_resource_context(
-                config={
-                    "auth_token": DBT_CLOUD_API_TOKEN,
-                    "account_id": DBT_CLOUD_ACCOUNT_ID,
-                }
-            )
-        )
 
 
 def _add_dbt_cloud_job_responses(
@@ -594,12 +555,14 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
 
 @responses.activate
 @pytest.mark.parametrize(
-    "dbt_materialization_command_options",
-    [
-        "",
-        "--selector xyz",
-    ],
-    ids=["no selector", "with selector"],
+    "dbt_materialization_command_subsetting_options",
+    ["", "--selector xyz", "--select subdir_schema/least_caloric -s=sort_by_calories"],
+    ids=["no selector", "with selector", "with --select args"],
+)
+@pytest.mark.parametrize(
+    "dbt_materialization_command_non_subsetting_options",
+    ["", "--target dev"],
+    ids=["without non-selection commands", "with non-selection commands"],
 )
 @pytest.mark.parametrize(
     "asset_selection, expected_dbt_asset_names",
@@ -629,14 +592,20 @@ def test_subsetting(
     mocker,
     dbt_cloud,
     dbt_cloud_service,
-    dbt_materialization_command_options,
+    dbt_materialization_command_subsetting_options,
+    dbt_materialization_command_non_subsetting_options,
     asset_selection,
     expected_dbt_asset_names,
 ):
     dbt_materialization_command = "dbt build"
-    full_dbt_materialization_command = (
-        f"{dbt_materialization_command} {dbt_materialization_command_options}".strip()
+    # Core command should not be changed by dagster
+    core_dbt_materialization_command = f"{dbt_materialization_command} {dbt_materialization_command_non_subsetting_options}".strip()
+    full_dbt_materialization_command = f"{core_dbt_materialization_command} {dbt_materialization_command_subsetting_options}".strip()
+
+    expected_dbt_asset_names_list = (
+        expected_dbt_asset_names.split(",") if expected_dbt_asset_names else []
     )
+
     _add_dbt_cloud_job_responses(
         dbt_cloud_service=dbt_cloud_service,
         dbt_commands=[full_dbt_materialization_command],
@@ -672,23 +641,37 @@ def test_subsetting(
         selection=asset_selection,
     ).resolve(asset_graph=AssetGraph.from_assets([*dbt_cloud_assets, hanger1, hanger2]))
 
+    if expected_dbt_asset_names_list:
+        filtered_results = [
+            result
+            for result in RUN_RESULTS_JSON["results"]
+            if result["unique_id"][len("model.") :] in expected_dbt_asset_names_list
+        ]
+        run_results_json = {**RUN_RESULTS_JSON, "results": filtered_results}
+    else:
+        run_results_json = RUN_RESULTS_JSON
+
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=[full_dbt_materialization_command],
+        run_results_json=run_results_json,
+    )
     with instance_for_test() as instance:
         result = materialize_cereal_assets.execute_in_process(instance=instance)
 
     assert result.success
 
-    expected_dbt_asset_names = (
-        expected_dbt_asset_names.split(",") if expected_dbt_asset_names else []
-    )
     dbt_filter_option = (
-        f"--select {' '.join(expected_dbt_asset_names)}" if expected_dbt_asset_names else ""
+        f"--select {' '.join(expected_dbt_asset_names_list)}"
+        if expected_dbt_asset_names_list
+        else ""
     )
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[
             (
-                f"{dbt_materialization_command} {dbt_filter_option}".strip()
+                f"{core_dbt_materialization_command} {dbt_filter_option}".strip()
                 if dbt_filter_option
                 else full_dbt_materialization_command
             )

@@ -65,6 +65,7 @@ export {
   colorAccentGray as accentGray,
   colorAccentGrayHover as accentGrayHover,
   colorAccentWhite as accentWhite,
+  colorAlwaysWhite as alwaysWhite,
   colorDialogBackground as dialogBackground,
   colorTooltipBackground as tooltipBackground,
   colorTooltipText as tooltipText,
@@ -77,7 +78,6 @@ export {
   colorNavTextSelected as navTextSelected,
   colorNavButton as navButton,
   colorNavButtonHover as navButtonHover,
-  colorLineageDots as lineageDots,
   colorLineageEdge as lineageEdge,
   colorLineageEdgeHighlighted as lineageEdgeHighlighted,
   colorLineageGroupNodeBackground as lineageGroupNodeBackground,
@@ -116,4 +116,5 @@ export {
   colorDataVizVioletAlt as dataVizVioletAlt,
   colorDataVizYellow as dataVizYellow,
   colorDataVizYellowAlt as dataVizYellowAlt,
+  colorBlueGradient as blueGradient,
 } from '../theme/color';

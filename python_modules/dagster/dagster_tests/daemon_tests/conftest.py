@@ -4,11 +4,12 @@ from typing import Iterator, Optional, cast
 
 import pytest
 from dagster import DagsterInstance
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     CodeLocation,
     ExternalRepository,
     InProcessCodeLocationOrigin,
 )
+from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
@@ -62,7 +63,7 @@ def external_repo_fixture(
     yield cast(
         CodeLocation,
         next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location,
     ).get_repository("the_repo")
 
@@ -154,7 +155,7 @@ def partitions_defs_changes_location_2_fixture(
 
 def base_job_name_changes_workspace_1_load_target(attribute=None):
     return InProcessTestWorkspaceLoadTarget(
-        InProcessCodeLocationOrigin(
+        ManagedGrpcPythonEnvCodeLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 module_name="dagster_tests.daemon_tests.test_locations.base_job_name_changes_locations.location_1",
@@ -179,7 +180,7 @@ def base_job_name_changes_location_1_fixture(
 
 def base_job_name_changes_workspace_2_load_target(attribute=None):
     return InProcessTestWorkspaceLoadTarget(
-        InProcessCodeLocationOrigin(
+        ManagedGrpcPythonEnvCodeLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 module_name="dagster_tests.daemon_tests.test_locations.base_job_name_changes_locations.location_2",

@@ -1,4 +1,3 @@
-import {gql, useMutation} from '@apollo/client';
 import {
   Box,
   Button,
@@ -19,6 +18,7 @@ import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,
 } from './types/CreatePartitionDialog.types';
+import {gql, useMutation} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {invalidatePartitions} from '../assets/PartitionSubscribers';
@@ -40,7 +40,6 @@ const INVALID_PARITION_SUBSTRINGS = [
   '\t',
   '\v',
   '\0',
-  '|',
   ',',
   '[',
   ']',
@@ -57,7 +56,6 @@ const INVALID_PARTITION_SUBSTRINGS_READABLE = [
   '\\t',
   '\\v',
   '\\0',
-  '|',
   '","',
   '[',
   ']',
@@ -66,14 +64,14 @@ const INVALID_PARTITION_SUBSTRINGS_READABLE = [
 
 export const CreatePartitionDialog = ({
   isOpen,
-  partitionDefinitionName,
+  dynamicPartitionsDefinitionName,
   close,
   repoAddress,
   refetch,
   onCreated,
 }: {
   isOpen: boolean;
-  partitionDefinitionName?: string | null;
+  dynamicPartitionsDefinitionName?: string | null;
   close: () => void;
   repoAddress: RepoAddress;
   refetch?: () => Promise<void>;
@@ -119,7 +117,7 @@ export const CreatePartitionDialog = ({
     const result = await createPartition({
       variables: {
         repositorySelector: repoAddressToSelector(repoAddress),
-        partitionsDefName: partitionDefinitionName || '',
+        partitionsDefName: dynamicPartitionsDefinitionName || '',
         partitionKey: partitionName,
       },
 
@@ -177,10 +175,10 @@ export const CreatePartitionDialog = ({
           <Icon name="add_circle" size={24} />
           <div>
             Add a partition
-            {partitionDefinitionName ? (
+            {dynamicPartitionsDefinitionName ? (
               <>
                 {' '}
-                for <Mono>{partitionDefinitionName}</Mono>
+                for <Mono>{dynamicPartitionsDefinitionName}</Mono>
               </>
             ) : (
               ''

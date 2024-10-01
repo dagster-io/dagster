@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
+from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+from dagster._core.storage.daemon_cursor import DaemonCursorStorage
 from dagster._core.storage.dagster_run import (
     DagsterRun,
     JobBucket,
@@ -19,10 +21,8 @@ from dagster._core.storage.sql import AlembicVersion
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
 
-from ..daemon_cursor import DaemonCursorStorage
-
 if TYPE_CHECKING:
-    from dagster._core.host_representation.origin import ExternalJobOrigin
+    from dagster._core.remote_representation.origin import RemoteJobOrigin
 
 
 class RunGroupInfo(TypedDict):
@@ -161,14 +161,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_run_tags(
         self,
-        tag_keys: Optional[Sequence[str]] = None,
+        tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[Tuple[str, Set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
 
         Args:
-            tag_keys (Optional[Sequence[str]]): tag keys to filter by.
+            tag_keys (Sequence[str]): tag keys to filter by.
 
         Returns:
             List[Tuple[str, Set[str]]]
@@ -353,6 +353,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         """Latest heartbeats of all daemon types."""
 
+    def add_run_telemetry(
+        self,
+        run_telemetry: RunTelemetryData,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
+        """Not implemented in base class. Should be implemented in subclasses that support telemetry."""
+        pass
+
     @abstractmethod
     def wipe_daemon_heartbeats(self) -> None:
         """Wipe all daemon heartbeats."""
@@ -361,11 +369,23 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_backfills(
         self,
-        status: Optional[BulkActionStatus] = None,
+        filters: Optional[BulkActionsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        status: Optional[BulkActionStatus] = None,
     ) -> Sequence[PartitionBackfill]:
         """Get a list of partition backfills."""
+
+    @abstractmethod
+    def get_backfills_count(self, filters: Optional[BulkActionsFilter] = None) -> int:
+        """Return the number of backfills present in the storage that match the given filters.
+
+        Args:
+            filters (Optional[BulkActionsFilter]) -- The filter by which to filter backfills
+
+        Returns:
+            int: The number of backfills that match the given filters.
+        """
 
     @abstractmethod
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
@@ -383,5 +403,4 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         return None
 
     @abstractmethod
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None:
-        ...
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "RemoteJobOrigin") -> None: ...

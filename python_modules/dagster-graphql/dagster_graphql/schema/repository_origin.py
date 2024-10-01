@@ -2,9 +2,9 @@ from typing import Sequence
 
 import dagster._check as check
 import graphene
-from dagster._core.host_representation import ExternalRepositoryOrigin
+from dagster._core.remote_representation import RemoteRepositoryOrigin
 
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneRepositoryMetadata(graphene.ObjectType):
@@ -24,9 +24,9 @@ class GrapheneRepositoryOrigin(graphene.ObjectType):
     class Meta:
         name = "RepositoryOrigin"
 
-    def __init__(self, origin: ExternalRepositoryOrigin):
+    def __init__(self, origin: RemoteRepositoryOrigin):
         super().__init__()
-        self._origin = check.inst_param(origin, "origin", ExternalRepositoryOrigin)
+        self._origin = check.inst_param(origin, "origin", RemoteRepositoryOrigin)
 
     def resolve_id(self, _graphene_info: ResolveInfo) -> str:
         return self._origin.get_id()

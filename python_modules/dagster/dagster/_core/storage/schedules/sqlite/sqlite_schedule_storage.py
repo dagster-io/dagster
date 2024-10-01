@@ -11,6 +11,8 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.schedules.schema import ScheduleStorageSqlMetadata
+from dagster._core.storage.schedules.sql_schedule_storage import SqlScheduleStorage
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -22,9 +24,6 @@ from dagster._core.storage.sql import (
 from dagster._core.storage.sqlite import create_db_conn_string, get_sqlite_version
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
-
-from ..schema import ScheduleStorageSqlMetadata
-from ..sql_schedule_storage import SqlScheduleStorage
 
 MINIMUM_SQLITE_BATCH_VERSION = "3.25.0"
 

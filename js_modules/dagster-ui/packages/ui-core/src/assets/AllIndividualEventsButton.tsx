@@ -23,27 +23,28 @@ import {
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface AssetEventsTableProps {
   hasPartitions: boolean;
   hasLineage: boolean;
   groups: AssetEventGroup[];
-  focused?: AssetEventGroup;
-  setFocused?: (timestamp: AssetEventGroup | undefined) => void;
+  focusedTimestamp?: string;
+  setFocusedTimestamp?: (timestamp: string | undefined) => void;
 }
 
 const AssetEventsTable = ({
   hasPartitions,
   hasLineage,
   groups,
-  focused,
-  setFocused,
+  focusedTimestamp,
+  setFocusedTimestamp,
 }: AssetEventsTableProps) => {
   return (
     <Table>
@@ -66,17 +67,19 @@ const AssetEventsTable = ({
                 if (e.target instanceof HTMLElement && e.target.closest('a')) {
                   return;
                 }
-                setFocused?.(focused !== group ? group : undefined);
+                setFocusedTimestamp?.(
+                  focusedTimestamp !== group.timestamp ? group.timestamp : undefined,
+                );
               }}
             >
               <EventGroupRow
                 group={group}
                 hasPartitions={hasPartitions}
                 hasLineage={hasLineage}
-                isFocused={focused === group}
+                isFocused={focusedTimestamp === group.timestamp}
               />
             </HoverableRow>
-            {focused === group ? (
+            {focusedTimestamp === group.timestamp ? (
               <MetadataEntriesRow hasLineage={hasLineage} group={group} />
             ) : undefined}
           </React.Fragment>
@@ -303,8 +306,12 @@ export const AllIndividualEventsButton = ({
   children: React.ReactNode;
   disabled?: boolean;
 }) => {
-  const [open, setOpen] = React.useState(false);
-  const [focused, setFocused] = React.useState<AssetEventGroup | undefined>();
+  const [_open, setOpen] = useQueryPersistedState({
+    queryKey: 'showAllEvents',
+    decode: (qs) => (qs.showAllEvents === 'true' ? true : false),
+    encode: (b) => ({showAllEvents: b || undefined}),
+  });
+  const [focusedTimestamp, setFocusedTimestamp] = React.useState<string | undefined>();
   const groups = React.useMemo(
     () =>
       events.map((p) => ({
@@ -315,6 +322,7 @@ export const AllIndividualEventsButton = ({
       })),
     [events],
   );
+
   const title = () => {
     if (hasPartitions && events[0]) {
       const partition = events[0].partition;
@@ -324,6 +332,8 @@ export const AllIndividualEventsButton = ({
     }
     return `Materialization and observation events`;
   };
+
+  const open = _open && !disabled;
 
   return (
     <>
@@ -343,8 +353,8 @@ export const AllIndividualEventsButton = ({
             <AssetEventsTable
               hasLineage={hasLineage}
               hasPartitions={hasPartitions}
-              focused={focused}
-              setFocused={setFocused}
+              focusedTimestamp={focusedTimestamp}
+              setFocusedTimestamp={setFocusedTimestamp}
               groups={groups}
             />
           </Box>

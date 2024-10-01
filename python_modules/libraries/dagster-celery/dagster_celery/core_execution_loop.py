@@ -11,9 +11,9 @@ from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .defaults import task_default_priority, task_default_queue
-from .make_app import make_app
-from .tags import (
+from dagster_celery.defaults import task_default_priority, task_default_queue
+from dagster_celery.make_app import make_app
+from dagster_celery.tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
     DAGSTER_CELERY_STEP_PRIORITY_TAG,

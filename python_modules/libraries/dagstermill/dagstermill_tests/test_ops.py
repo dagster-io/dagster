@@ -10,6 +10,7 @@ from dagster import execute_job, job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError
@@ -396,7 +397,6 @@ def test_resources_notebook():
 @pytest.mark.skip
 @pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
-    result = None
     with safe_tempfile_path() as path:
         with exec_for_test(
             "resource_with_exception_job",
@@ -492,7 +492,7 @@ def test_default_tags():
     test_op_default_tags = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
 
     assert test_op_default_tags.tags == {
-        "kind": "ipynb",
+        COMPUTE_KIND_TAG: "ipynb",
         "notebook_path": BACKING_NB_PATH,
     }
 
@@ -503,7 +503,7 @@ def test_custom_tags():
     )
 
     assert test_op_custom_tags.tags == {
-        "kind": "ipynb",
+        COMPUTE_KIND_TAG: "ipynb",
         "notebook_path": BACKING_NB_PATH,
         "foo": "bar",
     }
@@ -514,7 +514,7 @@ def test_reserved_tags_not_overridden():
         define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"notebook_path": "~"})
 
     with pytest.raises(CheckError, match="key is reserved for use by Dagster"):
-        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"kind": "py"})
+        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={COMPUTE_KIND_TAG: "py"})
 
 
 def test_default_description():

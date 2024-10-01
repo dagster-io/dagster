@@ -4,12 +4,12 @@ import * as Types from '../../graphql/types';
 
 export type TickHistoryQueryVariables = Types.Exact<{
   instigationSelector: Types.InstigationSelector;
-  dayRange?: Types.InputMaybe<Types.Scalars['Int']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  dayRange?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
   statuses?: Types.InputMaybe<Array<Types.InstigationTickStatus> | Types.InstigationTickStatus>;
-  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
-  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']>;
+  beforeTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  afterTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
 }>;
 
 export type TickHistoryQuery = {
@@ -65,3 +65,5 @@ export type TickHistoryQuery = {
         }>;
       };
 };
+
+export const TickHistoryQueryVersion = '4dff0791129120937abefb56bf6b21102cd3b67f81f7285763f01d6467f850e8';

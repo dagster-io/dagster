@@ -29,16 +29,15 @@ from dagster._core.execution.context.system import (
     PlanExecutionContext,
     PlanOrchestrationContext,
 )
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
+from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
+from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode, RetryState
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG, PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._utils.tags import TagConcurrencyLimitsCounter
-
-from .instance_concurrency_context import InstanceConcurrencyContext
-from .outputs import StepOutputData, StepOutputHandle
-from .plan import ExecutionPlan
-from .step import ExecutionStep
 
 
 def _default_sort_key(step: ExecutionStep) -> float:
@@ -305,7 +304,7 @@ class ActiveExecution:
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
         step = self._plan.get_step_by_key(step_key)
-        return cast(ExecutionStep, check.inst(step, ExecutionStep))
+        return check.inst(step, ExecutionStep)
 
     def get_steps_to_execute(
         self,
@@ -354,12 +353,12 @@ class ActiveExecution:
             step_concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG)
             if step_concurrency_key and self._instance_concurrency_context:
                 try:
-                    priority = int(step.tags.get(PRIORITY_TAG, 0))
+                    step_priority = int(step.tags.get(PRIORITY_TAG, 0))
                 except ValueError:
-                    priority = 0
+                    step_priority = 0
 
                 if not self._instance_concurrency_context.claim(
-                    step_concurrency_key, step.key, priority
+                    step_concurrency_key, step.key, step_priority
                 ):
                     continue
 
@@ -550,8 +549,8 @@ class ActiveExecution:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure."""
         if step_key in self._in_flight:
             job_context.log.error(
-                "Step {key} finished without success or failure event. Downstream steps will not"
-                " execute.".format(key=step_key)
+                f"Step {step_key} finished without success or failure event. Downstream steps will not"
+                " execute."
             )
             self.mark_unknown_state(step_key)
 
@@ -585,6 +584,10 @@ class ActiveExecution:
     @property
     def retry_state(self) -> RetryState:
         return self._retry_state
+
+    @property
+    def has_in_flight_steps(self) -> bool:
+        return len(self._in_flight) > 0
 
     def get_known_state(self) -> KnownExecutionState:
         return KnownExecutionState(

@@ -1,8 +1,10 @@
 import os
 from contextlib import contextmanager
+from typing import cast
 
 import pytest
 from dagster import AssetKey, DagsterEventType
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import execute_job
@@ -107,6 +109,12 @@ def test_add_two_number_asset():
 def test_hello_world_resource_asset():
     with exec_for_test("hello_world_resource_asset_job") as result:
         assert result.success
+
+
+@pytest.mark.notebook_test
+def test_asset_tags() -> None:
+    key = cast(AssetsDefinition, custom_io_mgr_key_asset).key
+    assert cast(AssetsDefinition, custom_io_mgr_key_asset).tags_by_key[key] == {"foo": "bar"}
 
 
 @pytest.mark.notebook_test

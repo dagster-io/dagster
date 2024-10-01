@@ -1,37 +1,27 @@
 import hashlib
-from abc import ABC, abstractmethod, abstractproperty
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, AbstractSet, Iterator, List, Optional, Sequence, Set, Union, cast
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle
-from dagster._core.definitions.version_strategy import ResourceVersionContext
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterExecutionLoadInputError,
-    DagsterInvariantViolationError,
     DagsterTypeLoadingError,
     user_code_error_boundary,
 )
+from dagster._core.execution.plan.objects import TypeCheckData
+from dagster._core.execution.plan.outputs import StepOutputHandle, UnresolvedStepOutputHandle
+from dagster._core.execution.plan.utils import (
+    build_resources_for_manager,
+    op_execution_error_boundary,
+)
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
-
-from .objects import TypeCheckData
-from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
-from .utils import build_resources_for_manager, op_execution_error_boundary
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
@@ -44,34 +34,21 @@ StepInputUnion: TypeAlias = Union[
 
 
 @whitelist_for_serdes
-class StepInputData(
-    NamedTuple("_StepInputData", [("input_name", str), ("type_check_data", TypeCheckData)])
-):
+@record
+class StepInputData:
     """Serializable payload of information for the result of processing a step input."""
 
-    def __new__(cls, input_name: str, type_check_data: TypeCheckData):
-        return super(StepInputData, cls).__new__(
-            cls,
-            input_name=check.str_param(input_name, "input_name"),
-            type_check_data=check.inst_param(type_check_data, "type_check_data", TypeCheckData),
-        )
+    input_name: str
+    type_check_data: TypeCheckData
 
 
-class StepInput(
-    NamedTuple(
-        "_StepInput",
-        [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
-    )
-):
+@record
+class StepInput:
     """Holds information for how to prepare an input for an ExecutionStep."""
 
-    def __new__(cls, name: str, dagster_type_key: str, source: "StepInputSource"):
-        return super(StepInput, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
-            source=check.inst_param(source, "source", StepInputSource),
-        )
+    name: str
+    dagster_type_key: str
+    source: "StepInputSource"
 
     @property
     def dependency_keys(self) -> AbstractSet[str]:
@@ -105,60 +82,48 @@ class StepInputSource(ABC):
     @abstractmethod
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
-    ) -> Iterator[object]:
-        ...
+    ) -> Iterator[object]: ...
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> AbstractSet[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> AbstractSet[str]:
         return set()
 
-    @abstractmethod
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        """See resolve_step_versions in resolve_versions.py for explanation of step_versions."""
-        raise NotImplementedError()
 
-
-@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromSourceAsset(
-    NamedTuple(
-        "_FromSourceAsset",
-        [
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@whitelist_for_serdes(
+    storage_name="FromSourceAsset", storage_field_names={"node_handle": "solid_handle"}
+)
+@record
+class FromLoadableAsset(StepInputSource):
     """Load input value from an asset."""
+
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle = NodeHandle("", None)
+    input_name: str = ""
 
     def load_input_object(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ) -> Iterator[object]:
-        from dagster._core.definitions.asset_layer import AssetOutputInfo
         from dagster._core.events import DagsterEvent
         from dagster._core.execution.context.output import OutputContext
 
         asset_layer = step_context.job_def.asset_layer
 
         input_asset_key = asset_layer.asset_key_for_input(
-            self.node_handle, input_name=self.input_name
+            step_context.node_handle, input_name=input_def.name
         )
         assert input_asset_key is not None
 
         input_manager_key = (
             input_def.input_manager_key
             if input_def.input_manager_key
-            else asset_layer.io_manager_key_for_asset(input_asset_key)
+            else asset_layer.get(input_asset_key).io_manager_key
         )
 
-        op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
-        config_data = op_config.inputs.get(self.input_name) if op_config else None
+        op_config = step_context.resolved_run_config.ops.get(str(step_context.node_handle))
+        config_data = op_config.inputs.get(input_def.name) if op_config else None
 
         loader = getattr(step_context.resources, input_manager_key)
         resources = build_resources_for_manager(input_manager_key, step_context)
@@ -166,27 +131,28 @@ class FromSourceAsset(
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
-            metadata=input_def.metadata,
+            definition_metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=resource_config,
             resources=resources,
             artificial_output_context=OutputContext(
                 resources=resources,
-                asset_info=AssetOutputInfo(
-                    key=input_asset_key,
-                    partitions_def=asset_layer.partitions_def_for_asset(input_asset_key),
-                ),
+                asset_key=input_asset_key,
                 name=input_asset_key.path[-1],
                 step_key="none",
-                metadata=asset_layer.metadata_for_asset(input_asset_key),
+                definition_metadata=asset_layer.get(input_asset_key).metadata,
                 resource_config=resource_config,
                 log_manager=step_context.log,
+                step_context=step_context,
             ),
         )
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_logged_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -195,60 +161,25 @@ class FromSourceAsset(
             metadata=metadata,
         )
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        from ..resolve_versions import check_valid_version, resolve_config_version
-
-        op = job_def.get_node(self.node_handle)
-        input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)
-        io_manager_def = job_def.resource_defs[input_manager_key]
-
-        op_config = check.not_none(resolved_run_config.ops.get(op.name))
-        input_config = op_config.inputs.get(self.input_name)
-        resource_entry = check.not_none(resolved_run_config.resources.get(input_manager_key))
-        resource_config = resource_entry.config
-
-        version_context = ResourceVersionContext(
-            resource_def=io_manager_def,
-            resource_config=resource_config,
-        )
-
-        if job_def.version_strategy is not None:
-            io_manager_def_version = job_def.version_strategy.get_resource_version(version_context)
-        else:
-            io_manager_def_version = io_manager_def.version
-
-        if io_manager_def_version is None:
-            raise DagsterInvariantViolationError(
-                f"While using memoization, version for io manager '{io_manager_def}' was "
-                "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the io_manager decorator."
-            )
-
-        check_valid_version(io_manager_def_version)
-        return join_and_hash(
-            resolve_config_version(input_config),
-            resolve_config_version(resource_config),
-            io_manager_def_version,
-        )
-
-    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
-        input_asset_key = job_def.asset_layer.asset_key_for_input(self.node_handle, self.input_name)
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
+        input_asset_key = job_def.asset_layer.asset_key_for_input(op_handle, op_input_name)
         if input_asset_key is None:
             check.failed(
-                f"Must have an asset key associated with input {self.input_name} to load it"
+                f"Must have an asset key associated with input {op_input_name} to load it"
                 " using FromSourceAsset",
             )
 
-        input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
+        input_def = job_def.get_node(op_handle).input_def_named(op_input_name)
         if input_def.input_manager_key is not None:
             input_manager_key = input_def.input_manager_key
         else:
-            input_manager_key = job_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+            input_manager_key = (
+                job_def.asset_layer.get(input_asset_key).io_manager_key
+                if job_def.asset_layer.has(input_asset_key)
+                else DEFAULT_IO_MANAGER_KEY
+            )
 
         if input_manager_key is None:
             check.failed(
@@ -261,17 +192,12 @@ class FromSourceAsset(
 @whitelist_for_serdes(
     storage_name="FromRootInputManager", storage_field_names={"node_handle": "solid_handle"}
 )
-class FromInputManager(
-    NamedTuple(
-        "_FromInputManager",
-        [
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record
+class FromInputManager(StepInputSource):
     """Load input value via a InputManager."""
+
+    node_handle: NodeHandle
+    input_name: str
 
     def load_input_object(
         self,
@@ -299,7 +225,7 @@ class FromInputManager(
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
-            metadata=input_def.metadata,
+            definition_metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
             resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
             resources=build_resources_for_manager(input_manager_key, step_context),
@@ -307,7 +233,10 @@ class FromInputManager(
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_logged_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -316,54 +245,10 @@ class FromInputManager(
             metadata=metadata,
         )
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        from ..resolve_versions import check_valid_version, resolve_config_version
-
-        node = job_def.get_node(self.node_handle)
-        input_manager_key: str = check.not_none(
-            node.input_def_named(self.input_name).input_manager_key
-        )
-        input_manager_def = job_def.resource_defs[input_manager_key]
-
-        op_config = resolved_run_config.ops[node.name]
-        input_config = op_config.inputs.get(self.input_name)
-        resource_config = check.not_none(
-            resolved_run_config.resources.get(input_manager_key)
-        ).config
-
-        version_context = ResourceVersionContext(
-            resource_def=input_manager_def,
-            resource_config=resource_config,
-        )
-
-        if job_def.version_strategy is not None:
-            input_manager_def_version = job_def.version_strategy.get_resource_version(
-                version_context
-            )
-        else:
-            input_manager_def_version = input_manager_def.version
-
-        if input_manager_def_version is None:
-            raise DagsterInvariantViolationError(
-                f"While using memoization, version for input manager '{input_manager_key}' was "
-                "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the input_manager decorator."
-            )
-
-        check_valid_version(input_manager_def_version)
-        return join_and_hash(
-            resolve_config_version(input_config),
-            resolve_config_version(resource_config),
-            input_manager_def_version,
-        )
-
-    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
-        input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
+        input_def = job_def.get_node(op_handle).input_def_named(op_input_name)
 
         input_manager_key: str = check.not_none(input_def.input_manager_key)
 
@@ -371,22 +256,18 @@ class FromInputManager(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromStepOutput(
-    NamedTuple(
-        "_FromStepOutput",
-        [
-            ("step_output_handle", StepOutputHandle),
-            ("fan_in", bool),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record_custom
+class FromStepOutput(StepInputSource, IHaveNew):
     """This step input source is the output of a previous step.
     Source handle may refer to graph in case of input mapping.
     """
+
+    step_output_handle: StepOutputHandle
+    fan_in: bool
+
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -398,15 +279,11 @@ class FromStepOutput(
     ):
         return super().__new__(
             cls,
-            step_output_handle=check.inst_param(
-                step_output_handle, "step_output_handle", StepOutputHandle
-            ),
-            fan_in=check.bool_param(fan_in, "fan_in"),
+            step_output_handle=step_output_handle,
+            fan_in=fan_in,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -485,7 +362,10 @@ class FromStepOutput(
         )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
-        metadata = load_input_context.consume_metadata()
+        metadata = {
+            **load_input_context.definition_metadata,
+            **load_input_context.consume_logged_metadata(),
+        }
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -496,48 +376,22 @@ class FromStepOutput(
             metadata=metadata,
         )
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        if (
-            self.step_output_handle.step_key not in step_versions
-            or not step_versions[self.step_output_handle.step_key]
-        ):
-            return None
-        else:
-            return join_and_hash(
-                step_versions[self.step_output_handle.step_key], self.step_output_handle.output_name
-            )
-
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromConfig(
-    NamedTuple(
-        "_FromConfig",
-        [
-            ("node_handle", Optional[NodeHandle]),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record
+class FromConfig(StepInputSource):
     """This step input source is configuration to be passed to a type loader.
 
     A None node_handle implies the inputs were provided at the root graph level.
     """
 
-    def __new__(cls, node_handle: Optional[NodeHandle], input_name: str):
-        return super(FromConfig, cls).__new__(
-            cls,
-            node_handle=node_handle,
-            input_name=input_name,
-        )
+    node_handle: Optional[NodeHandle]
+    input_name: str
 
     def get_associated_input_def(self, job_def: JobDefinition) -> InputDefinition:
         """Returns the InputDefinition along the potential composition InputMapping chain
@@ -576,39 +430,21 @@ class FromConfig(
                 step_context.get_type_loader_context(), config_data
             )
 
-    def required_resource_keys(self, job_def: JobDefinition) -> AbstractSet[str]:
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> AbstractSet[str]:
         dagster_type = self.get_associated_input_def(job_def).dagster_type
         return dagster_type.loader.required_resource_keys() if dagster_type.loader else set()
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        config_data = self.get_associated_config(resolved_run_config)
-        input_def = self.get_associated_input_def(job_def)
-        dagster_type = input_def.dagster_type
-        loader = check.not_none(dagster_type.loader)
-
-        return loader.compute_loaded_input_version(config_data)
-
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
+@record
 class FromDirectInputValue(
-    NamedTuple(
-        "_FromDirectInputValue",
-        [("input_name", str)],
-    ),
     StepInputSource,
 ):
     """This input source is for direct python values to be passed as inputs to ops."""
 
-    def __new__(cls, input_name: str):
-        return super(FromDirectInputValue, cls).__new__(
-            cls,
-            input_name=input_name,
-        )
+    input_name: str
 
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
@@ -616,33 +452,19 @@ class FromDirectInputValue(
         job_def = step_context.job_def
         yield job_def.get_direct_input_value(self.input_name)
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
-
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        return str(self.input_name)
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromDefaultValue(
-    NamedTuple(
-        "_FromDefaultValue",
-        [
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record
+class FromDefaultValue(StepInputSource):
     """This step input source is the default value declared on an InputDefinition."""
 
-    def __new__(cls, node_handle: NodeHandle, input_name: str):
-        return super(FromDefaultValue, cls).__new__(cls, node_handle, input_name)
+    node_handle: NodeHandle
+    input_name: str
 
     def _load_value(self, pipeline_def: JobDefinition):
         return pipeline_def.get_node(self.node_handle).definition.default_value_for_input(
@@ -656,19 +478,9 @@ class FromDefaultValue(
     ) -> Iterator[object]:
         yield self._load_value(step_context.job_def)
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        return join_and_hash(repr(self._load_value(job_def)))
 
-
-class MultiStepInputSource(StepInputSource):
-    @abstractproperty
-    def sources(self) -> Sequence[StepInputSource]:
-        raise NotImplementedError
+class MultiStepInputSource(StepInputSource, ABC):
+    sources: Sequence[StepInputSource]
 
     @property
     def step_key_dependencies(self) -> AbstractSet[str]:
@@ -686,40 +498,26 @@ class MultiStepInputSource(StepInputSource):
 
         return handles
 
-    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         resource_keys: Set[str] = set()
         for source in self.sources:
-            resource_keys = resource_keys.union(source.required_resource_keys(job_def))
+            resource_keys = resource_keys.union(
+                source.required_resource_keys(job_def, op_handle, op_input_name)
+            )
         return resource_keys
-
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        return join_and_hash(
-            *[
-                inner_source.compute_version(step_versions, job_def, resolved_run_config)
-                for inner_source in self.sources
-            ]
-        )
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromMultipleSources(
-    NamedTuple(
-        "_FromMultipleSources",
-        [
-            ("sources", Sequence[StepInputSource]),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    MultiStepInputSource,
-):
+@record_custom
+class FromMultipleSources(MultiStepInputSource, IHaveNew):
     """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
+
+    sources: Sequence[StepInputSource]
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -738,10 +536,8 @@ class FromMultipleSources(
             cls,
             sources=sources,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     def load_input_object(
@@ -778,19 +574,14 @@ class FromMultipleSources(
 
 
 @whitelist_for_serdes
-class FromMultipleSourcesLoadSingleSource(
-    NamedTuple(
-        "_FromMultipleSourcesLoadSingleSource",
-        [
-            ("sources", Sequence[StepInputSource]),
-            ("source_to_load_from", StepInputSource),
-        ],
-    ),
-    MultiStepInputSource,
-):
+@record_custom
+class FromMultipleSourcesLoadSingleSource(MultiStepInputSource, IHaveNew):
     """This step input fans-in multiple sources in to a single input. The input will receive just
     the value from loading source_to_load_from.
     """
+
+    sources: Sequence[StepInputSource]
+    source_to_load_from: StepInputSource
 
     def __new__(cls, sources: Sequence[StepInputSource], source_to_load_from: StepInputSource):
         check.sequence_param(sources, "sources", StepInputSource)
@@ -802,9 +593,7 @@ class FromMultipleSourcesLoadSingleSource(
         return super().__new__(
             cls,
             sources=sources,
-            source_to_load_from=check.inst_param(
-                source_to_load_from, "source_to_load_from", StepInputSource
-            ),
+            source_to_load_from=source_to_load_from,
         )
 
     def load_input_object(
@@ -837,20 +626,16 @@ def _load_input_with_input_manager(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromPendingDynamicStepOutput(
-    NamedTuple(
-        "_FromPendingDynamicStepOutput",
-        [
-            ("step_output_handle", StepOutputHandle),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-):
+@record_custom
+class FromPendingDynamicStepOutput(IHaveNew):
     """This step input source models being directly downstream of a step with dynamic output.
     Once that step completes successfully, this will resolve once per DynamicOutput.
     """
+
+    step_output_handle: StepOutputHandle
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -868,10 +653,8 @@ class FromPendingDynamicStepOutput(
             cls,
             step_output_handle=step_output_handle,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -897,25 +680,23 @@ class FromPendingDynamicStepOutput(
         # None mapping_key on StepOutputHandle acts as placeholder
         return self.step_output_handle
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromUnresolvedStepOutput(
-    NamedTuple(
-        "_FromUnresolvedStepOutput",
-        [
-            ("unresolved_step_output_handle", UnresolvedStepOutputHandle),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-):
+@record_custom
+class FromUnresolvedStepOutput(IHaveNew):
     """This step input source models being downstream of another unresolved step,
     for example indirectly downstream from a step with dynamic output.
     """
+
+    unresolved_step_output_handle: UnresolvedStepOutputHandle
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -926,16 +707,10 @@ class FromUnresolvedStepOutput(
     ):
         return super().__new__(
             cls,
-            unresolved_step_output_handle=check.inst_param(
-                unresolved_step_output_handle,
-                "unresolved_step_output_handle",
-                UnresolvedStepOutputHandle,
-            ),
+            unresolved_step_output_handle=unresolved_step_output_handle,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -956,22 +731,20 @@ class FromUnresolvedStepOutput(
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
         return self.unresolved_step_output_handle.get_step_output_handle_with_placeholder()
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromDynamicCollect(
-    NamedTuple(
-        "_FromDynamicCollect",
-        [
-            ("source", Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-):
+@record_custom
+class FromDynamicCollect(IHaveNew):
+    source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
+
     def __new__(
         cls,
         source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput],
@@ -983,10 +756,8 @@ class FromDynamicCollect(
             cls,
             source=source,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -1000,7 +771,9 @@ class FromDynamicCollect(
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
         return self.source.get_step_output_handle_dep_with_placeholder()
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
     def resolve(self, mapping_keys: Optional[Sequence[str]]):
@@ -1019,7 +792,8 @@ class FromDynamicCollect(
         )
 
 
-class UnresolvedMappedStepInput(NamedTuple):
+@record
+class UnresolvedMappedStepInput:
     """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str
@@ -1046,7 +820,8 @@ class UnresolvedMappedStepInput(NamedTuple):
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
-class UnresolvedCollectStepInput(NamedTuple):
+@record
+class UnresolvedCollectStepInput:
     """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str

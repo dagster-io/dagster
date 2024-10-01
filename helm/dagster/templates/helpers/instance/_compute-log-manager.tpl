@@ -20,7 +20,10 @@ class: AzureBlobComputeLogManager
 config:
   storage_account: {{ include "stringSource" $azureBlobComputeLogManagerConfig.storageAccount }}
   container: {{ include "stringSource" $azureBlobComputeLogManagerConfig.container }}
+
+  {{- if $azureBlobComputeLogManagerConfig.secretKey }}
   secret_key: {{ include "stringSource" $azureBlobComputeLogManagerConfig.secretKey }}
+  {{- end }}
 
   {{- if $azureBlobComputeLogManagerConfig.localDir }}
   local_dir: {{ include "stringSource" $azureBlobComputeLogManagerConfig.localDir }}

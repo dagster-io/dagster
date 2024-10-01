@@ -12,26 +12,28 @@ Why not pickle?
 * This isn't meant to replace pickle in the conditions that pickle is reasonable to use
   (in memory, not human readable, etc) just handle the json case effectively.
 """
+
 import collections.abc
 import dataclasses
 from abc import ABC, abstractmethod
 from dataclasses import is_dataclass
 from enum import Enum
-from functools import partial
+from functools import cached_property, partial
 from inspect import Parameter, signature
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
     Dict,
     FrozenSet,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
     NamedTuple,
     Optional,
-    Protocol,
     Sequence,
     Set,
     Tuple,
@@ -41,26 +43,31 @@ from typing import (
     overload,
 )
 
-import pydantic
+from pydantic import BaseModel
 from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
+from dagster._record import (
+    IHaveNew,
+    as_dict_for_new,
+    get_record_annotations,
+    has_generated_new,
+    is_record,
+)
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
-from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
-from .errors import DeserializationError, SerdesUsageError, SerializationError
+if TYPE_CHECKING:
+    # There is no actual class backing Dataclasses, _typeshed provides this
+    # protocol.
+    from _typeshed import DataclassInstance
 
 ###################################################################################################
 # Types
 ###################################################################################################
-
-
-# dataclasses don't have a backing class, so use a Protocol to type them
-class DataclassProtocol(Protocol):
-    __dict__: Mapping[str, Any]
-    __dataclass_fields__: Dict[str, dataclasses.Field]
 
 
 JsonSerializableValue: TypeAlias = Union[
@@ -82,11 +89,12 @@ PackableValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
-    DataclassProtocol,
+    BaseModel,
+    "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
+    IHaveNew,  # indirect way of indicating @record_custom classes are packable
 ]
 
 UnpackedValue: TypeAlias = Union[
@@ -98,12 +106,19 @@ UnpackedValue: TypeAlias = Union[
     bool,
     None,
     NamedTuple,
-    pydantic.BaseModel,
-    DataclassProtocol,
+    BaseModel,
+    "DataclassInstance",
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
     "UnknownSerdesValue",
+    IHaveNew,
+]
+
+SerializableObject: TypeAlias = Union[
+    NamedTuple,
+    BaseModel,
+    "DataclassInstance",
 ]
 
 _K = TypeVar("_K")
@@ -141,6 +156,7 @@ class WhitelistMap(NamedTuple):
     object_serializers: Dict[str, "ObjectSerializer"]
     object_deserializers: Dict[str, "ObjectSerializer"]
     enum_serializers: Dict[str, "EnumSerializer"]
+    object_type_map: Dict[str, Type]
 
     def register_object(
         self,
@@ -152,13 +168,15 @@ class WhitelistMap(NamedTuple):
         storage_field_names: Optional[Mapping[str, str]] = None,
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+        skip_when_none_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
+        kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
         """Register a model class in the whitelist map.
 
         Args:
             name: The class name of the namedtuple to register
-            nt: The namedtuple class to register.
+            object_class: The object class to register.
                 Can be None to gracefull load previously serialized objects as None.
             serializer: The class to use when serializing and deserializing
         """
@@ -168,30 +186,26 @@ class WhitelistMap(NamedTuple):
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
+            skip_when_none_fields=skip_when_none_fields,
             field_serializers=(
                 {k: klass.get_instance() for k, klass in field_serializers.items()}
                 if field_serializers
                 else None
             ),
+            kwargs_fields=kwargs_fields,
         )
         self.object_serializers[name] = serializer
         deserializer_name = storage_name or name
+        if deserializer_name in self.object_deserializers:
+            raise SerdesUsageError(
+                f"Multiple deserializers registered for storage name `{deserializer_name}`"
+            )
         self.object_deserializers[deserializer_name] = serializer
         if old_storage_names:
             for old_storage_name in old_storage_names:
                 self.object_deserializers[old_storage_name] = serializer
 
-    def has_object_serializer(self, name: str) -> bool:
-        return name in self.object_serializers
-
-    def has_object_deserializer(self, name: str) -> bool:
-        return name in self.object_deserializers
-
-    def get_object_serializer(self, name: str) -> "ObjectSerializer":
-        return self.object_serializers[name]
-
-    def get_object_deserializer(self, name: str) -> "ObjectSerializer":
-        return self.object_deserializers[name]
+        self.object_type_map[name] = serializer.klass
 
     def register_enum(
         self,
@@ -213,15 +227,14 @@ class WhitelistMap(NamedTuple):
             for old_storage_name in old_storage_names:
                 self.enum_serializers[old_storage_name] = serializer
 
-    def has_enum_entry(self, name: str) -> bool:
-        return name in self.enum_serializers
-
-    def get_enum_entry(self, name: str) -> "EnumSerializer":
-        return self.enum_serializers[name]
-
     @staticmethod
     def create() -> "WhitelistMap":
-        return WhitelistMap(object_serializers={}, object_deserializers={}, enum_serializers={})
+        return WhitelistMap(
+            object_serializers={},
+            object_deserializers={},
+            enum_serializers={},
+            object_type_map={},
+        )
 
 
 _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
@@ -233,8 +246,7 @@ T_Scalar = TypeVar("T_Scalar", bound=Union[str, int, float, bool, None])
 
 
 @overload
-def whitelist_for_serdes(__cls: T_Type) -> T_Type:
-    ...
+def whitelist_for_serdes(__cls: T_Type) -> T_Type: ...
 
 
 @overload
@@ -247,10 +259,10 @@ def whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = ...,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
+    skip_when_none_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
-) -> Callable[[T_Type], T_Type]:
-    ...
+    kwargs_fields: Optional[AbstractSet[str]] = None,
+) -> Callable[[T_Type], T_Type]: ...
 
 
 def whitelist_for_serdes(
@@ -262,8 +274,9 @@ def whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = None,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+    skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
+    kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorator to whitelist an object (NamedTuple / dataclass / pydantic model) or
     Enum subclass to be serializable. Various arguments can be passed to alter
@@ -297,11 +310,19 @@ def whitelist_for_serdes(
          Does not apply to enums.
       skip_when_empty_fields (Optional[AbstractSet[str]]):
           A set of fields that should be skipped when serializing if they are an empty collection
-          (list, dict, tuple, or set). This allows a stable snapshot ID to be maintained when a new
+          (list, dict, tuple, or set) or None. This allows a stable snapshot ID to be maintained when a new
           field is added. For example, if `{"bar"}` is passed as `skip_when_empty_fields` for `Foo`,
           then serializing `Foo(bar=[])` will give `{"__class__": "Foo"}` (no `bar` in the
           serialization). This is because the `[]` is an empty list and so is dropped. Does not
           apply to enums.
+      skip_when_none_fields (Optional[AbstractSet[str]]):
+          A set of fields that should be skipped when serializing if they are None. Unlike `skip_when_empty_fields`,
+          this will not skip fields that are empty collections, allowing preservation of a
+          distinction between None and empty collections across serialization boundaries. This
+          allows a stable snapshot ID to be maintained when a new field is added. For example, if
+          `{"bar"}` is passed as `skip_when_none_fields` for `Foo`, then serializing `Foo(bar=None)`
+          will give `{"__class__": "Foo"}` (no `bar` in the serialization). This is because the `None`
+          is an empty list and so is dropped. Does not apply to enums.
       field_serializers (Optional[Mapping[str, FieldSerializer]]):
           A mapping of field names to `FieldSerializer` classes containing custom serialization
           logic. If a field has an associated `FieldSerializer`, then the `pack` and `unpack`
@@ -310,21 +331,22 @@ def whitelist_for_serdes(
           The canonical example is `MetadataFieldSerializer`.  Note that if the field needs to be
           stored under a different name, then it still needs an entry in `storage_field_names` even
           if a `FieldSerializer` is provided. Does not apply to enums.
+        kwargs_fields (Optional[AbstractSet[str]]): A set of fields that will be passed to the constructor in kwargs.
     """
-    if storage_field_names or old_fields or skip_when_empty_fields:
+    if storage_field_names or old_fields or skip_when_empty_fields or skip_when_none_fields:
         check.invariant(
             serializer is None or issubclass(serializer, ObjectSerializer),
-            "storage_field_names, old_fields, skip_when_empty_fields can only be used with a"
+            "storage_field_names, old_fields, skip_when_empty_fields, skip_when_none_fields can only be used with a"
             " ObjectSerializer",
         )
     if __cls is not None:  # decorator invoked directly on class
         check.class_param(__cls, "__cls")
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP,
-            is_pickleable=is_pickleable,
         )(__cls)
     else:  # decorator passed params
         check.opt_class_param(serializer, "serializer", superclass=Serializer)
+
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP,
             serializer=serializer,
@@ -333,8 +355,9 @@ def whitelist_for_serdes(
             storage_field_names=storage_field_names,
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
+            skip_when_none_fields=skip_when_none_fields,
             field_serializers=field_serializers,
-            is_pickleable=is_pickleable,
+            kwargs_fields=kwargs_fields,
         )
 
 
@@ -346,8 +369,9 @@ def _whitelist_for_serdes(
     storage_field_names: Optional[Mapping[str, str]] = None,
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+    skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
+    kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if issubclass(klass, Enum) and (
@@ -364,7 +388,10 @@ def _whitelist_for_serdes(
         elif is_named_tuple_subclass(klass) and (
             serializer is None or issubclass(serializer, NamedTupleSerializer)
         ):
-            _check_serdes_tuple_class_invariants(klass, is_pickleable=is_pickleable)
+            _check_serdes_tuple_class_invariants(
+                klass,
+                kwargs_fields=kwargs_fields,
+            )
 
             whitelist_map.register_object(
                 klass.__name__,
@@ -375,7 +402,9 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
+                kwargs_fields=kwargs_fields,
             )
             return klass  # type: ignore  # (NamedTuple quirk)
 
@@ -391,10 +420,11 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
             return klass  # type: ignore
-        elif issubclass(klass, pydantic.BaseModel) and (
+        elif issubclass(klass, BaseModel) and (
             serializer is None or issubclass(serializer, PydanticModelSerializer)
         ):
             whitelist_map.register_object(
@@ -406,6 +436,7 @@ def _whitelist_for_serdes(
                 storage_field_names=storage_field_names,
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
+                skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
             )
             return klass
@@ -422,10 +453,10 @@ def is_whitelisted_for_serdes_object(
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))  # NamedTuple
         or (is_dataclass(val) and not isinstance(val, type))  # dataclass instance
-        or isinstance(val, pydantic.BaseModel)
+        or isinstance(val, BaseModel)
     ):
         klass_name = val.__class__.__name__
-        return whitelist_map.has_object_serializer(klass_name)
+        return klass_name in whitelist_map.object_serializers
 
     return False
 
@@ -463,6 +494,7 @@ class UnpackContext:
     def clear_ignored_unknown_values(self, obj: T) -> T:
         if isinstance(obj, UnknownSerdesValue):
             self.observed_unknown_serdes_values.discard(obj)
+            self.clear_ignored_unknown_values(obj.value)
         elif isinstance(obj, (list, set, frozenset)):
             for inner in obj:
                 self.clear_ignored_unknown_values(inner)
@@ -509,7 +541,12 @@ class EnumSerializer(Serializer, Generic[T_Enum]):
         return self.storage_name or self.klass.__name__
 
 
-EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (None, [], {}, set())
+EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (
+    None,
+    [],
+    {},
+    set(),
+)
 
 
 class ObjectSerializer(Serializer, Generic[T]):
@@ -522,7 +559,9 @@ class ObjectSerializer(Serializer, Generic[T]):
         storage_field_names: Optional[Mapping[str, str]] = None,
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
+        skip_when_none_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, "FieldSerializer"]] = None,
+        kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
         self.klass = klass
         self.storage_name = storage_name
@@ -530,11 +569,12 @@ class ObjectSerializer(Serializer, Generic[T]):
         self.loaded_field_names = {v: k for k, v in self.storage_field_names.items()}
         self.old_fields = old_fields or {}
         self.skip_when_empty_fields = skip_when_empty_fields or set()
+        self.skip_when_none_fields = skip_when_none_fields or set()
         self.field_serializers = field_serializers or {}
+        self.kwargs_fields = kwargs_fields
 
     @abstractmethod
-    def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]:
-        ...
+    def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]: ...
 
     def unpack(
         self,
@@ -562,7 +602,7 @@ class ObjectSerializer(Serializer, Generic[T]):
                     elif context.observed_unknown_serdes_values:
                         unpacked[loaded_name] = context.assert_no_unknown_values(value)
                     else:
-                        unpacked[loaded_name] = cast(PackableValue, value)
+                        unpacked[loaded_name] = value  # type: ignore # 2 hot 4 cast()
 
                 else:
                     context.clear_ignored_unknown_values(value)
@@ -594,49 +634,50 @@ class ObjectSerializer(Serializer, Generic[T]):
     ) -> Any:
         raise exc
 
-    def pack(
+    def pack_items(
         self,
         value: T,
         whitelist_map: WhitelistMap,
+        object_handler: Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue],
         descent_path: str,
-    ) -> Dict[str, JsonSerializableValue]:
-        packed: Dict[str, JsonSerializableValue] = {}
-        packed["__class__"] = self.get_storage_name()
+    ) -> Iterator[Tuple[str, JsonSerializableValue]]:
+        yield "__class__", self.get_storage_name()
         for key, inner_value in self.object_as_mapping(self.before_pack(value)).items():
-            if key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
+            if (key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP) or (
+                key in self.skip_when_none_fields and inner_value is None
+            ):
                 continue
             storage_key = self.storage_field_names.get(key, key)
             custom = self.field_serializers.get(key)
             if custom:
-                packed[storage_key] = custom.pack(
-                    inner_value,
-                    whitelist_map=whitelist_map,
-                    descent_path=f"{descent_path}.{key}",
+                yield (
+                    storage_key,
+                    custom.pack(
+                        inner_value,
+                        whitelist_map=whitelist_map,
+                        descent_path=f"{descent_path}.{key}",
+                    ),
                 )
             else:
-                packed[storage_key] = _pack_value(
-                    inner_value,
-                    whitelist_map=whitelist_map,
-                    descent_path=f"{descent_path}.{key}",
+                yield (
+                    storage_key,
+                    _transform_for_serialization(
+                        inner_value,
+                        whitelist_map=whitelist_map,
+                        object_handler=object_handler,
+                        descent_path=f"{descent_path}.{key}",
+                    ),
                 )
         for key, default in self.old_fields.items():
-            packed[key] = default
-        packed = self.after_pack(**packed)
-        return packed
+            yield key, default
 
     # Hook: Modify the contents of the object before packing
     def before_pack(self, value: T) -> T:
         return value
 
-    # Hook: Modify the contents of the packed, json-serializable dict before it is converted to a
-    # string.
-    def after_pack(self, **packed_dict: JsonSerializableValue) -> Dict[str, JsonSerializableValue]:
-        return packed_dict
-
     @property
     @abstractmethod
-    def constructor_param_names(self) -> Sequence[str]:
-        ...
+    def constructor_param_names(self) -> Sequence[str]: ...
 
     def get_storage_name(self) -> str:
         return self.storage_name or self.klass.__name__
@@ -647,36 +688,73 @@ T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple, default=NamedTuple)
 
 class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
     def object_as_mapping(self, value: T_NamedTuple) -> Mapping[str, Any]:
+        if is_record(value):
+            return as_dict_for_new(value)
+
         return value._asdict()
 
-    @property
-    @cached_method
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
-        return list(signature(self.klass.__new__).parameters.keys())
+        if has_generated_new(self.klass):
+            return list(get_record_annotations(self.klass).keys())
+
+        names = []
+        for name, parameter in signature(self.klass.__new__).parameters.items():
+            if parameter.kind is Parameter.VAR_POSITIONAL:
+                check.failed("Can not use positional args capture on serdes object.")
+            elif parameter.kind is Parameter.VAR_KEYWORD:
+                names.extend(
+                    check.not_none(
+                        self.kwargs_fields,
+                        "Must specify kwargs_fields when using kwarg capture in __new__.",
+                    )
+                )
+            else:
+                names.append(name)
+
+        return names
 
 
-T_Dataclass = TypeVar("T_Dataclass", bound=DataclassProtocol, default=DataclassProtocol)
+T_Dataclass = TypeVar("T_Dataclass", bound="DataclassInstance", default="DataclassInstance")
 
 
 class DataclassSerializer(ObjectSerializer[T_Dataclass]):
     def object_as_mapping(self, value: T_Dataclass) -> Mapping[str, Any]:
         return value.__dict__
 
-    @property
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
         return list(f.name for f in dataclasses.fields(self.klass))
 
 
-T_PydanticModel = TypeVar("T_PydanticModel", bound=pydantic.BaseModel, default=pydantic.BaseModel)
+T_PydanticModel = TypeVar("T_PydanticModel", bound=BaseModel, default=BaseModel)
 
 
 class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
     def object_as_mapping(self, value: T_PydanticModel) -> Mapping[str, Any]:
-        return value.__dict__
+        value_dict = value.__dict__
 
-    @property
+        result = {}
+        for key, field in self._model_fields.items():
+            if field.alias is None and (
+                field.serialization_alias is not None or field.validation_alias is not None
+            ):
+                raise SerializationError(
+                    "Can't serialize pydantic models with serialization or validation aliases. Use "
+                    "the storage_field_names argument to whitelist_for_serdes instead."
+                )
+            result_key = field.alias if field.alias else key
+            result[result_key] = value_dict[key]
+
+        return result
+
+    @cached_property
     def constructor_param_names(self) -> Sequence[str]:
-        return list(self.klass.__fields__.keys())
+        return [field.alias or key for key, field in self._model_fields.items()]
+
+    @cached_property
+    def _model_fields(self) -> Mapping[str, ModelFieldCompat]:
+        return model_fields(self.klass)
 
 
 class FieldSerializer(Serializer):
@@ -697,8 +775,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: UnpackedValue,
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> PackableValue:
-        ...
+    ) -> PackableValue: ...
 
     @abstractmethod
     def pack(
@@ -706,8 +783,7 @@ class FieldSerializer(Serializer):
         __unpacked_value: Any,
         whitelist_map: WhitelistMap,
         descent_path: str,
-    ) -> JsonSerializableValue:
-        ...
+    ) -> JsonSerializableValue: ...
 
 
 class SetToSequenceFieldSerializer(FieldSerializer):
@@ -717,7 +793,10 @@ class SetToSequenceFieldSerializer(FieldSerializer):
         return set(sequence_value) if sequence_value is not None else None
 
     def pack(
-        self, set_value: Optional[AbstractSet[Any]], whitelist_map: WhitelistMap, descent_path: str
+        self,
+        set_value: Optional[AbstractSet[Any]],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
     ) -> Optional[Sequence[Any]]:
         return (
             sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
@@ -740,8 +819,13 @@ def serialize_value(
 
     Objects are first converted to a JSON-serializable form with `pack_value`.
     """
-    packed_value = pack_value(val, whitelist_map=whitelist_map)
-    return seven.json.dumps(packed_value, **json_kwargs)
+    serializable_value = _transform_for_serialization(
+        val,
+        whitelist_map=whitelist_map,
+        object_handler=_wrap_object,
+        descent_path=_root(val),
+    )
+    return seven.json.dumps(serializable_value, **json_kwargs)
 
 
 @overload
@@ -749,8 +833,7 @@ def pack_value(
     val: T_Scalar,
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> T_Scalar:
-    ...
+) -> T_Scalar: ...
 
 
 @overload  # for all the types that serialize to JSON object
@@ -760,14 +843,13 @@ def pack_value(
         Set[PackableValue],
         FrozenSet[PackableValue],
         NamedTuple,
-        DataclassProtocol,
-        pydantic.BaseModel,
+        "DataclassInstance",
+        BaseModel,
         Enum,
     ],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Mapping[str, JsonSerializableValue]:
-    ...
+) -> Mapping[str, JsonSerializableValue]: ...
 
 
 @overload
@@ -775,8 +857,7 @@ def pack_value(
     val: Sequence[PackableValue],
     whitelist_map: WhitelistMap = ...,
     descent_path: Optional[str] = ...,
-) -> Sequence[JsonSerializableValue]:
-    ...
+) -> Sequence[JsonSerializableValue]: ...
 
 
 def pack_value(
@@ -793,34 +874,60 @@ def pack_value(
         * frozenset
     """
     descent_path = _root(val) if descent_path is None else descent_path
-    return _pack_value(val, whitelist_map=whitelist_map, descent_path=descent_path)
+    return _transform_for_serialization(
+        val,
+        whitelist_map=whitelist_map,
+        descent_path=descent_path,
+        object_handler=_pack_object,
+    )
 
 
-def _pack_value(
+def _transform_for_serialization(
     val: PackableValue,
     whitelist_map: WhitelistMap,
+    object_handler: Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue],
     descent_path: str,
 ) -> JsonSerializableValue:
     # this is a hot code path so we handle the common base cases without isinstance
     tval = type(val)
     if tval in (int, float, str, bool) or val is None:
-        return cast(JsonSerializableValue, val)
+        return val  # type: ignore # 2 hot 4 cast()
     if tval is list:
         return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            _transform_for_serialization(
+                item,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}[{idx}]",
+            )
             for idx, item in enumerate(cast(list, val))
         ]
     if tval is dict:
         return {
-            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: _transform_for_serialization(
+                value,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}.{key}",
+            )
             for key, value in cast(dict, val).items()
         }
     if tval is SerializableNonScalarKeyMapping:
         return {
             "__mapping_items__": [
                 [
-                    _pack_value(k, whitelist_map, f"{descent_path}.{k}"),
-                    _pack_value(v, whitelist_map, f"{descent_path}.{k}"),
+                    _transform_for_serialization(
+                        k,
+                        whitelist_map,
+                        object_handler,
+                        f"{descent_path}.{k}",
+                    ),
+                    _transform_for_serialization(
+                        v,
+                        whitelist_map,
+                        object_handler,
+                        f"{descent_path}.{k}",
+                    ),
                 ]
                 for k, v in cast(dict, val).items()
             ]
@@ -828,38 +935,52 @@ def _pack_value(
 
     if isinstance(val, Enum):
         klass_name = val.__class__.__name__
-        if not whitelist_map.has_enum_entry(klass_name):
+        if klass_name not in whitelist_map.enum_serializers:
             raise SerializationError(
                 "Can only serialize whitelisted Enums, received"
                 f" {klass_name}.\nDescent path: {descent_path}",
             )
-        enum_serializer = whitelist_map.get_enum_entry(klass_name)
+        enum_serializer = whitelist_map.enum_serializers[klass_name]
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
+        or isinstance(val, BaseModel)
         or (is_dataclass(val) and not isinstance(val, type))
-        or isinstance(val, pydantic.BaseModel)
     ):
         klass_name = val.__class__.__name__
-        if not whitelist_map.has_object_serializer(klass_name):
+        if klass_name not in whitelist_map.object_serializers:
             raise SerializationError(
                 "Can only serialize whitelisted namedtuples, received"
                 f" {val}.\nDescent path: {descent_path}",
             )
-        serializer = whitelist_map.get_object_serializer(klass_name)
-        return serializer.pack(val, whitelist_map, descent_path)
+        return object_handler(
+            cast(SerializableObject, val),
+            whitelist_map,
+            descent_path,
+        )
     if isinstance(val, set):
         set_path = descent_path + "{}"
         return {
             "__set__": [
-                _pack_value(item, whitelist_map, set_path) for item in sorted(list(val), key=str)
+                _transform_for_serialization(
+                    item,
+                    whitelist_map,
+                    object_handler,
+                    set_path,
+                )
+                for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, frozenset):
         frz_set_path = descent_path + "{}"
         return {
             "__frozenset__": [
-                _pack_value(item, whitelist_map, frz_set_path)
+                _transform_for_serialization(
+                    item,
+                    whitelist_map,
+                    object_handler,
+                    frz_set_path,
+                )
                 for item in sorted(list(val), key=str)
             ]
         }
@@ -871,16 +992,79 @@ def _pack_value(
     # handle more expensive and uncommon abc instance checks last
     if isinstance(val, collections.abc.Mapping):
         return {
-            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: _transform_for_serialization(
+                value,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}.{key}",
+            )
             for key, value in val.items()
         }
     if isinstance(val, collections.abc.Sequence):
         return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            _transform_for_serialization(
+                item,
+                whitelist_map,
+                object_handler,
+                f"{descent_path}[{idx}]",
+            )
             for idx, item in enumerate(val)
         ]
 
     raise SerializationError(f"Unhandled value type {tval}")
+
+
+def _pack_object(
+    obj: SerializableObject, whitelist_map: WhitelistMap, descent_path: str
+) -> Mapping[str, JsonSerializableValue]:
+    # the object_handler for _transform_for_serialization to produce dicts for objects
+
+    klass_name = obj.__class__.__name__
+    serializer = whitelist_map.object_serializers[klass_name]
+    return dict(serializer.pack_items(obj, whitelist_map, _pack_object, descent_path))
+
+
+class _LazySerializationWrapper(dict):
+    """An object used to allow us to drive serialization iteratively
+    over the tree of objects via json.dumps, instead of having to create
+    an entire tree of primitive objects to pass to json.dumps.
+    """
+
+    __slots__ = [
+        "_obj",
+        "_whitelist_map",
+        "_descent_path",
+    ]
+
+    def __init__(
+        self,
+        obj: SerializableObject,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ):
+        self._obj = obj
+        self._whitelist_map = whitelist_map
+        self._descent_path = descent_path
+
+        # populate backing native dict to work around c fast path check
+        # https://github.com/python/cpython/blob/0fb18b02c8ad56299d6a2910be0bab8ad601ef24/Modules/_json.c#L1542
+        super().__init__({"__serdes": "wrapper"})
+
+    def items(self) -> Iterator[Tuple[str, JsonSerializableValue]]:
+        klass_name = self._obj.__class__.__name__
+        serializer = self._whitelist_map.object_serializers[klass_name]
+        yield from serializer.pack_items(
+            self._obj, self._whitelist_map, _wrap_object, self._descent_path
+        )
+
+
+def _wrap_object(
+    obj: SerializableObject,
+    whitelist_map: WhitelistMap,
+    descent_path: str,
+) -> "_LazySerializationWrapper":
+    # the object_handler for _transform_for_serialization to use in conjunction with json.dumps for iterative serialization
+    return _LazySerializationWrapper(obj, whitelist_map, descent_path)
 
 
 ###################################################################################################
@@ -896,8 +1080,7 @@ def deserialize_value(
     val: str,
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -905,8 +1088,7 @@ def deserialize_value(
     val: str,
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -914,8 +1096,7 @@ def deserialize_value(
     val: str,
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def deserialize_value(
@@ -934,23 +1115,65 @@ def deserialize_value(
     """
     check.str_param(val, "val")
 
-    # Never issue warnings when deserializing deprecated objects.
-    with disable_dagster_warnings():
-        context = UnpackContext()
-        unpacked_value = seven.json.loads(
-            val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)
-        )
-        unpacked_value = context.finalize_unpack(unpacked_value)
-        if as_type and not (
-            is_named_tuple_instance(unpacked_value)
-            if as_type is NamedTuple
-            else isinstance(unpacked_value, as_type)
-        ):
-            raise DeserializationError(
-                f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
-            )
+    return deserialize_values([val], as_type, whitelist_map)[0]
 
-    return unpacked_value
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Type[T_PackableValue],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[T_PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: None = ...,
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]: ...
+
+
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ] = None,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
+    """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
+    with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
+        whitelist_map.object_type_map
+    ):
+        unpacked_values = []
+        for val in vals:
+            context = UnpackContext()
+            unpacked_value = seven.json.loads(
+                val,
+                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
+            )
+            unpacked_value = context.finalize_unpack(unpacked_value)
+            if as_type and not (
+                is_named_tuple_instance(unpacked_value)
+                if as_type is NamedTuple
+                else isinstance(unpacked_value, as_type)
+            ):
+                raise DeserializationError(
+                    f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
+                )
+            unpacked_values.append(unpacked_value)
+
+    return unpacked_values
 
 
 class UnknownSerdesValue:
@@ -959,10 +1182,10 @@ class UnknownSerdesValue:
         self.value = value
 
 
-def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext):
+def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext) -> UnpackedValue:
     if "__class__" in val:
-        klass_name = cast(str, val["__class__"])
-        if not whitelist_map.has_object_deserializer(klass_name):
+        klass_name = val["__class__"]
+        if klass_name not in whitelist_map.object_deserializers:
             return context.observe_unknown_value(
                 UnknownSerdesValue(
                     f'Attempted to deserialize class "{klass_name}" which is not in the whitelist.',
@@ -971,13 +1194,13 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
             )
 
         val.pop("__class__")
-        deserializer = whitelist_map.get_object_deserializer(klass_name)
+        deserializer = whitelist_map.object_deserializers[klass_name]
         return deserializer.unpack(val, whitelist_map, context)
 
     if "__enum__" in val:
         enum = cast(str, val["__enum__"])
         name, member = enum.split(".")
-        if not whitelist_map.has_enum_entry(name):
+        if name not in whitelist_map.enum_serializers:
             return context.observe_unknown_value(
                 UnknownSerdesValue(
                     f"Attempted to deserialize enum {name} which was not in the whitelist.",
@@ -985,7 +1208,7 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
                 )
             )
 
-        enum_serializer = whitelist_map.get_enum_entry(name)
+        enum_serializer = whitelist_map.enum_serializers[name]
         return enum_serializer.unpack(member)
 
     if "__set__" in val:
@@ -998,7 +1221,9 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
 
     if "__mapping_items__" in val:
         return {
-            _unpack_value(k, whitelist_map, context): _unpack_value(v, whitelist_map, context)
+            cast(Any, _unpack_value(k, whitelist_map, context)): _unpack_value(
+                v, whitelist_map, context
+            )
             for k, v in val["__mapping_items__"]
         }
 
@@ -1011,8 +1236,7 @@ def unpack_value(
     as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> Union[T_PackableValue, U_PackableValue]:
-    ...
+) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
 @overload
@@ -1021,8 +1245,7 @@ def unpack_value(
     as_type: Type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> T_PackableValue:
-    ...
+) -> T_PackableValue: ...
 
 
 @overload
@@ -1031,8 +1254,7 @@ def unpack_value(
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
     context: Optional[UnpackContext] = ...,
-) -> PackableValue:
-    ...
+) -> PackableValue: ...
 
 
 def unpack_value(
@@ -1087,15 +1309,20 @@ def _unpack_value(
 
 
 def _check_serdes_tuple_class_invariants(
-    klass: Type[NamedTuple], is_pickleable: bool = True
+    klass: Type[NamedTuple],
+    kwargs_fields: Optional[AbstractSet[str]],
 ) -> None:
+    # can skip validation on @record generated new
+    if has_generated_new(klass):
+        return
+
     sig_params = signature(klass.__new__).parameters
     dunder_new_params = list(sig_params.values())
 
     cls_param = dunder_new_params[0]
 
     def _with_header(msg: str) -> str:
-        return f"For namedtuple {klass.__name__}: {msg}"
+        return f"For {klass.__name__}: {msg}"
 
     if cls_param.name not in {"cls", "_cls"}:
         raise SerdesUsageError(
@@ -1106,21 +1333,41 @@ def _check_serdes_tuple_class_invariants(
 
     for index, field in enumerate(klass._fields):
         if index >= len(value_params):
-            error_msg = (
-                "Missing parameters to __new__. You have declared fields "
-                "in the named tuple that are not present as parameters to the "
-                "to the __new__ method. In order for "
-                "both serdes serialization and pickling to work, "
-                f"these must match. Missing: {list(klass._fields[index:])!r}"
-            )
+            if value_params[-1].kind is Parameter.VAR_KEYWORD:
+                if kwargs_fields is None:
+                    raise SerdesUsageError(
+                        _with_header(
+                            "kwargs capture used in __new__ but kwargs_fields was not specified. "
+                            "Declare the set of fields processed via kwargs as kwargs_fields "
+                            f"Expecting: {list(klass._fields[index:])!r}"
+                        )
+                    )
+                elif field not in kwargs_fields:
+                    raise SerdesUsageError(
+                        _with_header(
+                            f'Expected field "{field}" in kwargs_fields but it was not specified.'
+                        )
+                    )
 
-            raise SerdesUsageError(_with_header(error_msg))
+            else:
+                error_msg = (
+                    "Missing parameters to __new__. You have declared fields "
+                    "that are not present as parameters to the "
+                    "to the __new__ method. In order for "
+                    "both serdes serialization and pickling to work, "
+                    "these must match or kwargs and kwargs_fields must be used. "
+                    f"Missing: {list(klass._fields[index:])!r}"
+                )
 
-        if is_pickleable:
+                raise SerdesUsageError(_with_header(error_msg))
+
+        if not is_record(klass):
+            # non @record NamedTuples get pickled via ordinal args, so ensure ordering
             value_param = value_params[index]
             if value_param.name != field:
                 error_msg = (
-                    "Params to __new__ must match the order of field declaration in the namedtuple. "
+                    "Params to __new__ must match the order of field declaration for "
+                    "NamedTuples that are not @record based. "
                     f'Declared field number {index + 1} in the namedtuple is "{field}". '
                     f'Parameter {index + 1} in __new__ method is "{value_param.name}".'
                 )
@@ -1131,14 +1378,14 @@ def _check_serdes_tuple_class_invariants(
         for extra_param_index in range(len(klass._fields), len(value_params) - 1):
             if value_params[extra_param_index].default == Parameter.empty:
                 error_msg = (
-                    'Parameter "{param_name}" is a parameter to the __new__ '
+                    f'Parameter "{value_params[extra_param_index].name}" is a parameter to the __new__ '
                     "method but is not a field in this namedtuple. The only "
                     "reason why this should exist is that "
                     "it is a field that used to exist (we refer to this as the graveyard) "
                     "but no longer does. However it might exist in historical storage. This "
                     "parameter existing ensures that serdes continues to work. However these "
                     "must come at the end and have a default value for pickling to work."
-                ).format(param_name=value_params[extra_param_index].name)
+                )
                 raise SerdesUsageError(_with_header(error_msg))
 
 

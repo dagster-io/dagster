@@ -1,0 +1,109 @@
+---
+title: "Using Dagster with Looker"
+description: Represent your Looker assets in Dagster
+---
+
+# Using Dagster with Looker
+
+<ExperimentalCallout />
+
+This guide provides instructions for using Dagster with Looker. Your Looker assets, such as views, explores, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Looker assets. You can also use Dagster to orchestrate Looker PDTs, allowing you to trigger refreshes of these materialized tables on a cadence or based on upstream data changes.
+
+## What you'll learn
+
+- How to represent Looker assets in the Dagster asset graph.
+- How to customize asset definition metadata for these Looker assets.
+- How to materialize Looker PDTs from Dagster.
+
+<details>
+  <summary>Prerequisites</summary>
+
+- Familiarity with asset definitions and the Dagster asset graph
+- Familiarity with Dagster resources - Familiarity with Power BI concepts, like semantic models, data sources, reports, and dashboards
+- A Looker instance
+- Looker API credentials to access your Looker instance. For more information, see [Looker API authentication](https://cloud.google.com/looker/docs/api-auth) in the Looker documentation.
+
+</details>
+
+## Represent Looker assets in the asset graph
+
+To load Looker assets into the Dagster asset graph, you must first construct a `LookerResource`, which allows Dagster to communicate with your Looker instance. You'll need to supply your Looker instance URL and API credentials, which can be passed directly or accessed from the environment using `EnvVar`.
+
+Dagster can automatically load all views, explores, and dashboards from your Looker instance. Call the `build_defs()` function, which returns a `Definitions` object containing all the asset definitions for these Looker assets.
+
+```python file=/integrations/looker/representing-looker-assets.py
+from dagster_looker import LookerResource
+
+from dagster import EnvVar
+
+resource = LookerResource(
+    client_id=EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=EnvVar("LOOKERSDK_HOST_URL"),
+)
+
+defs = resource.build_defs()
+```
+
+### Customize asset definition metadata for Looker assets
+
+By default, Dagster will generate asset keys for each Looker asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom `DagsterLookerAPITranslator` subclass to the `LookerResource.build_defs(...)` function. This subclass can implement methods to customize the asset keys or specs for each Looker asset type.
+
+```python file=/integrations/looker/customize-looker-assets.py
+from dagster_looker import (
+    DagsterLookerApiTranslator,
+    LookerResource,
+    LookerStructureData,
+    LookerStructureType,
+)
+
+from dagster import AssetSpec, EnvVar
+
+resource = LookerResource(
+    client_id=EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=EnvVar("LOOKERSDK_HOST_URL"),
+)
+
+
+class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
+    def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        asset_spec = super().get_asset_spec(looker_structure)
+
+        # Add a team owner for all Looker assets
+        asset_spec = asset_spec._replace(owners=["my_team"])
+
+        # For only Looker dashboard, prefix the asset key with "looker" for organizational purposes
+        if looker_structure.structure_type == LookerStructureType.DASHBOARD:
+            asset_spec = asset_spec._replace(key=asset_spec.key.with_prefix("looker"))
+
+        return asset_spec
+
+
+defs = resource.build_defs(dagster_looker_translator=CustomDagsterLookerApiTranslator())
+```
+
+### Materialize Looker PDTs from Dagster
+
+You can use Dagster to orchestrate the materialization of Looker PDTs. To model a PDT as an asset, pass its definition by passing `RequestStartPdtBuild` to `LookerResource.build_defs(...)` function.
+
+```python file=/integrations/looker/materializing-looker-pdts.py
+from dagster_looker import LookerResource, RequestStartPdtBuild
+
+from dagster import EnvVar
+
+resource = LookerResource(
+    client_id=EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=EnvVar("LOOKERSDK_HOST_URL"),
+)
+
+defs = resource.build_defs(
+    request_start_pdt_builds=[
+        RequestStartPdtBuild(
+            model_name="analytics",
+            view_name="page_keyword_performance",
+        ),
+    ]
+)
+```

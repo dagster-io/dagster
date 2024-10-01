@@ -4,26 +4,25 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple, Unio
 
 import dagster._check as check
 from dagster._core.code_pointer import rebase_file
-from dagster._core.host_representation.origin import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.config_schema import ensure_workspace_config
 from dagster._utils.yaml_utils import load_yaml_from_path
 
-from .config_schema import ensure_workspace_config
-
 if TYPE_CHECKING:
-    from .context import WorkspaceProcessContext
+    from dagster._core.workspace.context import WorkspaceProcessContext
 
 
 def load_workspace_process_context_from_yaml_paths(
     instance: DagsterInstance, yaml_paths: Sequence[str], version: str = ""
 ) -> "WorkspaceProcessContext":
-    from .context import WorkspaceProcessContext
-    from .load_target import WorkspaceFileTarget
+    from dagster._core.workspace.context import WorkspaceProcessContext
+    from dagster._core.workspace.load_target import WorkspaceFileTarget
 
     return WorkspaceProcessContext(instance, WorkspaceFileTarget(paths=yaml_paths), version=version)
 
@@ -39,13 +38,14 @@ def location_origins_from_yaml_paths(
         check.invariant(
             workspace_config is not None,
             (
-                "Could not parse a workspace config from the yaml file at {yaml_path}. Check that "
+                f"Could not parse a workspace config from the yaml file at {os.path.abspath(yaml_path)}. Check that "
                 "the file contains valid yaml."
-            ).format(yaml_path=os.path.abspath(yaml_path)),
+            ),
         )
 
-        for k, v in location_origins_from_config(cast(Dict, workspace_config), yaml_path).items():
-            origins_by_name[k] = v
+        origins_by_name.update(
+            location_origins_from_config(cast(Dict, workspace_config), yaml_path)
+        )
 
     return list(origins_by_name.values())
 
@@ -60,9 +60,7 @@ def location_origins_from_config(
         origin = _location_origin_from_location_config(location_config, yaml_path)
         check.invariant(
             location_origins.get(origin.location_name) is None,
-            'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
-                name=origin.location_name,
-            ),
+            f'Cannot have multiple locations with the same name, got multiple "{origin.location_name}"',
         )
 
         location_origins[origin.location_name] = origin

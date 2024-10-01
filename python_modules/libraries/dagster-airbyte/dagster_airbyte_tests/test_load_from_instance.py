@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 
 import pytest
@@ -24,7 +25,7 @@ from dagster._core.instance_for_test import environ
 from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
-from .utils import (
+from dagster_airbyte_tests.utils import (
     get_instance_connections_json,
     get_instance_operations_json,
     get_instance_workspaces_json,
@@ -48,6 +49,7 @@ def airbyte_instance_fixture(request):
             )
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 12), reason="something with py3.12 and sqlite")
 @responses.activate
 @pytest.mark.parametrize("use_normalization_tables", [True, False])
 @pytest.mark.parametrize(
@@ -217,7 +219,7 @@ def test_load_from_instance(
     assert ab_assets[0].keys == {AssetKey(t) for t in tables}
     assert all(
         [
-            ab_assets[0].group_names_by_key.get(AssetKey(t))
+            ab_assets[0].specs_by_key[AssetKey(t)].group_name
             == (
                 connection_meta_to_group_fn(
                     AirbyteConnectionMetadata("GitHub <> snowflake-ben", "", False, [])
@@ -235,13 +237,17 @@ def test_load_from_instance(
     assert len(ab_assets[0].op.output_defs) == len(tables)
 
     expected_freshness_policy = TEST_FRESHNESS_POLICY if connection_to_freshness_policy_fn else None
-    freshness_policies = ab_assets[0].freshness_policies_by_key
+    freshness_policies = {spec.key: spec.freshness_policy for spec in ab_assets[0].specs}
     assert all(freshness_policies[key] == expected_freshness_policy for key in freshness_policies)
 
     expected_auto_materialize_policy = (
         AutoMaterializePolicy.lazy() if connection_to_auto_materialize_policy_fn else None
     )
-    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    auto_materialize_policies_by_key = {
+        spec.key: spec.auto_materialize_policy for spec in ab_assets[0].specs
+    }
+    if expected_auto_materialize_policy:
+        assert auto_materialize_policies_by_key
     assert all(
         auto_materialize_policies_by_key[key] == expected_auto_materialize_policy
         for key in auto_materialize_policies_by_key
@@ -270,7 +276,7 @@ def test_load_from_instance(
 
     materializations = [
         event.event_specific_data.materialization  # type: ignore[attr-defined]
-        for event in res.events_for_node("airbyte_sync_87b7f")
+        for event in res.events_for_node("airbyte_sync_87b7fe85_a22c_420e_8d74_b30e7ede77df")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == len(tables)
@@ -282,7 +288,9 @@ def test_load_from_instance(
 
 
 def test_load_from_instance_cloud() -> None:
-    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo", poll_interval=0)
+    airbyte_cloud_instance = AirbyteCloudResource(
+        client_id="some_client_id", client_secret="some_client_secret", poll_interval=0
+    )
 
     with pytest.raises(
         DagsterInvalidInvocationError,

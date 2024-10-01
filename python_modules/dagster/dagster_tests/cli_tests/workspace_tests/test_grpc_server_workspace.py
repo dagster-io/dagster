@@ -5,7 +5,7 @@ import yaml
 from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import GrpcServerCodeLocationOrigin
+from dagster._core.remote_representation import GrpcServerCodeLocationOrigin
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess

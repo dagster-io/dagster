@@ -1,16 +1,17 @@
-import warnings
 from typing import Optional
 
 import dagster._check as check
-import pendulum
 import pytest
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
     AssetOut,
     AssetsDefinition,
+    AssetSpec,
+    DagsterInstance,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
     InputContext,
     IOManager,
@@ -29,9 +30,11 @@ from dagster import (
     materialize,
 )
 from dagster._check import CheckError
-from dagster._core.definitions import asset, build_assets_job, multi_asset
+from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
@@ -39,16 +42,18 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import assert_namedtuple_lists_equal
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._core.test_utils import (
+    assert_namedtuple_lists_equal,
+    freeze_time,
+    ignore_warning,
+    raise_exception_on_warnings,
+)
+from dagster._time import create_datetime, parse_time_string
 
 
 @pytest.fixture(autouse=True)
 def error_on_warning():
-    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
-    warnings.resetwarnings()
-
-    warnings.filterwarnings("error")
+    raise_exception_on_warnings()
 
 
 def get_upstream_partitions_for_partition_range(
@@ -159,12 +164,11 @@ def test_single_partitioned_asset_job():
     def my_asset(context: AssetExecutionContext):
         assert context.assets_def.partitions_def == partitions_def
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
     )
-    result = my_job.execute_in_process(partition_key="b")
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("my_asset"),
         [AssetMaterialization(asset_key=AssetKey(["my_asset"]), partition="b")],
@@ -181,8 +185,7 @@ def test_two_partitioned_assets_job():
     def downstream(upstream):
         assert upstream is None
 
-    my_job = build_assets_job("my_job", assets=[upstream, downstream])
-    result = my_job.execute_in_process(partition_key="b")
+    result = materialize_to_memory(assets=[upstream, downstream], partition_key="b")
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream"),
         [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
@@ -206,7 +209,10 @@ def test_assets_job_with_different_partitions_defs():
         def downstream(upstream):
             assert upstream is None
 
-        build_assets_job("my_job", assets=[upstream, downstream])
+        Definitions(
+            assets=[upstream, downstream],
+            jobs=[define_asset_job("my_job", selection=[upstream, downstream])],
+        ).get_job_def("my_job")
 
 
 def test_access_partition_keys_from_context_direct_invocation():
@@ -290,7 +296,7 @@ def test_output_context_asset_partitions_time_window():
     class MyIOManager(IOManager):
         def handle_output(self, context, _obj):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+                parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
             )
 
         def load_input(self, context):
@@ -300,12 +306,11 @@ def test_output_context_asset_partitions_time_window():
     def my_asset():
         pass
 
-    my_job = build_assets_job(
-        "my_job",
+    materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="2021-06-06",
     )
-    my_job.execute_in_process(partition_key="2021-06-06")
 
 
 def test_input_context_asset_partitions_time_window():
@@ -314,12 +319,12 @@ def test_input_context_asset_partitions_time_window():
     class MyIOManager(IOManager):
         def handle_output(self, context, _obj):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+                parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
             )
 
         def load_input(self, context):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+                parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
             )
 
     @asset(partitions_def=partitions_def)
@@ -329,7 +334,7 @@ def test_input_context_asset_partitions_time_window():
     @asset(partitions_def=partitions_def)
     def downstream_asset(context, upstream_asset):
         assert context.asset_partitions_time_window_for_input("upstream_asset") == TimeWindow(
-            pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+            parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
         )
         assert upstream_asset is None
 
@@ -364,15 +369,15 @@ def test_cross_job_different_partitions():
             assert key_range.start == "2021-06-06-00:00"
             assert key_range.end == "2021-06-06-23:00"
 
-    daily_job = build_assets_job(
-        name="daily_job",
-        assets=[daily_asset],
-        source_assets=[hourly_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
-    )
-    assert daily_job.execute_in_process(partition_key="2021-06-06").success
+    assert materialize(
+        assets=[daily_asset, hourly_asset],
+        selection=[daily_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key="2021-06-06",
+    ).success
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset_partitions():
     hourly_asset = SourceAsset(
         AssetKey("hourly_asset"),
@@ -392,13 +397,11 @@ def test_source_asset_partitions():
             assert key_range.start == "2021-06-06-00:00"
             assert key_range.end == "2021-06-06-23:00"
 
-    daily_job = build_assets_job(
-        name="daily_job",
-        assets=[daily_asset],
-        source_assets=[hourly_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
-    )
-    assert daily_job.execute_in_process(partition_key="2021-06-06").success
+    assert materialize(
+        assets=[daily_asset, hourly_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key="2021-06-06",
+    ).success
 
 
 def test_multi_assets_with_same_partitioning():
@@ -471,12 +474,11 @@ def test_single_partitioned_multi_asset_job():
     def my_asset():
         return (Output(1, output_name="out1"), Output(2, output_name="out2"))
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[my_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
     )
-    result = my_job.execute_in_process(partition_key="b")
 
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("my_asset"),
@@ -509,10 +511,9 @@ def test_two_partitioned_multi_assets_job():
     def downstream_asset_2(upstream_asset_2: int):
         del upstream_asset_2
 
-    my_job = build_assets_job(
-        "my_job", assets=[upstream_asset, downstream_asset_1, downstream_asset_2]
+    result = materialize_to_memory(
+        assets=[upstream_asset, downstream_asset_1, downstream_asset_2], partition_key="b"
     )
-    result = my_job.execute_in_process(partition_key="b")
 
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("upstream_asset"),
@@ -544,11 +545,9 @@ def test_job_config_with_asset_partitions():
         assert context.op_execution_context.op_config["a"] == 5
         assert context.partition_key == "2020-01-01"
 
-    the_job = define_asset_job(
-        "job",
-        partitions_def=daily_partitions_def,
-        config={"ops": {"asset1": {"config": {"a": 5}}}},
-    ).resolve(asset_graph=AssetGraph.from_assets([asset1]))
+    the_job = define_asset_job("job", config={"ops": {"asset1": {"config": {"a": 5}}}}).resolve(
+        asset_graph=AssetGraph.from_assets([asset1])
+    )
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
     assert (
@@ -607,6 +606,7 @@ def test_partition_range_single_run():
     @asset(partitions_def=partitions_def)
     def upstream_asset(context) -> None:
         key_range = PartitionKeyRange(start="2020-01-01", end="2020-01-03")
+        assert context.has_partition_key_range
         assert context.partition_key_range == key_range
         assert context.partition_time_window == TimeWindow(
             partitions_def.time_window_for_partition_key(key_range.start).start,
@@ -699,12 +699,12 @@ def test_multipartitioned_asset_partitions_time_window():
     class CustomIOManager(IOManager):
         def handle_output(self, context: OutputContext, obj):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+                parse_time_string("2023-01-01"), parse_time_string("2023-01-02")
             )
 
         def load_input(self, context: InputContext):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+                parse_time_string("2023-01-01"), parse_time_string("2023-01-02")
             )
 
     assert materialize(
@@ -712,6 +712,39 @@ def test_multipartitioned_asset_partitions_time_window():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
         partition_key="a|2023-01-01",
     ).success
+
+
+def test_dynamic_partition_range_single_run():
+    partitions_def = DynamicPartitionsDefinition(name="yolo")
+
+    @asset(partitions_def=partitions_def)
+    def dynamicpartitioned_asset(context: AssetExecutionContext) -> None:
+        key_range = context.partition_key_range
+
+        assert key_range.start == "a"
+        assert key_range.end == "c"
+
+        assert len(context.partition_keys) == 3
+
+    the_job = define_asset_job("job").resolve(
+        asset_graph=AssetGraph.from_assets([dynamicpartitioned_asset])
+    )
+
+    instance = DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("yolo", ["a", "b", "c"])
+
+    result = the_job.execute_in_process(
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "a",
+            ASSET_PARTITION_RANGE_END_TAG: "c",
+        },
+        instance=instance,
+    )
+    assert result.success
+    assert {
+        materialization.partition
+        for materialization in result.asset_materializations_for_node("dynamicpartitioned_asset")
+    } == {"a", "b", "c"}
 
 
 def test_error_on_nonexistent_upstream_partition():
@@ -723,7 +756,7 @@ def test_error_on_nonexistent_upstream_partition():
     def downstream_asset(context, upstream_asset):
         return upstream_asset + 1
 
-    with pendulum_freeze_time(create_pendulum_time(2020, 1, 2, 10, 0)):
+    with freeze_time(create_datetime(2020, 1, 2, 10, 0)):
         with pytest.raises(
             DagsterInvariantViolationError,
             match="invalid partition keys",
@@ -732,3 +765,45 @@ def test_error_on_nonexistent_upstream_partition():
                 [downstream_asset, upstream_asset.to_source_asset()],
                 partition_key="2020-01-02-05:00",
             )
+
+
+def test_asset_spec_partitions_def():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @multi_asset(
+        specs=[AssetSpec("asset1", partitions_def=partitions_def)], partitions_def=partitions_def
+    )
+    def assets1(): ...
+
+    assert assets1.partitions_def == partitions_def
+    assert next(iter(assets1.specs)).partitions_def == partitions_def
+
+    @multi_asset(specs=[AssetSpec("asset1", partitions_def=partitions_def)])
+    def assets2(): ...
+
+    assert assets2.partitions_def == partitions_def
+    assert next(iter(assets2.specs)).partitions_def == partitions_def
+
+    with pytest.raises(
+        CheckError,
+        match="AssetSpec for asset1 has partitions_def which is different than the partitions_def provided to AssetsDefinition.",
+    ):
+
+        @multi_asset(
+            specs=[AssetSpec("asset1", partitions_def=StaticPartitionsDefinition(["a", "b"]))],
+            partitions_def=partitions_def,
+        )
+        def assets3(): ...
+
+    with pytest.raises(
+        CheckError,
+        match="All AssetSpecs must have the same partitions_def, but asset1 and asset2 have different partitions_defs.",
+    ):
+
+        @multi_asset(
+            specs=[
+                AssetSpec("asset1", partitions_def=partitions_def),
+                AssetSpec("asset2", partitions_def=StaticPartitionsDefinition(["a", "b"])),
+            ],
+        )
+        def assets4(): ...

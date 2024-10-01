@@ -1,9 +1,9 @@
 import abc
 from typing import Mapping, Optional, Sequence, Set
 
-from dagster import AssetKey
-from dagster._core.definitions.asset_condition import (
-    AssetConditionEvaluationWithRunIds,
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
@@ -156,14 +156,16 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abc.abstractmethod
     def add_auto_materialize_asset_evaluations(
-        self, evaluation_id: int, asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds]
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds[EntityKey]],
     ) -> None:
         """Add asset policy evaluations to storage."""
 
     @abc.abstractmethod
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
-    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        self, key: T_EntityKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord[T_EntityKey]]:
         """Get the policy evaluations for a given asset.
 
         Args:

@@ -9,14 +9,19 @@
 pyright:
 	python scripts/run-pyright.py --all
 
+install_prettier:
+	npm install -g prettier
+
 install_pyright:
-	pip install -e 'python_modules/dagster[pyright]'
+	pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
 
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
 
+# Skip typecheck so that this can be used to test if all requirements can successfully be resolved
+# in CI independently of typechecking.
 rebuild_pyright_pins:
-	python scripts/run-pyright.py --update-pins
+	python scripts/run-pyright.py --update-pins --skip-typecheck
 
 quick_pyright:
 	python scripts/run-pyright.py --diff
@@ -25,22 +30,22 @@ unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
 
 ruff:
-	-ruff --fix .
+	-ruff check --fix .
 	ruff format .
 
 check_ruff:
-	ruff .
+	ruff check .
 	ruff format --check .
 
 check_prettier:
 #NOTE:  excludes README.md because it's a symlink
-	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files \
+	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
 	':!:README.md'` --check
 
 prettier:
-	yarn exec --cwd js_modules/dagster-ui/packages/eslint-config -- prettier `git ls-files \
+	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
 	':!:README.md'` --write

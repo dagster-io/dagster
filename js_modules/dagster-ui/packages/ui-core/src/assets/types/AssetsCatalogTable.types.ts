@@ -2,13 +2,17 @@
 
 import * as Types from '../../graphql/types';
 
-export type AssetCatalogTableQueryVariables = Types.Exact<{[key: string]: never}>;
+export type AssetCatalogTableQueryVariables = Types.Exact<{
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit: Types.Scalars['Int']['input'];
+}>;
 
 export type AssetCatalogTableQuery = {
   __typename: 'Query';
   assetsOrError:
     | {
         __typename: 'AssetConnection';
+        cursor: string | null;
         nodes: Array<{
           __typename: 'Asset';
           id: string;
@@ -16,15 +20,31 @@ export type AssetCatalogTableQuery = {
           definition: {
             __typename: 'AssetNode';
             id: string;
-            groupName: string | null;
+            changedReasons: Array<Types.ChangeReason>;
+            groupName: string;
             opNames: Array<string>;
-            isSource: boolean;
+            isMaterializable: boolean;
             isObservable: boolean;
             isExecutable: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
+            hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
-            partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+            kinds: Array<string>;
+            partitionDefinition: {
+              __typename: 'PartitionDefinition';
+              description: string;
+              dimensionTypes: Array<{
+                __typename: 'DimensionDefinitionType';
+                type: Types.PartitionDefinitionType;
+                dynamicPartitionsDefinitionName: string | null;
+              }>;
+            } | null;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -55,16 +75,31 @@ export type AssetCatalogGroupTableQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    groupName: string | null;
+    changedReasons: Array<Types.ChangeReason>;
+    groupName: string;
     opNames: Array<string>;
-    isSource: boolean;
+    isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
+    kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      description: string;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        type: Types.PartitionDefinitionType;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
+    } | null;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -77,16 +112,31 @@ export type AssetCatalogGroupTableQuery = {
 export type AssetCatalogGroupTableNodeFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
+  changedReasons: Array<Types.ChangeReason>;
+  groupName: string;
   opNames: Array<string>;
-  isSource: boolean;
+  isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -94,3 +144,7 @@ export type AssetCatalogGroupTableNodeFragment = {
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
 };
+
+export const AssetCatalogTableQueryVersion = '24337025321725613b86a82d1733d75dde2cfd750be0a0cee0b4b75ac5b14d64';
+
+export const AssetCatalogGroupTableQueryVersion = '4fdeaff9339d10f2a6b4b78993f9627c5b58f7e4ceb01ffdf04d71d65ab2bc1d';

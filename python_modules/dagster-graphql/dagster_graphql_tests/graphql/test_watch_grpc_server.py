@@ -1,13 +1,16 @@
 import time
 from typing import Any
 
-from dagster._core.host_representation.grpc_server_state_subscriber import (
+from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
 
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    GraphQLContextVariant,
+    make_graphql_context_test_suite,
+)
 
 BaseTestSuite: Any = make_graphql_context_test_suite(
     context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env()]

@@ -12,7 +12,7 @@ import {
 import {useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 
 export const CodeLocationMenu = ({
   locationNode,
@@ -110,7 +110,7 @@ export const DagsterLibrariesDialog = ({
       <Table>
         <thead>
           <tr>
-            <th>Libray</th>
+            <th>Library</th>
             <th>Version</th>
           </tr>
         </thead>
@@ -138,9 +138,13 @@ const CodeLocationConfig = ({
   displayMetadata: WorkspaceRepositoryLocationNode['displayMetadata'];
 }) => {
   const yamlString = useMemo(() => {
-    const kvPairs = displayMetadata.reduce((accum, item) => {
-      return {...accum, [item.key]: item.value};
-    }, {});
+    const kvPairs = displayMetadata.reduce(
+      (accum, item) => {
+        accum[item.key] = item.value;
+        return accum;
+      },
+      {} as Record<string, string>,
+    );
     return yaml.stringify(kvPairs);
   }, [displayMetadata]);
 

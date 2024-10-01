@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -21,6 +20,7 @@ import {
   RunStatusAndPartitionKeyQueryVariables,
   RunStatusAndTagsFragment,
 } from './types/AutomaterializeRequestedPartitionsLink.types';
+import {gql, useQuery} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
@@ -114,12 +114,13 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
 type PartitionRunTuple = [string, RunStatusAndTagsFragment];
 
 const PartitionAndRunList = ({runIds, partitionKeys}: Props) => {
-  const {data, loading} = useQuery<
+  const queryResult = useQuery<
     RunStatusAndPartitionKeyQuery,
     RunStatusAndPartitionKeyQueryVariables
   >(RUN_STATUS_AND_PARTITION_KEY, {
     variables: {filter: {runIds}},
   });
+  const {data, loading} = queryResult;
 
   const runs = data?.runsOrError;
 

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui-components';
 
 import {Description} from './Description';
@@ -8,9 +7,11 @@ import {
   SidebarResourcesSection,
 } from './SidebarResourcesSection';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
+import {gql} from '../apollo-client';
 import {breakOnUnderscores} from '../app/Util';
-import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
-import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {MetadataEntry} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
 

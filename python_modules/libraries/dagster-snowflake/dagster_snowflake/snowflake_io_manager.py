@@ -3,9 +3,7 @@ from contextlib import contextmanager
 from typing import Optional, Sequence, Type, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._config.pythonic_config import (
-    ConfigurableIOManagerFactory,
-)
+from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -18,7 +16,7 @@ from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
 from snowflake.connector.errors import ProgrammingError
 
-from .resources import SnowflakeResource
+from dagster_snowflake.resources import SnowflakeResource
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

@@ -22,7 +22,6 @@ export type AssetNodeInstigatorsFragment = {
     | {
         __typename: 'Sensor';
         id: string;
-        jobOriginId: string;
         name: string;
         sensorType: Types.SensorType;
         sensorState: {
@@ -30,6 +29,10 @@ export type AssetNodeInstigatorsFragment = {
           id: string;
           selectorId: string;
           status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
         };
       }
   >;

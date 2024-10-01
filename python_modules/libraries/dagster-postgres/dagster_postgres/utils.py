@@ -169,6 +169,8 @@ def create_pg_connection(
             conn.close()
 
 
-def pg_statement_timeout(millis: int) -> str:
+def set_pg_statement_timeout(conn: psycopg2.extensions.connection, millis: int):
     check.int_param(millis, "millis")
-    return f"-c statement_timeout={millis}"
+    with conn:
+        with conn.cursor() as curs:
+            curs.execute(f"SET statement_timeout = {millis};")

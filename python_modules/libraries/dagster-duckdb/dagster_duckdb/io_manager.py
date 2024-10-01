@@ -15,6 +15,7 @@ from dagster._core.storage.db_io_manager import (
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._utils.backoff import backoff
+from packaging.version import Version
 from pydantic import Field
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -236,8 +237,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     @staticmethod
     @abstractmethod
-    def type_handlers() -> Sequence[DbTypeHandler]:
-        ...
+    def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
     def default_load_type() -> Optional[Type]:
@@ -280,13 +280,23 @@ class DuckDbClient(DbClient):
     @staticmethod
     @contextmanager
     def connect(context, _):
+        config = context.resource_config["connection_config"]
+
+        # support for `custom_user_agent` was added in v1.0.0
+        # https://github.com/duckdb/duckdb/commit/0c66b6007b736ed2197bca54d20c9ad9a5eeef46
+        if Version(duckdb.__version__) >= Version("1.0.0"):
+            config = {
+                "custom_user_agent": "dagster",
+                **config,
+            }
+
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
             kwargs={
                 "database": context.resource_config["database"],
                 "read_only": False,
-                "config": context.resource_config["connection_config"],
+                "config": config,
             },
             max_retries=10,
         )

@@ -12,19 +12,23 @@ To practice what you’ve learned, partition the `taxi_trips` asset by month usi
 
 - With every partition, insert the new data into the `taxi_trips` table
 
-- For convenience, add a `partition_date` column to represent which partition the record was inserted from. You’ll need to drop the existing `taxi_trips` because of the new `partition_date` column. In a Python REPL or scratch script, run the following:
+- For convenience, add a `partition_date` column to represent which partition the record was inserted from. 
+
+  {% callout %}
+  You’ll need to drop the existing `taxi_trips` because of the new `partition_date` column. In a Python REPL or scratch script, run the following:
 
   ```yaml
   import duckdb
   conn = duckdb.connect(database="data/staging/data.duckdb")
   conn.execute("drop table trips;")
   ```
+  {% /callout %}
 
 - Because the `taxi_trips` table will exist after the first partition materializes, the SQL query will have to change
 
 - In this asset, you’ll need to do three actions:
   - Create the `taxi_trips` table if it doesn’t already exist
-  - Delete any old data from that `partition_date` to prevent duplicates when backfilling
+  - Delete any old data from `partition_date` to prevent duplicates when backfilling
   - Insert new records from the month’s parquet file
 
 ---
@@ -36,19 +40,20 @@ The updated asset should look similar to the following code. Click **View answer
 **If there are differences**, compare what you wrote to the asset below and change them, as this asset will be used as-is in future lessons.
 
 ```python {% obfuscated="true" %}
-from dagster import asset
+from dagster import asset, AssetExecutionContext
+from dagster_duckdb import DuckDBResource
 from ..partitions import monthly_partitions
 
 @asset(
   deps=["taxi_trips_file"],
   partitions_def=monthly_partition,
 )
-def taxi_trips(context, database: DuckDBResource):
+def taxi_trips(context: AssetExecutionContext, database: DuckDBResource) -> None:
     """
       The raw taxi trips dataset, loaded into a DuckDB database, partitioned by month.
     """
 
-    partition_date_str = context.asset_partition_key_for_output()
+    partition_date_str = context.partition_key
     month_to_fetch = partition_date_str[:-3]
 
     query = f"""
@@ -69,5 +74,5 @@ def taxi_trips(context, database: DuckDBResource):
     """
 
     with database.get_connection() as conn:
-      conn.execute(query)
+        conn.execute(query)
 ```

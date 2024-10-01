@@ -1,30 +1,23 @@
 ---
-title: Dagster with Airflow | Dagster
-description: The dagster-airflow package allows you to import Airflow DAGs into Dagster jobs and assets, as well as trigger job runs from Airflow.
+title: "Airflow & Dagster | Dagster Docs"
+description: Explore the options for migrating from Airflow to Dagster.
 ---
 
-# Using Dagster with Airflow
+# Airflow & Dagster
 
-<CodeReferenceLink filePath="examples/with_airflow" />
+Migrating from Airflow to Dagster, or integrating Dagster into your existing workflow orchestration stack, can be accomplished in many ways. The [Pick your own journey](/guides/migrations/migrating-airflow-to-dagster) guide provides a variety suggestions in how one can migrate their Airflow pipelines to Dagster, or build a platform where both tools co-exist.
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster-airflow) library provides interoperability between Dagster and Airflow. The main scenarios for using the Dagster Airflow integration are:
-
-- You want to do a lift-and-shift migration of all your existing Airflow DAGs into Dagster jobs/Software-defined Assets (SDAs)
-- You want to trigger Dagster job runs from Airflow
-
-This integration is designed to help support users who have existing Airflow usage and are interested in exploring Dagster.
+- [Learning Dagster from Airflow](/integrations/airflow/from-airflow-to-dagster) - a step-by-step tutorial of mapping concepts from Airflow to Dagster
+- [Migrating from Airflow](/guides/migrations/migrating-airflow-to-dagster) - migration patterns for translating Airflow code to Dagster
+- [Observe your Airflow pipelines with Dagster](/guides/migrations/observe-your-airflow-pipelines-with-dagster) - See how Dagster can act as the observation layer over all pipelines in your organization
 
 ---
 
-## Migrating to Dagster
-
-Interested in migrating from Airflow to Dagster? Check out the [migration guide](/integrations/airflow/migrating-to-dagster) for a step-by-step walkthrough.
-
-If you're not sure how to map Airflow concepts to Dagster, check out the cheatsheet in the next section before you begin.
-
-### Mapping Airflow concepts to Dagster
+## Mapping Airflow concepts to Dagster
 
 While Airflow and Dagster have some significant differences, there are many concepts that overlap. Use this cheatsheet to understand how Airflow concepts map to Dagster.
+
+**Want a look at this in code?** Check out the [Learning Dagster from Airflow](/integrations/airflow/from-airflow-to-dagster) guide.
 
 <table
   className="table"
@@ -69,13 +62,11 @@ While Airflow and Dagster have some significant differences, there are many conc
     <tr>
       <td>Datasets</td>
       <td>
-        <a href="/concepts/assets/software-defined-assets">
-          Software-defined Assets (SDAs)
-        </a>
+        <a href="/concepts/assets/software-defined-assets">Assets</a>
       </td>
       <td>
-        SDAs are more powerful and mature than datasets and include support for
-        things like{" "}
+        Dagster assets are more powerful and mature than datasets and include
+        support for things like{" "}
         <a href="/concepts/partitions-schedules-sensors/partitioning-assets">
           partitioning
         </a>
@@ -99,7 +90,7 @@ While Airflow and Dagster have some significant differences, there are many conc
             <a href="/guides/dagster/using-environment-variables-and-secrets">
               Environment variables
             </a>{" "}
-            (Dagster Cloud only)
+            (Dagster+ only)
           </li>
         </ul>
       </td>
@@ -137,8 +128,8 @@ While Airflow and Dagster have some significant differences, there are many conc
             </a>
           </li>
           <li>
-            <a href="/concepts/assets/asset-auto-execution">
-              Auto-materialization
+            <a href="/concepts/automation/declarative-automation">
+              Declarative Automation
             </a>
           </li>
         </ul>
@@ -153,8 +144,8 @@ While Airflow and Dagster have some significant differences, there are many conc
         </a>
         . When this is the case, <a href="/concepts/partitions-schedules-sensors/backfills">
           backfills
-        </a> and <a href="/concepts/assets/asset-auto-execution">
-          auto-materialize
+        </a> and <a href="/concepts/automation/declarative-automation">
+          Declarative Automation
         </a> will only materialize later partitions after earlier partitions have
         completed.
       </td>
@@ -211,7 +202,7 @@ While Airflow and Dagster have some significant differences, there are many conc
     <tr>
       <td>Schedulers</td>
       <td>
-        <a href="/concepts/partitions-schedules-sensors/schedules">Schedules</a>
+        <a href="/concepts/automation/schedules">Schedules</a>
       </td>
       <td></td>
     </tr>
@@ -230,7 +221,7 @@ While Airflow and Dagster have some significant differences, there are many conc
             <a href="/concepts/ops-jobs-graphs/graphs">Graphs</a>
           </li>
           <li>
-            <a href="/concepts/ops-jobs-graphs/metadata-tags">Tags</a>
+            <a href="/concepts/metadata-tags/tags">Tags</a>
           </li>
           <li>
             <a href="/concepts/assets/software-defined-assets#grouping-assets">
@@ -241,8 +232,8 @@ While Airflow and Dagster have some significant differences, there are many conc
       </td>
       <td>
         Dagster provides rich, searchable{" "}
-        <a href="/concepts/ops-jobs-graphs/metadata-tags">
-          metadata and tagging
+        <a href="/concepts/metadata-tags">
+          metadata and <a href="/concepts/metadata-tags/tags">tagging</a>
         </a>{" "}
         support beyond what’s offered by Airflow.
       </td>
@@ -282,18 +273,3 @@ While Airflow and Dagster have some significant differences, there are many conc
     </tr>
   </tbody>
 </table>
-
----
-
-## Related
-
-<ArticleList>
-  <ArticleListItem
-    title="Migrating from Airflow to Dagster"
-    href="/integrations/airflow/migrating-to-dagster"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Airflow integration reference"
-    href="/integrations/airflow/reference"
-  ></ArticleListItem>
-</ArticleList>

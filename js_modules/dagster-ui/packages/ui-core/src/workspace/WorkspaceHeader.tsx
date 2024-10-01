@@ -1,4 +1,3 @@
-import {QueryResult} from '@apollo/client';
 import {Box, Button, Colors, Heading, Icon, PageHeader, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
@@ -11,15 +10,14 @@ import {
   ReloadRepositoryLocationButton,
 } from '../nav/ReloadRepositoryLocationButton';
 
-interface Props<TData> {
+interface Props {
   repoAddress: RepoAddress;
   tab: string;
   refreshState?: QueryRefreshState;
-  queryData?: QueryResult<TData, any>;
 }
 
-export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<TData>) => {
-  const {repoAddress, tab, refreshState, queryData} = props;
+export const WorkspaceHeader = (props: Props) => {
+  const {repoAddress, tab, refreshState} = props;
 
   return (
     <PageHeader
@@ -36,14 +34,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
           </Heading>
         </Box>
       }
-      tabs={
-        <WorkspaceTabs
-          repoAddress={repoAddress}
-          tab={tab}
-          refreshState={refreshState}
-          queryData={queryData}
-        />
-      }
+      tabs={<WorkspaceTabs repoAddress={repoAddress} tab={tab} refreshState={refreshState} />}
       right={
         <ReloadRepositoryLocationButton
           location={repoAddress.location}
@@ -58,7 +49,7 @@ export const WorkspaceHeader = <TData extends Record<string, any>>(props: Props<
                   onClick={() => tryReload()}
                   loading={reloading}
                   disabled={!hasReloadPermission}
-                  icon={<Icon name="refresh" />}
+                  icon={<Icon name="code_location_reload" />}
                   outlined
                 >
                   Reload definitions

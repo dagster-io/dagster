@@ -1,5 +1,7 @@
 load_from:
   - python_package:
-      package_name: tutorial_template
+      package_name: tutorial_template.definitions
+      location_name: tutorial_template
   - python_package:
-      package_name: tutorial_finished
+      package_name: tutorial_finished.definitions
+      location_name: tutorial_finished

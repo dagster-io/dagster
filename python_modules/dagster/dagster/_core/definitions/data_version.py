@@ -17,10 +17,11 @@ from typing_extensions import Final
 
 from dagster import _check as check
 from dagster._annotations import deprecated, experimental
+from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.events import (
         AssetKey,
         AssetKeyPartitionKey,
@@ -374,19 +375,22 @@ class CachingStaleStatusResolver:
 
     _instance: "DagsterInstance"
     _instance_queryer: Optional["CachingInstanceQueryer"]
-    _asset_graph: Optional["AssetGraph"]
-    _asset_graph_load_fn: Optional[Callable[[], "AssetGraph"]]
+    _asset_graph: Optional["BaseAssetGraph"]
+    _asset_graph_load_fn: Optional[Callable[[], "BaseAssetGraph"]]
 
     def __init__(
         self,
         instance: "DagsterInstance",
-        asset_graph: Union["AssetGraph", Callable[[], "AssetGraph"]],
+        asset_graph: Union["BaseAssetGraph", Callable[[], "BaseAssetGraph"]],
+        loading_context: LoadingContext,
+        instance_queryer: Optional["CachingInstanceQueryer"] = None,
     ):
-        from dagster._core.definitions.asset_graph import AssetGraph
+        from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
         self._instance = instance
-        self._instance_queryer = None
-        if isinstance(asset_graph, AssetGraph):
+        self._instance_queryer = instance_queryer
+        self._loading_context = loading_context
+        if isinstance(asset_graph, BaseAssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
         else:
@@ -423,13 +427,14 @@ class CachingStaleStatusResolver:
     def _get_status(self, key: "AssetKeyPartitionKey") -> StaleStatus:
         # The status loader does not support querying for the stale status of a
         # partitioned asset without specifying a partition, so we return here.
-        if self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
+        asset = self.asset_graph.get(key.asset_key)
+        if asset.is_partitioned and not key.partition_key:
             return StaleStatus.FRESH
         else:
             current_version = self._get_current_data_version(key=key)
             if current_version == NULL_DATA_VERSION:
                 return StaleStatus.MISSING
-            elif self.asset_graph.is_source(key.asset_key):
+            elif asset.is_external:
                 return StaleStatus.FRESH
             else:
                 causes = self._get_stale_causes(key=key)
@@ -440,9 +445,10 @@ class CachingStaleStatusResolver:
         # Querying for the stale status of a partitioned asset without specifying a partition key
         # is strictly speaking undefined, but we return an empty list here (from which FRESH status
         # is inferred) for backcompat.
-        if self.asset_graph.is_partitioned(key.asset_key) and not key.partition_key:
+        asset = self.asset_graph.get(key.asset_key)
+        if asset.is_partitioned and not key.partition_key:
             return []
-        elif self.asset_graph.is_source(key.asset_key):
+        elif asset.is_external:
             return []
         else:
             current_version = self._get_current_data_version(key=key)
@@ -454,6 +460,7 @@ class CachingStaleStatusResolver:
                 )
 
     def _is_dep_updated(self, provenance: DataProvenance, dep_key: "AssetKeyPartitionKey") -> bool:
+        dep_asset = self.asset_graph.get(dep_key.asset_key)
         if dep_key.partition_key is None:
             current_data_version = self._get_current_data_version(key=dep_key)
             return provenance.input_data_versions[dep_key.asset_key] != current_data_version
@@ -461,14 +468,14 @@ class CachingStaleStatusResolver:
             cursor = provenance.input_storage_ids[dep_key.asset_key]
             updated_record = self._instance.get_latest_data_version_record(
                 dep_key.asset_key,
-                self.asset_graph.is_source(dep_key.asset_key),
+                dep_asset.is_external,
                 dep_key.partition_key,
                 after_cursor=cursor,
             )
             if updated_record:
                 previous_record = self._instance.get_latest_data_version_record(
                     dep_key.asset_key,
-                    self.asset_graph.is_source(dep_key.asset_key),
+                    dep_asset.is_external,
                     dep_key.partition_key,
                     before_cursor=cursor + 1 if cursor else None,
                 )
@@ -485,10 +492,10 @@ class CachingStaleStatusResolver:
     def _get_stale_causes_materialized(self, key: "AssetKeyPartitionKey") -> Iterator[StaleCause]:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
-        code_version = self.asset_graph.get_code_version(key.asset_key)
+        code_version = self.asset_graph.get(key.asset_key).code_version
         provenance = self._get_current_data_provenance(key=key)
 
-        asset_deps = self.asset_graph.get_parents(key.asset_key)
+        asset_deps = self.asset_graph.get(key.asset_key).parent_keys
 
         # only used if no provenance available
         materialization = check.not_none(self._get_latest_data_version_record(key=key))
@@ -513,15 +520,8 @@ class CachingStaleStatusResolver:
         # partition counts.
         partition_deps = self._get_partition_dependencies(key=key)
         for dep_key in sorted(partition_deps):
-            if self._get_status(key=dep_key) == StaleStatus.STALE:
-                yield StaleCause(
-                    key,
-                    StaleCauseCategory.DATA,
-                    "stale dependency",
-                    dep_key,
-                    self._get_stale_causes(key=dep_key),
-                )
-            elif provenance:
+            dep_asset = self.asset_graph.get(dep_key.asset_key)
+            if provenance:
                 if not provenance.has_input_asset(dep_key.asset_key):
                     yield StaleCause(
                         key,
@@ -529,12 +529,11 @@ class CachingStaleStatusResolver:
                         f"has a new dependency on {dep_key.asset_key.to_user_string()}",
                         dep_key,
                     )
-                # Currently we exclude assets downstream of AllPartitionMappings from stale
-                # status logic due to potentially huge numbers of dependencies.
                 elif self._is_dep_updated(provenance, dep_key):
-                    report_data_version = self.asset_graph.get_code_version(
-                        dep_key.asset_key
-                    ) is not None or self._is_current_data_version_user_provided(key=dep_key)
+                    report_data_version = (
+                        dep_asset.code_version is not None
+                        or self._is_current_data_version_user_provided(key=dep_key)
+                    )
                     yield StaleCause(
                         key,
                         StaleCauseCategory.DATA,
@@ -563,7 +562,7 @@ class CachingStaleStatusResolver:
             # timestamps instead of versions this should be removable eventually since
             # provenance is on all newer materializations. If dep is a source, then we'll never
             # provide a stale reason here.
-            elif not self.asset_graph.is_source(dep_key.asset_key):
+            elif not dep_asset.is_external:
                 dep_materialization = self._get_latest_data_version_record(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
@@ -602,7 +601,7 @@ class CachingStaleStatusResolver:
         return root_causes
 
     @property
-    def asset_graph(self) -> "AssetGraph":
+    def asset_graph(self) -> "BaseAssetGraph":
         if self._asset_graph is None:
             self._asset_graph = check.not_none(self._asset_graph_load_fn)()
         return self._asset_graph
@@ -614,7 +613,9 @@ class CachingStaleStatusResolver:
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
         if self._instance_queryer is None:
-            self._instance_queryer = CachingInstanceQueryer(self._instance, self.asset_graph)
+            self._instance_queryer = CachingInstanceQueryer(
+                self._instance, self.asset_graph, self._loading_context
+            )
         return self._instance_queryer
 
     @cached_method
@@ -622,7 +623,7 @@ class CachingStaleStatusResolver:
         # Currently we can only use asset records, which are fetched in one shot, for non-source
         # assets. This is because the most recent AssetObservation is not stored on the AssetRecord.
         record = self._get_latest_data_version_record(key=key)
-        if self.asset_graph.is_source(key.asset_key) and record is None:
+        if self.asset_graph.get(key.asset_key).is_external and record is None:
             return DEFAULT_DATA_VERSION
         elif record is None:
             return NULL_DATA_VERSION
@@ -632,7 +633,7 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _is_current_data_version_user_provided(self, *, key: "AssetKeyPartitionKey") -> bool:
-        if self.asset_graph.is_source(key.asset_key):
+        if self.asset_graph.get(key.asset_key).is_external:
             return True
         else:
             provenance = self._get_current_data_provenance(key=key)
@@ -654,10 +655,11 @@ class CachingStaleStatusResolver:
     # are at the root of the graph (have no dependencies) or are downstream of a volatile asset.
     @cached_method
     def _is_volatile(self, *, key: "AssetKey") -> bool:
-        if self.asset_graph.is_source(key):
-            return self.asset_graph.is_observable(key)
+        asset = self.asset_graph.get(key)
+        if asset.is_external:
+            return asset.is_observable
         else:
-            deps = self.asset_graph.get_parents(key)
+            deps = asset.get(key).parent_keys
             return len(deps) == 0 or any(self._is_volatile(key=dep_key) for dep_key in deps)
 
     @cached_method
@@ -675,46 +677,43 @@ class CachingStaleStatusResolver:
     def _get_latest_data_version_record(
         self, key: "AssetKeyPartitionKey"
     ) -> Optional["EventLogRecord"]:
-        # If an asset record is cached, all of its ancestors have already been cached.
-        if (
-            key.partition_key is None
-            and not self.asset_graph.is_source(key.asset_key)
-            and not self.instance_queryer.has_cached_asset_record(key.asset_key)
-        ):
-            ancestors = self.asset_graph.get_ancestors(key.asset_key, include_self=True)
-            self.instance_queryer.prefetch_asset_records(ancestors)
         return self.instance_queryer.get_latest_materialization_or_observation_record(
             asset_partition=key
         )
 
     # If a partition has greater than or equal to SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD
-    # of dependencies, it is not included in partition_deps. This is for performance reasons. This
-    # constraint can be removed when we have thoroughly tested performance for large upstream
-    # partition counts. At that time, the body of this method can just be replaced with a call to
-    # `asset_graph.get_parents_partitions`, which the logic here largely replicates.
+    # of dependencies, or is downstream of a time window partition with an AllPartitionsMapping,
+    # it is not included in partition_deps. This is for performance reasons. Besides this, the
+    # logic here largely replicates `asset_graph.get_parents_partitions`.
     #
-    # If an asset is self-dependent and has greater than or equal to
+    # Similarly, If an asset is self-dependent and has greater than or equal to
     # SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD partitions, we don't check the
     # self-edge for updated data or propagate other stale causes through the edge. That is because
     # the current logic will recurse to the first partition, potentially throwing a recursion error.
-    # This constraint can be removed when we have thoroughly tested performance for large partition
-    # counts on self-dependent assets.
     @cached_method
     def _get_partition_dependencies(
         self, *, key: "AssetKeyPartitionKey"
     ) -> Sequence["AssetKeyPartitionKey"]:
-        from dagster._core.definitions.events import (
-            AssetKeyPartitionKey,
-        )
+        from dagster import AllPartitionMapping
+        from dagster._core.definitions.events import AssetKeyPartitionKey
+        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
-        asset_deps = self.asset_graph.get_parents(key.asset_key)
+        asset_deps = self.asset_graph.get(key.asset_key).parent_keys
 
         deps = []
         for dep_asset_key in asset_deps:
-            if not self.asset_graph.is_partitioned(dep_asset_key):
+            dep_asset = self.asset_graph.get(dep_asset_key)
+            if not dep_asset.is_partitioned:
                 deps.append(AssetKeyPartitionKey(dep_asset_key, None))
             elif key.asset_key == dep_asset_key and self._exceeds_self_partition_limit(
                 key.asset_key
+            ):
+                continue
+            elif isinstance(
+                dep_asset.partitions_def, TimeWindowPartitionsDefinition
+            ) and isinstance(
+                self.asset_graph.get_partition_mapping(key.asset_key, dep_asset_key),
+                AllPartitionMapping,
             ):
                 continue
             else:
@@ -738,6 +737,8 @@ class CachingStaleStatusResolver:
 
     def _exceeds_self_partition_limit(self, asset_key: "AssetKey") -> bool:
         return (
-            check.not_none(self.asset_graph.get_partitions_def(asset_key)).get_num_partitions()
+            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions(
+                dynamic_partitions_store=self._instance
+            )
             >= SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
         )

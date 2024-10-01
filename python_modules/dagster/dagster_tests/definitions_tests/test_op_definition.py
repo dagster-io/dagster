@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from dagster import DagsterInvariantViolationError, In, Nothing, OpDefinition, Out, Output, job, op
 
@@ -81,3 +83,13 @@ def test_multi_out_implicit_none():
         match="has multiple outputs, but only one output was returned",
     ):
         untyped_job.execute_in_process()
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="| operator Python 3.10 or higher")
+def test_pipe_union_optional():
+    # union is not yet supported, but you can express optional as union of T and None
+    @op
+    def pipe_union(thing: str | None) -> str | None:  # type: ignore
+        return thing
+
+    assert pipe_union

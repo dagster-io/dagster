@@ -7,28 +7,33 @@
     i.e. it`s late enough to pull in the required data time, and early enough to not go over the
     maximum lag minutes.
 """
+
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
+)
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._seven.compat.pendulum import (
-    PendulumInterval,
-)
+from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .asset_condition import AssetSubsetWithMetadata
-    from .asset_condition_evaluation_context import AssetConditionEvaluationContext
-    from .auto_materialize_rule_evaluation import TextRuleEvaluationData
+    from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
+    from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
+        LegacyRuleEvaluationContext,
+    )
+    from dagster._core.definitions.declarative_automation.serialized_objects import (
+        AssetSubsetWithMetadata,
+    )
 
 
 def get_execution_period_for_policy(
     freshness_policy: FreshnessPolicy,
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> PendulumInterval:
+) -> TimeWindow:
     if freshness_policy.cron_schedule:
         tick_iterator = cron_string_iterator(
             start_timestamp=current_time.timestamp(),
@@ -42,18 +47,18 @@ def get_execution_period_for_policy(
             tick = next(tick_iterator)
             required_data_time = tick - freshness_policy.maximum_lag_delta
             if effective_data_time is None or effective_data_time < required_data_time:
-                return PendulumInterval(start=required_data_time, end=tick)
+                return TimeWindow(start=required_data_time, end=tick)
 
     else:
         # occurs when asset is missing
         if effective_data_time is None:
-            return PendulumInterval(
+            return TimeWindow(
                 # require data from at most maximum_lag_delta ago
                 start=current_time - freshness_policy.maximum_lag_delta,
                 # this data should be available as soon as possible
                 end=current_time,
             )
-        return PendulumInterval(
+        return TimeWindow(
             # we don't want to execute this too frequently
             start=effective_data_time + 0.9 * freshness_policy.maximum_lag_delta,
             end=max(effective_data_time + freshness_policy.maximum_lag_delta, current_time),
@@ -65,11 +70,11 @@ def get_execution_period_and_evaluation_data_for_policies(
     policies: AbstractSet[FreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[PendulumInterval], Optional["TextRuleEvaluationData"]]:
+) -> Tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
-    from .auto_materialize_rule_evaluation import TextRuleEvaluationData
+    from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
 
     merged_period = None
     contains_local = False
@@ -85,7 +90,7 @@ def get_execution_period_and_evaluation_data_for_policies(
         if merged_period is None:
             merged_period = period
         elif period.start <= merged_period.end:
-            merged_period = PendulumInterval(
+            merged_period = TimeWindow(
                 start=max(period.start, merged_period.start),
                 end=period.end,
             )
@@ -112,12 +117,12 @@ def get_execution_period_and_evaluation_data_for_policies(
 
 
 def get_expected_data_time_for_asset_key(
-    context: "AssetConditionEvaluationContext", will_materialize: bool
+    context: "LegacyRuleEvaluationContext", will_materialize: bool
 ) -> Optional[datetime.datetime]:
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
     """
-    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
     asset_key = context.asset_key
     asset_graph = context.asset_graph
@@ -129,12 +134,12 @@ def get_expected_data_time_for_asset_key(
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
         return context.data_time_resolver.get_current_data_time(asset_key, current_time)
-    elif asset_graph.has_non_source_parents(asset_key):
+    elif asset_graph.has_materializable_parents(asset_key):
         expected_data_time = None
-        for parent_key in asset_graph.get_parents(asset_key):
+        for parent_key in asset_graph.get(asset_key).parent_keys:
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
-            if isinstance(asset_graph, ExternalAssetGraph) and context.will_update_asset_partition(
+            if isinstance(asset_graph, RemoteAssetGraph) and context.will_update_asset_partition(
                 AssetKeyPartitionKey(parent_key)
             ):
                 parent_repo = asset_graph.get_repository_handle(parent_key)
@@ -155,21 +160,24 @@ def get_expected_data_time_for_asset_key(
 
 
 def freshness_evaluation_results_for_asset_key(
-    context: "AssetConditionEvaluationContext",
-) -> Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+    context: "LegacyRuleEvaluationContext",
+) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
     Attempts to minimize the total number of asset executions.
     """
-    from .asset_condition import AssetSubsetWithMetadata
+    from dagster._core.definitions.declarative_automation.serialized_objects import (
+        AssetSubsetWithMetadata,
+    )
 
     asset_key = context.asset_key
     current_time = context.evaluation_time
 
-    if not context.asset_graph.get_downstream_freshness_policies(
-        asset_key=asset_key
-    ) or context.asset_graph.is_partitioned(asset_key):
+    if (
+        not context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+        or context.asset_graph.get(asset_key).is_partitioned
+    ):
         return context.empty_subset(), []
 
     # figure out the current contents of this asset
@@ -207,7 +215,7 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=context.asset_graph.freshness_policies_by_key.get(asset_key),
+        local_policy=context.asset_graph.get(asset_key).freshness_policy,
         policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,
@@ -221,10 +229,10 @@ def freshness_evaluation_results_for_asset_key(
         and expected_data_time >= execution_period.start
         and evaluation_data is not None
     ):
-        all_subset = AssetSubset.all(asset_key, None)
+        all_subset = ValidAssetSubset.all(asset_key, None)
         return (
-            AssetSubset.all(asset_key, None),
-            [AssetSubsetWithMetadata(all_subset, evaluation_data.metadata)],
+            ValidAssetSubset.all(asset_key, None),
+            [AssetSubsetWithMetadata(subset=all_subset, metadata=evaluation_data.metadata)],
         )
     else:
         return context.empty_subset(), []

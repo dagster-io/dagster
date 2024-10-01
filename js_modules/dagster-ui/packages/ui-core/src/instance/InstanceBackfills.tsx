@@ -1,34 +1,32 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
   CursorPaginationControls,
-  Heading,
   NonIdealState,
-  Page,
-  PageHeader,
   Spinner,
 } from '@dagster-io/ui-components';
 
-import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './backfill/BackfillTable';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
-  InstanceHealthForBackfillsQuery,
-  InstanceHealthForBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {BulkActionStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {OverviewTabs} from '../overview/OverviewTabs';
-import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {useFilters} from '../ui/Filters';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {useFilters} from '../ui/BaseFilters';
+import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 const PAGE_SIZE = 10;
 
@@ -44,6 +42,10 @@ const labelForBackfillStatus = (key: BulkActionStatus) => {
       return 'Failed';
     case BulkActionStatus.REQUESTED:
       return 'In progress';
+    case BulkActionStatus.COMPLETED_SUCCESS:
+      return 'Success';
+    case BulkActionStatus.COMPLETED_FAILED:
+      return 'Failed';
   }
 };
 
@@ -61,11 +63,10 @@ export const InstanceBackfills = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Backfills');
 
-  const queryData = useQuery<
-    InstanceHealthForBackfillsQuery,
-    InstanceHealthForBackfillsQueryVariables
-  >(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
-
+  const [statusState, setStatusState] = useQueryPersistedState<Set<BulkActionStatus>>({
+    encode: (vals) => ({status: vals.size ? Array.from(vals).join(',') : undefined}),
+    decode: (qs) => new Set((qs.status?.split(',') as BulkActionStatus[]) || []),
+  });
   const statusFilter = useStaticSetFilter<BulkActionStatus>({
     name: 'Status',
     icon: 'status',
@@ -74,9 +75,9 @@ export const InstanceBackfills = () => {
     closeOnSelect: true,
     renderLabel: ({value}) => <div>{labelForBackfillStatus(value)}</div>,
     getStringValue: (status) => labelForBackfillStatus(status),
+    state: statusState,
+    onStateChanged: setStatusState,
   });
-
-  const {state: statusState} = statusFilter;
 
   const {button, activeFiltersJsx} = useFilters({filters: [statusFilter]});
 
@@ -99,6 +100,7 @@ export const InstanceBackfills = () => {
         : [],
   });
 
+  const isDaemonHealthy = useIsBackfillDaemonHealthy();
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {loading, data} = queryResult;
 
@@ -143,17 +145,11 @@ export const InstanceBackfills = () => {
       );
     }
 
-    const daemonHealths = queryData.data?.instance.daemonHealth.allDaemonStatuses || [];
-    const backfillHealths = daemonHealths
-      .filter((daemon) => daemon.daemonType === 'BACKFILL')
-      .map((daemon) => daemon.required && daemon.healthy);
-    const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
-
     return (
       <div>
-        {isBackfillHealthy ? null : (
-          <Box padding={{horizontal: 24, vertical: 16}}>
-            <DaemonNotRunningAlertBody />
+        {isDaemonHealthy ? null : (
+          <Box padding={{horizontal: 24, bottom: 16}}>
+            <DaemonNotRunningAlert />
           </Box>
         )}
         <BackfillTable
@@ -170,32 +166,21 @@ export const InstanceBackfills = () => {
   };
 
   return (
-    <Page>
-      <PageHeader
-        title={<Heading>Overview</Heading>}
-        tabs={<OverviewTabs tab="backfills" refreshState={refreshState} />}
-      />
-      <Box padding={{vertical: 12, horizontal: 20}}>
+    <>
+      <Box
+        padding={{vertical: 12, horizontal: 20}}
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+      >
         <Box flex={{direction: 'column', gap: 8}}>
           <div>{button}</div>
           {activeFiltersJsx}
         </Box>
+        <QueryRefreshCountdown refreshState={refreshState} />
       </Box>
       {content()}
-    </Page>
+    </>
   );
 };
-
-const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
-  query InstanceHealthForBackfillsQuery {
-    instance {
-      id
-      ...InstanceHealthFragment
-    }
-  }
-
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
 
 const BACKFILLS_QUERY = gql`
   query InstanceBackfillsQuery($status: BulkActionStatus, $cursor: String, $limit: Int) {

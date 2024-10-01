@@ -58,15 +58,15 @@ export const SpinnerWrapper = styled.div<{$padding: number}>`
 `;
 
 const SlowSpinner = styled(BlueprintSpinner)<{$fillColor: string; $stopped?: boolean}>`
-  .bp4-spinner-animation {
+  .bp5-spinner-animation {
     animation-duration: 0.8s;
     ${(p) => (p.$stopped ? 'animation: none;' : '')}
 
-    path.bp4-spinner-track {
+    path.bp5-spinner-track {
       stroke: ${(p) => p.$fillColor};
       stroke-opacity: 0.25;
     }
-    path.bp4-spinner-head {
+    path.bp5-spinner-head {
       ${(p) =>
         p.$stopped
           ? `stroke-opacity: 0;

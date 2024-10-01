@@ -1,14 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from dagster import (
-    AssetKey,
-    Config,
-    In,
-    Nothing,
-    Out,
-    Output,
-    op,
-)
+from dagster import AssetKey, Config, In, Nothing, Out, Output, op
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
@@ -61,7 +54,7 @@ class SyncConfig(Config):
             " detailed information on this response."
         ),
     ),
-    tags={"kind": "fivetran"},
+    tags={COMPUTE_KIND_TAG: "fivetran"},
 )
 def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
     """Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
@@ -130,7 +123,7 @@ class FivetranResyncConfig(SyncConfig):
             " detailed information on this response."
         ),
     ),
-    tags={"kind": "fivetran"},
+    tags={COMPUTE_KIND_TAG: "fivetran"},
 )
 def fivetran_resync_op(
     config: FivetranResyncConfig,

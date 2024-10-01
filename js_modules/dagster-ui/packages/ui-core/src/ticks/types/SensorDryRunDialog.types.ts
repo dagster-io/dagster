@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type SensorDryRunMutationVariables = Types.Exact<{
   selectorData: Types.SensorSelector;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type SensorDryRunMutation = {
@@ -62,3 +62,5 @@ export type DynamicPartitionRequestFragment = {
   partitionsDefName: string;
   type: Types.DynamicPartitionsRequestType;
 };
+
+export const SensorDryRunMutationVersion = '018c498063838a146dbc76607bc84c92c235eaa73a3859b1c94b469bc76f5170';

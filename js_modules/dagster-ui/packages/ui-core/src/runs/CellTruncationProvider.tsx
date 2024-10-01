@@ -1,8 +1,8 @@
-import {Button, Icon} from '@dagster-io/ui-components';
+import {Button, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
+import {MAX_ROW_HEIGHT_PX} from './LogsRowComponents';
 
 const OverflowFade = styled.div`
   position: absolute;
@@ -31,10 +31,11 @@ export class CellTruncationProvider extends React.Component<
     onExpand?: () => void;
     forceExpandability?: boolean;
   },
-  {isOverflowing: boolean}
+  {isOverflowing: boolean; showDialog: boolean}
 > {
   state = {
     isOverflowing: false,
+    showDialog: false,
   };
 
   private contentContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
@@ -55,25 +56,24 @@ export class CellTruncationProvider extends React.Component<
       return;
     }
 
-    const isOverflowing =
-      typeof this.props.style.height === 'number' && child.scrollHeight > this.props.style.height;
+    const isOverflowing = child.scrollHeight > MAX_ROW_HEIGHT_PX;
     if (isOverflowing !== this.state.isOverflowing) {
       this.setState({isOverflowing});
     }
   }
 
-  defaultExpand() {
+  dialogContents() {
     const message =
       this.contentContainerRef.current && this.contentContainerRef.current.textContent;
-    message &&
-      showCustomAlert({
-        body: <div style={{whiteSpace: 'pre-wrap'}}>{message}</div>,
-      });
+    if (message) {
+      return <div style={{whiteSpace: 'pre-wrap'}}>{message}</div>;
+    }
+    return null;
   }
 
   onView = () => {
     const {onExpand} = this.props;
-    onExpand ? onExpand() : this.defaultExpand();
+    onExpand ? onExpand() : this.setState({showDialog: true});
   };
 
   render() {
@@ -90,6 +90,22 @@ export class CellTruncationProvider extends React.Component<
                 View full message
               </Button>
             </OverflowButtonContainer>
+            {this.props.onExpand ? null : (
+              <Dialog
+                canEscapeKeyClose
+                canOutsideClickClose
+                isOpen={this.state.showDialog}
+                onClose={() => this.setState({showDialog: false})}
+                style={{width: 'auto', maxWidth: '80vw'}}
+              >
+                <div>{this.dialogContents()}</div>
+                <DialogFooter topBorder>
+                  <Button intent="primary" onClick={() => this.setState({showDialog: false})}>
+                    Done
+                  </Button>
+                </DialogFooter>
+              </Dialog>
+            )}
           </>
         )}
       </div>

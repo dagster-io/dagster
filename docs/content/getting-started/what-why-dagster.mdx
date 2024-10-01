@@ -42,6 +42,7 @@ Dagster’s asset-centric approach to building data pipelines makes it easy to:
 
 - **Understand how an asset - like a database table or report - is produced.** Everyone in your organization can understand the data lineage and how data assets relate to each other, even if they didn’t build the pipeline themselves.
 - **Determine if an asset is up to date.** It’s easy to tell exactly why assets are out-of-date, whether it might be late upstream data or errors in code.
+- **Diagnose data quality issues.** Building data quality checks into your pipelines is straightforward, and you can be notified automatically when data quality issues arise.
 - **Standardize best practices.** [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets), the Dagster concept that produces data assets, are a unifying abstraction across all data teams. SDAs enable easier collaboration and rapid adoption of best practices such as domain-specific languages, continuous integration, local development, and testing.
 - **Simplify debugging.** Every run and computation is tied to the goal of producing data, so debugging tools like logs are specific to the assets being produced. When something goes wrong, you can quickly identify the problematic asset, address it, and only need to re-execute that asset.
 
@@ -53,7 +54,7 @@ Additionally, Dagster is accompanied by a sleek, modern, [web-based UI](/concept
 
 ## How does it work?
 
-If you want to try running Dagster yourself, check out the [Hello, Dagster!](/getting-started/hello-dagster) quickstart.
+If you want to try running Dagster yourself, check out the Dagster [Quickstart](/getting-started/quickstart).
 
 ---
 
@@ -61,7 +62,7 @@ If you want to try running Dagster yourself, check out the [Hello, Dagster!](/ge
 
 Ready to dive in? Depending on your learning preferences, there are a few ways to get started:
 
-- [Dagster University](https://courses.dagster.io) - An in-depth, step-by-step course with quizzes and practice problems focusing on the essentials of building in Dagster. Completing the course takes from six to 10 hours.
+- [Dagster University](https://courses.dagster.io) - In-depth, step-by-step courses with quizzes and practice problems focusing on building in Dagster.
 - [Tutorial](/tutorial) - Not as lengthy or detailed as Dagster University, the tutorial focuses on building a small data pipeline that retrieves data from HackerNews.
 - [Concepts](/concepts) - Detailed information about Dagster’s core concepts.
 - [Guides](/guides) - Step-by-step guides for completing specific tasks with Dagster.

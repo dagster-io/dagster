@@ -2,13 +2,13 @@ from typing import Type, TypeVar, cast
 
 from typing_extensions import NotRequired, get_origin, is_typeddict
 
+from dagster._utils.typing_api import is_closed_python_optional_type
+
 _TypedDictClass = TypeVar("_TypedDictClass")
 
 
 def init_optional_typeddict(cls: Type[_TypedDictClass]) -> _TypedDictClass:
     """Initialize a TypedDict with optional values."""
-    from dagster._config.pythonic_config.type_check_utils import is_optional
-
     if not is_typeddict(cls):
         raise Exception("Must pass a TypedDict class to init_optional_typeddict")
     result = {}
@@ -16,7 +16,7 @@ def init_optional_typeddict(cls: Type[_TypedDictClass]) -> _TypedDictClass:
         # If the value is a typed dict, recursively initialize it
         if is_typeddict(value):
             result[key] = init_optional_typeddict(value)
-        elif is_optional(value):
+        elif is_closed_python_optional_type(value):
             result[key] = None
         elif get_origin(value) is dict:
             result[key] = {}

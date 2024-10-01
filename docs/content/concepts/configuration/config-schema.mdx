@@ -18,11 +18,11 @@ description: Job run configuration allows providing parameters to jobs at the ti
 
 Run configuration allows providing parameters to jobs at the time they're executed.
 
-It's often useful to provide user-chosen values to Dagster jobs or Software-defined Assets at runtime. For example, you might want to provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
+It's often useful to provide user-chosen values to Dagster jobs or asset definitions at runtime. For example, you might want to provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
 Various Dagster entities (assets, ops, resources) can be individually configured. When launching a job that materializes (assets), executes (ops), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration through the `config` parameter. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the asset/op/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
-A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the assets as a config value, and that asset might use that config value to decide what day's data to read.
+A common use of configuration is for a [schedule](/concepts/automation/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the assets as a config value, and that asset might use that config value to decide what day's data to read.
 
 ---
 
@@ -35,7 +35,7 @@ During execution, the specified config is accessed within the body of the op or 
 <TabGroup persistentKey="assetsorops">
 <TabItem name="Using software-defined-assets">
 
-#### Using Software-defined Assets
+#### Using asset definitions
 
 Here, we define a subclass of <PyObject object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body.
 
@@ -65,7 +65,7 @@ class MyOpConfig(Config):
 
 @op
 def print_greeting(config: MyOpConfig):
-    print(f"hello {config.person_name}")  # noqa: T201
+    print(f"hello {config.person_name}")
 ```
 
 You can also build config into [jobs](/concepts/ops-jobs-graphs/jobs).
@@ -191,7 +191,7 @@ asset_result = materialize(
 
 ### Using environment variables with config
 
-Assets and ops can be configured using environment variables by passing an <PyObject object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster Cloud, environment variables can be [set up directly in the UI](/guides/dagster/using-environment-variables-and-secrets).
+Assets and ops can be configured using environment variables by passing an <PyObject object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/dagster/using-environment-variables-and-secrets).
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config_envvar endbefore=end_execute_with_config_envvar dedent=4
 from dagster import job, materialize, op, RunConfig, EnvVar

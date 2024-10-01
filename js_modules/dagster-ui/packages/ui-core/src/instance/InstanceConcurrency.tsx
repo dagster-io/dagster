@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -30,6 +29,7 @@ import {Link} from 'react-router-dom';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
+import {ConcurrencyTable} from './VirtualizedInstanceConcurrencyTable';
 import {
   ConcurrencyKeyDetailsQuery,
   ConcurrencyKeyDetailsQueryVariables,
@@ -47,12 +47,19 @@ import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  QueryRefreshState,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses} from '../runs/RunStatuses';
 import {titleForRun} from '../runs/RunUtils';
@@ -61,10 +68,12 @@ import {TimeElapsed} from '../runs/TimeElapsed';
 const DEFAULT_MIN_VALUE = 1;
 const DEFAULT_MAX_VALUE = 1000;
 
-const InstanceConcurrencyPage = React.memo(() => {
+export const InstanceConcurrencyPageContent = React.memo(() => {
   useTrackPageView();
   useDocumentTitle('Concurrency');
-  const {pageTitle} = React.useContext(InstancePageContext);
+  const [selectedKey, setSelectedKey] = useQueryPersistedState<string | undefined>({
+    queryKey: 'key',
+  });
   const queryResult = useQuery<
     InstanceConcurrencyLimitsQuery,
     InstanceConcurrencyLimitsQueryVariables
@@ -76,26 +85,25 @@ const InstanceConcurrencyPage = React.memo(() => {
   const {data} = queryResult;
 
   return (
-    <Page>
-      <PageHeader
-        title={<Heading>{pageTitle}</Heading>}
-        tabs={<InstanceTabs tab="concurrency" refreshState={refreshState} />}
-      />
+    <div style={{overflowY: 'auto'}}>
       {data ? (
         <>
           <Box margin={{bottom: 64}}>
             <RunConcurrencyContent
+              refreshState={refreshState}
               hasRunQueue={!!data?.instance.runQueuingSupported}
               runQueueConfig={data?.instance.runQueueConfig}
             />
           </Box>
           <ConcurrencyLimits
             instanceConfig={data.instance.info}
-            limits={data.instance.concurrencyLimits}
+            concurrencyKeys={data.instance.concurrencyLimits.map((limit) => limit.concurrencyKey)}
             hasSupport={data.instance.supportsConcurrencyLimits}
             refetch={queryResult.refetch}
             minValue={data.instance.minConcurrencyLimitValue}
             maxValue={data.instance.maxConcurrencyLimitValue}
+            selectedKey={selectedKey}
+            onSelectKey={setSelectedKey}
           />
         </>
       ) : (
@@ -103,9 +111,22 @@ const InstanceConcurrencyPage = React.memo(() => {
           <Spinner purpose="section" />
         </Box>
       )}
-    </Page>
+    </div>
   );
 });
+
+export const InstanceConcurrencyPage = () => {
+  const {pageTitle} = React.useContext(InstancePageContext);
+  return (
+    <Page style={{padding: 0}}>
+      <PageHeader
+        title={<Heading>{pageTitle}</Heading>}
+        tabs={<InstanceTabs tab="concurrency" />}
+      />
+      <InstanceConcurrencyPageContent />
+    </Page>
+  );
+};
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
@@ -118,7 +139,6 @@ type DialogAction =
   | {
       actionType: 'edit';
       concurrencyKey: string;
-      concurrencyLimit: number;
     }
   | {
       actionType: 'delete';
@@ -130,18 +150,25 @@ export const RunConcurrencyContent = ({
   hasRunQueue,
   runQueueConfig,
   onEdit,
+  refreshState,
 }: {
   hasRunQueue: boolean;
   runQueueConfig: RunQueueConfigFragment | null | undefined;
+  refreshState?: QueryRefreshState;
   onEdit?: () => void;
 }) => {
   if (!hasRunQueue) {
     return (
       <>
-        <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border="bottom"
+          flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+        >
           <Subheading>Run concurrency</Subheading>
+          {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
         </Box>
-        <div>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
           limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
           <Mono>dagster.yaml</Mono>. See the{' '}
@@ -153,12 +180,12 @@ export const RunConcurrencyContent = ({
             QueuedRunCoordinator documentation
           </a>{' '}
           for more information.
-        </div>
+        </Box>
       </>
     );
   }
 
-  const info_content = (
+  const infoContent = (
     <Box padding={{vertical: 16, horizontal: 24}}>
       Run concurrency can be set in your run queue settings. See the{' '}
       <a
@@ -177,9 +204,7 @@ export const RunConcurrencyContent = ({
       <tbody>
         <tr>
           <td>Max concurrent runs:</td>
-          <td>
-            <Mono>{runQueueConfig.maxConcurrentRuns}</Mono>
-          </td>
+          <td>{runQueueConfig.maxConcurrentRuns}</td>
         </tr>
         <tr>
           <td>Tag concurrency limits:</td>
@@ -200,64 +225,74 @@ export const RunConcurrencyContent = ({
 
   return (
     <>
-      <RunConcurrencyLimitHeader onEdit={onEdit} />
-      {info_content}
+      <RunConcurrencyLimitHeader onEdit={onEdit} refreshState={refreshState} />
+      {infoContent}
       {settings_content}
     </>
   );
 };
 
-const RunConcurrencyLimitHeader = ({onEdit}: {onEdit?: () => void}) => (
+const RunConcurrencyLimitHeader = ({
+  onEdit,
+  refreshState,
+}: {
+  onEdit?: () => void;
+  refreshState?: QueryRefreshState;
+}) => (
   <Box
     flex={{justifyContent: 'space-between', alignItems: 'center'}}
     padding={{vertical: 16, horizontal: 24}}
     border="bottom"
   >
     <Subheading>Run concurrency</Subheading>
-    {onEdit ? (
-      <Button icon={<Icon name="edit" />} onClick={() => onEdit()}>
-        Edit configuration
-      </Button>
-    ) : (
-      <span />
-    )}
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
+      {onEdit ? (
+        <Button icon={<Icon name="edit" />} onClick={() => onEdit()}>
+          Edit configuration
+        </Button>
+      ) : null}
+    </Box>
   </Box>
 );
 
 export const ConcurrencyLimits = ({
   instanceConfig,
   hasSupport,
-  limits,
+  concurrencyKeys,
   refetch,
   minValue,
   maxValue,
+  selectedKey,
+  onSelectKey,
 }: {
-  limits: ConcurrencyLimitFragment[];
+  concurrencyKeys: string[];
   refetch: () => void;
   instanceConfig?: string | null;
   hasSupport?: boolean;
   maxValue?: number;
   minValue?: number;
+  selectedKey?: string | null;
+  onSelectKey: (key: string | undefined) => void;
 }) => {
   const [action, setAction] = React.useState<DialogAction>();
-  const [selectedKey, setSelectedKey] = React.useState<string | undefined>(undefined);
   const onConcurrencyStepsDialogClose = React.useCallback(() => {
-    setSelectedKey(undefined);
-  }, [setSelectedKey]);
+    onSelectKey(undefined);
+  }, [onSelectKey]);
 
-  const limitsByKey = Object.fromEntries(
-    limits.map(({concurrencyKey, slotCount}) => [concurrencyKey, slotCount]),
-  );
+  const [search, setSearch] = React.useState('');
 
-  const sortedLimits = React.useMemo(() => {
-    return [...limits].sort((a, b) => COMMON_COLLATOR.compare(a.concurrencyKey, b.concurrencyKey));
-  }, [limits]);
+  const sortedKeys = React.useMemo(() => {
+    return [...concurrencyKeys]
+      .filter((key) => key.includes(search))
+      .sort((a, b) => COMMON_COLLATOR.compare(a, b));
+  }, [concurrencyKeys, search]);
 
   const onAdd = () => {
     setAction({actionType: 'add'});
   };
   const onEdit = (concurrencyKey: string) => {
-    setAction({actionType: 'edit', concurrencyKey, concurrencyLimit: limitsByKey[concurrencyKey]!});
+    setAction({actionType: 'edit', concurrencyKey});
   };
   const onDelete = (concurrencyKey: string) => {
     setAction({actionType: 'delete', concurrencyKey});
@@ -300,9 +335,9 @@ export const ConcurrencyLimits = ({
   }
 
   return (
-    <>
-      <ConcurrencyLimitHeader onAdd={onAdd} />
-      {limits.length === 0 ? (
+    <Box flex={{direction: 'column'}} style={{overflow: 'auto', height: '100%'}}>
+      <ConcurrencyLimitHeader onAdd={onAdd} search={search} setSearch={setSearch} />
+      {concurrencyKeys.length === 0 ? (
         <Box margin={24}>
           <NonIdealState
             icon="error"
@@ -316,47 +351,12 @@ export const ConcurrencyLimits = ({
           />
         </Box>
       ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th style={{width: '260px'}}>Concurrency key</th>
-              <th style={{width: '20%'}}>Total slots</th>
-              <th style={{width: '20%'}}>Assigned steps</th>
-              <th style={{width: '20%'}}>Pending steps</th>
-              <th style={{width: '20%'}}>All steps</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedLimits.map((limit) => (
-              <tr key={limit.concurrencyKey}>
-                <td>{limit.concurrencyKey}</td>
-                <td>{limit.slotCount}</td>
-                <td>{limit.pendingSteps.filter((x) => !!x.assignedTimestamp).length}</td>
-                <td>{limit.pendingSteps.filter((x) => !x.assignedTimestamp).length}</td>
-                <td>
-                  <span style={{marginRight: 16}}>{limit.pendingSteps.length}</span>
-                  <Tag intent="primary" interactive>
-                    <ButtonLink
-                      onClick={() => {
-                        setSelectedKey(limit.concurrencyKey);
-                      }}
-                    >
-                      View all
-                    </ButtonLink>
-                  </Tag>
-                </td>
-                <td>
-                  <ConcurrencyLimitActionMenu
-                    concurrencyKey={limit.concurrencyKey}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+        <ConcurrencyTable
+          concurrencyKeys={sortedKeys}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onSelect={onSelectKey}
+        />
       )}
       <AddConcurrencyLimitDialog
         open={action?.actionType === 'add'}
@@ -389,56 +389,51 @@ export const ConcurrencyLimits = ({
         concurrencyKey={selectedKey}
         onUpdate={refetch}
       />
-    </>
+    </Box>
   );
 };
 
-const ConcurrencyLimitHeader = ({onAdd}: {onAdd?: () => void}) => (
-  <Box
-    flex={{justifyContent: 'space-between', alignItems: 'center'}}
-    padding={{vertical: 16, horizontal: 24}}
-    border="top-and-bottom"
-  >
-    <Subheading>
-      <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
-        <span>Global op/asset concurrency</span>
-        <Tag>Experimental</Tag>
-      </Box>
-    </Subheading>
-    {onAdd ? (
-      <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
-        Add concurrency limit
-      </Button>
-    ) : null}
-  </Box>
-);
-
-const ConcurrencyLimitActionMenu = ({
-  concurrencyKey,
-  onDelete,
-  onEdit,
+const ConcurrencyLimitHeader = ({
+  onAdd,
+  setSearch,
+  search,
 }: {
-  concurrencyKey: string;
-  onEdit: (key: string) => void;
-  onDelete: (key: string) => void;
-}) => {
+  onAdd?: () => void;
+} & (
+  | {
+      setSearch: (searchString: string) => void;
+      search: string;
+    }
+  | {setSearch?: never; search?: never}
+)) => {
   return (
-    <Popover
-      content={
-        <Menu>
-          <MenuItem icon="edit" text="Edit" onClick={() => onEdit(concurrencyKey)} />
-          <MenuItem
-            icon="delete"
-            intent="danger"
-            text="Delete"
-            onClick={() => onDelete(concurrencyKey)}
+    <Box flex={{direction: 'column'}}>
+      <Box
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{vertical: 16, horizontal: 24}}
+        border="top-and-bottom"
+      >
+        <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+          <Subheading>Global op/asset concurrency</Subheading>
+          <Tag>Experimental</Tag>
+        </Box>
+        {onAdd ? (
+          <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
+            Add concurrency limit
+          </Button>
+        ) : null}
+      </Box>
+      {setSearch ? (
+        <Box flex={{direction: 'row'}} padding={{vertical: 16, horizontal: 24}} border="bottom">
+          <TextInput
+            value={search || ''}
+            style={{width: '30vw', minWidth: 150, maxWidth: 400}}
+            placeholder="Filter concurrency keys"
+            onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
-        </Menu>
-      }
-      position="bottom-left"
-    >
-      <Button icon={<Icon name="expand_more" />} />
-    </Popover>
+        </Box>
+      ) : null}
+    </Box>
   );
 };
 
@@ -740,7 +735,7 @@ const ConcurrencyStepsDialog = ({
   title,
   onUpdate,
 }: {
-  concurrencyKey?: string;
+  concurrencyKey?: string | null;
   title: string | React.ReactNode;
   onClose: () => void;
   onUpdate: () => void;
@@ -955,7 +950,7 @@ const PendingStepRow = ({
   );
 };
 
-export const CONCURRENCY_STEP_FRAGMENT = gql`
+const CONCURRENCY_STEP_FRAGMENT = gql`
   fragment ConcurrencyStepFragment on PendingConcurrencyStep {
     runId
     stepKey
@@ -964,7 +959,7 @@ export const CONCURRENCY_STEP_FRAGMENT = gql`
     priority
   }
 `;
-export const CONCURRENCY_LIMIT_FRAGMENT = gql`
+const CONCURRENCY_LIMIT_FRAGMENT = gql`
   fragment ConcurrencyLimitFragment on ConcurrencyKeyInfo {
     concurrencyKey
     slotCount
@@ -978,7 +973,7 @@ export const CONCURRENCY_LIMIT_FRAGMENT = gql`
   }
   ${CONCURRENCY_STEP_FRAGMENT}
 `;
-export const RUN_QUEUE_CONFIG_FRAGMENT = gql`
+const RUN_QUEUE_CONFIG_FRAGMENT = gql`
   fragment RunQueueConfigFragment on RunQueueConfig {
     maxConcurrentRuns
     tagConcurrencyLimitsYaml
@@ -998,12 +993,11 @@ export const INSTANCE_CONCURRENCY_LIMITS_QUERY = gql`
       minConcurrencyLimitValue
       maxConcurrencyLimitValue
       concurrencyLimits {
-        ...ConcurrencyLimitFragment
+        concurrencyKey
       }
     }
   }
 
-  ${CONCURRENCY_LIMIT_FRAGMENT}
   ${RUN_QUEUE_CONFIG_FRAGMENT}
 `;
 

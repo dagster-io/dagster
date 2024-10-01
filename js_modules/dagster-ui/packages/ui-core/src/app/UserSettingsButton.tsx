@@ -1,48 +1,30 @@
-import {Colors, Icon, IconWrapper} from '@dagster-io/ui-components';
+import {Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
-import styled from 'styled-components';
+import {useVisibleFeatureFlagRows} from 'shared/app/useVisibleFeatureFlagRows.oss';
 
-import {UserSettingsDialog} from './UserSettingsDialog';
-import {getVisibleFeatureFlagRows} from './getVisibleFeatureFlagRows';
-
-const SettingsButton = styled.button`
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  padding: 24px;
-
-  ${IconWrapper} {
-    transition: background 50ms linear;
-  }
-
-  &:hover ${IconWrapper} {
-    background: ${Colors.navTextHover()};
-  }
-
-  &:active ${IconWrapper} {
-    background: ${Colors.navTextHover()};
-  }
-
-  &:focus {
-    outline: none;
-
-    ${IconWrapper} {
-      background: ${Colors.navTextHover()};
-    }
-  }
-`;
+import {useFeatureFlags} from './Flags';
+import {TopNavButton} from './TopNavButton';
+import {UserSettingsDialog} from './UserSettingsDialog/UserSettingsDialog';
 
 export const UserSettingsButton = () => {
+  const {flagSettingsPage} = useFeatureFlags();
   const [isOpen, setIsOpen] = useState(false);
+
+  const visibleFlags = useVisibleFeatureFlagRows();
+
+  if (flagSettingsPage) {
+    return null;
+  }
+
   return (
     <>
-      <SettingsButton onClick={() => setIsOpen(true)} title="User settings">
-        <Icon name="settings" color={Colors.navTextSelected()} />
-      </SettingsButton>
+      <TopNavButton onClick={() => setIsOpen(true)} title="User settings">
+        <Icon name="settings" size={20} />
+      </TopNavButton>
       <UserSettingsDialog
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        visibleFlags={getVisibleFeatureFlagRows()}
+        visibleFlags={visibleFlags}
       />
     </>
   );

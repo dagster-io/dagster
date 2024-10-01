@@ -4,6 +4,7 @@ This tooling should be invoked to regenerate the Python grpc artifacts by runnin
 
     python -m dagster._grpc.compile
 """
+
 import os
 import shutil
 import subprocess

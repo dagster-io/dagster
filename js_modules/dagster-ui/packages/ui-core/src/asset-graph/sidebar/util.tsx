@@ -2,12 +2,24 @@ import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import styled, {keyframes} from 'styled-components';
 
+import {AssetKeyInput} from '../../graphql/types';
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
 
-export type FolderNodeNonAssetType =
-  | {groupName: string; id: string; level: number}
-  | {locationName: string; id: string; level: number};
+export type FolderNodeGroupType = {
+  id: string;
+  level: number;
+  groupNode: {
+    groupName: string;
+    assets: GraphNode[];
+    repositoryName: string;
+    repositoryLocationName: string;
+  };
+};
+
+export type FolderNodeCodeLocationType = {locationName: string; id: string; level: number};
+
+export type FolderNodeNonAssetType = FolderNodeGroupType | FolderNodeCodeLocationType;
 
 export type FolderNodeType = FolderNodeNonAssetType | {path: string; id: string; level: number};
 
@@ -17,7 +29,7 @@ export function nodePathKey(node: {path: string; id: string} | {id: string}) {
   return 'path' in node ? node.path : node.id;
 }
 
-export function getDisplayName(node: GraphNode) {
+export function getDisplayName(node: {assetKey: AssetKeyInput}) {
   return node.assetKey.path[node.assetKey.path.length - 1]!;
 }
 

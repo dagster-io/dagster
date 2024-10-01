@@ -10,11 +10,15 @@ from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLa
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ
+from dagster._core.test_utils import ensure_dagster_tests_import, environ
+from dagster._time import get_current_datetime
 from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+
+ensure_dagster_tests_import()
+from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -85,14 +89,6 @@ def test_compute_log_manager(
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check ADLS2 directly
             adls2_object = fake_client.get_blob_client(
                 container=container,
@@ -114,14 +110,6 @@ def test_compute_log_manager(
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config(storage_account, container, credential):
@@ -175,11 +163,74 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
         assert logs == "hello hello"
 
 
-class TestAzureComputeLogManager(TestCapturedLogManager):
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_get_log_keys_for_log_key_prefix(
+    mock_create_blob_client, storage_account, container, credential
+):
+    evaluation_time = get_current_datetime()
+    blob_prefix = "foo/bar/"  # note the trailing slash
+    fake_client = FakeBlobServiceClient(storage_account)
+    mock_create_blob_client.return_value = fake_client
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = AzureBlobComputeLogManager(
+            storage_account=storage_account,
+            container=container,
+            prefix=blob_prefix,
+            local_dir=temp_dir,
+            secret_key=credential,
+        )
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        def write_log_file(file_id: int, io_type: ComputeIOType):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with manager.open_log_stream(full_log_key, io_type) as f:
+                f.write("foo")
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert len(log_keys) == 0
+
+    for i in range(4):
+        write_log_file(i, ComputeIOType.STDERR)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
+
+    # write a different file type - azure blob compute log manager will create empty files for both file types
+    # when using open_log_stream, sp manually create the file
+
+    log_key = [*log_key_prefix, "4"]
+    with manager.local_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as f:
+        f.write("foo")
+    blob_key = manager._blob_key(log_key, ComputeIOType.STDOUT)  # noqa: SLF001
+    with open(
+        manager.local_manager.get_captured_local_path(
+            log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+        ),
+        "rb",
+    ) as data:
+        blob = manager._container_client.get_blob_client(blob_key)  # noqa: SLF001
+        blob.upload_blob(data)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
+
+
+class TestAzureComputeLogManager(TestComputeLogManager):
     __test__ = True
 
-    @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(
+    @pytest.fixture(name="compute_log_manager")
+    def compute_log_manager(
         self,
         blob_client,
         storage_account,
@@ -229,8 +280,8 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, captured_log_manager):
-        yield captured_log_manager
+    def read_manager(self, compute_log_manager):
+        yield compute_log_manager
 
 
 @mock.patch("dagster_azure.blob.compute_log_manager.DefaultAzureCredential")
@@ -299,14 +350,6 @@ def test_compute_log_manager_default_azure_credential(
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check ADLS2 directly
             adls2_object = fake_client.get_blob_client(
                 container=container,
@@ -328,14 +371,6 @@ def test_compute_log_manager_default_azure_credential(
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config_default_azure_credential(storage_account, container):

@@ -49,9 +49,9 @@ const LOADING_STATUS_CONTENT = {
   ),
 };
 
-type StatusContentArgs = {
+export type StatusContentArgs = {
   assetKey: AssetKeyInput;
-  definition: {opNames: string[]; isSource: boolean; isObservable: boolean};
+  definition: {opNames: string[]; isMaterializable: boolean; isObservable: boolean};
   liveData: LiveDataForNode | null | undefined;
   expanded?: boolean;
 };
@@ -62,7 +62,7 @@ export function buildAssetNodeStatusContent({
   liveData,
   expanded,
 }: StatusContentArgs) {
-  return definition.isSource
+  return definition.isObservable
     ? _buildSourceAssetNodeStatusContent({
         assetKey,
         definition,
@@ -103,6 +103,67 @@ export function _buildSourceAssetNodeStatusContent({
           </span>
           {expanded && <SpacerDot />}
           <AssetRunLink assetKey={assetKey} runId={materializingRunId} />
+        </>
+      ),
+    };
+  }
+  if (isAssetOverdue(liveData)) {
+    const {lastMaterialization, runWhichFailedToMaterialize} = liveData;
+
+    const lastMaterializationLink = lastMaterialization ? (
+      <span style={{overflow: 'hidden'}}>
+        <AssetRunLink
+          assetKey={assetKey}
+          runId={lastMaterialization.runId}
+          event={{stepKey: stepKeyForAsset(definition), timestamp: lastMaterialization.timestamp}}
+        >
+          <TimestampDisplay
+            timestamp={Number(lastMaterialization.timestamp) / 1000}
+            timeFormat={{showSeconds: false, showTimezone: false}}
+          />
+        </AssetRunLink>
+      </span>
+    ) : undefined;
+
+    return {
+      case: StatusCase.OVERDUE as const,
+      background: Colors.backgroundRed(),
+      border: Colors.accentRed(),
+      content: (
+        <>
+          {expanded && (
+            <Icon
+              name="partition_failure"
+              color={Colors.accentRed()}
+              style={{marginRight: -2}}
+              size={12}
+            />
+          )}
+
+          {liveData.runWhichFailedToMaterialize ? (
+            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
+              <span style={{color: Colors.textRed()}}>Failed, Overdue</span>
+            </OverdueLineagePopover>
+          ) : (
+            <OverdueLineagePopover assetKey={assetKey} liveData={liveData}>
+              <span style={{color: Colors.textRed()}}>Overdue</span>
+            </OverdueLineagePopover>
+          )}
+
+          {expanded && <SpacerDot />}
+
+          {runWhichFailedToMaterialize ? (
+            <span style={{overflow: 'hidden'}}>
+              <AssetRunLink assetKey={assetKey} runId={runWhichFailedToMaterialize.id}>
+                <TimestampDisplay
+                  timestamp={Number(runWhichFailedToMaterialize.endTime)}
+                  timeFormat={{showSeconds: false, showTimezone: false}}
+                />
+              </AssetRunLink>
+            </span>
+          ) : (
+            lastMaterializationLink
+          )}
         </>
       ),
     };
@@ -336,6 +397,15 @@ export function _buildAssetNodeStatusContent({
           )}
         </>
       ),
+    };
+  }
+
+  if (!lastMaterialization && !definition.isMaterializable) {
+    return {
+      case: StatusCase.SOURCE_NO_STATE as const,
+      background: Colors.backgroundLight(),
+      border: Colors.borderDefault(),
+      content: <span>–</span>,
     };
   }
 

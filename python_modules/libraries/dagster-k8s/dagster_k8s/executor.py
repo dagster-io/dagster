@@ -24,11 +24,9 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._utils.merger import merge_dicts
 
-from dagster_k8s.launcher import K8sRunLauncher
-
-from .client import DagsterKubernetesClient
-from .container_context import K8sContainerContext
-from .job import (
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_k8s.job import (
     USER_DEFINED_K8S_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
     UserDefinedDagsterK8sConfig,
@@ -36,6 +34,7 @@ from .job import (
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
+from dagster_k8s.launcher import K8sRunLauncher
 
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),
@@ -140,6 +139,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         namespace=exc_cfg.get("job_namespace"),  # type: ignore
         resources=exc_cfg.get("resources"),  # type: ignore
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
+        security_context=exc_cfg.get("security_context"),  # type: ignore
         # step_k8s_config feeds into the run_k8s_config field because it is merged
         # with any configuration for the run that was set on the run launcher or code location
         run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(exc_cfg.get("step_k8s_config", {})),
@@ -273,9 +273,9 @@ class K8sStepHandler(StepHandler):
             "dagster/run-id": step_handler_context.execute_step_args.run_id,
         }
         if run.external_job_origin:
-            labels[
-                "dagster/code-location"
-            ] = run.external_job_origin.external_repository_origin.code_location_origin.location_name
+            labels["dagster/code-location"] = (
+                run.external_job_origin.repository_origin.code_location_origin.location_name
+            )
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,
@@ -291,7 +291,6 @@ class K8sStepHandler(StepHandler):
                     "value": run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
-                *container_context.env,
             ],
         )
 
@@ -317,6 +316,10 @@ class K8sStepHandler(StepHandler):
             namespace=container_context.namespace,
             job_name=job_name,
         )
+        if not status:
+            return CheckStepHealthResult.unhealthy(
+                reason=f"Kubernetes job {job_name} for step {step_key} could not be found."
+            )
         if status.failed:
             return CheckStepHealthResult.unhealthy(
                 reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",

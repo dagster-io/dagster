@@ -1,30 +1,22 @@
 import inspect
-from typing import (
-    Any,
-    NamedTuple,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, NamedTuple, Optional, Type, TypeVar, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param
+from dagster._core.definitions.inference import InferredOutputProps
+from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
-    MetadataUserInput,
+    RawMetadataMapping,
     normalize_metadata,
 )
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, check_valid_name
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (
     DagsterType,
     is_dynamic_output_annotation,
     resolve_dagster_type,
 )
-
-from .inference import InferredOutputProps
-from .input import NoValueSentinel
-from .utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, check_valid_name
 
 TOutputDefinition = TypeVar("TOutputDefinition", bound="OutputDefinition")
 TOut = TypeVar("TOut", bound="Out")
@@ -332,7 +324,7 @@ class Out(
             ("description", PublicAttr[Optional[str]]),
             ("is_required", PublicAttr[bool]),
             ("io_manager_key", PublicAttr[str]),
-            ("metadata", PublicAttr[Optional[MetadataUserInput]]),
+            ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
             ("code_version", PublicAttr[Optional[str]]),
         ],
     )

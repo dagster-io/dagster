@@ -2,35 +2,37 @@ from typing import Optional, Sequence, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
-from dagster_graphql.implementation.execution.backfill import (
-    cancel_partition_backfill,
-    create_and_launch_partition_backfill,
-    resume_partition_backfill,
-)
-from dagster_graphql.implementation.execution.dynamic_partitions import add_dynamic_partition
-from dagster_graphql.implementation.execution.launch_execution import (
-    launch_pipeline_execution,
-    launch_pipeline_reexecution,
-    launch_reexecution_from_parent_run,
-)
-
-from ...implementation.execution import (
+from dagster_graphql.implementation.execution import (
     delete_pipeline_run,
     report_runless_asset_events,
     terminate_pipeline_execution,
     terminate_pipeline_execution_for_runs,
     wipe_assets,
 )
-from ...implementation.external import fetch_workspace, get_full_external_job_or_raise
-from ...implementation.telemetry import log_ui_telemetry_event
-from ...implementation.utils import (
+from dagster_graphql.implementation.execution.backfill import (
+    cancel_partition_backfill,
+    create_and_launch_partition_backfill,
+    resume_partition_backfill,
+)
+from dagster_graphql.implementation.execution.dynamic_partitions import (
+    add_dynamic_partition,
+    delete_dynamic_partitions,
+)
+from dagster_graphql.implementation.execution.launch_execution import (
+    launch_pipeline_execution,
+    launch_pipeline_reexecution,
+    launch_reexecution_from_parent_run,
+)
+from dagster_graphql.implementation.external import fetch_workspace, get_full_external_job_or_raise
+from dagster_graphql.implementation.telemetry import log_ui_telemetry_event
+from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
     UserFacingGraphQLError,
@@ -41,13 +43,14 @@ from ...implementation.utils import (
     pipeline_selector_from_graphql,
     require_permission_check,
 )
-from ..asset_key import GrapheneAssetKey
-from ..backfill import (
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.backfill import (
+    GrapheneAssetPartitionRange,
     GrapheneCancelBackfillResult,
     GrapheneLaunchBackfillResult,
     GrapheneResumeBackfillResult,
 )
-from ..errors import (
+from dagster_graphql.schema.errors import (
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
     GrapheneError,
@@ -57,38 +60,42 @@ from ..errors import (
     GrapheneRepositoryLocationNotFound,
     GrapheneRunNotFoundError,
     GrapheneUnauthorizedError,
+    GrapheneUnsupportedOperationError,
 )
-from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
-from ..inputs import (
-    GrapheneAssetKeyInput,
+from dagster_graphql.schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
+from dagster_graphql.schema.inputs import (
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
+    GraphenePartitionsByAssetSelector,
     GrapheneReexecutionParams,
     GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
 )
-from ..partition_sets import GrapheneAddDynamicPartitionResult
-from ..pipelines.pipeline import GrapheneRun
-from ..runs import (
+from dagster_graphql.schema.partition_sets import (
+    GrapheneAddDynamicPartitionResult,
+    GrapheneDeleteDynamicPartitionsResult,
+)
+from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+from dagster_graphql.schema.runs import (
     GrapheneLaunchRunReexecutionResult,
     GrapheneLaunchRunResult,
     GrapheneLaunchRunSuccess,
     parse_run_config_input,
 )
-from ..schedule_dry_run import GrapheneScheduleDryRunMutation
-from ..schedules import (
+from dagster_graphql.schema.schedule_dry_run import GrapheneScheduleDryRunMutation
+from dagster_graphql.schema.schedules import (
     GrapheneResetScheduleMutation,
     GrapheneStartScheduleMutation,
     GrapheneStopRunningScheduleMutation,
 )
-from ..sensor_dry_run import GrapheneSensorDryRunMutation
-from ..sensors import (
+from dagster_graphql.schema.sensor_dry_run import GrapheneSensorDryRunMutation
+from dagster_graphql.schema.sensors import (
     GrapheneResetSensorMutation,
     GrapheneSetSensorCursorMutation,
     GrapheneStartSensorMutation,
     GrapheneStopSensorMutation,
 )
-from ..util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 def create_execution_params(graphene_info, graphql_execution_params):
@@ -386,6 +393,33 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
         )
 
 
+class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
+    """Deletes partitions from a dynamic partition set."""
+
+    Output = graphene.NonNull(GrapheneDeleteDynamicPartitionsResult)
+
+    class Arguments:
+        repositorySelector = graphene.NonNull(GrapheneRepositorySelector)
+        partitionsDefName = graphene.NonNull(graphene.String)
+        partitionKeys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "DeleteDynamicPartitionsMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.EDIT_DYNAMIC_PARTITIONS)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: GrapheneRepositorySelector,
+        partitionsDefName: str,
+        partitionKeys: Sequence[str],
+    ):
+        return delete_dynamic_partitions(
+            graphene_info, repositorySelector, partitionsDefName, partitionKeys
+        )
+
+
 def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
     execution_params = create_execution_params(graphene_info, execution_params_dict)
     assert_permission_for_location(
@@ -645,7 +679,7 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
 class GrapheneAssetWipeSuccess(graphene.ObjectType):
     """Output indicating that asset history was deleted."""
 
-    assetKeys = non_null_list(GrapheneAssetKey)
+    assetPartitionRanges = non_null_list(GrapheneAssetPartitionRange)
 
     class Meta:
         name = "AssetWipeSuccess"
@@ -659,6 +693,7 @@ class GrapheneAssetWipeMutationResult(graphene.Union):
             GrapheneAssetNotFoundError,
             GrapheneUnauthorizedError,
             GraphenePythonError,
+            GrapheneUnsupportedOperationError,
             GrapheneAssetWipeSuccess,
         )
         name = "AssetWipeMutationResult"
@@ -670,17 +705,29 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneAssetWipeMutationResult)
 
     class Arguments:
-        assetKeys = graphene.Argument(non_null_list(GrapheneAssetKeyInput))
+        assetPartitionRanges = graphene.Argument(non_null_list(GraphenePartitionsByAssetSelector))
 
     class Meta:
         name = "AssetWipeMutation"
 
     @capture_error
     @check_permission(Permissions.WIPE_ASSETS)
-    def mutate(self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]):
-        return wipe_assets(
-            graphene_info, [AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys]
-        )
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        assetPartitionRanges: Sequence[GraphenePartitionsByAssetSelector],
+    ) -> GrapheneAssetWipeMutationResult:
+        normalized_ranges = [
+            AssetPartitionWipeRange(
+                AssetKey.from_graphql_input(ap.assetKey),
+                PartitionKeyRange(start=ap.partitions.range.start, end=ap.partitions.range.end)
+                if ap.partitions
+                else None,
+            )
+            for ap in assetPartitionRanges
+        ]
+
+        return wipe_assets(graphene_info, normalized_ranges)
 
 
 class GrapheneReportRunlessAssetEventsSuccess(graphene.ObjectType):
@@ -727,7 +774,7 @@ class GrapheneReportRunlessAssetEventsMutation(graphene.Mutation):
 
         reporting_user_tags = {**graphene_info.context.get_reporting_user_tags()}
 
-        asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        asset_graph = graphene_info.context.asset_graph
 
         assert_permission_for_asset_graph(
             graphene_info, asset_graph, [asset_key], Permissions.REPORT_RUNLESS_ASSET_EVENTS
@@ -938,6 +985,7 @@ class GrapheneMutation(graphene.ObjectType):
     logTelemetry = GrapheneLogTelemetryMutation.Field()
     setNuxSeen = GrapheneSetNuxSeenMutation.Field()
     addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()
+    deleteDynamicPartitions = GrapheneDeleteDynamicPartitionsMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
     deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()

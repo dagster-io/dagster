@@ -12,16 +12,15 @@ from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
+from dagster._core.definitions.definition_config_schema import (
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
-
-from .definition_config_schema import (
-    IDefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
-)
 
 if TYPE_CHECKING:
     from dagster._core.executor.base import Executor
@@ -195,8 +194,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
 
 @overload
-def executor(name: ExecutorCreationFunction) -> ExecutorDefinition:
-    ...
+def executor(name: ExecutorCreationFunction) -> ExecutorDefinition: ...
 
 
 @overload
@@ -206,8 +204,7 @@ def executor(
     requirements: Optional[
         Union[ExecutorRequirementsFunction, Sequence[ExecutorRequirement]]
     ] = ...,
-) -> "_ExecutorDecoratorCallable":
-    ...
+) -> "_ExecutorDecoratorCallable": ...
 
 
 def executor(

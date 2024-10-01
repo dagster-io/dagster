@@ -23,36 +23,32 @@ from dagster._config import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_definition import (
-    JobDefinition,
-)
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
 )
-from dagster._core.utils import toposort_flatten
-from dagster._serdes import (
-    create_snapshot_id,
-    deserialize_value,
-    whitelist_for_serdes,
+from dagster._core.snap.config_types import build_config_schema_snapshot
+from dagster._core.snap.dagster_types import (
+    DagsterTypeNamespaceSnapshot,
+    build_dagster_type_namespace_snapshot,
 )
-from dagster._serdes.serdes import NamedTupleSerializer
-
-from .config_types import build_config_schema_snapshot
-from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
-from .dep_snapshot import (
+from dagster._core.snap.dep_snapshot import (
     DependencyStructureSnapshot,
     build_dep_structure_snapshot_from_graph_def,
 )
-from .mode import ModeDefSnap, build_mode_def_snap
-from .node import (
+from dagster._core.snap.mode import ModeDefSnap, build_mode_def_snap
+from dagster._core.snap.node import (
     GraphDefSnap,
     NodeDefsSnapshot,
     OpDefSnap,
     build_node_defs_snapshot,
 )
+from dagster._core.utils import toposort_flatten
+from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer
 
 
 def create_job_snapshot_id(snapshot: "JobSnapshot") -> str:
@@ -72,6 +68,8 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
     #     - add kwargs so that if future versions add new args, this version of deserialization will
     #     be able to ignore them. previously, new args would be passed to old versions and cause
     #     deserialization errors.
+    # v5:
+    #     - run_tags added
     def before_unpack(
         self,
         context,
@@ -83,6 +81,8 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
             unpacked_dict["metadata"] = []
         if unpacked_dict.get("lineage_snapshot") is None:
             unpacked_dict["lineage_snapshot"] = None
+        if unpacked_dict.get("run_tags") is None:
+            unpacked_dict["run_tags"] = None
         return unpacked_dict
 
 
@@ -93,6 +93,7 @@ class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
     storage_name="PipelineSnapshot",
     serializer=JobSnapshotSerializer,
     skip_when_empty_fields={"metadata"},
+    skip_when_none_fields={"run_tags"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
@@ -103,6 +104,12 @@ class JobSnapshot(
             ("name", str),
             ("description", Optional[str]),
             ("tags", Mapping[str, Any]),
+            # It is important that run_tags is nullable to distinguish in host code between
+            # snapshots from older code servers where run_tags does not exist as a field (and is
+            # therefore None) vs snapshots from newer code servers where run_tags is always set, if
+            # sometimes empty. In the None case, we need to set run_tags to tags (at the level of
+            # ExternalJob) to maintain backcompat.
+            ("run_tags", Optional[Mapping[str, Any]]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
             ("node_defs_snapshot", NodeDefsSnapshot),
@@ -119,6 +126,7 @@ class JobSnapshot(
         name: str,
         description: Optional[str],
         tags: Optional[Mapping[str, Any]],
+        run_tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         node_defs_snapshot: NodeDefsSnapshot,
@@ -133,6 +141,7 @@ class JobSnapshot(
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
+            run_tags=check.opt_nullable_mapping_param(run_tags, "run_tags"),
             config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
             ),
@@ -184,6 +193,7 @@ class JobSnapshot(
             name=job_def.name,
             description=job_def.description,
             tags=job_def.tags,
+            run_tags=job_def.run_tags if job_def.has_separately_defined_run_tags else None,
             metadata=job_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(job_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(job_def),
@@ -309,9 +319,7 @@ def _construct_scalar_union_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 2,
-        "Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        f"Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {config_type_snap.type_param_keys}",
     )
 
     return ScalarUnion(
@@ -328,9 +336,7 @@ def _construct_array_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 1,
-        "Expect ARRAY to provide a single inner type. Snapshot provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        f"Expect ARRAY to provide a single inner type. Snapshot provided: {config_type_snap.type_param_keys}",
     )
 
     return Array(
@@ -344,9 +350,7 @@ def _construct_map_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 2,
-        "Expect map to provide exactly two types (key, value). Snapshot provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        f"Expect map to provide exactly two types (key, value). Snapshot provided: {config_type_snap.type_param_keys}",
     )
 
     return Map(
@@ -367,9 +371,7 @@ def _construct_noneable_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 1,
-        "Expect NONEABLE to provide a single inner type. Snapshot provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        f"Expect NONEABLE to provide a single inner type. Snapshot provided: {config_type_snap.type_param_keys}",
     )
     return Noneable(
         construct_config_type_from_snap(

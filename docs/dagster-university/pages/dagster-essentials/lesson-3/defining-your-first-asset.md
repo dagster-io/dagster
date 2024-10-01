@@ -19,12 +19,12 @@ Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yello
    from . import constants
    ```
 
-3. Below the imports, add the following code to create a function named `taxi_trips_file`:
+3. Below the imports, let's define a function that takes no inputs and returns nothing (type-annoted with `None`). Add the following code to create a function to do this named `taxi_trips_file`:
 
    ```python
-   def taxi_trips_file():
+   def taxi_trips_file() -> None:
        """
-           The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+         The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
        """
        month_to_fetch = '2023-03'
        raw_trips = requests.get(
@@ -51,9 +51,9 @@ Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yello
       from dagster import asset
 
       @asset
-      def taxi_trips_file():
+      def taxi_trips_file() -> None:
           """
-              The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
+            The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
           """
           month_to_fetch = '2023-03'
           raw_trips = requests.get(
@@ -65,3 +65,5 @@ Your first asset, which you’ll name `taxi_trips_file`, will retrieve the yello
       ```
 
 That’s it - you’ve created your first Dagster asset! Using the `@asset` decorator, you can easily turn any existing Python function into a Dagster asset.
+
+**Questions about the `-> None` bit?** That's a Python feature called **type annotation**. In this case, it's saying that the function returns nothing. You can learn more about type annotations in the [Python documentation](https://docs.python.org/3/library/typing.html). We highly recommend using type annotations in your code to make it easier to read and understand.

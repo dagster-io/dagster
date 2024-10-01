@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type RunReExecutionQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
+  runId: Types.Scalars['ID']['input'];
 }>;
 
 export type RunReExecutionQuery = {
@@ -31,3 +31,5 @@ export type RunReExecutionQuery = {
       }
     | {__typename: 'RunNotFoundError'};
 };
+
+export const RunReExecutionQueryVersion = '95f0a988be27f8d33377eec80eaac91bcbd709e73098e0b12f05f71c4f732077';

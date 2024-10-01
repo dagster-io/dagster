@@ -24,7 +24,7 @@ interface Props {
 export const DeploymentStatusProvider = (props: Props) => {
   const {children, include} = props;
 
-  const codeLocations = useCodeLocationsStatus(!include.has('code-locations'));
+  const codeLocations = useCodeLocationsStatus();
   const daemons = useDaemonStatus(!include.has('daemons'));
 
   const value = React.useMemo(() => ({codeLocations, daemons}), [daemons, codeLocations]);

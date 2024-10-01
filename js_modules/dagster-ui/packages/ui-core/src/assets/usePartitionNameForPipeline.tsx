@@ -1,25 +1,27 @@
-import {gql, useQuery} from '@apollo/client';
 import {useMemo} from 'react';
 
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,
 } from './types/usePartitionNameForPipeline.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RepoAddress} from '../workspace/types';
 
 export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineName: string) {
-  const {data: partitionSetsData} = useQuery<
-    AssetJobPartitionSetsQuery,
-    AssetJobPartitionSetsQueryVariables
-  >(ASSET_JOB_PARTITION_SETS_QUERY, {
-    skip: !pipelineName,
-    variables: {
-      repositoryLocationName: repoAddress.location,
-      repositoryName: repoAddress.name,
-      pipelineName,
+  const queryResult = useQuery<AssetJobPartitionSetsQuery, AssetJobPartitionSetsQueryVariables>(
+    ASSET_JOB_PARTITION_SETS_QUERY,
+    {
+      skip: !pipelineName,
+      variables: {
+        repositoryLocationName: repoAddress.location,
+        repositoryName: repoAddress.name,
+        pipelineName,
+      },
     },
-  });
+  );
+
+  const {data: partitionSetsData} = queryResult;
 
   return useMemo(
     () => ({

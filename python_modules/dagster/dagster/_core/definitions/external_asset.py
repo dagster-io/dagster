@@ -1,25 +1,29 @@
 from typing import List, Sequence
 
 from dagster import _check as check
+from dagster._annotations import deprecated, experimental
 from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
+    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
     AssetExecutionType,
     AssetSpec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.output import Out
 from dagster._core.definitions.source_asset import (
     SourceAsset,
     wrap_source_asset_observe_fn_in_op_compute_fn,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
     return external_assets_from_specs([spec])[0]
 
 
+@deprecated(breaking_version="1.9.0", additional_warn_text="Directly use the AssetSpecs instead.")
+@experimental
 def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinition]:
     """Create an external assets definition from a sequence of asset specs.
 
@@ -83,7 +87,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
     eroding trust.
 
     Args:
-            specs (Sequence[AssetSpec]): The specs for the assets.
+        specs (Sequence[AssetSpec]): The specs for the assets.
     """
     assets_defs = []
     for spec in specs:
@@ -93,92 +97,84 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
         )
         check.invariant(spec.code_version is None, "code_version must be None since it is ignored")
         check.invariant(
-            spec.freshness_policy is None, "freshness_policy must be None since it is ignored"
-        )
-        check.invariant(
             spec.skippable is False,
             "skippable must be False since it is ignored and False is the default",
         )
 
-        @multi_asset(
-            name=spec.key.to_python_identifier(),
-            specs=[
-                AssetSpec(
-                    key=spec.key,
-                    description=spec.description,
-                    group_name=spec.group_name,
-                    metadata={
-                        **(spec.metadata or {}),
-                        **{
-                            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
-                                AssetExecutionType.UNEXECUTABLE.value
-                            )
-                        },
-                    },
-                    deps=spec.deps,
-                )
-            ],
-        )
-        def _external_assets_def(context: AssetExecutionContext) -> None:
-            raise DagsterInvariantViolationError(
-                "You have attempted to execute an unexecutable asset"
-                f" {context.asset_key.to_user_string}."
-            )
-
-        assets_defs.append(_external_assets_def)
+        with disable_dagster_warnings():
+            assets_defs.append(AssetsDefinition(specs=[spec]))
 
     return assets_defs
 
 
 def create_external_asset_from_source_asset(source_asset: SourceAsset) -> AssetsDefinition:
-    check.invariant(
-        source_asset.auto_observe_interval_minutes is None,
-        "Automatically observed external assets not supported yet: auto_observe_interval_minutes"
-        " should be None",
-    )
+    if source_asset.observe_fn is not None:
+        keys_by_output_name = {"result": source_asset.key}
+        node_def = OpDefinition(
+            name=source_asset.key.to_python_identifier(),
+            compute_fn=wrap_source_asset_observe_fn_in_op_compute_fn(source_asset),
+            # We need to access the raw attribute because the property will return a computed value that
+            # includes requirements for the io manager. Those requirements will be inferred again when
+            # we create an AssetsDefinition.
+            required_resource_keys=source_asset._required_resource_keys,  # noqa: SLF001,
+            outs={"result": Out(io_manager_key=source_asset.io_manager_key)},
+        )
+        extra_metadata_entries = {}
+        execution_type = AssetExecutionType.OBSERVATION
+    else:
+        keys_by_output_name = {}
+        node_def = None
+        extra_metadata_entries = (
+            {SYSTEM_METADATA_KEY_IO_MANAGER_KEY: source_asset.io_manager_key}
+            if source_asset.io_manager_key is not None
+            else {}
+        )
+        execution_type = None
 
-    injected_metadata = (
-        {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
-        if source_asset.observe_fn is None
-        else {}
-    )
-
-    injected_metadata = (
-        {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value}
-        if source_asset.observe_fn is None
-        else {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value}
-    )
-
-    kwargs = {
-        "key": source_asset.key,
-        "metadata": {
-            **source_asset.metadata,
-            **injected_metadata,
-        },
-        "group_name": source_asset.group_name,
-        "description": source_asset.description,
-        "partitions_def": source_asset.partitions_def,
+    observe_interval = source_asset.auto_observe_interval_minutes
+    metadata = {
+        **source_asset.raw_metadata,
+        **extra_metadata_entries,
+        **(
+            {SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES: observe_interval}
+            if observe_interval
+            else {}
+        ),
     }
 
-    if source_asset.io_manager_def:
-        kwargs["io_manager_def"] = source_asset.io_manager_def
-    elif source_asset.io_manager_key:
-        kwargs["io_manager_key"] = source_asset.io_manager_key
-
-    @asset(**kwargs)
-    def _shim_assets_def(context: AssetExecutionContext):
-        if not source_asset.observe_fn:
-            raise NotImplementedError(f"Asset {source_asset.key} is not executable")
-
-        op_function = wrap_source_asset_observe_fn_in_op_compute_fn(source_asset)
-        return_value = op_function.decorated_fn(context)
-        check.invariant(
-            return_value is None,
-            "The wrapped decorated_fn should return a value. If this changes, this code path must"
-            " changed to process the events appopriately.",
+    with disable_dagster_warnings():
+        spec = AssetSpec(
+            key=source_asset.key,
+            metadata=metadata,
+            group_name=source_asset.group_name,
+            description=source_asset.description,
+            tags=source_asset.tags,
+            freshness_policy=source_asset.freshness_policy,
+            deps=[],
+            owners=[],
         )
 
-    check.invariant(isinstance(_shim_assets_def, AssetsDefinition))
-    assert isinstance(_shim_assets_def, AssetsDefinition)  # appease pyright
+        return AssetsDefinition(
+            specs=[spec],
+            keys_by_output_name=keys_by_output_name,
+            node_def=node_def,
+            partitions_def=source_asset.partitions_def,
+            # We don't pass the `io_manager_def` because it will already be present in
+            # `resource_defs` (it is added during `SourceAsset` initialization).
+            resource_defs=source_asset.resource_defs,
+            execution_type=execution_type,
+        )
 
-    return _shim_assets_def
+
+# Create unexecutable assets defs for each asset key in the provided assets def. This is used to
+# make a materializable assets def available only for loading in a job.
+def create_unexecutable_external_assets_from_assets_def(
+    assets_def: AssetsDefinition,
+) -> Sequence[AssetsDefinition]:
+    if not assets_def.is_executable:
+        return [assets_def]
+    else:
+        with disable_dagster_warnings():
+            return [
+                create_external_asset_from_source_asset(sa) for sa in assets_def.to_source_assets()
+            ]

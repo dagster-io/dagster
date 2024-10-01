@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -21,6 +20,7 @@ import {
   JobMetadataQueryVariables,
   RunMetadataFragment,
 } from './types/JobMetadata.types';
+import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
 import {DagsterTag} from '../runs/RunTag';
@@ -37,7 +37,7 @@ type JobMetadata = {
 };
 
 function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
-  const {data} = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
+  const queryResult = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
     variables: {
       runsFilter: {
         pipelineName,
@@ -55,6 +55,7 @@ function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
       },
     },
   });
+  const data = queryResult.data;
 
   return useMemo<JobMetadata>(() => {
     return {
@@ -214,7 +215,7 @@ export const JOB_METADATA_QUERY = gql`
   fragment JobMetadataAssetNode on AssetNode {
     id
     autoMaterializePolicy {
-      policyType
+      __typename
     }
     assetKey {
       path

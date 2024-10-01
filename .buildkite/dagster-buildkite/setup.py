@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="dagster_buildkite",
+    name="dagster-buildkite",
     version="0.0.1",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
@@ -18,6 +18,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     install_requires=[
         "PyYAML",
+        "tomli",
         "packaging>=20.9",
         "requests",
         "typing_extensions>=4.2",
@@ -29,6 +30,8 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-buildkite = dagster_buildkite.cli:dagster",
+            "dagster-buildkite-nightly = dagster_buildkite.cli:dagster_nightly",
+            "dagster-buildkite-prerelease-package = dagster_buildkite.cli:prerelease_package",
         ]
     },
 )

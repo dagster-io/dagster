@@ -1,8 +1,8 @@
-import {Resolvers} from '@apollo/client';
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {Resolvers} from '../../apollo-client';
 import {EvaluateScheduleDialog} from '../EvaluateScheduleDialog';
 import {
   GetScheduleQueryMock,

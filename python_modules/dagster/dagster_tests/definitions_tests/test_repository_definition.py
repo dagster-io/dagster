@@ -7,7 +7,6 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
-    Definitions,
     GraphDefinition,
     IOManager,
     JobDefinition,
@@ -31,9 +30,10 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.automation_policy_sensor_definition import (
-    AutomationPolicySensorDefinition,
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    AutomationConditionSensorDefinition,
 )
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -633,9 +633,7 @@ def test_bad_coerce():
 
 
 def test_bad_resolve():
-    with pytest.raises(
-        DagsterInvalidSubsetError, match=r"AssetKey\(s\) {AssetKey\(\['foo'\]\)} were selected"
-    ):
+    with pytest.raises(DagsterInvalidSubsetError, match=r"AssetKey\(s\) \['foo'\] were selected"):
 
         @repository
         def _fails():
@@ -650,10 +648,23 @@ def test_source_assets():
     def my_repo():
         return [foo, bar]
 
-    assert my_repo.source_assets_by_key == {
-        AssetKey("foo"): SourceAsset(key=AssetKey("foo")),
-        AssetKey("bar"): SourceAsset(key=AssetKey("bar")),
-    }
+    all_assets = list(my_repo.asset_graph.assets_defs)
+    assert len(all_assets) == 2
+    assert {key.to_user_string() for a in all_assets for key in a.keys} == {"foo", "bar"}
+
+
+def test_assets_checks():
+    foo = SourceAsset(key=AssetKey("foo"))
+
+    @asset_check(asset=foo)
+    def foo_check():
+        return True
+
+    @repository
+    def my_repo():
+        return [foo, foo_check]
+
+    assert my_repo.asset_checks_defs_by_key[next(iter(foo_check.check_keys))] == foo_check
 
 
 def test_direct_assets():
@@ -677,7 +688,7 @@ def test_direct_assets():
         return [foo, asset1, asset2]
 
     assert len(my_repo.get_all_jobs()) == 1
-    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+    assert set(my_repo.get_all_jobs()[0].asset_layer.executable_asset_keys) == {
         AssetKey(["asset1"]),
         AssetKey(["asset2"]),
     }
@@ -707,14 +718,15 @@ def test_direct_asset_unsatified_resource():
     def asset1():
         pass
 
+    @repository
+    def my_repo():
+        return [asset1]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'a' required by op 'asset1' was not provided.",
     ):
-
-        @repository
-        def my_repo():
-            return [asset1]
+        my_repo.get_all_jobs()
 
 
 def test_direct_asset_unsatified_resource_transitive():
@@ -726,20 +738,25 @@ def test_direct_asset_unsatified_resource_transitive():
     def asset1():
         pass
 
+    @repository
+    def my_repo():
+        return [asset1]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'b' required by resource with key 'a' was not provided.",
     ):
-
-        @repository
-        def my_repo():
-            return [asset1]
+        my_repo.get_all_jobs()
 
 
 def test_source_asset_unsatisfied_resource():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
+
+    @repository
+    def the_repo():
+        return [SourceAsset("foo", io_manager_def=the_manager)]
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -748,10 +765,7 @@ def test_source_asset_unsatisfied_resource():
             " provided."
         ),
     ):
-
-        @repository
-        def the_repo():
-            return [SourceAsset("foo", io_manager_def=the_manager)]
+        the_repo.get_all_jobs()
 
 
 def test_source_asset_unsatisfied_resource_transitive():
@@ -763,20 +777,21 @@ def test_source_asset_unsatisfied_resource_transitive():
     def foo_resource():
         pass
 
+    @repository
+    def the_repo():
+        return [
+            SourceAsset(
+                "foo",
+                io_manager_def=the_manager,
+                resource_defs={"foo": foo_resource},
+            )
+        ]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="resource with key 'bar' required by resource with key 'foo' was not provided.",
     ):
-
-        @repository
-        def the_repo():
-            return [
-                SourceAsset(
-                    "foo",
-                    io_manager_def=the_manager,
-                    resource_defs={"foo": foo_resource},
-                )
-            ]
+        the_repo.get_all_jobs()
 
 
 def test_direct_asset_resource_conflicts():
@@ -788,14 +803,15 @@ def test_direct_asset_resource_conflicts():
     def second():
         pass
 
+    @repository
+    def the_repo():
+        return [first, second]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-
-        @repository
-        def the_repo():
-            return [first, second]
+        the_repo.get_all_jobs()
 
 
 def test_source_asset_resource_conflicts():
@@ -813,14 +829,15 @@ def test_source_asset_resource_conflicts():
         resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")},
     )
 
+    @repository
+    def the_repo():
+        return [the_asset, the_source]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-
-        @repository
-        def the_repo():
-            return [the_asset, the_source]
+        the_repo.get_all_jobs()
 
     other_source = SourceAsset(
         key=AssetKey("other_key"),
@@ -828,14 +845,15 @@ def test_source_asset_resource_conflicts():
         resource_defs={"foo": ResourceDefinition.hardcoded_resource("3")},
     )
 
+    @repository
+    def other_repo():
+        return [other_source, the_source]
+
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Conflicting versions of resource with key 'foo' were provided to different assets.",
     ):
-
-        @repository
-        def other_repo():
-            return [other_source, the_source]
+        other_repo.get_all_jobs()
 
 
 def test_assets_different_io_manager_defs():
@@ -932,7 +950,7 @@ def test_duplicate_graph_target_invalid():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "sensor '_the_sensor' targets graph 'foo', but a different graph with the same name was"
+            "sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
             " provided."
         ),
     ):
@@ -944,7 +962,7 @@ def test_duplicate_graph_target_invalid():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "schedule '_the_schedule' targets graph 'foo', but a different graph with the same name"
+            "schedule '_the_schedule' targets job 'foo', but a different job with the same name"
             " was provided."
         ),
     ):
@@ -1181,7 +1199,7 @@ def test_list_load():
         return [all_assets]
 
     assert len(assets_repo.get_all_jobs()) == 1
-    assert set(assets_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+    assert set(assets_repo.get_all_jobs()[0].asset_layer.executable_asset_keys) == {
         AssetKey(["asset1"]),
         AssetKey(["asset2"]),
     }
@@ -1229,7 +1247,7 @@ def test_list_load():
         return [combo_list]
 
     assert len(combo_repo.get_all_jobs()) == 2
-    assert set(combo_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+    assert set(combo_repo.get_all_jobs()[0].asset_layer.executable_asset_keys) == {
         AssetKey(["asset3"]),
     }
 
@@ -1278,8 +1296,7 @@ def test_scheduled_partitioned_asset_job():
     partitions_def = DailyPartitionsDefinition(start_date="2022-06-06")
 
     @asset(partitions_def=partitions_def)
-    def asset1():
-        ...
+    def asset1(): ...
 
     @repository
     def repo():
@@ -1391,78 +1408,64 @@ def test_default_loggers_keys_conflict():
     assert the_repo.get_job("the_job").loggers == {"foo": some_logger}
 
 
-def test_base_jobs():
+def test_implicit_asset_job():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
-    def asset2():
-        ...
+    def asset2(): ...
 
     @asset(partitions_def=StaticPartitionsDefinition(["x", "y", "z"]))
-    def asset3():
-        ...
+    def asset3(): ...
 
     @repository
     def repo():
         return [asset1, asset2, asset3]
 
-    assert sorted(repo.get_implicit_asset_job_names()) == ["__ASSET_JOB_0", "__ASSET_JOB_1"]
-    assert repo.get_implicit_job_def_for_assets(
-        [asset1.key, asset2.key]
-    ).asset_layer.asset_keys == {
-        asset1.key,
-        asset2.key,
-    }
-    assert repo.get_implicit_job_def_for_assets([asset2.key, asset3.key]) is None
+    job_def = repo.get_implicit_global_asset_job_def()
+    assert job_def.name == "__ASSET_JOB"
+    assert job_def.asset_layer.executable_asset_keys == {asset1.key, asset2.key, asset3.key}
 
 
-def test_automation_policy_sensors_do_not_conflict():
+def test_auto_materialize_sensors_do_not_conflict():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @repository
     def repo():
         return [
             asset1,
             asset2,
-            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
-            AutomationPolicySensorDefinition("b", asset_selection=[asset2]),
+            AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
+            AutomationConditionSensorDefinition("b", asset_selection=[asset2]),
         ]
 
 
-def test_automation_policy_sensors_incomplete_cover():
+def test_auto_materialize_sensors_incomplete_cover():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     @repository
     def repo():
         return [
             asset1,
             asset2,
-            AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
+            AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
         ]
 
 
-def test_automation_policy_sensors_conflict():
+def test_auto_materialize_sensors_conflict():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1475,28 +1478,6 @@ def test_automation_policy_sensors_conflict():
             return [
                 asset1,
                 asset2,
-                AutomationPolicySensorDefinition("a", asset_selection=[asset1]),
-                AutomationPolicySensorDefinition("b", asset_selection=[asset1, asset2]),
+                AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
+                AutomationConditionSensorDefinition("b", asset_selection=[asset1, asset2]),
             ]
-
-
-def test_invalid_asset_selection():
-    source_asset = SourceAsset("source_asset")
-
-    @asset
-    def asset1():
-        ...
-
-    @sensor(asset_selection=[source_asset, asset1])
-    def sensor1():
-        ...
-
-    Definitions(assets=[source_asset, asset1], sensors=[sensor1])
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="specified both regular assets and source"
-    ):
-        Definitions(
-            assets=[source_asset, asset1],
-            jobs=[define_asset_job("foo", selection=[source_asset, asset1])],
-        ).get_all_job_defs()

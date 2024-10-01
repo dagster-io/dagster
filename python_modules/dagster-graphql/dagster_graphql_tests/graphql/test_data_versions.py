@@ -20,9 +20,7 @@ from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.client.query import (
-    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-)
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     GqlAssetKey,
     GqlResult,

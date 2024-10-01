@@ -1,7 +1,11 @@
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 
-from .repo import get_main_workspace, main_repo_location_name, main_repo_name
+from dagster_graphql_tests.graphql.repo import (
+    get_main_workspace,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 
 def test_sync_run_launcher_from_configurable_class():
@@ -33,7 +37,7 @@ def test_sync_run_launcher_run():
             run = create_run_for_test(
                 instance=instance,
                 job_name=external_pipeline.name,
-                external_job_origin=external_pipeline.get_external_origin(),
+                external_job_origin=external_pipeline.get_remote_origin(),
                 job_code_origin=external_pipeline.get_python_origin(),
             )
 

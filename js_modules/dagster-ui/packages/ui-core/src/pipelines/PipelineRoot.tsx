@@ -1,9 +1,9 @@
-import {useContext} from 'react';
-import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
+import {Redirect, Switch} from 'react-router-dom';
+import {JobFallthroughRoot} from 'shared/pipelines/JobFallthroughRoot.oss';
 
-import {JobFeatureContext} from './JobFeatureContext';
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
 import {PipelineRunsRoot} from './PipelineRunsRoot';
+import {Route} from '../app/Route';
 import {JobOrAssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchpadSetupFromRunRoot} from '../launchpad/LaunchpadSetupFromRunRoot';
 import {LaunchpadSetupRoot} from '../launchpad/LaunchpadSetupRoot';
@@ -17,7 +17,6 @@ interface Props {
 
 export const PipelineRoot = (props: Props) => {
   const {repoAddress} = props;
-  const {FallthroughRoute} = useContext(JobFeatureContext);
 
   return (
     <div
@@ -63,9 +62,7 @@ export const PipelineRoot = (props: Props) => {
             '/locations/:repoPath/pipelines/:pipelinePath/runs/:runId',
             '/locations/:repoPath/jobs/:pipelinePath/runs/:runId',
           ]}
-          render={(props: RouteComponentProps<{runId: string}>) => (
-            <Redirect to={`/runs/${props.match.params.runId}`} />
-          )}
+          render={(props) => <Redirect to={`/runs/${props.match.params.runId}`} />}
         />
         <Route
           path={[
@@ -93,7 +90,7 @@ export const PipelineRoot = (props: Props) => {
           )}
         />
         <Route path={['/locations/:repoPath/pipelines/(/?.*)', '/locations/:repoPath/jobs/(/?.*)']}>
-          <FallthroughRoute repoAddress={repoAddress} />
+          <JobFallthroughRoot repoAddress={repoAddress} />
         </Route>
       </Switch>
     </div>

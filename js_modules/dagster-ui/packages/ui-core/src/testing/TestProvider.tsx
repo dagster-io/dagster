@@ -1,6 +1,7 @@
 import {loader} from 'graphql.macro';
 import * as React from 'react';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 import {AppContext, AppContextValue} from '../app/AppContext';
@@ -8,7 +9,7 @@ import {PermissionsContext, PermissionsFromJSON, extractPermissions} from '../ap
 import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
 import {AnalyticsContext} from '../app/analytics';
 import {PermissionFragment} from '../app/types/Permissions.types';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 const typeDefs = loader('../graphql/schema.graphql');
 
@@ -73,25 +74,27 @@ export const TestProvider = (props: Props) => {
   );
 
   return (
-    <AppContext.Provider value={{...testValue, ...appContextProps}}>
-      <WebSocketContext.Provider value={websocketValue}>
-        <PermissionsContext.Provider
-          value={{
-            unscopedPermissions: extractPermissions(permissions),
-            locationPermissions: {}, // Allow all permissions to fall back
-            loading: false,
-            rawUnscopedData: [],
-          }}
-        >
-          <AnalyticsContext.Provider value={analytics}>
-            <MemoryRouter {...routerProps}>
-              <ApolloTestProvider {...apolloProps} typeDefs={typeDefs as any}>
-                <WorkspaceProvider>{props.children}</WorkspaceProvider>
-              </ApolloTestProvider>
-            </MemoryRouter>
-          </AnalyticsContext.Provider>
-        </PermissionsContext.Provider>
-      </WebSocketContext.Provider>
-    </AppContext.Provider>
+    <RecoilRoot>
+      <AppContext.Provider value={{...testValue, ...appContextProps}}>
+        <WebSocketContext.Provider value={websocketValue}>
+          <PermissionsContext.Provider
+            value={{
+              unscopedPermissions: extractPermissions(permissions),
+              locationPermissions: {}, // Allow all permissions to fall back
+              loading: false,
+              rawUnscopedData: [],
+            }}
+          >
+            <AnalyticsContext.Provider value={analytics}>
+              <MemoryRouter {...routerProps}>
+                <ApolloTestProvider {...apolloProps} typeDefs={typeDefs as any}>
+                  <WorkspaceProvider>{props.children}</WorkspaceProvider>
+                </ApolloTestProvider>
+              </MemoryRouter>
+            </AnalyticsContext.Provider>
+          </PermissionsContext.Provider>
+        </WebSocketContext.Provider>
+      </AppContext.Provider>
+    </RecoilRoot>
   );
 };

@@ -1,0 +1,27 @@
+etl_tables:
+  - name: cleaned_transactions
+    deps:
+      - transactions
+    query: |
+      create or replace table cleaned_transactions as (
+        SELECT * FROM transactions WHERE amount IS NOT NULL
+      )
+
+  - name: risky_customers
+    deps:
+      - customers
+    query: |
+      create or replace table risky_customers as (
+        SELECT * FROM customers WHERE risk_score > 0.8
+      )
+
+  - name: risky_transactions
+    deps:
+      - cleaned_transactions
+      - risky_customers
+    query: |
+      create or replace table risky_transactions as (
+        SELECT *
+        FROM cleaned_transactions JOIN risky_customers
+        ON cleaned_transactions.customer_id = risky_customers.customer_id
+      )

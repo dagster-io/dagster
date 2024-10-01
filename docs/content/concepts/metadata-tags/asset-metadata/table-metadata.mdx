@@ -1,0 +1,160 @@
+---
+title: "Table metadata | Dagster Docs"
+description: "Table metadata can be used to provide additional context about a tabular asset, such as its schema, row count, and more."
+---
+
+# Table metadata
+
+Table metadata provides additional context about a tabular asset, such as its schema, row count, and more. This metadata can be used to improve collaboration, debugging, and data quality in your data platform.
+
+Dagster supports attaching different types of table metadata to assets, including:
+
+- [**Column schema**](#attaching-column-schema), which describes the structure of the table, including column names and types
+- [**Row count**](#attaching-row-count), which describes the number of rows in a materialized table
+- [**Column-level lineage**](#attaching-column-level-lineage), which describes how a column is created and used by other assets
+
+---
+
+## Attaching column schema
+
+### For assets defined in Dagster
+
+Column schema metadata can be attached to Dagster assets either as [definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) or [materialization metadata](/concepts/metadata-tags/asset-metadata#attaching-materialization-metadata), which will then be visible in the Dagster UI. For example:
+
+<Image
+alt="Column schema for an asset in the Dagster UI"
+src="/images/concepts/metadata-tags/metadata-table-schema.png"
+width={1793}
+height={652}
+/>
+
+If the schema of your asset is pre-defined, you can attach it as definition metadata. If the schema is only known when an asset is materialized, you can attach it as metadata to the materialization.
+
+To attach schema metadata to an asset, you will need to:
+
+1. Construct a <PyObject object="TableSchema"/> object with <PyObject object="TableColumn"  /> entries describing each column in the table
+2. Attach the `TableSchema` object to the asset as part of the `metadata` parameter under the `dagster/column_schema` key. This can be attached to your asset definition, or to the <PyObject object="MaterializeResult" /> object returned by the asset function.
+
+Below are two examples of how to attach column schema metadata to an asset, one as definition metadata and one as materialization metadata:
+
+```python file=/concepts/metadata-tags/asset_column_schema.py
+from dagster import AssetKey, MaterializeResult, TableColumn, TableSchema, asset
+
+
+# Definition metadata
+# Here, we know the schema of the asset, so we can attach it to the asset decorator
+@asset(
+    deps=[AssetKey("source_bar"), AssetKey("source_baz")],
+    metadata={
+        "dagster/column_schema": TableSchema(
+            columns=[
+                TableColumn(
+                    "name",
+                    "string",
+                    description="The name of the person",
+                ),
+                TableColumn(
+                    "age",
+                    "int",
+                    description="The age of the person",
+                ),
+            ]
+        )
+    },
+)
+def my_asset(): ...
+
+
+# Materialization metadata
+# Here, the schema isn't known until runtime
+@asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
+def my_other_asset():
+    column_names = ...
+    column_types = ...
+
+    columns = [
+        TableColumn(name, column_type)
+        for name, column_type in zip(column_names, column_types)
+    ]
+
+    yield MaterializeResult(
+        metadata={"dagster/column_schema": TableSchema(columns=columns)}
+    )
+```
+
+The schema for `my_asset` will be visible in the Dagster UI.
+
+### For assets loaded from integrations
+
+Dagster's dbt integration enables automatically attaching column schema metadata to assets loaded from dbt models. Refer to the [dbt documentation](/integrations/dbt/reference#fetching-column-level-metadata) for more information.
+
+---
+
+## Attaching row count
+
+Row count metadata can be attached to Dagster assets as [materialization metadata](/concepts/metadata-tags/asset-metadata#attaching-materialization-metadata) to provide additional context about the number of rows in a materialized table. This will be highlighted in the Dagster UI. For example:
+
+<Image
+alt="Row count for an asset in the Dagster UI"
+src="/images/concepts/metadata-tags/metadata-row-count.png"
+width={1921}
+height={559}
+/>
+
+In addition to showing the latest row count, Dagster will let you track changes in the row count over time, and you can use this information to monitor data quality.
+
+To attach row count metadata to an asset, you will need to attach a numerical value to the `dagster/row_count` key in the metadata parameter of the <PyObject object="MaterializeResult" /> object returned by the asset function. For example:
+
+```python file=/concepts/metadata-tags/asset_row_count.py
+import pandas as pd
+
+from dagster import AssetKey, MaterializeResult, asset
+
+
+@asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
+def my_asset():
+    my_df: pd.DataFrame = ...
+
+    yield MaterializeResult(metadata={"dagster/row_count": 374})
+```
+
+---
+
+## Attaching column-level lineage
+
+Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform. Refer to the [Column-level lineage documentation](/concepts/metadata-tags/asset-metadata/column-level-lineage) for more information.
+
+---
+
+## APIs in this guide
+
+| Name                                         | Description                                                      |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| <PyObject object="asset" decorator />        | A decorator used to define assets.                               |
+| <PyObject object="MaterializeResult" />      | An object representing a successful materialization of an asset. |
+| <PyObject object="TableSchema" />            | An object representing the schema of a tabular asset.            |
+| <PyObject object="TableColumn" />            | Class that defines column information for a tabular asset.       |
+| <PyObject object="TableColumnConstraints" /> | Class that defines constraints for a column in a tabular asset.  |
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Asset metadata"
+    href="/concepts/metadata-tags/asset-metadata"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Column-level lineage"
+    href="/concepts/metadata-tags/asset-metadata/column-level-lineage"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Metadata & tags"
+    href="/concepts/metadata-tags"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset definitions"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+</ArticleList>

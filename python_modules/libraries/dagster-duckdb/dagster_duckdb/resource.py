@@ -4,6 +4,7 @@ from typing import Any, Dict
 import duckdb
 from dagster import ConfigurableResource
 from dagster._utils.backoff import backoff
+from packaging.version import Version
 from pydantic import Field
 
 
@@ -48,13 +49,23 @@ class DuckDBResource(ConfigurableResource):
 
     @contextmanager
     def get_connection(self):
+        config = self.connection_config
+
+        # support for `custom_user_agent` was added in v1.0.0
+        # https://github.com/duckdb/duckdb/commit/0c66b6007b736ed2197bca54d20c9ad9a5eeef46
+        if Version(duckdb.__version__) >= Version("1.0.0"):
+            config = {
+                "custom_user_agent": "dagster",
+                **config,
+            }
+
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
             kwargs={
                 "database": self.database,
                 "read_only": False,
-                "config": self.connection_config,
+                "config": config,
             },
             max_retries=10,
         )

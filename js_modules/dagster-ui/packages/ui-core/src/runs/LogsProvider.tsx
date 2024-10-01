@@ -1,10 +1,3 @@
-import {
-  OnSubscriptionDataOptions,
-  gql,
-  useApolloClient,
-  useQuery,
-  useSubscription,
-} from '@apollo/client';
 import {TokenizingFieldValue} from '@dagster-io/ui-components';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
@@ -22,8 +15,16 @@ import {
   RunLogsSubscriptionSuccessFragment,
 } from './types/LogsProvider.types';
 import {RunDagsterRunEventFragment} from './types/RunFragments.types';
+import {
+  OnSubscriptionDataOptions,
+  gql,
+  useApolloClient,
+  useQuery,
+  useSubscription,
+} from '../apollo-client';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../graphql/types';
+import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -68,7 +69,7 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
 };
 
 const BATCH_INTERVAL = 100;
-const QUERY_LOG_LIMIT = 10000;
+const QUERY_LOG_LIMIT = 1000;
 
 type State = {
   nodes: LogNode[];
@@ -286,10 +287,13 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {counts, cursor, nodes} = state;
 
+  const dependency = useTraceDependency('RunLogsQuery');
+
   const {stopPolling, startPolling} = useQuery<RunLogsQuery, RunLogsQueryVariables>(
     RUN_LOGS_QUERY,
     {
       notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'no-cache',
       variables: {runId, cursor, limit: QUERY_LOG_LIMIT},
       pollInterval: POLL_INTERVAL,
       onCompleted: (data: RunLogsQuery) => {
@@ -300,6 +304,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
           data?.pipelineRunOrError.__typename !== 'Run' ||
           data?.logsForRun.__typename !== 'EventConnection'
         ) {
+          dependency.completeDependency(CompletionType.ERROR);
           return;
         }
 
@@ -315,6 +320,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
           status !== RunStatus.CANCELED;
 
         dispatch({type: 'append', queued, hasMore, cursor});
+        dependency.completeDependency(CompletionType.SUCCESS);
 
         if (hasMore) {
           startPolling(POLL_INTERVAL);

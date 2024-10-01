@@ -527,15 +527,14 @@ def single_input_op():
 
 
 def test_collision_invocations():
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
 
         @job
         def _():
             single_input_op()
             single_input_op()
             single_input_op()
-
-    assert len(record) == 0
 
 
 def test_alias_invoked(recwarn):

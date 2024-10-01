@@ -274,7 +274,7 @@ You can specify the default schema where data will be stored as configuration to
 If you want to store assets in different schemas, you can specify the schema as metadata:
 
 ```python file=/integrations/duckdb/reference/schema.py startafter=start_metadata endbefore=end_metadata dedent=4
-daffodil_dataset = SourceAsset(
+daffodil_dataset = AssetSpec(
     key=["daffodil_dataset"], metadata={"schema": "daffodil"}
 )
 
@@ -292,13 +292,10 @@ def iris_dataset() -> pd.DataFrame:
     )
 ```
 
-You can also specify the schema as part of the asset's asset key:
-
-- **For `SourceAsset`**, use the `key` parameter. The schema should be the second-to-last value in the parameter. In the following example, this would be `daffodil`.
-- **For Software-defined Assets**, use the `key_prefix` parameter. This value will be prepended to the asset name to create the full asset key. In the following example, this would be `iris`.
+You can also specify the schema as part of the asset's key:
 
 ```python file=/integrations/duckdb/reference/schema.py startafter=start_asset_key endbefore=end_asset_key dedent=4
-daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
+daffodil_dataset = AssetSpec(key=["daffodil", "daffodil_dataset"])
 
 @asset(key_prefix=["iris"])
 def iris_dataset() -> pd.DataFrame:
@@ -426,15 +423,8 @@ The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either c
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager
 from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import AssetExecutionContext, Definitions, asset
 
@@ -477,16 +467,8 @@ defs = Definitions(
 ```python file=/integrations/duckdb/reference/pyspark_with_spark_session.py startafter=start endbefore=end
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import Definitions, asset
 

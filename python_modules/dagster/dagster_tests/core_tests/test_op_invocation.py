@@ -1,8 +1,8 @@
 import asyncio
+import sys
 from datetime import datetime
 from functools import partial
 
-import pendulum
 import pytest
 from dagster import (
     AssetKey,
@@ -44,10 +44,9 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
-from dagster._core.execution.context.invocation import (
-    DirectOpExecutionContext,
-    build_asset_context,
-)
+from dagster._core.execution.context.invocation import DirectOpExecutionContext, build_asset_context
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
+from dagster._time import create_datetime
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -647,6 +646,10 @@ def test_missing_required_output_generator_async():
         asyncio.run(get_results())
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12) and USING_PYDANTIC_1,
+    reason="something with py3.12 and pydantic1 and sqlite",
+)
 def test_missing_required_output_return():
     @op(
         out={
@@ -805,21 +808,6 @@ def test_output_type_check():
         match='Description: Value "foo" of python type "str" must be a int.',
     ):
         wrong_type()
-
-
-def test_pending_node_invocation():
-    @op
-    def basic_op_to_hook():
-        return 5
-
-    assert basic_op_to_hook.with_hooks(set())() == 5
-
-    @op
-    def basic_op_with_tag(context):
-        assert context.has_tag("foo")
-        return context.get_tag("foo")
-
-    assert basic_op_with_tag.tag({"foo": "bar"})(None) == "bar"
 
 
 def test_graph_invocation_out_of_composition():
@@ -1261,8 +1249,8 @@ def test_partitions_time_window_asset_invocation():
     )
     def partitioned_asset(context: AssetExecutionContext):
         start, end = context.partition_time_window
-        assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
-        assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
+        assert start == create_datetime(2023, 2, 2, tz=partitions_def.timezone)
+        assert end == create_datetime(2023, 2, 3, tz=partitions_def.timezone)
 
     context = build_asset_context(
         partition_key="2023-02-02",
@@ -1284,14 +1272,8 @@ def test_multipartitioned_time_window_asset_invocation():
         if time_partition is None:
             assert False, "partitions def does not have a time component"
         time_window = TimeWindow(
-            start=pendulum.instance(
-                datetime(year=2020, month=1, day=1),
-                tz=time_partition.timezone,
-            ),
-            end=pendulum.instance(
-                datetime(year=2020, month=1, day=2),
-                tz=time_partition.timezone,
-            ),
+            start=create_datetime(year=2020, month=1, day=1, tz=time_partition.timezone),
+            end=create_datetime(year=2020, month=1, day=2, tz=time_partition.timezone),
         )
         assert context.partition_time_window == time_window
         return 1
@@ -1592,3 +1574,23 @@ def test_context_bound_state_with_error_async_generator():
         asyncio.run(get_results())
 
     assert_context_unbound(ctx)
+
+
+def test_run_tags():
+    @op
+    def basic_op(context):
+        assert context.run_tags["foo"] == "bar"
+        assert context.has_tag("foo")
+        assert not context.has_tag("ffdoo")
+        assert context.get_tag("foo") == "bar"
+
+    basic_op(build_op_context(run_tags={"foo": "bar"}))
+
+    @asset
+    def basic_asset(context):
+        assert context.run_tags["foo"] == "bar"
+        assert context.has_tag("foo")
+        assert not context.has_tag("ffdoo")
+        assert context.get_tag("foo") == "bar"
+
+    basic_asset(build_asset_context(run_tags={"foo": "bar"}))

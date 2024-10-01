@@ -98,7 +98,7 @@ python_logs:
 
 ## Configuring Python log handlers <Experimental />
 
-In your `dagster.yaml` file, you can configure handlers and formatters that will apply to the Dagster instance. This will apply the same logging configuration to all runs.
+In your `dagster.yaml` file, you can configure handlers, formatters and filters that will apply to the Dagster instance. This will apply the same logging configuration to all runs.
 
 For example:
 
@@ -111,14 +111,19 @@ python_logs:
         level: INFO
         stream: ext://sys.stdout
         formatter: myFormatter
+        filters:
+          - myFilter
     formatters:
       myFormatter:
         format: "My formatted message: %(message)s"
+    filters:
+      myFilter:
+        name: dagster
 ```
 
-Handler and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the `handlers` and `formatters` dictionary keys will be accepted, as Dagster creates loggers internally.
+Handler, filter and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the `handlers`, `formatters` and `filters` dictionary keys will be accepted, as Dagster creates loggers internally.
 
-From there, standard `context.log` calls will output with the configured handlers and formatters. After execution, read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log:
+From there, standard `context.log` calls will output with the configured handlers, formatters and filters. After execution, read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log:
 
 <Image
 alt="log-file-output"

@@ -2,17 +2,13 @@
 
 
 # start_basic_multi_asset
-from dagster import AssetOut, multi_asset, AssetExecutionContext
+from dagster import AssetSpec, multi_asset
 
 
-@multi_asset(
-    outs={
-        "my_string_asset": AssetOut(),
-        "my_int_asset": AssetOut(),
-    }
-)
+@multi_asset(specs=[AssetSpec("users"), AssetSpec("orders")])
 def my_function():
-    return "abc", 123
+    # some code that writes out data to the users table and the orders table
+    ...
 
 
 # end_basic_multi_asset
@@ -34,41 +30,36 @@ def my_assets():
 # end_io_manager_multi_asset
 
 # start_subsettable_multi_asset
-from dagster import AssetOut, Output, multi_asset
+from dagster import AssetExecutionContext, AssetSpec, MaterializeResult, multi_asset
 
 
 @multi_asset(
-    outs={
-        "a": AssetOut(is_required=False),
-        "b": AssetOut(is_required=False),
-    },
+    specs=[AssetSpec("asset1", skippable=True), AssetSpec("asset2", skippable=True)],
     can_subset=True,
 )
 def split_actions(context: AssetExecutionContext):
-    if "a" in context.op_execution_context.selected_output_names:
-        yield Output(value=123, output_name="a")
-    if "b" in context.op_execution_context.selected_output_names:
-        yield Output(value=456, output_name="b")
+    if "asset1" in context.op_execution_context.selected_asset_keys:
+        yield MaterializeResult(asset_key="asset1")
+    if "asset2" in context.op_execution_context.selected_asset_keys:
+        yield MaterializeResult(asset_key="asset2")
 
 
 # end_subsettable_multi_asset
 
 # start_asset_deps_multi_asset
-from dagster import AssetKey, AssetOut, Output, multi_asset
+from dagster import AssetKey, AssetSpec, asset, multi_asset
 
 
-@multi_asset(
-    outs={"c": AssetOut(), "d": AssetOut()},
-    internal_asset_deps={
-        "c": {AssetKey("a")},
-        "d": {AssetKey("b")},
-    },
-)
-def my_complex_assets(a, b):
-    # c only depends on a
-    yield Output(value=a + 1, output_name="c")
-    # d only depends on b
-    yield Output(value=b + 1, output_name="d")
+@asset
+def a(): ...
+
+
+@asset
+def b(): ...
+
+
+@multi_asset(specs=[AssetSpec("c", deps=["b"]), AssetSpec("d", deps=["a"])])
+def my_complex_assets(): ...
 
 
 # end_asset_deps_multi_asset

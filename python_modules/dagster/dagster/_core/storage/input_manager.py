@@ -100,8 +100,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
 @overload
 def input_manager(
     config_schema: InputLoadFn,
-) -> InputManagerDefinition:
-    ...
+) -> InputManagerDefinition: ...
 
 
 @overload
@@ -111,8 +110,7 @@ def input_manager(
     input_config_schema: Optional[CoercableToConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
-) -> Callable[[InputLoadFn], InputManagerDefinition]:
-    ...
+) -> Callable[[InputLoadFn], InputManagerDefinition]: ...
 
 
 def input_manager(
