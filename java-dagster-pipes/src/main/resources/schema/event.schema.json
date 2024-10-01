@@ -1,0 +1,37 @@
+{
+    "title": "PipesEvent",
+    "type": "object",
+    "properties": {
+        "__dagster_pipes_version": {
+            "type": "string",
+            "description": "The version of the Dagster Pipes protocol"
+        },
+        "method": {
+            "enum": [
+                "opened",
+                "closed",
+                "log",
+                "report_asset_materialization",
+                "report_asset_check",
+                "report_custom_message"
+            ],
+            "description": "Event type"
+        },
+        "params": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "additionalProperties": {
+                "type": "object"
+            },
+            "description": "Event parameters"
+        }
+    },
+    "required": [
+        "__dagster_pipes_version",
+        "method",
+        "params"
+    ],
+    "additionalProperties": false
+}
