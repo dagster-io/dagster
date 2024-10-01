@@ -1,4 +1,5 @@
 import base64
+import gzip
 import os
 import random
 import string
@@ -51,6 +52,10 @@ def _can_read_from_s3(client: "S3Client", bucket: Optional[str], key: Optional[s
 
 def default_log_decode_fn(contents: bytes) -> str:
     return contents.decode("utf-8")
+
+
+def gzip_log_decode_fn(contents: bytes) -> str:
+    return gzip.decompress(contents).decode("utf-8")
 
 
 class PipesS3LogReader(PipesChunkedLogReader):
