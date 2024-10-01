@@ -12,7 +12,8 @@ import styled from 'styled-components';
 
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
-import {RunFilterToken, runsPathWithFilters} from './RunsFilterInput';
+import {getBackfillPath} from './RunsFeedUtils';
+import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -48,14 +49,7 @@ export const RunRowTags = ({
     const tags: TagType[] = [];
 
     if (targetBackfill && targetBackfill.pinned) {
-      const link = run.assetSelection?.length
-        ? `/overview/backfills/${targetBackfill.value}`
-        : runsPathWithFilters([
-            {
-              token: 'tag',
-              value: `${DagsterTag.Backfill}=${targetBackfill.value}`,
-            },
-          ]);
+      const link = getBackfillPath(targetBackfill.value, !!run.assetSelection?.length);
       tags.push({
         ...targetBackfill,
         link,

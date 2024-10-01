@@ -1,11 +1,12 @@
 import {Redirect, Switch} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewJobsRoot} from './OverviewJobsRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
-import {useFeatureFlags} from '../app/Flags';
+import {featureEnabled, useFeatureFlags} from '../app/Flags';
 import {Route} from '../app/Route';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
@@ -44,8 +45,21 @@ export const OverviewRoot = () => {
           )
         }
       />
-      <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
-      <Route path="/overview/backfills" exact render={() => <InstanceBackfillsRoot />} />
+      {featureEnabled(FeatureFlag.flagRunsFeed)
+        ? null
+        : [
+            <Route
+              path="/overview/backfills/:backfillId"
+              render={() => <BackfillPage />}
+              key="1"
+            />,
+            <Route
+              path="/overview/backfills"
+              exact
+              render={() => <InstanceBackfillsRoot />}
+              key="2"
+            />,
+          ]}
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
       </Route>

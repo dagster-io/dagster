@@ -121,7 +121,10 @@ export const RunRoot = () => {
                   All runs
                 </Link>
                 {' / '}
-                <Link to={getBackfillPath(backfillTag.value)} style={{color: Colors.textLight()}}>
+                <Link
+                  to={getBackfillPath(backfillTag.value, !!run?.assetSelection?.length)}
+                  style={{color: Colors.textLight()}}
+                >
                   {backfillTag.value}
                 </Link>
                 {' / '}
