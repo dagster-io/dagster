@@ -238,14 +238,13 @@ class AssetGraphView(LoadingContext):
 
         partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
 
-        if from_partitions_def is None or to_partitions_def is None:
-            return (
-                self.get_empty_subset(key=to_key)
-                if from_subset.is_empty
-                else self.get_full_subset(key=to_key)
-            )
-
         if from_key in self.asset_graph.get(to_key).parent_entity_keys:
+            if from_partitions_def is None or to_partitions_def is None:
+                return (
+                    self.get_empty_subset(key=to_key)
+                    if from_subset.is_empty
+                    else self.get_full_subset(key=to_key)
+                )
             to_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
                 upstream_partitions_subset=from_subset.get_internal_subset_value(),
                 upstream_partitions_def=from_partitions_def,
@@ -254,9 +253,17 @@ class AssetGraphView(LoadingContext):
                 current_time=self.effective_dt,
             )
         else:
+            if to_partitions_def is None or from_subset.is_empty:
+                return (
+                    self.get_empty_subset(key=to_key)
+                    if from_subset.is_empty
+                    else self.get_full_subset(key=to_key)
+                )
             to_partitions_subset = (
                 partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                    downstream_partitions_subset=from_subset.get_internal_subset_value(),
+                    downstream_partitions_subset=from_subset.get_internal_subset_value()
+                    if from_partitions_def is not None
+                    else None,
                     downstream_partitions_def=from_partitions_def,
                     upstream_partitions_def=to_partitions_def,
                     dynamic_partitions_store=self._queryer,
