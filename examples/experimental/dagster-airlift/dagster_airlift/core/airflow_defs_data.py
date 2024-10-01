@@ -9,6 +9,8 @@ from dagster_airlift.core.serialization.serialized_data import SerializedAirflow
 
 @record
 class AirflowDefinitionsData:
+    """dumm"""
+
     serialized_data: SerializedAirflowDefinitionsData
 
     @property
