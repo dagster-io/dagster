@@ -262,8 +262,8 @@ def test_load_from_instance(
                 .replace("_test", "")
                 .split("_")[-1]
             )
-            assert metadata.get("dagster/relation_identifier") in relation_identifiers
-            assert table_name in metadata.get("dagster/relation_identifier")
+            assert metadata["dagster/relation_identifier"] in relation_identifiers
+            assert table_name in metadata["dagster/relation_identifier"]
         else:
             assert not metadata.get("dagster/relation_identifier")
 

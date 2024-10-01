@@ -127,7 +127,7 @@ def _build_airbyte_asset_defn_metadata(
                     destination_raw_table_names_by_table[table],
                 ]
             )
-            if normalization_tables:
+            if normalization_tables and normalization_raw_table_names_by_table:
                 for normalization_table in normalization_tables.get(table, set()):
                     relation_identifiers[normalization_table] = ".".join(
                         [

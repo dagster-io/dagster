@@ -338,8 +338,8 @@ def test_built_airbyte_asset_relation_identifier():
     for key, metadata in assets_def.metadata_by_key.items():
         # Extract the table name from the asset key
         table_name = key.path[-1]
-        assert metadata.get("dagster/relation_identifier") in relation_identifiers
-        assert table_name in metadata.get("dagster/relation_identifier")
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]
 
     ab_assets = build_airbyte_assets(
         "12345",
@@ -356,5 +356,5 @@ def test_built_airbyte_asset_relation_identifier():
     for key, metadata in assets_def.metadata_by_key.items():
         # Extract the table name from the asset key
         table_name = key.path[-1]
-        assert metadata.get("dagster/relation_identifier") in relation_identifiers
-        assert table_name in metadata.get("dagster/relation_identifier")
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]

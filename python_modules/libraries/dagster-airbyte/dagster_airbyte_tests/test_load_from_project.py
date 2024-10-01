@@ -133,8 +133,8 @@ def test_load_from_project(
             .replace("_test", "")
             .split("_")[-1]
         )
-        assert metadata.get("dagster/relation_identifier") in relation_identifiers
-        assert table_name in metadata.get("dagster/relation_identifier")
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]
 
     assert assets_def.keys == {AssetKey(t) for t in tables}
     assert all(
