@@ -74,8 +74,8 @@ def test_migrated_dagster_print_materializes(
             run_ids = dagster_instance.get_run_ids()
             assert dagster_run, f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
             assert (
-                "dagster-airlift/dag-run_id" in dagster_run.tags
-            ), "Could not find dagster run tag"
+                "dagster-airlift/dag-run-id" in dagster_run.tags
+            ), f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
             assert (
                 dagster_run.tags["dagster-airlift/dag-run-id"] == airflow_run_id
             ), "dagster run tag does not match dag run id"
