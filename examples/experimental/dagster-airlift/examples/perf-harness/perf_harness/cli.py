@@ -9,6 +9,7 @@ from typing import Dict, Generator, List, Tuple
 
 import dagster._check as check
 from dagster import Definitions, RepositoryDefinition, build_sensor_context
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow
@@ -144,6 +145,7 @@ def main() -> None:
                 run_suite_for_defs(
                     module_name_to_defs_and_instance=module_name_to_defs_and_instance,
                     num_dags=num_dags,
+                    instance=DagsterInstance.get(),
                 )
             )
 
@@ -156,6 +158,7 @@ def run_suite_for_defs(
     *,
     module_name_to_defs_and_instance: Dict[str, Tuple[Definitions, AirflowInstance]],
     num_dags: int,
+    instance: DagsterInstance,
 ) -> List[str]:
     lines = []
     module_name_to_repo_def_and_instance: Dict[
@@ -176,7 +179,7 @@ def run_suite_for_defs(
         sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         print(f"Running {module_name} sensor ticks...")
         sensor_tick_no_runs_start_time = time.time()
-        sensor_def(build_sensor_context(repository_def=repo_def))
+        sensor_def(build_sensor_context(repository_def=repo_def, instance=instance))
         sensor_tick_no_runs_end_time = time.time()
 
         lines.append(
@@ -191,7 +194,7 @@ def run_suite_for_defs(
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
         sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         sensor_tick_with_single_run_start_time = time.time()
-        sensor_def(build_sensor_context(repository_def=repo_def))
+        sensor_def(build_sensor_context(repository_def=repo_def, instance=instance))
         sensor_tick_with_single_run_end_time = time.time()
         lines.append(
             f"{module_name} sensor tick with single run time: {sensor_tick_with_single_run_end_time - sensor_tick_with_single_run_start_time:.4f} seconds\n"
@@ -219,7 +222,7 @@ def run_suite_for_defs(
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
         sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         sensor_tick_with_all_runs_start_time = time.time()
-        sensor_def(build_sensor_context(repository_def=repo_def))
+        sensor_def(build_sensor_context(repository_def=repo_def, instance=instance))
         sensor_tick_with_all_runs_end_time = time.time()
         lines.append(
             f"{module_name} sensor tick with {num_dags} runs time: {sensor_tick_with_all_runs_end_time - sensor_tick_with_all_runs_start_time:.4f} seconds\n"
