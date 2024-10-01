@@ -12,11 +12,13 @@ import {
 } from '../../assets/types/AssetsCatalogTable.types';
 import {buildAssetConnection} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';
+import {__resetForJest, useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';
 
 const mockCache = _cache as any;
 
 jest.useFakeTimers();
+
+let mockShouldThrowError = false;
 
 // Mock idb-lru-cache
 jest.mock('idb-lru-cache', () => {
@@ -27,7 +29,12 @@ jest.mock('idb-lru-cache', () => {
     delete: jest.fn(),
   };
   return {
-    cache: jest.fn(() => mockedCache),
+    cache: jest.fn(() => {
+      if (mockShouldThrowError) {
+        throw new Error('Internal error opening backing store for indexedDB.open.');
+      }
+      return mockedCache;
+    }),
   };
 });
 
@@ -68,84 +75,106 @@ describe('useIndexedDBCachedQuery', () => {
     jest.clearAllMocks();
   });
 
-  it('should use cached data if available and version matches', async () => {
-    mockCache().has.mockResolvedValue(true);
-    mockCache().get.mockResolvedValue({value: {data: 'test', version: 1}});
-
-    const {result, waitForNextUpdate} = renderHook(
-      () =>
-        useIndexedDBCachedQuery({
-          key: 'testKey',
-          query: ASSET_CATALOG_TABLE_QUERY,
-          version: 1,
-        }),
-      {
-        wrapper: ({children}: {children: ReactNode}) => (
-          <Wrapper mocks={[mock({delay: Infinity})]}>{children}</Wrapper>
-        ),
-      },
-    );
-    expect(result.current.data).toBeUndefined();
-
-    await act(async () => {
-      await waitForNextUpdate();
-    });
-
-    expect(result.current.data).toBe('test');
-  });
-
-  it('should not return cached data if version does not match', async () => {
-    mockCache().has.mockResolvedValue(true);
-    mockCache().get.mockResolvedValue({value: {data: 'test', version: 1}});
-
-    const {result} = renderHook(
-      () =>
-        useIndexedDBCachedQuery({
-          key: 'testKey',
-          query: ASSET_CATALOG_TABLE_QUERY,
-          version: 2,
-        }),
-      {
-        wrapper: ({children}: {children: ReactNode}) => <Wrapper mocks={[]}>{children}</Wrapper>,
-      },
-    );
-    expect(result.current.data).toBeUndefined();
-    jest.runAllTimers();
-    expect(result.current.data).toBeUndefined();
-  });
-
-  it('Ensures that concurrent fetch requests consolidate correctly, not triggering multiple network requests for the same key', async () => {
-    mockCache().has.mockResolvedValue(false);
-    const mock1 = mock();
-    const mock2 = mock();
-    let result1;
-    let result2;
-    renderHook(
+  [true, false].forEach((shouldThrowError) => {
+    const throwingError = shouldThrowError;
+    describe(
+      // eslint-disable-next-line jest/valid-title
+      throwingError ? 'with crashing indexeddb cache' : 'with working indexeddb cache',
       () => {
-        result1 = useIndexedDBCachedQuery({
-          key: 'testKey',
-          query: ASSET_CATALOG_TABLE_QUERY,
-          version: 2,
+        beforeEach(() => {
+          __resetForJest();
+          mockShouldThrowError = throwingError;
         });
-        const {fetch} = result1;
-        useMemo(() => fetch(), [fetch]);
-        result2 = useIndexedDBCachedQuery({
-          key: 'testKey',
-          query: ASSET_CATALOG_TABLE_QUERY,
-          version: 2,
+
+        it('should use cached data if available and version matches', async () => {
+          if (!throwingError) {
+            mockCache().has.mockResolvedValue(true);
+            mockCache().get.mockResolvedValue({value: {data: 'test', version: 1}});
+          }
+
+          const {result, waitForNextUpdate} = renderHook(
+            () =>
+              useIndexedDBCachedQuery({
+                key: 'testKey',
+                query: ASSET_CATALOG_TABLE_QUERY,
+                version: 1,
+              }),
+            {
+              wrapper: ({children}: {children: ReactNode}) => (
+                <Wrapper mocks={[mock({delay: Infinity})]}>{children}</Wrapper>
+              ),
+            },
+          );
+          expect(result.current.data).toBeUndefined();
+
+          await act(async () => {
+            await waitForNextUpdate();
+          });
+
+          expect(result.current.data).toBe(throwingError ? undefined : 'test');
         });
-        const {fetch: fetch2} = result2;
-        useMemo(() => fetch2(), [fetch2]);
-        return result2;
-      },
-      {
-        wrapper: ({children}: {children: ReactNode}) => (
-          <Wrapper mocks={[mock1, mock2]}>{children}</Wrapper>
-        ),
+
+        it('should not return cached data if version does not match', async () => {
+          if (!throwingError) {
+            mockCache().has.mockResolvedValue(true);
+            mockCache().get.mockResolvedValue({value: {data: 'test', version: 1}});
+          }
+
+          const {result} = renderHook(
+            () =>
+              useIndexedDBCachedQuery({
+                key: 'testKey',
+                query: ASSET_CATALOG_TABLE_QUERY,
+                version: 2,
+              }),
+            {
+              wrapper: ({children}: {children: ReactNode}) => (
+                <Wrapper mocks={[]}>{children}</Wrapper>
+              ),
+            },
+          );
+          expect(result.current.data).toBeUndefined();
+          jest.runAllTimers();
+          expect(result.current.data).toBeUndefined();
+        });
+
+        it('Ensures that concurrent fetch requests consolidate correctly, not triggering multiple network requests for the same key', async () => {
+          if (!throwingError) {
+            mockCache().has.mockResolvedValue(false);
+          }
+          const mock1 = mock();
+          const mock2 = mock();
+          let result1;
+          let result2;
+          renderHook(
+            () => {
+              result1 = useIndexedDBCachedQuery({
+                key: 'testKey',
+                query: ASSET_CATALOG_TABLE_QUERY,
+                version: 2,
+              });
+              const {fetch} = result1;
+              useMemo(() => fetch(), [fetch]);
+              result2 = useIndexedDBCachedQuery({
+                key: 'testKey',
+                query: ASSET_CATALOG_TABLE_QUERY,
+                version: 2,
+              });
+              const {fetch: fetch2} = result2;
+              useMemo(() => fetch2(), [fetch2]);
+              return result2;
+            },
+            {
+              wrapper: ({children}: {children: ReactNode}) => (
+                <Wrapper mocks={[mock1, mock2]}>{children}</Wrapper>
+              ),
+            },
+          );
+          expect(useApolloClient().query).toHaveBeenCalledTimes(1);
+          expect(result1!.data).toEqual(result2!.data);
+          expect(result1!.loading).toEqual(result2!.loading);
+        });
       },
     );
-    expect(useApolloClient().query).toHaveBeenCalledTimes(1);
-    expect(result1!.data).toEqual(result2!.data);
-    expect(result1!.loading).toEqual(result2!.loading);
   });
 });

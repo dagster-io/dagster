@@ -41,12 +41,14 @@ export class HourlyDataCache<T> {
     this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
 
     if (id) {
-      this.indexedDBCache = cache<string, CacheType<T>>({
-        dbName: `HourlyDataCache:${id}`,
-        maxCount: keyMaxCount,
-      });
-      this.loadCacheFromIndexedDB();
-      this.clearOldEntries();
+      try {
+        this.indexedDBCache = cache<string, CacheType<T>>({
+          dbName: `HourlyDataCache:${id}`,
+          maxCount: keyMaxCount,
+        });
+        this.loadCacheFromIndexedDB();
+        this.clearOldEntries();
+      } catch (e) {}
     }
   }
 
