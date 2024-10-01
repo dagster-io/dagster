@@ -223,6 +223,9 @@ class DbtCliResource(ConfigurableResource):
             if not target and project_dir.target:
                 target = project_dir.target
 
+            if not profiles_dir and project_dir.profiles_dir:
+                profiles_dir = project_dir.profiles_dir
+
             project_dir = project_dir.project_dir
 
         project_dir = os.fspath(project_dir)

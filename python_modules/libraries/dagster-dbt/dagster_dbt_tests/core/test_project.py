@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 
 import pytest
 from dagster._core.test_utils import environ
@@ -6,7 +7,7 @@ from dagster._utils.test import copy_directory
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_project import DbtProject
 
-from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path, test_profiles_dir
 
 
 @pytest.fixture(scope="session")
@@ -53,3 +54,17 @@ def test_concurrent_processes(project_dir):
             assert proc.exitcode == 0
 
         assert my_project.manifest_path.exists()
+
+
+def test_custom_profiles_dir(project_dir):
+    os.remove(os.path.join(project_dir, "profiles.yml"))
+    my_project = DbtProject(project_dir=project_dir, profiles_dir=test_profiles_dir)
+    assert not my_project.manifest_path.exists()
+    with environ(
+        {
+            "DAGSTER_IS_DEV_CLI": "1",
+        }
+    ):
+        my_project.prepare_if_dev()
+
+    assert my_project.manifest_path.exists()

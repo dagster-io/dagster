@@ -148,6 +148,8 @@ class DbtProject(IHaveNew):
     Args:
         project_dir (Union[str, Path]):
             The directory of the dbt project.
+        profiles_dir (Optional[Union[str, Path]):
+            The directory of the dbt profiles.yml file.
         target_path (Union[str, Path]):
             The path, relative to the project directory, to output artifacts.
             It corresponds to the target path in dbt.
@@ -174,7 +176,7 @@ class DbtProject(IHaveNew):
 
             my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
-        Creating a DbtProject that changes target based on environment variables and uses manged state artifacts:
+        Creating a DbtProject that changes target based on environment variables and uses managed state artifacts:
 
         .. code-block:: python
 
@@ -200,6 +202,7 @@ class DbtProject(IHaveNew):
     """
 
     project_dir: Path
+    profiles_dir: Optional[Path]
     target_path: Path
     target: Optional[str]
     manifest_path: Path
@@ -212,6 +215,7 @@ class DbtProject(IHaveNew):
         cls,
         project_dir: Union[Path, str],
         *,
+        profiles_dir: Optional[Union[Path, str]] = None,
         target_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
@@ -251,6 +255,7 @@ class DbtProject(IHaveNew):
         return super().__new__(
             cls,
             project_dir=project_dir,
+            profiles_dir=profiles_dir,
             target_path=target_path,
             target=target,
             manifest_path=manifest_path,
