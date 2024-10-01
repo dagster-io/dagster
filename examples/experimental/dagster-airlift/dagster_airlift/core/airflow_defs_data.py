@@ -8,7 +8,6 @@ from dagster._serdes.serdes import deserialize_value
 
 from dagster_airlift.constants import STANDALONE_DAG_ID_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     TaskHandle,
@@ -45,16 +44,16 @@ class AirflowDefinitionsData:
         return asset_keys_per_handle
 
     @cached_property
-    def asset_key_per_dag(self) -> Mapping[str, AssetKey]:
-        dag_id_to_asset_key = {}
+    def asset_keys_per_dag(self) -> Mapping[str, AbstractSet[AssetKey]]:
+        dag_id_to_asset_key = defaultdict(set)
         for spec in self.resolved_airflow_defs.get_all_asset_specs():
             if STANDALONE_DAG_ID_METADATA_KEY in spec.metadata:
                 dag_id = spec.metadata[STANDALONE_DAG_ID_METADATA_KEY]
-                dag_id_to_asset_key[dag_id] = spec.key
+                dag_id_to_asset_key[dag_id].add(spec.key)
         return dag_id_to_asset_key
 
-    def asset_key_for_dag(self, dag_id: str) -> AssetKey:
-        return make_default_dag_asset_key(self.serialized_data.instance_name, dag_id)
+    def asset_keys_for_dag(self, dag_id: str) -> AbstractSet[AssetKey]:
+        return self.asset_keys_per_dag[dag_id]
 
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
         return self.asset_keys_per_task_handle[TaskHandle(dag_id=dag_id, task_id=task_id)]
