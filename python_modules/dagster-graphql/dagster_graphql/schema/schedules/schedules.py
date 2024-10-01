@@ -4,8 +4,8 @@ from typing import List, Optional, Sequence
 import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
-from dagster._core.remote_representation import ExternalSchedule
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation import RemoteSchedule
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
 
@@ -65,13 +65,13 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def __init__(
         self,
-        external_schedule: ExternalSchedule,
-        external_repository: ExternalRepository,
+        external_schedule: RemoteSchedule,
+        external_repository: RemoteRepository,
         schedule_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._external_schedule = check.inst_param(
-            external_schedule, "external_schedule", ExternalSchedule
+            external_schedule, "external_schedule", RemoteSchedule
         )
         self._external_repository = external_repository
 

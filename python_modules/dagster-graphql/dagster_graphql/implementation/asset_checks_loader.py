@@ -4,7 +4,7 @@ from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -39,7 +39,7 @@ class AssetChecksLoader:
 
     def _get_external_checks(
         self, pipeline: Optional[GraphenePipelineSelector]
-    ) -> Iterator[Tuple[CodeLocation, ExternalRepository, AssetCheckNodeSnap]]:
+    ) -> Iterator[Tuple[CodeLocation, RemoteRepository, AssetCheckNodeSnap]]:
         if pipeline is None:
             entries = self._context.get_code_location_entries().values()
             for entry in entries:

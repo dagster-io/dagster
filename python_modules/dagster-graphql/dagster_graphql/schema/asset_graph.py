@@ -21,7 +21,7 @@ from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
+from dagster._core.remote_representation.external import RemoteJob, RemoteSensor
 from dagster._core.remote_representation.external_data import (
     AssetNodeSnap,
     DynamicPartitionsSnap,
@@ -411,7 +411,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def asset_graph_differ(self) -> Optional[AssetGraphDiffer]:
         return self._asset_graph_differ
 
-    def get_external_job(self, graphene_info: ResolveInfo) -> ExternalJob:
+    def get_external_job(self, graphene_info: ResolveInfo) -> RemoteJob:
         if self._external_job is None:
             check.invariant(
                 len(self._asset_node_snap.job_names) >= 1,
@@ -908,7 +908,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return None
 
     def _sensor_targets_asset(
-        self, sensor: ExternalSensor, asset_graph: RemoteAssetGraph, job_names: Set[str]
+        self, sensor: RemoteSensor, asset_graph: RemoteAssetGraph, job_names: Set[str]
     ) -> bool:
         asset_key = self._asset_node_snap.asset_key
 
@@ -959,7 +959,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def _get_auto_materialize_external_sensor(
         self, graphene_info: ResolveInfo
-    ) -> Optional[ExternalSensor]:
+    ) -> Optional[RemoteSensor]:
         repo = graphene_info.context.get_repository(self._repository_selector)
         asset_graph = repo.asset_graph
 

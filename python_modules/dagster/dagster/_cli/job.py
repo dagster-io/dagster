@@ -38,8 +38,8 @@ from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
     CodeLocation,
-    ExternalJob,
-    ExternalRepository,
+    RemoteJob,
+    RemoteRepository,
     RepositoryHandle,
 )
 from dagster._core.remote_representation.external_data import (
@@ -435,8 +435,8 @@ def execute_launch_command(
 def _create_external_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
-    external_repo: ExternalRepository,
-    external_job: ExternalJob,
+    external_repo: RemoteRepository,
+    external_job: RemoteJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
@@ -444,8 +444,8 @@ def _create_external_run(
 ) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(code_location, "code_location", CodeLocation)
-    check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.inst_param(external_job, "external_job", ExternalJob)
+    check.inst_param(external_repo, "external_repo", RemoteRepository)
+    check.inst_param(external_job, "external_job", RemoteJob)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_mapping_param(tags, "tags", key_type=str)
@@ -501,12 +501,12 @@ def _create_external_run(
 
 
 def _check_execute_external_job_args(
-    external_job: ExternalJob,
+    external_job: RemoteJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
-    check.inst_param(external_job, "external_job", ExternalJob)
+    check.inst_param(external_job, "external_job", RemoteJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)

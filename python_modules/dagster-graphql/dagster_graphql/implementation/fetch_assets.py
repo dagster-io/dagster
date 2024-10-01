@@ -41,7 +41,7 @@ from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
@@ -755,8 +755,8 @@ def get_freshness_info(
 
 
 def unique_repos(
-    external_repositories: Sequence[ExternalRepository],
-) -> Sequence[ExternalRepository]:
+    external_repositories: Sequence[RemoteRepository],
+) -> Sequence[RemoteRepository]:
     repos = []
     used = set()
     for external_repository in external_repositories:

@@ -105,7 +105,7 @@ from dagster._core.definitions.sensor_definition import RunRequest, SensorDefini
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.log_manager import coerce_valid_log_level
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
@@ -180,7 +180,7 @@ def get_main_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCo
 
 
 @contextmanager
-def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalRepository]:
+def get_main_external_repo(instance: DagsterInstance) -> Iterator[RemoteRepository]:
     with get_main_workspace(instance) as workspace:
         location = workspace.get_code_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())

@@ -17,7 +17,7 @@ import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -84,7 +84,7 @@ class AssetDefinitionDiffDetails:
 
 def _get_external_repo_from_context(
     context: BaseWorkspaceRequestContext, code_location_name: str, repository_name: str
-) -> Optional[ExternalRepository]:
+) -> Optional[RemoteRepository]:
     """Returns the ExternalRepository specified by the code location name and repository name
     for the provided workspace context. If the repository doesn't exist, return None.
     """

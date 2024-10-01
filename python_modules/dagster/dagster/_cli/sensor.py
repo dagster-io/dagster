@@ -17,7 +17,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -76,8 +76,8 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         )
 
 
-def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterInstance) -> None:
-    check.inst_param(repository, "repository", ExternalRepository)
+def check_repo_and_scheduler(repository: RemoteRepository, instance: DagsterInstance) -> None:
+    check.inst_param(repository, "repository", RemoteRepository)
     check.inst_param(instance, "instance", DagsterInstance)
 
     repository_name = repository.name

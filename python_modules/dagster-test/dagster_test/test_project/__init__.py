@@ -15,10 +15,10 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._core.remote_representation import (
-    ExternalJob,
-    ExternalSchedule,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
+    RemoteJob,
+    RemoteSchedule,
 )
 from dagster._core.remote_representation.origin import (
     RemoteInstigatorOrigin,
@@ -135,9 +135,9 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         )
 
 
-class ReOriginatedExternalJobForTest(ExternalJob):
+class ReOriginatedExternalJobForTest(RemoteJob):
     def __init__(
-        self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
+        self, external_job: RemoteJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
@@ -190,10 +190,10 @@ class ReOriginatedExternalJobForTest(ExternalJob):
         )
 
 
-class ReOriginatedExternalScheduleForTest(ExternalSchedule):
+class ReOriginatedExternalScheduleForTest(RemoteSchedule):
     def __init__(
         self,
-        external_schedule: ExternalSchedule,
+        external_schedule: RemoteSchedule,
         container_image=None,
     ):
         self._container_image = container_image

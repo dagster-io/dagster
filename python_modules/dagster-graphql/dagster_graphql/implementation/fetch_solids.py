@@ -1,7 +1,7 @@
 from collections import OrderedDict, defaultdict
 
 import dagster._check as check
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 
 from dagster_graphql.implementation.utils import GraphSelector
 
@@ -19,7 +19,7 @@ def get_used_solid_map(repo):
     from dagster_graphql.schema.solids import build_solid_handles
     from dagster_graphql.schema.used_solid import GrapheneNodeInvocationSite, GrapheneUsedSolid
 
-    check.inst_param(repo, "repo", ExternalRepository)
+    check.inst_param(repo, "repo", RemoteRepository)
 
     inv_by_def_name = defaultdict(list)
     definitions = []

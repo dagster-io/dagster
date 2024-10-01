@@ -36,7 +36,7 @@ from dagster._core.remote_representation import (
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation.external import ExternalRepository, ExternalSchedule
+from dagster._core.remote_representation.external import RemoteRepository, RemoteSchedule
 from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -641,7 +641,7 @@ def logger():
 
 def validate_tick(
     tick: InstigatorTick,
-    external_schedule: ExternalSchedule,
+    external_schedule: RemoteSchedule,
     expected_datetime: datetime.datetime,
     expected_status: TickStatus,
     expected_run_ids: Sequence[str],
@@ -888,7 +888,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             assert reset_instigator_state
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
-            running_to_not_running_schedule = ExternalSchedule(
+            running_to_not_running_schedule = RemoteSchedule(
                 external_schedule_data=copy(
                     running_schedule._external_schedule_data,  # noqa: SLF001
                     default_status=DefaultScheduleStatus.STOPPED,
@@ -1155,7 +1155,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
 def test_stale_request_context(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = feb_27_2019_start_of_day()
     with freeze_time(freeze_datetime):
@@ -1207,7 +1207,7 @@ def test_stale_request_context(
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_launch_failure(
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     with instance_for_test(
@@ -1323,7 +1323,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -1491,7 +1491,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -1538,7 +1538,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -1575,7 +1575,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -1648,7 +1648,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
@@ -1719,7 +1719,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
@@ -1815,7 +1815,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         # We need to use different keys across sync and async executors, as the dictionary is persisted across processes.
@@ -1923,7 +1923,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
@@ -1963,7 +1963,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("skip_schedule")
@@ -1993,7 +1993,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
@@ -2025,7 +2025,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("default_config_schedule")
@@ -2068,7 +2068,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule(
@@ -2095,7 +2095,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         good_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -2216,7 +2216,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -2241,7 +2241,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2283,7 +2283,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2322,7 +2322,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = create_datetime(
@@ -2370,7 +2370,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -2422,7 +2422,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         # This is a Wednesday.
@@ -2538,7 +2538,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2616,7 +2616,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2694,7 +2694,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_start_of_day()
@@ -2728,7 +2728,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2753,7 +2753,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_start_of_day()
@@ -2786,7 +2786,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
         submit_executor: Optional[ThreadPoolExecutor],
     ):
@@ -2825,7 +2825,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2876,7 +2876,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2904,7 +2904,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -2930,7 +2930,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
@@ -3007,7 +3007,7 @@ class TestSchedulerRun:
         self,
         scheduler_instance: DagsterInstance,
         workspace_context: WorkspaceProcessContext,
-        external_repo: ExternalRepository,
+        external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ) -> None:
         freeze_datetime = feb_27_2019_one_second_to_midnight()

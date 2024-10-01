@@ -8,7 +8,7 @@ import moto
 import pytest
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -267,19 +267,19 @@ def job() -> JobDefinition:
 
 
 @pytest.fixture
-def external_job(workspace: WorkspaceRequestContext) -> ExternalJob:
+def external_job(workspace: WorkspaceRequestContext) -> RemoteJob:
     location = workspace.get_code_location(workspace.code_location_names[0])
     return location.get_repository(repo.repository.name).get_full_external_job(repo.job.name)
 
 
 @pytest.fixture
-def other_external_job(other_workspace: WorkspaceRequestContext) -> ExternalJob:
+def other_external_job(other_workspace: WorkspaceRequestContext) -> RemoteJob:
     location = other_workspace.get_code_location(other_workspace.code_location_names[0])
     return location.get_repository(repo.repository.name).get_full_external_job(repo.job.name)
 
 
 @pytest.fixture
-def run(instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob) -> DagsterRun:
+def run(instance: DagsterInstance, job: JobDefinition, external_job: RemoteJob) -> DagsterRun:
     return instance.create_run_for_job(
         job,
         external_job_origin=external_job.get_remote_origin(),
@@ -289,7 +289,7 @@ def run(instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob
 
 @pytest.fixture
 def other_run(
-    instance: DagsterInstance, job: JobDefinition, other_external_job: ExternalJob
+    instance: DagsterInstance, job: JobDefinition, other_external_job: RemoteJob
 ) -> DagsterRun:
     return instance.create_run_for_job(
         job,
@@ -300,7 +300,7 @@ def other_run(
 
 @pytest.fixture
 def launch_run(
-    workspace: WorkspaceRequestContext, job: JobDefinition, external_job: ExternalJob
+    workspace: WorkspaceRequestContext, job: JobDefinition, external_job: RemoteJob
 ) -> Callable[[DagsterInstance], None]:
     def _launch_run(instance: DagsterInstance) -> None:
         run = instance.create_run_for_job(
@@ -355,7 +355,7 @@ def custom_workspace(
 
 @pytest.fixture
 def custom_run(
-    custom_instance: DagsterInstance, job: JobDefinition, external_job: ExternalJob
+    custom_instance: DagsterInstance, job: JobDefinition, external_job: RemoteJob
 ) -> DagsterRun:
     return custom_instance.create_run_for_job(
         job,
@@ -558,7 +558,7 @@ def other_container_context_config(other_configured_secret):
 @pytest.fixture
 def launch_run_with_container_context(
     job: JobDefinition,
-    external_job: ExternalJob,
+    external_job: RemoteJob,
     workspace: WorkspaceRequestContext,
     container_context_config,
 ):

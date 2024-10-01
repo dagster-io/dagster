@@ -7,7 +7,7 @@ from dagster._cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
@@ -54,7 +54,7 @@ def load_workspace_via_cli_runner(cli_args, workspace_assert_fn=None):
 
 def successfully_load_repository_via_cli(cli_args, repo_assert_fn=None):
     def wrapped_repo_assert(external_repo):
-        assert isinstance(external_repo, ExternalRepository)
+        assert isinstance(external_repo, RemoteRepository)
         if repo_assert_fn:
             repo_assert_fn(external_repo)
 
@@ -303,7 +303,7 @@ def test_dagster_definitions():
 
     executed = {}
 
-    def the_assert(external_repo: ExternalRepository):
+    def the_assert(external_repo: RemoteRepository):
         assert external_repo.name == "__repository__"
         assert len(external_repo.get_asset_node_snaps()) == 1
         executed["yes"] = True

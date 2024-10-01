@@ -14,7 +14,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
-from dagster._core.remote_representation import ExternalJob
+from dagster._core.remote_representation import RemoteJob
 from dagster._core.remote_representation.external_data import external_job_data_from_def
 from dagster._core.remote_representation.handle import RepositoryHandle
 
@@ -41,7 +41,7 @@ def external_job_from_recon_job(
     op_selection: Optional[Iterable[str]],
     repository_handle: RepositoryHandle,
     asset_selection: Optional[AbstractSet[AssetKey]] = None,
-) -> ExternalJob:
+) -> RemoteJob:
     if op_selection or asset_selection:
         sub_recon_job = recon_job.get_subset(
             op_selection=op_selection, asset_selection=asset_selection
@@ -50,7 +50,7 @@ def external_job_from_recon_job(
     else:
         job_def = recon_job.get_definition()
 
-    return ExternalJob(
+    return RemoteJob(
         external_job_data_from_def(job_def, include_parent_snapshot=True),
         repository_handle=repository_handle,
     )

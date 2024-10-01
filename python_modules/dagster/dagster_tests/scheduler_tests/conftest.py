@@ -4,7 +4,7 @@ from typing import Iterator, Optional
 
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -72,7 +72,7 @@ def workspace_fixture(
 
 
 @pytest.fixture(name="external_repo", scope="session")
-def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> ExternalRepository:
+def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
     return next(
         iter(workspace_context.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore  # (possible none)

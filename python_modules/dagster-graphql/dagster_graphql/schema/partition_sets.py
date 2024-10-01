@@ -5,7 +5,7 @@ import graphene
 from dagster import MultiPartitionsDefinition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import ExternalJob, ExternalPartitionSet, RepositoryHandle
+from dagster._core.remote_representation import RemoteJob, RemotePartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import (
     DynamicPartitionsSnap,
     MultiPartitionsSnap,
@@ -195,7 +195,7 @@ class GrapheneJobSelectionPartition(graphene.ObjectType):
 
     def __init__(
         self,
-        external_job: ExternalJob,
+        external_job: RemoteJob,
         partition_name: str,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ):
@@ -247,14 +247,14 @@ class GraphenePartition(graphene.ObjectType):
     def __init__(
         self,
         external_repository_handle: RepositoryHandle,
-        external_partition_set: ExternalPartitionSet,
+        external_partition_set: RemotePartitionSet,
         partition_name: str,
     ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
         self._external_partition_set = check.inst_param(
-            external_partition_set, "external_partition_set", ExternalPartitionSet
+            external_partition_set, "external_partition_set", RemotePartitionSet
         )
         self._partition_name = check.str_param(partition_name, "partition_name")
 
@@ -351,13 +351,13 @@ class GraphenePartitionSet(graphene.ObjectType):
     def __init__(
         self,
         external_repository_handle: RepositoryHandle,
-        external_partition_set: ExternalPartitionSet,
+        external_partition_set: RemotePartitionSet,
     ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
         self._external_partition_set = check.inst_param(
-            external_partition_set, "external_partition_set", ExternalPartitionSet
+            external_partition_set, "external_partition_set", RemotePartitionSet
         )
         self._partition_names = None
 

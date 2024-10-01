@@ -10,8 +10,8 @@ from dagster._core.remote_representation import (
     CodeLocation,
     GrpcServerCodeLocation,
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteRepository,
 )
-from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.feature_flags import get_feature_flags_for_location
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -282,7 +282,7 @@ class GrapheneRepository(graphene.ObjectType):
 
         super().__init__(name=handle.repository_name)
 
-    def get_repository(self, graphene_info: ResolveInfo) -> ExternalRepository:
+    def get_repository(self, graphene_info: ResolveInfo) -> RemoteRepository:
         return graphene_info.context.get_repository(self._handle.to_selector())
 
     def get_batch_loader(self, graphene_info: ResolveInfo):

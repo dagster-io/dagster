@@ -48,9 +48,9 @@ from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.remote_representation import ExternalJobSubsetResult
 from dagster._core.remote_representation.external import (
-    ExternalExecutionPlan,
-    ExternalJob,
-    ExternalRepository,
+    RemoteExecutionPlan,
+    RemoteJob,
+    RemoteRepository,
 )
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
@@ -112,7 +112,7 @@ class CodeLocation(AbstractContextManager):
     """
 
     @abstractmethod
-    def get_repository(self, name: str) -> ExternalRepository:
+    def get_repository(self, name: str) -> RemoteRepository:
         pass
 
     @abstractmethod
@@ -120,7 +120,7 @@ class CodeLocation(AbstractContextManager):
         pass
 
     @abstractmethod
-    def get_repositories(self) -> Mapping[str, ExternalRepository]:
+    def get_repositories(self) -> Mapping[str, RemoteRepository]:
         pass
 
     def get_repository_names(self) -> Sequence[str]:
@@ -133,15 +133,15 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_external_execution_plan(
         self,
-        external_job: ExternalJob,
+        external_job: RemoteJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> ExternalExecutionPlan:
+    ) -> RemoteExecutionPlan:
         pass
 
-    def get_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
+    def get_external_job(self, selector: JobSubsetSelector) -> RemoteJob:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         an op selection is specified, which requires access to the underlying JobDefinition
@@ -170,7 +170,7 @@ class CodeLocation(AbstractContextManager):
                     f" {error}"
                 )
 
-        return ExternalJob(external_data, repo_handle)
+        return RemoteJob(external_data, repo_handle)
 
     @abstractmethod
     def get_subset_external_job_result(
@@ -395,9 +395,9 @@ class InProcessCodeLocation(CodeLocation):
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
 
-        self._repositories: Dict[str, ExternalRepository] = {}
+        self._repositories: Dict[str, RemoteRepository] = {}
         for repo_name, repo_def in self._loaded_repositories.definitions_by_name.items():
-            self._repositories[repo_name] = ExternalRepository(
+            self._repositories[repo_name] = RemoteRepository(
                 RepositorySnap.from_def(repo_def),
                 RepositoryHandle.from_location(repository_name=repo_name, code_location=self),
                 instance=instance,
@@ -439,13 +439,13 @@ class InProcessCodeLocation(CodeLocation):
     def _get_repo_def(self, name: str) -> RepositoryDefinition:
         return self._loaded_repositories.definitions_by_name[name]
 
-    def get_repository(self, name: str) -> ExternalRepository:
+    def get_repository(self, name: str) -> RemoteRepository:
         return self._repositories[name]
 
     def has_repository(self, name: str) -> bool:
         return name in self._repositories
 
-    def get_repositories(self) -> Mapping[str, ExternalRepository]:
+    def get_repositories(self) -> Mapping[str, RemoteRepository]:
         return self._repositories
 
     def get_subset_external_job_result(
@@ -471,13 +471,13 @@ class InProcessCodeLocation(CodeLocation):
 
     def get_external_execution_plan(
         self,
-        external_job: ExternalJob,
+        external_job: RemoteJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> ExternalExecutionPlan:
-        check.inst_param(external_job, "external_job", ExternalJob)
+    ) -> RemoteExecutionPlan:
+        check.inst_param(external_job, "external_job", RemoteJob)
         check.mapping_param(run_config, "run_config")
         step_keys_to_execute = check.opt_nullable_sequence_param(
             step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -498,7 +498,7 @@ class InProcessCodeLocation(CodeLocation):
             known_state=known_state,
             instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
         )
-        return ExternalExecutionPlan(
+        return RemoteExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
                 external_job.identifying_job_snapshot_id,
@@ -735,7 +735,7 @@ class GrpcServerCodeLocation(CodeLocation):
             )
 
             self.external_repositories = {
-                repo_name: ExternalRepository(
+                repo_name: RemoteRepository(
                     repo_data,
                     RepositoryHandle.from_location(
                         repository_name=repo_name,
@@ -815,25 +815,25 @@ class GrpcServerCodeLocation(CodeLocation):
     def is_reload_supported(self) -> bool:
         return True
 
-    def get_repository(self, name: str) -> ExternalRepository:
+    def get_repository(self, name: str) -> RemoteRepository:
         check.str_param(name, "name")
         return self.get_repositories()[name]
 
     def has_repository(self, name: str) -> bool:
         return name in self.get_repositories()
 
-    def get_repositories(self) -> Mapping[str, ExternalRepository]:
+    def get_repositories(self) -> Mapping[str, RemoteRepository]:
         return self.external_repositories
 
     def get_external_execution_plan(
         self,
-        external_job: ExternalJob,
+        external_job: RemoteJob,
         run_config: Mapping[str, Any],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> ExternalExecutionPlan:
-        check.inst_param(external_job, "external_job", ExternalJob)
+    ) -> RemoteExecutionPlan:
+        check.inst_param(external_job, "external_job", RemoteJob)
         run_config = check.mapping_param(run_config, "run_config")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
@@ -865,7 +865,7 @@ class GrpcServerCodeLocation(CodeLocation):
             instance=instance,
         )
 
-        return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
+        return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
     def get_subset_external_job_result(
         self, selector: JobSubsetSelector
