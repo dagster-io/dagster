@@ -1297,7 +1297,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                     new_deps.append(dep)
 
             if new_key is not spec.key or any_deps_changed:
-                new_specs.append(spec._replace(deps=new_deps))
+                new_specs.append(spec._replace(key=new_key, deps=new_deps))
             else:
                 new_specs.append(spec)
 

@@ -237,6 +237,11 @@ class UnresolvedAssetJobDefinition(
             allow_different_partitions_defs=False,
         )
 
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "UnresolvedAssetJobDefinition":
+        return self._replace(selection=self.selection.replace_asset_keys(new_keys_by_old_key))
+
 
 @deprecated_param(
     param="partitions_def",

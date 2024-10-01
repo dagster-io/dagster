@@ -848,4 +848,34 @@ def map_asset_keys(defs: Definitions, fn: Callable[[AssetSpec], AssetKey]) -> "D
         assets_def.with_replaced_asset_keys(new_asset_keys_by_old_asset_key=new_keys_by_old_key)
         for assets_def in assets_defs
     ]
-    return copy(defs, assets=new_assets, asset_checks=[])
+
+    interior_replaced_job_object_ids = []
+
+    new_schedules = []
+    for schedule_def in defs.schedules or []:
+        if isinstance(schedule_def, ScheduleDefinition):
+            resolvable_to_job = schedule_def.target.resolvable_to_job
+            if isinstance(resolvable_to_job, UnresolvedAssetJobDefinition):
+                interior_replaced_job_object_ids.append(id(resolvable_to_job))
+                new_schedules.append(
+                    schedule_def.with_updated_job(
+                        resolvable_to_job.replace_asset_keys(new_keys_by_old_key)
+                    )
+                )
+            else:
+                new_schedules.append(schedule_def)
+        elif isinstance(schedule_def, UnresolvedPartitionedAssetScheduleDefinition):
+            pass
+        else:
+            check.failed(f"Unexpected type in Definitions schedules: {type(schedule_def)}")
+
+    new_sensors = []
+
+    new_jobs = [
+        job_def.replace_asset_keys(new_keys_by_old_key)
+        if isinstance(job_def, UnresolvedAssetJobDefinition)
+        else job_def
+        for job_def in defs.jobs
+        if id(job_def) not in interior_replaced_job_object_ids
+    ]
+    return copy(defs, assets=new_assets, jobs=new_jobs, schedules=new_schedules, asset_checks=[])

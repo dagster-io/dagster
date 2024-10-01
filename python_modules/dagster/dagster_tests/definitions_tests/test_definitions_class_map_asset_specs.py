@@ -8,20 +8,23 @@ from dagster import (
     AssetSpec,
     Definitions,
     MaterializeResult,
+    ScheduleDefinition,
     SourceAsset,
     asset,
     asset_check,
+    define_asset_job,
     materialize,
     multi_asset,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.definitions_class import map_asset_specs
+from dagster._core.definitions.definitions_class import map_asset_keys, map_asset_specs
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
-class DefinitionsWithMapAssetSpecs(Definitions):
+class DefinitionsWithMapAssetMethods(Definitions):
     map_asset_specs = map_asset_specs
+    map_asset_keys = map_asset_keys
 
 
 def test_single_basic_asset() -> None:
@@ -29,7 +32,7 @@ def test_single_basic_asset() -> None:
     def asset1():
         pass
 
-    mapped_defs = DefinitionsWithMapAssetSpecs(assets=[asset1]).map_asset_specs(
+    mapped_defs = DefinitionsWithMapAssetMethods(assets=[asset1]).map_asset_specs(
         lambda spec: spec._replace(group_name="yolo")
     )
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -41,7 +44,7 @@ def test_single_basic_asset() -> None:
 
 
 def test_a_couple_specs() -> None:
-    mapped_defs = DefinitionsWithMapAssetSpecs(
+    mapped_defs = DefinitionsWithMapAssetMethods(
         assets=[AssetSpec("a1"), AssetSpec("a2")]
     ).map_asset_specs(lambda spec: spec._replace(group_name="yolo"))
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -54,7 +57,7 @@ def test_a_couple_specs() -> None:
 
 
 def test_two_specs_with_dep() -> None:
-    mapped_defs = DefinitionsWithMapAssetSpecs(
+    mapped_defs = DefinitionsWithMapAssetMethods(
         assets=[AssetSpec("a1"), AssetSpec("a2", deps=[AssetDep("a1")])]
     ).map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -72,7 +75,7 @@ def test_two_defs_with_dep() -> None:
     @asset(deps=[a1])
     def a2(): ...
 
-    mapped_defs = DefinitionsWithMapAssetSpecs(assets=[a1, a2]).map_asset_specs(
+    mapped_defs = DefinitionsWithMapAssetMethods(assets=[a1, a2]).map_asset_specs(
         lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"]))
     )
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -95,7 +98,7 @@ def test_independent_asset_check() -> None:
     def asset_check1():
         return AssetCheckResult(passed=True)
 
-    mapped_defs = DefinitionsWithMapAssetSpecs(
+    mapped_defs = DefinitionsWithMapAssetMethods(
         assets=[AssetSpec("a1")], asset_checks=[asset_check1]
     ).map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -115,7 +118,7 @@ def test_internal_dep():
         yield MaterializeResult(asset_key=AssetKey(["prefix", "a1"]))
         yield MaterializeResult(asset_key=AssetKey(["prefix", "a2"]))
 
-    mapped_defs = DefinitionsWithMapAssetSpecs(assets=[assets]).map_asset_specs(
+    mapped_defs = DefinitionsWithMapAssetMethods(assets=[assets]).map_asset_specs(
         lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"]))
     )
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -141,7 +144,7 @@ def test_asset_and_check_same_op():
         for ck in context.selected_asset_check_keys:
             yield AssetCheckResult(asset_key=ck.asset_key, check_name=ck.name, passed=True)
 
-    mapped_defs = DefinitionsWithMapAssetSpecs(assets=[a1]).map_asset_specs(
+    mapped_defs = DefinitionsWithMapAssetMethods(assets=[a1]).map_asset_specs(
         lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"]))
     )
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -162,7 +165,7 @@ def test_asset_and_check_same_op():
 
 
 def test_source_asset():
-    mapped_defs = DefinitionsWithMapAssetSpecs(
+    mapped_defs = DefinitionsWithMapAssetMethods(
         assets=[SourceAsset("a1", group_name="abc"), AssetSpec("a2", deps=["a1"])]
     ).map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
     all_asset_specs = mapped_defs.get_all_asset_specs()
@@ -182,10 +185,23 @@ def test_cacheable_assets_definition():
         def build_definitions(self, *_args, **_kwargs):
             return []
 
-    defs = DefinitionsWithMapAssetSpecs(assets=[FooCacheableAssetsDefinition("abc")])
+    defs = DefinitionsWithMapAssetMethods(assets=[FooCacheableAssetsDefinition("abc")])
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Can't use map_asset_specs on Definitions objects that contain CacheableAssetsDefinitions.",
     ):
         defs.map_asset_specs(lambda spec: spec._replace(key=spec.key.with_prefix(["prefix"])))
+
+
+def test_job_def_and_schedule():
+    @asset
+    def asset1(): ...
+
+    job1 = define_asset_job("job1", selection=["asset1"])
+    schedule1 = ScheduleDefinition(job=job1, cron_schedule="@daily")
+    defs = DefinitionsWithMapAssetMethods(assets=[asset1], jobs=[job1], schedules=[schedule1])
+    mapped_defs = defs.map_asset_keys(lambda x: AssetKey("asset2"))
+    breakpoint()
+    result = mapped_defs.get_job_def("job1").execute_in_process()
+    assert len(result.get_asset_materialization_events())
