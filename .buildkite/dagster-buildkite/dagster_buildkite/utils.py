@@ -303,6 +303,11 @@ def has_helm_changes():
 
 
 @functools.lru_cache(maxsize=None)
+def has_dagster_airlift_changes():
+    return any("dagster-airlift" in str(path) for path in ChangedFiles.all)
+
+
+@functools.lru_cache(maxsize=None)
 def has_storage_test_fixture_changes():
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(

@@ -10,6 +10,7 @@ from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
+    has_dagster_airlift_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
 )
@@ -369,24 +370,28 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],
+        always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/perf-harness",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],
+        always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/tutorial-example",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],
+        always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/kitchen-sink",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],
+        always_run_if=has_dagster_airlift_changes,
     ),
 ]
 
