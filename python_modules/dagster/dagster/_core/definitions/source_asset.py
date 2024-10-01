@@ -15,7 +15,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -485,46 +485,6 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         )
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(source_key=source_key)
-
-    def to_asset_spec(self) -> AssetSpec:
-        spec = AssetSpec.dagster_internal_init(
-            key=self.key,
-            deps=[],
-            description=self.description,
-            metadata=self.metadata,
-            skippable=False,
-            group_name=self.group_name,
-            code_version=None,
-            automation_condition=None,
-            freshness_policy=None,
-            owners=None,
-            tags=self.tags,
-            auto_materialize_policy=None,
-            partitions_def=self.partitions_def,
-        )
-        if self.io_manager_key is not None and self.io_manager_key != DEFAULT_IO_MANAGER_KEY:
-            return spec.with_io_manager_key(self.io_manager_key)
-        else:
-            return spec
-
-    def with_attributes_from_spec(self, spec: AssetSpec) -> "SourceAsset":
-        with disable_dagster_warnings():
-            return SourceAsset.dagster_internal_init(
-                key=spec.key,
-                metadata=spec.metadata,
-                description=spec.description,
-                partitions_def=spec.partitions_def,
-                group_name=spec.group_name,
-                tags=spec.tags,
-                freshness_policy=spec.freshness_policy,
-                resource_defs=self.resource_defs,
-                io_manager_key=self.io_manager_key,
-                io_manager_def=self.io_manager_def,
-                observe_fn=self.observe_fn,
-                auto_observe_interval_minutes=self.auto_observe_interval_minutes,
-                _required_resource_keys=self._required_resource_keys,
-                op_tags=self.op_tags,
-            )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SourceAsset):

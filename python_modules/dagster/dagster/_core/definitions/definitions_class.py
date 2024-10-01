@@ -10,7 +10,6 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Tuple,
     Type,
     Union,
 )
@@ -754,67 +753,9 @@ class Definitions(IHaveNew):
         )
 
 
-def map_asset_specs(defs: Definitions, fn: Callable[[AssetSpec], AssetSpec]) -> "Definitions":
-    """Applies the given mapping function to every asset spec within this Definitions object,
-    including both external asset specs and asset specs within AssetsDefinitions.
-
-    Returns a new Definitions object with the transformed assets; does not mutate this object.
-
-    If the mapping function produces asset specs with new asset keys, downstream assets and
-    asset checks will be updated so that they depend on the new key.
-
-    Does not support Definitions  objects that contain CacheableAssetsDefinitions.
-
-    Args:
-        fn (Callable[[AssetSpec], AssetSpec]): A function that accepts an AssetSpec and returns
-            a new AssetSpec.
-
-    Returns:
-        Definitions: A new Definitions object with the transformed assets.
-    """
-    # Don't want to unintentionally trigger a fetch from an external tool
-    for el in defs.assets or []:
-        if isinstance(el, CacheableAssetsDefinition):
-            raise DagsterInvalidDefinitionError(
-                "Can't use map_asset_specs on Definitions objects that contain "
-                "CacheableAssetsDefinitions."
-            )
-
-    new_keys_by_old_key: Dict[AssetKey, AssetKey] = {}
-    assets_def_new_specs: List[Tuple[AssetsDefinition, Sequence[AssetSpec]]] = []
-
-    assets_defs = defs.get_asset_graph().assets_defs
-    for el in assets_defs:
-        new_specs = []
-        for spec in el.specs:
-            new_spec = fn(spec)
-            new_specs.append(new_spec)
-            if new_spec.key != spec.key:
-                new_keys_by_old_key[spec.key] = new_spec.key
-        assets_def_new_specs.append((el, new_specs))
-
-    result_assets = []
-    result_asset_checks = []
-
-    for assets_def, new_specs in assets_def_new_specs:
-        new_asset_specs_replaced_deps = [
-            replace_asset_spec_dep_asset_keys(spec, new_keys_by_old_key) for spec in new_specs
-        ]
-        new_assets_def = assets_def.with_replaced_asset_specs(
-            specs=new_asset_specs_replaced_deps,
-            new_asset_keys_by_old_asset_key=new_keys_by_old_key,
-        )
-        if len(new_specs) > 0:
-            result_assets.append(new_assets_def)
-        else:
-            result_asset_checks.append(new_assets_def)
-
-    return copy(defs, assets=result_assets, asset_checks=result_asset_checks)
-
-
 def map_asset_keys(defs: Definitions, fn: Callable[[AssetSpec], AssetKey]) -> "Definitions":
-    """Replaces asset keys for assets within this Definitions object, keeping downstream assets and
-    asset checks in sync.
+    """Replaces asset keys for assets within this Definitions object, keeping jobs,
+    downstream assets, and downstream asset checks in sync.
 
     Returns a new Definitions object with the transformed assets; does not mutate this object.
 
@@ -845,37 +786,44 @@ def map_asset_keys(defs: Definitions, fn: Callable[[AssetSpec], AssetKey]) -> "D
                 new_keys_by_old_key[spec.key] = new_key
 
     new_assets = [
-        assets_def.with_replaced_asset_keys(new_asset_keys_by_old_asset_key=new_keys_by_old_key)
+        assets_def.replace_asset_keys(new_asset_keys_by_old_asset_key=new_keys_by_old_key)
         for assets_def in assets_defs
     ]
 
-    interior_replaced_job_object_ids = []
+    # When a sensor or schedule contains a job, that job can also be passed to the jobs parameter of
+    # Definitions if it matches the interior job by reference equality. If we were to invoke
+    # replace_asset_keys on an interior job as well as on the job passed to the jobs param, and pass
+    # them both in to a new Definitions object, we would get an error. Thus, we filter out jobs
+    # from the jobs param that are also inside a schedule or sensor.
+    interior_job_object_ids = set()
 
     new_schedules = []
     for schedule_def in defs.schedules or []:
+        new_schedules.append(schedule_def.replace_asset_keys(new_keys_by_old_key))
         if isinstance(schedule_def, ScheduleDefinition):
-            resolvable_to_job = schedule_def.target.resolvable_to_job
-            if isinstance(resolvable_to_job, UnresolvedAssetJobDefinition):
-                interior_replaced_job_object_ids.append(id(resolvable_to_job))
-                new_schedules.append(
-                    schedule_def.with_updated_job(
-                        resolvable_to_job.replace_asset_keys(new_keys_by_old_key)
-                    )
-                )
-            else:
-                new_schedules.append(schedule_def)
+            interior_job_object_ids.add(id(schedule_def.target.resolvable_to_job))
         elif isinstance(schedule_def, UnresolvedPartitionedAssetScheduleDefinition):
-            pass
-        else:
-            check.failed(f"Unexpected type in Definitions schedules: {type(schedule_def)}")
+            interior_job_object_ids.add(schedule_def.job)
 
     new_sensors = []
+    for sensor_def in defs.sensors or []:
+        new_sensors.append(sensor_def.replace_asset_keys(new_keys_by_old_key))
+        interior_job_object_ids.update(
+            id(target.resolvable_to_job) for target in sensor_def.targets
+        )
 
     new_jobs = [
         job_def.replace_asset_keys(new_keys_by_old_key)
         if isinstance(job_def, UnresolvedAssetJobDefinition)
         else job_def
-        for job_def in defs.jobs
-        if id(job_def) not in interior_replaced_job_object_ids
+        for job_def in defs.jobs or []
+        if id(job_def) not in interior_job_object_ids
     ]
-    return copy(defs, assets=new_assets, jobs=new_jobs, schedules=new_schedules, asset_checks=[])
+    return copy(
+        defs,
+        assets=new_assets,
+        jobs=new_jobs,
+        schedules=new_schedules,
+        sensors=new_sensors,
+        asset_checks=[],
+    )

@@ -1280,7 +1280,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         merged_attrs = merge_dicts(self.get_attributes_dict(), replaced_attributes)
         return self.__class__.dagster_internal_init(**merged_attrs)
 
-    def with_replaced_asset_keys(
+    def replace_asset_keys(
         self, new_asset_keys_by_old_asset_key: Mapping[AssetKey, AssetKey]
     ) -> "AssetsDefinition":
         new_specs = []

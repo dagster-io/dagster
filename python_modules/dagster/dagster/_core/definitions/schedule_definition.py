@@ -26,6 +26,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, experimental_param, public
 from dagster._core.decorator_utils import has_at_least_one_parameter
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
@@ -1028,3 +1029,13 @@ class ScheduleDefinition(IHasInternalInit):
     @property
     def has_anonymous_job(self) -> bool:
         return bool(self._target and self._target.job_name.startswith(ANONYMOUS_ASSET_JOB_PREFIX))
+
+    def replace_asset_keys(
+        self, new_keys_by_old_key: Mapping[AssetKey, AssetKey]
+    ) -> "ScheduleDefinition":
+        resolvable_to_job = self.target.resolvable_to_job
+
+        if isinstance(resolvable_to_job, UnresolvedAssetJobDefinition):
+            return self.with_updated_job(resolvable_to_job.replace_asset_keys(new_keys_by_old_key))
+        else:
+            return self
