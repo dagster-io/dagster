@@ -1775,10 +1775,8 @@ def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
 
 @multi_asset(
     specs=[
-        AssetSpec(
-            key="first_kinds_key", tags={"dagster/kind/python": "", "dagster/kind/airflow": ""}
-        ),
-        AssetSpec(key="second_kinds_key", tags={"dagster/kind/python": ""}),
+        AssetSpec(key="first_kinds_key", kinds={"python", "airflow"}),
+        AssetSpec(key="second_kinds_key", kinds={"python"}),
     ],
 )
 def multi_asset_with_kinds():
