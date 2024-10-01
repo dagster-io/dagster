@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -217,9 +216,10 @@ class CachingRepositoryData(RepositoryData):
         jobs: Mapping[str, Union[JobDefinition, Resolvable[JobDefinition]]],
         schedules: Mapping[str, Union[ScheduleDefinition, Resolvable[ScheduleDefinition]]],
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
-        source_assets_by_key: Mapping[AssetKey, SourceAsset],
-        assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
-        asset_checks_defs_by_key: Mapping[AssetCheckKey, "AssetChecksDefinition"],
+        assets_defs: Sequence["AssetsDefinition"],
+        original_source_assets_by_key: Mapping[AssetKey, SourceAsset],
+        original_assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
+        original_asset_checks_defs_by_key: Mapping[AssetCheckKey, "AssetChecksDefinition"],
         top_level_resources: Mapping[str, ResourceDefinition],
         utilized_env_vars: Mapping[str, AbstractSet[str]],
         unresolved_partitioned_asset_schedules: Mapping[
@@ -244,44 +244,18 @@ class CachingRepositoryData(RepositoryData):
                 The schedules belonging to the repository.
             sensors (Mapping[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
                 The sensors belonging to a repository.
-            source_assets_by_key (Mapping[AssetKey, SourceAsset]): The source assets belonging to a repository.
-            assets_defs_by_key (Mapping[AssetKey, AssetsDefinition]): The assets definitions
-                belonging to a repository.
-            asset_checks_defs_by_key (Mapping[AssetKey, AssetChecksDefinition]): The asset checks definitions
-                belonging to a repository.
+            original_source_assets_by_key (Mapping[AssetKey, SourceAsset]): The SourceAsset objects
+                passed in when constructing the repository.
+            original_assets_defs_by_key (Mapping[AssetKey, AssetsDefinition]): The assets definitions
+                passed in when constructing the repository.
+            original_asset_checks_defs_by_key (Mapping[AssetKey, AssetChecksDefinition]): The asset checks
+                definitions passed in when constructing the repository.
+            assets_defs (Sequence[AssetsDefinition]): The canonicalized AssetsDefinition objects.
+                Contains canonicalized versions of all the materializable assets, external / source
+                assets and asset checks.
             top_level_resources (Mapping[str, ResourceDefinition]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
         """
-        from dagster._core.definitions import AssetsDefinition
-
-        check.mapping_param(jobs, "jobs", key_type=str, value_type=(JobDefinition, FunctionType))
-        check.mapping_param(
-            schedules, "schedules", key_type=str, value_type=(ScheduleDefinition, FunctionType)
-        )
-        check.mapping_param(
-            sensors, "sensors", key_type=str, value_type=(SensorDefinition, FunctionType)
-        )
-        check.mapping_param(
-            source_assets_by_key, "source_assets_by_key", key_type=AssetKey, value_type=SourceAsset
-        )
-        check.mapping_param(
-            assets_defs_by_key, "assets_defs_by_key", key_type=AssetKey, value_type=AssetsDefinition
-        )
-        check.mapping_param(
-            asset_checks_defs_by_key,
-            "assets_checks_defs_by_key",
-            key_type=AssetCheckKey,
-            value_type=AssetsDefinition,
-        )
-        check.mapping_param(
-            top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
-        )
-        check.mapping_param(
-            utilized_env_vars,
-            "utilized_resources",
-            key_type=str,
-        )
-
         self._jobs = CacheingDefinitionIndex(
             JobDefinition,
             "JobDefinition",
@@ -310,9 +284,10 @@ class CachingRepositoryData(RepositoryData):
         # load all schedules to force validation
         self._schedules.get_all_definitions()
 
-        self._source_assets_by_key = source_assets_by_key
-        self._assets_defs_by_key = assets_defs_by_key
-        self._assets_checks_defs_by_key = asset_checks_defs_by_key
+        self._assets_defs = assets_defs
+        self._original_source_assets_by_key = original_source_assets_by_key
+        self._original_assets_defs_by_key = original_assets_defs_by_key
+        self._original_assets_checks_defs_by_key = original_asset_checks_defs_by_key
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
 
@@ -493,14 +468,19 @@ class CachingRepositoryData(RepositoryData):
     def has_sensor(self, sensor_name: str) -> bool:
         return self._sensors.has_definition(sensor_name)
 
+    def get_assets_defs(self) -> Sequence["AssetsDefinition"]:
+        return self._assets_defs
+
     def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
-        return self._source_assets_by_key
+        return self._original_source_assets_by_key
 
     def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
-        return self._assets_defs_by_key
+        return self._original_assets_defs_by_key
 
-    def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
-        return self._assets_checks_defs_by_key
+    def get_asset_checks_defs_by_key(
+        self,
+    ) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
+        return self._original_assets_checks_defs_by_key
 
     def _check_node_defs(self, job_defs: Sequence[JobDefinition]) -> None:
         node_defs = {}

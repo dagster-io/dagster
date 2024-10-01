@@ -386,13 +386,7 @@ class RepositoryDefinition:
     @property
     @cached_method
     def asset_graph(self) -> AssetGraph:
-        return AssetGraph.from_assets(
-            [
-                *list(set(self.assets_defs_by_key.values())),
-                *self.source_assets_by_key.values(),
-                *list(set(self.asset_checks_defs_by_key.values())),
-            ],
-        )
+        return AssetGraph.from_assets(self._repository_data.get_assets_defs())
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

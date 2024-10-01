@@ -279,26 +279,37 @@ def build_caching_repository_data_from_list(
         key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
     }
 
+    assets_defs_from_sensors_and_schedules = []
     for name, sensor_def in sensors.items():
         for target in sensor_def.targets:
             if target.has_job_def:
-                _process_and_validate_target_job(sensor_def, unresolved_jobs, jobs, target.job_def)
+                assets_defs_from_sensors_and_schedules.extend(
+                    _process_and_validate_target_job(
+                        sensor_def, unresolved_jobs, jobs, target.job_def
+                    )
+                )
             if target.assets_defs:
-                _process_and_validate_target_assets(
-                    sensor_def, assets_defs_by_key, source_assets_by_key, target.assets_defs
+                assets_defs_from_sensors_and_schedules.extend(
+                    _process_and_validate_target_assets(
+                        sensor_def, assets_defs_by_key, source_assets_by_key, target.assets_defs
+                    )
                 )
 
     for name, schedule_def in schedules.items():
         if schedule_def.target.has_job_def:
-            _process_and_validate_target_job(
-                schedule_def, unresolved_jobs, jobs, schedule_def.target.job_def
+            assets_defs_from_sensors_and_schedules.extend(
+                _process_and_validate_target_job(
+                    schedule_def, unresolved_jobs, jobs, schedule_def.target.job_def
+                )
             )
         if schedule_def.target.assets_defs:
-            _process_and_validate_target_assets(
-                schedule_def,
-                assets_defs_by_key,
-                source_assets_by_key,
-                schedule_def.target.assets_defs,
+            assets_defs_from_sensors_and_schedules.extend(
+                _process_and_validate_target_assets(
+                    schedule_def,
+                    assets_defs_by_key,
+                    source_assets_by_key,
+                    schedule_def.target.assets_defs,
+                )
             )
 
     if unresolved_partitioned_asset_schedules:
@@ -313,15 +324,7 @@ def build_caching_repository_data_from_list(
                 unresolved_partitioned_asset_schedule.job,
             )
 
-    assets_without_keys = [ad for ad in assets_defs if not ad.keys]
-    asset_graph = AssetGraph.from_assets(
-        [
-            *assets_defs_by_key.values(),
-            *assets_without_keys,
-            *asset_checks_defs,
-            *source_assets_by_key.values(),
-        ]
-    )
+    asset_graph = AssetGraph.from_assets([*assets_defs, *asset_checks_defs, *source_assets])
     if assets_defs or asset_checks_defs or source_assets:
         jobs[IMPLICIT_ASSET_JOB_NAME] = get_base_asset_job_lambda(
             asset_graph=asset_graph,
@@ -369,9 +372,10 @@ def build_caching_repository_data_from_list(
         jobs=jobs,
         schedules=schedules,
         sensors=sensors,
-        source_assets_by_key=source_assets_by_key,
-        assets_defs_by_key=assets_defs_by_key,
-        asset_checks_defs_by_key=asset_checks_defs_by_key,
+        assets_defs=assets_defs,
+        original_source_assets_by_key=source_assets_by_key,
+        original_assets_defs_by_key=assets_defs_by_key,
+        original_asset_checks_defs_by_key=asset_checks_defs_by_key,
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
         unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
@@ -487,14 +491,14 @@ def _process_and_validate_target_assets(
     assets_defs_by_key: Dict["AssetKey", AssetsDefinition],
     source_assets_by_key: Dict["AssetKey", SourceAsset],
     target_assets_defs: Sequence[Union[AssetsDefinition, SourceAsset]],
-) -> None:
+) -> Iterable[Union[AssetsDefinition, SourceAsset]]:
     for ad in target_assets_defs:
         keys = ad.keys if isinstance(ad, AssetsDefinition) else [ad.key]
         for key in keys:
             if isinstance(ad, AssetsDefinition):
                 existing_ad = assets_defs_by_key.get(key)
                 if not existing_ad:
-                    assets_defs_by_key[key] = ad
+                    yield ad
                 elif not existing_ad.computation == ad.computation:
                     raise DagsterInvalidDefinitionError(
                         _get_error_msg_for_target_asset_conflict(
@@ -504,7 +508,7 @@ def _process_and_validate_target_assets(
             elif isinstance(ad, SourceAsset):
                 existing_sa = source_assets_by_key.get(key)
                 if not existing_sa:
-                    source_assets_by_key[key] = ad
+                    yield ad
                 elif not ad == existing_sa:
                     raise DagsterInvalidDefinitionError(
                         _get_error_msg_for_target_asset_conflict(
