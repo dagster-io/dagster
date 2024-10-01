@@ -86,11 +86,19 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                     asset_node["assetKey"]["path"]
                 )
         logger.debug(f"Found assets to trigger: {assets_to_trigger}")
+
+        dag_run = context.get("dag_run")
+        assert dag_run, "dag_run not found in context"
+        # Get the dag_run_id
+        dag_run_id = dag_run.run_id
+
         triggered_runs = []
         for (repo_location, repo_name, job_name), asset_keys in assets_to_trigger.items():
             execution_params = {
                 "mode": "default",
-                "executionMetadata": {"tags": []},
+                "executionMetadata": {
+                    "tags": [{"key": "dagster-airlift/dag-run-id", "value": dag_run_id}]
+                },
                 "runConfigData": "{}",
                 "selector": {
                     "repositoryLocationName": repo_location,
@@ -112,6 +120,15 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                 # Timeout in seconds
                 timeout=10,
             )
+            response_json = response.json()
+
+            if "data" not in response_json:
+                raise Exception(f"Error in GraphQL request: {response_json}")
+            if not response_json.get("data"):
+                raise Exception(f"Error in GraphQL request: {response_json}")
+            if "launchPipelineExecution" not in response_json.get("data", {}):
+                raise Exception(f"Error in GraphQL request: {response_json}")
+
             run_id = response.json()["data"]["launchPipelineExecution"]["run"]["id"]
             logger.debug(f"Launched run {run_id}...")
             triggered_runs.append(run_id)
