@@ -102,6 +102,12 @@ class SerializedAirflowDefinitionsData:
     def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
         return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
 
+    def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
+        return set(self.dag_datas[dag_id].task_handle_data.keys())
+
+    def proxied_state_for_task(self, dag_id: str, task_id: str) -> Optional[bool]:
+        return self.dag_datas[dag_id].task_handle_data[task_id].proxied_state
+
 
 # History:
 # - created
