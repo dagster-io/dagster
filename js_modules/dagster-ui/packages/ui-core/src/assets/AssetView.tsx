@@ -79,7 +79,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     }
   }, [definitionQueryResult, writeAssetVisit, assetKey.path]);
 
-  const tabList = useTabBuilder({definition: definition ?? cachedDefinition, params});
+  const tabList = useTabBuilder({definition: cachedOrLiveDefinition, params});
 
   const defaultTab = 'overview';
   const selectedTab = params.view || defaultTab;
@@ -319,7 +319,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
         headerBreadcrumbs={headerBreadcrumbs}
         tags={
           <AssetViewPageHeaderTags
-            definition={definition ?? cachedDefinition}
+            definition={cachedOrLiveDefinition}
             liveData={liveData}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
           />
