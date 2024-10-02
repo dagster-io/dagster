@@ -11,7 +11,7 @@ from dagster_airlift.in_airflow.base_proxy_operator import (
     DefaultProxyToDagsterOperator,
     build_dagster_task,
 )
-from dagster_airlift.proxied_state import AirflowProxiedState, DagProxiedState
+from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState, DagProxiedState
 from dagster_airlift.utils import get_local_proxied_state_dir
 
 

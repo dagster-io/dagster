@@ -6,7 +6,7 @@ from airflow.operators.python import PythonOperator
 from dagster._core.test_utils import environ
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.base_proxy_operator import BaseProxyToDagsterOperator
-from dagster_airlift.proxied_state import AirflowProxiedState
+from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState
 from dagster_airlift.test.shared_fixtures import VAR_DICT
 from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
 
