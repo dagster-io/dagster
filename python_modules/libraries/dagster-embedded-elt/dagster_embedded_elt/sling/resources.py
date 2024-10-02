@@ -23,6 +23,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.env import environ
 from pydantic import Field
 
@@ -358,7 +359,10 @@ class SlingResource(ConfigurableResource):
         context_streams = self._get_replication_streams_for_context(context)
         if context_streams:
             replication_config.update({"streams": context_streams})
-        stream_definition = get_streams_from_replication(replication_config)
+        stream_definitions = get_streams_from_replication(replication_config)
+
+        # extract the destination name from the replication config
+        destination_name = replication_config.get("target")
 
         with self._setup_config():
             uid = uuid.uuid4()
@@ -394,12 +398,21 @@ class SlingResource(ConfigurableResource):
 
             # TODO: In the future, it'd be nice to yield these materializations as they come in
             # rather than waiting until the end of the replication
-            for stream in stream_definition:
+            for stream in stream_definitions:
                 asset_key = dagster_sling_translator.get_asset_key(stream)
+
+                object_key = stream.get("config", {}).get("object")
+                stream_name = object_key or stream["name"]
+                relation_identifier = None
+                if destination_name and stream_name:
+                    relation_identifier = ".".join([destination_name, stream_name])
 
                 metadata = {
                     "elapsed_time": end_time - start_time,
                     "stream_name": stream["name"],
+                    **TableMetadataSet(
+                        relation_identifier=relation_identifier,
+                    ),
                 }
 
                 if context.has_assets_def:
