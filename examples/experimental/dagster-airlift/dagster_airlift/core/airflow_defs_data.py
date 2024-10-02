@@ -2,7 +2,11 @@ from collections import defaultdict
 from functools import cached_property
 from typing import AbstractSet, Mapping, cast
 
-from dagster import AssetKey, Definitions
+from dagster import (
+    AssetKey,
+    Definitions,
+    _check as check,
+)
 from dagster._record import record
 from dagster._serdes.serdes import deserialize_value
 
@@ -23,9 +27,20 @@ class AirflowDefinitionsData:
 
     @cached_property
     def serialized_data(self) -> SerializedAirflowDefinitionsData:
-        serialized_data_str = self.resolved_airflow_defs.metadata[
-            get_metadata_key(self.airflow_instance.name)
-        ].value
+        regular_metadata_key = get_metadata_key(self.airflow_instance.name)
+        automapped_metadata_key = regular_metadata_key + "/full_automapped_dags"
+        check.invariant(
+            any(
+                metadata_key in self.resolved_airflow_defs.metadata
+                for metadata_key in [regular_metadata_key, automapped_metadata_key]
+            ),
+            "Expected at least one of the possible metadata keys to be present",
+        )
+        serialized_data_str = (
+            self.resolved_airflow_defs.metadata[regular_metadata_key].value
+            if regular_metadata_key in self.resolved_airflow_defs.metadata
+            else self.resolved_airflow_defs.metadata[automapped_metadata_key].value
+        )
         return deserialize_value(
             cast(str, serialized_data_str), as_type=SerializedAirflowDefinitionsData
         )
