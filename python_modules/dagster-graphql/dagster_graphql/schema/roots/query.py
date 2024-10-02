@@ -1025,8 +1025,13 @@ class GrapheneQuery(graphene.ObjectType):
                 if remote_node:
                     repo_handle = remote_node.priority_repository_handle
                     code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
-                    repo = code_loc.get_repository(repo_handle.repository_name)
-                    results.append((code_loc, repo, remote_node.priority_node_snap))
+                    results.append(
+                        (
+                            code_loc,
+                            code_loc.get_repository(repo_handle.repository_name),
+                            remote_node.priority_node_snap,
+                        )
+                    )
 
         # Filter down to requested asset keys
         results = [
