@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Set, Tuple, Type
 
 import requests
+from airflow import DAG
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 from requests import Response
@@ -13,6 +14,7 @@ from requests import Response
 from dagster_airlift.constants import (
     DAG_ID_TAG_KEY,
     DAG_RUN_ID_TAG_KEY,
+    STANDALONE_DAG_ID_METADATA_KEY,
     TASK_ID_TAG_KEY,
     TASK_MAPPING_METADATA_KEY,
 )
@@ -35,6 +37,18 @@ def matched_dag_id_task_id(asset_node: dict, dag_id: str, task_id: str) -> bool:
             if task_handle_dict["dag_id"] == dag_id and task_handle_dict["task_id"] == task_id:
                 return True
 
+    return False
+
+
+def matched_dag_id(asset_node: dict, dag_id: str) -> bool:
+    # Eventually this should be json metadata for when we accept multiple dag ids
+    text_metadata_entries = {
+        entry["label"]: entry["text"]
+        for entry in asset_node["metadataEntries"]
+        if entry["__typename"] == "TextMetadataEntry"
+    }
+    if mapping_entry := text_metadata_entries.get(STANDALONE_DAG_ID_METADATA_KEY):
+        return mapping_entry == dag_id
     return False
 
 
@@ -76,6 +90,95 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             raise Exception(f"Error in GraphQL request. No {key} key: {response_json}")
 
         return response_json["data"][key]
+
+    @property
+    def full_dag_override(self) -> bool:
+        return False
+
+    def launch_runs_for_dag(self, context: Context, dag_id: str) -> None:
+        """Launches runs for the given dag in Dagster."""
+        # Obviously a ton of duplication here that we can consolidate.
+        session = self._get_validated_session(context)
+
+        dagster_url = self.get_dagster_url(context)
+        assets_to_trigger = {}  # key is (repo_location, repo_name, job_name), value is list of asset keys
+        # create graphql client
+        response = session.post(
+            # Timeout in seconds
+            f"{dagster_url}/graphql",
+            json={"query": ASSET_NODES_QUERY},
+            timeout=3,
+        )
+        asset_nodes_data = self.get_valid_graphql_response(response, "assetNodes")
+        for asset_node in asset_nodes_data:
+            if matched_dag_id(asset_node, dag_id):
+                repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
+                repo_name = asset_node["jobs"][0]["repository"]["name"]
+                job_name = asset_node["jobs"][0]["name"]
+                if (repo_location, repo_name, job_name) not in assets_to_trigger:
+                    assets_to_trigger[(repo_location, repo_name, job_name)] = []
+                assets_to_trigger[(repo_location, repo_name, job_name)].append(
+                    asset_node["assetKey"]["path"]
+                )
+        logger.debug(f"Found assets to trigger: {assets_to_trigger}")
+
+        dag_run = context.get("dag_run")
+        assert dag_run, "dag_run not found in context"
+        # Get the dag_run_id
+        dag_run_id = dag_run.run_id
+
+        triggered_runs = []
+        for (repo_location, repo_name, job_name), asset_keys in assets_to_trigger.items():
+            execution_params = {
+                "mode": "default",
+                "executionMetadata": {"tags": [{"key": DAG_RUN_ID_TAG_KEY, "value": dag_run_id}]},
+                "runConfigData": "{}",
+                "selector": {
+                    "repositoryLocationName": repo_location,
+                    "repositoryName": repo_name,
+                    "pipelineName": job_name,
+                    "assetSelection": [{"path": asset_key} for asset_key in asset_keys],
+                    "assetCheckSelection": [],
+                },
+            }
+            logger.debug(
+                f"Triggering run for {repo_location}/{repo_name}/{job_name} with assets {asset_keys}"
+            )
+            response = session.post(
+                f"{dagster_url}/graphql",
+                json={
+                    "query": TRIGGER_ASSETS_MUTATION,
+                    "variables": {"executionParams": execution_params},
+                },
+                # Timeout in seconds
+                timeout=10,
+            )
+            launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
+            run_id = launch_data["run"]["id"]
+            logger.debug(f"Launched run {run_id}...")
+            triggered_runs.append(run_id)
+        completed_runs = {}  # key is run_id, value is status
+        while len(completed_runs) < len(triggered_runs):
+            for run_id in triggered_runs:
+                if run_id in completed_runs:
+                    continue
+                response = session.post(
+                    f"{dagster_url}/graphql",
+                    json={"query": RUNS_QUERY, "variables": {"runId": run_id}},
+                    # Timeout in seconds
+                    timeout=3,
+                )
+                run_status = self.get_valid_graphql_response(response, "runOrError")["status"]
+                if run_status in ["SUCCESS", "FAILURE", "CANCELED"]:
+                    logger.debug(f"Run {run_id} completed with status {run_status}")
+                    completed_runs[run_id] = run_status
+        non_successful_runs = [
+            run_id for run_id, status in completed_runs.items() if status != "SUCCESS"
+        ]
+        if non_successful_runs:
+            raise Exception(f"Runs {non_successful_runs} did not complete successfully.")
+        logger.debug("All runs completed successfully.")
+        return None
 
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
         """Launches runs for the given task in Dagster."""
@@ -173,7 +276,10 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         os.environ["NO_PROXY"] = "*"
         dag_id = os.environ["AIRFLOW_CTX_DAG_ID"]
         task_id = os.environ["AIRFLOW_CTX_TASK_ID"]
-        return self.launch_runs_for_task(context, dag_id, task_id)
+        if self.full_dag_override:
+            return self.launch_runs_for_dag(context, dag_id)
+        else:
+            return self.launch_runs_for_task(context, dag_id, task_id)
 
 
 class DefaultProxyToDagsterOperator(BaseProxyToDagsterOperator):
@@ -184,10 +290,20 @@ class DefaultProxyToDagsterOperator(BaseProxyToDagsterOperator):
         return os.environ["DAGSTER_URL"]
 
 
+class DefaultDagToDagsterOperator(DefaultProxyToDagsterOperator):
+    @property
+    def full_dag_override(self) -> bool:
+        return True
+
+
 def build_dagster_task(
     original_task: BaseOperator, dagster_operator_klass: Type[BaseProxyToDagsterOperator]
 ) -> BaseProxyToDagsterOperator:
     return instantiate_dagster_operator(original_task, dagster_operator_klass)
+
+
+def build_override_task(dag: DAG) -> DefaultDagToDagsterOperator:
+    return DefaultDagToDagsterOperator(task_id="DAGSTER_OVERRIDE", dag=dag)
 
 
 def instantiate_dagster_operator(

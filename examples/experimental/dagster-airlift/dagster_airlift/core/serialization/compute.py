@@ -8,7 +8,9 @@ from dagster._record import record
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
 from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
-    KeyScopedDataItem,
+    KeyScopedDagItem,
+    KeyScopedTaskItem,
+    MappedAirflowDagData,
     MappedAirflowTaskData,
     SerializedAirflowDefinitionsData,
     SerializedDagData,
@@ -16,7 +18,13 @@ from dagster_airlift.core.serialization.serialized_data import (
     TaskHandle,
     TaskInfo,
 )
-from dagster_airlift.core.utils import is_mapped_asset_spec, spec_iterator, task_handles_for_spec
+from dagster_airlift.core.utils import (
+    dag_ids_for_spec,
+    is_dag_mapped_asset_spec,
+    is_task_mapped_asset_spec,
+    spec_iterator,
+    task_handles_for_spec,
+)
 from dagster_airlift.proxied_state import AirflowProxiedState
 
 
@@ -25,8 +33,12 @@ class AirliftMetadataMappingInfo:
     asset_specs: List[AssetSpec]
 
     @cached_property
-    def mapped_asset_specs(self) -> List[AssetSpec]:
-        return [spec for spec in self.asset_specs if is_mapped_asset_spec(spec)]
+    def mapped_to_task_asset_specs(self) -> List[AssetSpec]:
+        return [spec for spec in self.asset_specs if is_task_mapped_asset_spec(spec)]
+
+    @cached_property
+    def mapped_to_dag_asset_specs(self) -> List[AssetSpec]:
+        return [spec for spec in self.asset_specs if is_dag_mapped_asset_spec(spec)]
 
     @cached_property
     def dag_ids(self) -> Set[str]:
@@ -56,7 +68,7 @@ class AirliftMetadataMappingInfo:
         """Mapping of dag_id to task_id to set of asset_keys mapped from that task."""
         asset_key_map: Dict[str, Dict[str, Set[AssetKey]]] = defaultdict(lambda: defaultdict(set))
         for spec in self.asset_specs:
-            if is_mapped_asset_spec(spec):
+            if is_task_mapped_asset_spec(spec):
                 for task_handle in task_handles_for_spec(spec):
                     asset_key_map[task_handle.dag_id][task_handle.task_id].add(spec.key)
         return asset_key_map
@@ -73,7 +85,7 @@ class AirliftMetadataMappingInfo:
     @cached_property
     def downstream_deps(self) -> Dict[AssetKey, Set[AssetKey]]:
         downstreams = defaultdict(set)
-        for spec in self.mapped_asset_specs:
+        for spec in self.mapped_to_task_asset_specs:
             for dep in spec.deps:
                 downstreams[dep.asset_key].add(spec.key)
         return downstreams
@@ -94,7 +106,7 @@ class FetchedAirflowData:
     @cached_property
     def proxied_state_map(self) -> Dict[str, Dict[str, Optional[bool]]]:
         proxied_state_map: Dict[str, Dict[str, Optional[bool]]] = defaultdict(dict)
-        for spec in self.mapping_info.mapped_asset_specs:
+        for spec in self.mapping_info.mapped_to_task_asset_specs:
             for task_handle in task_handles_for_spec(spec):
                 dag_id, task_id = task_handle
                 proxied_state_map[task_handle.dag_id][task_handle.task_id] = None
@@ -115,7 +127,21 @@ class FetchedAirflowData:
                 )
                 for task_handle in task_handles_for_spec(spec)
             ]
-            for spec in self.mapping_info.mapped_asset_specs
+            for spec in self.mapping_info.mapped_to_task_asset_specs
+        }
+
+    @cached_property
+    def all_mapped_dags(self) -> Dict[AssetKey, List[MappedAirflowDagData]]:
+        return {
+            spec.key: [
+                MappedAirflowDagData(
+                    dag_id=dag_id,
+                    dag_info=self.dag_infos[dag_id],
+                    proxied=self.is_dag_overridden(dag_id),  # Need to go back and implement this
+                )
+                for dag_id in dag_ids_for_spec(spec)
+            ]
+            for spec in self.mapping_info.mapped_to_dag_asset_specs
         }
 
     def task_handle_data_for_dag(self, dag_id: str) -> Dict[str, SerializedTaskHandleData]:
@@ -126,6 +152,9 @@ class FetchedAirflowData:
             )
             for task_id in self.mapping_info.task_id_map[dag_id]
         }
+
+    def is_dag_overridden(self, dag_id: str) -> bool:
+        return dag_id in self.proxied_state.dags and bool(self.proxied_state.dags[dag_id].proxied)
 
 
 def fetch_all_airflow_data(
@@ -156,9 +185,13 @@ def compute_serialized_data(
     fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
     return SerializedAirflowDefinitionsData(
         instance_name=airflow_instance.name,
-        key_scoped_data_items=[
-            KeyScopedDataItem(asset_key=k, mapped_tasks=v)
+        key_scoped_task_items=[
+            KeyScopedTaskItem(asset_key=k, mapped_tasks=v)
             for k, v in fetched_airflow_data.all_mapped_tasks.items()
+        ],
+        key_scoped_dag_items=[
+            KeyScopedDagItem(asset_key=k, mapped_dags=v)
+            for k, v in fetched_airflow_data.all_mapped_dags.items()
         ],
         dag_datas={
             dag_id: SerializedDagData(
@@ -171,6 +204,7 @@ def compute_serialized_data(
                     downstreams_asset_dependency_graph=mapping_info.downstream_deps,
                 ),
                 task_infos=fetched_airflow_data.task_info_map[dag_id],
+                proxied=None,  # Need to go back and implement this
             )
             for dag_id, dag_info in fetched_airflow_data.dag_infos.items()
         },

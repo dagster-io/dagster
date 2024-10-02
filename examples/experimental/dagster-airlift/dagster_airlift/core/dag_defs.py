@@ -7,7 +7,7 @@ from dagster import (
     _check as check,
 )
 
-from dagster_airlift.core.utils import metadata_for_task_mapping
+from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 
 
 class TaskDefs:
@@ -91,3 +91,30 @@ def task_defs(task_id, defs: Definitions) -> TaskDefs:
     by Airlift tooling.
     """
     return TaskDefs(task_id, defs)
+
+
+def standalone_dag_defs(
+    dag_id: str,
+    defs: Definitions,
+) -> Definitions:
+    """Construct a Dagster :py:class:`Definitions` object with definitions
+    associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
+
+    Concretely this adds metadata to all asset specs in the provided definitions
+    with the provided dag_id. There is a single metadata key
+    "dagster-airlift/dag_id" that is used to store this information. It is a simple string listing the dag_id.
+    This should be used in an either-or manner with :py:func:`dag_defs`. Whereas dag_defs is used to associate
+    each task with a specific set of Definitions, this function is used to associate a single set of Definitions
+    with an entire Dag.
+
+    Example:
+    .. code-block:: python
+        defs = standalone_dag_defs(
+            "dag_one",
+            Definitions(assets=[AssetSpec(key="asset_one")]),
+        )
+    """
+    return apply_metadata_to_all_specs(
+        defs=defs,
+        metadata=metadata_for_dag_mapping(dag_id=dag_id),
+    )

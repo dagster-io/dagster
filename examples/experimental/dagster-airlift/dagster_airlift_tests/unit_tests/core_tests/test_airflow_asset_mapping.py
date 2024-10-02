@@ -200,4 +200,4 @@ def test_produce_fetched_airflow_data() -> None:
         mapping_info=mapping_info,
     )
 
-    assert len(fetched_airflow_data.mapping_info.mapped_asset_specs) == 1
+    assert len(fetched_airflow_data.mapping_info.mapped_to_task_asset_specs) == 1

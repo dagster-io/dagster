@@ -344,3 +344,20 @@ def test_no_runs(init_load_context: None, instance: DagsterInstance) -> None:
         assert new_cursor.dag_query_offset == 0
         assert not result.asset_events
         assert not result.run_requests
+
+
+def test_standalone_dag_materializations(init_load_context: None) -> None:
+    """Test that assets provided in the standalone dag are materialized."""
+    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+    with freeze_time(freeze_datetime):
+        result, context = build_and_invoke_sensor(
+            assets_per_dag={
+                "dag": [
+                    ("a", []),
+                    ("b", ["a"]),
+                ]
+            },
+        )
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 2
+        assert_expected_key_order(result.asset_events, ["a", "b"])

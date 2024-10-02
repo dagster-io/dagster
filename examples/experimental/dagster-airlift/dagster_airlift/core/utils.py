@@ -11,7 +11,11 @@ from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 
-from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
+    STANDALONE_DAG_ID_METADATA_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 
 if TYPE_CHECKING:
     from dagster_airlift.core.serialization.serialized_data import TaskHandle
@@ -24,6 +28,10 @@ def convert_to_valid_dagster_name(name: str) -> str:
 
 def airflow_kind_dict() -> dict:
     return {f"{KIND_PREFIX}airflow": ""}
+
+
+def airflow_dag_kind_dict() -> dict:
+    return {**airflow_kind_dict(), f"{KIND_PREFIX}dag": ""}
 
 
 def spec_iterator(
@@ -46,21 +54,34 @@ def metadata_for_task_mapping(*, task_id: str, dag_id: str) -> dict:
     return {TASK_MAPPING_METADATA_KEY: [{"dag_id": dag_id, "task_id": task_id}]}
 
 
+def metadata_for_dag_mapping(*, dag_id: str) -> dict:
+    return {STANDALONE_DAG_ID_METADATA_KEY: dag_id}
+
+
 def get_metadata_key(instance_name: str) -> str:
     return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
 
 
-def is_mapped_asset_spec(spec: AssetSpec) -> bool:
+def is_task_mapped_asset_spec(spec: AssetSpec) -> bool:
     return TASK_MAPPING_METADATA_KEY in spec.metadata
+
+
+def is_dag_mapped_asset_spec(spec: AssetSpec) -> bool:
+    return STANDALONE_DAG_ID_METADATA_KEY in spec.metadata
 
 
 def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
     from dagster_airlift.core.serialization.serialized_data import TaskHandle
 
-    check.param_invariant(is_mapped_asset_spec(spec), "spec", "Must be mappped spec")
+    check.param_invariant(is_task_mapped_asset_spec(spec), "spec", "Must be mappped spec")
     task_handles = []
     for task_handle_dict in spec.metadata[TASK_MAPPING_METADATA_KEY]:
         task_handles.append(
             TaskHandle(dag_id=task_handle_dict["dag_id"], task_id=task_handle_dict["task_id"])
         )
     return set(task_handles)
+
+
+def dag_ids_for_spec(spec: AssetSpec) -> Set[str]:
+    check.param_invariant(is_dag_mapped_asset_spec(spec), "spec", "Must be mappped spec")
+    return {spec.metadata[STANDALONE_DAG_ID_METADATA_KEY]}

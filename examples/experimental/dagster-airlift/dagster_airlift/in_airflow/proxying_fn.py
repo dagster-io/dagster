@@ -10,6 +10,7 @@ from dagster_airlift.in_airflow.base_proxy_operator import (
     BaseProxyToDagsterOperator,
     DefaultProxyToDagsterOperator,
     build_dagster_task,
+    build_override_task,
 )
 from dagster_airlift.proxied_state import AirflowProxiedState, DagProxiedState
 from dagster_airlift.utils import get_local_proxied_state_dir
@@ -38,7 +39,8 @@ def proxying_to_dagster(
     if not logger:
         logger = logging.getLogger("dagster_airlift")
     logger.debug(f"Searching for dags proxied to dagster{suffix}...")
-    proxying_dags: List[DAG] = []
+    task_proxying_dags: List[DAG] = []
+    override_dags: List[DAG] = []
     all_dag_ids: Set[str] = set()
     # Do a pass to collect dags and ensure that proxied information is set correctly.
     for obj in global_vars.values():
@@ -46,28 +48,43 @@ def proxying_to_dagster(
             continue
         dag: DAG = obj
         all_dag_ids.add(dag.dag_id)
-        if not proxied_state.dag_has_proxied_state(dag.dag_id):
+        if not proxied_state.dag_proxies_dag(dag.dag_id) and not proxied_state.dag_proxies_tasks(
+            dag.dag_id
+        ):
             logger.debug(f"Dag with id `{dag.dag_id}` has no proxied state. Skipping...")
             continue
         logger.debug(f"Dag with id `{dag.dag_id}` has proxied state.")
         proxied_state_for_dag = proxied_state.dags[dag.dag_id]
-        for task_id in proxied_state_for_dag.tasks.keys():
-            if task_id not in dag.task_dict:
-                raise Exception(
-                    f"Task with id `{task_id}` not found in dag `{dag.dag_id}`. Found tasks: {list(dag.task_dict.keys())}"
-                )
-            if not isinstance(dag.task_dict[task_id], BaseOperator):
-                raise Exception(
-                    f"Task with id `{task_id}` in dag `{dag.dag_id}` is not an instance of BaseOperator. This likely means a MappedOperator was attempted, which is not yet supported by airlift."
-                )
-        proxying_dags.append(dag)
+        if proxied_state_for_dag.proxied:
+            logger.debug("Full dag-level override detected.")
+            override_dags.append(dag)
+        else:
+            logger.debug("Task-level overrides detected.")
+            for task_id in proxied_state_for_dag.tasks.keys():
+                if task_id not in dag.task_dict:
+                    raise Exception(
+                        f"Task with id `{task_id}` not found in dag `{dag.dag_id}`. Found tasks: {list(dag.task_dict.keys())}"
+                    )
+                if not isinstance(dag.task_dict[task_id], BaseOperator):
+                    raise Exception(
+                        f"Task with id `{task_id}` in dag `{dag.dag_id}` is not an instance of BaseOperator. This likely means a MappedOperator was attempted, which is not yet supported by airlift."
+                    )
+        task_proxying_dags.append(dag)
 
     if len(all_dag_ids) == 0:
         raise Exception(
             "No dags found in globals dictionary. Ensure that your dags are available from global context, and that the call to `proxying_to_dagster` is the last line in your dag file."
         )
 
-    for dag in proxying_dags:
+    for dag in override_dags:
+        logger.debug(f"Tagging dag {dag.dag_id} as override proxied.")
+        dag.tags = [*dag.tags, "Dag overriden to Dagster"]
+        dag.task_dict = {}
+        dag.task_group.children = {}
+        override_task = build_override_task(dag)
+        dag.task_dict[override_task.task_id] = override_task
+
+    for dag in task_proxying_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as proxied.")
         set_proxied_state_for_dag_if_changed(dag.dag_id, proxied_state.dags[dag.dag_id], logger)
         proxied_state_for_dag = proxied_state.dags[dag.dag_id]
@@ -108,7 +125,7 @@ def proxying_to_dagster(
             original_op.dag = None
             proxied_tasks.add(task_id)
         logger.debug(f"Proxied tasks {proxied_tasks} in dag {dag.dag_id}.")
-    logging.debug(f"Proxied {len(proxying_dags)}.")
+    logging.debug(f"Proxied {len(task_proxying_dags)}.")
     logging.debug(f"Completed switching proxied tasks to dagster{suffix}.")
 
 

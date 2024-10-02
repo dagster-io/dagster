@@ -2,6 +2,7 @@ from ..proxied_state import load_proxied_state_from_yaml as load_proxied_state_f
 from .basic_auth import BasicAuthBackend as BasicAuthBackend
 from .dag_defs import (
     dag_defs as dag_defs,
+    standalone_dag_defs as standalone_dag_defs,
     task_defs as task_defs,
 )
 from .defs_builders import specs_from_task as specs_from_task

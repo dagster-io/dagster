@@ -13,18 +13,27 @@ from dagster._core.storage.tags import KIND_PREFIX
 
 from dagster_airlift.core.dag_asset import dag_asset_metadata, dag_description
 from dagster_airlift.core.serialization.serialized_data import (
+    MappedAirflowDagData,
     MappedAirflowTaskData,
     SerializedAirflowDefinitionsData,
     SerializedDagData,
     TaskInfo,
 )
-from dagster_airlift.core.utils import airflow_kind_dict, convert_to_valid_dagster_name
+from dagster_airlift.core.utils import (
+    airflow_dag_kind_dict,
+    airflow_kind_dict,
+    convert_to_valid_dagster_name,
+)
 
 
 def tags_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, str]:
     all_not_migrated = all(not task.proxied for task in tasks)
     # Only show the airflow kind if the asset is orchestrated exlusively by airflow
     return airflow_kind_dict() if all_not_migrated else {}
+
+
+def tags_for_mapped_dags(dag_data: SerializedDagData) -> Mapping[str, str]:
+    return airflow_dag_kind_dict() if not dag_data.proxied else {}
 
 
 def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, Any]:
@@ -41,12 +50,31 @@ def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str
     return task_level_metadata
 
 
-def enrich_spec_with_airflow_metadata(
+def metadata_for_mapped_dags(dag_datas: List[MappedAirflowDagData]) -> Mapping[str, Any]:
+    mapped_dag = dag_datas[0]
+    dag_level_metadata = {
+        "Dag Info (raw)": JsonMetadataValue(mapped_dag.dag_info.metadata),
+        "Dag ID": mapped_dag.dag_id,
+        "Link to DAG": UrlMetadataValue(mapped_dag.dag_info.url),
+    }
+    return dag_level_metadata
+
+
+def enrich_spec_with_airflow_task_metadata(
     spec: AssetSpec, tasks: List[MappedAirflowTaskData]
 ) -> AssetSpec:
     return spec._replace(
         tags={**spec.tags, **tags_for_mapped_tasks(tasks)},
         metadata={**spec.metadata, **metadata_for_mapped_tasks(tasks)},
+    )
+
+
+def enrich_spec_with_airflow_dag_metadata(
+    spec: AssetSpec, dag_datas: List[MappedAirflowDagData]
+) -> AssetSpec:
+    return spec._replace(
+        tags={**spec.tags, **airflow_kind_dict()},
+        metadata={**spec.metadata, **metadata_for_mapped_dags(dag_datas)},
     )
 
 
@@ -69,7 +97,12 @@ def get_airflow_data_to_spec_mapper(
 
     def _fn(spec: AssetSpec) -> AssetSpec:
         mapped_tasks = serialized_data.all_mapped_tasks.get(spec.key)
-        return enrich_spec_with_airflow_metadata(spec, mapped_tasks) if mapped_tasks else spec
+        if mapped_tasks:
+            return enrich_spec_with_airflow_task_metadata(spec, mapped_tasks)
+        mapped_dags = serialized_data.all_mapped_dags.get(spec.key)
+        if mapped_dags:
+            return enrich_spec_with_airflow_dag_metadata(spec, mapped_dags)
+        return spec
 
     return _fn
 
@@ -79,6 +112,7 @@ def construct_dag_assets_defs(serialized_data: SerializedAirflowDefinitionsData)
         [
             make_dag_external_asset(serialized_data.instance_name, dag_data)
             for dag_data in serialized_data.dag_datas.values()
+            if dag_data.dag_id not in serialized_data.mapped_dag_ids
         ]
     )
 

@@ -57,6 +57,14 @@ class MappedAirflowTaskData:
     proxied: Optional[bool]
 
 
+@whitelist_for_serdes
+@record
+class MappedAirflowDagData:
+    dag_info: DagInfo
+    dag_id: str
+    proxied: Optional[bool]
+
+
 ###################################################################################################
 # Serialized data that scopes to airflow DAGs and tasks.
 ###################################################################################################
@@ -73,13 +81,21 @@ class SerializedDagData:
     source_code: str
     leaf_asset_keys: Set[AssetKey]
     task_infos: Mapping[str, TaskInfo]
+    proxied: Optional[bool]
 
 
 @whitelist_for_serdes
 @record
-class KeyScopedDataItem:
+class KeyScopedTaskItem:
     asset_key: AssetKey
     mapped_tasks: List[MappedAirflowTaskData]
+
+
+@whitelist_for_serdes
+@record
+class KeyScopedDagItem:
+    asset_key: AssetKey
+    mapped_dags: List[MappedAirflowDagData]
 
 
 ###################################################################################################
@@ -95,12 +111,25 @@ class KeyScopedDataItem:
 @record
 class SerializedAirflowDefinitionsData:
     instance_name: str
-    key_scoped_data_items: List[KeyScopedDataItem]
+    key_scoped_task_items: List[KeyScopedTaskItem]
+    key_scoped_dag_items: List[KeyScopedDagItem]
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
     def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
-        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
+        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_task_items}
+
+    @cached_property
+    def all_mapped_dags(self) -> Dict[AssetKey, List[MappedAirflowDagData]]:
+        return {item.asset_key: item.mapped_dags for item in self.key_scoped_dag_items}
+
+    @cached_property
+    def mapped_dag_ids(self) -> AbstractSet[str]:
+        res = set()
+        for item in self.key_scoped_dag_items:
+            for dag_data in item.mapped_dags:
+                res.add(dag_data.dag_id)
+        return res
 
     def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
         return set(self.dag_datas[dag_id].task_handle_data.keys())

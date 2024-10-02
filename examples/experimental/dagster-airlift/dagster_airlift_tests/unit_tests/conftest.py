@@ -28,7 +28,7 @@ from dagster._time import get_current_datetime
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.utils import metadata_for_task_mapping
+from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 from dagster_airlift.test import make_dag_run, make_instance
 
 
@@ -37,12 +37,16 @@ def strip_to_first_of_month(dt: datetime) -> datetime:
 
 
 def fully_loaded_repo_from_airflow_asset_graph(
-    assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
+    assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]] = {},
+    assets_per_dag: Dict[str, List[Tuple[str, List[str]]]] = {},
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
 ) -> RepositoryDefinition:
     defs = load_definitions_airflow_asset_graph(
-        assets_per_task, additional_defs=additional_defs, create_runs=create_runs
+        assets_per_task,
+        assets_per_dag=assets_per_dag,
+        additional_defs=additional_defs,
+        create_runs=create_runs,
     )
     repo_def = defs.get_repository_def()
     repo_def.load_all_definitions()
@@ -51,6 +55,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
 
 def load_definitions_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
+    assets_per_dag: Dict[str, List[Tuple[str, List[str]]]],
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     create_assets_defs: bool = True,
@@ -88,6 +93,36 @@ def load_definitions_airflow_asset_graph(
         if create_runs
         else []
     )
+    for dag_id, asset_structure in assets_per_dag.items():
+        dag_and_task_structure[dag_id] = []
+        for asset_key, deps in asset_structure:
+            spec = AssetSpec(
+                asset_key,
+                deps=deps,
+                metadata=metadata_for_dag_mapping(dag_id=dag_id),
+            )
+            if create_assets_defs:
+
+                @multi_asset(specs=[spec], name=f"{spec.key.to_python_identifier()}_asset")
+                def _asset():
+                    return None
+
+                assets.append(_asset)
+            else:
+                assets.append(spec)
+    runs.extend(
+        [
+            make_dag_run(
+                dag_id=dag_id,
+                run_id=f"run-{dag_id}",
+                start_date=get_current_datetime() - timedelta(minutes=10),
+                end_date=get_current_datetime(),
+            )
+            for dag_id in assets_per_dag.keys()
+        ]
+        if create_runs
+        else []
+    )
     instance = make_instance(
         dag_and_task_structure=dag_and_task_structure,
         dag_runs=runs,
@@ -103,10 +138,11 @@ def build_and_invoke_sensor(
     *,
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     instance: DagsterInstance,
+    assets_per_dag: Dict[str, List[Tuple[str, List[str]]]] = {},
     additional_defs: Definitions = Definitions(),
 ) -> Tuple[SensorResult, SensorEvaluationContext]:
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
-        assets_per_task, additional_defs=additional_defs
+        assets_per_task, assets_per_dag=assets_per_dag, additional_defs=additional_defs
     )
     sensor = next(iter(repo_def.sensor_defs))
     sensor_context = build_sensor_context(repository_def=repo_def, instance=instance)

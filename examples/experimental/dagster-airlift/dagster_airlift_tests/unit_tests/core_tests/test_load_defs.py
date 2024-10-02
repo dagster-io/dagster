@@ -27,6 +27,7 @@ from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
     dag_defs,
+    standalone_dag_defs,
     task_defs,
 )
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
@@ -43,7 +44,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
-from dagster_airlift.core.utils import is_mapped_asset_spec, metadata_for_task_mapping
+from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
 
@@ -228,7 +229,7 @@ def test_transitive_asset_deps() -> None:
 
     b_asset = repo_def.assets_defs_by_key[b_key]
     assert [dep.asset_key for dep in next(iter(b_asset.specs)).deps] == [a_key]
-    assert not is_mapped_asset_spec(next(iter(b_asset.specs)))
+    assert not is_task_mapped_asset_spec(next(iter(b_asset.specs)))
 
     c_asset = repo_def.assets_defs_by_key[c_key]
     assert [dep.asset_key for dep in next(iter(c_asset.specs)).deps] == [b_key]
@@ -246,6 +247,7 @@ def test_peered_dags() -> None:
         additional_defs=Definitions(
             assets=[AssetSpec(key="a", deps=[make_test_dag_asset_key("dag1")])]
         ),
+        assets_per_dag={},
     )
     assert defs.assets
     repo_def = defs.get_repository_def()
@@ -279,6 +281,7 @@ def test_observed_assets() -> None:
                 "task2": [("d", ["b", "c"]), ("e", ["d"]), ("f", ["d"])],
             },
         },
+        assets_per_dag={},
     )
     assert defs.assets
     repo_def = defs.get_repository_def()
@@ -306,6 +309,7 @@ def test_local_airflow_instance() -> None:
         assets_per_task={
             "dag": {"task": [("a", [])]},
         },
+        assets_per_dag={},
         create_assets_defs=True,
     )
 
@@ -323,6 +327,7 @@ def test_local_airflow_instance() -> None:
             assets_per_task={
                 "dag": {"task": [("a", [])]},
             },
+            assets_per_dag={},
             create_assets_defs=True,
         )
         repo_def = defs.get_repository_def()
@@ -682,4 +687,23 @@ def test_double_instance() -> None:
     assert set(all_specs.keys()) == {
         make_default_dag_asset_key("instance_one", "dag1"),
         make_default_dag_asset_key("instance_two", "dag1"),
+    }
+
+
+def test_dag_override() -> None:
+    """Test providing dag level override and the "peered" dag asset goes away."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance({"dag": ["task"]}),
+        defs=standalone_dag_defs(
+            "dag",
+            Definitions(assets=[AssetSpec(key="a")]),
+        ),
+    )
+    all_specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
+    assert set(all_specs.keys()) == {AssetKey("a")}
+    assert set(all_specs[AssetKey("a")].metadata.keys()) == {
+        "dagster-airlift/dag_id",
+        "Dag Info (raw)",
+        "Dag ID",
+        "Link to DAG",
     }

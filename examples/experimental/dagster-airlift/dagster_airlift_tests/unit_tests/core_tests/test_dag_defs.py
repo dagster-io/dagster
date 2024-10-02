@@ -1,7 +1,7 @@
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.core import dag_defs, task_defs
+from dagster_airlift.core import dag_defs, standalone_dag_defs, task_defs
 
 
 def from_specs(*specs: AssetSpec) -> Definitions:
@@ -58,3 +58,11 @@ def test_dag_def_defs() -> None:
         task_defs("task_one", Definitions(assets=[an_asset])),
     )
     assert has_single_task_handle(asset_spec(defs, "asset_one"), "dag_one", "task_one")
+
+
+def test_standlone_dag_defs() -> None:
+    @multi_asset(specs=[AssetSpec(key="asset_one")])
+    def an_asset() -> None: ...
+
+    defs = standalone_dag_defs("dag_one", Definitions(assets=[an_asset]))
+    assert asset_spec(defs, "asset_one").metadata == {"dagster-airlift/dag_id": "dag_one"}
