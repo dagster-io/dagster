@@ -402,10 +402,10 @@ class SlingResource(ConfigurableResource):
                 asset_key = dagster_sling_translator.get_asset_key(stream)
 
                 object_key = stream.get("config", {}).get("object")
-                stream_name = object_key or stream["name"]
+                destination_stream_name = object_key or stream["name"]
                 relation_identifier = None
-                if destination_name and stream_name:
-                    relation_identifier = ".".join([destination_name, stream_name])
+                if destination_name and destination_stream_name:
+                    relation_identifier = ".".join([destination_name, destination_stream_name])
 
                 metadata = {
                     "elapsed_time": end_time - start_time,
