@@ -301,16 +301,12 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ]
 
     @cached_property
-    def toposorted_entity_keys(self) -> Sequence[EntityKey]:
-        """Return topologically sorted entity keys in graph. Keys with the same topological level are
+    def toposorted_entity_keys(self) -> Sequence[Sequence[EntityKey]]:
+        """Return topologically sorted levels for entity keys in graph. Keys with the same topological level are
         sorted alphabetically to provide stability.
         """
         sort_key = lambda e: (e, None) if isinstance(e, AssetKey) else (e.asset_key, e.name)
-        return [
-            item
-            for items_in_level in toposort(self.entity_dep_graph["upstream"], sort_key=sort_key)
-            for item in sorted(items_in_level, key=sort_key)
-        ]
+        return toposort(self.entity_dep_graph["upstream"], sort_key=sort_key)
 
     @cached_property
     def toposorted_asset_keys_by_level(self) -> Sequence[AbstractSet[AssetKey]]:
