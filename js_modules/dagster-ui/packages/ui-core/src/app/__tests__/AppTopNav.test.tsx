@@ -28,6 +28,6 @@ describe('AppTopNav', () => {
     expect(screen.getByText('Overview').closest('a')).toHaveAttribute('href', '/overview');
     expect(screen.getByText('Runs').closest('a')).toHaveAttribute('href', '/runs');
     expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/assets');
-    expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/locations');
+    expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/deployment');
   });
 });

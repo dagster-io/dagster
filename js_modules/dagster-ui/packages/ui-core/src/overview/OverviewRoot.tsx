@@ -14,7 +14,7 @@ import {InstanceBackfillsRoot} from '../instance/InstanceBackfillsRoot';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const OverviewRoot = () => {
-  const {flagSettingsPage} = useFeatureFlags();
+  const {flagLegacyNav} = useFeatureFlags();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   return (
     <Switch>
@@ -23,22 +23,20 @@ export const OverviewRoot = () => {
       </Route>
       <Route
         path="/overview/jobs"
-        render={() => (flagSettingsPage ? <Redirect to="/jobs" /> : <OverviewJobsRoot />)}
+        render={() => (flagLegacyNav ? <OverviewJobsRoot /> : <Redirect to="/jobs" />)}
       />
       <Route
         path="/overview/schedules"
-        render={() =>
-          flagSettingsPage ? <Redirect to="/automation" /> : <OverviewSchedulesRoot />
-        }
+        render={() => (flagLegacyNav ? <OverviewSchedulesRoot /> : <Redirect to="/automation" />)}
       />
       <Route
         path="/overview/sensors"
-        render={() => (flagSettingsPage ? <Redirect to="/automation" /> : <OverviewSensorsRoot />)}
+        render={() => (flagLegacyNav ? <OverviewSensorsRoot /> : <Redirect to="/automation" />)}
       />
       <Route
         path="/overview/automation"
         render={() =>
-          flagSettingsPage && automaterializeSensorsFlagState !== 'has-global-amp' ? (
+          !flagLegacyNav && automaterializeSensorsFlagState !== 'has-global-amp' ? (
             <Redirect to="/automation" />
           ) : (
             <AutomaterializationRoot />

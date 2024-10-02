@@ -21,10 +21,10 @@ export const useVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDebugConsoleLogging,
   },
   {
-    key: 'New navigation',
+    key: 'Revert to legacy navigation',
     label: (
       <>
-        Experimental navigation (
+        Revert to legacy navigation (
         <a
           href="https://github.com/dagster-io/dagster/discussions/21370"
           target="_blank"
@@ -35,7 +35,7 @@ export const useVisibleFeatureFlagRows = () => [
         )
       </>
     ),
-    flagType: FeatureFlag.flagSettingsPage,
+    flagType: FeatureFlag.flagLegacyNav,
   },
   {
     key: 'New code location page',
