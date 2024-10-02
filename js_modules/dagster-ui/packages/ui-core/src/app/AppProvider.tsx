@@ -111,10 +111,11 @@ export const AppProvider = (props: AppProviderProps) => {
   const retryLink = React.useMemo(() => {
     return new RetryLink({
       attempts: {
-        max: 2,
+        max: 3,
         retryIf: async (error, _operation) => {
           if (error && error.statusCode && httpStatusCodesToRetry.includes(error.statusCode)) {
-            const wait = parseInt(error?.response?.headers?.get?.('retry-after') ?? '300');
+            // Retry-after header is in seconds, concert to ms by multiplying by 1000.
+            const wait = parseFloat(error?.response?.headers?.get?.('retry-after') ?? '0.3') * 1000;
             await new Promise((res) => {
               setTimeout(res, wait);
             });
