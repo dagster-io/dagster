@@ -6,8 +6,8 @@ from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.dag_defs import spec_with_metadata
 from dagster_airlift.core.load_defs import assets_def_of_defs, replace_assets_in_defs
+from dagster_airlift.core.top_level_dag_def_api import spec_with_metadata
 
 
 class TaskHandleDict(TypedDict):
