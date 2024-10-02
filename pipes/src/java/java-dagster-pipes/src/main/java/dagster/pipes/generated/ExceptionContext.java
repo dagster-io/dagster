@@ -1,4 +1,4 @@
-package dagster.pipes;
+package dagster.pipes.generated;
 
 import com.fasterxml.jackson.annotation.*;
 
@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.*;
  *
  * exception that explicitly led to this exception
  */
-public class CauseContext {
+public class ExceptionContext {
     private CauseCause cause;
     private CauseContext context;
     private String message;

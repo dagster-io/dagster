@@ -1,4 +1,4 @@
-package dagster.pipes;
+package dagster.pipes.generated;
 
 import com.fasterxml.jackson.annotation.*;
 

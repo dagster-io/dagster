@@ -1,15 +1,10 @@
-package dagster.pipes;
+package dagster.pipes.generated;
 
 import com.fasterxml.jackson.annotation.*;
 
-/**
- * exception that being handled when this exception was raised
- *
- * exception that explicitly led to this exception
- */
-public class ExceptionContext {
-    private CauseCause cause;
-    private CauseContext context;
+public class PurpleException {
+    private ExceptionCause cause;
+    private ExceptionContext context;
     private String message;
     private String name;
     private String[] stack;
@@ -18,17 +13,17 @@ public class ExceptionContext {
      * exception that explicitly led to this exception
      */
     @JsonProperty("cause")
-    public CauseCause getCause() { return cause; }
+    public ExceptionCause getCause() { return cause; }
     @JsonProperty("cause")
-    public void setCause(CauseCause value) { this.cause = value; }
+    public void setCause(ExceptionCause value) { this.cause = value; }
 
     /**
      * exception that being handled when this exception was raised
      */
     @JsonProperty("context")
-    public CauseContext getContext() { return context; }
+    public ExceptionContext getContext() { return context; }
     @JsonProperty("context")
-    public void setContext(CauseContext value) { this.context = value; }
+    public void setContext(ExceptionContext value) { this.context = value; }
 
     @JsonProperty("message")
     public String getMessage() { return message; }

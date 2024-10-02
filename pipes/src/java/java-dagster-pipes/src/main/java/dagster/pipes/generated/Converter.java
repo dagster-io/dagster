@@ -12,7 +12,7 @@
 //
 //     Metadata data = Converter.fromJsonString(jsonString);
 
-package dagster.pipes;
+package dagster.pipes.generated;
 
 import java.io.IOException;
 import com.fasterxml.jackson.databind.*;
