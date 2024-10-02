@@ -1,22 +1,6 @@
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
-function useMatchMedia(query: string) {
-  const match = React.useRef(matchMedia(query));
-  const [result, setResult] = React.useState(match.current.matches);
-
-  React.useEffect(() => {
-    const matcher = match.current;
-    const onChange = () => setResult(matcher.matches);
-    matcher.addEventListener('change', onChange);
-    return () => {
-      matcher.removeEventListener('change', onChange);
-    };
-  }, [query]);
-
-  return result;
-}
-
 type LayoutContextValue = {
   nav: {
     canOpen: boolean;
