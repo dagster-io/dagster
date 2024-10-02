@@ -1,3 +1,21 @@
+[project]
+name = "dagster_quickstart"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.8,<3.12"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "pandas",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "dagster-webserver", 
+    "pytest",
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
