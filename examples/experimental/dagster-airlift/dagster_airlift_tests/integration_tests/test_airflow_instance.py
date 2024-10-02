@@ -68,6 +68,7 @@ def test_airflow_instance(airflow_instance: None) -> None:
     assert run.success
     assert isinstance(run.start_date, datetime.datetime)
     assert isinstance(run.end_date, datetime.datetime)
+    assert isinstance(run.logical_date, datetime.datetime)
 
     # Fetch task instance
     task_instance = instance.get_task_instance(
@@ -79,3 +80,5 @@ def test_airflow_instance(airflow_instance: None) -> None:
     assert isinstance(task_instance.start_date, datetime.datetime)
     assert isinstance(task_instance.end_date, datetime.datetime)
     assert isinstance(task_instance.note, str)
+    assert isinstance(task_instance.logical_date, datetime.datetime)
+    assert run.logical_date == task_instance.logical_date
