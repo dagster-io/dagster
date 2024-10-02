@@ -111,7 +111,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   const isLoading = !definitionQueryResult.previousData && !definitionQueryResult.data;
 
   const renderOverviewTab = () => {
-    if (!definition && !isLoading && !cachedDefinition) {
+    if (!definition && !isLoading) {
       return (
         <AssetNodeOverviewNonSDA assetKey={assetKey} lastMaterialization={lastMaterialization} />
       );
