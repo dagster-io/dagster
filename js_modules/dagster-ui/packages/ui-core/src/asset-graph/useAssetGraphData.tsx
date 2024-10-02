@@ -80,7 +80,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       [options.pipelineSelector, options.groupSelector],
     ),
     key: usePrefixedCacheKey(
-      `/AssetGraphQuery/${JSON.stringify({
+      `AssetGraphQuery/${JSON.stringify({
         pipelineSelector: options.pipelineSelector,
         groupSelector: options.groupSelector,
       })}`,
