@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -44,7 +45,7 @@ from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import dedupe_object_refs
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -750,3 +751,79 @@ class Definitions(IHaveNew):
                 **normalized_metadata,
             },
         )
+
+
+def map_asset_keys(defs: Definitions, fn: Callable[[AssetSpec], AssetKey]) -> "Definitions":
+    """Replaces asset keys for assets within this Definitions object, keeping jobs,
+    downstream assets, and downstream asset checks in sync.
+
+    Returns a new Definitions object with the transformed assets; does not mutate this object.
+
+    Does not support Definitions  objects that contain CacheableAssetsDefinitions.
+
+    Args:
+        fn (Callable[[AssetSpec], AssetKey]): A function that accepts an AssetSpec and returns
+            a new AssetKey.
+
+    Returns:
+        Definitions: A new Definitions object with the transformed assets.
+    """
+    # Don't want to unintentionally trigger a fetch from an external tool
+    for el in defs.assets or []:
+        if isinstance(el, CacheableAssetsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Can't use map_asset_specs on Definitions objects that contain "
+                "CacheableAssetsDefinitions."
+            )
+
+    new_keys_by_old_key: Dict[AssetKey, AssetKey] = {}
+
+    assets_defs = defs.get_asset_graph().assets_defs
+    for el in assets_defs:
+        for spec in el.specs:
+            new_key = fn(spec)
+            if new_key != spec.key:
+                new_keys_by_old_key[spec.key] = new_key
+
+    new_assets = [
+        assets_def.replace_asset_keys(new_asset_keys_by_old_asset_key=new_keys_by_old_key)
+        for assets_def in assets_defs
+    ]
+
+    # When a sensor or schedule contains a job, that job can also be passed to the jobs parameter of
+    # Definitions if it matches the interior job by reference equality. If we were to invoke
+    # replace_asset_keys on an interior job as well as on the job passed to the jobs param, and pass
+    # them both in to a new Definitions object, we would get an error. Thus, we filter out jobs
+    # from the jobs param that are also inside a schedule or sensor.
+    interior_job_object_ids = set()
+
+    new_schedules = []
+    for schedule_def in defs.schedules or []:
+        new_schedules.append(schedule_def.replace_asset_keys(new_keys_by_old_key))
+        if isinstance(schedule_def, ScheduleDefinition):
+            interior_job_object_ids.add(id(schedule_def.target.resolvable_to_job))
+        elif isinstance(schedule_def, UnresolvedPartitionedAssetScheduleDefinition):
+            interior_job_object_ids.add(schedule_def.job)
+
+    new_sensors = []
+    for sensor_def in defs.sensors or []:
+        new_sensors.append(sensor_def.replace_asset_keys(new_keys_by_old_key))
+        interior_job_object_ids.update(
+            id(target.resolvable_to_job) for target in sensor_def.targets
+        )
+
+    new_jobs = [
+        job_def.replace_asset_keys(new_keys_by_old_key)
+        if isinstance(job_def, UnresolvedAssetJobDefinition)
+        else job_def
+        for job_def in defs.jobs or []
+        if id(job_def) not in interior_job_object_ids
+    ]
+    return copy(
+        defs,
+        assets=new_assets,
+        jobs=new_jobs,
+        schedules=new_schedules,
+        sensors=new_sensors,
+        asset_checks=[],
+    )

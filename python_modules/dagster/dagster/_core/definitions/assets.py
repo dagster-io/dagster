@@ -1280,6 +1280,61 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         merged_attrs = merge_dicts(self.get_attributes_dict(), replaced_attributes)
         return self.__class__.dagster_internal_init(**merged_attrs)
 
+    def replace_asset_keys(
+        self, new_asset_keys_by_old_asset_key: Mapping[AssetKey, AssetKey]
+    ) -> "AssetsDefinition":
+        new_specs = []
+        for spec in self.specs:
+            new_deps = []
+            any_deps_changed = False
+            new_key = new_asset_keys_by_old_asset_key.get(spec.key, spec.key)
+            for dep in spec.deps:
+                new_dep_key = new_asset_keys_by_old_asset_key.get(dep.asset_key)
+                if new_dep_key is not None:
+                    new_deps.append(dep._replace(asset_key=new_dep_key))
+                    any_deps_changed = True
+                else:
+                    new_deps.append(dep)
+
+            if new_key is not spec.key or any_deps_changed:
+                new_specs.append(spec._replace(key=new_key, deps=new_deps))
+            else:
+                new_specs.append(spec)
+
+        return self.__class__.dagster_internal_init(
+            **{
+                **self.get_attributes_dict(),
+                "specs": new_specs,
+                "check_specs_by_output_name": {
+                    output_name: check_spec._replace(
+                        asset_key=new_asset_keys_by_old_asset_key.get(
+                            check_spec.asset_key, check_spec.asset_key
+                        )
+                    )
+                    for output_name, check_spec in self.node_check_specs_by_output_name.items()
+                },
+                "keys_by_input_name": {
+                    input_name: new_asset_keys_by_old_asset_key.get(key, key)
+                    for input_name, key in self.node_keys_by_input_name.items()
+                },
+                "keys_by_output_name": {
+                    output_name: new_asset_keys_by_old_asset_key.get(key, key)
+                    for output_name, key in self.node_keys_by_output_name.items()
+                },
+                "selected_asset_keys": {
+                    new_asset_keys_by_old_asset_key.get(key, key) for key in self.keys
+                },
+                "selected_asset_check_keys": {
+                    check_key._replace(
+                        asset_key=new_asset_keys_by_old_asset_key.get(
+                            check_key.asset_key, check_key.asset_key
+                        )
+                    )
+                    for check_key in self.check_keys
+                },
+            },
+        )
+
     def map_asset_specs(self, fn: Callable[[AssetSpec], AssetSpec]) -> "AssetsDefinition":
         mapped_specs = []
         for spec in self.specs:
