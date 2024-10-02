@@ -50,7 +50,13 @@ export const AssetJobPartitionsView = ({
     });
   }, [assetGraph]);
 
-  const assetHealth = usePartitionHealthData(assetKeysWithPartitions);
+  const assetHealth = usePartitionHealthData(
+    assetKeysWithPartitions.length
+      ? assetKeysWithPartitions
+      : assetGraph.graphAssetKeys[0]
+      ? [assetGraph.graphAssetKeys[0]]
+      : [],
+  );
 
   const {total, missing, merged} = useMemo(() => {
     const merged = mergedAssetHealth(assetHealth.filter((h) => h.dimensions.length > 0));
