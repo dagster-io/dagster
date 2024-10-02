@@ -98,7 +98,7 @@ class BaseTableauClient:
             headers={"kid": self.connected_app_secret_id, "iss": self.connected_app_client_id},
         )
 
-        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)
+        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)  # pyright: ignore (reportAttributeAccessIssue)
         return self._server.auth.sign_in(tableau_auth)
 
     @staticmethod
