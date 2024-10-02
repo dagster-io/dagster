@@ -1,10 +1,13 @@
+import datetime
 from typing import List
 
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
+from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import DagInfo
+from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 from dagster_airlift.core.serialization.compute import (
     FetchedAirflowData,
     TaskHandle,
@@ -14,10 +17,11 @@ from dagster_airlift.core.serialization.compute import (
 from dagster_airlift.core.serialization.serialized_data import TaskInfo
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.test import AirflowInstanceFake
+from dagster_airlift.test.airflow_test_instance import make_dag_run, make_instance
 
 
 def ak(key: str) -> AssetKey:
-    return AssetKey(key)
+    return AssetKey.from_user_string(key)
 
 
 def airlift_asset_spec(key: CoercibleToAssetKey, dag_id: str, task_id: str) -> AssetSpec:
@@ -188,3 +192,37 @@ def test_produce_fetched_airflow_data() -> None:
     )
 
     assert len(fetched_airflow_data.mapping_info.mapped_asset_specs) == 1
+
+
+def test_automapped_loaded_data() -> None:
+    airflow_instance = make_instance(
+        dag_and_task_structure={"dag1": ["task1", "task2"]},
+        dag_runs=[
+            make_dag_run(
+                dag_id="dag1",
+                run_id="run1",
+                start_date=datetime.datetime.now(),
+                end_date=datetime.datetime.now(),
+            ),
+        ],
+        task_deps={"task1": ["task2"]},
+        instance_name="test_instance",
+    )
+
+    defs = build_full_automapped_dags_from_airflow_instance(
+        airflow_instance=airflow_instance,
+    )
+
+    mapping_info = build_airlift_metadata_mapping_info(defs)
+
+    fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
+
+    airflow_data = AirflowDefinitionsData(
+        airflow_instance=airflow_instance, resolved_airflow_defs=defs
+    )
+
+    task_handle_data = fetched_airflow_data.task_handle_data_for_dag("dag1")
+    assert task_handle_data["task1"].asset_keys_in_task == {ak("test_instance/dag/dag1/task/task1")}
+    assert task_handle_data["task2"].asset_keys_in_task == {ak("test_instance/dag/dag1/task/task2")}
+
+    assert airflow_data.task_ids_in_dag("dag1") == {"task1", "task2"}
