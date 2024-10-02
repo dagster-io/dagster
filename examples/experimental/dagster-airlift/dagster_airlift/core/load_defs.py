@@ -87,7 +87,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDef
 
     @property
     def defs_key(self) -> str:
-        return get_metadata_key(self.airflow_instance.name) + "/full_automapped_dags"
+        return get_metadata_key(self.airflow_instance.name)
 
     def fetch_state(self) -> SerializedAirflowDefinitionsData:
         return compute_serialized_data(airflow_instance=self.airflow_instance, defs=Definitions())

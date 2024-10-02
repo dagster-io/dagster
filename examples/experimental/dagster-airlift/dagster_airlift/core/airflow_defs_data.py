@@ -25,6 +25,10 @@ class AirflowDefinitionsData:
     airflow_instance: AirflowInstance
     resolved_airflow_defs: Definitions
 
+    @property
+    def instance_name(self) -> str:
+        return self.airflow_instance.name
+
     @cached_property
     def serialized_data(self) -> SerializedAirflowDefinitionsData:
         regular_metadata_key = get_metadata_key(self.airflow_instance.name)

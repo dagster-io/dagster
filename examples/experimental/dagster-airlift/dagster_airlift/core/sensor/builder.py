@@ -17,16 +17,21 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_datetime
 
+from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
+from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun
 from dagster_airlift.core.sensor.event_translation import (
     AirflowEventTranslationFn,
     get_timestamp_from_materialization,
+    materializations_for_dag_run,
+    materializations_for_task_instance,
 )
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
@@ -67,6 +72,7 @@ def build_airflow_polling_sensor_defs(
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
+        context.log.info(f"Running sensor for {airflow_data.airflow_instance.name}")
         try:
             cursor = (
                 deserialize_value(context.cursor, AirflowPollingSensorCursor)
@@ -84,6 +90,7 @@ def build_airflow_polling_sensor_defs(
         )
         end_date_lte = cursor.end_date_lte or current_date.timestamp()
         sensor_iter = materializations_and_requests_from_batch_iter(
+            context=context,
             end_date_gte=end_date_gte,
             end_date_lte=end_date_lte,
             offset=current_dag_offset,
@@ -152,6 +159,7 @@ class BatchResult:
 
 
 def materializations_and_requests_from_batch_iter(
+    context: SensorEvaluationContext,
     end_date_gte: float,
     end_date_lte: float,
     offset: int,
@@ -165,19 +173,15 @@ def materializations_and_requests_from_batch_iter(
         offset=offset,
     )
     for i, dag_run in enumerate(runs):
-        task_instances = airflow_data.airflow_instance.get_task_instance_batch(
-            run_id=dag_run.run_id,
-            dag_id=dag_run.dag_id,
-            # We need to make sure to ignore tasks that have already been proxied.
-            task_ids=[
-                task_id
-                for task_id in airflow_data.serialized_data.task_ids_in_dag(dag_run.dag_id)
-                if not airflow_data.serialized_data.proxied_state_for_task(dag_run.dag_id, task_id)
-            ],
-            states=["success"],
-        )
+        # TODO: add pluggability here (ignoring `event_translation_fn` for now)
 
-        mats = event_translation_fn(dag_run, task_instances, airflow_data)
+        dag_mats = materializations_for_dag_run(dag_run, airflow_data)
+        synthetic_mats = build_synthetic_asset_materializations(
+            context, airflow_data.airflow_instance, dag_run, airflow_data
+        )
+        mats = list(dag_mats) + synthetic_mats
+        context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
+
         all_asset_keys_materialized = {mat.asset_key for mat in mats}
         yield (
             BatchResult(
@@ -190,3 +194,70 @@ def materializations_and_requests_from_batch_iter(
             if mats
             else None
         )
+
+
+def build_synthetic_asset_materializations(
+    context: SensorEvaluationContext,
+    airflow_instance: AirflowInstance,
+    dag_run: DagRun,
+    airflow_data: AirflowDefinitionsData,
+) -> List[AssetMaterialization]:
+    """In this function we need to return the asset materializations we want to synthesize
+    on behalf of the user.
+
+    This happens when the user has modeled an external asset that has a corresponding
+    task in airflow which is not proxied to Dagster. We want to detect the case
+    where there is a successful airflow task instance that is mapped to a
+    dagster asset but is _not_ proxied, and then synthensize a materialization
+    for observability.
+
+    We do this by querying for successful task instances in Airflow. And then
+    for each successful task we see it there exists a Dagster Run tagged with
+    the run id. If there is not Dagster run, we know the task was not proxied.
+
+    Task instances are mutable in Airflow, so we are not guaranteed to register
+    every task instance. If, for example, the sensor is paused, and then there are
+    multiple task clearings, we will only register the last materialization.
+
+    This also currently does not support dynamic tasks in Airflow, in which case
+    the use should instead map at the dag-level granularity.
+    """
+    task_instances = airflow_instance.get_task_instance_batch(
+        run_id=dag_run.run_id,
+        dag_id=dag_run.dag_id,
+        task_ids=[
+            task_id for task_id in airflow_data.serialized_data.task_ids_in_dag(dag_run.dag_id)
+        ],
+        states=["success"],
+    )
+
+    check.invariant(
+        len({ti.task_id for ti in task_instances}) == len(task_instances),
+        "Assuming one task instance per task_id for now. Dynamic Airflow tasks not supported.",
+    )
+
+    # https://linear.app/dagster-labs/issue/FOU-444/make-sensor-work-with-an-airflow-dag-run-that-has-more-than-1000
+    dagster_runs = context.instance.get_runs(
+        filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: dag_run.run_id}),
+        limit=1000,
+    )
+
+    context.log.info(
+        f"Airlift Sensor: Found dagster run ids: {[run.run_id for run in dagster_runs]}"
+        f" for airflow run id {dag_run.run_id} and dag id {dag_run.dag_id}"
+    )
+
+    dagster_runs_by_task_id = {run.tags[TASK_ID_TAG_KEY]: run for run in dagster_runs}
+    task_instances_by_task_id = {ti.task_id: ti for ti in task_instances}
+
+    synthetic_mats = []
+
+    for task_id, task_instance in task_instances_by_task_id.items():
+        # If there is no dagster_run for this task, it was not proxied.
+        # Therefore synthensize a materialization based on the task information.
+        if task_id not in dagster_runs_by_task_id:
+            synthetic_mats.extend(
+                materializations_for_task_instance(airflow_data, dag_run, task_instance)
+            )
+
+    return synthetic_mats

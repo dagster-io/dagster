@@ -10,7 +10,12 @@ from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 from requests import Response
 
-from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    TASK_ID_TAG_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 
@@ -104,10 +109,17 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         dag_run_id = dag_run.run_id
 
         triggered_runs = []
+        tags = {
+            DAG_ID_TAG_KEY: dag_id,
+            DAG_RUN_ID_TAG_KEY: dag_run_id,
+            TASK_ID_TAG_KEY: task_id,
+        }
         for (repo_location, repo_name, job_name), asset_keys in assets_to_trigger.items():
             execution_params = {
                 "mode": "default",
-                "executionMetadata": {"tags": [{"key": DAG_RUN_ID_TAG_KEY, "value": dag_run_id}]},
+                "executionMetadata": {
+                    "tags": [{"key": key, "value": value} for key, value in tags.items()]
+                },
                 "runConfigData": "{}",
                 "selector": {
                     "repositoryLocationName": repo_location,
