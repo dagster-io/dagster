@@ -87,15 +87,15 @@ def key_for_automapped_task_asset(instance_name, dag_id, task_id) -> AssetKey:
     return AssetKey([instance_name, "dag", dag_id, "task", task_id])
 
 
-def description_for_automapped_task(task_info: TaskInfo) -> str:
+def description_for_automapped_task_asset(task_info: TaskInfo) -> str:
     return f'Automapped task in dag "{task_info.dag_id}" with task_id "{task_info.task_id}"'
 
 
-def tags_for_automapped_task() -> Mapping[str, str]:
+def tags_for_automapped_task_asset() -> Mapping[str, str]:
     return {f"{KIND_PREFIX}airflow": "", f"{KIND_PREFIX}task": ""}
 
 
-def metadata_for_auto_mapped_task(task_info: TaskInfo) -> Mapping[str, Any]:
+def metadata_for_auto_mapped_task_asset(task_info: TaskInfo) -> Mapping[str, Any]:
     return {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
         "Dag ID": task_info.dag_id,
@@ -129,9 +129,9 @@ def construct_automapped_dag_assets_defs(
                     )
                     for upstream_task_id in upstream_task_ids
                 ],
-                description=description_for_automapped_task(dag_data.task_infos[task_id]),
-                tags=tags_for_automapped_task(),
-                metadata=metadata_for_auto_mapped_task(dag_data.task_infos[task_id]),
+                description=description_for_automapped_task_asset(dag_data.task_infos[task_id]),
+                tags=tags_for_automapped_task_asset(),
+                metadata=metadata_for_auto_mapped_task_asset(dag_data.task_infos[task_id]),
             )
             for task_id, upstream_task_ids in upstream_deps.items()
         )
