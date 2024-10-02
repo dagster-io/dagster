@@ -5,7 +5,6 @@ from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp
 from dagster._utils import check
-from dagster._utils.warnings import disable_dagster_warnings
 
 from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
 from dagster_graphql.schema.runs import GrapheneRunConfigData
@@ -72,19 +71,21 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
         created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
 
-        with disable_dagster_warnings():
-            return RunsFilter(
-                run_ids=self.runIds if self.runIds else None,
-                job_name=self.pipelineName,
-                tags=tags,
-                statuses=statuses,
-                snapshot_id=self.snapshotId,
-                updated_before=updated_before,
-                updated_after=updated_after,
-                created_before=created_before,
-                created_after=created_after,
-                exclude_subruns=self.excludeSubruns,
-            )
+        kwargs = dict(
+            run_ids=self.runIds if self.runIds else None,
+            job_name=self.pipelineName,
+            tags=tags,
+            statuses=statuses,
+            snapshot_id=self.snapshotId,
+            updated_before=updated_before,
+            updated_after=updated_after,
+            created_before=created_before,
+            created_after=created_after,
+        )
+        if self.excludeSubruns:
+            kwargs["exclude_subruns"] = self.excludeSubruns
+
+        return RunsFilter(**kwargs)
 
 
 class GrapheneStepOutputHandle(graphene.InputObjectType):

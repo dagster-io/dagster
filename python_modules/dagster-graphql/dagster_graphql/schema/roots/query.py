@@ -21,6 +21,7 @@ from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.permissions import Permissions
+from dagster._utils.warnings import disable_dagster_warnings
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
@@ -855,7 +856,8 @@ class GrapheneQuery(graphene.ObjectType):
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
-        selector = filter.to_selector() if filter is not None else None
+        with disable_dagster_warnings():
+            selector = filter.to_selector() if filter is not None else None
         return get_runs_feed_entries(
             graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
         )
