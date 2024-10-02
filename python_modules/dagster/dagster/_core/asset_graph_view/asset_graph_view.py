@@ -270,6 +270,47 @@ class AssetGraphView(LoadingContext):
                 value=_ValidatedEntitySubsetValue(child_partitions_subset),
             )
 
+    def compute_mapped_subset(
+        self, to_key: T_EntityKey, from_subset: EntitySubset
+    ) -> EntitySubset[T_EntityKey]:
+        from_key = from_subset.key
+        from_partitions_def = self.asset_graph.get(from_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+
+        partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
+
+        if from_partitions_def is None or to_partitions_def is None:
+            return (
+                self.get_empty_subset(key=to_key)
+                if from_subset.is_empty
+                else self.get_full_subset(key=to_key)
+            )
+
+        if from_key in self.asset_graph.get(to_key).parent_entity_keys:
+            to_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
+                upstream_partitions_subset=from_subset.get_internal_subset_value(),
+                upstream_partitions_def=from_partitions_def,
+                downstream_partitions_def=to_partitions_def,
+                dynamic_partitions_store=self._queryer,
+                current_time=self.effective_dt,
+            )
+        else:
+            to_partitions_subset = (
+                partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                    downstream_partitions_subset=from_subset.get_internal_subset_value(),
+                    downstream_partitions_def=from_partitions_def,
+                    upstream_partitions_def=to_partitions_def,
+                    dynamic_partitions_store=self._queryer,
+                    current_time=self.effective_dt,
+                ).partitions_subset
+            )
+
+        return EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(to_partitions_subset),
+        )
+
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str], asset_subset: EntitySubset[AssetKey]
     ) -> EntitySubset[AssetKey]:
