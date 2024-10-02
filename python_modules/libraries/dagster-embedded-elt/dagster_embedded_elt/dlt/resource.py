@@ -125,7 +125,7 @@ class DagsterDltResource(ConfigurableResource):
         destination_name: Optional[str] = base_metadata.get("destination_name")
         relation_identifier = None
         if destination_name and schema:
-            relation_identifier = ".".join([destination_name, schema, resource.table_name])
+            relation_identifier = ".".join([destination_name, schema, str(resource.table_name)])
 
         table_columns = [
             TableColumn(name=column.get("name"), type=column.get("data_type"))
