@@ -177,8 +177,7 @@ class AutomationConditionEvaluator:
                 # evaluated it may have had a different requested subset. however, because
                 # all these neighbors must be executed as a unit, we need to union together
                 # the subset of all required neighbors
-                # TODO: replace with result.true_subset.map_to(neighbor_key)
-                neighbor_true_subset = result.true_subset.compute_child_subset(neighbor_key)
+                neighbor_true_subset = result.true_subset.compute_mapped_subset(neighbor_key)
                 if neighbor_key in self.current_results_by_key:
                     self.current_results_by_key[
                         neighbor_key
