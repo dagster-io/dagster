@@ -19,6 +19,10 @@ from dagster import (
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.test_utils import environ
 from dagster._serdes.serdes import deserialize_value
+from dagster._utils.test.definitions import (
+    scoped_reconstruction_metadata,
+    unwrap_reconstruction_metadata,
+)
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
@@ -38,10 +42,6 @@ from dagster_airlift.core.serialization.defs_construction import (
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     TaskHandle,
-)
-from dagster_airlift.core.state_backed_defs_loader import (
-    scoped_reconstruction_metadata,
-    unwrap_reconstruction_metadata,
 )
 from dagster_airlift.core.utils import is_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
