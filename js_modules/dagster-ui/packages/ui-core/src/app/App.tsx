@@ -18,7 +18,7 @@ export const App = ({banner, children}: Props) => {
   const {nav} = React.useContext(LayoutContext);
 
   // todo dish: Remove flag and alert once this change has shipped.
-  const {flagSettingsPage} = useFeatureFlags();
+  const {flagLegacyNav} = useFeatureFlags();
   const [didDismissNavAlert, setDidDismissNavAlert] = useStateWithStorage<boolean>(
     'new_navigation_alert',
     (json) => !!json,
@@ -33,7 +33,7 @@ export const App = ({banner, children}: Props) => {
       <LeftNav />
       <Main $navOpen={nav.isOpen} onClick={onClickMain}>
         <div>{banner}</div>
-        {flagSettingsPage && !didDismissNavAlert ? (
+        {!flagLegacyNav && !didDismissNavAlert ? (
           <ExperimentalNavAlert setDidDismissNavAlert={setDidDismissNavAlert} />
         ) : null}
         <ChildContainer>{children}</ChildContainer>
@@ -52,7 +52,7 @@ const ExperimentalNavAlert = (props: AlertProps) => {
 
   const revertToLegacyNavigation = () => {
     const copy = new Set(flags);
-    copy.delete(FeatureFlag.flagSettingsPage);
+    copy.add(FeatureFlag.flagLegacyNav);
     setFeatureFlags(Array.from(copy));
     setDidDismissNavAlert(true);
     window.location.reload();

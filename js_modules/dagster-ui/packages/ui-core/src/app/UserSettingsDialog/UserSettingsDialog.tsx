@@ -18,6 +18,7 @@ import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
 import {showCustomAlert} from '../CustomAlertProvider';
 import {getFeatureFlags, setFeatureFlags} from '../Flags';
+import {useTrackEvent} from '../analytics';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
 type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlag};
@@ -51,6 +52,7 @@ interface DialogContentProps {
  * we want to render it.
  */
 const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
+  const trackEvent = useTrackEvent();
   const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 
@@ -61,7 +63,14 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
   });
 
   const toggleFlag = (flag: FeatureFlag) => {
-    setFlags(flags.includes(flag) ? flags.filter((f) => f !== flag) : [...flags, flag]);
+    const flagSet = new Set(flags);
+    trackEvent('feature-flag', {flag, enabled: !flagSet.has(flag)});
+    if (flagSet.has(flag)) {
+      flagSet.delete(flag);
+    } else {
+      flagSet.add(flag);
+    }
+    setFlags(Array.from(flagSet));
   };
 
   const [arePreferencesChanged, setAreaPreferencesChanged] = React.useState(false);
