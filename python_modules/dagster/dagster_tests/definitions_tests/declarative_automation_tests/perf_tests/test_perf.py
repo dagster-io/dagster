@@ -1,118 +1,71 @@
-import itertools
-from typing import List, NamedTuple, Optional, Sequence
+import datetime
+import time
 
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetKey,
-    AssetsDefinition,
-    AutoMaterializePolicy,
     AutomationCondition,
+    DagsterInstance,
     DailyPartitionsDefinition,
+    Definitions,
     HourlyPartitionsDefinition,
-    MaterializeResult,
-    PartitionsDefinition,
-    StaticPartitionsDefinition,
-    asset,
-    repository,
+    evaluate_automation_conditions,
 )
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.automation_tick_evaluation_context import build_run_requests
+from dagster._time import get_current_datetime
+from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 
 
-class AssetLayerConfig(NamedTuple):
-    n_assets: int
-    n_upstreams_per_asset: int = 0
-    partitions_def: Optional[PartitionsDefinition] = None
-    n_checks_per_asset: int = 0
-
-
-def build_assets(
-    id: str,
-    layer_configs: Sequence[AssetLayerConfig],
-    automation_condition: AutomationCondition = AutomationCondition.eager(),
-) -> List[AssetsDefinition]:
-    with disable_dagster_warnings():
-        layers = []
-
-        for layer_config in layer_configs:
-            parent_index = 0
-            layer = []
-            for i in range(layer_config.n_assets):
-                if layer_config.n_upstreams_per_asset > 0:
-                    # each asset connects to n_upstreams_per_asset assets from the above layer, chosen
-                    # in a round-robin manner
-                    non_argument_deps = {
-                        layers[-1][(parent_index + j) % len(layers[-1])].key
-                        for j in range(layer_config.n_upstreams_per_asset)
-                    }
-                    parent_index += layer_config.n_upstreams_per_asset
-                else:
-                    non_argument_deps = set()
-
-                name = f"{id}_{len(layers)}_{i}"
-
-                @asset(
-                    partitions_def=layer_config.partitions_def,
-                    name=name,
-                    automation_condition=automation_condition,
-                    non_argument_deps=non_argument_deps,
-                    check_specs=[
-                        AssetCheckSpec(
-                            name=f"check{k}",
-                            asset=AssetKey(name),
-                            automation_condition=automation_condition,
-                        )
-                        for k in range(layer_config.n_checks_per_asset)
-                    ],
-                )
-                def _asset(context: AssetExecutionContext) -> MaterializeResult:
-                    return MaterializeResult(
-                        asset_key=context.asset_key,
-                        check_results=[
-                            AssetCheckResult(check_name=key.name, passed=True)
-                            for key in context.selected_asset_check_keys
-                        ],
-                    )
-
-                layer.append(_asset)
-            layers.append(layer)
-
-        return list(itertools.chain(*layers))
-
-
-hourly = HourlyPartitionsDefinition(start_date="2022-01-01-00:00")
-daily = DailyPartitionsDefinition(
-    start_date="2022-01-01",
-)
-static = StaticPartitionsDefinition(partition_keys=[f"p{i}" for i in range(100)])
-
-
-@repository
-def auto_materialize_large_time_graph():
-    return build_assets(
-        id="hourly_to_daily",
+def run_declarative_automation_perf_simulation(instance: DagsterInstance) -> None:
+    hourly_partitions_def = HourlyPartitionsDefinition("2020-01-01-00:00")
+    daily_partitions_def = DailyPartitionsDefinition("2020-01-01")
+    assets = build_assets(
+        id="perf_test",
         layer_configs=[
-            AssetLayerConfig(n_assets=10, partitions_def=hourly),
-            AssetLayerConfig(n_assets=50, n_upstreams_per_asset=5, partitions_def=hourly),
-            AssetLayerConfig(n_assets=50, n_upstreams_per_asset=5, partitions_def=hourly),
-            AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=daily),
-            AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=daily),
+            AssetLayerConfig(100, 0, hourly_partitions_def),
+            AssetLayerConfig(200, 2, hourly_partitions_def, n_checks_per_asset=1),
+            AssetLayerConfig(200, 4, hourly_partitions_def, n_checks_per_asset=2),
+            AssetLayerConfig(200, 4, daily_partitions_def, n_checks_per_asset=2),
+            AssetLayerConfig(200, 2, daily_partitions_def),
+            AssetLayerConfig(100, 2, daily_partitions_def),
         ],
-        automation_condition=AutoMaterializePolicy.eager().to_automation_condition(),
+        automation_condition=AutomationCondition.eager()
+        & AutomationCondition.all_deps_blocking_checks_passed(),
     )
+    defs = Definitions(assets=assets)
+    asset_job = defs.get_implicit_global_asset_job_def()
+
+    cursor = None
+    start = time.time()
+    evaluation_time = get_current_datetime() - datetime.timedelta(days=1)
+    for _ in range(3):
+        result = evaluate_automation_conditions(
+            defs=assets, instance=instance, cursor=cursor, evaluation_time=evaluation_time
+        )
+        cursor = result.cursor
+        end = time.time()
+        duration = end - start
+        # all iterations should take less than 20 seconds on this graph
+        assert duration < 20.0
+
+        # simulate the new events that would come from the requested runs
+        run_requests = build_run_requests(
+            entity_subsets=[r.true_subset for r in result.results],
+            asset_graph=defs.get_asset_graph(),
+            run_tags={},
+            emit_backfills=False,
+        )
+        for run_request in run_requests:
+            asset_job.get_subset(
+                asset_selection=set(run_request.asset_selection)
+                if run_request.asset_selection
+                else None,
+                asset_check_selection=set(run_request.asset_check_keys)
+                if run_request.asset_check_keys
+                else None,
+            ).execute_in_process(instance=instance, partition_key=run_request.partition_key)
+
+        evaluation_time += datetime.timedelta(hours=1)
+        start = time.time()
 
 
-@repository
-def auto_materialize_large_static_graph():
-    return build_assets(
-        id="static_and_unpartitioned",
-        layer_configs=[
-            AssetLayerConfig(n_assets=10, partitions_def=None),
-            AssetLayerConfig(n_assets=50, n_upstreams_per_asset=5, partitions_def=static),
-            AssetLayerConfig(n_assets=50, n_upstreams_per_asset=5, partitions_def=static),
-            AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=static),
-            AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=None),
-        ],
-        automation_condition=AutoMaterializePolicy.eager().to_automation_condition(),
-    )
+def test_eager_perf() -> None:
+    run_declarative_automation_perf_simulation(DagsterInstance.ephemeral())
