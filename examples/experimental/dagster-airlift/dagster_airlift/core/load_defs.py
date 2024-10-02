@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
     external_asset_from_spec,
 )
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
@@ -24,7 +25,6 @@ from dagster_airlift.core.serialization.defs_construction import (
     get_airflow_data_to_spec_mapper,
 )
 from dagster_airlift.core.serialization.serialized_data import SerializedAirflowDefinitionsData
-from dagster_airlift.core.state_backed_defs_loader import StateBackedDefinitionsLoader
 from dagster_airlift.core.utils import get_metadata_key
 
 
