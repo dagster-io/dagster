@@ -28,7 +28,6 @@ from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun
 from dagster_airlift.core.sensor.event_translation import (
-    AirflowEventTranslationFn,
     get_timestamp_from_materialization,
     materializations_for_dag_run,
     materializations_for_task_instance,
@@ -60,7 +59,6 @@ def check_keys_for_asset_keys(
 
 def build_airflow_polling_sensor_defs(
     airflow_data: AirflowDefinitionsData,
-    event_translation_fn: AirflowEventTranslationFn,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     @sensor(
@@ -95,7 +93,6 @@ def build_airflow_polling_sensor_defs(
             end_date_lte=end_date_lte,
             offset=current_dag_offset,
             airflow_data=airflow_data,
-            event_translation_fn=event_translation_fn,
         )
         all_materializations: List[Tuple[float, AssetMaterialization]] = []
         all_check_keys: Set[AssetCheckKey] = set()
@@ -164,7 +161,6 @@ def materializations_and_requests_from_batch_iter(
     end_date_lte: float,
     offset: int,
     airflow_data: AirflowDefinitionsData,
-    event_translation_fn: AirflowEventTranslationFn,
 ) -> Iterator[Optional[BatchResult]]:
     runs = airflow_data.airflow_instance.get_dag_runs_batch(
         dag_ids=list(airflow_data.all_dag_ids),

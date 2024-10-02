@@ -16,7 +16,6 @@ from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor_defs,
-    get_asset_events,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
@@ -70,7 +69,6 @@ def build_defs_from_airflow_instance(
             airflow_data=AirflowDefinitionsData(
                 airflow_instance=airflow_instance, resolved_airflow_defs=resolved_defs
             ),
-            event_translation_fn=get_asset_events,
             minimum_interval_seconds=sensor_minimum_interval_seconds,
         ),
     )
@@ -114,7 +112,6 @@ def build_full_automapped_dags_from_airflow_instance(
             airflow_data=AirflowDefinitionsData(
                 resolved_airflow_defs=defs, airflow_instance=airflow_instance
             ),
-            event_translation_fn=get_asset_events,
         ),
     )
 
