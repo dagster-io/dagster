@@ -853,7 +853,7 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         limit: int,
-        includeRunsInBackfill,
+        includeRunsInBackfills,
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
@@ -863,7 +863,7 @@ class GrapheneQuery(graphene.ObjectType):
             cursor=cursor,
             limit=limit,
             filters=selector,
-            include_runs_in_backfills=includeRunsInBackfill,
+            include_runs_in_backfills=includeRunsInBackfills,
         )
 
     def resolve_runsFeedCountOrError(
