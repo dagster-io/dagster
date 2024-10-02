@@ -113,6 +113,20 @@ class DagsterDltResource(ConfigurableResource):
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
+        schema: Optional[str] = None
+        for load_package in load_info_dict.get("load_packages", []):
+            for table in load_package.get("tables", []):
+                if table.get("name") == resource.table_name:
+                    schema = table.get("schema_name")
+                    break
+            if schema:
+                break
+
+        destination_name: Optional[str] = base_metadata.get("destination_name")
+        relation_identifier = None
+        if destination_name and schema:
+            relation_identifier = ".".join([destination_name, schema, str(resource.table_name)])
+
         table_columns = [
             TableColumn(name=column.get("name"), type=column.get("data_type"))
             for pkg in load_info_dict.get("load_packages", [])
@@ -122,7 +136,10 @@ class DagsterDltResource(ConfigurableResource):
         ]
         base_metadata = {
             **base_metadata,
-            **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
+            **TableMetadataSet(
+                column_schema=TableSchema(columns=table_columns),
+                relation_identifier=relation_identifier,
+            ),
         }
 
         return base_metadata
