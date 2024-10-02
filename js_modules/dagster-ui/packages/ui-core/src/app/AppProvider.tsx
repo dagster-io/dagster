@@ -55,6 +55,8 @@ const idempotencyLink = new ApolloLink((operation, forward) => {
   return forward(operation);
 });
 
+const httpStatusCodesToRetry = [502, 503, 504, 429, 409];
+
 export interface AppProviderProps {
   children: React.ReactNode;
   appCache: InMemoryCache;
@@ -110,12 +112,16 @@ export const AppProvider = (props: AppProviderProps) => {
     return new RetryLink({
       attempts: {
         max: 2,
-        retryIf: (error, _operation) => {
-          return error && error.statusCode && [502, 503, 504].includes(error.statusCode);
+        retryIf: async (error, _operation) => {
+          if (error && error.statusCode && httpStatusCodesToRetry.includes(error.statusCode)) {
+            const wait = parseInt(error?.response?.headers?.get?.('retry-after') ?? '300');
+            await new Promise((res) => {
+              setTimeout(res, wait);
+            });
+            return true;
+          }
+          return false;
         },
-      },
-      delay: {
-        initial: 300,
       },
     });
   }, []);
