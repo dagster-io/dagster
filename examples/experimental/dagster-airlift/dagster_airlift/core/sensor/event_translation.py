@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from dagster import (
     AssetMaterialization,
@@ -13,10 +13,13 @@ from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
 
+EventTransformationFn = Callable[[Sequence[AssetMaterialization]], Sequence[AssetMaterialization]]
 
-def get_timestamp_from_materialization(mat: AssetMaterialization) -> float:
+
+def get_timestamp_from_asset_event(event: AssetMaterialization) -> float:
     return check.float_param(
-        mat.metadata[EFFECTIVE_TIMESTAMP_METADATA_KEY].value, "Materialization Effective Timestamp"
+        event.metadata[EFFECTIVE_TIMESTAMP_METADATA_KEY].value,
+        "Materialization Effective Timestamp",
     )
 
 

@@ -372,7 +372,7 @@ class SensorResult(
             ),
             (
                 "asset_events",
-                List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
+                List[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
             ),
             (
                 "automation_condition_evaluations",

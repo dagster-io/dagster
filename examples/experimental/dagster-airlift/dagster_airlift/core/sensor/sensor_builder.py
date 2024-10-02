@@ -1,10 +1,11 @@
 from datetime import timedelta
-from typing import Iterable, Iterator, List, Optional, Set, Tuple
+from typing import Iterable, Iterator, List, Optional, Sequence, Set
 
 from dagster import (
     AssetCheckKey,
     AssetKey,
     AssetMaterialization,
+    AssetObservation as AssetObservation,
     DefaultSensorStatus,
     RunRequest,
     SensorEvaluationContext,
@@ -28,7 +29,8 @@ from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun
 from dagster_airlift.core.sensor.event_translation import (
-    get_timestamp_from_materialization,
+    EventTransformationFn,
+    get_timestamp_from_asset_event,
     materializations_for_dag_run,
     materializations_for_task_instance,
 )
@@ -59,6 +61,7 @@ def check_keys_for_asset_keys(
 
 def build_airflow_polling_sensor_defs(
     airflow_data: AirflowDefinitionsData,
+    event_transformation_fn: Optional[EventTransformationFn],
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     @sensor(
@@ -94,7 +97,7 @@ def build_airflow_polling_sensor_defs(
             offset=current_dag_offset,
             airflow_data=airflow_data,
         )
-        all_materializations: List[Tuple[float, AssetMaterialization]] = []
+        all_events: List[AssetMaterialization] = []
         all_check_keys: Set[AssetCheckKey] = set()
         latest_offset = current_dag_offset
         repository_def = check.not_none(context.repository_def)
@@ -102,7 +105,7 @@ def build_airflow_polling_sensor_defs(
             batch_result = next(sensor_iter, None)
             if batch_result is None:
                 break
-            all_materializations.extend(batch_result.materializations_and_timestamps)
+            all_events.extend(batch_result.asset_events)
 
             all_check_keys.update(
                 check_keys_for_asset_keys(repository_def, batch_result.all_asset_keys_materialized)
@@ -122,10 +125,17 @@ def build_airflow_polling_sensor_defs(
                 end_date_lte=None,
                 dag_query_offset=0,
             )
+        transformed_events = (
+            event_transformation_fn(all_events) if event_transformation_fn else all_events
+        )
+
         context.update_cursor(serialize_value(new_cursor))
+        sorted_events = sorted_asset_events(transformed_events, repository_def)
 
         return SensorResult(
-            asset_events=sorted_asset_events(all_materializations, repository_def),
+            asset_events=event_transformation_fn(sorted_events)
+            if event_transformation_fn
+            else sorted_events,
             run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]
             if all_check_keys
             else None,
@@ -135,15 +145,16 @@ def build_airflow_polling_sensor_defs(
 
 
 def sorted_asset_events(
-    all_materializations: List[Tuple[float, AssetMaterialization]],
+    events: Sequence[AssetMaterialization],
     repository_def: RepositoryDefinition,
 ) -> List[AssetMaterialization]:
     """Sort materializations by end date and toposort order."""
     topo_aks = repository_def.asset_graph.toposorted_asset_keys
+    timestamps_and_events = [(get_timestamp_from_asset_event(event), event) for event in events]
     return [
         sorted_mat[1]
         for sorted_mat in sorted(
-            all_materializations, key=lambda x: (x[0], topo_aks.index(x[1].asset_key))
+            timestamps_and_events, key=lambda x: (x[0], topo_aks.index(x[1].asset_key))
         )
     ]
 
@@ -151,7 +162,7 @@ def sorted_asset_events(
 @record
 class BatchResult:
     idx: int
-    materializations_and_timestamps: List[Tuple[float, AssetMaterialization]]
+    asset_events: Sequence[AssetMaterialization]
     all_asset_keys_materialized: Set[AssetKey]
 
 
@@ -182,9 +193,7 @@ def materializations_and_requests_from_batch_iter(
         yield (
             BatchResult(
                 idx=i + offset,
-                materializations_and_timestamps=[
-                    (get_timestamp_from_materialization(mat), mat) for mat in mats
-                ],
+                asset_events=mats,
                 all_asset_keys_materialized=all_asset_keys_materialized,
             )
             if mats

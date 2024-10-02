@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, Generator, List, Sequence, Tuple, Union
+from typing import Dict, Generator, List, Optional, Sequence, Tuple, Union
 
 import pytest
 from dagster import (
@@ -28,6 +28,7 @@ from dagster._time import get_current_datetime
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
+from dagster_airlift.core.sensor.event_translation import EventTransformationFn
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.test import make_dag_run, make_instance
 
@@ -39,10 +40,14 @@ def strip_to_first_of_month(dt: datetime) -> datetime:
 def fully_loaded_repo_from_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
+    event_transformation_fn: Optional[EventTransformationFn] = None,
     create_runs: bool = True,
 ) -> RepositoryDefinition:
     defs = load_definitions_airflow_asset_graph(
-        assets_per_task, additional_defs=additional_defs, create_runs=create_runs
+        assets_per_task,
+        additional_defs=additional_defs,
+        create_runs=create_runs,
+        event_transformation_fn=event_transformation_fn,
     )
     repo_def = defs.get_repository_def()
     repo_def.load_all_definitions()
@@ -54,6 +59,7 @@ def load_definitions_airflow_asset_graph(
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     create_assets_defs: bool = True,
+    event_transformation_fn: Optional[EventTransformationFn] = None,
 ) -> Definitions:
     assets = []
     dag_and_task_structure = defaultdict(list)
@@ -96,7 +102,9 @@ def load_definitions_airflow_asset_graph(
         additional_defs,
         Definitions(assets=assets),
     )
-    return build_defs_from_airflow_instance(airflow_instance=instance, defs=defs)
+    return build_defs_from_airflow_instance(
+        airflow_instance=instance, defs=defs, event_transformation_fn=event_transformation_fn
+    )
 
 
 def build_and_invoke_sensor(
@@ -104,9 +112,12 @@ def build_and_invoke_sensor(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     instance: DagsterInstance,
     additional_defs: Definitions = Definitions(),
+    event_transformation_fn: Optional[EventTransformationFn] = None,
 ) -> Tuple[SensorResult, SensorEvaluationContext]:
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
-        assets_per_task, additional_defs=additional_defs
+        assets_per_task,
+        additional_defs=additional_defs,
+        event_transformation_fn=event_transformation_fn,
     )
     sensor = next(iter(repo_def.sensor_defs))
     sensor_context = build_sensor_context(repository_def=repo_def, instance=instance)

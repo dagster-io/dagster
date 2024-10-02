@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Sequence
 
 import mock
 from dagster import (
@@ -8,12 +9,14 @@ from dagster import (
     DagsterInstance,
     Definitions,
     SensorResult,
+    TimestampMetadataValue,
     asset_check,
     build_sensor_context,
 )
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
+from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
 from dagster_airlift.core.sensor import AirflowPollingSensorCursor
 
 from dagster_airlift_tests.unit_tests.conftest import (
@@ -344,3 +347,49 @@ def test_no_runs(init_load_context: None, instance: DagsterInstance) -> None:
         assert new_cursor.dag_query_offset == 0
         assert not result.asset_events
         assert not result.run_requests
+
+
+def test_pluggable_transformation(init_load_context: None, instance: DagsterInstance) -> None:
+    """Test the case where a custom transformation is provided to the sensor."""
+
+    def pluggable_event_transformer(
+        events: Sequence[AssetMaterialization],
+    ) -> Sequence[AssetMaterialization]:
+        # Change the timestamp, which should also change the order. We expect this to be respected by the sensor.
+        new_events = []
+        for event in events:
+            if AssetKey(["a"]) == event.asset_key:
+                new_events.append(
+                    event._replace(
+                        metadata={
+                            "test": "test",
+                            EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(1.0),
+                        }
+                    )
+                )
+            elif AssetKey.from_user_string(make_dag_key_str("dag")) == event.asset_key:
+                new_events.append(
+                    event._replace(
+                        metadata={
+                            "test": "test",
+                            EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(0.0),
+                        }
+                    )
+                )
+        return new_events
+
+    result, context = build_and_invoke_sensor(
+        assets_per_task={
+            "dag": {"task": [("a", [])]},
+        },
+        instance=instance,
+        event_transformation_fn=pluggable_event_transformer,
+    )
+
+    assert len(result.asset_events) == 2
+    assert_expected_key_order(result.asset_events, [make_dag_key_str("dag"), "a"])
+    for event in result.asset_events:
+        assert set(event.metadata.keys()) == {"test", EFFECTIVE_TIMESTAMP_METADATA_KEY}
+
+
+# try and test sensor timeout during user fxn. Ensure that we don't update the cursor.

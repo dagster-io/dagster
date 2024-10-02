@@ -17,6 +17,7 @@ from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor_defs,
 )
+from dagster_airlift.core.sensor.event_translation import EventTransformationFn
 from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
     construct_automapped_dag_assets_defs,
@@ -57,6 +58,7 @@ def build_defs_from_airflow_instance(
     airflow_instance: AirflowInstance,
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    event_transformation_fn: Optional[EventTransformationFn] = None,
 ) -> Definitions:
     resolved_defs = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
@@ -70,6 +72,7 @@ def build_defs_from_airflow_instance(
                 airflow_instance=airflow_instance, resolved_airflow_defs=resolved_defs
             ),
             minimum_interval_seconds=sensor_minimum_interval_seconds,
+            event_transformation_fn=event_transformation_fn,
         ),
     )
 
@@ -100,6 +103,7 @@ def build_full_automapped_dags_from_airflow_instance(
     *,
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    event_transformation_fn: Optional[EventTransformationFn] = None,
 ) -> Definitions:
     defs = FullAutomappedDagsLoader(
         airflow_instance=airflow_instance,
@@ -112,6 +116,7 @@ def build_full_automapped_dags_from_airflow_instance(
             airflow_data=AirflowDefinitionsData(
                 resolved_airflow_defs=defs, airflow_instance=airflow_instance
             ),
+            event_transformation_fn=event_transformation_fn,
         ),
     )
 
