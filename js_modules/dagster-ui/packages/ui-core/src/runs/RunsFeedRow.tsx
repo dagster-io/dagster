@@ -101,7 +101,7 @@ export const RunsFeedRow = ({
             style={{gap: '4px 8px', lineHeight: 0}}
           >
             <RunRowTags
-              run={{...entry, mode: ''}}
+              run={{...entry, mode: 'default'}}
               isJob={true}
               isHovered={isHovered}
               onAddTag={onAddTag}
