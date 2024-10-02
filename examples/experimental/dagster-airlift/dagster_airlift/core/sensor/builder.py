@@ -236,7 +236,7 @@ def build_synthetic_asset_materializations(
         "Assuming one task instance per task_id for now. Dynamic Airflow tasks not supported.",
     )
 
-    # TODO: Need to properly paginate this.
+    # https://linear.app/dagster-labs/issue/FOU-444/make-sensor-work-with-an-airflow-dag-run-that-has-more-than-1000
     dagster_runs = context.instance.get_runs(
         filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: dag_run.run_id}),
         limit=1000,

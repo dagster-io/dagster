@@ -18,7 +18,7 @@ def poll_for_materialization(
     asset_key: AssetKey,
 ) -> EventLogEntry:
     start_time = get_current_datetime()
-    while get_current_datetime() - start_time < timedelta(seconds=300000):
+    while get_current_datetime() - start_time < timedelta(seconds=30):
         asset_materialization = dagster_instance.get_latest_materialization_event(
             asset_key=asset_key
         )
