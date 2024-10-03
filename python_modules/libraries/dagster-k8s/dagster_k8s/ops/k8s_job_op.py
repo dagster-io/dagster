@@ -418,7 +418,7 @@ def execute_k8s_job(
     except (DagsterExecutionInterruptedError, Exception) as e:
         if delete_failed_k8s_jobs:
             context.log.info(
-                    f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception"
+                f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception"
             )
             api_client.delete_job(job_name=job_name, namespace=namespace)
         raise e
