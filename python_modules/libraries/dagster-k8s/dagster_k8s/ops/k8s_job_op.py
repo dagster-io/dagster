@@ -6,8 +6,6 @@ import kubernetes.config
 import kubernetes.watch
 from dagster import (
     Enum as DagsterEnum,
-)
-from dagster import (
     Field,
     In,
     Noneable,
@@ -21,11 +19,7 @@ from dagster._annotations import experimental
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
-from dagster_k8s.client import (
-    DEFAULT_JOB_POD_COUNT,
-    DagsterKubernetesClient,
-    k8s_api_retry,
-)
+from dagster_k8s.client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
     DagsterK8sJobConfig,
