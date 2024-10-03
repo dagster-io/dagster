@@ -193,8 +193,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 "Only allow_list can be set for the propagate_tags config property",
             )
         if self.propagate_tags.get("allow_list"):
-            invalid_tags = {"dagster/op_selection", "dagster/solid_selection"}
             # These tags are potentially very large and can cause ECS to fail to start a task. They also don't seem particularly useful in a task-tagging context
+            invalid_tags = {"dagster/op_selection", "dagster/solid_selection"}
             check.invariant(
                 invalid_tags - set(self.propagate_tags.get("allow_list", [])) == invalid_tags,
                 f"Cannot include {invalid_tags} in allow_list",
