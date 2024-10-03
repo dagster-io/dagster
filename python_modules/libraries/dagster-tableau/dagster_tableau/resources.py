@@ -140,12 +140,13 @@ class BaseTableauClient:
                 job = self.get_job(job_id=job.id)
 
                 if job.finish_code == -1:
+                    # -1 is the default value for JobItem.finish_code, when the job is in progress
                     continue
-                elif job.finish_code == 0:
+                elif job.finish_code == TSC.JobItem.FinishCode.Success:
                     break
-                elif job.finish_code == 1:
+                elif job.finish_code == TSC.JobItem.FinishCode.Failed:
                     raise Failure(f"Job failed: {job.id}")
-                elif job.finish_code == 2:
+                elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
                     raise Failure(f"Job was cancelled: {job.id}")
                 else:
                     raise Failure(
@@ -154,7 +155,7 @@ class BaseTableauClient:
         finally:
             # if Tableau sync has not completed, make sure to cancel it so that it doesn't outlive
             # the python process
-            if job.finish_code not in (0, 1, 2):
+            if job.finish_code not in (TSC.JobItem.FinishCode.Success, TSC.JobItem.FinishCode.Failed, TSC.JobItem.FinishCode.Cancelled):
                 self.cancel_job(job.id)
 
         return job.workbook_id
