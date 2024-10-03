@@ -23,7 +23,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -36,6 +36,7 @@ from dagster._core.remote_representation import (
     GrpcServerCodeLocation,
     RepositoryHandle,
 )
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -340,6 +341,11 @@ class BaseWorkspaceRequestContext(LoadingContext):
             return None
 
         return self.get_workspace_snapshot().asset_graph.get(asset_key)
+
+    def get_repository(self, selector: RepositorySelector) -> ExternalRepository:
+        return self.get_code_location(selector.location_name).get_repository(
+            selector.repository_name
+        )
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):

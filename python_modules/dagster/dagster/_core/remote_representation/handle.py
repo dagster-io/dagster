@@ -1,28 +1,34 @@
-from typing import TYPE_CHECKING, Mapping
+import sys
+from typing import TYPE_CHECKING, Mapping, Optional
 
 import dagster._check as check
-from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.code_pointer import ModuleCodePointer
+from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.origin import RepositoryPythonOrigin
-from dagster._core.remote_representation.origin import CodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_representation.origin import (
+    CodeLocationOrigin,
+    RegisteredCodeLocationOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._record import IHaveNew, record, record_custom
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
 
 
-@record_custom
-class RepositoryHandle(IHaveNew):
+@record
+class RepositoryHandle:
     repository_name: str
     code_location_origin: CodeLocationOrigin
     repository_python_origin: RepositoryPythonOrigin
     display_metadata: Mapping[str, str]
 
-    def __new__(cls, repository_name: str, code_location: "CodeLocation"):
+    @classmethod
+    def from_location(cls, repository_name: str, code_location: "CodeLocation"):
         from dagster._core.remote_representation.code_location import CodeLocation
 
         check.inst_param(code_location, "code_location", CodeLocation)
-        return super().__new__(
-            cls,
+        return cls(
             repository_name=repository_name,
             code_location_origin=code_location.origin,
             repository_python_origin=code_location.get_repository_python_origin(repository_name),
@@ -41,6 +47,32 @@ class RepositoryHandle(IHaveNew):
 
     def get_python_origin(self) -> RepositoryPythonOrigin:
         return self.repository_python_origin
+
+    def to_selector(self) -> RepositorySelector:
+        return RepositorySelector(
+            location_name=self.location_name,
+            repository_name=self.repository_name,
+        )
+
+    @staticmethod
+    def for_test(
+        *,
+        location_name: str = "fake_location",
+        repository_name: str = "fake_repository",
+        display_metadata: Optional[Mapping[str, str]] = None,
+    ) -> "RepositoryHandle":
+        return RepositoryHandle(
+            repository_name=repository_name,
+            code_location_origin=RegisteredCodeLocationOrigin(location_name=location_name),
+            repository_python_origin=RepositoryPythonOrigin(
+                executable_path=sys.executable,
+                code_pointer=ModuleCodePointer(
+                    module="fake.module",
+                    fn_name="fake_fn",
+                ),
+            ),
+            display_metadata=display_metadata or {},
+        )
 
 
 @record_custom

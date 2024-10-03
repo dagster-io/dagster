@@ -257,8 +257,8 @@ def get_assets_latest_info(
         if asset_node:
             node_id = get_unique_asset_id(
                 asset_key,
-                asset_node.priority_repository_handle.repository_name,
-                asset_node.priority_repository_handle.location_name,
+                asset_node.priority_repository_selector.repository_name,
+                asset_node.priority_repository_selector.location_name,
             )
         else:
             node_id = get_unique_asset_id(asset_key)

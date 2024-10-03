@@ -79,6 +79,7 @@ from dagster_graphql.schema.tags import GraphenePipelineTag
 from dagster_graphql.schema.util import ResolveInfo, get_compute_log_manager, non_null_list
 
 if TYPE_CHECKING:
+    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
     from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
 
@@ -214,19 +215,15 @@ class GrapheneAsset(graphene.ObjectType):
     class Meta:
         name = "Asset"
 
-    def __init__(self, key, definition=None):
+    def __init__(self, key, definition: Optional["GrapheneAssetNode"] = None):
         super().__init__(key=key, definition=definition)
         self._definition = definition
 
-    def resolve_id(self, _):
+    def resolve_id(self, _) -> str:
         # If the asset is not a SDA asset (has no definition), the id is the asset key
-        # Else, return a unique idenitifer containing the repository location and name
+        # Else, return a unique identifier containing the repository location and name
         if self._definition:
-            return get_unique_asset_id(
-                self.key,
-                self._definition.repository_location.name,
-                self._definition.external_repository.name,
-            )
+            return self._definition.id
         return get_unique_asset_id(self.key)
 
     def resolve_assetMaterializations(

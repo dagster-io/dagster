@@ -64,8 +64,8 @@ def _get_job_execution_data_from_run_request(
         len(run_request.entity_keys) > 0,
         "Expected RunRequest to have an asset selection or asset check keys",
     )
-    repo_handle = asset_graph.get_repository_handle(run_request.entity_keys[0])
-    location_name = repo_handle.code_location_origin.location_name
+    selector = asset_graph.get_repository_selector(run_request.entity_keys[0])
+    location_name = selector.location_name
     job_name = (
         _get_implicit_job_name_for_assets(asset_graph, run_request.asset_selection)
         if run_request.asset_selection
@@ -81,7 +81,7 @@ def _get_job_execution_data_from_run_request(
 
     pipeline_selector = JobSubsetSelector(
         location_name=location_name,
-        repository_name=repo_handle.repository_name,
+        repository_name=selector.repository_name,
         job_name=job_name,
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
@@ -89,7 +89,7 @@ def _get_job_execution_data_from_run_request(
     )
 
     if pipeline_selector not in run_request_execution_data_cache:
-        code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
+        code_location = workspace.get_code_location(selector.location_name)
         external_job = code_location.get_external_job(pipeline_selector)
 
         external_execution_plan = code_location.get_external_execution_plan(

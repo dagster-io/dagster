@@ -642,7 +642,7 @@ def _execute_backfill_command_at_location(
 
     run_tags = get_tags_from_args(cli_args)
 
-    repo_handle = RepositoryHandle(
+    repo_handle = RepositoryHandle.from_location(
         repository_name=external_repo.name,
         code_location=code_location,
     )
