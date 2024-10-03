@@ -6,7 +6,7 @@ export type RunsFeedRootQueryVariables = Types.Exact<{
   limit: Types.Scalars['Int']['input'];
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  includeRunsInBackfills: Types.Scalars['Boolean']['input'];
+  includeRunsFromBackfills: Types.Scalars['Boolean']['input'];
 }>;
 
 export type RunsFeedRootQuery = {
@@ -97,4 +97,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = '47f5f305206b0696195bae6de586fada3d6c536cb7d84e7d9290760f8e027dde';
+export const RunsFeedRootQueryVersion = 'fbfc82cccaebc1698305767c04c4dc16ed15b7a272342135d5a83745ffece37e';

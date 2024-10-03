@@ -40,14 +40,14 @@ const filters: RunFilterTokenType[] = [
   'status',
 ];
 
-export function useRunsFeedEntries(filter: RunsFilter, includeRunsInBackfills: boolean) {
+export function useRunsFeedEntries(filter: RunsFilter, includeRunsFromBackfills: boolean) {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsFeedRootQuery,
     RunsFeedRootQueryVariables
   >({
     query: RUNS_FEED_ROOT_QUERY,
     pageSize: PAGE_SIZE,
-    variables: {filter, includeRunsInBackfills},
+    variables: {filter, includeRunsFromBackfills},
     nextCursorForResult: (runs) => {
       if (runs.runsFeedOrError.__typename !== 'RunsFeedConnection') {
         return undefined;
@@ -118,12 +118,12 @@ export const RunsFeedRoot = () => {
     enabledFilters: filters,
   });
 
-  const [includeRunsInBackfills, setIncludeRunsInBackfills] = useState(false);
+  const [includeRunsFromBackfills, setincludeRunsFromBackfills] = useState(false);
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
 
   const {entries, paginationProps, queryResult} = useRunsFeedEntries(
     filter,
-    includeRunsInBackfills,
+    includeRunsFromBackfills,
   );
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
@@ -135,9 +135,9 @@ export const RunsFeedRoot = () => {
       {button}
       <Checkbox
         label={<span>Show runs within backfills</span>}
-        checked={includeRunsInBackfills}
+        checked={includeRunsFromBackfills}
         onChange={() => {
-          setIncludeRunsInBackfills(!includeRunsInBackfills);
+          setincludeRunsFromBackfills(!includeRunsFromBackfills);
         }}
       />
     </Box>
@@ -227,13 +227,13 @@ export const RUNS_FEED_ROOT_QUERY = gql`
     $limit: Int!
     $cursor: String
     $filter: RunsFilter
-    $includeRunsInBackfills: Boolean!
+    $includeRunsFromBackfills: Boolean!
   ) {
     runsFeedOrError(
       limit: $limit
       cursor: $cursor
       filter: $filter
-      includeRunsInBackfills: $includeRunsInBackfills
+      includeRunsFromBackfills: $includeRunsFromBackfills
     ) {
       ... on RunsFeedConnection {
         cursor
