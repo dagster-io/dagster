@@ -164,7 +164,7 @@ class BaseTableauClient:
 
         return job.workbook_id
 
-    def add_data_quality_warning_to_datasource(
+    def add_data_quality_warning_to_data_source(
         self,
         datasource_id: str,
         warning_type: Optional[TSC.DQWItem.WarningType] = None,
