@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from typing import Sequence
 
 import mock
+import pytest
 from dagster import (
     AssetCheckKey,
     AssetKey,
@@ -16,14 +18,24 @@ from dagster import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
+from dagster._core.definitions.sensor_definition import SensorEvaluationContext
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
 from dagster._time import get_current_datetime
-from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    EFFECTIVE_TIMESTAMP_METADATA_KEY,
+    TASK_ID_TAG_KEY,
+)
 from dagster_airlift.core import dag_defs, task_defs
+from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 from dagster_airlift.core.sensor import AirflowPollingSensorCursor
+from dagster_airlift.core.sensor.builder import AirliftSensorEventTransformerError
 from dagster_airlift.core.serialization.defs_construction import (
     key_for_automapped_task_asset,
     make_default_dag_asset_key,
@@ -581,3 +593,113 @@ def simulate_materialize_from_proxy_operator(
         TASK_ID_TAG_KEY: task_id,
     }
     return materialize(assets=[assets_def], instance=instance, tags=tags)
+
+
+def test_pluggable_transformation(init_load_context: None, instance: DagsterInstance) -> None:
+    """Test the case where a custom transformation is provided to the sensor."""
+
+    def pluggable_event_transformer(
+        context: SensorEvaluationContext,
+        airflow_data: AirflowDefinitionsData,
+        events: Sequence[AssetMaterialization],
+    ) -> Sequence[AssetMaterialization]:
+        assert isinstance(context, SensorEvaluationContext)
+        assert isinstance(airflow_data, AirflowDefinitionsData)
+        # Change the timestamp, which should also change the order. We expect this to be respected by the sensor.
+        new_events = []
+        for event in events:
+            if AssetKey(["a"]) == event.asset_key:
+                new_events.append(
+                    event._replace(
+                        metadata={
+                            "test": "test",
+                            EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(1.0),
+                        }
+                    )
+                )
+            elif AssetKey.from_user_string(make_dag_key_str("dag")) == event.asset_key:
+                new_events.append(
+                    event._replace(
+                        metadata={
+                            "test": "test",
+                            EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(0.0),
+                        }
+                    )
+                )
+        return new_events
+
+    result, context = build_and_invoke_sensor(
+        assets_per_task={
+            "dag": {"task": [("a", [])]},
+        },
+        instance=instance,
+        event_transformer_fn=pluggable_event_transformer,
+    )
+    assert len(result.asset_events) == 2
+    assert_expected_key_order(result.asset_events, [make_dag_key_str("dag"), "a"])
+    for event in result.asset_events:
+        assert set(event.metadata.keys()) == {"test", EFFECTIVE_TIMESTAMP_METADATA_KEY}
+
+
+def test_user_code_error_pluggable_transformation(
+    init_load_context: None, instance: DagsterInstance
+) -> None:
+    """Test the case where a custom transformation is provided to the sensor, and the user code raises an error."""
+
+    def pluggable_event_transformer(
+        context: SensorEvaluationContext,
+        airflow_data: AirflowDefinitionsData,
+        events: Sequence[AssetMaterialization],
+    ) -> Sequence[AssetMaterialization]:
+        raise ValueError("User code error")
+
+    with pytest.raises(AirliftSensorEventTransformerError):
+        build_and_invoke_sensor(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            instance=instance,
+            event_transformer_fn=pluggable_event_transformer,
+        )
+
+
+def test_missing_effective_timestamp_pluggable_impl(
+    init_load_context: None, instance: DagsterInstance
+) -> None:
+    """Test the case where a custom transformation is provided to the sensor, and the user doesn't include effective timestamp metadata."""
+
+    def missing_effective_timestamp(
+        context: SensorEvaluationContext,
+        airflow_data: AirflowDefinitionsData,
+        events: Sequence[AssetMaterialization],
+    ) -> Sequence[AssetMaterialization]:
+        return [event._replace(metadata={}) for event in events]
+
+    with pytest.raises(DagsterInvariantViolationError):
+        build_and_invoke_sensor(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            instance=instance,
+            event_transformer_fn=missing_effective_timestamp,
+        )
+
+
+def test_nonsense_result_pluggable_impl(init_load_context: None, instance: DagsterInstance) -> None:
+    """Test the case where a nonsense result is returned from the custom transformation."""
+
+    def nonsense_result(
+        context: SensorEvaluationContext,
+        airflow_data: AirflowDefinitionsData,
+        events: Sequence[AssetMaterialization],
+    ) -> Sequence[AssetMaterialization]:
+        return [1, 2, 3]  # type: ignore # intentionally wrong
+
+    with pytest.raises(DagsterInvariantViolationError):
+        build_and_invoke_sensor(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            instance=instance,
+            event_transformer_fn=nonsense_result,
+        )
