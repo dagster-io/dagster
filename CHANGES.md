@@ -6,8 +6,8 @@
 
 - `JobDefinition`, `@job`, and `define_asset_job` now take a `run_tags` parameter. If `run_tags` are defined, they will be attached to all runs of the job, and `tags` will not be. If `run_tags` is not set, then `tags` are attached to all runs of the job (status quo behavior). This change enables the separation of definition-level and run-level tags on jobs.
 - Then env var `DAGSTER_COMPUTE_LOG_TAIL_WAIT_AFTER_FINISH` can now be used to pause before capturing logs (thanks @HynekBlaha!)
-- The `kinds` parameter is now available on `AssetSpec`
-- `OutputContext` now exposes the `AssetSpec` of the asset that is being stored as an output. (thanks, @marijncv)
+- The `kinds` parameter is now available on `AssetSpec`.
+- `OutputContext` now exposes the `AssetSpec` of the asset that is being stored as an output (thanks, @marijncv!)
 - [experimental] Backfills are incorporated into the Runs page to improve observability and provide a more simplified UI. See the [GitHub discussion](https://github.com/dagster-io/dagster/discussions/24898) for more details.
 - [ui] The updated navigation is now enabled for all users. You can revert to the legacy navigation via a feature flag. See [GitHub discussion](https://github.com/dagster-io/dagster/discussions/21370) for more.
 - [ui] Improved performance for loading partition statuses of an asset job.
@@ -16,16 +16,15 @@
 
 ### Bugfixes
 
-- Changed the log volume for global concurrency blocked runs in the run coordinator, to be less spammy.
+- Changed the log volume for global concurrency blocked runs in the run coordinator to be less spammy.
 - [ui] Asset checks are now visible in the run page header when launched from a schedule.
-- [ui] Fixed asset group outlines not rendering properly in Safari
+- [ui] Fixed asset group outlines not rendering properly in Safari.
 - [ui] Reporting a materialization event now removes the asset from the asset health "Execution failures" list and returns the asset to a green / success state.
-- [ui] When setting an AutomationCondition on an asset, the label of this condition will now be shown in the sidebar on the Asset Details page.
+- [ui] When setting an `AutomationCondition` on an asset, the label of this condition will now be shown in the sidebar on the Asset Details page.
 - [ui] Previously, filtering runs by Created date would include runs that had been updated after the lower bound of the requested time range. This has been updated so that only runs created after the lower bound will be included.
-- [ui] In new navigation experimental flag, fix automations page for code locations that have schedules but no sensors.
+- [ui] When using the new experimental navigation flag, added a fix for the automations page for code locations that have schedules but no sensors.
 - [ui] Fixed tag wrapping on asset column schema table.
-- [ui] Restored object counts on code location list view.
-- [ui] Added work-around for "Internal error opening backing store for indexedDB.open" error
+- [ui] Restored object counts on the code location list view.
 - [ui] Padding when displaying warnings on unsupported run coordinators has been corrected (thanks @hainenber!)
 - [dagster-k8s] Fixed an issue where run termination sometimes did not terminate all step processes when using the k8s_job_executor, if the termination was initiated while it was in the middle of launching a step pod.
 
@@ -33,12 +32,12 @@
 
 - Corrections on the Dagster instance concept page (thanks @mheguy!)
 - Corrections on the code locations concept page (thanks @tiberiuana!)
-- Repeated words removed (thanks @tianzedavid)
+- Repeated words removed (thanks @tianzedavid!)
 - [dagster-deltalake] Corrections and improvements (thanks @avriiil!)
-- [dagster-aws] Added docs for PipesEMRServerlessClient
-- [dagster-cli] A guide on how to validate Dagster definitions using `dagster definitions validate` have been added. [#24815](https://github.com/dagster-io/dagster/pull/24815)
-- [dagster-databricks] added docs for using Databricks Pipes with existing clusters
-- [dagster-dbt] corrected sql (thanks @b-per!)
+- [dagster-aws] Added docs for PipesEMRServerlessClient.
+- [dagster-cli] A guide on how to validate Dagster definitions using `dagster definitions validate` have been added.
+- [dagster-databricks] Added docs for using Databricks Pipes with existing clusters.
+- [dagster-dbt] Corrected sample sql code (thanks @b-per!)
 
 ## 1.8.9 (core) / 0.24.9 (libraries)
 
