@@ -1,4 +1,4 @@
-from dagster_tableau import StartWorkbookRefreshRequest, TableauCloudWorkspace
+from dagster_tableau import TableauCloudWorkspace
 
 from dagster import EnvVar
 
@@ -12,7 +12,5 @@ workspace = TableauCloudWorkspace(
 )
 
 defs = workspace.build_defs(
-    start_workbook_refresh_requests=[
-        StartWorkbookRefreshRequest(workbook_id="b75fc023-a7ca-4115-857b-4342028640d0")
-    ]
+    refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]
 )

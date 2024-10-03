@@ -158,16 +158,10 @@ defs = Definitions.merge(
 
 ### Refresh and materialize Tableau assets
 
-You can use Dagster to orchestrate the refreshment of Tableau workbooks and materialization of Looker sheets and dashboards.
-
-To refresh a Tableau workbook with Dagster, pass its definition by passing `StartWorkbookRefreshRequest` to `TableauCloudWorkspace.build_defs(...)` function.
-
-Note that only workbooks created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
-
-When materializing the Tableau assets, Dagster will refresh the workbooks for which a `StartWorkbookRefreshRequest` has been created. Dagster will materialize the sheets and dashboards of workbooks that have been refreshed as `AssetMaterialization`, and the sheets and dashboards of the workbooks that have not been refreshed as `AssetObservation`.
+You can use Dagster to refresh Tableau workbooks and materialize Tableau sheets and dashboards.
 
 ```python file=/integrations/tableau/refresh-and-materialize-tableau-assets.py
-from dagster_tableau import StartWorkbookRefreshRequest, TableauCloudWorkspace
+from dagster_tableau import TableauCloudWorkspace
 
 from dagster import EnvVar
 
@@ -181,8 +175,8 @@ workspace = TableauCloudWorkspace(
 )
 
 defs = workspace.build_defs(
-    start_workbook_refresh_requests=[
-        StartWorkbookRefreshRequest(workbook_id="b75fc023-a7ca-4115-857b-4342028640d0")
-    ]
+    refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]
 )
 ```
+
+Note that only workbooks created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
