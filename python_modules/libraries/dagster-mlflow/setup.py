@@ -33,6 +33,6 @@ setup(
     packages=find_packages(exclude=["dagster_mlflow_tests*"]),
     include_package_data=True,
     python_requires=">=3.8,<3.13",
-    install_requires=[f"dagster{pin}", "mlflow", "pandas"],
+    install_requires=["dagster==1.8.10", "mlflow", "pandas"],
     zip_safe=False,
 )
