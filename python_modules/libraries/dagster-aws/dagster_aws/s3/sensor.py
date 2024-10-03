@@ -1,18 +1,25 @@
 from typing import Optional
 
 import boto3
+import botocore
 import dagster._check as check
 
 
 def get_s3_keys(
-    bucket: str, prefix: str = "", since_key: Optional[str] = None, s3_session: boto3.Session = None
+    bucket: str,
+    prefix: str = "",
+    since_key: Optional[str] = None,
+    s3_session: Optional[boto3.Session] = None,
 ):
     check.str_param(bucket, "bucket")
     check.str_param(prefix, "prefix")
     check.opt_str_param(since_key, "since_key")
 
     if not s3_session:
-        s3_session = boto3.resource("s3", use_ssl=True, verify=True).meta.client
+        s3_session = boto3.client("s3", use_ssl=True, verify=True)
+
+    if not s3_session:
+        raise botocore.exceptions.ClientError("Failed to initialize s3 client")
 
     paginator = s3_session.get_paginator("list_objects_v2")
     page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
