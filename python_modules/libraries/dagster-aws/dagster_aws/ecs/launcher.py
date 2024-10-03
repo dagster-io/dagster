@@ -389,8 +389,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
             raise Exception("Cannot override system ECS tag: dagster/run_id")
 
-        # these tags often contain * or + characters which are not allowed in ECS tags. They don't seem super useful
-        # from an observability perspective, so we exclude them from the ECS tags
+        tags_to_propagate = self._get_tags_to_propagate_to_ecs_task(run)
+
+        return [
+            {"key": "dagster/run_id", "value": run.run_id},
+            {"key": "dagster/job_name", "value": run.job_name},
+            *container_context.run_ecs_tags,
+            *tags_to_propagate,
+        ]
+
+    def _get_tags_to_propagate_to_ecs_task(self, run: DagsterRun) -> List[Dict[str, str]]:
+        # These tags often contain * or + characters which are not allowed in ECS tags.
+        # They don't seem super useful from an observability perspective, so are excluded from the ECS tags
         tags_to_exclude = (
             "dagster/op_selection",
             "dagster/solid_selection",
@@ -405,13 +415,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     for k, v in run.tags.items()
                     if k in self.propagate_tags["allow_list"] and k not in tags_to_exclude
                 ]
-
-        return [
-            {"key": "dagster/run_id", "value": run.run_id},
-            {"key": "dagster/job_name", "value": run.job_name},
-            *container_context.run_ecs_tags,
-            *tags_to_propagate,
-        ]
+        return tags_to_propagate
 
     def _get_run_tags(self, run_id: str) -> Tags:
         run = self._instance.get_run_by_id(run_id)
