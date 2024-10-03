@@ -155,7 +155,11 @@ class BaseTableauClient:
         finally:
             # if Tableau sync has not completed, make sure to cancel it so that it doesn't outlive
             # the python process
-            if job.finish_code not in (TSC.JobItem.FinishCode.Success, TSC.JobItem.FinishCode.Failed, TSC.JobItem.FinishCode.Cancelled):
+            if job.finish_code not in (
+                TSC.JobItem.FinishCode.Success,
+                TSC.JobItem.FinishCode.Failed,
+                TSC.JobItem.FinishCode.Cancelled,
+            ):
                 self.cancel_job(job.id)
 
         return job.workbook_id
