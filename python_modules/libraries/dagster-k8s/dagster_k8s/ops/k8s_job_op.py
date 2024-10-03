@@ -163,7 +163,7 @@ def execute_k8s_job(
     job_spec_config: Optional[Dict[str, Any]] = None,
     k8s_job_name: Optional[str] = None,
     merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
-    delete_failed_k8s_jobs: bool = True,
+    delete_failed_k8s_jobs: Optional[bool] = True,
     _kubeconfig_file_context: Optional[str] = None,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
