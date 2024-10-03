@@ -121,7 +121,10 @@ export const RunsFeedRoot = () => {
   const [includeRunsInBackfills, setIncludeRunsInBackfills] = useState(false);
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
 
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter, includeRunsInBackfills);
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
+    filter,
+    includeRunsInBackfills,
+  );
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
@@ -220,8 +223,18 @@ export const RunsFeedRoot = () => {
 export default RunsFeedRoot;
 
 export const RUNS_FEED_ROOT_QUERY = gql`
-  query RunsFeedRootQuery($limit: Int!, $cursor: String, $filter: RunsFilter, $includeRunsInBackfills: Boolean!) {
-    runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter, includeRunsInBackfills: $includeRunsInBackfills) {
+  query RunsFeedRootQuery(
+    $limit: Int!
+    $cursor: String
+    $filter: RunsFilter
+    $includeRunsInBackfills: Boolean!
+  ) {
+    runsFeedOrError(
+      limit: $limit
+      cursor: $cursor
+      filter: $filter
+      includeRunsInBackfills: $includeRunsInBackfills
+    ) {
       ... on RunsFeedConnection {
         cursor
         hasMore
