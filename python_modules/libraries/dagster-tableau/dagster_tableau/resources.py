@@ -177,7 +177,7 @@ class BaseTableauClient:
             datasource_id=datasource_id
         )
         warning: TSC.DQWItem = TSC.DQWItem(
-            warning_type=warning_type or TSC.DQWItem.WarningType.WARNING,
+            warning_type=str(warning_type) or TSC.DQWItem.WarningType.WARNING,
             message=message,
             active=active or True,
             severe=severe or False,
