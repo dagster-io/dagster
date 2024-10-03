@@ -140,7 +140,7 @@ class AutomationConditionEvaluator:
             )
             num_evaluated += 1
 
-        for topo_level in self.asset_graph.toposorted_entity_keys:
+        for topo_level in self.asset_graph.toposorted_entity_keys_by_level:
             coroutines = [
                 _evaluate_entity_async(entity_key)
                 for entity_key in topo_level

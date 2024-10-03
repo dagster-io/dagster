@@ -754,7 +754,11 @@ def test_toposort(
     asset_graph = asset_graph_from_assets([A, B, Ac, Bc])
 
     assert asset_graph.toposorted_asset_keys == [A.key, B.key]
-    assert asset_graph.toposorted_entity_keys == [A.key, Ac.check_key, B.key, Bc.check_key]
+    assert asset_graph.toposorted_entity_keys_by_level == [
+        [A.key],
+        [Ac.check_key, B.key],
+        [Bc.check_key],
+    ]
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
