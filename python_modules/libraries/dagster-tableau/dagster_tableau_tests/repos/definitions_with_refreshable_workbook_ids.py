@@ -1,10 +1,5 @@
-from typing import cast
-
 from dagster import asset, define_asset_job
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.repository_definition.repository_definition import (
-    PendingRepositoryDefinition,
-)
 from dagster_tableau import TableauCloudWorkspace
 
 from dagster_tableau_tests.conftest import (
@@ -25,7 +20,7 @@ resource = TableauCloudWorkspace(
     pod_name=FAKE_POD_NAME,
 )
 
-pbi_defs = resource.build_defs()
+pbi_defs = resource.build_defs(refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"])
 
 
 @asset
@@ -33,10 +28,7 @@ def my_materializable_asset():
     pass
 
 
-pending_repo_from_cached_asset_metadata = cast(
-    PendingRepositoryDefinition,
-    Definitions.merge(
-        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
-        pbi_defs,
-    ).get_inner_repository(),
+defs = Definitions.merge(
+    Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
+    pbi_defs,
 )
