@@ -4,7 +4,7 @@ import os
 import uuid
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import boto3
 from botocore.exceptions import ClientError
@@ -195,7 +195,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if self.propagate_tags.get("allow_list"):
             invalid_tags = {"dagster/op_selection", "dagster/solid_selection"}
             # These tags are potentially very large and can cause ECS to fail to start a task. They also don't seem particularly useful in a task-tagging context
-            check.invariant(invalid_tags - set(self.propagate_tags.get("allow_list")) == invalid_tags, f"Cannot include {invalid_tags} in allow_list")
+            check.invariant(
+                invalid_tags - set(self.propagate_tags.get("allow_list")) == invalid_tags,
+                f"Cannot include {invalid_tags} in allow_list",
+            )
 
         self._current_task_metadata = None
         self._current_task = None
@@ -388,14 +391,19 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         # these tags often contain * or + characters which are not allowed in ECS tags. They don't seem super useful
         # from an observability perspective, so we exclude them from the ECS tags
-        tags_to_exclude = ("dagster/op_selection", "dagster/solid_selection",)
+        tags_to_exclude = (
+            "dagster/op_selection",
+            "dagster/solid_selection",
+        )
 
         tags_to_propagate = []
         if self.propagate_tags:
             # Add contextual Dagster run tags to ECS tags
             if self.propagate_tags.get("allow_list"):
                 tags_to_propagate = [
-                    {"key": k, "value": v} for k, v in run.tags.items() if k in self.propagate_tags["allow_list"] and k not in tags_to_exclude
+                    {"key": k, "value": v}
+                    for k, v in run.tags.items()
+                    if k in self.propagate_tags["allow_list"] and k not in tags_to_exclude
                 ]
 
         return [
