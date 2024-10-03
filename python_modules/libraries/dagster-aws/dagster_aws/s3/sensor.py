@@ -1,9 +1,12 @@
 from typing import Optional
+
 import boto3
 import dagster._check as check
 
 
-def get_s3_keys(bucket: str, prefix: str = "", since_key: Optional[str] = None, s3_session: boto3.Session = None):
+def get_s3_keys(
+    bucket: str, prefix: str = "", since_key: Optional[str] = None, s3_session: boto3.Session = None
+):
     check.str_param(bucket, "bucket")
     check.str_param(prefix, "prefix")
     check.opt_str_param(since_key, "since_key")
@@ -11,24 +14,12 @@ def get_s3_keys(bucket: str, prefix: str = "", since_key: Optional[str] = None, 
     if not s3_session:
         s3_session = boto3.resource("s3", use_ssl=True, verify=True).meta.client
 
+    paginator = s3_session.get_paginator("list_objects_v2")
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
+
     contents = []
-    continuation_token = None
-
-    while True:
-        params = {
-            "Bucket": bucket,
-            "Prefix": prefix,
-        }
-        if continuation_token:
-            params["ContinuationToken"] = continuation_token
-
-        response = s3_session.list_objects_v2(**params)
-        contents.extend(response.get("Contents", []))
-
-        if not response.get("IsTruncated"):
-            break
-
-        continuation_token = response.get("NextContinuationToken")
+    for page in page_iterator:
+        contents.extend(page.get("Contents", []))
 
     sorted_keys = [obj["Key"] for obj in sorted(contents, key=lambda x: x["LastModified"])]
 
