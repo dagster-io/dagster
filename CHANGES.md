@@ -4,10 +4,10 @@
 
 ### New
 
-*  Insert changelog entry or "NOCHANGELOG" here. [#24899](https://github.com/dagster-io/dagster/pull/24899)
-*  `JobDefinition`, `@job`, and `define_asset_job` now take a `run_tags` parameter. If `run_tags` are defined, they will be attached to all runs of the job, and `tags` will not be. If `run_tags` is not set, then `tags` are attached to all runs of the job (status quo behavior). This change enables the separation of definition-level and run-level tags on jobs. [#24379](https://github.com/dagster-io/dagster/pull/24379)
-*  [dagster-aws] The ECS launcher now automatically retries transient ECS RunTask failures (like capacity placement failures). [#24691](https://github.com/dagster-io/dagster/pull/24691)
-*  `OutputContext` now exposes the `AssetSpec` of the asset that is being stored as an output [#24495](https://github.com/dagster-io/dagster/pull/24495)
+*  Backfills are incorporated into the Runs page to improve observability and provide a more simplified UI. See the [GitHub discussion](https://github.com/dagster-io/dagster/discussions/24898) for more details.
+*  `JobDefinition`, `@job`, and `define_asset_job` now take a `run_tags` parameter. If `run_tags` are defined, they will be attached to all runs of the job, and `tags` will not be. If `run_tags` is not set, then `tags` are attached to all runs of the job (status quo behavior). This change enables the separation of definition-level and run-level tags on jobs. 
+*  [dagster-aws] The ECS launcher now automatically retries transient ECS RunTask failures (like capacity placement failures).
+*  `OutputContext` now exposes the `AssetSpec` of the asset that is being stored as an output. (thanks, @marijncv)[#24495](https://github.com/dagster-io/dagster/pull/24495)
 *  Insert changelog entry or "NOCHANGELOG" here. [#24463](https://github.com/dagster-io/dagster/pull/24463)
 
 ### Bugfixes
@@ -53,18 +53,6 @@
 *  Add alert targets to the config schema to ensure that alert targets aren't deleted when an alert policy is turned off. [#11859](https://github.com/dagster-io/internal/pull/11859)
 
 # Undocumented Changes
-- [ ] Alex Langenfeld
-	- [ ] (repo:dagster) [#25012](https://github.com/dagster-io/dagster/pull/25012) prevent TableColumn.tags from shifting job snapshot id (#25012)
-	- [ ] (repo:dagster) [#25010](https://github.com/dagster-io/dagster/pull/25010) [graphql] avoid using outerscoped repo variable in resolve_assetNodes (#25010)
-	- [ ] (repo:dagster) [#24822](https://github.com/dagster-io/dagster/pull/24822) [record] handle.py (#24822)
-	- [ ] (repo:dagster) [#24890](https://github.com/dagster-io/dagster/pull/24890) remove legacy nt from RunFilter (#24890)
-	- [ ] (repo:dagster) [#24820](https://github.com/dagster-io/dagster/pull/24820) [record] selector.py (#24820)
-	- [ ] (repo:dagster) [#24875](https://github.com/dagster-io/dagster/pull/24875) Revert "filter run_ids before calling get_runs (#24873)" (#24875)
-	- [ ] (repo:dagster) [#24873](https://github.com/dagster-io/dagster/pull/24873) filter run_ids before calling get_runs (#24873)
-	- [ ] (repo:dagster) [#24872](https://github.com/dagster-io/dagster/pull/24872) short circuit get_run_record_by_id (#24872)
-	- [ ] (repo:dagster) [#24537](https://github.com/dagster-io/dagster/pull/24537) [graphql] use RemoteAssetGraph (#24537)
-	- [ ] (repo:dagster) [#24777](https://github.com/dagster-io/dagster/pull/24777) [record] mutex record_custom and record inheritance (#24777)
-	- [ ] (repo:dagster) [#24607](https://github.com/dagster-io/dagster/pull/24607) remove IWorkspace (#24607)
 - [ ] Avril Aysha
 	- [ ] (repo:dagster) [#19249](https://github.com/dagster-io/dagster/pull/19249) [docs] Fix typo in deltalake docs (#19249)
 	- [ ] (repo:dagster) [#19247](https://github.com/dagster-io/dagster/pull/19247) fix typos (#19247)
