@@ -6,11 +6,12 @@ from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
+from dagster._core.remote_representation import ExternalSensor, TargetSnap
 from dagster._core.remote_representation.external import CompoundID, ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.fetch_sensors import (
     get_sensor_next_tick,
     reset_sensor,
@@ -38,6 +39,7 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -50,10 +52,8 @@ class GrapheneTarget(graphene.ObjectType):
     class Meta:
         name = "Target"
 
-    def __init__(self, external_target: ExternalTargetData):
-        self._external_target = check.inst_param(
-            external_target, "external_target", ExternalTargetData
-        )
+    def __init__(self, external_target: TargetSnap):
+        self._external_target = check.inst_param(external_target, "external_target", TargetSnap)
         super().__init__(
             pipelineName=external_target.job_name,
             mode=external_target.mode,
@@ -86,6 +86,7 @@ class GrapheneSensor(graphene.ObjectType):
     sensorType = graphene.NonNull(GrapheneSensorType)
     assetSelection = graphene.Field(GrapheneAssetSelection)
     tags = non_null_list(GrapheneDefinitionTag)
+    metadataEntries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "Sensor"
@@ -111,10 +112,10 @@ class GrapheneSensor(graphene.ObjectType):
 
         super().__init__(
             name=external_sensor.name,
-            jobOriginId=external_sensor.get_external_origin_id(),
+            jobOriginId=external_sensor.get_remote_origin_id(),
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
-            targets=[GrapheneTarget(target) for target in external_sensor.get_external_targets()],
+            targets=[GrapheneTarget(target) for target in external_sensor.get_targets()],
             metadata=GrapheneSensorMetadata(
                 assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
             ),
@@ -155,6 +156,17 @@ class GrapheneSensor(graphene.ObjectType):
             GrapheneDefinitionTag(key, value)
             for key, value in (self._external_sensor.tags or {}).items()
         ]
+
+    def resolve_metadataEntries(
+        self, _graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneMetadataEntry]:
+        # Standard metadata is nested under the non-standard ExternalSensorMetadata object for
+        # backcompat reasons.
+        sensor_metadata = self._external_sensor.metadata
+        if sensor_metadata and sensor_metadata.standard_metadata:
+            return list(iterate_metadata_entries(sensor_metadata.standard_metadata))
+        else:
+            return []
 
 
 class GrapheneSensorOrError(graphene.Union):
@@ -250,12 +262,12 @@ class GrapheneStopSensorMutation(graphene.Mutation):
     ):
         if id:
             cid = CompoundID.from_string(id)
-            sensor_origin_id = cid.external_origin_id
+            sensor_origin_id = cid.remote_origin_id
             sensor_selector_id = cid.selector_id
         elif job_origin_id and CompoundID.is_valid_string(job_origin_id):
             # cross-push handle if InstigationState.id being passed through as origin id
             cid = CompoundID.from_string(job_origin_id)
-            sensor_origin_id = cid.external_origin_id
+            sensor_origin_id = cid.remote_origin_id
             sensor_selector_id = cid.selector_id
         elif job_origin_id is None or job_selector_id is None:
             raise DagsterInvariantViolationError("Must specify id or jobOriginId and jobSelectorId")

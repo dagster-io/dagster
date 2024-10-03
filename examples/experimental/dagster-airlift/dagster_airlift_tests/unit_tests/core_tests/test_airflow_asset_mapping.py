@@ -13,11 +13,6 @@ from dagster_airlift.core.serialization.compute import (
 )
 from dagster_airlift.core.serialization.serialized_data import TaskInfo
 from dagster_airlift.core.utils import metadata_for_task_mapping
-from dagster_airlift.migration_state import (
-    AirflowMigrationState,
-    DagMigrationState,
-    TaskMigrationState,
-)
 from dagster_airlift.test import AirflowInstanceFake
 
 
@@ -145,16 +140,6 @@ def test_fetched_airflow_data() -> None:
                 ),
             }
         },
-        migration_state=AirflowMigrationState(
-            dags={
-                "dag1": DagMigrationState(
-                    {
-                        "task1": TaskMigrationState(task_id="task1", migrated=True),
-                        "task2": TaskMigrationState(task_id="task2", migrated=False),
-                    }
-                )
-            },
-        ),
         mapping_info=build_airlift_metadata_mapping_info(
             defs=Definitions(
                 assets=[
@@ -164,8 +149,6 @@ def test_fetched_airflow_data() -> None:
             )
         ),
     )
-
-    assert fetched_airflow_data.migration_state_map == {"dag1": {"task1": True, "task2": False}}
 
     all_mapped_tasks = fetched_airflow_data.all_mapped_tasks
     assert all_mapped_tasks.keys() == {ak("asset1"), ak("asset2")}

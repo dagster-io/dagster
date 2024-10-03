@@ -920,7 +920,7 @@ def _check_execute_job_args(
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(op_selection, "op_selection", of_type=str)
 
-    tags = merge_dicts(job_def.tags, tags)
+    tags = merge_dicts(job_def.run_tags, tags)
 
     # generate job subset from the given op_selection
     if op_selection:

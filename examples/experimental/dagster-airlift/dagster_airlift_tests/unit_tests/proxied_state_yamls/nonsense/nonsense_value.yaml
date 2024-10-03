@@ -1,0 +1,3 @@
+tasks:
+  - id: some_task 
+    proxied: elephant

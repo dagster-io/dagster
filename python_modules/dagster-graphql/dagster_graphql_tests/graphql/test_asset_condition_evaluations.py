@@ -353,7 +353,7 @@ query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: Int!, $nodeUni
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
     def test_auto_materialize_sensor(self, graphql_context: WorkspaceRequestContext):
         sensor_origin = RemoteInstigatorOrigin(
-            repository_origin=infer_repository(graphql_context).get_external_origin(),
+            repository_origin=infer_repository(graphql_context).get_remote_origin(),
             instigator_name="my_auto_materialize_sensor",
         )
 

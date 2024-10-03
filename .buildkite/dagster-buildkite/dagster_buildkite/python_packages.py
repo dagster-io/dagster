@@ -1,13 +1,13 @@
 # pyright: reportUnnecessaryTypeIgnoreComment=false
 
 import logging
-import os
 import subprocess
 from distutils import core as distutils_core
 from importlib import reload
 from pathlib import Path
 from typing import Dict, Optional, Set
 
+import tomli
 from pkg_resources import Requirement, parse_requirements
 
 from dagster_buildkite.git import ChangedFiles, GitInfo
@@ -21,18 +21,39 @@ def _path_is_relative_to(p: Path, u: Path) -> bool:
 
 
 class PythonPackage:
-    def __init__(self, setup_py_path: Path):
-        self.directory = setup_py_path.parent
+    def __init__(self, setup_path: Path):
+        self.directory = setup_path
 
-        # run_setup stores state in a global variable. Reload the module
-        # each time we use it - otherwise we'll get the previous invocation's
-        # distribution if our setup.py doesn't implement setup() correctly
-        reload(distutils_core)
-        distribution = distutils_core.run_setup(str(setup_py_path), stop_after="init")
+        if (setup_path / "setup.py").exists():
+            # run_setup stores state in a global variable. Reload the module
+            # each time we use it - otherwise we'll get the previous invocation's
+            # distribution if our setup.py doesn't implement setup() correctly
+            reload(distutils_core)
 
-        self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
-        self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
-        self.name = distribution.get_name()
+            distribution = distutils_core.run_setup(str(setup_path), stop_after="init")
+
+            self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
+            self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
+            self.name = distribution.get_name()
+        else:
+            pyproject_toml = setup_path / "pyproject.toml"
+            assert (
+                pyproject_toml.exists()
+            ), f"expected pyproject.toml to exist in directory {setup_path}"
+
+            try:
+                with open(pyproject_toml, "rb") as f:
+                    project = tomli.load(f)["project"]
+            except KeyError:
+                # this directory has a pyproject.toml but isn't really a python projects,
+                # ie docs/
+                self.name = setup_path.name
+                self._install_requires = []
+                self._extras_require = {}
+            else:
+                self.name = project["name"]
+                self._install_requires = project["dependnecies"]
+                self._extras_require = project.get("optional-dependencies", {})
 
     @property
     def install_requires(self) -> Set[Requirement]:
@@ -125,11 +146,13 @@ class PythonPackages:
             ["git", "ls-files", "."],
             cwd=str(git_info.directory),
         ).decode("utf-8")
-        packages = [
-            PythonPackage(git_info.directory / Path(file))
-            for file in output.split("\n")
-            if os.path.basename(file) == "setup.py"
-        ]
+        packages = []
+        for file in output.split("\n"):
+            path = git_info.directory / Path(file)
+            if path.is_dir() and (
+                (path / "setup.py").exists() or (path / "pyproject.toml").exists()
+            ):
+                packages.append(PythonPackage(path))
 
         for package in sorted(packages):
             logging.info("  - " + package.name)

@@ -12,7 +12,7 @@ from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
-from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._time import datetime_from_timestamp, get_current_timestamp
@@ -144,7 +144,7 @@ def create_and_launch_partition_backfill(
                 instance=graphene_info.context.instance,
                 selected_asset_keys=None,
             )
-            if isinstance(result, ExternalPartitionExecutionErrorData):
+            if isinstance(result, PartitionExecutionErrorSnap):
                 raise DagsterUserCodeProcessError.from_error_info(result.error)
             partition_names = result.partition_names
         elif backfill_params.get("partitionNames"):
@@ -161,7 +161,7 @@ def create_and_launch_partition_backfill(
 
         backfill = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=bool(backfill_params.get("fromFailure")),

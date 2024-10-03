@@ -124,6 +124,7 @@ def evaluate_automation_conditions(
             if asset_graph.get(key).automation_condition is not None
         },
         evaluation_time=evaluation_time,
+        allow_backfills=False,
         logger=logging.getLogger("dagster.automation_condition_tester"),
         cursor=cursor or AssetDaemonCursor.empty(),
     )

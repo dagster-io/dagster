@@ -38,32 +38,27 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external_data import (
-    external_asset_checks_from_defs,
-    external_asset_nodes_from_defs,
+    asset_check_node_snaps_from_repo,
+    asset_node_snaps_from_repo,
 )
 from dagster._core.test_utils import freeze_time, instance_for_test
 from dagster._time import create_datetime, get_current_datetime
 
 
-def to_external_asset_graph(assets, asset_checks=None) -> BaseAssetGraph:
+def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
     @repository
     def repo():
         return assets + (asset_checks or [])
 
-    external_asset_nodes = external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph)
-    return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-        [(MagicMock(), asset_node) for asset_node in external_asset_nodes],
-        [
-            (MagicMock(), asset_check)
-            for asset_check in external_asset_checks_from_defs(
-                repo.get_all_jobs(), repo.asset_graph
-            )
-        ],
+    asset_node_snaps = asset_node_snaps_from_repo(repo)
+    return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
+        [(MagicMock(), asset_node) for asset_node in asset_node_snaps],
+        [(MagicMock(), asset_check) for asset_check in asset_check_node_snaps_from_repo(repo)],
     )
 
 
 @pytest.fixture(
-    name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_external_asset_graph]
+    name="asset_graph_from_assets", params=[AssetGraph.from_assets, to_remote_asset_graph]
 )
 def asset_graph_from_assets_fixture(request) -> Callable[[List[AssetsDefinition]], BaseAssetGraph]:
     return request.param
@@ -277,7 +272,7 @@ def test_custom_unsupported_partition_mapping():
         def child(parent): ...
 
     internal_asset_graph = AssetGraph.from_assets([parent, child])
-    external_asset_graph = to_external_asset_graph([parent, child])
+    external_asset_graph = to_remote_asset_graph([parent, child])
 
     with instance_for_test() as instance:
         current_time = get_current_datetime()
@@ -881,13 +876,21 @@ def test_cross_code_location_partition_mapping() -> None:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
     def a(): ...
 
+    @repository
+    def repo_a():
+        return [a]
+
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"), deps=["a"])
     def b(): ...
 
-    a_nodes = external_asset_nodes_from_defs([], AssetGraph.from_assets([a]))
-    b_nodes = external_asset_nodes_from_defs([], AssetGraph.from_assets([b]))
+    @repository
+    def repo_b():
+        return [b]
 
-    asset_graph = RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
+    a_nodes = asset_node_snaps_from_repo(repo_a)
+    b_nodes = asset_node_snaps_from_repo(repo_b)
+
+    asset_graph = RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
         [(MagicMock(), asset_node) for asset_node in [*a_nodes, *b_nodes]], []
     )
 

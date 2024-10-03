@@ -15,7 +15,7 @@ import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
-import {runsPathWithFilters} from '../../runs/RunsFilterInput';
+import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
@@ -110,20 +110,7 @@ export const BackfillRowContent = ({
     <tr>
       <td style={{width: 120}}>
         <Mono>
-          <Link
-            to={
-              backfill.isAssetBackfill
-                ? `/overview/backfills/${backfill.id}`
-                : runsPathWithFilters([
-                    {
-                      token: 'tag',
-                      value: `dagster/backfill=${backfill.id}`,
-                    },
-                  ])
-            }
-          >
-            {backfill.id}
-          </Link>
+          <Link to={getBackfillPath(backfill.id, backfill.isAssetBackfill)}>{backfill.id}</Link>
         </Mono>
       </td>
       <td style={{width: 220}}>

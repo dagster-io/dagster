@@ -362,7 +362,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 job_name=job_name,
                 run_config=run_config,
                 tags=tags,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -440,7 +440,7 @@ def test_raise_on_error(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 run_config=run_config,
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=fake_external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -492,7 +492,7 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 run_config={"execution": {"celery-k8s": {}}},
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -507,7 +507,7 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 run_config={
                     "execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}
                 },
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))

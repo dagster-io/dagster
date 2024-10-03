@@ -9,13 +9,13 @@ interface ILoadingProps<TData> {
   children: (data: TData) => React.ReactNode;
   renderError?: (error: ApolloError) => React.ReactNode;
   allowStaleData?: boolean;
-  purpose: 'section' | 'page';
+  purpose?: 'section' | 'page';
 }
 
 const BLANK_LOADING_DELAY_MSEC = 500;
 
 export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<TData>) => {
-  const {children, purpose, allowStaleData = false, renderError} = props;
+  const {children, purpose = 'page', allowStaleData = false, renderError} = props;
   const {error, data, loading} = props.queryResult;
 
   const [blankLoading, setBlankLoading] = React.useState(true);
@@ -74,7 +74,7 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
   return <>{children(data as TData)}</>;
 };
 
-export const LoadingSpinner = ({purpose}: {purpose: 'page' | 'section'}) => {
+export const LoadingSpinner = ({purpose = 'page'}: {purpose?: 'page' | 'section'}) => {
   const isPage = purpose === 'page';
   return (
     <Box
@@ -89,8 +89,4 @@ export const LoadingSpinner = ({purpose}: {purpose: 'page' | 'section'}) => {
       <Spinner purpose={purpose} />
     </Box>
   );
-};
-
-Loading.defaultProps = {
-  purpose: 'page',
 };

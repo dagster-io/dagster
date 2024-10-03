@@ -9,6 +9,7 @@ import {PartitionPerAssetStatus, getVisibleItemCount} from './PartitionStepStatu
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {allPartitionsRange} from './SpanRepresentation';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
+import {toGraphId} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
@@ -43,7 +44,19 @@ export const AssetJobPartitionsView = ({
     },
   });
 
-  const assetHealth = usePartitionHealthData(assetGraph.graphAssetKeys);
+  const assetKeysWithPartitions = useMemo(() => {
+    return assetGraph.graphAssetKeys.filter((key) => {
+      return assetGraph.assetGraphData?.nodes[toGraphId(key)]?.definition.isPartitioned;
+    });
+  }, [assetGraph]);
+
+  const assetHealth = usePartitionHealthData(
+    assetKeysWithPartitions.length
+      ? assetKeysWithPartitions
+      : assetGraph.graphAssetKeys[0]
+      ? [assetGraph.graphAssetKeys[0]]
+      : [],
+  );
 
   const {total, missing, merged} = useMemo(() => {
     const merged = mergedAssetHealth(assetHealth.filter((h) => h.dimensions.length > 0));

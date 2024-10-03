@@ -162,7 +162,9 @@ export const BackfillActionsMenu = ({
     <>
       {anchorLabel ? (
         <JoinedButtons>
-          <AnchorButton to={getBackfillPath(backfill.id)}>View run</AnchorButton>
+          <AnchorButton to={getBackfillPath(backfill.id, backfill.isAssetBackfill)}>
+            View
+          </AnchorButton>
           {popover}
         </JoinedButtons>
       ) : (

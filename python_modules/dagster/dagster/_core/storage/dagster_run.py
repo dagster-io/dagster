@@ -35,7 +35,7 @@ from dagster._core.storage.tags import (
     TICK_ID_TAG,
 )
 from dagster._core.utils import make_new_run_id
-from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
+from dagster._record import IHaveNew, record_custom
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -510,7 +510,7 @@ class DagsterRun(
 
 
 @record_custom
-class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
+class RunsFilter(IHaveNew):
     """Defines a filter across job runs, for use when querying storage directly.
 
     Each field of the RunsFilter represents a logical AND with each other. For

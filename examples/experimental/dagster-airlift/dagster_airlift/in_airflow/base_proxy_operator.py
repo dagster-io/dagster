@@ -8,8 +8,14 @@ from typing import Any, Callable, Dict, Set, Tuple, Type
 import requests
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
+from requests import Response
 
-from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    TASK_ID_TAG_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 
@@ -35,7 +41,7 @@ def matched_dag_id_task_id(asset_node: dict, dag_id: str, task_id: str) -> bool:
 class BaseProxyToDagsterOperator(BaseOperator, ABC):
     """Interface for a DagsterOperator.
 
-    This interface is used to create a custom operator that will be used to replace the original airflow operator when a task is marked as migrated.
+    This interface is used to create a custom operator that will be used to replace the original airflow operator when a task is marked as proxied.
     """
 
     @abstractmethod
@@ -61,6 +67,16 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
     def get_dagster_url(self, context: Context) -> str:
         """Returns the URL for the Dagster instance."""
 
+    def get_valid_graphql_response(self, response: Response, key: str) -> Any:
+        response_json = response.json()
+        if not response_json.get("data"):
+            raise Exception(f"Error in GraphQL request. No data key: {response_json}")
+
+        if key not in response_json["data"]:
+            raise Exception(f"Error in GraphQL request. No {key} key: {response_json}")
+
+        return response_json["data"][key]
+
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
         """Launches runs for the given task in Dagster."""
         session = self._get_validated_session(context)
@@ -74,8 +90,8 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             json={"query": ASSET_NODES_QUERY},
             timeout=3,
         )
-        response_data = response.json()["data"]
-        for asset_node in response_data["assetNodes"]:
+        asset_nodes_data = self.get_valid_graphql_response(response, "assetNodes")
+        for asset_node in asset_nodes_data:
             if matched_dag_id_task_id(asset_node, dag_id, task_id):
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
@@ -86,11 +102,24 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                     asset_node["assetKey"]["path"]
                 )
         logger.debug(f"Found assets to trigger: {assets_to_trigger}")
+
+        dag_run = context.get("dag_run")
+        assert dag_run, "dag_run not found in context"
+        # Get the dag_run_id
+        dag_run_id = dag_run.run_id
+
         triggered_runs = []
+        tags = {
+            DAG_ID_TAG_KEY: dag_id,
+            DAG_RUN_ID_TAG_KEY: dag_run_id,
+            TASK_ID_TAG_KEY: task_id,
+        }
         for (repo_location, repo_name, job_name), asset_keys in assets_to_trigger.items():
             execution_params = {
                 "mode": "default",
-                "executionMetadata": {"tags": []},
+                "executionMetadata": {
+                    "tags": [{"key": key, "value": value} for key, value in tags.items()]
+                },
                 "runConfigData": "{}",
                 "selector": {
                     "repositoryLocationName": repo_location,
@@ -112,7 +141,8 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                 # Timeout in seconds
                 timeout=10,
             )
-            run_id = response.json()["data"]["launchPipelineExecution"]["run"]["id"]
+            launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
+            run_id = launch_data["run"]["id"]
             logger.debug(f"Launched run {run_id}...")
             triggered_runs.append(run_id)
         completed_runs = {}  # key is run_id, value is status
@@ -126,7 +156,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                     # Timeout in seconds
                     timeout=3,
                 )
-                run_status = response.json()["data"]["runOrError"]["status"]
+                run_status = self.get_valid_graphql_response(response, "runOrError")["status"]
                 if run_status in ["SUCCESS", "FAILURE", "CANCELED"]:
                     logger.debug(f"Run {run_id} completed with status {run_status}")
                     completed_runs[run_id] = run_status

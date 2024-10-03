@@ -7,7 +7,7 @@ endef
 export MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
-export DAGSTER_AIRLIFT_MIGRATION_STATE_DIR := $(MAKEFILE_DIR)/kitchen_sink/airflow_dags/migration_state
+export DAGSTER_AIRLIFT_PROXIED_STATE_DIR := $(MAKEFILE_DIR)/kitchen_sink/airflow_dags/proxied_state
 export DAGSTER_URL := http://localhost:3333
 
 help:
@@ -28,8 +28,11 @@ setup_local_env:
 run_airflow:
 	airflow standalone
 
-run_dagster:
-	dagster dev -m kitchen_sink.dagster_defs -p 3333
+run_dagster_mapped:
+	dagster dev -m kitchen_sink.dagster_defs.mapped_defs -p 3333
+
+run_dagster_automapped:
+	dagster dev -m kitchen_sink.dagster_defs.automapped_defs -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)

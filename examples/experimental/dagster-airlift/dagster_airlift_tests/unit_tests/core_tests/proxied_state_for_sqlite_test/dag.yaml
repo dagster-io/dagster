@@ -1,0 +1,3 @@
+tasks:
+  - id: task
+    proxied: True 

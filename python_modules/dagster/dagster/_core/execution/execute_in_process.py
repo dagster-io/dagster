@@ -50,7 +50,7 @@ def core_execute_in_process(
         run = execute_instance.create_run_for_job(
             job_def=job_def,
             run_config=run_config,
-            tags={**job_def.tags, **(run_tags or {})},
+            tags={**job_def.run_tags, **(run_tags or {})},
             run_id=run_id,
             asset_selection=asset_selection,
             execution_plan=execution_plan,

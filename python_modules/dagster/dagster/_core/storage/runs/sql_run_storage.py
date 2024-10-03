@@ -301,7 +301,7 @@ class SqlRunStorage(RunStorage):
             runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
                 RunTagsTable.c.key == BACKFILL_ID_TAG
             )
-            query = query.where(RunsTable.c.run_id.notin_(db_subquery(runs_in_backfills)))
+            query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
 
         return query
 
@@ -889,6 +889,8 @@ class SqlRunStorage(RunStorage):
             query = query.where(BulkActionsTable.c.timestamp > filters.created_after)
         if filters and filters.created_before:
             query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
+        if filters and filters.backfill_ids:
+            query = query.where(BulkActionsTable.c.key.in_(filters.backfill_ids))
         return query
 
     def _add_cursor_limit_to_backfills_query(
@@ -954,6 +956,27 @@ class SqlRunStorage(RunStorage):
                 backfill_candidates, filters.tags
             )
         return backfill_candidates
+
+    def get_backfills_count(self, filters: Optional[BulkActionsFilter] = None) -> int:
+        check.opt_inst_param(filters, "filters", BulkActionsFilter)
+        if filters and filters.tags:
+            # runs can have more tags than the backfill that launched them. Since we filtered tags by
+            # querying for runs with those tags, we need to do an additional check that the backfills
+            # also have the requested tags. This requires fetching the backfills from the db and filtering them
+            query = self._backfills_query(filters=filters)
+            rows = self.fetchall(query)
+            backfill_candidates = deserialize_values(
+                (row["body"] for row in rows), PartitionBackfill
+            )
+            return len(
+                self._apply_backfill_tags_filter_to_results(backfill_candidates, filters.tags)
+            )
+
+        subquery = db_subquery(self._backfills_query(filters=filters))
+        query = db_select([db.func.count().label("count")]).select_from(subquery)
+        row = self.fetchone(query)
+        count = row["count"] if row else 0
+        return count
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")

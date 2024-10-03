@@ -914,7 +914,7 @@ def create_repo_run(instance):
         run = create_run_for_test(
             instance,
             job_name="my_job",
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, context)

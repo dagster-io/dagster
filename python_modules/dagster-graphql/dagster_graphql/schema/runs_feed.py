@@ -37,6 +37,17 @@ class GrapheneRunsFeedConnectionOrError(graphene.Union):
         name = "RunsFeedConnectionOrError"
 
 
-types = [
-    GrapheneRunsFeedConnectionOrError,
-]
+class GrapheneRunsFeedCount(graphene.ObjectType):
+    class Meta:
+        name = "RunsFeedCount"
+
+    count = graphene.NonNull(graphene.Int)
+
+
+class GrapheneRunsFeedCountOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneRunsFeedCount, GraphenePythonError)
+        name = "RunsFeedCountOrError"
+
+
+types = [GrapheneRunsFeedConnectionOrError, GrapheneRunsFeedCountOrError]

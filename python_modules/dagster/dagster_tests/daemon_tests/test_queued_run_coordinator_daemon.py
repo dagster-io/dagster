@@ -8,7 +8,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
-from dagster._core.remote_representation.handle import JobHandle
+from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -22,6 +22,7 @@ from dagster._core.test_utils import (
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, PythonFileTarget
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster._record import copy
 from dagster._time import create_datetime
 from dagster._utils import file_relative_path
 
@@ -81,18 +82,20 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def other_location_job_handle(self, job_handle: JobHandle) -> JobHandle:
         code_location_origin = job_handle.repository_handle.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
-        return job_handle._replace(
-            repository_handle=job_handle.repository_handle._replace(
-                code_location_origin=code_location_origin._replace(
-                    location_name="other_location_name"
-                )
-            )
+        new_origin = code_location_origin._replace(location_name="other_location_name")
+        with instance_for_test() as temp_instance:
+            with new_origin.create_single_location(temp_instance) as location:
+                new_repo_handle = RepositoryHandle(job_handle.repository_name, location)
+
+        return copy(
+            job_handle,
+            repository_handle=new_repo_handle,
         )
 
     def create_run(self, instance, job_handle, **kwargs):
         create_run_for_test(
             instance,
-            external_job_origin=job_handle.get_external_origin(),
+            external_job_origin=job_handle.get_remote_origin(),
             job_code_origin=job_handle.get_python_origin(),
             job_name="foo",
             **kwargs,
@@ -101,7 +104,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def create_queued_run(self, instance, job_handle, **kwargs):
         run = create_run_for_test(
             instance,
-            external_job_origin=job_handle.get_external_origin(),
+            external_job_origin=job_handle.get_remote_origin(),
             job_code_origin=job_handle.get_python_origin(),
             job_name="foo",
             status=DagsterRunStatus.NOT_STARTED,
@@ -135,7 +138,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         )
         run = create_run_for_test(
             instance,
-            external_job_origin=subset_job.get_external_origin(),
+            external_job_origin=subset_job.get_remote_origin(),
             job_code_origin=subset_job.get_python_origin(),
             job_name=subset_job.name,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
@@ -847,6 +850,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         concurrency_limited_workspace_context,
         daemon,
         instance,
+        caplog,
     ):
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         workspace = concurrency_limited_workspace_context.create_request_context()
@@ -860,23 +864,30 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         instance.event_log_storage.set_concurrency_slots("foo", 1)
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+        caplog.text.count("is blocked by global concurrency limits") == 0
 
         self.submit_run(
             instance, external_job, workspace, run_id=run_id_2, asset_selection=set([foo_key])
         )
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
 
         self.submit_run(
             instance, external_job, workspace, run_id=run_id_3, asset_selection=set([foo_key])
         )
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1}
+        # the log message only shows up once per run
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
+        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1
 
         # bumping up the slot by one means that one more run should get dequeued
         instance.event_log_storage.set_concurrency_slots("foo", 2)
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1, run_id_2}
+        caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
+        caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1
 
     @pytest.mark.parametrize(
         "run_coordinator_config",

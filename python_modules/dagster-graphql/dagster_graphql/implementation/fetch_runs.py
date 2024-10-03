@@ -495,12 +495,24 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
     converted_statuses = (
         _bulk_action_statuses_from_run_statuses(filters.statuses) if filters.statuses else None
     )
+    backfill_ids = None
+    if filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None:
+        backfill_ids = filters.tags[BACKFILL_ID_TAG]
+        if isinstance(backfill_ids, str):
+            backfill_ids = [backfill_ids]
+
+    tags = (
+        {key: value for key, value in filters.tags.items() if key != BACKFILL_ID_TAG}
+        if filters.tags
+        else None
+    )
     return BulkActionsFilter(
         created_before=filters.created_before,
         created_after=filters.created_after,
         statuses=converted_statuses,
         job_name=filters.job_name,
-        tags=filters.tags,
+        tags=tags,
+        backfill_ids=backfill_ids,
     )
 
 
@@ -549,6 +561,9 @@ def get_runs_feed_entries(
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
+    exclude_subruns = (
+        filters.exclude_subruns if filters and filters.exclude_subruns is not None else True
+    )
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1
@@ -558,15 +573,19 @@ def get_runs_feed_entries(
         datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
     )
 
-    should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
+    should_fetch_backfills = exclude_subruns and (
+        _filters_apply_to_backfills(filters) if filters else True
+    )
     if filters:
-        run_filters = copy(filters, exclude_subruns=True)
+        run_filters = copy(filters, exclude_subruns=exclude_subruns)
         run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
             _bulk_action_filters_from_run_filters(run_filters) if should_fetch_backfills else None
         )
     else:
-        run_filters = RunsFilter(created_before=created_before_cursor, exclude_subruns=True)
+        run_filters = RunsFilter(
+            created_before=created_before_cursor, exclude_subruns=exclude_subruns
+        )
         backfill_filters = BulkActionsFilter(created_before=created_before_cursor)
 
     if should_fetch_backfills:
@@ -634,3 +653,17 @@ def get_runs_feed_entries(
     return GrapheneRunsFeedConnection(
         results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
     )
+
+
+def get_runs_feed_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
+    should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
+    run_filters = (
+        copy(filters, exclude_subruns=True) if filters else RunsFilter(exclude_subruns=True)
+    )
+    if should_fetch_backfills:
+        backfill_filters = _bulk_action_filters_from_run_filters(run_filters)
+        backfills_count = graphene_info.context.instance.get_backfills_count(backfill_filters)
+    else:
+        backfills_count = 0
+
+    return graphene_info.context.instance.get_runs_count(run_filters) + backfills_count

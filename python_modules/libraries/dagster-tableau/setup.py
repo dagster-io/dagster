@@ -38,7 +38,8 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "pyjwt[crypto]",
-        "requests",
+        "tableauserverclient",
+        "xmltodict",
     ],
     include_package_data=True,
     python_requires=">=3.8,<3.13",

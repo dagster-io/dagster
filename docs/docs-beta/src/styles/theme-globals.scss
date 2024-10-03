@@ -42,4 +42,6 @@
   --ifm-card-background-color: var(--theme-color-background-light);
   --ifm-card-border-color: var(--theme-color-keyline);
   --ifm-alert-padding-vertical: 16px;
+  --ifm-alert-background-color: var(--theme-color-background-light) !important;
+  --ifm-color-secondary-contrast-background: var(--theme-color-background-light) !important;
 }

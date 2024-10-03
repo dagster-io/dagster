@@ -9,7 +9,7 @@ from dagster._api.snapshot_sensor import (
 )
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
-from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
+from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import SensorExecutionArgs
 from dagster._serdes import deserialize_value
@@ -31,7 +31,7 @@ def test_external_sensor_grpc(instance):
 
 def test_external_sensor_grpc_fallback_to_streaming(instance):
     with get_bar_repo_handle(instance) as repository_handle:
-        origin = repository_handle.get_external_origin()
+        origin = repository_handle.get_remote_origin()
         with ephemeral_grpc_api_client(
             origin.code_location_origin.loadable_target_origin
         ) as api_client:
@@ -95,7 +95,7 @@ def test_external_sensor_client_timeout(instance, timeout: int, env_var_default_
 
 def test_external_sensor_deserialize_error(instance):
     with get_bar_repo_handle(instance) as repository_handle:
-        origin = repository_handle.get_external_origin()
+        origin = repository_handle.get_remote_origin()
         with ephemeral_grpc_api_client(
             origin.code_location_origin.loadable_target_origin
         ) as api_client:
@@ -112,7 +112,7 @@ def test_external_sensor_deserialize_error(instance):
                     )
                 )
             )
-            assert isinstance(result, ExternalSensorExecutionErrorData)
+            assert isinstance(result, SensorExecutionErrorSnap)
 
 
 def test_external_sensor_raises_dagster_error(instance):

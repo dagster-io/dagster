@@ -27,7 +27,7 @@ def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_
         workspace_id=workspace_id,
     )
 
-    actual_workspace_data = resource.fetch_powerbi_workspace_data()
+    actual_workspace_data = resource._fetch_powerbi_workspace_data()  # noqa: SLF001
     assert len(actual_workspace_data.dashboards_by_id) == 1
     assert len(actual_workspace_data.reports_by_id) == 1
     assert len(actual_workspace_data.semantic_models_by_id) == 1

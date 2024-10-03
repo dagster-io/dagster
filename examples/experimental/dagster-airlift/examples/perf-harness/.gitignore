@@ -185,5 +185,5 @@ scripts/.build
 # output files
 **/**.o
 
-perf_harness/airflow_dags/migration_state/*
+perf_harness/airflow_dags/proxied_state/*
 **/**perf_output.txt

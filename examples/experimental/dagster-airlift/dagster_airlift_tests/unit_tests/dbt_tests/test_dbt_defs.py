@@ -7,7 +7,7 @@ import pytest
 from dagster import AssetSpec, Definitions
 from dagster._core.test_utils import environ
 from dagster_airlift.core import build_defs_from_airflow_instance
-from dagster_airlift.core.dag_defs import dag_defs, task_defs
+from dagster_airlift.core.top_level_dag_def_api import dag_defs, task_defs
 from dagster_airlift.dbt import dbt_defs
 from dagster_airlift.test import make_instance
 from dagster_dbt.dbt_project import DbtProject
@@ -46,7 +46,8 @@ def test_dbt_defs(dbt_project_path: Path, dbt_project_setup: None, init_load_con
     assert isinstance(dbt_defs_inst, Definitions)
 
     test_airflow_instance = make_instance(
-        dag_and_task_structure={"dag_one": ["task_one"], "dag_two": ["task_two"]}
+        dag_and_task_structure={"dag_one": ["task_one"], "dag_two": ["task_two"]},
+        instance_name="airflow_instance",
     )
 
     initial_defs = Definitions.merge(

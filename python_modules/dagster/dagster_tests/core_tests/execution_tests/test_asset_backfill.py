@@ -56,7 +56,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.remote_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.remote_representation.external_data import asset_node_snaps_from_repo
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -554,7 +554,7 @@ def get_asset_graph(
             for assets_def in assets
             for dep_key in assets_def.dependency_keys
         )
-        return external_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
+        return remote_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
 
 
 def execute_asset_backfill_iteration_consume_generator(
@@ -733,22 +733,22 @@ def _requested_asset_partitions_in_run_request(
     return requested_asset_partitions
 
 
-def external_asset_graph_from_assets_by_repo_name(
+def remote_asset_graph_from_assets_by_repo_name(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
 ) -> RemoteAssetGraph:
-    from_repository_handles_and_external_asset_nodes = []
+    from_repository_handles_and_asset_node_snaps = []
 
     for repo_name, assets in assets_by_repo_name.items():
         repo = Definitions(assets=assets).get_repository_def()
 
-        external_asset_nodes = external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph)
+        asset_node_snaps = asset_node_snaps_from_repo(repo)
         repo_handle = MagicMock(repository_name=repo_name)
-        from_repository_handles_and_external_asset_nodes.extend(
-            [(repo_handle, asset_node) for asset_node in external_asset_nodes]
+        from_repository_handles_and_asset_node_snaps.extend(
+            [(repo_handle, asset_node) for asset_node in asset_node_snaps]
         )
 
-    return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-        from_repository_handles_and_external_asset_nodes, []
+    return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
+        from_repository_handles_and_asset_node_snaps, repo_handle_asset_checks=[]
     )
 
 
@@ -835,7 +835,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=static_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+        return remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     asset_graph1 = make_asset_graph1()
     assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph1) is True
@@ -848,7 +848,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=time_window_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+        return remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     asset_graph2 = make_asset_graph2()
     assert (
@@ -863,7 +863,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=static_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+        return remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     asset_graph3 = make_asset_graph3()
 
@@ -877,7 +877,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=time_window_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name(
+        return remote_asset_graph_from_assets_by_repo_name(
             {"repo": [daily_asset_renamed, static_asset]}
         )
 
@@ -1444,15 +1444,16 @@ def test_connected_assets_disconnected_partitions():
         backfill_start_datetime.timestamp(),
         [
             PartitionsByAssetSelector(
-                foo.key, PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")])
+                asset_key=foo.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")]),
             ),
             PartitionsByAssetSelector(
-                foo_child.key,
-                PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
+                asset_key=foo_child.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
             ),
             PartitionsByAssetSelector(
-                foo_grandchild.key,
-                PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
+                asset_key=foo_grandchild.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
             ),
         ],
     )

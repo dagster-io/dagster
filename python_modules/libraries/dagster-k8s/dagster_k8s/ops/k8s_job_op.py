@@ -163,6 +163,7 @@ def execute_k8s_job(
     job_spec_config: Optional[Dict[str, Any]] = None,
     k8s_job_name: Optional[str] = None,
     merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
+    _kubeconfig_file_context: Optional[str] = None,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
 
@@ -320,7 +321,7 @@ def execute_k8s_job(
     if load_incluster_config:
         kubernetes.config.load_incluster_config()
     else:
-        kubernetes.config.load_kube_config(kubeconfig_file)
+        kubernetes.config.load_kube_config(kubeconfig_file, context=_kubeconfig_file_context)
 
     # changing this to be able to be passed in will allow for unit testing
     api_client = DagsterKubernetesClient.production_client()

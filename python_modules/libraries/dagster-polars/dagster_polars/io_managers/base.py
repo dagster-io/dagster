@@ -301,6 +301,12 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
             context.log.warning(self.get_missing_optional_input_log_message(context, path))
             return None
 
+        # missing files detection in UPathIOManager doesn't work with `LazyFrame`
+        # since the FileNotFoundError is raised only when calling `.collect()` outside of the UPathIOManager
+        # as a workaround, we check if the file exists and if not, we raise the error here
+        if context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS and not path.exists():
+            raise FileNotFoundError(f"File {path} does not exist")
+
         assert context.definition_metadata is not None
 
         metadata: Optional[StorageMetadata] = None

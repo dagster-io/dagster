@@ -44,8 +44,8 @@ from dagster._core.remote_representation import (
     RepositoryHandle,
 )
 from dagster._core.remote_representation.external_data import (
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
+    PartitionNamesSnap,
+    PartitionSetExecutionParamSnap,
 )
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
@@ -492,7 +492,7 @@ def _create_external_run(
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         asset_check_selection=None,
@@ -660,7 +660,7 @@ def _execute_backfill_command_at_location(
             f"Failure fetching partition names: {error_info.message}",
             serialized_error_info=error_info,
         ) from e
-    if not isinstance(partition_names_or_error, ExternalPartitionNamesData):
+    if not isinstance(partition_names_or_error, PartitionNamesSnap):
         raise DagsterBackfillFailedError(
             f"Failure fetching partition names: {partition_names_or_error.error}"
         )
@@ -682,7 +682,7 @@ def _execute_backfill_command_at_location(
         backfill_id = make_new_backfill_id()
         backfill_job = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=job_partition_set.get_external_origin(),
+            partition_set_origin=job_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=False,
@@ -706,7 +706,7 @@ def _execute_backfill_command_at_location(
             )
             raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
 
-        assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
+        assert isinstance(partition_execution_data, PartitionSetExecutionParamSnap)
 
         for partition_data in partition_execution_data.partition_data:
             dagster_run = create_backfill_run(

@@ -7,8 +7,8 @@ from typing import List, Optional
 from airflow import DAG
 from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
-from dagster_airlift.in_airflow import mark_as_dagster_migrating
-from dagster_airlift.migration_state import load_migration_state_from_yaml
+from dagster_airlift.in_airflow import proxying_to_dagster
+from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
 
@@ -122,11 +122,11 @@ export_customers = ExportDuckDBToCSV(
 
 load_raw_customers >> run_dbt_model >> export_customers  # type: ignore
 
-# Set this to True to begin the migration process
-MIGRATING = False
+# Set this to True to begin the proxying process
+PROXYING = False
 
-if MIGRATING:
-    mark_as_dagster_migrating(
+if PROXYING:
+    proxying_to_dagster(
         global_vars=globals(),
-        migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+        proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
     )

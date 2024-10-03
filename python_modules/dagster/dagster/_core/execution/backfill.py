@@ -18,9 +18,7 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.external_data import (
-    job_name_for_external_partition_set_name,
-)
+from dagster._core.remote_representation.external_data import job_name_for_partition_set_snap_name
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -62,6 +60,7 @@ class BulkActionsFilter:
         tags (Optional[Dict[str, Union[str, List[str]]]]): A dictionary of tags to query by. All tags specified
             here must be present for a given bulk action to pass the filter.
         job_name (Optional[str]): Name of the job to query for. If blank, all job_names will be accepted.
+        backfill_ids (Optional[Sequence[str]]): A list of backfill_ids to filter by. If blank, all backfill_ids will be included
     """
 
     statuses: Optional[Sequence[BulkActionStatus]] = None
@@ -69,6 +68,7 @@ class BulkActionsFilter:
     created_after: Optional[datetime] = None
     tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None
     job_name: Optional[str] = None
+    backfill_ids: Optional[Sequence[str]] = None
 
 
 @whitelist_for_serdes
@@ -212,7 +212,7 @@ class PartitionBackfill(
         if self.is_asset_backfill:
             return None
         return (
-            job_name_for_external_partition_set_name(self.partition_set_name)
+            job_name_for_partition_set_snap_name(self.partition_set_name)
             if self.partition_set_name
             else None
         )

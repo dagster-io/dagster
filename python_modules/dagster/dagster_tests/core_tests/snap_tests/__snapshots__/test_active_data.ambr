@@ -2285,6 +2285,7 @@
         "description": null,
         "environment_vars": {},
         "execution_timezone": "US/Central",
+        "metadata": {},
         "mode": "default",
         "name": "foo_schedule",
         "partition_set_name": null,

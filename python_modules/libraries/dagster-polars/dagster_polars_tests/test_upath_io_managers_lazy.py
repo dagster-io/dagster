@@ -386,3 +386,42 @@ def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
         [upstream.to_source_asset(), downstream],
         partition_key=MultiPartitionKey({"time": str(today - timedelta(days=2)), "static": "a"}),
     )
+
+
+def test_polars_upath_io_manager_input_dict_optional_lazy(
+    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, df = io_manager_and_df
+    partition_keys = ["a", "b", "missing"]
+
+    if isinstance(manager, PolarsDeltaIOManager):
+        pytest.skip("PolarsDeltaIOManager does not read partitions as dictionaries")
+
+    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(partition_keys))
+    def upstream(context: AssetExecutionContext) -> Optional[pl.DataFrame]:
+        return (
+            None
+            if context.partition_key == "missing"
+            else df.with_columns(pl.lit(context.partition_key).alias("partition"))
+        )
+
+    @asset(
+        io_manager_def=manager,
+        ins={"upstream": AssetIn(metadata={"allow_missing_partitions": True})},
+    )
+    def downstream(upstream: Dict[str, pl.LazyFrame]) -> pl.DataFrame:
+        dfs = []
+        for df in upstream.values():
+            assert isinstance(df, pl.LazyFrame)
+            dfs.append(df)
+        return pl.concat(dfs).collect()
+
+    for partition_key in ["a", "b"]:
+        materialize(
+            [upstream],
+            partition_key=partition_key,
+        )
+
+    materialize(
+        [upstream.to_source_asset(), downstream],
+    )

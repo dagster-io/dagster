@@ -10,15 +10,14 @@ import {
 import {useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
-import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
+import {RunAssetCheckTags} from './RunAssetCheckTags';
 import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
-import {assetKeysForRun} from './RunUtils';
 import {getBackfillPath} from './RunsFeedUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
@@ -122,7 +121,10 @@ export const RunRoot = () => {
                   All runs
                 </Link>
                 {' / '}
-                <Link to={getBackfillPath(backfillTag.value)} style={{color: Colors.textLight()}}>
+                <Link
+                  to={getBackfillPath(backfillTag.value, !!run?.assetSelection?.length)}
+                  style={{color: Colors.textLight()}}
+                >
                   {backfillTag.value}
                 </Link>
                 {' / '}
@@ -130,7 +132,7 @@ export const RunRoot = () => {
               </Heading>
             ) : (
               <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
-                <Link to="/runs">Runs</Link>
+                <Link to="/runs">All Runs</Link>
                 <span>/</span>
                 <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
               </Heading>
@@ -159,12 +161,8 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <AssetKeyTagCollection useTags assetKeys={assetKeysForRun(run)} />
-                ) : (
-                  <RunAssetTags run={run} />
-                )}
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
+                <RunAssetTags run={run} />
+                <RunAssetCheckTags run={run} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation

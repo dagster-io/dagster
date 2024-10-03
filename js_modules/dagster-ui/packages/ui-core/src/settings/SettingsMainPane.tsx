@@ -9,8 +9,8 @@ import {InstanceConfigContent} from '../instance/InstanceConfig';
 import {InstanceHealthPageContent} from '../instance/InstanceHealthPage';
 
 export const SettingsMainPane = () => {
-  const {flagSettingsPage} = useFeatureFlags();
-  if (!flagSettingsPage) {
+  const {flagLegacyNav} = useFeatureFlags();
+  if (flagLegacyNav) {
     return <Redirect to="/locations" />;
   }
 

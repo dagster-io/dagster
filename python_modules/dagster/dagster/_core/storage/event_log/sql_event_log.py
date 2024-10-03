@@ -2684,7 +2684,7 @@ class SqlEventLogStorage(EventLogStorage):
                 concurrency_key=concurrency_key,
                 slot_count=len([slot_row for slot_row in slot_rows if not slot_row["deleted"]]),
                 claimed_slots=[
-                    ClaimedSlotInfo(slot_row["run_id"], slot_row["step_key"])
+                    ClaimedSlotInfo(run_id=slot_row["run_id"], step_key=slot_row["step_key"])
                     for slot_row in slot_rows
                     if slot_row["run_id"]
                 ],

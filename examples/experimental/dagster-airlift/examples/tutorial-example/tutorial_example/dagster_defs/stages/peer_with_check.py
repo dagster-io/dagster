@@ -7,7 +7,7 @@ from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_f
 
 # Attach a check to the DAG representation asset, which will be executed by Dagster
 # any time the DAG is run in Airflow
-@asset_check(asset=AssetKey(["airflow_instance", "dag", "rebuild_customers_list"]))
+@asset_check(asset=AssetKey(["airflow_instance_one", "dag", "rebuild_customers_list"]))
 def validate_exported_csv() -> AssetCheckResult:
     csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
 

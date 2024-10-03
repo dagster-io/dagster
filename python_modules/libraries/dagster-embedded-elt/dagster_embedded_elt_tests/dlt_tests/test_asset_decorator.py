@@ -16,6 +16,7 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (
     IntMetadataValue,
     TableSchemaMetadataValue,
+    TextMetadataValue,
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag, has_kind
@@ -104,7 +105,13 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
         for materialization in materializations
         if materialization.asset_key == AssetKey("dlt_pipeline_repos")
     )
+    
     assert repos_materialization.metadata["dagster/row_count"] == IntMetadataValue(3)
+    
+    assert repos_materialization.metadata["dagster/relation_identifier"] == TextMetadataValue(
+        text="duckdb.pipeline.repos"
+    )
+
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
             columns=[

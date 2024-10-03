@@ -31,18 +31,18 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
     [
         # cron condition returns a unique value hash if parents change, if schedule changes, if the
         # partitions def changes, or if an asset is materialized
-        ("0696dcb07b82fd8f4934c828bbc8365f", SC.on_cron("0 * * * *"), one_parent, False),
-        ("7fb8a01606b51f6306e85769533fd5b9", SC.on_cron("0 * * * *"), one_parent, True),
-        ("38ba78431e6c22552840e7177918a880", SC.on_cron("0 0 * * *"), one_parent, False),
-        ("98e74cd660564cb881d889ec9ae75ce0", SC.on_cron("0 * * * *"), one_parent_daily, False),
-        ("c0e6323656d8208666e8c74d9af93a64", SC.on_cron("0 * * * *"), two_parents, False),
-        ("3545889e64a11959400cb116ba2320ec", SC.on_cron("0 * * * *"), two_parents_daily, False),
+        ("9a5947c1196f3311a1039aecb90e04f5", SC.on_cron("0 * * * *"), one_parent, False),
+        ("bdf32a2d014be85c68843f55776bd70c", SC.on_cron("0 * * * *"), one_parent, True),
+        ("be9c8c64a822d0dbc49e462a3aabf4d8", SC.on_cron("0 0 * * *"), one_parent, False),
+        ("dfed65a9a20ff1f10e60ff7f0397ffb1", SC.on_cron("0 * * * *"), one_parent_daily, False),
+        ("44305b43d3719344819f9bda178f4588", SC.on_cron("0 * * * *"), two_parents, False),
+        ("1d902e0c59648e5022ae84bd6a1b1c49", SC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
-        ("8d1dc13e39337b2cc43c711930893a36", SC.eager(), one_parent, False),
-        ("a111331589fc2766a34bacab88639ff5", SC.eager(), one_parent, True),
-        ("a41576711e61908a321bf8fc4f7d1261", SC.eager(), one_parent_daily, False),
-        ("a4dbf8969ab764eb07fb666688dafe1b", SC.eager(), two_parents, False),
-        ("ceff99f39c4db7381d8da4622421fde2", SC.eager(), two_parents_daily, False),
+        ("0e5ef287a89ed9e6c08a25e4920ee4f3", SC.eager(), one_parent, False),
+        ("42a1a04bf1fa76fd723fb60294bff6ae", SC.eager(), one_parent, True),
+        ("bfb3170339eea63e425d375d2c187c34", SC.eager(), one_parent_daily, False),
+        ("0e9b7774d09132a19b8d8674fdca500d", SC.eager(), two_parents, False),
+        ("3cf82286c216f9535842fb2852b88838", SC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
         ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), one_parent, False),
         ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), one_parent, True),

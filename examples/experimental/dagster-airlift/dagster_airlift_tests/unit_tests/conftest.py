@@ -100,14 +100,16 @@ def load_definitions_airflow_asset_graph(
 
 
 def build_and_invoke_sensor(
+    *,
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
+    instance: DagsterInstance,
     additional_defs: Definitions = Definitions(),
 ) -> Tuple[SensorResult, SensorEvaluationContext]:
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
         assets_per_task, additional_defs=additional_defs
     )
     sensor = next(iter(repo_def.sensor_defs))
-    sensor_context = build_sensor_context(repository_def=repo_def)
+    sensor_context = build_sensor_context(repository_def=repo_def, instance=instance)
     result = sensor(sensor_context)
     assert isinstance(result, SensorResult)
     return result, sensor_context

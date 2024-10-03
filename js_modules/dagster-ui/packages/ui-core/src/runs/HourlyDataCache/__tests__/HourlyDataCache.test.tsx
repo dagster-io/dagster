@@ -5,12 +5,17 @@ const mockedCache = {
   get: jest.fn(),
   set: jest.fn(),
 };
+let mockShouldThrowError = false;
 jest.mock('idb-lru-cache', () => {
   return {
-    cache: jest.fn(() => mockedCache),
+    cache: jest.fn(() => {
+      if (mockShouldThrowError) {
+        throw new Error('Internal error opening backing store for indexedDB.open.');
+      }
+      return mockedCache;
+    }),
   };
 });
-
 const VERSION = 1;
 
 describe('HourlyDataCache', () => {
@@ -128,66 +133,79 @@ describe('HourlyDataCache Subscriptions', () => {
     cache = new HourlyDataCache<number>({version: VERSION});
   });
 
-  it('should notify subscriber immediately with existing data', () => {
-    cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
+  [true, false].forEach((shouldThrowError) => {
+    const throwingError = shouldThrowError;
+    describe(
+      // eslint-disable-next-line jest/valid-title
+      throwingError ? 'with crashing indexeddb cache' : 'with working indexeddb cache',
+      () => {
+        beforeEach(() => {
+          mockShouldThrowError = throwingError;
+          cache = new HourlyDataCache<number>({version: VERSION, id: 'test'});
+        });
+        it('should notify subscriber immediately with existing data', () => {
+          cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
-    const callback = jest.fn();
-    cache.subscribe(1, callback);
+          const callback = jest.fn();
+          cache.subscribe(1, callback);
 
-    expect(callback).toHaveBeenCalledWith([1, 2, 3]);
-  });
+          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+        });
 
-  it('should notify subscriber with new data added to the subscribed hour', () => {
-    const callback = jest.fn();
-    cache.subscribe(0, callback);
+        it('should notify subscriber with new data added to the subscribed hour', () => {
+          const callback = jest.fn();
+          cache.subscribe(0, callback);
 
-    cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
+          cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
-    expect(callback).toHaveBeenCalledWith([1, 2, 3]);
-  });
+          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+        });
 
-  it('should notify subscriber with new data added to subsequent hours', () => {
-    const callback = jest.fn();
-    cache.subscribe(0, callback);
+        it('should notify subscriber with new data added to subsequent hours', () => {
+          const callback = jest.fn();
+          cache.subscribe(0, callback);
 
-    cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
+          cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-    expect(callback).toHaveBeenCalledWith([4, 5, 6]);
-  });
+          expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+        });
 
-  it('should aggregate data from multiple hours for the subscriber', () => {
-    cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
+        it('should aggregate data from multiple hours for the subscriber', () => {
+          cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
-    const callback = jest.fn();
-    cache.subscribe(0, callback);
+          const callback = jest.fn();
+          cache.subscribe(0, callback);
 
-    expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
 
-    cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
+          cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-    expect(callback).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6]);
-  });
+          expect(callback).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6]);
+        });
 
-  it('should not notify subscribers of data added before their subscription hour', () => {
-    cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
+        it('should not notify subscribers of data added before their subscription hour', () => {
+          cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
-    const callback = jest.fn();
-    cache.subscribe(ONE_HOUR_S, callback);
+          const callback = jest.fn();
+          cache.subscribe(ONE_HOUR_S, callback);
 
-    cache.addData(2 * ONE_HOUR_S, 3 * ONE_HOUR_S, [4, 5, 6]);
+          cache.addData(2 * ONE_HOUR_S, 3 * ONE_HOUR_S, [4, 5, 6]);
 
-    expect(callback).toHaveBeenCalledWith([4, 5, 6]);
-  });
+          expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+        });
 
-  it('should stop notifying unsubscribed callbacks', () => {
-    const callback = jest.fn();
-    const unsubscribe = cache.subscribe(0, callback);
-    unsubscribe();
+        it('should stop notifying unsubscribed callbacks', () => {
+          const callback = jest.fn();
+          const unsubscribe = cache.subscribe(0, callback);
+          unsubscribe();
 
-    cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
-    cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
+          cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
+          cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-    expect(callback).not.toHaveBeenCalled();
+          expect(callback).not.toHaveBeenCalled();
+        });
+      },
+    );
   });
 });
 

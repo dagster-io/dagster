@@ -276,7 +276,7 @@ To use a PostgreSQL database (<PyObject module="dagster_postgres" object="Dagste
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_postgres endbefore=end_marker_storage_postgres
 # Postgres storage can be set using either credentials or a connection string.  This requires that
-# the `dagster-postgres` library be installed.
+# the `dagster-postgres` library be installed and a database configured with UTC timezone.
 
 # this config manually sets the Postgres credentials
 storage:
@@ -323,7 +323,7 @@ storage:
 
 <Note>
   To use MySQL storage, you'll need to install the{" "}
-  <a href="/_apidocs/libraries/dagster-mysql">dagster-postgres</a> library.
+  <a href="/_apidocs/libraries/dagster-mysql">dagster-mysql</a> library.
 </Note>
 
 To use a MySQL database (<PyObject module="dagster_mysql" object="DagsterMySQLStorage" />) for storage, configure `storage.mysql` in `dagster.yaml`:
@@ -378,7 +378,7 @@ storage:
 
 The `run_launcher` key allows you to configure the run launcher for your instance. Run launchers determine where runs are executed. You can use one of the Dagster-provided options or write your own custom run launcher. Refer to the [Run launcher documentation](/deployment/run-launcher) for more info.
 
-Refer to the following tabs for available options and sample configuration.
+Refer to the following tabs for available options and sample configuration. Keep in mind that databases should be configured to use UTC timezone.
 
 <TabGroup>
 <TabItem name="DefaultRunLauncher (default)">

@@ -1,12 +1,20 @@
-from typing import Iterable, Iterator, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Iterator, Optional, Set, Union
 
-from dagster import AssetsDefinition, AssetSpec, SourceAsset
+from dagster import (
+    AssetsDefinition,
+    AssetSpec,
+    SourceAsset,
+    _check as check,
+)
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 
-from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX, TASK_MAPPING_METADATA_KEY
+
+if TYPE_CHECKING:
+    from dagster_airlift.core.serialization.serialized_data import TaskHandle
 
 
 def convert_to_valid_dagster_name(name: str) -> str:
@@ -36,3 +44,23 @@ def spec_iterator(
 
 def metadata_for_task_mapping(*, task_id: str, dag_id: str) -> dict:
     return {TASK_MAPPING_METADATA_KEY: [{"dag_id": dag_id, "task_id": task_id}]}
+
+
+def get_metadata_key(instance_name: str) -> str:
+    return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
+
+
+def is_mapped_asset_spec(spec: AssetSpec) -> bool:
+    return TASK_MAPPING_METADATA_KEY in spec.metadata
+
+
+def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
+    from dagster_airlift.core.serialization.serialized_data import TaskHandle
+
+    check.param_invariant(is_mapped_asset_spec(spec), "spec", "Must be mappped spec")
+    task_handles = []
+    for task_handle_dict in spec.metadata[TASK_MAPPING_METADATA_KEY]:
+        task_handles.append(
+            TaskHandle(dag_id=task_handle_dict["dag_id"], task_id=task_handle_dict["task_id"])
+        )
+    return set(task_handles)

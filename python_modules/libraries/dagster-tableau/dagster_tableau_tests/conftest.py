@@ -1,10 +1,9 @@
-import contextlib
+# ruff: noqa: SLF001
+
 import uuid
-from typing import Callable, Iterator, Union
+from unittest.mock import patch
 
 import pytest
-import responses
-from dagster_tableau.resources import TableauCloudClient, TableauServerClient
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
 FAKE_CONNECTED_APP_CLIENT_ID = uuid.uuid4().hex
@@ -130,6 +129,33 @@ def dashboard_id_fixture() -> str:
     return "c9bf8403-5daf-427a-b3d6-2ce9bed7798f"
 
 
+@pytest.fixture(name="sign_in", autouse=True)
+def sign_in_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.sign_in") as mocked_function:
+        yield mocked_function
+
+
+@pytest.fixture(name="get_workbooks", autouse=True)
+def get_workbooks_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.get_workbooks") as mocked_function:
+        mocked_function.return_value = SAMPLE_WORKBOOKS
+        yield mocked_function
+
+
+@pytest.fixture(name="get_workbook", autouse=True)
+def get_workbook_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.get_workbook") as mocked_function:
+        mocked_function.return_value = {"data": {"workbooks": [SAMPLE_WORKBOOK]}}
+        yield mocked_function
+
+
+@pytest.fixture(name="get_view", autouse=True)
+def get_view_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.get_view") as mocked_function:
+        mocked_function.side_effect = [SAMPLE_VIEW_SHEET, SAMPLE_VIEW_DASHBOARD]
+        yield mocked_function
+
+
 @pytest.fixture(
     name="workspace_data",
 )
@@ -157,61 +183,3 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
             )
         },
     )
-
-
-@pytest.fixture(
-    name="workspace_data_api_mocks_fn",
-)
-def workspace_data_api_mocks_fn_fixture(
-    site_id: str, api_token: str, sheet_id: str, dashboard_id: str
-) -> Callable:
-    @contextlib.contextmanager
-    def _method(
-        client: Union[TableauCloudClient, TableauServerClient],
-        site_id: str = site_id,
-        api_token: str = api_token,
-        sheet_id: str = sheet_id,
-        dashbord_id: str = dashboard_id,
-        include_views: bool = False,
-    ) -> Iterator[responses.RequestsMock]:
-        with responses.RequestsMock() as response:
-            response.add(
-                method=responses.POST,
-                url=f"{client.rest_api_base_url}/auth/signin",
-                json={"credentials": {"site": {"id": site_id}, "token": api_token}},
-                status=200,
-            )
-            response.add(
-                method=responses.GET,
-                url=f"{client.rest_api_base_url}/sites/{site_id}/workbooks",
-                json=SAMPLE_WORKBOOKS,
-                status=200,
-            )
-            response.add(
-                method=responses.POST,
-                url=f"{client.metadata_api_base_url}",
-                json={"data": {"workbooks": [SAMPLE_WORKBOOK]}},
-                status=200,
-            )
-            response.add(
-                method=responses.POST,
-                url=f"{client.rest_api_base_url}/auth/signout",
-                status=200,
-            )
-            if include_views:
-                response.add(
-                    method=responses.GET,
-                    url=f"{client.rest_api_base_url}/sites/{site_id}/views/{sheet_id}",
-                    json=SAMPLE_VIEW_SHEET,
-                    status=200,
-                )
-                response.add(
-                    method=responses.GET,
-                    url=f"{client.rest_api_base_url}/sites/{site_id}/views/{dashbord_id}",
-                    json=SAMPLE_VIEW_DASHBOARD,
-                    status=200,
-                )
-
-            yield response
-
-    return _method

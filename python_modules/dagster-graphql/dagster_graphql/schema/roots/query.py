@@ -78,6 +78,7 @@ from dagster_graphql.implementation.fetch_runs import (
     get_run_group,
     get_run_tag_keys,
     get_run_tags,
+    get_runs_feed_count,
     get_runs_feed_entries,
     validate_pipeline_config,
 )
@@ -183,7 +184,11 @@ from dagster_graphql.schema.runs import (
     GrapheneRunTagsOrError,
     parse_run_config_input,
 )
-from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnectionOrError
+from dagster_graphql.schema.runs_feed import (
+    GrapheneRunsFeedConnectionOrError,
+    GrapheneRunsFeedCount,
+    GrapheneRunsFeedCountOrError,
+)
 from dagster_graphql.schema.schedules import (
     GrapheneScheduleOrError,
     GrapheneSchedulerOrError,
@@ -372,6 +377,11 @@ class GrapheneQuery(graphene.ObjectType):
         cursor=graphene.String(),
         filter=graphene.Argument(GrapheneRunsFilter),
         description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
+    )
+    runsFeedCountOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunsFeedCountOrError),
+        filter=graphene.Argument(GrapheneRunsFilter),
+        description="Retrieve the number of entries for the Runs Feed after applying a filter.",
     )
     runTagKeysOrError = graphene.Field(
         GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
@@ -850,6 +860,14 @@ class GrapheneQuery(graphene.ObjectType):
             graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
         )
 
+    def resolve_runsFeedCountOrError(
+        self,
+        graphene_info: ResolveInfo,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
+    ):
+        selector = filter.to_selector() if filter is not None else None
+        return GrapheneRunsFeedCount(get_runs_feed_count(graphene_info, selector))
+
     @capture_error
     def resolve_partitionSetsOrError(
         self, graphene_info: ResolveInfo, repositorySelector: RepositorySelector, pipelineName: str
@@ -965,14 +983,14 @@ class GrapheneQuery(graphene.ObjectType):
                 return []
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_nodes()
+            asset_node_snaps = repo.get_asset_node_snaps()
             results = (
                 [
                     (repo_loc, repo, asset_node)
-                    for asset_node in external_asset_nodes
+                    for asset_node in asset_node_snaps
                     if asset_node.group_name == group_name
                 ]
-                if external_asset_nodes
+                if asset_node_snaps
                 else []
             )
         elif pipeline is not None:
@@ -985,10 +1003,10 @@ class GrapheneQuery(graphene.ObjectType):
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
 
-            external_asset_nodes = repo.get_external_asset_nodes(job_name)
+            asset_node_snaps = repo.get_asset_node_snaps(job_name)
             results = (
-                [(repo_loc, repo, asset_node) for asset_node in external_asset_nodes]
-                if external_asset_nodes
+                [(repo_loc, repo, asset_node) for asset_node in asset_node_snaps]
+                if asset_node_snaps
                 else []
             )
         else:
@@ -1007,8 +1025,13 @@ class GrapheneQuery(graphene.ObjectType):
                 if remote_node:
                     repo_handle = remote_node.priority_repository_handle
                     code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
-                    repo = code_loc.get_repository(repo_handle.repository_name)
-                    results.append((code_loc, repo, remote_node.priority_node))
+                    results.append(
+                        (
+                            code_loc,
+                            code_loc.get_repository(repo_handle.repository_name),
+                            remote_node.priority_node_snap,
+                        )
+                    )
 
         # Filter down to requested asset keys
         results = [
@@ -1049,7 +1072,7 @@ class GrapheneQuery(graphene.ObjectType):
             GrapheneAssetNode(
                 code_loc,
                 repo,
-                external_asset_node,
+                asset_node_snap,
                 asset_checks_loader=asset_checks_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
@@ -1064,7 +1087,7 @@ class GrapheneQuery(graphene.ObjectType):
                 if base_deployment_context is not None
                 else None,
             )
-            for (code_loc, repo, external_asset_node) in results
+            for (code_loc, repo, asset_node_snap) in results
         ]
         return sorted(nodes, key=lambda node: node.id)
 
@@ -1154,7 +1177,7 @@ class GrapheneQuery(graphene.ObjectType):
 
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            remote_node.key: remote_node.priority_node.op_names
+            remote_node.key: remote_node.priority_node_snap.op_names
             for remote_node in remote_nodes
             if remote_node
         }

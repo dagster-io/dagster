@@ -18,6 +18,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     install_requires=[
         "PyYAML",
+        "tomli",
         "packaging>=20.9",
         "requests",
         "typing_extensions>=4.2",
