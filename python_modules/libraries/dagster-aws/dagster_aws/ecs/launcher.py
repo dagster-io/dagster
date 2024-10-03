@@ -81,11 +81,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self,
         inst_data: Optional[ConfigurableClassData] = None,
         task_definition=None,
-        container_name="run",
-        secrets=None,
-        secrets_tag="dagster",
-        env_vars=None,
-        include_sidecars=False,
+        container_name: str = "run",
+        secrets: Optional[List[str]] = None,
+        secrets_tag: str = "dagster",
+        env_vars: Optional[Sequence[str]] = None,
+        include_sidecars: bool = False,
         use_current_ecs_task_config: bool = True,
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
@@ -196,7 +196,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             invalid_tags = {"dagster/op_selection", "dagster/solid_selection"}
             # These tags are potentially very large and can cause ECS to fail to start a task. They also don't seem particularly useful in a task-tagging context
             check.invariant(
-                invalid_tags - set(self.propagate_tags.get("allow_list")) == invalid_tags,
+                invalid_tags - set(self.propagate_tags.get("allow_list", [])) == invalid_tags,
                 f"Cannot include {invalid_tags} in allow_list",
             )
 
@@ -413,7 +413,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             *tags_to_propagate,
         ]
 
-    def _get_run_tags(self, run_id):
+    def _get_run_tags(self, run_id: str) -> Tags:
         run = self._instance.get_run_by_id(run_id)
         tags = run.tags if run else {}
         arn = tags.get("ecs/task_arn")
@@ -829,11 +829,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return False
 
-    def _is_transient_startup_failure(self, run, task):
-        if not task.get("stoppedReason"):
+    def _is_transient_startup_failure(self, run: DagsterRun, task: Dict[str, Any]):
+        if task.get("stoppedReason") is None:
             return False
         return run.status == DagsterRunStatus.STARTING and self._is_transient_stop_reason(
-            task.get("stoppedReason")
+            task.get("stoppedReason", "")
         )
 
     def check_run_worker_health(self, run: DagsterRun):
