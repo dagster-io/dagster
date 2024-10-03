@@ -1,6 +1,6 @@
 import {Box, Checkbox, Colors, NonIdealState, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import {useCallback, useMemo} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
@@ -40,14 +40,14 @@ const filters: RunFilterTokenType[] = [
   'status',
 ];
 
-export function useRunsFeedEntries(filter: RunsFilter) {
+export function useRunsFeedEntries(filter: RunsFilter, includeRunsInBackfills: boolean) {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsFeedRootQuery,
     RunsFeedRootQueryVariables
   >({
     query: RUNS_FEED_ROOT_QUERY,
     pageSize: PAGE_SIZE,
-    variables: {filter},
+    variables: {filter, includeRunsInBackfills},
     nextCursorForResult: (runs) => {
       if (runs.runsFeedOrError.__typename !== 'RunsFeedConnection') {
         return undefined;
@@ -118,49 +118,23 @@ export const RunsFeedRoot = () => {
     enabledFilters: filters,
   });
 
+  const [includeRunsInBackfills, setIncludeRunsInBackfills] = useState(false);
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
 
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter);
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter, includeRunsInBackfills);
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
   const {error} = queryResult;
-
-  const showRunsWithinBackfills = useMemo(() => {
-    const excludeToken = filterTokens.find(
-      (token) => token?.token === 'show_runs_within_backfills',
-    );
-    if (!excludeToken) {
-      // If the token doesn't exist, the box is not checked
-      return false;
-    }
-    return excludeToken.value === 'true';
-  }, [filterTokens]);
 
   const actionBarComponents = (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       {button}
       <Checkbox
         label={<span>Show runs within backfills</span>}
-        checked={showRunsWithinBackfills}
+        checked={includeRunsInBackfills}
         onChange={() => {
-          setFilterTokens((filterTokens) => {
-            const copy = [...filterTokens];
-            const index = copy.findIndex((token) => token?.token === 'show_runs_within_backfills');
-            if (index !== -1) {
-              const [token] = copy.splice(index, 1);
-              if (token?.value === 'false') {
-                copy.push({
-                  token: 'show_runs_within_backfills',
-                  value: 'true',
-                });
-              }
-              // if the token value is true, removing it is enough to disable the filter
-            } else {
-              copy.push({token: 'show_runs_within_backfills', value: 'true'});
-            }
-            return copy;
-          });
+          setIncludeRunsInBackfills(!includeRunsInBackfills);
         }}
       />
     </Box>
@@ -246,8 +220,8 @@ export const RunsFeedRoot = () => {
 export default RunsFeedRoot;
 
 export const RUNS_FEED_ROOT_QUERY = gql`
-  query RunsFeedRootQuery($limit: Int!, $cursor: String, $filter: RunsFilter) {
-    runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter) {
+  query RunsFeedRootQuery($limit: Int!, $cursor: String, $filter: RunsFilter, $includeRunsInBackfills: Boolean!) {
+    runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter, includeRunsInBackfills: $includeRunsInBackfills) {
       ... on RunsFeedConnection {
         cursor
         hasMore
