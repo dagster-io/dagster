@@ -301,7 +301,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ]
 
     @cached_property
-    def toposorted_entity_keys(self) -> Sequence[Sequence[EntityKey]]:
+    def toposorted_entity_keys_by_level(self) -> Sequence[Sequence[EntityKey]]:
         """Return topologically sorted levels for entity keys in graph. Keys with the same topological level are
         sorted alphabetically to provide stability.
         """
