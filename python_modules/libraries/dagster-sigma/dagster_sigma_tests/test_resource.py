@@ -50,7 +50,7 @@ def test_basic_fetch(sigma_auth_token: str) -> None:
         status=200,
     )
 
-    resource.fetch_json("datasets")
+    resource._fetch_json("datasets")  # noqa: SLF001
 
     assert len(responses.calls) == 2
     assert responses.calls[1].request.headers["Authorization"] == f"Bearer {sigma_auth_token}"
