@@ -6,8 +6,18 @@ from dagster_duckdb import DuckDBResource
 import dagster as dg
 
 
-# formatting for metadata
 def query_to_markdown(conn, query, limit=10):
+    """Performs SQL query and converts result to markdown.
+
+    Args:
+        conn(DuckDBPyConnection) connection to duckdb
+        query (str): query to run against duckdb connection
+        limit (int): maximum number of rows to render to markdown
+
+    Returns:
+        Markdown representation of query result
+
+    """
     result = conn.execute(query).fetchdf()
     if result.empty:
         return "No results found."
@@ -15,66 +25,81 @@ def query_to_markdown(conn, query, limit=10):
     return result.head(limit).to_markdown(index=False)
 
 
-@dg.asset(compute_kind="DuckDB", group_name="ingestion")
+@dg.asset(
+    compute_kind="duckdb",
+    group_name="ingestion",
+)
 def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
     with duckdb.get_connection() as conn:
-        conn.execute("""
-                     DROP TABLE IF EXISTS products;
-                     CREATE TABLE products AS SELECT * FROM read_csv_auto('data/products.csv')
-                     """)
-
-        # asset metadata
-        preview_query = "SELECT * FROM products LIMIT 10"
-        preview_md = query_to_markdown(conn, preview_query)
-        row_count = conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
-
-        return dg.MaterializeResult(
-            metadata={
-                "row_count": dg.MetadataValue.int(row_count),
-                "preview": dg.MetadataValue.md(preview_md),
-            }
+        conn.execute(
+            """
+            create or replace table products as (
+                select * from read_csv_auto('data/products.csv')
+            )
+            """
         )
 
-
-@dg.asset(compute_kind="DuckDB", group_name="ingestion")
-def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
-    with duckdb.get_connection() as conn:
-        conn.execute("""
-                     DROP TABLE IF EXISTS Sales_reps;
-                     CREATE TABLE sales_reps AS SELECT * FROM read_csv_auto('data/sales_reps.csv')
-                     """)
-
-        # asset metadata
-        preview_query = "SELECT * FROM sales_reps LIMIT 10"
+        preview_query = "select * from products limit 10"
         preview_md = query_to_markdown(conn, preview_query)
-        row_count = conn.execute("SELECT COUNT(*) FROM sales_reps").fetchone()[0]
+        row_count = conn.execute("select count(*) from products").fetchone()
+        count = row_count[0] if row_count else 0
 
         return dg.MaterializeResult(
             metadata={
-                "row_count": dg.MetadataValue.int(row_count),
+                "row_count": dg.MetadataValue.int(count),
                 "preview": dg.MetadataValue.md(preview_md),
             }
         )
 
 
 @dg.asset(
-    compute_kind="DuckDB",
+    compute_kind="duckdb",
+    group_name="ingestion",
+)
+def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
+    with duckdb.get_connection() as conn:
+        conn.execute(
+            """
+            create or replace table sales_reps as (
+                select * from read_csv_auto('data/sales_reps.csv')
+            )
+            """
+        )
+
+        preview_query = "select * from sales_reps limit 10"
+        preview_md = query_to_markdown(conn, preview_query)
+        row_count = conn.execute("select count(*) from sales_reps").fetchone()
+        count = row_count[0] if row_count else 0
+
+        return dg.MaterializeResult(
+            metadata={
+                "row_count": dg.MetadataValue.int(count),
+                "preview": dg.MetadataValue.md(preview_md),
+            }
+        )
+
+
+@dg.asset(
+    compute_kind="duckdb",
     group_name="ingestion",
 )
 def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
     with duckdb.get_connection() as conn:
-        conn.execute("""
-                     DROP TABLE IF EXISTS sales_data;
-                     CREATE TABLE sales_data AS SELECT * FROM read_csv_auto('data/sales_data.csv')
-                     """)
-        # asset metadata
+        conn.execute(
+            """
+            drop table if exists sales_data;
+            create table sales_data as select * from read_csv_auto('data/sales_data.csv')
+            """
+        )
+
         preview_query = "SELECT * FROM sales_data LIMIT 10"
         preview_md = query_to_markdown(conn, preview_query)
-        row_count = conn.execute("SELECT COUNT(*) FROM sales_data").fetchone()[0]
+        row_count = conn.execute("select count(*) from sales_data").fetchone()
+        count = row_count[0] if row_count else 0
 
         return dg.MaterializeResult(
             metadata={
-                "row_count": dg.MetadataValue.int(row_count),
+                "row_count": dg.MetadataValue.int(count),
                 "preview": dg.MetadataValue.md(preview_md),
             }
         )
@@ -82,39 +107,43 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
 
 # step 1: adding dependencies
 @dg.asset(
-    compute_kind="DuckDB", group_name="joins", deps=[sales_data, sales_reps, products]
+    compute_kind="duckdb",
+    group_name="joins",
+    deps=[sales_data, sales_reps, products],
 )
 def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
     with duckdb.get_connection() as conn:
-        conn.execute("""
-                     DROP VIEW IF EXISTS joined_data;
-                     CREATE VIEW joined_data AS 
-                     SELECT 
-                        date,
-                        dollar_amount,
-                        customer_name,
-                        quantity,
-                        rep_name,
-                        department,
-                        hire_date,
-                        product_name,
-                        category,
-                        price
-                     FROM sales_data
-                     LEFT JOIN sales_reps
-                        on sales_reps.rep_id = sales_data.rep_id
-                     LEFT JOIN products
-                        on products.product_id = sales_data.product_id
-                     """)
+        conn.execute(
+            """
+            create or replace view joined_data as (
+                select 
+                    date,
+                    dollar_amount,
+                    customer_name,
+                    quantity,
+                    rep_name,
+                    department,
+                    hire_date,
+                    product_name,
+                    category,
+                    price
+                from sales_data
+                left join sales_reps
+                    on sales_reps.rep_id = sales_data.rep_id
+                left join products
+                    on products.product_id = sales_data.product_id
+            )
+            """
+        )
 
-        # asset metadata
-        preview_query = "SELECT * FROM joined_data LIMIT 10"
+        preview_query = "select * from joined_data limit 10"
         preview_md = query_to_markdown(conn, preview_query)
-        row_count = conn.execute("SELECT COUNT(*) FROM joined_data").fetchone()[0]
+        row_count = conn.execute("select count(*) from joined_data").fetchone()
+        count = row_count[0] if row_count else 0
 
         return dg.MaterializeResult(
             metadata={
-                "row_count": dg.MetadataValue.int(row_count),
+                "row_count": dg.MetadataValue.int(count),
                 "preview": dg.MetadataValue.md(preview_md),
             }
         )
@@ -124,14 +153,17 @@ def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
 @dg.asset_check(asset=joined_data)
 def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
     with duckdb.get_connection() as conn:
-        query_result = conn.execute("""
-                        SELECT count(*) FROM joined_data
-                        where rep_name is null
-                        or product_name is null
-                        """).fetchone()
-        result = query_result[0] == 0
+        query_result = conn.execute(
+            """
+            select count(*) from joined_data
+            where rep_name is null
+            or product_name is null
+            """
+        ).fetchone()
+
+        count = query_result[0] if query_result else 0
         return dg.AssetCheckResult(
-            passed=result, metadata={"missing dimensions": query_result[0]}
+            passed=count > 0, metadata={"missing dimensions": count}
         )
 
 
@@ -140,10 +172,10 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
 
 
 @dg.asset(
-    deps=[joined_data],
     partitions_def=monthly_partition,
+    compute_kind="duckdb",
     group_name="analysis",
-    compute_kind="DuckDB",
+    deps=[joined_data],
     auto_materialize_policy=dg.AutoMaterializePolicy.eager(),
 )
 def monthly_sales_performance(
@@ -153,38 +185,42 @@ def monthly_sales_performance(
     month_to_fetch = partition_date_str[:-3]
 
     with duckdb.get_connection() as conn:
-        conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS monthly_sales_performance (
-                    partition_date varchar, 
-                    rep_name varchar, 
-                    product varchar,
-                    total_dollar_amount double
-                );
+        conn.execute(
+            f"""
+            create table if not exists monthly_sales_performance (
+                partition_date varchar,
+                rep_name varchar,
+                product varchar,
+                total_dollar_amount double
+            );
 
-                DELETE FROM monthly_sales_performance WHERE partition_date = '{month_to_fetch}';
-            
-                INSERT INTO monthly_sales_performance
-                SELECT
-                    '{month_to_fetch}' as partition_date,
-                    rep_name, 
-                    product_name,
-                    sum(dollar_amount) as total_dollar_amount
-                FROM joined_data WHERE strftime(date, '%Y-%m') = '{month_to_fetch}'
-                GROUP BY
-                '{month_to_fetch}',
-                rep_name,
-                product_name
-                ;
-                """)
-        preview_query = f"SELECT * FROM monthly_sales_performance WHERE partition_date = '{month_to_fetch}';"
+            delete from monthly_sales_performance where partition_date = '{month_to_fetch}';
+
+            insert into monthly_sales_performance
+            select
+                '{month_to_fetch}' as partition_date,
+                rep_name, 
+                product_name,
+                sum(dollar_amount) as total_dollar_amount
+            from joined_data where strftime(date, '%Y-%m') = '{month_to_fetch}'
+            group by '{month_to_fetch}', rep_name, product_name;
+            """
+        )
+
+        preview_query = f"select * from monthly_sales_performance where partition_date = '{month_to_fetch}';"
         preview_md = query_to_markdown(conn, preview_query)
         row_count = conn.execute(
-            f"SELECT COUNT(*) FROM monthly_sales_performance WHERE partition_date = '{month_to_fetch}';"
-        ).fetchone()[0]
+            f"""
+            select count(*)
+            from monthly_sales_performance
+            where partition_date = '{month_to_fetch}'
+            """
+        ).fetchone()
+        count = row_count[0] if row_count else 0
 
     return dg.MaterializeResult(
         metadata={
-            "row_count": dg.MetadataValue.int(row_count),
+            "row_count": dg.MetadataValue.int(count),
             "preview": dg.MetadataValue.md(preview_md),
         }
     )
@@ -200,64 +236,65 @@ product_category_partition = dg.StaticPartitionsDefinition(
     deps=[joined_data],
     partitions_def=product_category_partition,
     group_name="analysis",
-    compute_kind="DuckDB",
+    compute_kind="duckdb",
     auto_materialize_policy=dg.AutoMaterializePolicy.eager(),
 )
 def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
     product_category_str = context.partition_key
 
     with duckdb.get_connection() as conn:
-        conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS product_performance (
-                    product_category varchar, 
-                    product_name varchar,
-                    total_dollar_amount double,
-                    total_units_sold double
-                );
+        conn.execute(
+            f"""
+            create table if not exists product_performance (
+                product_category varchar, 
+                product_name varchar,
+                total_dollar_amount double,
+                total_units_sold double
+            );
 
-                DELETE FROM product_performance WHERE product_category = '{product_category_str}';
-            
-                INSERT INTO product_performance
-                SELECT
-                    '{product_category_str}' as product_category,
-                    product_name,
-                    sum(dollar_amount) as total_dollar_amount,
-                    sum(quantity) as total_units_sold
-                FROM joined_data 
-                WHERE category = '{product_category_str}'
-                GROUP BY
-                '{product_category_str}',
-                product_name
-                ;
-                """)
-        preview_query = f"SELECT * FROM product_performance WHERE product_category = '{product_category_str}';"
+            delete from product_performance where product_category = '{product_category_str}';
+
+            insert into product_performance
+            select
+                '{product_category_str}' as product_category,
+                product_name,
+                sum(dollar_amount) as total_dollar_amount,
+                sum(quantity) as total_units_sold
+            from joined_data 
+            where category = '{product_category_str}'
+            group by '{product_category_str}', product_name;
+            """
+        )
+        preview_query = f"select * from product_performance where product_category = '{product_category_str}';"
         preview_md = query_to_markdown(conn, preview_query)
         row_count = conn.execute(
-            f"SELECT COUNT(*) FROM product_performance WHERE product_category = '{product_category_str}';"
-        ).fetchone()[0]
+            f"""
+            SELECT COUNT(*)
+            FROM product_performance
+            WHERE product_category = '{product_category_str}';
+            """
+        ).fetchone()
+        count = row_count[0] if row_count else 0
 
     return dg.MaterializeResult(
         metadata={
-            "row_count": dg.MetadataValue.int(row_count),
+            "row_count": dg.MetadataValue.int(count),
             "preview": dg.MetadataValue.md(preview_md),
         }
     )
 
 
-# jobs
 analysis_assets = dg.AssetSelection.keys("joined_data").upstream()
 
 analysis_update_job = dg.define_asset_job(
     name="analysis_update_job",
     selection=analysis_assets,
 )
+
 weekly_update_schedule = dg.ScheduleDefinition(
     job=analysis_update_job,
     cron_schedule="0 0 * * 1",  # every Monday at midnight
 )
-
-
-# sensor asset
 
 
 class AdhocRequestConfig(dg.Config):
@@ -269,23 +306,23 @@ class AdhocRequestConfig(dg.Config):
 
 @dg.asset(
     deps=["joined_data"],
-    compute_kind="Python",
+    compute_kind="python",
 )
 def adhoc_request(
     config: AdhocRequestConfig, duckdb: DuckDBResource
 ) -> dg.MaterializeResult:
     query = f"""
-        SELECT
+        select
             department,
             rep_name,
             product_name,
             sum(dollar_amount) as total_sales
-        FROM joined_data
-        WHERE date >= '{config.start_date}'
-        AND date < '{config.end_date}'
-        AND department = '{config.department}'
-        AND product_name = '{config.product}'
-        GROUP BY
+        from joined_data
+        where date >= '{config.start_date}'
+        and date < '{config.end_date}'
+        and department = '{config.department}'
+        and product_name = '{config.product}'
+        group by
             department,
             rep_name,
             product_name
@@ -297,7 +334,6 @@ def adhoc_request(
     return dg.MaterializeResult(metadata={"preview": dg.MetadataValue.md(preview_md)})
 
 
-# sensor job
 adhoc_request_job = dg.define_asset_job(
     name="adhoc_request_job",
     selection=dg.AssetSelection.assets("adhoc_request"),
