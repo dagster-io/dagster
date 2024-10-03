@@ -51,6 +51,17 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
         )
 
 
+def build_airflow_mapped_defs(
+    *,
+    airflow_instance: AirflowInstance,
+    defs: Optional[Definitions] = None,
+) -> Definitions:
+    return AirflowInstanceDefsLoader(
+        airflow_instance=airflow_instance,
+        explicit_defs=defs or Definitions(),
+    ).build_defs()
+
+
 @suppress_dagster_warnings
 def build_defs_from_airflow_instance(
     *,
@@ -59,15 +70,11 @@ def build_defs_from_airflow_instance(
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     event_transformer_fn: Optional[DagsterEventTransformerFn] = None,
 ) -> Definitions:
-    resolved_defs = AirflowInstanceDefsLoader(
-        airflow_instance=airflow_instance,
-        explicit_defs=defs or Definitions(),
-        sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
-    ).build_defs()
+    mapped_defs = build_airflow_mapped_defs(airflow_instance=airflow_instance, defs=defs)
     return Definitions.merge(
-        resolved_defs,
+        mapped_defs,
         build_airflow_polling_sensor_defs(
-            mapped_defs=resolved_defs,
+            mapped_defs=mapped_defs,
             airflow_instance=airflow_instance,
             minimum_interval_seconds=sensor_minimum_interval_seconds,
             event_transformer_fn=event_transformer_fn,
