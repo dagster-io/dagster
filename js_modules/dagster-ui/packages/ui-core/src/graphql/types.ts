@@ -3973,7 +3973,7 @@ export type QueryRunsFeedCountOrErrorArgs = {
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   filter?: InputMaybe<RunsFilter>;
-  includeRunsInBackfills?: InputMaybe<Scalars['Boolean']['input']>;
+  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
   limit: Scalars['Int']['input'];
 };
 

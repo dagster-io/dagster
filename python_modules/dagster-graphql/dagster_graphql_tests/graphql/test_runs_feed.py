@@ -17,8 +17,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 )
 
 GET_RUNS_FEED_QUERY = """
-query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter, $includeRunsInBackfills: Boolean!) {
-    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter, includeRunsInBackfills: $includeRunsInBackfills) {
+query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter, $includeRunsFromBackfills: Boolean!) {
+    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter, includeRunsFromBackfills: $includeRunsFromBackfills) {
       ... on RunsFeedConnection {
           results {
             __typename
@@ -131,7 +131,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         _assert_results_match_count_match_expected(result, 20)
@@ -148,7 +148,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -174,7 +174,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": old_cursor,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -194,7 +194,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 15,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -218,7 +218,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         # limit was used, count will differ from number of results returned
@@ -239,7 +239,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -271,7 +271,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": old_cursor.to_string(),
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -297,7 +297,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
         prev_run_time = None
@@ -314,7 +314,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -338,7 +338,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 5,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -364,7 +364,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 5,
                 "cursor": old_cursor,
                 "filter": None,
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -401,7 +401,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -426,7 +426,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -449,7 +449,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -481,7 +481,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -512,7 +512,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -540,7 +540,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -572,7 +572,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 5,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -605,7 +605,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -643,7 +643,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -660,7 +660,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["SUCCESS"]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -674,7 +674,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["FAILURE"]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -688,7 +688,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELING"]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -702,7 +702,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELED"]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -716,7 +716,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["NOT_STARTED"]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -742,7 +742,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -759,7 +759,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["SUCCESS"]},
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
@@ -773,7 +773,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["FAILURE"]},
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
@@ -787,7 +787,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELING"]},
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
@@ -801,7 +801,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELED"]},
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
@@ -834,7 +834,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -851,7 +851,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": nothing_created_ts},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -866,7 +866,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": half_created_ts},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -881,7 +881,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": all_created_ts},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -898,7 +898,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 6,
                 "cursor": None,
                 "filter": {"createdBefore": half_created_ts},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -913,7 +913,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 4,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": {"createdBefore": half_created_ts},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -958,7 +958,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -975,7 +975,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"pipelineName": "foo"},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -989,7 +989,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"pipelineName": "bar"},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1020,7 +1020,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -1037,7 +1037,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "bar"}]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1052,7 +1052,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "baz", "value": "quux"}]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1066,7 +1066,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "baz"}]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1085,7 +1085,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -1102,7 +1102,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"runIds": [run.run_id]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1123,7 +1123,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -1140,7 +1140,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"runIds": [run.run_id]},
-                "includeRunsInBackfills": True,
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
@@ -1190,7 +1190,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -1207,7 +1207,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "bar"}], "statuses": ["SUCCESS"]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1224,7 +1224,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                     "tags": [{"key": "foo", "value": "bar"}],
                     "statuses": ["FAILURE", "CANCELED"],
                 },
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1238,7 +1238,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "baz"}], "statuses": ["FAILURE"]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1258,7 +1258,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -1274,7 +1274,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": BACKFILL_ID_TAG, "value": backfill_id}]},
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -1296,7 +1296,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                         {"key": "not", "value": "present"},
                     ]
                 },
-                "includeRunsInBackfills": False,
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors

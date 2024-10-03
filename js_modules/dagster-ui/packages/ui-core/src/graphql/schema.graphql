@@ -3291,7 +3291,7 @@ type Query {
     limit: Int!
     cursor: String
     filter: RunsFilter
-    includeRunsInBackfills: Boolean
+    includeRunsFromBackfills: Boolean
   ): RunsFeedConnectionOrError!
   runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
