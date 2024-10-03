@@ -341,12 +341,16 @@ def adhoc_request_sensor(context: dg.SensorEvaluationContext):
     )
 
 
-all_assets = dg.load_assets_from_current_module()
-all_asset_checks = dg.load_asset_checks_from_current_module()
-
 defs = dg.Definitions(
-    assets=all_assets,
-    asset_checks=all_asset_checks,
+    assets=[
+        products,
+        sales_reps,
+        sales_data,
+        joined_data,
+        monthly_sales_performance,
+        product_performance,
+    ],
+    asset_checks=[missing_dimension_check],
     schedules=[weekly_update_schedule],
     jobs=[analysis_update_job, adhoc_request_job],
     sensors=[adhoc_request_sensor],
