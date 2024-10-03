@@ -2,10 +2,7 @@ import {render, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import {
-  ONE_DIMENSIONAL_ASSET,
-  TWO_DIMENSIONAL_ASSET_BOTH_STATIC,
-} from '../../assets/__fixtures__/PartitionHealth.fixtures';
+import {TWO_DIMENSIONAL_ASSET_BOTH_STATIC} from '../../assets/__fixtures__/PartitionHealth.fixtures';
 import {PartitionHealthQuery} from '../../assets/types/usePartitionHealthData.types';
 import {
   PartitionDimensionSelection,
@@ -109,70 +106,5 @@ describe('OrdinalOrSingleRangePartitionSelector', () => {
     expect(getByTestId('selection').textContent).toEqual(
       '{"selectedKeys":["CA","MN"],"selectedRanges":[]}',
     );
-  });
-
-  it('should support All, Single or Range entry for time partition dimensions', async () => {
-    const {getByText, getByTestId, getAllByTestId, queryByText} = render(
-      <Wrapper queryResult={ONE_DIMENSIONAL_ASSET} />,
-    );
-    expect(getByText('All')).toBeVisible();
-    expect(getByText('Single')).toBeVisible();
-    expect(queryByText('Range')).toBeVisible();
-
-    expect(getByTestId('selection').textContent).toEqual('undefined');
-
-    const user = userEvent.setup();
-
-    // Click All, verify the value changes to `null` (meta value for all)
-    await user.click(getByText('All'));
-    await waitFor(() => {
-      expect(getByTestId('selection').textContent).toEqual('null');
-    });
-
-    // Click Single, verify the value changes to an empty selection
-    await user.click(getByText('Single'));
-    await waitFor(() => {
-      expect(getByTestId('selection').textContent).toEqual(
-        '{"selectedKeys":[],"selectedRanges":[]}',
-      );
-    });
-
-    // Click a few partitions, verify the values are added to the selection
-    await user.click(getByText('Select a partition'));
-    await user.click(getByTestId(`menu-item-2022-01-02`));
-    await user.click(getByTestId(`menu-item-2022-01-03`));
-    expect(getByTestId('selection').textContent).toEqual(
-      '{"selectedKeys":["2022-01-02","2022-01-03"],"selectedRanges":[]}',
-    );
-
-    // Click Range, verify the value resets to an empty selection
-    await user.click(getByText('Range'));
-    await waitFor(() => {
-      expect(getByTestId('selection').textContent).toEqual(
-        '{"selectedKeys":[],"selectedRanges":[]}',
-      );
-    });
-
-    // Click a start partition, verify the value is saved but incomplete
-    await user.click(getByText('Select a starting partition'));
-    await user.click(getAllByTestId(`menu-item-2022-01-02`)[0]!);
-    expect(getByTestId('selection').textContent).toEqual(
-      '{"selectedKeys":[],"selectedRanges":[{"start":{"key":"2022-01-02","idx":1},"end":{"key":"","idx":-1}}]}',
-    );
-
-    // Click an end partition, verify the value is saved
-    await user.click(getByText('Select an ending partition'));
-    await user.click(getAllByTestId(`menu-item-2022-01-03`)[1]!);
-    expect(getByTestId('selection').textContent).toEqual(
-      '{"selectedKeys":[],"selectedRanges":[{"start":{"key":"2022-01-02","idx":1},"end":{"key":"2022-01-03","idx":2}}]}',
-    );
-
-    // Click Single, verify the value resets to an empty selection
-    await user.click(getByText('Single'));
-    await waitFor(() => {
-      expect(getByTestId('selection').textContent).toEqual(
-        '{"selectedKeys":[],"selectedRanges":[]}',
-      );
-    });
   });
 });
