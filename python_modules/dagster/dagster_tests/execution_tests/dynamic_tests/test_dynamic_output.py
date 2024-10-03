@@ -252,7 +252,8 @@ def no_leaks_plz():
     spawn()
 
 
-def test_dealloc_prev_outputs():
+@pytest.mark.parametrize("executor", ["in_process", "multiprocess"])
+def test_dealloc_prev_outputs(executor):
     # Ensure dynamic outputs can be used to chunk large data objects
     # by not holding any refs to previous outputs.
     # Things that will hold on to outputs:
@@ -263,6 +264,7 @@ def test_dealloc_prev_outputs():
         with execute_job(
             reconstructable(no_leaks_plz),
             instance=inst,
+            run_config={"execution": {"config": {executor: {}}}},
         ) as result:
             assert result.success
             # there may be 1 still referenced by outer iteration frames
