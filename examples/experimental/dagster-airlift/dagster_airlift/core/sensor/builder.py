@@ -65,7 +65,7 @@ def check_keys_for_asset_keys(
 
 def build_airflow_polling_sensor_defs(
     airflow_data: AirflowDefinitionsData,
-    event_translation_fn: AirflowEventTranslationFn,
+    event_translation_fn: Optional[AirflowEventTranslationFn],
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     @sensor(
@@ -174,7 +174,7 @@ def materializations_and_requests_from_batch_iter(
     end_date_lte: float,
     offset: int,
     airflow_data: AirflowDefinitionsData,
-    event_translation_fn: AirflowEventTranslationFn,
+    event_translation_fn: Optional[AirflowEventTranslationFn],
 ) -> Iterator[Optional[BatchResult]]:
     runs = airflow_data.airflow_instance.get_dag_runs_batch(
         dag_ids=list(airflow_data.all_dag_ids),

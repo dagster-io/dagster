@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Callable, Iterable, List, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, Iterable, Mapping, Sequence
 
 from dagster import (
     AssetMaterialization,
@@ -17,20 +17,6 @@ from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
 AirflowEventTranslationFn = Callable[
     [DagRun, Sequence[TaskInstance], AirflowDefinitionsData], Iterable[AssetMaterialization]
 ]
-
-
-def get_asset_events(
-    dag_run: DagRun, task_instances: Sequence[TaskInstance], airflow_data: AirflowDefinitionsData
-) -> List[AssetMaterialization]:
-    mats: List[AssetMaterialization] = []
-    mats.extend(materializations_for_dag_run(dag_run, airflow_data))
-    for task_run in task_instances:
-        mats.extend(
-            synthetic_mats_for_task_instance(
-                airflow_data=airflow_data, dag_run=dag_run, task_instance=task_run
-            )
-        )
-    return mats
 
 
 def get_timestamp_from_materialization(mat: AssetMaterialization) -> float:
