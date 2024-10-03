@@ -62,7 +62,9 @@ export const RunsFeedTable = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  const selectedEntries = entries.filter((e): e is RunsFeedTableEntryFragment_Run => checkedIds.has(e.id));
+  const selectedEntries = entries.filter((e): e is RunsFeedTableEntryFragment_Run =>
+    checkedIds.has(e.id),
+  );
 
   const selectedRuns = selectedEntries.filter(
     (e): e is RunsFeedTableEntryFragment_Run => e.__typename === 'Run',
