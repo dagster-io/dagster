@@ -1,4 +1,130 @@
-# Changelog
+# Changelog 
+
+## 1.8.10 (core) / 0.24.10 (libraries)
+
+### New
+
+*  Insert changelog entry or "NOCHANGELOG" here. [#24899](https://github.com/dagster-io/dagster/pull/24899)
+*  `JobDefinition`, `@job`, and `define_asset_job` now take a `run_tags` parameter. If `run_tags` are defined, they will be attached to all runs of the job, and `tags` will not be. If `run_tags` is not set, then `tags` are attached to all runs of the job (status quo behavior). This change enables the separation of definition-level and run-level tags on jobs. [#24379](https://github.com/dagster-io/dagster/pull/24379)
+*  [dagster-aws] The ECS launcher now automatically retries transient ECS RunTask failures (like capacity placement failures). [#24691](https://github.com/dagster-io/dagster/pull/24691)
+*  `OutputContext` now exposes the `AssetSpec` of the asset that is being stored as an output [#24495](https://github.com/dagster-io/dagster/pull/24495)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24463](https://github.com/dagster-io/dagster/pull/24463)
+
+### Bugfixes
+
+*  Asset checks are now visible in the run page header when launched from a schedule. [#24652](https://github.com/dagster-io/dagster/pull/24652)
+*  [ui] When setting an AutomationCondition on an asset, the label of this condition will now be shown in the sidebar on the Asset Details page. [#24554](https://github.com/dagster-io/dagster/pull/24554)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24804](https://github.com/dagster-io/dagster/pull/24804)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24727](https://github.com/dagster-io/dagster/pull/24727)
+
+### Documentation
+
+*  Insert changelog entry or "NOCHANGELOG" here. [#24319](https://github.com/dagster-io/dagster/pull/24319)
+*  [dagster-cli] A guide on how to validate Dagster definitions using `dagster definitions validate` have been added. [#24815](https://github.com/dagster-io/dagster/pull/24815)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24797](https://github.com/dagster-io/dagster/pull/24797)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24684](https://github.com/dagster-io/dagster/pull/24684)
+
+### Breaking Changes
+
+
+### Deprecations
+
+
+### Dagster Plus
+
+
+### Invalid
+
+*  `BUGFIX`(compute_log): incomplete stdout/stderr logs tailed from files Co-authored-by: Hynek Blaha <hynek.blaha@second-foundation.eu> [#24548](https://github.com/dagster-io/dagster/pull/24548)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24913](https://github.com/dagster-io/dagster/pull/24913)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24863](https://github.com/dagster-io/dagster/pull/24863)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24883](https://github.com/dagster-io/dagster/pull/24883)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24882](https://github.com/dagster-io/dagster/pull/24882)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24753](https://github.com/dagster-io/dagster/pull/24753)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24766](https://github.com/dagster-io/dagster/pull/24766)
+*  > Replace this message with a changelog entry, or `NOCHANGELOG` [#24140](https://github.com/dagster-io/dagster/pull/24140)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24637](https://github.com/dagster-io/dagster/pull/24637)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24757](https://github.com/dagster-io/dagster/pull/24757)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24729](https://github.com/dagster-io/dagster/pull/24729)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24726](https://github.com/dagster-io/dagster/pull/24726)
+*  `NOCHANGELOG` [#24731](https://github.com/dagster-io/dagster/pull/24731)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24683](https://github.com/dagster-io/dagster/pull/24683)
+*  Insert changelog entry or "NOCHANGELOG" here. [#24704](https://github.com/dagster-io/dagster/pull/24704)
+*  Add alert targets to the config schema to ensure that alert targets aren't deleted when an alert policy is turned off. [#11859](https://github.com/dagster-io/internal/pull/11859)
+
+# Undocumented Changes
+- [ ] Alex Langenfeld
+	- [ ] (repo:dagster) [#25012](https://github.com/dagster-io/dagster/pull/25012) prevent TableColumn.tags from shifting job snapshot id (#25012)
+	- [ ] (repo:dagster) [#25010](https://github.com/dagster-io/dagster/pull/25010) [graphql] avoid using outerscoped repo variable in resolve_assetNodes (#25010)
+	- [ ] (repo:dagster) [#24822](https://github.com/dagster-io/dagster/pull/24822) [record] handle.py (#24822)
+	- [ ] (repo:dagster) [#24890](https://github.com/dagster-io/dagster/pull/24890) remove legacy nt from RunFilter (#24890)
+	- [ ] (repo:dagster) [#24820](https://github.com/dagster-io/dagster/pull/24820) [record] selector.py (#24820)
+	- [ ] (repo:dagster) [#24875](https://github.com/dagster-io/dagster/pull/24875) Revert "filter run_ids before calling get_runs (#24873)" (#24875)
+	- [ ] (repo:dagster) [#24873](https://github.com/dagster-io/dagster/pull/24873) filter run_ids before calling get_runs (#24873)
+	- [ ] (repo:dagster) [#24872](https://github.com/dagster-io/dagster/pull/24872) short circuit get_run_record_by_id (#24872)
+	- [ ] (repo:dagster) [#24537](https://github.com/dagster-io/dagster/pull/24537) [graphql] use RemoteAssetGraph (#24537)
+	- [ ] (repo:dagster) [#24777](https://github.com/dagster-io/dagster/pull/24777) [record] mutex record_custom and record inheritance (#24777)
+	- [ ] (repo:dagster) [#24607](https://github.com/dagster-io/dagster/pull/24607) remove IWorkspace (#24607)
+- [ ] Avril Aysha
+	- [ ] (repo:dagster) [#19249](https://github.com/dagster-io/dagster/pull/19249) [docs] Fix typo in deltalake docs (#19249)
+	- [ ] (repo:dagster) [#19247](https://github.com/dagster-io/dagster/pull/19247) fix typos (#19247)
+	- [ ] (repo:dagster) [#19216](https://github.com/dagster-io/dagster/pull/19216) update iris_dataset asset definition in Delta Lake integration tutorial (#19216)
+- [ ] Ben Pankow
+	- [ ] (repo:dagster) [#24154](https://github.com/dagster-io/dagster/pull/24154) Add kinds parameter to AssetSpec (#24154)
+	- [ ] (repo:dagster) [#24633](https://github.com/dagster-io/dagster/pull/24633) [dagster-embedded-elt] Include entire error message when failing to fetch Sling metadata (#24633)
+	- [ ] (repo:dagster) [#24750](https://github.com/dagster-io/dagster/pull/24750) explicitly set kwargs_fields to fix bk (#24750)
+	- [ ] (repo:dagster) [#24536](https://github.com/dagster-io/dagster/pull/24536) [dagster-sigma] Fetch and assign default owners to workbooks (#24536)
+- [ ] Benoit Perigaud
+	- [ ] (repo:dagster) [#19530](https://github.com/dagster-io/dagster/pull/19530) [docs] Update config dbt incremental model with partitions (#19530)
+- [ ] Isaac Hellendag
+	- [ ] (repo:dagster) [#24985](https://github.com/dagster-io/dagster/pull/24985) [ui] Flip navigation feature flag (#24985)
+	- [ ] (repo:dagster) [#24887](https://github.com/dagster-io/dagster/pull/24887) [ui] Fix Automations page when only schedules present (#24887)
+	- [ ] (repo:dagster) [#24854](https://github.com/dagster-io/dagster/pull/24854) [ui] Fix Asset column schema tags (#24854)
+	- [ ] (repo:dagster) [#24805](https://github.com/dagster-io/dagster/pull/24805) [ui] Migrate from Blueprint 4 to 5 (#24805)
+	- [ ] (repo:dagster) [#24724](https://github.com/dagster-io/dagster/pull/24724) [ui] Restore object counts in code location list (#24724)
+- [ ] Marco polo
+	- [ ] (repo:dagster) [#25000](https://github.com/dagster-io/dagster/pull/25000) Skip fetching partition information for unpartitioned assets (#25000)
+	- [ ] (repo:dagster) [#24946](https://github.com/dagster-io/dagster/pull/24946) Wrap IndexeddbDB usage with try/catch and degrade gracefully. (#24946)
+	- [ ] (repo:dagster) [#24780](https://github.com/dagster-io/dagster/pull/24780) Kill JobFeatureContext (#24780)
+	- [ ] (repo:dagster) [#24738](https://github.com/dagster-io/dagster/pull/24738) Revert "Revert "Eliminate LaunchpadHooksContext"" (#24738)
+	- [ ] (repo:dagster) [#24723](https://github.com/dagster-io/dagster/pull/24723) Revert "Eliminate LaunchpadHooksContext" (#24723)
+- [ ] Matthew Heguy
+	- [ ] (repo:dagster) [#12717](https://github.com/dagster-io/dagster/pull/12717) Doc fixes (#12717)
+- [ ] Neil Fulwiler
+	- [ ] (repo:dagster) [#24655](https://github.com/dagster-io/dagster/pull/24655) buildkite - python packages can either have setup.py or pyproject.toml (#24655)
+- [ ] Sandy Ryza
+	- [ ] (repo:dagster) [#23552](https://github.com/dagster-io/dagster/pull/23552) add "dagster-dbt/materialization_type" to default metadata produced for dbt assets (#23552)
+- [ ] Sean Mackesey
+	- [ ] (repo:dagster) [#22444](https://github.com/dagster-io/dagster/pull/22444) Add `metadata` to schedules (#22444)
+	- [ ] (repo:dagster) [#20813](https://github.com/dagster-io/dagster/pull/20813) [external-renames] Rename `*Partitions*Data` classes (#20813)
+	- [ ] (repo:dagster) [#20806](https://github.com/dagster-io/dagster/pull/20806) [external-renames] misc External*Data renames (#20806)
+	- [ ] (repo:dagster) [#20805](https://github.com/dagster-io/dagster/pull/20805) [external-renames] ExternalResourceData -> ResourceSnap (#20805)
+	- [ ] (repo:dagster) [#20803](https://github.com/dagster-io/dagster/pull/20803) [external-renames] Rename ExternalAssetCheck -> AssetCheckNodeSnap (#20803)
+	- [ ] (repo:dagster) [#20788](https://github.com/dagster-io/dagster/pull/20788) [external-renames] Rename ExternalAssetNode and associates (#20788)
+	- [ ] (repo:dagster) [#10756](https://github.com/dagster-io/dagster/pull/10756) [typing] misc (#10756)
+	- [ ] (repo:dagster) [#20790](https://github.com/dagster-io/dagster/pull/20790) [external-renames] remote origin (#20790)
+	- [ ] (repo:dagster) [#20787](https://github.com/dagster-io/dagster/pull/20787) [external-renames] ExternalTargetData -> TargetSnap (#20787)
+	- [ ] (repo:dagster) [#22797](https://github.com/dagster-io/dagster/pull/22797) Non-transitive sync status (#22797)
+- [ ] Tiberiu Ana
+	- [ ] (repo:dagster) [#22522](https://github.com/dagster-io/dagster/pull/22522) Correct Python module vs package reference in code locations docs (#22522)
+- [ ] Tim Castillo
+	- [ ] (repo:dagster) [#21765](https://github.com/dagster-io/dagster/pull/21765) [du] fixing imports for 4-automating-dbt-models-in-dagster (#21765)
+- [ ] dependabot[bot]
+	- [ ] (repo:dagster) [#24821](https://github.com/dagster-io/dagster/pull/24821) Bump rollup from 2.79.1 to 2.79.2 in /js_modules/dagster-ui (#24821)
+- [ ] elementl
+	- [ ] (repo:dagster) [#Automation: versioned docs for 1.8.](https://github.com/dagster-io/dagster/pull/Automation: versioned docs for 1.8.) Automation: versioned docs for 1.8.9
+- [ ] gibsondan
+	- [ ] (repo:dagster) [#24896](https://github.com/dagster-io/dagster/pull/24896) Terminate execute-step process early when it runs on a run that is canceling or otherwise finisehed (#24896)
+	- [ ] (repo:dagster) [#24814](https://github.com/dagster-io/dagster/pull/24814) Add dagster/run_Id and dagster/job_name as Docker labels in the docker run launcher (#24814)
+	- [ ] (repo:dagster) [#24635](https://github.com/dagster-io/dagster/pull/24635) Don't create a new k8s configuration object every time a model is programatically created (#24635)
+- [ ] jamiedemaria
+	- [ ] (repo:dagster) [#24996](https://github.com/dagster-io/dagster/pull/24996) change backfill view runs button to view (#24996)
+- [ ] prha
+	- [ ] (repo:dagster) [#24823](https://github.com/dagster-io/dagster/pull/24823) remove log spamming on concurrency blocked runs (#24823)
+- [ ] tianzedavid
+	- [ ] (repo:dagster) [#21514](https://github.com/dagster-io/dagster/pull/21514) [docs] chore: remove repetitive words (#21514)
+- [ ] Đỗ Trọng Hải
+	- [ ] (repo:dagster) [#19451](https://github.com/dagster-io/dagster/pull/19451) fix(ui/instance): correct padding when display warning unsupported run coordinator (#19451) Changelog
 
 ## 1.8.9 (core) / 0.24.9 (libraries)
 
