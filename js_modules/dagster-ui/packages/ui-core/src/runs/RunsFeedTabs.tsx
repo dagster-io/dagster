@@ -31,7 +31,7 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) =
   }
 };
 
-export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
+export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfills: boolean) => {
   const queryResult = useQuery<RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables>(
     RUN_FEED_TABS_COUNT_QUERY,
     {
@@ -62,7 +62,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
   const urlForStatus = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
-    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], getRunFeedPath());
+    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], getRunFeedPath(), includeRunsFromBackfills);
   };
 
   const tabs = (

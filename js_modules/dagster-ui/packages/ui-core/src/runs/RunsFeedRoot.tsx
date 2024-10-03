@@ -123,7 +123,7 @@ export const RunsFeedRoot = () => {
     queryKey: 'show_runs_within_backfills',
     defaults: {show_runs_within_backfills: false},
   });
-  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
+  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter, includeRunsFromBackfills);
 
   const {entries, paginationProps, queryResult} = useRunsFeedEntries(
     filter,
