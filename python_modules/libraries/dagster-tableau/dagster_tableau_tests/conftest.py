@@ -185,6 +185,28 @@ def cancel_job_fixture():
         yield mocked_function
 
 
+@pytest.fixture(name="get_data_source_by_id", autouse=True)
+def get_data_source_by_id_fixture():
+    with patch(
+        "dagster_tableau.resources.TSC.server.endpoint.datasources_endpoint.Datasources.get_by_id"
+    ) as mocked_function:
+        yield mocked_function
+
+
+@pytest.fixture(name="build_data_quality_warning_item", autouse=True)
+def build_data_quality_warning_item_fixture():
+    with patch("dagster_tableau.resources.TSC.DQWItem") as mocked_class:
+        yield mocked_class
+
+
+@pytest.fixture(name="add_data_quality_warning", autouse=True)
+def add_data_quality_warning_fixture():
+    with patch(
+        "dagster_tableau.resources.TSC.server.endpoint.datasources_endpoint.Datasources.add_dqw"
+    ) as mocked_function:
+        yield mocked_function
+
+
 @pytest.fixture(
     name="workspace_data",
 )

@@ -164,6 +164,26 @@ class BaseTableauClient:
 
         return job.workbook_id
 
+    def add_data_quality_warning_to_datasource(
+        self,
+        datasource_id: str,
+        warning_type: Optional[TSC.DQWItem.WarningType] = None,
+        message: Optional[str] = None,
+        active: Optional[bool] = None,
+        severe: Optional[bool] = None,
+    ) -> List[TSC.DQWItem]:
+        """Add a data quality warning to a data source."""
+        datasource: TSC.DatasourceItem = self._server.datasources.get_by_id(
+            datasource_id=datasource_id
+        )
+        warning: TSC.DQWItem = TSC.DQWItem(
+            warning_type=warning_type or TSC.DQWItem.WarningType.WARNING,
+            message=message,
+            active=active or True,
+            severe=severe or False,
+        )
+        return self._server.datasources.add_dqw(item=datasource, warning=warning)
+
     def sign_in(self) -> Auth.contextmgr:
         """Sign in to the site in Tableau."""
         jwt_token = jwt.encode(
