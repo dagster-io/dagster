@@ -1,20 +1,22 @@
-import dagster as dg
+import json
+import os
+
 from dagster_duckdb import DuckDBResource
-import json, os
+
+import dagster as dg
+
 
 # formatting for metadata
 def query_to_markdown(conn, query, limit=10):
     result = conn.execute(query).fetchdf()
     if result.empty:
         return "No results found."
-    
+
     return result.head(limit).to_markdown(index=False)
 
-@dg.asset(
-    compute_kind="DuckDB",
-    group_name="ingestion"
-)
-def products(duckdb: DuckDBResource)-> dg.MaterializeResult:
+
+@dg.asset(compute_kind="DuckDB", group_name="ingestion")
+def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
     with duckdb.get_connection() as conn:
         conn.execute("""
                      DROP TABLE IF EXISTS products;
@@ -25,38 +27,34 @@ def products(duckdb: DuckDBResource)-> dg.MaterializeResult:
         preview_query = "SELECT * FROM products LIMIT 10"
         preview_md = query_to_markdown(conn, preview_query)
         row_count = conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
-        
+
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(row_count),
                 "preview": dg.MetadataValue.md(preview_md),
             }
         )
-    
 
-@dg.asset(
-    compute_kind="DuckDB",
-    group_name="ingestion"
-)
+
+@dg.asset(compute_kind="DuckDB", group_name="ingestion")
 def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
     with duckdb.get_connection() as conn:
         conn.execute("""
                      DROP TABLE IF EXISTS Sales_reps;
                      CREATE TABLE sales_reps AS SELECT * FROM read_csv_auto('data/sales_reps.csv')
                      """)
-        
+
         # asset metadata
         preview_query = "SELECT * FROM sales_reps LIMIT 10"
         preview_md = query_to_markdown(conn, preview_query)
         row_count = conn.execute("SELECT COUNT(*) FROM sales_reps").fetchone()[0]
-        
+
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(row_count),
                 "preview": dg.MetadataValue.md(preview_md),
             }
         )
-    
 
 
 @dg.asset(
@@ -73,7 +71,7 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
         preview_query = "SELECT * FROM sales_data LIMIT 10"
         preview_md = query_to_markdown(conn, preview_query)
         row_count = conn.execute("SELECT COUNT(*) FROM sales_data").fetchone()[0]
-        
+
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(row_count),
@@ -81,11 +79,10 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
             }
         )
 
+
 # step 1: adding dependencies
 @dg.asset(
-    compute_kind="DuckDB",
-    group_name="joins",
-    deps=[sales_data, sales_reps, products]
+    compute_kind="DuckDB", group_name="joins", deps=[sales_data, sales_reps, products]
 )
 def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
     with duckdb.get_connection() as conn:
@@ -109,20 +106,20 @@ def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
                      LEFT JOIN products
                         on products.product_id = sales_data.product_id
                      """)
-        
-        
+
         # asset metadata
         preview_query = "SELECT * FROM joined_data LIMIT 10"
         preview_md = query_to_markdown(conn, preview_query)
         row_count = conn.execute("SELECT COUNT(*) FROM joined_data").fetchone()[0]
-        
+
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(row_count),
                 "preview": dg.MetadataValue.md(preview_md),
             }
         )
-    
+
+
 # asset checks
 @dg.asset_check(asset=joined_data)
 def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
@@ -134,14 +131,13 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
                         """).fetchone()
         result = query_result[0] == 0
         return dg.AssetCheckResult(
-            passed=result,
-            metadata={"missing dimensions": query_result[0]}
+            passed=result, metadata={"missing dimensions": query_result[0]}
         )
-    
 
 
 # datetime partitions & automaterializations
 monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
+
 
 @dg.asset(
     deps=[joined_data],
@@ -150,10 +146,12 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
     compute_kind="DuckDB",
     auto_materialize_policy=dg.AutoMaterializePolicy.eager(),
 )
-def monthly_sales_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
+def monthly_sales_performance(
+    context: dg.AssetExecutionContext, duckdb: DuckDBResource
+):
     partition_date_str = context.partition_key
     month_to_fetch = partition_date_str[:-3]
-    
+
     with duckdb.get_connection() as conn:
         conn.execute(f"""
                 CREATE TABLE IF NOT EXISTS monthly_sales_performance (
@@ -177,12 +175,13 @@ def monthly_sales_performance(context: dg.AssetExecutionContext, duckdb: DuckDBR
                 rep_name,
                 product_name
                 ;
-                """
-            )
+                """)
         preview_query = f"SELECT * FROM monthly_sales_performance WHERE partition_date = '{month_to_fetch}';"
         preview_md = query_to_markdown(conn, preview_query)
-        row_count = conn.execute(f"SELECT COUNT(*) FROM monthly_sales_performance WHERE partition_date = '{month_to_fetch}';").fetchone()[0]
-    
+        row_count = conn.execute(
+            f"SELECT COUNT(*) FROM monthly_sales_performance WHERE partition_date = '{month_to_fetch}';"
+        ).fetchone()[0]
+
     return dg.MaterializeResult(
         metadata={
             "row_count": dg.MetadataValue.int(row_count),
@@ -190,8 +189,11 @@ def monthly_sales_performance(context: dg.AssetExecutionContext, duckdb: DuckDBR
         }
     )
 
+
 # defined partitions
-product_category_partition = dg.StaticPartitionsDefinition(["Electronics", "Books", "Home and Garden", "Clothing"])
+product_category_partition = dg.StaticPartitionsDefinition(
+    ["Electronics", "Books", "Home and Garden", "Clothing"]
+)
 
 
 @dg.asset(
@@ -227,12 +229,13 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
                 '{product_category_str}',
                 product_name
                 ;
-                """
-            )
+                """)
         preview_query = f"SELECT * FROM product_performance WHERE product_category = '{product_category_str}';"
         preview_md = query_to_markdown(conn, preview_query)
-        row_count = conn.execute(f"SELECT COUNT(*) FROM product_performance WHERE product_category = '{product_category_str}';").fetchone()[0]
-    
+        row_count = conn.execute(
+            f"SELECT COUNT(*) FROM product_performance WHERE product_category = '{product_category_str}';"
+        ).fetchone()[0]
+
     return dg.MaterializeResult(
         metadata={
             "row_count": dg.MetadataValue.int(row_count),
@@ -240,8 +243,9 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
         }
     )
 
-# jobs 
-analysis_assets = dg.AssetSelection.keys("joined_data").upstream() 
+
+# jobs
+analysis_assets = dg.AssetSelection.keys("joined_data").upstream()
 
 analysis_update_job = dg.define_asset_job(
     name="analysis_update_job",
@@ -249,11 +253,12 @@ analysis_update_job = dg.define_asset_job(
 )
 weekly_update_schedule = dg.ScheduleDefinition(
     job=analysis_update_job,
-    cron_schedule="0 0 * * 1", # every Monday at midnight
+    cron_schedule="0 0 * * 1",  # every Monday at midnight
 )
 
 
 # sensor asset
+
 
 class AdhocRequestConfig(dg.Config):
     department: str
@@ -261,12 +266,14 @@ class AdhocRequestConfig(dg.Config):
     start_date: str
     end_date: str
 
+
 @dg.asset(
     deps=["joined_data"],
     compute_kind="Python",
 )
-def adhoc_request(config: AdhocRequestConfig, duckdb: DuckDBResource) -> dg.MaterializeResult:
-
+def adhoc_request(
+    config: AdhocRequestConfig, duckdb: DuckDBResource
+) -> dg.MaterializeResult:
     query = f"""
         SELECT
             department,
@@ -287,11 +294,8 @@ def adhoc_request(config: AdhocRequestConfig, duckdb: DuckDBResource) -> dg.Mate
     with duckdb.get_connection() as conn:
         preview_md = query_to_markdown(conn, query)
 
-    return dg.MaterializeResult(
-        metadata={
-            "preview": dg.MetadataValue.md(preview_md)
-        }
-    )
+    return dg.MaterializeResult(metadata={"preview": dg.MetadataValue.md(preview_md)})
+
 
 # sensor job
 adhoc_request_job = dg.define_asset_job(
@@ -299,9 +303,8 @@ adhoc_request_job = dg.define_asset_job(
     selection=dg.AssetSelection.assets("adhoc_request"),
 )
 
-@dg.sensor(
-    job=adhoc_request_job
-)
+
+@dg.sensor(job=adhoc_request_job)
 def adhoc_request_sensor(context: dg.SensorEvaluationContext):
     PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../", "data/requests")
 
@@ -313,30 +316,28 @@ def adhoc_request_sensor(context: dg.SensorEvaluationContext):
         file_path = os.path.join(PATH_TO_REQUESTS, filename)
         if filename.endswith(".json") and os.path.isfile(file_path):
             last_modified = os.path.getmtime(file_path)
-            
+
             current_state[filename] = last_modified
 
             # if the file is new or has been modified since the last run, add it to the request queue
-            if filename not in previous_state or previous_state[filename] != last_modified:
+            if (
+                filename not in previous_state
+                or previous_state[filename] != last_modified
+            ):
                 with open(file_path, "r") as f:
                     request_config = json.load(f)
 
-                runs_to_request.append(dg.RunRequest(
-                    run_key=f"adhoc_request_{filename}_{last_modified}",
-                    run_config={
-                        "ops": {
-                            "adhoc_request": {
-                                "config": {
-                                    **request_config
-                                }
-                            }
-                        }
-                    }
-                ))
+                runs_to_request.append(
+                    dg.RunRequest(
+                        run_key=f"adhoc_request_{filename}_{last_modified}",
+                        run_config={
+                            "ops": {"adhoc_request": {"config": {**request_config}}}
+                        },
+                    )
+                )
 
     return dg.SensorResult(
-        run_requests=runs_to_request,
-        cursor=json.dumps(current_state)
+        run_requests=runs_to_request, cursor=json.dumps(current_state)
     )
 
 
@@ -347,9 +348,7 @@ defs = dg.Definitions(
     assets=all_assets,
     asset_checks=all_asset_checks,
     schedules=[weekly_update_schedule],
-    jobs=[analysis_update_job,adhoc_request_job],
+    jobs=[analysis_update_job, adhoc_request_job],
     sensors=[adhoc_request_sensor],
-    resources={
-            "duckdb": DuckDBResource(database="data/mydb.duckdb")  
-    }
+    resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
 )
