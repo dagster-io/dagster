@@ -64,15 +64,6 @@ def test_using_cached_asset_data(
         assert get_view.call_count == 2
 
 
-from unittest.mock import MagicMock
-
-from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.instance_for_test import instance_for_test
-from dagster._utils import file_relative_path
-
-
 def test_using_cached_asset_data_with_refresh_request(
     sign_in: MagicMock,
     get_workbooks: MagicMock,
@@ -83,7 +74,9 @@ def test_using_cached_asset_data_with_refresh_request(
     cancel_job: MagicMock,
 ) -> None:
     with instance_for_test() as instance:
-        from dagster_tableau_tests.repos.pending_repo_with_refresh_requests import pending_repo_from_cached_asset_metadata
+        from dagster_tableau_tests.repos.pending_repo_with_refreshable_workbook_ids import (
+            pending_repo_from_cached_asset_metadata,
+        )
 
         assert sign_in.call_count == 0
         assert get_workbooks.call_count == 0
@@ -111,7 +104,7 @@ def test_using_cached_asset_data_with_refresh_request(
         repository_load_data = repository_def.repository_load_data
 
         recon_repo = ReconstructableRepository.for_file(
-            file_relative_path(__file__, "repos/pending_repo_with_refresh_requests.py"),
+            file_relative_path(__file__, "repos/pending_repo_with_refreshable_workbook_ids.py"),
             fn_name="pending_repo_from_cached_asset_metadata",
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
@@ -128,8 +121,8 @@ def test_using_cached_asset_data_with_refresh_request(
         )
 
         assert (
-                len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
-                == 2
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 2
         ), "Expected two successful steps"
 
         # 3 calls to create the defs + 5 calls to materialize the Tableau assets

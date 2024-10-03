@@ -1,7 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
-from unittest.mock import patch, PropertyMock
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData

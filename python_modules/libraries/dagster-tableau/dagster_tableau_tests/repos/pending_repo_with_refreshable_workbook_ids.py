@@ -5,7 +5,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     PendingRepositoryDefinition,
 )
-from dagster_tableau import StartWorkbookRefreshRequest, TableauCloudWorkspace
+from dagster_tableau import TableauCloudWorkspace
 
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
@@ -25,11 +25,7 @@ resource = TableauCloudWorkspace(
     pod_name=FAKE_POD_NAME,
 )
 
-pbi_defs = resource.build_defs(
-    start_workbook_refresh_requests=[
-        StartWorkbookRefreshRequest(workbook_id="b75fc023-a7ca-4115-857b-4342028640d0")
-    ]
-)
+pbi_defs = resource.build_defs(refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"])
 
 
 @asset

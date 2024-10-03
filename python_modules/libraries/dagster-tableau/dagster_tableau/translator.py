@@ -15,11 +15,6 @@ def _clean_asset_name(name: str) -> str:
     return re.sub(r"[^a-z0-9A-Z.]+", "_", name).lower()
 
 
-@record
-class StartWorkbookRefreshRequest:
-    workbook_id: str
-
-
 class TableauContentType(Enum):
     """Enum representing each object in Tableau's ontology."""
 

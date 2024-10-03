@@ -34,7 +34,6 @@ from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
-    StartWorkbookRefreshRequest,
     TableauContentData,
     TableauContentType,
     TableauWorkspaceData,
@@ -119,7 +118,7 @@ class BaseTableauClient:
         workbook_id: str,
         poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
-    ) -> str:
+    ) -> Optional[str]:
         job = self.refresh_workbook(workbook_id)
 
         if not poll_interval:
@@ -381,16 +380,21 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def build_assets(
         self,
-        start_workbook_refresh_requests: Sequence[StartWorkbookRefreshRequest],
+        refreshable_workbook_ids: Sequence[str],
         dagster_tableau_translator: Type[DagsterTableauTranslator],
     ) -> Sequence[CacheableAssetsDefinition]:
         """Returns a set of CacheableAssetsDefinition which will load Tableau content from
         the workspace and translates it into AssetSpecs, using the provided translator.
 
         Args:
-            start_workbook_refresh_requests (Sequence[StartWorkbookRefreshRequest]): A list of
-                requests to start workbook refreshes. This feature is equivalent to selecting Refreshing Extracts
-                for a workbook in Tableau UI and only works for workbooks for which the data sources are extracts.
+            refreshable_workbook_ids (Sequence[str]): A list of workbook IDs. The workbooks provided must
+                have extracts as data sources and be refreshable in Tableau.
+
+                When materializing your Tableau assets, the workbooks provided are refreshed,
+                refreshing their sheets and dashboards before pulling their data in Dagster.
+
+                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+                and only works for workbooks for which the data sources are extracts.
                 See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
                 for documentation.
             dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
@@ -402,22 +406,27 @@ class BaseTableauWorkspace(ConfigurableResource):
         """
         return [
             TableauCacheableAssetsDefinition(
-                self, start_workbook_refresh_requests, dagster_tableau_translator
+                self, refreshable_workbook_ids, dagster_tableau_translator
             )
         ]
 
     def build_defs(
         self,
-        start_workbook_refresh_requests: Optional[Sequence[StartWorkbookRefreshRequest]] = None,
+        refreshable_workbook_ids: Optional[Sequence[str]] = None,
         dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
     ) -> Definitions:
         """Returns a Definitions object which will load Tableau content from
         the workspace and translate it into assets, using the provided translator.
 
         Args:
-            start_workbook_refresh_requests (Optional[Sequence[StartWorkbookRefreshRequest]]): A list of
-                requests to start workbook refreshes. This feature is equivalent to selecting Refreshing Extracts
-                for a workbook in Tableau UI and only works for workbooks for which the data sources are extracts.
+            refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
+                have extracts as data sources and be refreshable in Tableau.
+
+                When materializing your Tableau assets, the workbooks provided are refreshed,
+                refreshing their sheets and dashboards before pulling their data in Dagster.
+
+                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+                and only works for workbooks for which the data sources are extracts.
                 See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
                 for documentation.
             dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
@@ -428,7 +437,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         """
         defs = Definitions(
             assets=self.build_assets(
-                start_workbook_refresh_requests=start_workbook_refresh_requests or [],
+                refreshable_workbook_ids=refreshable_workbook_ids or [],
                 dagster_tableau_translator=dagster_tableau_translator,
             ),
         )
@@ -477,11 +486,11 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(
         self,
         workspace: BaseTableauWorkspace,
-        refresh_requests: Sequence[StartWorkbookRefreshRequest],
+        refreshable_workbook_ids: Sequence[str],
         translator: Type[DagsterTableauTranslator],
     ):
         self._workspace = workspace
-        self._refresh_requests = refresh_requests
+        self._refreshable_workbook_ids = refreshable_workbook_ids
         self._translator_cls = translator
         super().__init__(unique_id=self._workspace.site_name)
 
@@ -545,8 +554,8 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
         def _assets(tableau: BaseTableauWorkspace):
             with tableau.get_client() as client:
                 refreshed_workbooks = set()
-                for refresh_request in self._refresh_requests:
-                    refreshed_workbooks.add(client.refresh_and_poll(refresh_request.workbook_id))
+                for refreshable_workbook_id in self._refreshable_workbook_ids:
+                    refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
                 for view_id, view_content_data in [
                     *workspace_data.sheets_by_id.items(),
                     *workspace_data.dashboards_by_id.items(),
