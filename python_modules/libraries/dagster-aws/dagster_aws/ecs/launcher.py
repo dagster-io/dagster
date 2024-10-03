@@ -185,16 +185,17 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             propagate_tags,
             "propagate_tags",
             key_type=str,
-            value_type=Union[bool, List],
+            value_type=List,
         )
         if self.propagate_tags:
             check.invariant(
-                len([k for k, v in self.propagate_tags.items() if v]) <= 1,
-                "Only one of include_only, include_all, or exclude can be set for the propagate_tags config property",
+                list(self.propagate_tags.keys()) == ["allow_list"],
+                "Only allow_list can be set for the propagate_tags config property",
             )
-        if self.propagate_tags.get("include_only"):
+        if self.propagate_tags.get("allow_list"):
             invalid_tags = {"dagster/op_selection", "dagster/solid_selection"}
-            check.invariant({invalid_tags - set(self.propagate_tags["include_only"]) == invalid_tags, f"Cannot include {invalid_tags} in include_only"})
+            # These tags are potentially very large and can cause ECS to fail to start a task. They also don't seem particularly useful in a task-tagging context
+            check.invariant(invalid_tags - set(self.propagate_tags.get("allow_list")) == invalid_tags, f"Cannot include {invalid_tags} in allow_list")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -354,25 +355,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             "propagate_tags": Field(
                 Shape(
                     {
-                        "include_all": Field(
-                            bool,
-                            default_value=True,
-                            description="Whether to propagate all tags assigned to a Dagster run to the ECS task.",
-                        ),
-                        "include_only": Field(
+                        "allow_list": Field(
                             Array(str),
-                            default_value=[],
+                            is_required=True,
                             description="List of specific tag keys from the Dagster run which should be propagated to the ECS task.",
-                        ),
-                        "exclude": Field(
-                            Array(str),
-                            default_value=[],
-                            description="List of specific tag keys which should not be propagated to the ECS task. All other tags will be propagated to the ECS task.",
                         ),
                     }
                 ),
                 is_required=False,
-                description="Configuration for propagating tags from Dagster runs to ECS tasks. Only one of include_all, include_only, or exclude can be set.",
+                description="Configuration for propagating tags from Dagster runs to ECS tasks. Currently only exposes an allow list.",
             ),
             **SHARED_ECS_SCHEMA,
         }
@@ -399,32 +390,19 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         # from an observability perspective, so we exclude them from the ECS tags
         tags_to_exclude = ("dagster/op_selection", "dagster/solid_selection",)
 
+        tags_to_propagate = []
         if self.propagate_tags:
             # Add contextual Dagster run tags to ECS tags
-            tags = run.tags
-            if self.propagate_tags.get("include_all"):
-                tags = {
-                    k: v for k, v in run.tags.items() if not k.startswith("ecs/") and k not in tags_to_exclude
-                }  # ecs tags are redundant to information already defined on the task
-            elif self.propagate_tags.get("include_only"):
-                tags = {
-                    k: v for k, v in run.tags.items() if k in self.propagate_tags["include_only"] and k not in tags_to_exclude
-                }
-            elif self.propagate_tags.get("exclude"):
-                tags = {
-                    k: v
-                    for k, v in run.tags.items()
-                    if k not in self.propagate_tags["exclude"] and not k.startswith("ecs/") and k not in tags_to_exclude
-                }
-            to_add = [{"key": k, "value": v} for k, v in tags.items()]
-        else:
-            to_add = []
+            if self.propagate_tags.get("allow_list"):
+                tags_to_propagate = [
+                    {"key": k, "value": v} for k, v in run.tags.items() if k in self.propagate_tags["allow_list"] and k not in tags_to_exclude
+                ]
 
         return [
             {"key": "dagster/run_id", "value": run.run_id},
             {"key": "dagster/job_name", "value": run.job_name},
             *container_context.run_ecs_tags,
-            *to_add,
+            *tags_to_propagate,
         ]
 
     def _get_run_tags(self, run_id):
