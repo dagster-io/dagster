@@ -1,6 +1,6 @@
 import {Box, Checkbox, Colors, NonIdealState, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
@@ -25,6 +25,7 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {RunsFilter} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LoadingSpinner} from '../ui/Loading';
 
 const PAGE_SIZE = 25;
@@ -118,7 +119,10 @@ export const RunsFeedRoot = () => {
     enabledFilters: filters,
   });
 
-  const [includeRunsFromBackfills, setincludeRunsFromBackfills] = useState(false);
+  const [includeRunsFromBackfills, setincludeRunsFromBackfills] = useQueryPersistedState<boolean>({
+    queryKey: 'show_runs_within_backfills',
+    defaults: {show_runs_within_backfills: false},
+  });
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
 
   const {entries, paginationProps, queryResult} = useRunsFeedEntries(
