@@ -1,10 +1,7 @@
 from typing import Iterable, Sequence
 
-from dagster import Definitions
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation
-from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
-from dagster_airlift.core.sensor.event_translation import AssetEvent
+from dagster import AssetMaterialization, AssetObservation, AssetSpec, Definitions
+from dagster_airlift.core import AssetEvent, build_defs_from_airflow_instance, dag_defs, task_defs
 
 from .airflow_instance import local_airflow_instance
 
