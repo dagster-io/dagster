@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Iterable, Iterator, List, Optional, Set, Tuple
+from typing import Iterable, Iterator, List, Optional, Sequence, Set
 
 from dagster import (
     AssetCheckKey,
@@ -104,7 +104,7 @@ def build_airflow_polling_sensor_defs(
             airflow_data=airflow_data,
             event_translation_fn=event_translation_fn,
         )
-        all_materializations: List[Tuple[float, AssetMaterialization]] = []
+        all_asset_events: List[AssetMaterialization] = []
         all_check_keys: Set[AssetCheckKey] = set()
         latest_offset = current_dag_offset
         repository_def = check.not_none(context.repository_def)
@@ -112,7 +112,7 @@ def build_airflow_polling_sensor_defs(
             batch_result = next(sensor_iter, None)
             if batch_result is None:
                 break
-            all_materializations.extend(batch_result.materializations_and_timestamps)
+            all_asset_events.extend(batch_result.asset_events)
 
             all_check_keys.update(
                 check_keys_for_asset_keys(repository_def, batch_result.all_asset_keys_materialized)
@@ -138,7 +138,7 @@ def build_airflow_polling_sensor_defs(
             f"************Exitting sensor for {airflow_data.airflow_instance.name}***********"
         )
         return SensorResult(
-            asset_events=sorted_asset_events(all_materializations, repository_def),
+            asset_events=sorted_asset_events(all_asset_events, repository_def),
             run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]
             if all_check_keys
             else None,
@@ -148,15 +148,18 @@ def build_airflow_polling_sensor_defs(
 
 
 def sorted_asset_events(
-    all_materializations: List[Tuple[float, AssetMaterialization]],
+    all_materializations: Sequence[AssetMaterialization],
     repository_def: RepositoryDefinition,
 ) -> List[AssetMaterialization]:
     """Sort materializations by end date and toposort order."""
     topo_aks = repository_def.asset_graph.toposorted_asset_keys
+    materializations_and_timestamps = [
+        (get_timestamp_from_materialization(mat), mat) for mat in all_materializations
+    ]
     return [
         sorted_mat[1]
         for sorted_mat in sorted(
-            all_materializations, key=lambda x: (x[0], topo_aks.index(x[1].asset_key))
+            materializations_and_timestamps, key=lambda x: (x[0], topo_aks.index(x[1].asset_key))
         )
     ]
 
@@ -164,7 +167,7 @@ def sorted_asset_events(
 @record
 class BatchResult:
     idx: int
-    materializations_and_timestamps: List[Tuple[float, AssetMaterialization]]
+    asset_events: Sequence[AssetMaterialization]
     all_asset_keys_materialized: Set[AssetKey]
 
 
@@ -198,9 +201,7 @@ def materializations_and_requests_from_batch_iter(
         yield (
             BatchResult(
                 idx=i + offset,
-                materializations_and_timestamps=[
-                    (get_timestamp_from_materialization(mat), mat) for mat in mats
-                ],
+                asset_events=mats,
                 all_asset_keys_materialized=all_asset_keys_materialized,
             )
             if mats
