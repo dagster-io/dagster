@@ -76,43 +76,47 @@ def build_defs_from_airflow_instance(
     )
 
 
+@dataclass
 class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
-    def __init__(
-        self,
-        airflow_instance: AirflowInstance,
-        sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    ):
-        self.airflow_instance = airflow_instance
-        self.sensor_minimum_interval_seconds = sensor_minimum_interval_seconds
+    airflow_instance: AirflowInstance
+    explicit_defs: Definitions
+    sensor_minimum_interval_seconds: int
 
     @property
     def defs_key(self) -> str:
         return get_metadata_key(self.airflow_instance.name)
 
     def fetch_state(self) -> SerializedAirflowDefinitionsData:
-        return compute_serialized_data(airflow_instance=self.airflow_instance, defs=Definitions())
+        return compute_serialized_data(
+            airflow_instance=self.airflow_instance, defs=self.explicit_defs
+        )
 
     def defs_from_state(
         self, serialized_airflow_data: SerializedAirflowDefinitionsData
     ) -> Definitions:
-        return construct_automapped_dag_assets_defs(serialized_airflow_data)
+        return Definitions.merge(
+            enrich_explicit_defs_with_airflow_metadata(self.explicit_defs, serialized_airflow_data),
+            construct_automapped_dag_assets_defs(serialized_airflow_data),
+        )
 
 
 def build_full_automapped_dags_from_airflow_instance(
     *,
     airflow_instance: AirflowInstance,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    defs: Optional[Definitions] = None,
 ) -> Definitions:
-    defs = FullAutomappedDagsLoader(
+    resolved_defs = FullAutomappedDagsLoader(
         airflow_instance=airflow_instance,
         sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
+        explicit_defs=defs or Definitions(),
     ).build_defs()
     return Definitions.merge(
-        defs,
+        resolved_defs,
         build_airflow_polling_sensor_defs(
             minimum_interval_seconds=sensor_minimum_interval_seconds,
             airflow_data=AirflowDefinitionsData(
-                resolved_airflow_defs=defs, airflow_instance=airflow_instance
+                resolved_airflow_defs=resolved_defs, airflow_instance=airflow_instance
             ),
             event_translation_fn=get_asset_events,
         ),

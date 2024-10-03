@@ -1,6 +1,7 @@
-STANDALONE_DAG_ID_METADATA_KEY = "dagster-airlift/dag_id"
+STANDALONE_DAG_ID_METADATA_KEY = "dagster-airlift/dag-id"
 AIRFLOW_SOURCE_METADATA_KEY_PREFIX = "dagster-airlift/source"
-TASK_MAPPING_METADATA_KEY = "dagster-airlift/task_mapping"
+TASK_MAPPING_METADATA_KEY = "dagster-airlift/task-mapping"
+AUTOMAPPED_TASK_METADATA_KEY = "dagster-airlift/automapped-task"
 # This represents the timestamp used in ordering the materializatons.
 EFFECTIVE_TIMESTAMP_METADATA_KEY = "dagster-airlift/effective_timestamp"
 DAG_RUN_ID_TAG_KEY = "dagster-airlift/airflow-dag-run-id"

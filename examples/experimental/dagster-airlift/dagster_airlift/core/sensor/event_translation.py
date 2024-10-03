@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, List, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, Iterable, List, Mapping, Sequence
 
 from dagster import (
     AssetMaterialization,
@@ -7,6 +7,7 @@ from dagster import (
     TimestampMetadataValue,
     _check as check,
 )
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._time import get_current_timestamp
 
 from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
@@ -25,7 +26,7 @@ def get_asset_events(
     mats.extend(materializations_for_dag_run(dag_run, airflow_data))
     for task_run in task_instances:
         mats.extend(
-            materializations_for_task_instance(
+            synthetic_mats_for_task_instance(
                 airflow_data=airflow_data, dag_run=dag_run, task_instance=task_run
             )
         )
@@ -83,13 +84,19 @@ def get_task_instance_metadata(dag_run: DagRun, task_instance: TaskInstance) -> 
     }
 
 
-def materializations_for_task_instance(
+def synthetic_mats_for_task_instance(
     airflow_data: AirflowDefinitionsData,
     dag_run: DagRun,
     task_instance: TaskInstance,
 ) -> Sequence[AssetMaterialization]:
-    mats = []
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
+    return synthetic_mats_for_mapped_asset_keys(dag_run, task_instance, asset_keys)
+
+
+def synthetic_mats_for_mapped_asset_keys(
+    dag_run: DagRun, task_instance: TaskInstance, asset_keys: AbstractSet[AssetKey]
+) -> Sequence[AssetMaterialization]:
+    mats = []
     for asset_key in asset_keys:
         mats.append(
             AssetMaterialization(

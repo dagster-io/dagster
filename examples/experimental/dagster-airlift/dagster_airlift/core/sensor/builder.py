@@ -24,14 +24,19 @@ from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_datetime
 
-from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
+from dagster_airlift.constants import (
+    AUTOMAPPED_TASK_METADATA_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    TASK_ID_TAG_KEY,
+)
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
-from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun
+from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
 from dagster_airlift.core.sensor.event_translation import (
     AirflowEventTranslationFn,
     get_timestamp_from_materialization,
     materializations_for_dag_run,
-    materializations_for_task_instance,
+    synthetic_mats_for_mapped_asset_keys,
+    synthetic_mats_for_task_instance,
 )
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
@@ -72,7 +77,9 @@ def build_airflow_polling_sensor_defs(
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
-        context.log.info(f"Running sensor for {airflow_data.airflow_instance.name}")
+        context.log.info(
+            f"************Running sensor for {airflow_data.airflow_instance.name}***********"
+        )
         try:
             cursor = (
                 deserialize_value(context.cursor, AirflowPollingSensorCursor)
@@ -127,6 +134,9 @@ def build_airflow_polling_sensor_defs(
             )
         context.update_cursor(serialize_value(new_cursor))
 
+        context.log.info(
+            f"************Exitting sensor for {airflow_data.airflow_instance.name}***********"
+        )
         return SensorResult(
             asset_events=sorted_asset_events(all_materializations, repository_def),
             run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]
@@ -172,6 +182,8 @@ def materializations_and_requests_from_batch_iter(
         end_date_lte=datetime_from_timestamp(end_date_lte),
         offset=offset,
     )
+    context.log.info(f"Found {len(runs)} dag runs for {airflow_data.airflow_instance.name}")
+    context.log.info(f"All runs {runs}")
     for i, dag_run in enumerate(runs):
         # TODO: add pluggability here (ignoring `event_translation_fn` for now)
 
@@ -225,11 +237,12 @@ def build_synthetic_asset_materializations(
     task_instances = airflow_instance.get_task_instance_batch(
         run_id=dag_run.run_id,
         dag_id=dag_run.dag_id,
-        task_ids=[
-            task_id for task_id in airflow_data.serialized_data.task_ids_in_dag(dag_run.dag_id)
-        ],
+        task_ids=[task_id for task_id in airflow_data.task_ids_in_dag(dag_run.dag_id)],
         states=["success"],
     )
+
+    context.log.info(f"Found {len(task_instances)} task instances for {dag_run.run_id}")
+    context.log.info(f"All task instances {task_instances}")
 
     check.invariant(
         len({ti.task_id for ti in task_instances}) == len(task_instances),
@@ -256,8 +269,38 @@ def build_synthetic_asset_materializations(
         # If there is no dagster_run for this task, it was not proxied.
         # Therefore synthensize a materialization based on the task information.
         if task_id not in dagster_runs_by_task_id:
+            context.log.info(
+                f"Synthesizing materialization for tasks {task_id} in dag {dag_run.dag_id} because no dagster run found."
+            )
             synthetic_mats.extend(
-                materializations_for_task_instance(airflow_data, dag_run, task_instance)
+                synthetic_mats_for_task_instance(airflow_data, dag_run, task_instance)
+            )
+        else:
+            # We *always* emit for the automapped tasks, even if they are proxied
+            asset_keys_to_emit = automapped_tasks_asset_keys(dag_run, airflow_data, task_instance)
+
+            synthetic_mats.extend(
+                synthetic_mats_for_mapped_asset_keys(
+                    dag_run=dag_run, task_instance=task_instance, asset_keys=asset_keys_to_emit
+                )
+            )
+
+            context.log.info(
+                f"Dagster run found for task {task_id} in dag {dag_run.dag_id}. Run {dagster_runs_by_task_id[task_id].run_id}"
             )
 
     return synthetic_mats
+
+
+def automapped_tasks_asset_keys(
+    dag_run: DagRun, airflow_data: AirflowDefinitionsData, task_instance: TaskInstance
+) -> Set[AssetKey]:
+    asset_keys_to_emit = set()
+    asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
+    for asset_key in asset_keys:
+        spec = airflow_data.resolved_airflow_defs.get_assets_def(asset_key).get_asset_spec(
+            asset_key
+        )
+        if spec.metadata.get(AUTOMAPPED_TASK_METADATA_KEY):
+            asset_keys_to_emit.add(asset_key)
+    return asset_keys_to_emit

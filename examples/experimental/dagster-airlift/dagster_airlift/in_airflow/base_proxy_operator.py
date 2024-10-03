@@ -90,9 +90,12 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             json={"query": ASSET_NODES_QUERY},
             timeout=3,
         )
+        logger.info(f"Fetching asset nodes for {dag_id}/{task_id}")
         asset_nodes_data = self.get_valid_graphql_response(response, "assetNodes")
+        logger.info(f"Got response {asset_nodes_data}")
         for asset_node in asset_nodes_data:
-            if matched_dag_id_task_id(asset_node, dag_id, task_id):
+            # jobs can be empty if it is an external asset (e.g. an automapped task)
+            if matched_dag_id_task_id(asset_node, dag_id, task_id) and asset_node["jobs"]:
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
                 job_name = asset_node["jobs"][0]["name"]

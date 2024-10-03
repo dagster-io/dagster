@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Mapping, cast
+from typing import AbstractSet, Mapping, Set, cast
 
 from dagster import (
     AssetKey,
@@ -12,6 +12,7 @@ from dagster._serdes.serdes import deserialize_value
 
 from dagster_airlift.constants import STANDALONE_DAG_ID_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.serialization.compute import AirliftMetadataMappingInfo
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
@@ -28,6 +29,15 @@ class AirflowDefinitionsData:
     @property
     def instance_name(self) -> str:
         return self.airflow_instance.name
+
+    @cached_property
+    def mapping_info(self) -> AirliftMetadataMappingInfo:
+        return AirliftMetadataMappingInfo(
+            asset_specs=list(self.resolved_airflow_defs.get_all_asset_specs())
+        )
+
+    def task_ids_in_dag(self, dag_id: str) -> Set[str]:
+        return self.mapping_info.task_id_map[dag_id]
 
     @cached_property
     def serialized_data(self) -> SerializedAirflowDefinitionsData:

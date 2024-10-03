@@ -7,7 +7,7 @@ def test_parse_asset_node() -> None:
         "assetKey": {"path": ["lakehouse", "iris"]},
         "metadataEntries": [
             {
-                "label": "dagster-airlift/task_mapping",
+                "label": "dagster-airlift/task-mapping",
                 "jsonString": '[{"dag_id": "rebuild_iris_models", "task_id": "load_iris"}]',
                 "__typename": "JsonMetadataEntry",
             },

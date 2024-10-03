@@ -33,7 +33,7 @@ class AirliftMetadataMappingInfo:
 
     @cached_property
     def task_id_map(self) -> Dict[str, Set[str]]:
-        """Mapping of dag_id to set of task_ids in that dag."""
+        """Mapping of dag_id to set of task_ids in that dag. This only contains task ids mapped to assets in this object."""
         task_id_map_data = {
             dag_id: set(ta_map.keys()) for dag_id, ta_map in self.asset_key_map.items()
         }
