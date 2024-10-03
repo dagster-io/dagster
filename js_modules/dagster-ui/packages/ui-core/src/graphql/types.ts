@@ -3968,6 +3968,7 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedCountOrErrorArgs = {
   filter?: InputMaybe<RunsFilter>;
+  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type QueryRunsFeedOrErrorArgs = {

@@ -666,12 +666,12 @@ def get_runs_feed_entries(
 
 
 def get_runs_feed_count(
-    graphene_info: "ResolveInfo", filters: Optional[RunsFilter], include_runs_in_backfills: bool
+    graphene_info: "ResolveInfo", filters: Optional[RunsFilter], include_runs_from_backfills: bool
 ) -> int:
     # the UI is oriented toward showing runs that are part of a backfill, but the backend
     # is oriented toward excluding runs that are part of a backfill, so negate include_runs_in_backfills
     # to get the value to pass to the backend
-    exclude_subruns = not include_runs_in_backfills
+    exclude_subruns = not include_runs_from_backfills
     should_fetch_backfills = exclude_subruns and (
         _filters_apply_to_backfills(filters) if filters else True
     )

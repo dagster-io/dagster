@@ -3292,7 +3292,7 @@ type Query {
     filter: RunsFilter
     includeRunsFromBackfills: Boolean
   ): RunsFeedConnectionOrError!
-  runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
+  runsFeedCountOrError(filter: RunsFilter, includeRunsFromBackfills: Boolean): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
