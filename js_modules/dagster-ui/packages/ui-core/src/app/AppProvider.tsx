@@ -114,15 +114,16 @@ export const AppProvider = (props: AppProviderProps) => {
         max: 3,
         retryIf: async (error, _operation) => {
           if (error && error.statusCode && httpStatusCodesToRetry.includes(error.statusCode)) {
-            // Retry-after header is in seconds, concert to ms by multiplying by 1000.
-            const wait = parseFloat(error?.response?.headers?.get?.('retry-after') ?? '0.3') * 1000;
-            await new Promise((res) => {
-              setTimeout(res, wait);
-            });
             return true;
           }
           return false;
         },
+      },
+
+      delay: (_retryCount, _operation, error) => {
+        // Retry-after header is in seconds, concert to ms by multiplying by 1000.
+        const wait = parseFloat(error?.response?.headers?.get?.('retry-after') ?? '0.3') * 1000;
+        return wait;
       },
     });
   }, []);
