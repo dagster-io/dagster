@@ -14,6 +14,7 @@ from dagster import (
 )
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (
+    IntMetadataValue,
     TableSchemaMetadataValue,
     TextMetadataValue,
 )
@@ -34,7 +35,7 @@ def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
     def example_pipeline_assets(
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
-        yield from dlt_pipeline_resource.run(context=context)
+        yield from dlt_pipeline_resource.run(context=context).fetch_row_count()
 
     assert {
         AssetKey("dlt_pipeline_repos"),
@@ -75,7 +76,7 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     def example_pipeline_assets(
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
     ):
-        yield from dlt_pipeline_resource.run(context=context)
+        yield from dlt_pipeline_resource.run(context=context).fetch_row_count()
 
     res = materialize(
         [example_pipeline_assets],
@@ -95,15 +96,22 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     assert all(
         "dagster/column_schema" in materialization.metadata for materialization in materializations
     )
+    assert all(
+        "dagster/row_count" in materialization.metadata for materialization in materializations
+    )
 
     repos_materialization = next(
         materialization
         for materialization in materializations
         if materialization.asset_key == AssetKey("dlt_pipeline_repos")
     )
+
+    assert repos_materialization.metadata["dagster/row_count"] == IntMetadataValue(3)
+
     assert repos_materialization.metadata["dagster/relation_identifier"] == TextMetadataValue(
         text="duckdb.pipeline.repos"
     )
+
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
             columns=[
@@ -176,7 +184,9 @@ def test_get_automation_condition(dlt_pipeline: Pipeline):
         assert "0 1 * * *" in str(item)
 
 
-def test_get_automation_condition_converts_auto_materialize_policy(dlt_pipeline: Pipeline):
+def test_get_automation_condition_converts_auto_materialize_policy(
+    dlt_pipeline: Pipeline,
+):
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
@@ -502,7 +512,11 @@ def test_with_owner_replacements(dlt_pipeline: Pipeline) -> None:
 
 
 def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
-    expected_tags = {"customized": "tag", **build_kind_tag("dlt"), **build_kind_tag("duckdb")}
+    expected_tags = {
+        "customized": "tag",
+        **build_kind_tag("dlt"),
+        **build_kind_tag("duckdb"),
+    }
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_tags(self, _) -> Optional[Mapping[str, str]]:

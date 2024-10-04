@@ -23,6 +23,7 @@ from dagster_embedded_elt.dlt.constants import (
     META_KEY_SOURCE,
     META_KEY_TRANSLATOR,
 )
+from dagster_embedded_elt.dlt.dlt_event_iterator import DltEventIterator, DltEventType
 from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
@@ -152,7 +153,7 @@ class DagsterDltResource(ConfigurableResource):
         dlt_pipeline: Optional[Pipeline] = None,
         dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
         **kwargs,
-    ) -> Iterator[Union[MaterializeResult, AssetMaterialization]]:
+    ) -> DltEventIterator[DltEventType]:
         """Runs the dlt pipeline with subset support.
 
         Args:
@@ -163,7 +164,7 @@ class DagsterDltResource(ConfigurableResource):
             **kwargs (dict[str, Any]): Keyword args passed to pipeline `run` method
 
         Returns:
-            Iterator[Union[MaterializeResult, AssetMaterialization]]: An iterator of MaterializeResult or AssetMaterialization
+            DltEventIterator[DltEventType]: An iterator of MaterializeResult or AssetMaterialization
 
         """
         # This resource can be used in both `asset` and `op` definitions. In the context of an asset
@@ -194,7 +195,39 @@ class DagsterDltResource(ConfigurableResource):
 
         # Default to base translator if undefined
         dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
+        return DltEventIterator(
+            self._run(
+                context=context,
+                dlt_source=dlt_source,
+                dlt_pipeline=dlt_pipeline,
+                dagster_dlt_translator=dagster_dlt_translator,
+                **kwargs,
+            ),
+            context=context,
+            dlt_pipeline=dlt_pipeline,
+        )
 
+    def _run(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        dlt_source: DltSource,
+        dlt_pipeline: Pipeline,
+        dagster_dlt_translator: DagsterDltTranslator,
+        **kwargs,
+    ) -> Iterator[DltEventType]:
+        """Runs the dlt pipeline with subset support.
+
+        Args:
+            context (Union[OpExecutionContext, AssetExecutionContext]): Asset or op execution context
+            dlt_source (Optional[DltSource]): optional dlt source if resource is used from an `@op`
+            dlt_pipeline (Optional[Pipeline]): optional dlt pipeline if resource is used from an `@op`
+            dagster_dlt_translator (Optional[DagsterDltTranslator]): optional dlt translator if resource is used from an `@op`
+            **kwargs (dict[str, Any]): Keyword args passed to pipeline `run` method
+
+        Returns:
+            DltEventIterator[DltEventType]: An iterator of MaterializeResult or AssetMaterialization
+
+        """
         asset_key_dlt_source_resource_mapping = {
             dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
             for dlt_source_resource in dlt_source.selected_resources.values()
@@ -224,7 +257,10 @@ class DagsterDltResource(ConfigurableResource):
 
         has_asset_def: bool = bool(context and context.has_assets_def)
 
-        for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
+        for (
+            asset_key,
+            dlt_source_resource,
+        ) in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(
                 context, dlt_source_resource, load_info, dlt_pipeline
             )
