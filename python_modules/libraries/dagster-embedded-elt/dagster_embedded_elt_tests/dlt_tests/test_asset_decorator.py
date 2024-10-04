@@ -15,6 +15,7 @@ from dagster import (
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (
     IntMetadataValue,
+    TableColumnConstraints,
     TableSchemaMetadataValue,
     TextMetadataValue,
 )
@@ -115,11 +116,73 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
             columns=[
-                TableColumn(name="id", type="bigint"),
-                TableColumn(name="name", type="text"),
-                TableColumn(name="last_modified_dt", type="text"),
-                TableColumn(name="_dlt_load_id", type="text"),
-                TableColumn(name="_dlt_id", type="text"),
+                TableColumn(
+                    name="id",
+                    type="bigint",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["primary_key"]
+                    ),
+                ),
+                TableColumn(
+                    name="name",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="last_modified_dt",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_load_id",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=False, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=True, other=["row_key"]
+                    ),
+                ),
+            ]
+        ),
+    )
+    assert "repos__contributors" in repos_materialization.metadata
+    assert repos_materialization.metadata["repos__contributors"] == TableSchemaMetadataValue(
+        schema=TableSchema(
+            columns=[
+                TableColumn(
+                    name="value",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_root_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["root_key"]
+                    ),
+                ),
+                TableColumn(
+                    name="_dlt_parent_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["parent_key"]
+                    ),
+                ),
+                TableColumn(
+                    name="_dlt_list_idx",
+                    type="bigint",
+                    constraints=TableColumnConstraints(nullable=False, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=True, other=["row_key"]
+                    ),
+                ),
             ]
         ),
     )

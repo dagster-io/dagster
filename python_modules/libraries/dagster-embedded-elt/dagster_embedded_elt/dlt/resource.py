@@ -8,12 +8,14 @@ from dagster import (
     MaterializeResult,
     MetadataValue,
     OpExecutionContext,
+    TableColumnConstraints,
     _check as check,
 )
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
+from dlt.common.schema import Schema
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
@@ -67,6 +69,23 @@ class DagsterDltResource(ConfigurableResource):
                 return value
 
         return {k: _recursive_cast(v) for k, v in mapping.items()}
+
+    def _extract_table_schema_metadata(self, table_name: str, schema: Schema) -> TableSchema:
+        # Pyright does not detect the default value from 'pop' and 'get'
+        return TableSchema(
+            columns=[
+                TableColumn(
+                    name=column.pop("name", ""),  # type: ignore
+                    type=column.pop("data_type", "string"),  # type: ignore
+                    constraints=TableColumnConstraints(
+                        nullable=column.pop("nullable", True),  # type: ignore
+                        unique=column.pop("unique", False),  # type: ignore
+                        other=[*column.keys()],  # e.g. "primary_key" or "foreign_key"
+                    ),
+                )
+                for column in schema.get_table_columns(table_name).values()
+            ]
+        )
 
     def extract_resource_metadata(
         self,
@@ -128,17 +147,23 @@ class DagsterDltResource(ConfigurableResource):
         if destination_name and schema:
             relation_identifier = ".".join([destination_name, schema, str(resource.table_name)])
 
-        table_columns = [
-            TableColumn(name=column.get("name"), type=column.get("data_type"))
-            for pkg in load_info_dict.get("load_packages", [])
-            for table in pkg.get("tables", [])
-            for column in table.get("columns", [])
-            if table.get("name") == resource.table_name
+        default_schema = dlt_pipeline.default_schema
+        child_table_names = [
+            name
+            for name in default_schema.data_table_names()
+            if name.startswith(f"{resource.table_name}__")
         ]
+        child_table_schemas = {
+            table_name: self._extract_table_schema_metadata(table_name, default_schema)
+            for table_name in child_table_names
+        }
+        table_schema = self._extract_table_schema_metadata(str(resource.table_name), default_schema)
+
         base_metadata = {
+            **child_table_schemas,
             **base_metadata,
             **TableMetadataSet(
-                column_schema=TableSchema(columns=table_columns),
+                column_schema=table_schema,
                 relation_identifier=relation_identifier,
             ),
         }
