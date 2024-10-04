@@ -11,7 +11,7 @@ from dagster import (
     TableColumnConstraints,
     _check as check,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
@@ -29,7 +29,6 @@ from dagster_embedded_elt.dlt.dlt_event_iterator import DltEventIterator, DltEve
 from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
-@experimental
 class DagsterDltResource(ConfigurableResource):
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
