@@ -1,7 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
@@ -129,6 +129,11 @@ def dashboard_id_fixture() -> str:
     return "c9bf8403-5daf-427a-b3d6-2ce9bed7798f"
 
 
+@pytest.fixture(name="job_id")
+def job_id_fixture() -> str:
+    return uuid.uuid4().hex
+
+
 @pytest.fixture(name="sign_in", autouse=True)
 def sign_in_fixture():
     with patch("dagster_tableau.resources.BaseTableauClient.sign_in") as mocked_function:
@@ -153,6 +158,30 @@ def get_workbook_fixture():
 def get_view_fixture():
     with patch("dagster_tableau.resources.BaseTableauClient.get_view") as mocked_function:
         mocked_function.side_effect = [SAMPLE_VIEW_SHEET, SAMPLE_VIEW_DASHBOARD]
+        yield mocked_function
+
+
+@pytest.fixture(name="get_job", autouse=True)
+def get_job_fixture(workbook_id, job_id):
+    with patch("dagster_tableau.resources.BaseTableauClient.get_job") as mocked_function:
+        type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
+        type(mocked_function.return_value).finish_code = PropertyMock(return_value=0)
+        type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
+        yield mocked_function
+
+
+@pytest.fixture(name="refresh_workbook", autouse=True)
+def refresh_workbook_fixture(workbook_id, job_id):
+    with patch("dagster_tableau.resources.BaseTableauClient.refresh_workbook") as mocked_function:
+        type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
+        type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
+        type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
+        yield mocked_function
+
+
+@pytest.fixture(name="cancel_job", autouse=True)
+def cancel_job_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.cancel_job") as mocked_function:
         yield mocked_function
 
 

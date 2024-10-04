@@ -1,5 +1,7 @@
 import datetime
 import json
+import logging
+import time
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
@@ -13,9 +15,12 @@ from dagster import (
     AssetsDefinition,
     ConfigurableResource,
     Definitions,
+    Failure,
     ObserveResult,
+    Output,
     _check as check,
     external_assets_from_specs,
+    get_dagster_logger,
     multi_asset,
 )
 from dagster._annotations import experimental
@@ -33,6 +38,9 @@ from dagster_tableau.translator import (
     TableauContentType,
     TableauWorkspaceData,
 )
+
+DEFAULT_POLL_INTERVAL_SECONDS = 10
+DEFAULT_POLL_TIMEOUT = 600
 
 
 @experimental
@@ -58,6 +66,11 @@ class BaseTableauClient:
     def base_url(self) -> str:
         raise NotImplementedError()
 
+    @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
+
     @cached_method
     def get_workbooks(self) -> Mapping[str, object]:
         """Fetches a list of all Tableau workbooks in the workspace."""
@@ -82,6 +95,75 @@ class BaseTableauClient:
             self._server.views.get_request(f"{self._server.views.baseurl}/{view_id}")
         )
 
+    def get_job(
+        self,
+        job_id: str,
+    ) -> TSC.JobItem:
+        """Fetches information for a given job."""
+        return self._server.jobs.get_by_id(job_id)
+
+    def cancel_job(
+        self,
+        job_id: str,
+    ) -> Mapping[str, object]:
+        """Fetches information for a given job."""
+        return self._response_to_dict(self._server.jobs.cancel(job_id))
+
+    def refresh_workbook(self, workbook_id) -> TSC.JobItem:
+        """Refreshes all extracts for a given workbook and return the JobItem object."""
+        return self._server.workbooks.refresh(workbook_id)
+
+    def refresh_and_poll(
+        self,
+        workbook_id: str,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Optional[str]:
+        job = self.refresh_workbook(workbook_id)
+
+        if not poll_interval:
+            poll_interval = DEFAULT_POLL_INTERVAL_SECONDS
+        if not poll_timeout:
+            poll_timeout = DEFAULT_POLL_TIMEOUT
+
+        self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
+        start = time.monotonic()
+
+        try:
+            while True:
+                if poll_timeout and start + poll_timeout < time.monotonic():
+                    raise Failure(
+                        f"Timeout: Tableau job {job.id} is not ready after the timeout"
+                        f" {poll_timeout} seconds"
+                    )
+                time.sleep(poll_interval)
+                job = self.get_job(job_id=job.id)
+
+                if job.finish_code == -1:
+                    # -1 is the default value for JobItem.finish_code, when the job is in progress
+                    continue
+                elif job.finish_code == TSC.JobItem.FinishCode.Success:
+                    break
+                elif job.finish_code == TSC.JobItem.FinishCode.Failed:
+                    raise Failure(f"Job failed: {job.id}")
+                elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
+                    raise Failure(f"Job was cancelled: {job.id}")
+                else:
+                    raise Failure(
+                        f"Encountered unexpected finish code `{job.finish_code}` for job {job.id}"
+                    )
+        finally:
+            # if Tableau sync has not completed, make sure to cancel it so that it doesn't outlive
+            # the python process
+            if job.finish_code not in (
+                TSC.JobItem.FinishCode.Success,
+                TSC.JobItem.FinishCode.Failed,
+                TSC.JobItem.FinishCode.Cancelled,
+            ):
+                self.cancel_job(job.id)
+
+        return job.workbook_id
+
     def sign_in(self) -> Auth.contextmgr:
         """Sign in to the site in Tableau."""
         jwt_token = jwt.encode(
@@ -91,7 +173,7 @@ class BaseTableauClient:
                 "jti": str(uuid.uuid4()),
                 "aud": "tableau",
                 "sub": self.username,
-                "scp": ["tableau:content:read"],
+                "scp": ["tableau:content:read", "tableau:tasks:run"],
             },
             self.connected_app_secret_value,
             algorithm="HS256",
@@ -303,12 +385,23 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def build_assets(
         self,
+        refreshable_workbook_ids: Sequence[str],
         dagster_tableau_translator: Type[DagsterTableauTranslator],
     ) -> Sequence[CacheableAssetsDefinition]:
         """Returns a set of CacheableAssetsDefinition which will load Tableau content from
         the workspace and translates it into AssetSpecs, using the provided translator.
 
         Args:
+            refreshable_workbook_ids (Sequence[str]): A list of workbook IDs. The workbooks provided must
+                have extracts as data sources and be refreshable in Tableau.
+
+                When materializing your Tableau assets, the workbooks provided are refreshed,
+                refreshing their sheets and dashboards before pulling their data in Dagster.
+
+                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+                and only works for workbooks for which the data sources are extracts.
+                See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
+                for documentation.
             dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
                 to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
 
@@ -316,15 +409,31 @@ class BaseTableauWorkspace(ConfigurableResource):
             Sequence[CacheableAssetsDefinition]: A list of CacheableAssetsDefinitions which
                 will load the Tableau content.
         """
-        return [TableauCacheableAssetsDefinition(self, dagster_tableau_translator)]
+        return [
+            TableauCacheableAssetsDefinition(
+                self, refreshable_workbook_ids, dagster_tableau_translator
+            )
+        ]
 
     def build_defs(
-        self, dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator
+        self,
+        refreshable_workbook_ids: Optional[Sequence[str]] = None,
+        dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
     ) -> Definitions:
         """Returns a Definitions object which will load Tableau content from
         the workspace and translate it into assets, using the provided translator.
 
         Args:
+            refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
+                have extracts as data sources and be refreshable in Tableau.
+
+                When materializing your Tableau assets, the workbooks provided are refreshed,
+                refreshing their sheets and dashboards before pulling their data in Dagster.
+
+                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+                and only works for workbooks for which the data sources are extracts.
+                See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
+                for documentation.
             dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
                 to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
 
@@ -332,7 +441,10 @@ class BaseTableauWorkspace(ConfigurableResource):
             Definitions: A Definitions object which will build and return the Power BI content.
         """
         defs = Definitions(
-            assets=self.build_assets(dagster_tableau_translator=dagster_tableau_translator)
+            assets=self.build_assets(
+                refreshable_workbook_ids=refreshable_workbook_ids or [],
+                dagster_tableau_translator=dagster_tableau_translator,
+            ),
         )
         return defs
 
@@ -376,8 +488,14 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 
 
 class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
-    def __init__(self, workspace: BaseTableauWorkspace, translator: Type[DagsterTableauTranslator]):
+    def __init__(
+        self,
+        workspace: BaseTableauWorkspace,
+        refreshable_workbook_ids: Sequence[str],
+        translator: Type[DagsterTableauTranslator],
+    ):
         self._workspace = workspace
+        self._refreshable_workbook_ids = refreshable_workbook_ids
         self._translator_cls = translator
         super().__init__(unique_id=self._workspace.site_name)
 
@@ -440,6 +558,9 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
         def _assets(tableau: BaseTableauWorkspace):
             with tableau.get_client() as client:
+                refreshed_workbooks = set()
+                for refreshable_workbook_id in self._refreshable_workbook_ids:
+                    refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
                 for view_id, view_content_data in [
                     *workspace_data.sheets_by_id.items(),
                     *workspace_data.dashboards_by_id.items(),
@@ -451,16 +572,30 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
                         asset_key = translator.get_dashboard_asset_key(view_content_data)
                     else:
                         check.assert_never(view_content_data.content_type)
-                    yield ObserveResult(
-                        asset_key=asset_key,
-                        metadata={
-                            "workbook_id": data["workbook"]["id"],
-                            "owner_id": data["owner"]["id"],
-                            "name": data["name"],
-                            "contentUrl": data["contentUrl"],
-                            "createdAt": data["createdAt"],
-                            "updatedAt": data["updatedAt"],
-                        },
-                    )
+                    if view_content_data.properties["workbook"]["luid"] in refreshed_workbooks:
+                        yield Output(
+                            value=None,
+                            output_name="__".join(asset_key.path),
+                            metadata={
+                                "workbook_id": data["workbook"]["id"],
+                                "owner_id": data["owner"]["id"],
+                                "name": data["name"],
+                                "contentUrl": data["contentUrl"],
+                                "createdAt": data["createdAt"],
+                                "updatedAt": data["updatedAt"],
+                            },
+                        )
+                    else:
+                        yield ObserveResult(
+                            asset_key=asset_key,
+                            metadata={
+                                "workbook_id": data["workbook"]["id"],
+                                "owner_id": data["owner"]["id"],
+                                "name": data["name"],
+                                "contentUrl": data["contentUrl"],
+                                "createdAt": data["createdAt"],
+                                "updatedAt": data["updatedAt"],
+                            },
+                        )
 
         return [_assets]
