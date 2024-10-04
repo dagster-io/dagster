@@ -6,7 +6,7 @@ import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {getRunFeedPath} from './RunsFeedUtils';
-import {runsPathWithFilters, useQueryPersistedRunFilters, RunFilterTokenType} from './RunsFilterInput';
+import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {gql, useQuery} from '../apollo-client';
 import {RunStatus, RunsFilter} from '../graphql/types';
@@ -53,29 +53,22 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
           : null,
     };
   }, [countData]);
-  const enabledFilters: RunFilterTokenType[] = [
-    'status',
-    'tag',
-    'id',
-    'created_date_before',
-    'created_date_after',
-    'pipeline',
-    'partition',
-    'job',
-    'snapshotId',
-    'backfill'
-  ];
-  const [filterTokens] = useQueryPersistedRunFilters(enabledFilters);
+
+  const [filterTokens] = useQueryPersistedRunFilters();
   const selectedTab = useSelectedRunsFeedTab(filterTokens);
 
   useDocumentTitle(getDocumentTitle(selectedTab));
 
   const urlForStatus = (statuses: RunStatus[]) => {
-    console.log('filter tokens', filterTokens)
+    console.log('filter tokens', filterTokens);
 
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
-    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], getRunFeedPath(), includeRunsFromBackfills);
+    return runsPathWithFilters(
+      [...statusTokens, ...tokensMinusStatus],
+      getRunFeedPath(),
+      includeRunsFromBackfills,
+    );
   };
 
   const tabs = (
@@ -92,7 +85,13 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink id="scheduled" title="Scheduled" to={`${getRunFeedPath()}scheduled`} />
+      <TabLink
+        id="scheduled"
+        title="Scheduled"
+        to={`${getRunFeedPath()}scheduled?${
+          includeRunsFromBackfills ? 'show_runs_within_backfills=true' : ''
+        }`}
+      />
     </Tabs>
   );
 

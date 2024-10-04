@@ -116,9 +116,13 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   );
 }
 
-export function runsPathWithFilters(filterTokens: RunFilterToken[], basePath: string = '/runs', includeRunsFromBackfills: boolean | undefined = undefined) {
+export function runsPathWithFilters(
+  filterTokens: RunFilterToken[],
+  basePath: string = '/runs',
+  includeRunsFromBackfills: boolean | undefined = undefined,
+) {
   return `${basePath}?${qs.stringify(
-    {q: tokensAsStringArray([...filterTokens, {token: 'show_runs_within_backfills', value: includeRunsFromBackfills !== undefined ? includeRunsFromBackfills.toString() : ''}])},
+    {q: tokensAsStringArray(filterTokens), show_runs_within_backfills: includeRunsFromBackfills},
     {arrayFormat: 'brackets'},
   )}`;
 }
