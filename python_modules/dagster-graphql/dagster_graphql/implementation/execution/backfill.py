@@ -333,7 +333,7 @@ def resume_partition_backfill(
 def retry_partition_backfill(
     graphene_info: "ResolveInfo", backfill_id: str
 ) -> "GrapheneRetryBackfillSuccess":
-    from ...schema.backfill import GrapheneRetryBackfillSuccess
+    from dagster_graphql.schema.backfill import GrapheneRetryBackfillSuccess
 
     backfill = graphene_info.context.instance.get_backfill(backfill_id)
     if not backfill:
@@ -373,7 +373,9 @@ def retry_partition_backfill(
             tags={
                 **backfill.tags,
                 PARENT_BACKFILL_ID_TAG: backfill.backfill_id,
-                ROOT_BACKFILL_ID_TAG: backfill.tags.get(PARENT_BACKFILL_ID_TAG, backfill.backfill_id),
+                ROOT_BACKFILL_ID_TAG: backfill.tags.get(
+                    PARENT_BACKFILL_ID_TAG, backfill.backfill_id
+                ),
             },
             backfill_timestamp=get_current_timestamp(),
             title=f"Retry of {backfill.title}" if backfill.title else None,
@@ -396,7 +398,9 @@ def retry_partition_backfill(
             tags={
                 **backfill.tags,
                 PARENT_BACKFILL_ID_TAG: backfill.backfill_id,
-                ROOT_BACKFILL_ID_TAG: backfill.tags.get(PARENT_BACKFILL_ID_TAG, backfill.backfill_id),
+                ROOT_BACKFILL_ID_TAG: backfill.tags.get(
+                    PARENT_BACKFILL_ID_TAG, backfill.backfill_id
+                ),
             },
             backfill_timestamp=get_current_timestamp(),
             asset_selection=backfill.asset_selection,
