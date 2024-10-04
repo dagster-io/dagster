@@ -1,7 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
-from unittest.mock import PropertyMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
@@ -141,9 +141,9 @@ def sign_in_fixture():
 
 
 @pytest.fixture(name="get_workbooks", autouse=True)
-def get_workbooks_fixture():
+def get_workbooks_fixture(build_workbook_item):
     with patch("dagster_tableau.resources.BaseTableauClient.get_workbooks") as mocked_function:
-        mocked_function.return_value = SAMPLE_WORKBOOKS
+        mocked_function.return_value = [build_workbook_item()]
         yield mocked_function
 
 
@@ -155,9 +155,9 @@ def get_workbook_fixture():
 
 
 @pytest.fixture(name="get_view", autouse=True)
-def get_view_fixture():
+def get_view_fixture(build_view_item):
     with patch("dagster_tableau.resources.BaseTableauClient.get_view") as mocked_function:
-        mocked_function.side_effect = [SAMPLE_VIEW_SHEET, SAMPLE_VIEW_DASHBOARD]
+        mocked_function.return_value = build_view_item()
         yield mocked_function
 
 
@@ -183,6 +183,60 @@ def refresh_workbook_fixture(workbook_id, job_id):
 def cancel_job_fixture():
     with patch("dagster_tableau.resources.BaseTableauClient.cancel_job") as mocked_function:
         yield mocked_function
+
+
+@pytest.fixture(name="build_workbook_item", autouse=True)
+def build_workbook_item_fixture():
+    with patch("dagster_tableau.resources.TSC.WorkbookItem") as mocked_class:
+        type(mocked_class.return_value).id = PropertyMock(
+            return_value=SAMPLE_WORKBOOKS["workbooks"]["workbook"][0]["id"]
+        )
+        yield mocked_class
+
+
+@pytest.fixture(name="build_view_item", autouse=True)
+def build_view_item_fixture():
+    with patch("dagster_tableau.resources.TSC.ViewItem") as mocked_class:
+        mock_sheet = MagicMock()
+        type(mock_sheet.return_value).workbook_id = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["workbook"]["id"]
+        )
+        type(mock_sheet.return_value).owner_id = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["owner"]["id"]
+        )
+        type(mock_sheet.return_value).name = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["name"]
+        )
+        type(mock_sheet.return_value).content_url = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["contentUrl"]
+        )
+        type(mock_sheet.return_value).created_at = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["createdAt"]
+        )
+        type(mock_sheet.return_value).updated_at = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["updatedAt"]
+        )
+        mock_dashboard = MagicMock()
+        type(mock_dashboard.return_value).workbook_id = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["workbook"]["id"]
+        )
+        type(mock_dashboard.return_value).owner_id = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["owner"]["id"]
+        )
+        type(mock_dashboard.return_value).name = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["name"]
+        )
+        type(mock_dashboard.return_value).content_url = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["contentUrl"]
+        )
+        type(mock_dashboard.return_value).created_at = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["createdAt"]
+        )
+        type(mock_dashboard.return_value).updated_at = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["updatedAt"]
+        )
+        mocked_class.side_effect = [mock_sheet, mock_dashboard]
+        yield mocked_class
 
 
 @pytest.fixture(name="get_data_source_by_id", autouse=True)
