@@ -1,10 +1,12 @@
 from collections import abc
-from typing import Generic, Iterator, Tuple, Union
+from typing import Generic, Iterator, Union, Optional
 
 from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.asset_execution_context import (
+    AssetExecutionContext,
+)
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dlt import Pipeline
 from typing_extensions import TypeVar
@@ -16,13 +18,17 @@ T = TypeVar("T", bound=DltEventType)
 def _fetch_row_count(
     dlt_pipeline: Pipeline,
     table_name: str,
-) -> Tuple[int]:
+) -> Optional[int]:
     """Exists mostly for ease of testing."""
     with dlt_pipeline.sql_client() as client:
         with client.execute_query(
             f"select count(*) as row_count from {table_name}",
         ) as cursor:
-            return cursor.fetchone()
+            result = cursor.fetchone()
+            if result is not None and isinstance(result[0], int):
+                return result[0]
+            else:
+                return None
 
 
 def fetch_row_count_metadata(
@@ -43,7 +49,7 @@ def fetch_row_count_metadata(
         raise Exception("Missing jobs metadata to retrieve row count.")
     table_name = jobs_metadata[0].get("table_name")
     try:
-        row_count_result = _fetch_row_count(dlt_pipeline, table_name)
+        return TableMetadataSet(row_count=_fetch_row_count(dlt_pipeline, table_name))
     # Filesystem does not have a SQL client and table might not be found
     except Exception as e:
         context.log.error(
@@ -51,9 +57,7 @@ def fetch_row_count_metadata(
             " will not be included in the event.\n\n"
             f"Exception: {e}"
         )
-        row_count_result = None
-    row_count = row_count_result[0] if row_count_result else None
-    return TableMetadataSet(row_count=row_count)
+        return TableMetadataSet(row_count=None)
 
 
 class DltEventIterator(Generic[T], abc.Iterator):

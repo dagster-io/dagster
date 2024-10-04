@@ -105,9 +105,9 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
         for materialization in materializations
         if materialization.asset_key == AssetKey("dlt_pipeline_repos")
     )
-    
+
     assert repos_materialization.metadata["dagster/row_count"] == IntMetadataValue(3)
-    
+
     assert repos_materialization.metadata["dagster/relation_identifier"] == TextMetadataValue(
         text="duckdb.pipeline.repos"
     )
