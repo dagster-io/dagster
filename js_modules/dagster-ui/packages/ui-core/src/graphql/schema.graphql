@@ -3287,7 +3287,12 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  runsFeedOrError(limit: Int!, cursor: String, filter: RunsFilter): RunsFeedConnectionOrError!
+  runsFeedOrError(
+    limit: Int!
+    cursor: String
+    filter: RunsFilter
+    includeRunsFromBackfills: Boolean
+  ): RunsFeedConnectionOrError!
   runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError

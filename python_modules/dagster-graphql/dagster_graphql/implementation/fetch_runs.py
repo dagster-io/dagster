@@ -539,6 +539,7 @@ def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
     limit: int,
     filters: Optional[RunsFilter],
+    include_runs_from_backfills: bool,
     cursor: Optional[str] = None,
 ) -> "GrapheneRunsFeedConnection":
     """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
@@ -550,6 +551,7 @@ def get_runs_feed_entries(
         cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
             that querying should start at the beginning of the table for both runs and backfills.
         filters (Optional[RunsFilter]): Filters to apply to the runs. If None, no filters are applied.
+        include_runs_from_backfills (bool): If True, include runs that are part of a backfill in the results and exclude backfill objects
     """
     from dagster_graphql.schema.backfill import GraphenePartitionBackfill
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
@@ -561,9 +563,10 @@ def get_runs_feed_entries(
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
-    exclude_subruns = (
-        filters.exclude_subruns if filters and filters.exclude_subruns is not None else True
-    )
+    # the UI is oriented toward showing runs that are part of a backfill, but the backend
+    # is oriented toward excluding runs that are part of a backfill, so negate include_runs_from_backfills
+    # to get the value to pass to the backend
+    exclude_subruns = not include_runs_from_backfills
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1
@@ -577,6 +580,10 @@ def get_runs_feed_entries(
         _filters_apply_to_backfills(filters) if filters else True
     )
     if filters:
+        check.invariant(
+            filters.exclude_subruns is None,
+            "filters.exclude_subruns must be None when fetching the runs feed. Use include_runs_from_backfills instead.",
+        )
         run_filters = copy(filters, exclude_subruns=exclude_subruns)
         run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
