@@ -66,7 +66,7 @@ sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
 #NOTE:  dagster-hex is an external package
 	@echo Checking for prod installs - if any are listed below reinstall with 'pip -e'
-	@! (pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
+	@! (pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch | grep -v dagster-insights)
 
 rebuild_ui: sanity_check
 	cd js_modules/dagster-ui/; yarn install && yarn build
