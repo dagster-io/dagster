@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Mapping, Sequence, Union
 
 from dagster import (
     AssetsDefinition,
@@ -14,6 +14,12 @@ class TaskDefs:
     def __init__(self, task_id: str, defs: Definitions):
         self.task_id = task_id
         self.defs = defs
+
+
+def apply_metadata_to_assets(
+    assets: Sequence[Union[AssetsDefinition, AssetSpec]], metadata: Dict[str, Any]
+) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    return [assets_def_with_af_metadata(asset, metadata) for asset in assets]
 
 
 def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> Definitions:
@@ -54,6 +60,32 @@ def assets_def_with_af_metadata(
         if isinstance(assets_def, AssetsDefinition)
         else spec_with_metadata(assets_def, metadata)
     )
+
+
+class TaskMapping:
+    def __init__(self, task_id: str, assets: Sequence[Union[AssetsDefinition, AssetSpec]]):
+        self.task_id = task_id
+        self.assets = assets
+
+
+def proxying_dag_assets(
+    dag_id: str, *task_mapping: TaskMapping
+) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    assets_list = []
+    for single_task_mapping in task_mapping:
+        assets_list.extend(
+            apply_metadata_to_assets(
+                single_task_mapping.assets,
+                metadata_for_task_mapping(task_id=single_task_mapping.task_id, dag_id=dag_id),
+            )
+        )
+    return assets_list
+
+
+def proxying_task_assets(
+    task_id: str, assets: Sequence[Union[AssetsDefinition, AssetSpec]]
+) -> TaskMapping:
+    return TaskMapping(task_id, assets)
 
 
 def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:

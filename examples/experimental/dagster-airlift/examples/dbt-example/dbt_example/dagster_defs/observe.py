@@ -1,23 +1,13 @@
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
-)
-from dagster_dbt.asset_specs import build_dbt_asset_specs
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend
+from dagster_airlift.core.load_defs import build_defs_from_airflow_instance
+from dagster_airlift.core.top_level_dag_def_api import proxying_dag_assets, proxying_task_assets
 
-from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check_defs, specs_from_lakehouse
+from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check, specs_from_lakehouse
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH
 
-from .constants import (
-    AIRFLOW_BASE_URL,
-    AIRFLOW_INSTANCE_NAME,
-    PASSWORD,
-    USERNAME,
-    dbt_manifest_path,
-)
+from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
+from .jaffle_shop import jaffle_shop_assets, jaffle_shop_resource
 
 airflow_instance = AirflowInstance(
     auth_backend=BasicAuthBackend(
@@ -29,18 +19,20 @@ airflow_instance = AirflowInstance(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    defs=Definitions.merge(
-        dag_defs(
+    defs=Definitions(
+        assets=proxying_dag_assets(
             "rebuild_iris_models",
-            task_defs("load_iris", Definitions(assets=specs_from_lakehouse(csv_path=CSV_PATH))),
-            task_defs(
-                "build_dbt_models",
-                Definitions(assets=build_dbt_asset_specs(manifest=dbt_manifest_path())),
+            proxying_task_assets(
+                task_id="load_iris", assets=specs_from_lakehouse(csv_path=CSV_PATH)
             ),
+            proxying_task_assets(task_id="build_dbt_models", assets=[jaffle_shop_assets]),
         ),
-        lakehouse_existence_check_defs(
-            csv_path=CSV_PATH,
-            duckdb_path=DB_PATH,
-        ),
+        asset_checks=[
+            lakehouse_existence_check(
+                csv_path=CSV_PATH,
+                duckdb_path=DB_PATH,
+            )
+        ],
+        resources={"dbt": jaffle_shop_resource()},
     ),
 )
