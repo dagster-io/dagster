@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Set, Tuple, Type
+from typing import Any, Callable, Dict, Mapping, Sequence, Set, Tuple, Type
 
 import requests
 from airflow.models.operator import BaseOperator
@@ -22,7 +22,7 @@ from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION,
 logger = logging.getLogger(__name__)
 
 
-def matched_dag_id_task_id(asset_node: dict, dag_id: str, task_id: str) -> bool:
+def matched_dag_id_task_id(asset_node: Mapping[str, Any], dag_id: str, task_id: str) -> bool:
     json_metadata_entries = {
         entry["label"]: entry["jsonString"]
         for entry in asset_node["metadataEntries"]
@@ -77,12 +77,9 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
 
         return response_json["data"][key]
 
-    def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
-        """Launches runs for the given task in Dagster."""
-        session = self._get_validated_session(context)
-
-        dagster_url = self.get_dagster_url(context)
-        assets_to_trigger = {}  # key is (repo_location, repo_name, job_name), value is list of asset keys
+    def get_all_asset_nodes(
+        self, session: requests.Session, dagster_url: str, context: Context
+    ) -> Sequence[Mapping[str, Any]]:
         # create graphql client
         response = session.post(
             # Timeout in seconds
@@ -90,8 +87,45 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             json={"query": ASSET_NODES_QUERY},
             timeout=3,
         )
-        logger.info(f"Fetching asset nodes for {dag_id}/{task_id}")
-        asset_nodes_data = self.get_valid_graphql_response(response, "assetNodes")
+        return self.get_valid_graphql_response(response, "assetNodes")
+
+    def launch_dagster_run(
+        self,
+        context: Context,
+        session: requests.Session,
+        dagster_url: str,
+        execution_params: Mapping[str, Any],
+    ) -> str:
+        response = session.post(
+            f"{dagster_url}/graphql",
+            json={
+                "query": TRIGGER_ASSETS_MUTATION,
+                "variables": {"executionParams": execution_params},
+            },
+            # Timeout in seconds
+            timeout=10,
+        )
+        launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
+        return launch_data["run"]["id"]
+
+    def get_dagster_run_status(
+        self, session: requests.Session, dagster_url: str, run_id: str
+    ) -> str:
+        response = session.post(
+            f"{dagster_url}/graphql",
+            json={"query": RUNS_QUERY, "variables": {"runId": run_id}},
+            # Timeout in seconds
+            timeout=3,
+        )
+        return self.get_valid_graphql_response(response, "runOrError")["status"]
+
+    def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
+        """Launches runs for the given task in Dagster."""
+        session = self._get_validated_session(context)
+        dagster_url = self.get_dagster_url(context)
+
+        assets_to_trigger = {}  # key is (repo_location, repo_name, job_name), value is list of asset keys
+        asset_nodes_data = self.get_all_asset_nodes(session, dagster_url, context)
         logger.info(f"Got response {asset_nodes_data}")
         for asset_node in asset_nodes_data:
             # jobs can be empty if it is an external asset (e.g. an automapped task)
@@ -135,31 +169,14 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             logger.debug(
                 f"Triggering run for {repo_location}/{repo_name}/{job_name} with assets {asset_keys}"
             )
-            response = session.post(
-                f"{dagster_url}/graphql",
-                json={
-                    "query": TRIGGER_ASSETS_MUTATION,
-                    "variables": {"executionParams": execution_params},
-                },
-                # Timeout in seconds
-                timeout=10,
-            )
-            launch_data = self.get_valid_graphql_response(response, "launchPipelineExecution")
-            run_id = launch_data["run"]["id"]
-            logger.debug(f"Launched run {run_id}...")
+            run_id = self.launch_dagster_run(context, session, dagster_url, execution_params)
             triggered_runs.append(run_id)
         completed_runs = {}  # key is run_id, value is status
         while len(completed_runs) < len(triggered_runs):
             for run_id in triggered_runs:
                 if run_id in completed_runs:
                     continue
-                response = session.post(
-                    f"{dagster_url}/graphql",
-                    json={"query": RUNS_QUERY, "variables": {"runId": run_id}},
-                    # Timeout in seconds
-                    timeout=3,
-                )
-                run_status = self.get_valid_graphql_response(response, "runOrError")["status"]
+                run_status = self.get_dagster_run_status(session, dagster_url, run_id)
                 if run_status in ["SUCCESS", "FAILURE", "CANCELED"]:
                     logger.debug(f"Run {run_id} completed with status {run_status}")
                     completed_runs[run_id] = run_status
