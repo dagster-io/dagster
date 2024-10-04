@@ -4,6 +4,7 @@ import time
 import unittest
 from datetime import datetime, timedelta
 from typing import Optional
+from uuid import uuid4
 
 import pytest
 from dagster import _seven, job, op
@@ -1094,7 +1095,7 @@ class TestRunStorage:
             assert not storage.has_job_snapshot(job_snapshot_id)
 
     def test_single_write_read_with_snapshot(self, storage: RunStorage):
-        run_with_snapshot_id = "lkasjdflkjasdf"
+        run_with_snapshot_id = str(uuid4())
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         job_snapshot = job_def.get_job_snapshot()
