@@ -6,12 +6,12 @@ from airflow import DAG
 from airflow.models import BaseOperator, Variable
 from airflow.utils.session import create_session
 
-from dagster_airlift.in_airflow.base_proxy_operator import (
-    BaseProxyToDagsterOperator,
-    DefaultProxyToDagsterOperator,
+from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState, DagProxiedState
+from dagster_airlift.in_airflow.task_proxy_operator import (
+    BaseProxyTaskToDagsterOperator,
+    DefaultProxyTaskToDagsterOperator,
     build_dagster_task,
 )
-from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState, DagProxiedState
 from dagster_airlift.utils import get_local_proxied_state_dir
 
 
@@ -20,7 +20,9 @@ def proxying_to_dagster(
     global_vars: Dict[str, Any],
     proxied_state: AirflowProxiedState,
     logger: Optional[logging.Logger] = None,
-    dagster_operator_klass: Type[BaseProxyToDagsterOperator] = DefaultProxyToDagsterOperator,
+    dagster_operator_klass: Type[
+        BaseProxyTaskToDagsterOperator
+    ] = DefaultProxyTaskToDagsterOperator,
 ) -> None:
     """Uses passed-in dictionary to alter dags and tasks to proxy to dagster.
     Uses a proxied dictionary to determine the proxied status for each task within each dag.

@@ -1,9 +1,9 @@
 import requests
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import BaseProxyToDagsterOperator
+from dagster_airlift.in_airflow import BaseDagsterAssetsOperator
 
 
-class DagsterCloudProxyOperator(BaseProxyToDagsterOperator):
+class DagsterCloudProxyOperator(BaseDagsterAssetsOperator):
     def get_variable(self, context: Context, var_name: str) -> str:
         if "var" not in context:
             raise ValueError("No variables found in context")
