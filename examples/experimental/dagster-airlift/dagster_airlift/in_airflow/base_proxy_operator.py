@@ -72,6 +72,12 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
     def get_dagster_url(self, context: Context) -> str:
         """Returns the URL for the Dagster instance."""
 
+    @abstractmethod
+    def filter_asset_nodes(
+        self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
+    ) -> Iterable[Mapping[str, Any]]:
+        """Filters the asset nodes to only include those that should be triggered by the current task."""
+
     def get_valid_graphql_response(self, response: Response, key: str) -> Any:
         response_json = response.json()
         if not response_json.get("data"):
@@ -145,17 +151,11 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             TASK_ID_TAG_KEY: self.get_airflow_task_id(context),
         }
 
-    def filter_asset_nodes(
-        self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
-    ) -> Iterable[Mapping[str, Any]]:
-        for asset_node in asset_nodes:
-            if (
-                matched_dag_id_task_id(
-                    asset_node, self.get_airflow_dag_id(context), self.get_airflow_task_id(context)
-                )
-                and asset_node["jobs"]
-            ):
-                yield asset_node
+    def ensure_executable(self, asset_node: Mapping[str, Any]) -> None:
+        if not asset_node["jobs"]:
+            raise Exception(
+                f"Asset node {asset_node} has no jobs, and therefore cannot be executed."
+            )
 
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
         """Launches runs for the given task in Dagster."""
@@ -168,6 +168,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         asset_nodes_data = self.get_all_asset_nodes(session, dagster_url, context)
         logger.info(f"Got response {asset_nodes_data}")
         for asset_node in self.filter_asset_nodes(context, asset_nodes_data):
+            self.ensure_executable(asset_node)
             assets_to_trigger_per_job[_build_dagster_job_identifier(asset_node)].append(
                 asset_node["assetKey"]["path"]
             )
@@ -247,6 +248,15 @@ class DefaultProxyToDagsterOperator(BaseProxyToDagsterOperator):
 
     def get_dagster_url(self, context: Context) -> str:
         return os.environ["DAGSTER_URL"]
+
+    def filter_asset_nodes(
+        self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
+    ) -> Iterable[Mapping[str, Any]]:
+        for asset_node in asset_nodes:
+            if matched_dag_id_task_id(
+                asset_node, self.get_airflow_dag_id(context), self.get_airflow_task_id(context)
+            ):
+                yield asset_node
 
 
 def build_dagster_task(
