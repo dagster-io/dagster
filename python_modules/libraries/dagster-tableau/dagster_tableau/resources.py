@@ -101,7 +101,7 @@ class BaseTableauClient:
         self,
         job_id: str,
     ) -> requests.Response:
-        """Fetches information for a given job."""
+        """Cancels a given job."""
         return self._server.jobs.cancel(job_id)
 
     def refresh_workbook(self, workbook_id) -> TSC.JobItem:
