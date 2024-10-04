@@ -17,7 +17,7 @@ from dagster._core.definitions.asset_key import (
     key_prefix_from_coercible,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -355,6 +355,13 @@ class AssetSelection(ABC, DagsterModel):
         use the `upstream_source_assets` method.
         """
         return RootsAssetSelection(child=self)
+
+    @public
+    def executable(self) -> "ExecutableAssetSelection":
+        """Given an asset selection, returns a new asset selection that contains all of the assets
+        that are executable. Removes any external assets which are not executable.
+        """
+        return ExecutableAssetSelection(child=self)
 
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
@@ -781,6 +788,18 @@ class RootsAssetSelection(ChainedAssetSelection):
         return fetch_sources(asset_graph.asset_dep_graph, selection)
 
 
+@whitelist_for_serdes
+class ExecutableAssetSelection(ChainedAssetSelection):
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+        output = {
+            asset_key
+            for asset_key in selection
+            if cast(BaseAssetNode, asset_graph.get(asset_key)).is_executable
+        }
+        return output
 @whitelist_for_serdes
 class DownstreamAssetSelection(ChainedAssetSelection):
     depth: Optional[int]
