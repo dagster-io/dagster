@@ -1,8 +1,11 @@
 from typing import Optional
 
 import boto3
-import botocore
 import dagster._check as check
+
+
+class ClientException(Exception):
+    pass
 
 
 def get_s3_keys(
@@ -19,9 +22,9 @@ def get_s3_keys(
         s3_session = boto3.client("s3", use_ssl=True, verify=True)
 
     if not s3_session:
-        raise botocore.exceptions.ClientError("Failed to initialize s3 client")
+        raise ClientException("Failed to initialize s3 client")
 
-    paginator = s3_session.get_paginator("list_objects_v2")
+    paginator = s3_session.get_paginator("list_objects_v2")  # type: ignore
     page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
 
     contents = []
