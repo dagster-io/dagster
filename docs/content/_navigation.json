@@ -771,6 +771,10 @@
           {
             "title": "dagster_cloud.yaml",
             "path": "/dagster-plus/managing-deployments/dagster-cloud-yaml"
+          },
+          {
+            "title": "API Limits",
+            "path": "/dagster-plus/references/limits"
           }
         ]
       }
