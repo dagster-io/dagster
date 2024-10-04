@@ -357,11 +357,11 @@ class AssetSelection(ABC, DagsterModel):
         return RootsAssetSelection(child=self)
 
     @public
-    def executable(self) -> "ExecutableAssetSelection":
+    def materializable(self) -> "MaterializableAssetSelection":
         """Given an asset selection, returns a new asset selection that contains all of the assets
-        that are executable. Removes any external assets which are not executable.
+        that are materializable. Removes any assets which are not materializable.
         """
-        return ExecutableAssetSelection(child=self)
+        return MaterializableAssetSelection(child=self)
 
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
@@ -789,17 +789,17 @@ class RootsAssetSelection(ChainedAssetSelection):
 
 
 @whitelist_for_serdes
-class ExecutableAssetSelection(ChainedAssetSelection):
+class MaterializableAssetSelection(ChainedAssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
-        output = {
+        return {
             asset_key
-            for asset_key in selection
-            if cast(BaseAssetNode, asset_graph.get(asset_key)).is_executable
+            for asset_key in self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+            if cast(BaseAssetNode, asset_graph.get(asset_key)).is_materializable
         }
-        return output
+
+
 @whitelist_for_serdes
 class DownstreamAssetSelection(ChainedAssetSelection):
     depth: Optional[int]
