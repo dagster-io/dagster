@@ -5,12 +5,7 @@ from dagster import (
     build_last_update_freshness_checks,
     build_sensor_for_freshness_checks,
 )
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    proxying_dag_assets,
-    proxying_task_assets,
-)
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, assets_with_task_mappings
 
 from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check, specs_from_lakehouse
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH
@@ -38,13 +33,12 @@ dbt_freshness_checks = build_last_update_freshness_checks(
 )
 
 defs = Definitions(
-    assets=proxying_dag_assets(
-        "rebuild_iris_models",
-        proxying_task_assets(
-            "load_iris",
-            specs_from_lakehouse(csv_path=CSV_PATH),
-        ),
-        proxying_task_assets(task_id="build_dbt_models", assets=[jaffle_shop_assets]),
+    assets=assets_with_task_mappings(
+        dag_id="rebuild_iris_models",
+        task_mappings={
+            "load_iris": specs_from_lakehouse(csv_path=CSV_PATH),
+            "build_dbt_models": [jaffle_shop_assets],
+        },
     ),
     asset_checks=[
         lakehouse_existence_check(
