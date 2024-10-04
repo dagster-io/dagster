@@ -1,12 +1,10 @@
 from collections import abc
-from typing import Generic, Iterator, Union, Optional
+from typing import Generic, Iterator, Optional, Union
 
 from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-from dagster._core.execution.context.asset_execution_context import (
-    AssetExecutionContext,
-)
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dlt import Pipeline
 from typing_extensions import TypeVar
