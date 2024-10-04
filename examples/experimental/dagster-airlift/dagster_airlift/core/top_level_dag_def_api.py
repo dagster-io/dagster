@@ -62,14 +62,14 @@ def assets_def_with_af_metadata(
     )
 
 
-class TaskMapping:
+class ProxyableTaskMapping:
     def __init__(self, task_id: str, assets: Sequence[Union[AssetsDefinition, AssetSpec]]):
         self.task_id = task_id
         self.assets = assets
 
 
 def proxying_dag_assets(
-    dag_id: str, *task_mapping: TaskMapping
+    dag_id: str, *task_mapping: ProxyableTaskMapping
 ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
     assets_list = []
     for single_task_mapping in task_mapping:
@@ -84,8 +84,8 @@ def proxying_dag_assets(
 
 def proxying_task_assets(
     task_id: str, assets: Sequence[Union[AssetsDefinition, AssetSpec]]
-) -> TaskMapping:
-    return TaskMapping(task_id, assets)
+) -> ProxyableTaskMapping:
+    return ProxyableTaskMapping(task_id, assets)
 
 
 def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
