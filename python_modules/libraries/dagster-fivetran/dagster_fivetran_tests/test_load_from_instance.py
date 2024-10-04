@@ -56,12 +56,14 @@ from dagster_fivetran_tests.utils import (
 )
 @pytest.mark.parametrize("multiple_connectors", [True, False])
 @pytest.mark.parametrize("destination_ids", [None, [], ["some_group"]])
+@pytest.mark.parametrize("set_kind_tag_for_service", [True, False])
 def test_load_from_instance(
     connector_to_group_fn,
     filter_connector,
     connector_to_asset_key_fn,
     multiple_connectors,
     destination_ids,
+    set_kind_tag_for_service,
 ) -> None:
     with environ({"FIVETRAN_API_KEY": "some_key", "FIVETRAN_API_SECRET": "some_secret"}):
         load_calls = []
@@ -132,6 +134,7 @@ def test_load_from_instance(
                 connector_to_io_manager_key_fn=(lambda _: "test_io_manager"),
                 poll_interval=10,
                 poll_timeout=600,
+                set_kind_tag_for_service=set_kind_tag_for_service,
             )
         else:
             ft_cacheable_assets = load_assets_from_fivetran_instance(
@@ -141,6 +144,7 @@ def test_load_from_instance(
                 io_manager_key="test_io_manager",
                 poll_interval=10,
                 poll_timeout=600,
+                set_kind_tag_for_service=set_kind_tag_for_service,
             )
         ft_assets = ft_cacheable_assets.build_definitions(
             ft_cacheable_assets.compute_cacheable_data()
@@ -216,7 +220,10 @@ def test_load_from_instance(
             assert metadata.get("dagster/relation_identifier") == (
                 "example_database." + ".".join(key.path[-2:])
             )
-            assert has_kind(assets_def.tags_by_key[key], "snowflake")
+            if set_kind_tag_for_service:
+                assert has_kind(assets_def.tags_by_key[key], "snowflake")
+            else:
+                assert not has_kind(assets_def.tags_by_key[key], "snowflake")
 
         assert ft_assets[0].keys == tables
         assert all(
