@@ -267,3 +267,87 @@ class AssetSpec(
         return self._replace(
             metadata={**self.metadata, SYSTEM_METADATA_KEY_IO_MANAGER_KEY: io_manager_key}
         )
+
+    def replace_attributes(
+        self,
+        *,
+        key: CoercibleToAssetKey = ...,
+        deps: Optional[Iterable["CoercibleToAssetDep"]] = ...,
+        description: Optional[str] = ...,
+        metadata: Optional[Mapping[str, Any]] = ...,
+        skippable: bool = ...,
+        group_name: Optional[str] = ...,
+        code_version: Optional[str] = ...,
+        freshness_policy: Optional[FreshnessPolicy] = ...,
+        automation_condition: Optional[AutomationCondition] = ...,
+        owners: Optional[Sequence[str]] = ...,
+        tags: Optional[Mapping[str, str]] = ...,
+        kinds: Optional[Set[str]] = ...,
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
+        partitions_def: Optional[PartitionsDefinition] = ...,
+    ) -> "AssetSpec":
+        """Returns a new AssetSpec with the specified attributes replaced.
+
+        Args:
+            key (Optional[CoercibleToAssetKey]): The new key for the asset.
+            deps (Optional[Iterable[CoercibleToAssetDep]]): The new dependencies for the asset.
+        """
+        current_tags_without_kinds = {
+            tag_key: tag_value
+            for tag_key, tag_value in self.tags.items()
+            if not tag_key.startswith(KIND_PREFIX)
+        }
+        return self.dagster_internal_init(
+            key=key if key is not ... else self.key,
+            deps=deps if deps is not ... else self.deps,
+            description=description if description is not ... else self.description,
+            metadata=metadata if metadata is not ... else self.metadata,
+            skippable=skippable if skippable is not ... else self.skippable,
+            group_name=group_name if group_name is not ... else self.group_name,
+            code_version=code_version if code_version is not ... else self.code_version,
+            freshness_policy=freshness_policy
+            if freshness_policy is not ...
+            else self.freshness_policy,
+            automation_condition=automation_condition
+            if automation_condition is not ...
+            else self.automation_condition,
+            owners=owners if owners is not ... else self.owners,
+            tags=tags if tags is not ... else current_tags_without_kinds,
+            kinds=kinds if kinds is not ... else self.kinds,
+            auto_materialize_policy=auto_materialize_policy
+            if auto_materialize_policy is not ...
+            else self.auto_materialize_policy,
+            partitions_def=partitions_def if partitions_def is not ... else self.partitions_def,
+        )
+
+    def merge_attributes(
+        self,
+        *,
+        deps: Iterable["CoercibleToAssetDep"] = ...,
+        metadata: Mapping[str, Any] = ...,
+        owners: Sequence[str] = ...,
+        tags: Mapping[str, str] = ...,
+        kinds: Set[str] = ...,
+    ) -> "AssetSpec":
+        """Returns a new AssetSpec with the specified attributes merged with the current attributes."""
+        current_tags_without_kinds = {
+            tag_key: tag_value
+            for tag_key, tag_value in self.tags.items()
+            if not tag_key.startswith(KIND_PREFIX)
+        }
+        return self.dagster_internal_init(
+            key=self.key,
+            deps=[*self.deps, *(deps if deps is not ... else [])],
+            description=self.description,
+            metadata={**self.metadata, **(metadata if metadata is not ... else {})},
+            skippable=self.skippable,
+            group_name=self.group_name,
+            code_version=self.code_version,
+            freshness_policy=self.freshness_policy,
+            automation_condition=self.automation_condition,
+            owners=[*self.owners, *(owners if owners is not ... else [])],
+            tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
+            kinds={*self.kinds, *(kinds if kinds is not ... else {})},
+            auto_materialize_policy=self.auto_materialize_policy,
+            partitions_def=self.partitions_def,
+        )
