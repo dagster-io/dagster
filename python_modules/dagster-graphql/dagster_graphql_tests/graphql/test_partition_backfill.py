@@ -25,9 +25,9 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
-    PARENT_RUN_ID_TAG,
+    PARENT_BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
-    ROOT_RUN_ID_TAG,
+    ROOT_BACKFILL_ID_TAG,
 )
 from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.utils import make_new_backfill_id
@@ -619,8 +619,8 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         retried_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
         retried_backfill = graphql_context.instance.get_backfill(retried_backfill_id)
 
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -809,8 +809,8 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             first_backfill.asset_backfill_data.target_subset
             == retried_backfill.asset_backfill_data.target_subset
         )
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_resume_backfill(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
@@ -1628,8 +1628,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             first_backfill.asset_backfill_data.failed_and_downstream_subset
             == retried_backfill.asset_backfill_data.target_subset
         )
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_successful_asset_backfill(self, graphql_context):
         # TestLaunchDaemonBackfillFromFailure::test_retry_successful_asset_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
@@ -1784,8 +1784,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             first_backfill.asset_backfill_data.failed_and_downstream_subset
             == retried_backfill.asset_backfill_data.target_subset
         )
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_asset_backfill_twice(self, graphql_context):
         # TestLaunchDaemonBackfillFromFailure::test_retry_asset_backfill_twice[sqlite_with_default_run_launcher_managed_grpc_env]
@@ -1859,8 +1859,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             first_backfill.asset_backfill_data.failed_and_downstream_subset
             == retried_backfill.asset_backfill_data.target_subset
         )
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
         _execute_asset_backfill_iteration_no_side_effects(
             graphql_context, retried_backfill.backfill_id, asset_graph
@@ -1904,8 +1904,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             retried_backfill.asset_backfill_data.failed_and_downstream_subset
             == second_retried_backfill.asset_backfill_data.target_subset
         )
-        assert second_retried_backfill.tags.get(PARENT_RUN_ID_TAG) == retry_backfill_id
-        assert second_retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert second_retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == retry_backfill_id
+        assert second_retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_job_backfill(self, graphql_context):
         # TestLaunchDaemonBackfillFromFailure::test_retry_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
@@ -1956,8 +1956,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         retried_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
         retried_backfill = graphql_context.instance.get_backfill(retried_backfill_id)
 
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -2033,8 +2033,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         retried_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
         retried_backfill = graphql_context.instance.get_backfill(retried_backfill_id)
 
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_job_backfill_twice(self, graphql_context):
         # TestLaunchDaemonBackfillFromFailure::test_retry_in_progress_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
@@ -2086,8 +2086,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         retried_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
         retried_backfill = graphql_context.instance.get_backfill(retried_backfill_id)
 
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
         graphql_context.instance.update_backfill(
             retried_backfill.with_status(BulkActionStatus.COMPLETED)
@@ -2106,8 +2106,8 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         second_retried_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
         second_retried_backfill = graphql_context.instance.get_backfill(second_retried_backfill_id)
 
-        assert second_retried_backfill.tags.get(PARENT_RUN_ID_TAG) == retried_backfill_id
-        assert second_retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert second_retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == retried_backfill_id
+        assert second_retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_successful_job_backfill(self, graphql_context):
         # TestLaunchDaemonBackfillFromFailure::test_retry_successful_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
@@ -2150,5 +2150,5 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         retried_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
         retried_backfill = graphql_context.instance.get_backfill(retried_backfill_id)
 
-        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
-        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
