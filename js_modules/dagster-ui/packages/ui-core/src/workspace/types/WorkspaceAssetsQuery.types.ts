@@ -11,10 +11,12 @@ export type RepoAssetTableFragment = {
   isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
+  isPartitioned: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {
@@ -25,6 +27,10 @@ export type RepoAssetTableFragment = {
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
+  } | null;
+  autoMaterializePolicy: {
+    __typename: 'AutoMaterializePolicy';
+    policyType: Types.AutoMaterializePolicyType;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -68,10 +74,12 @@ export type WorkspaceAssetsQuery = {
           isMaterializable: boolean;
           isObservable: boolean;
           isExecutable: boolean;
+          isPartitioned: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
           hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
+          jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           partitionDefinition: {
@@ -82,6 +90,10 @@ export type WorkspaceAssetsQuery = {
               type: Types.PartitionDefinitionType;
               dynamicPartitionsDefinitionName: string | null;
             }>;
+          } | null;
+          autoMaterializePolicy: {
+            __typename: 'AutoMaterializePolicy';
+            policyType: Types.AutoMaterializePolicyType;
           } | null;
           owners: Array<
             | {__typename: 'TeamAssetOwner'; team: string}
@@ -99,4 +111,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = '5f392a40e848c1adfc661f4f9db904cbab74d68900bf5632d92b44fdf2128228';
+export const WorkspaceAssetsQueryVersion = 'e8592b84ffb6dafd46473b7be4784371a51f4e4f546399e5cc197b1b823ac4c3';

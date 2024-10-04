@@ -62,10 +62,14 @@ export const RunsFeedTable = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  const selectedRuns = entries.filter(
-    (e): e is RunsFeedTableEntryFragment_Run => checkedIds.has(e.id) && e.__typename === 'Run',
+  const selectedEntries = entries.filter((e): e is RunsFeedTableEntryFragment_Run =>
+    checkedIds.has(e.id),
   );
-  const backfillsExcluded = entries.length - selectedRuns.length;
+
+  const selectedRuns = selectedEntries.filter(
+    (e): e is RunsFeedTableEntryFragment_Run => e.__typename === 'Run',
+  );
+  const backfillsExcluded = selectedEntries.length - selectedRuns.length;
 
   const actionBar = (
     <Box flex={{direction: 'column', gap: 8}}>
