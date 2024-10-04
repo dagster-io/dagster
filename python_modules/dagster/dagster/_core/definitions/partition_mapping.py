@@ -1,5 +1,6 @@
 import collections.abc
 import itertools
+import json
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
@@ -976,6 +977,99 @@ class StaticPartitionMapping(
         )
 
 
+@whitelist_for_serdes
+class DynamicPartitionMapping(
+    PartitionMapping,
+    NamedTuple("_DynamicPartitionMapping", [("dynamic_mapping_partition_name", str)]),
+):
+    """Map upstream to downstream partitions dynamically based on a dynamic partition mapping."""
+
+    def get_upstream_mapped_partitions_result_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> UpstreamPartitionsResult:
+        if downstream_partitions_subset is None:
+            check.failed("downstream asset is not partitioned")
+
+        if dynamic_partitions_store is None:
+            check.failed("dynamic_partitions_store is None")
+
+        downstream_keys = list(downstream_partitions_subset.get_partition_keys())
+        if len(downstream_keys) != 1:
+            check.failed("Expected 1 partition in downstream_partitions_subset")
+
+        dynamic_mapping = [
+            json.loads(key)
+            for key in dynamic_partitions_store.get_dynamic_partitions(
+                self.dynamic_mapping_partition_name
+            )
+        ]
+
+        expected_upstream = next(
+            (map_[1] for map_ in dynamic_mapping if map_[0] == downstream_keys[0]),
+            None,
+        )
+
+        if not isinstance(expected_upstream, Sequence):
+            check.failed(f"expected_upstream is not a sequence: {expected_upstream}")
+
+        expected_upstream = set(expected_upstream)
+
+        upstream_partition_keys = set(
+            upstream_partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
+
+        return UpstreamPartitionsResult(
+            upstream_partitions_def.subset_with_partition_keys(
+                list(upstream_partition_keys & expected_upstream)
+            ),
+            list(upstream_partition_keys - expected_upstream),
+        )
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset: PartitionsSubset,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        if upstream_partitions_subset is None:
+            check.failed("upstream asset is not partitioned")
+
+        if dynamic_partitions_store is None:
+            check.failed("dynamic_partitions_store is None")
+
+        dynamic_mapping = [
+            json.loads(key)
+            for key in dynamic_partitions_store.get_dynamic_partitions(
+                self.dynamic_mapping_partition_name
+            )
+        ]
+
+        upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())
+        expected_downstream = {map_[0] for map_ in dynamic_mapping if set(map_[1]) & upstream_partition_keys}
+
+        downstream_partition_keys = set(
+            downstream_partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
+        return downstream_partitions_def.empty_subset().with_partition_keys(
+            list(downstream_partition_keys & expected_downstream)
+        )
+
+    @property
+    def description(self) -> str:
+        return "Dynamic mapping of partitions based user-input functions."
+
+
 class InferSingleToMultiDimensionDepsResult(
     NamedTuple(
         "_InferSingleToMultiDimensionDepsResult",
@@ -1152,6 +1246,7 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         TimeWindowPartitionMapping,
         MultiToSingleDimensionPartitionMapping,
         MultiPartitionMapping,
+        DynamicPartitionMapping,
     )
 
 
