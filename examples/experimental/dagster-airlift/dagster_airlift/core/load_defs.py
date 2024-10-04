@@ -11,7 +11,6 @@ from dagster import (
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.warnings import suppress_dagster_warnings
 
-from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
@@ -68,9 +67,8 @@ def build_defs_from_airflow_instance(
     return Definitions.merge(
         resolved_defs,
         build_airflow_polling_sensor_defs(
-            airflow_data=AirflowDefinitionsData(
-                airflow_instance=airflow_instance, resolved_airflow_defs=resolved_defs
-            ),
+            mapped_defs=resolved_defs,
+            airflow_instance=airflow_instance,
             minimum_interval_seconds=sensor_minimum_interval_seconds,
             event_transformer_fn=event_transformer_fn,
         ),
@@ -116,9 +114,8 @@ def build_full_automapped_dags_from_airflow_instance(
         resolved_defs,
         build_airflow_polling_sensor_defs(
             minimum_interval_seconds=sensor_minimum_interval_seconds,
-            airflow_data=AirflowDefinitionsData(
-                resolved_airflow_defs=resolved_defs, airflow_instance=airflow_instance
-            ),
+            mapped_defs=resolved_defs,
+            airflow_instance=airflow_instance,
             event_transformer_fn=None,
         ),
     )

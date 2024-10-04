@@ -217,9 +217,7 @@ def test_automapped_loaded_data() -> None:
 
     fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
 
-    airflow_data = AirflowDefinitionsData(
-        airflow_instance=airflow_instance, resolved_airflow_defs=defs
-    )
+    airflow_data = AirflowDefinitionsData(airflow_instance=airflow_instance, mapped_defs=defs)
 
     task_handle_data = fetched_airflow_data.task_handle_data_for_dag("dag1")
     assert task_handle_data["task1"].asset_keys_in_task == {ak("test_instance/dag/dag1/task/task1")}

@@ -77,10 +77,35 @@ def check_keys_for_asset_keys(
 
 
 def build_airflow_polling_sensor_defs(
-    airflow_data: AirflowDefinitionsData,
+    *,
+    mapped_defs: Definitions,
+    airflow_instance: AirflowInstance,
     event_transformer_fn: Optional[DagsterEventTransformerFn],
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
+    """The constructed sensor polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
+
+    The sensor decides which Airflow dags and tasks to monitor by inspecting the metadata of the passed-in Definitions object `mapped_defs`.
+    The metadata performing this mapping is typically set by calls to `dag_defs` and `task_defs`.
+
+    Using the `event_transformer_fn` argument, users can provide a function that transforms the materializations emitted by the sensor.
+    The expected return type of this function is an iterable of `AssetMaterialization`, `AssetObservation`, or `AssetCheckEvaluation` objects.
+    Each object is expected to have a metadata key `dagster_airlift.constants.EFFECTIVE_TIMESTAMP_METADATA_KEY` which is a `dagster.TimestampMetadataValue` set.
+    This allows Dagster to correctly order the materializations in the event stream.
+
+    Args:
+        mapped_defs (Definitions): The `Definitions` object containing assets with metadata mapping them to Airflow dags and tasks.
+        airflow_instance (AirflowInstance): The Airflow instance to poll for dag runs.
+        event_transformer_fn (Optional[DagsterEventTransformerFn]): A function that transforms the materializations emitted by the sensor.
+        minimum_interval_seconds (int): The minimum interval in seconds between sensor runs. Defaults to 1.
+
+    Returns:
+        Definitions: A `Definitions` object containing the constructed sensor.
+    """
+    airflow_data = AirflowDefinitionsData(
+        airflow_instance=airflow_instance, mapped_defs=mapped_defs
+    )
+
     @sensor(
         name=f"{airflow_data.airflow_instance.name}__airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -346,9 +371,7 @@ def automapped_tasks_asset_keys(
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:
-        spec = airflow_data.resolved_airflow_defs.get_assets_def(asset_key).get_asset_spec(
-            asset_key
-        )
+        spec = airflow_data.mapped_defs.get_assets_def(asset_key).get_asset_spec(asset_key)
         if spec.metadata.get(AUTOMAPPED_TASK_METADATA_KEY):
             asset_keys_to_emit.add(asset_key)
     return asset_keys_to_emit
