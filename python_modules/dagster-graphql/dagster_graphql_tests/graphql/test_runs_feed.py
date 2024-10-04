@@ -47,7 +47,7 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter, $in
         message
       }
     }
-    runsFeedCountOrError(filter: $filter, includeRunsInBackfills: $includeRunsInBackfills) {
+    runsFeedCountOrError(filter: $filter, includeRunsFromBackfills: $includeRunsFromBackfills) {
         ... on RunsFeedCount {
             count
         }
