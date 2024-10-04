@@ -60,8 +60,6 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
   useDocumentTitle(getDocumentTitle(selectedTab));
 
   const urlForStatus = (statuses: RunStatus[]) => {
-    console.log('filter tokens', filterTokens);
-
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
     return runsPathWithFilters(
