@@ -1,13 +1,27 @@
 from typing import Iterable, Sequence
 
-from dagster import AssetMaterialization, AssetObservation, AssetSpec, Definitions
-from dagster_airlift.core import AssetEvent, build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster import (
+    AssetMaterialization,
+    AssetObservation,
+    AssetSpec,
+    Definitions,
+    SensorEvaluationContext,
+)
+from dagster_airlift.core import (
+    AirflowDefinitionsData,
+    AssetEvent,
+    build_defs_from_airflow_instance,
+    dag_defs,
+    task_defs,
+)
 
 from .airflow_instance import local_airflow_instance
 
 
 def observations_from_materializations(
-    _context, _airflow_data, materializations: Sequence[AssetMaterialization]
+    context: SensorEvaluationContext,
+    airflow_data: AirflowDefinitionsData,
+    materializations: Sequence[AssetMaterialization],
 ) -> Iterable[AssetEvent]:
     """Construct AssetObservations from AssetMaterializations."""
     for materialization in materializations:
