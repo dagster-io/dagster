@@ -1,3 +1,4 @@
+import functools
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -53,6 +54,7 @@ def assert_permission_for_location(
 
 def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
+        @functools.wraps(fn)
         def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             result = fn(self, graphene_info, *args, **kwargs)
 
@@ -68,6 +70,7 @@ def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], 
 
 def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
+        @functools.wraps(fn)
         def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             assert_permission(graphene_info, permission)
 
@@ -163,6 +166,7 @@ class ErrorCapture:
 def capture_error(
     fn: Callable[P, T],
 ) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
+    @functools.wraps(fn)
     def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return fn(*args, **kwargs)
