@@ -16,7 +16,6 @@ from dagster import (
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from dagster._core.definitions.tags import has_kind
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance_for_test import environ
 from dagster_fivetran import FivetranResource
@@ -165,7 +164,6 @@ def test_load_from_instance(
                         "=",
                         {},
                         database="example_database",
-                        service="snowflake",
                     ),
                     ".".join(t.path),
                 )
@@ -181,7 +179,6 @@ def test_load_from_instance(
                     "=",
                     {},
                     database="example_database",
-                    service="snowflake",
                 ),
                 "abc.xyz",
             )
@@ -216,7 +213,6 @@ def test_load_from_instance(
             assert metadata.get("dagster/relation_identifier") == (
                 "example_database." + ".".join(key.path[-2:])
             )
-            assert has_kind(assets_def.tags_by_key[key], "snowflake")
 
         assert ft_assets[0].keys == tables
         assert all(

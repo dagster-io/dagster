@@ -78,7 +78,7 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
     assert fivetran_assets[0].keys == {AssetKey(table.split(".")) for table in tables}
     assert len(fivetran_assets[0].op.output_defs) == len(tables)
 
-    assert fivetran_assets[0].op.tags == (op_tags or {})
+    assert fivetran_assets[0].op.tags == {"dagster/compute_kind": "fivetran", **(op_tags or {})}
 
     with responses.RequestsMock() as rsps:
         rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
