@@ -1,12 +1,15 @@
-from typing import AbstractSet, Any, Callable, Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, Iterable, Mapping, Sequence, Union
 
 from dagster import (
     AssetMaterialization,
+    AssetObservation,
     JsonMetadataValue,
     MarkdownMetadataValue,
+    SensorEvaluationContext,
     TimestampMetadataValue,
     _check as check,
 )
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._time import get_current_timestamp
 
@@ -14,14 +17,17 @@ from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
 
-AirflowEventTranslationFn = Callable[
-    [DagRun, Sequence[TaskInstance], AirflowDefinitionsData], Iterable[AssetMaterialization]
+AssetEvent = Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]
+DagsterEventTransformerFn = Callable[
+    [SensorEvaluationContext, AirflowDefinitionsData, Sequence[AssetMaterialization]],
+    Iterable[AssetEvent],
 ]
 
 
-def get_timestamp_from_materialization(mat: AssetMaterialization) -> float:
+def get_timestamp_from_materialization(event: AssetEvent) -> float:
     return check.float_param(
-        mat.metadata[EFFECTIVE_TIMESTAMP_METADATA_KEY].value, "Materialization Effective Timestamp"
+        event.metadata[EFFECTIVE_TIMESTAMP_METADATA_KEY].value,
+        "Materialization Effective Timestamp",
     )
 
 
