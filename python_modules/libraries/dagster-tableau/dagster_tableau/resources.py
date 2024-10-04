@@ -166,15 +166,28 @@ class BaseTableauClient:
 
     def add_data_quality_warning_to_data_source(
         self,
-        datasource_id: str,
+        data_source_id: str,
         warning_type: Optional[TSC.DQWItem.WarningType] = None,
         message: Optional[str] = None,
         active: Optional[bool] = None,
         severe: Optional[bool] = None,
-    ) -> List[TSC.DQWItem]:
-        """Add a data quality warning to a data source."""
-        datasource: TSC.DatasourceItem = self._server.datasources.get_by_id(
-            datasource_id=datasource_id
+    ) -> Sequence[TSC.DQWItem]:
+        """Add a data quality warning to a data source.
+
+        Args:
+            data_source_id (str): The ID of the data source for which a data quality warning is to be added.
+            warning_type (Optional[tableauserverclient.DQWItem.WarningType]): The warning type
+                for the data quality warning. Defaults to `TSC.DQWItem.WarningType.WARNING`.
+            message (Optional[str]): The message for the data quality warning. Defaults to `None`.
+            active (Optional[bool]): Whether the data quality warning is active or not. Defaults to `True`.
+            severe (Optional[bool]): Whether the data quality warning is sever or not. Defaults to `False`.
+
+        Returns:
+            Sequence[tableauserverclient.DQWItem]: The list of tableauserverclient.DQWItems which
+                exist for the data source.
+        """
+        data_source: TSC.DatasourceItem = self._server.datasources.get_by_id(
+            datasource_id=data_source_id
         )
         warning: TSC.DQWItem = TSC.DQWItem(
             warning_type=str(warning_type) or TSC.DQWItem.WarningType.WARNING,
@@ -182,7 +195,7 @@ class BaseTableauClient:
             active=active or True,
             severe=severe or False,
         )
-        return self._server.datasources.add_dqw(item=datasource, warning=warning)
+        return self._server.datasources.add_dqw(item=data_source, warning=warning)
 
     def sign_in(self) -> Auth.contextmgr:
         """Sign in to the site in Tableau."""

@@ -96,7 +96,7 @@ def test_add_data_quality_warning(
     resource = clazz(**resource_args)  # type: ignore
 
     with resource.get_client() as client:
-        client.add_data_quality_warning_to_data_source(datasource_id="fake_datasource_id")
+        client.add_data_quality_warning_to_data_source(data_source_id="fake_datasource_id")
 
     assert get_data_source_by_id.call_count == 1
     assert build_data_quality_warning_item.call_count == 1
