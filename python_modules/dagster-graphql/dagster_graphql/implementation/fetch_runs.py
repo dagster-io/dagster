@@ -561,9 +561,7 @@ def get_runs_feed_entries(
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
-    exclude_subruns = (
-        filters.exclude_subruns if filters and filters.exclude_subruns is not None else True
-    )
+    exclude_subruns = filters.exclude_subruns if filters else True
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1

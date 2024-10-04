@@ -48,7 +48,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
-    excludeSubruns = graphene.InputField(graphene.Boolean)
+    excludeSubruns = graphene.InputField(graphene.Boolean, default_value=False)
 
     class Meta:
         description = """This type represents a filter on Dagster runs."""
