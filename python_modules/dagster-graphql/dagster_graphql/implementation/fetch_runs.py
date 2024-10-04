@@ -26,6 +26,7 @@ from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._record import copy, record
 from dagster._time import datetime_from_timestamp
+from dagster._utils.warnings import disable_dagster_warnings
 
 from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
 
@@ -584,15 +585,17 @@ def get_runs_feed_entries(
             filters.exclude_subruns is None,
             "filters.exclude_subruns must be None when fetching the runs feed. Use include_runs_from_backfills instead.",
         )
-        run_filters = copy(filters, exclude_subruns=exclude_subruns)
-        run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
+        with disable_dagster_warnings():
+            run_filters = copy(filters, exclude_subruns=exclude_subruns)
+            run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
             _bulk_action_filters_from_run_filters(run_filters) if should_fetch_backfills else None
         )
     else:
-        run_filters = RunsFilter(
-            created_before=created_before_cursor, exclude_subruns=exclude_subruns
-        )
+        with disable_dagster_warnings():
+            run_filters = RunsFilter(
+                created_before=created_before_cursor, exclude_subruns=exclude_subruns
+            )
         backfill_filters = BulkActionsFilter(created_before=created_before_cursor)
 
     if should_fetch_backfills:
@@ -664,9 +667,10 @@ def get_runs_feed_entries(
 
 def get_runs_feed_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
     should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
-    run_filters = (
-        copy(filters, exclude_subruns=True) if filters else RunsFilter(exclude_subruns=True)
-    )
+    with disable_dagster_warnings():
+        run_filters = (
+            copy(filters, exclude_subruns=True) if filters else RunsFilter(exclude_subruns=True)
+        )
     if should_fetch_backfills:
         backfill_filters = _bulk_action_filters_from_run_filters(run_filters)
         backfills_count = graphene_info.context.instance.get_backfills_count(backfill_filters)
