@@ -25,7 +25,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
-from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
+from dagster._core.pipes.client import PipesContextInjector, PipesLaunchedData, PipesMessageReader
 from dagster._core.pipes.context import (
     PipesMessageHandler,
     PipesSession,
@@ -261,6 +261,7 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     counter: int
     log_readers: Sequence["PipesLogReader"]
     opened_payload: Optional[PipesOpenedData]
+    launched_payload: Optional[PipesLaunchedData]
 
     def __init__(
         self,
@@ -316,6 +317,9 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
     def on_opened(self, opened_payload: PipesOpenedData) -> None:
         self.opened_payload = opened_payload
+
+    def on_launched(self, launched_payload: PipesLaunchedData) -> None:
+        self.launched_payload = launched_payload
 
     @abstractmethod
     @contextmanager
