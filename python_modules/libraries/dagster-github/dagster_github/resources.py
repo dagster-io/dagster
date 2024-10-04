@@ -117,6 +117,8 @@ class GithubClient:
             headers=headers,
         )
         request.raise_for_status()
+        if "errors" in request.json():
+            raise RuntimeError(request.json()["errors"])
         return request.json()
 
     def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
