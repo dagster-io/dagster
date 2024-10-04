@@ -9,7 +9,7 @@ Kind tags can help you quickly identify the underlying system or technology used
 
 ## Adding Compute Kinds to assets
 
-You can add a tag to any asset by providing a value to the `compute_kind` argument.
+You can add a single compute kind to any asset by providing a value to the `compute_kind` argument.
 
 ```python
 @asset(compute_kind="dbt")
@@ -19,21 +19,20 @@ def my_asset():
 
 When viewing the asset in the lineage view, the compute kind will be visible at the bottom the asset. <Image src="/images/concepts/metadata-tags/kinds/kind-tag.png" width={1039} height={484} />
 
-## Adding multiple kinds to an asset
+## Adding multiple kinds to an asset <Experimental />
 
-<Experimental />
-
-Dagster supports adding up to three kinds to an asset, which is useful to represent multiple technologies or systems that an asset is associated with. For example, an asset which is built by Python code and stored in Snowflake can be tagged with both `python` and `snowflake` kinds.
+You may add up to three kinds to the `kinds` argument, which can be useful to represent multiple technologies or systems that an asset is associated with. For example, an asset which is built by Python code and stored in Snowflake can be tagged with both `python` and `snowflake` kinds.
 
 ```python file=/concepts/metadata-tags/asset_kinds.py
 from dagster import asset
 
 
 @asset(kinds={"python", "snowflake"})
-def my_stored_in_snowflake_asset(): ...
+def my_asset():
+    pass
 ```
 
-Kinds can be specified on an <PyObject object="AssetSpec" />, for use in multi-assets:
+Kinds can also be specified on an <PyObject object="AssetSpec" />, for use in multi-assets:
 
 ```python file=/concepts/metadata-tags/asset_kinds_multi.py
 from dagster import AssetSpec, multi_asset
@@ -45,7 +44,8 @@ from dagster import AssetSpec, multi_asset
         AssetSpec("bar", kinds={"python", "postgres"}),
     ]
 )
-def my_multi_asset(): ...
+def my_multi_asset():
+    pass
 ```
 
 ## Supported Icons

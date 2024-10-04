@@ -7,4 +7,5 @@ from dagster import AssetSpec, multi_asset
         AssetSpec("bar", kinds={"python", "postgres"}),
     ]
 )
-def my_multi_asset(): ...
+def my_multi_asset():
+    pass
