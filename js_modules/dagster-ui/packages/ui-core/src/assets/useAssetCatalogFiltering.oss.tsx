@@ -16,7 +16,7 @@ import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTa
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useAssetKindsForAssets, useKindFilter} from '../ui/Filters/useKindFilter';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const EMPTY_ARRAY: any[] = [];
@@ -189,7 +189,7 @@ export function useAssetCatalogFiltering<
     isEnabled,
   ]);
 
-  const filtered = React.useMemo(
+  const filteredAssets = React.useMemo(
     () => assets.filter((a) => filterFn(a.definition ?? {})),
     [filterFn, assets],
   ) as T[];
@@ -199,7 +199,8 @@ export function useAssetCatalogFiltering<
     filterButton: components.button,
     isFiltered,
     filterFn,
-    filtered,
+    filteredAssets,
+    filteredAssetsLoading: false,
     kindFilter,
     groupsFilter,
     renderFilterButton: components.renderButton,

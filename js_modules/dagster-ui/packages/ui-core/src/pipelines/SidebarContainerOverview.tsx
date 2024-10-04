@@ -11,7 +11,7 @@ import {gql} from '../apollo-client';
 import {breakOnUnderscores} from '../app/Util';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
-import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {findRepositoryAmongOptions, useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
 

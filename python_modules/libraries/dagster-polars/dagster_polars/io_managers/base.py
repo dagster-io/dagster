@@ -26,6 +26,7 @@ from dagster import (
     UPathIOManager,
     _check as check,
 )
+from dagster._utils.warnings import deprecation_warning
 from pydantic import PrivateAttr
 from pydantic.fields import Field
 
@@ -137,6 +138,14 @@ def _process_env_vars(config: Mapping[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def emit_storage_metadata_deprecation_warning() -> None:
+    deprecation_warning(
+        subject="dagster-polars storage metadata",
+        breaking_version="0.25.0",
+        additional_warn_text="Please use a multi-output asset or op to save metadata.",
+    )
+
+
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     """Base class for `dagster-polars` IOManagers.
 
@@ -229,6 +238,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         ],
         path: "UPath",
     ):
+        if self.needs_output_metadata(context):
+            emit_storage_metadata_deprecation_warning()
+
         typing_type = context.dagster_type.typing_type
 
         if annotation_is_typing_optional(typing_type) and (
@@ -282,9 +294,18 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         Tuple[pl.LazyFrame, Dict[str, Any]],
         None,
     ]:
+        if self.needs_output_metadata(context):
+            emit_storage_metadata_deprecation_warning()
+
         if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():
             context.log.warning(self.get_missing_optional_input_log_message(context, path))
             return None
+
+        # missing files detection in UPathIOManager doesn't work with `LazyFrame`
+        # since the FileNotFoundError is raised only when calling `.collect()` outside of the UPathIOManager
+        # as a workaround, we check if the file exists and if not, we raise the error here
+        if context.dagster_type.typing_type in POLARS_LAZY_FRAME_ANNOTATIONS and not path.exists():
+            raise FileNotFoundError(f"File {path} does not exist")
 
         assert context.definition_metadata is not None
 

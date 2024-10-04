@@ -1,5 +1,6 @@
 import qs from 'qs';
 import {useCallback, useContext, useEffect, useRef} from 'react';
+import {useAugmentSearchResults} from 'shared/search/useAugmentSearchResults.oss';
 
 import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -7,13 +8,14 @@ import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './typ
 import {
   SearchPrimaryQuery,
   SearchPrimaryQueryVariables,
+  SearchPrimaryQueryVersion,
   SearchSecondaryQuery,
   SearchSecondaryQueryVariables,
+  SearchSecondaryQueryVersion,
 } from './types/useGlobalSearch.types';
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
 import {gql} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
-import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -303,12 +305,6 @@ type IndexBuffer = {
   cancel: () => void;
 };
 
-// These are the versions of the primary and secondary data queries. They are used to
-// version the cache in indexedDB. When the data in the cache must be invalidated, this version
-// should be bumped to prevent fetching stale data.
-export const SEARCH_PRIMARY_DATA_VERSION = 1;
-export const SEARCH_SECONDARY_DATA_VERSION = 2;
-
 /**
  * Perform global search populated by two lazy queries, to be initialized upon some
  * interaction with the search input. Each query result list is packaged and sent to a worker
@@ -327,7 +323,6 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
-  const {useAugmentSearchResults} = useContext(CloudOSSContext);
   const augmentSearchResults = useAugmentSearchResults();
 
   const {localCacheIdPrefix} = useContext(AppContext);
@@ -339,7 +334,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
     query: SEARCH_PRIMARY_QUERY,
     key: `${localCacheIdPrefix}/SearchPrimary`,
-    version: SEARCH_PRIMARY_DATA_VERSION,
+    version: SearchPrimaryQueryVersion,
   });
 
   // Delete old database from before the prefix, remove this at some point
@@ -352,7 +347,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
     query: SEARCH_SECONDARY_QUERY,
     key: `${localCacheIdPrefix}/SearchSecondary`,
-    version: SEARCH_SECONDARY_DATA_VERSION,
+    version: SearchSecondaryQueryVersion,
   });
 
   // Delete old database from before the prefix, remove this at some point

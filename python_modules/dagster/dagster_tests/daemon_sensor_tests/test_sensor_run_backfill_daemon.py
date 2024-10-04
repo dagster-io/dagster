@@ -164,7 +164,7 @@ def test_backfill_request_sensor(instance: DagsterInstance, executor, sensor_nam
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -173,7 +173,7 @@ def test_backfill_request_sensor(instance: DagsterInstance, executor, sensor_nam
 
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         assert len(ticks) == 1
 
@@ -210,14 +210,14 @@ def test_asset_selection_outside_of_range(instance, executor):
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         validate_tick(
@@ -241,14 +241,14 @@ def test_invalid_partition(instance, executor):
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         # allow creating a backfill with an invalid partition. it will get caught in the daemon
@@ -271,14 +271,14 @@ def test_single_partition(instance, executor):
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         backfills = instance.get_backfills()
@@ -303,14 +303,14 @@ def test_backfill_and_run_request(instance, executor):
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                external_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         evaluate_sensors(workspace_context, executor)
         ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         backfills = instance.get_backfills()

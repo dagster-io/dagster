@@ -1,10 +1,23 @@
+from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Generic,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
+from dagster._core.definitions.asset_key import T_EntityKey, entity_key_from_db_string
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
@@ -250,8 +263,8 @@ class InstigatorState(
     @property
     def repository_selector(self) -> RepositorySelector:
         return RepositorySelector(
-            self.origin.repository_origin.code_location_origin.location_name,
-            self.origin.repository_origin.repository_name,
+            location_name=self.origin.repository_origin.code_location_origin.location_name,
+            repository_name=self.origin.repository_origin.repository_name,
         )
 
     @property
@@ -266,9 +279,9 @@ class InstigatorState(
     def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
-                self.origin.repository_origin.code_location_origin.location_name,
-                self.origin.repository_origin.repository_name,
-                self.origin.instigator_name,
+                location_name=self.origin.repository_origin.code_location_origin.location_name,
+                repository_name=self.origin.repository_origin.repository_name,
+                name=self.origin.instigator_name,
             )
         )
 
@@ -442,6 +455,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
         asset_partitions_from_single_runs = set()
         num_assets_requested_from_backfill_runs = 0
+        num_requested_checks = 0
         for run_request in self.tick_data.run_requests or []:
             if run_request.requires_backfill_daemon():
                 asset_graph_subset = check.not_none(run_request.asset_graph_subset)
@@ -453,7 +467,13 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
                     asset_partitions_from_single_runs.add(
                         AssetKeyPartitionKey(asset_key, run_request.partition_key)
                     )
-        return len(asset_partitions_from_single_runs) + num_assets_requested_from_backfill_runs
+                for asset_check_key in run_request.asset_check_keys or []:
+                    num_requested_checks += 1
+        return (
+            len(asset_partitions_from_single_runs)
+            + num_assets_requested_from_backfill_runs
+            + num_requested_checks
+        )
 
     @property
     def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
@@ -478,6 +498,12 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
                     if run_request.partition_key:
                         partitions_by_asset_key[asset_key].add(run_request.partition_key)
+                for asset_check_key in run_request.asset_check_keys or []:
+                    asset_key = asset_check_key.asset_key
+                    if asset_key not in partitions_by_asset_key:
+                        partitions_by_asset_key[asset_key] = set()
+
+                    partitions_by_asset_key[asset_key].add(asset_check_key.name)
 
         return partitions_by_asset_key
 
@@ -760,24 +786,25 @@ def _validate_tick_args(
         )
 
 
-class AutoMaterializeAssetEvaluationRecord(NamedTuple):
+@dataclass
+class AutoMaterializeAssetEvaluationRecord(Generic[T_EntityKey]):
     id: int
     serialized_evaluation_body: str
     evaluation_id: int
     timestamp: float
-    asset_key: AssetKey
+    key: T_EntityKey
 
     @classmethod
     def from_db_row(cls, row) -> "AutoMaterializeAssetEvaluationRecord":
-        return cls(
+        return AutoMaterializeAssetEvaluationRecord(
             id=row["id"],
             serialized_evaluation_body=row["asset_evaluation_body"],
             evaluation_id=row["evaluation_id"],
             timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
-            asset_key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
+            key=entity_key_from_db_string(row["asset_key"]),
         )
 
-    def get_evaluation_with_run_ids(self) -> AutomationConditionEvaluationWithRunIds:
+    def get_evaluation_with_run_ids(self) -> AutomationConditionEvaluationWithRunIds[T_EntityKey]:
         return deserialize_value(
             self.serialized_evaluation_body, AutomationConditionEvaluationWithRunIds
         )

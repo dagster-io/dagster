@@ -13,4 +13,3 @@ swap:
   '[Ss]oftware-defined [Aa]sset': &asset-def asset definition|asset
   '[Ss][Dd][Aa]': *asset-def
   '[Rr][Ee][Ss][Tt]\s*[Aa][Pp][Ii]': REST API
-

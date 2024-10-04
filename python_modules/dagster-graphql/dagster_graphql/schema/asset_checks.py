@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Sequence, Union, cast
+from typing import Optional, Sequence, Union, cast
 
 import dagster._check as check
 import graphene
@@ -8,8 +8,9 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationTargetMaterializationData,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.events import DagsterEventType
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
+from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
@@ -20,11 +21,6 @@ from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
-
-if TYPE_CHECKING:
-    from dagster_graphql.implementation.asset_checks_loader import (
-        AssetChecksExecutionForLatestMaterializationLoader,
-    )
 
 GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
     AssetCheckExecutionResolvedStatus
@@ -100,15 +96,11 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     class Meta:
         name = "AssetCheckExecution"
 
-    def __init__(
-        self,
-        execution: AssetCheckExecutionRecord,
-        status: AssetCheckExecutionResolvedStatus,
-    ):
+    def __init__(self, execution: AssetCheckExecutionRecord):
         super().__init__()
+        self._execution = execution
         self.id = str(execution.id)
         self.runId = execution.run_id
-        self.status = status
         self.evaluation = (
             GrapheneAssetCheckEvaluation(execution.event)
             if execution.event
@@ -117,6 +109,9 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
         )
         self.timestamp = execution.create_timestamp
         self.stepKey = execution.event.step_key if execution.event else None
+
+    def resolve_status(self, graphene_info: "ResolveInfo") -> AssetCheckExecutionResolvedStatus:
+        return self._execution.resolve_status(graphene_info.context)
 
 
 class GrapheneAssetCheckCanExecuteIndividually(graphene.Enum):
@@ -141,17 +136,11 @@ class GrapheneAssetCheck(graphene.ObjectType):
     class Meta:
         name = "AssetCheck"
 
-    def __init__(
-        self,
-        asset_check: ExternalAssetCheck,
-        can_execute_individually,
-        execution_loader: "AssetChecksExecutionForLatestMaterializationLoader",
-    ):
+    def __init__(self, asset_check: AssetCheckNodeSnap, can_execute_individually):
         self._asset_check = asset_check
         self._can_execute_individually = can_execute_individually
-        self._execution_loader = execution_loader
 
-    def resolve_assetKey(self, _):
+    def resolve_assetKey(self, _) -> AssetKey:
         return self._asset_check.asset_key
 
     def resolve_name(self, _) -> str:
@@ -163,11 +152,14 @@ class GrapheneAssetCheck(graphene.ObjectType):
     def resolve_jobNames(self, _) -> Sequence[str]:
         return self._asset_check.job_names
 
-    def resolve_executionForLatestMaterialization(
-        self, _graphene_info: ResolveInfo
+    async def resolve_executionForLatestMaterialization(
+        self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetCheckExecution]:
-        return self._execution_loader.get_execution_for_latest_materialization(
-            self._asset_check.key
+        record = await AssetCheckExecutionRecord.gen(graphene_info.context, self._asset_check.key)
+        return (
+            GrapheneAssetCheckExecution(record)
+            if record and record.targets_latest_materialization(graphene_info.context)
+            else None
         )
 
     def resolve_canExecuteIndividually(self, _) -> GrapheneAssetCheckCanExecuteIndividually:

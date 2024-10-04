@@ -52,7 +52,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -69,7 +69,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
     launch_process.join(timeout=60)
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 @pytest.mark.skipif(
@@ -83,7 +83,7 @@ def test_before_submit(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -115,7 +115,7 @@ def test_before_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert instance.get_runs_count() == 3
 
 
@@ -130,7 +130,7 @@ def test_crash_after_submit(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=external_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -162,5 +162,5 @@ def test_crash_after_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert instance.get_runs_count() == 3

@@ -4,8 +4,8 @@ from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
 from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
@@ -353,7 +353,7 @@ query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: Int!, $nodeUni
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
     def test_auto_materialize_sensor(self, graphql_context: WorkspaceRequestContext):
         sensor_origin = RemoteInstigatorOrigin(
-            repository_origin=infer_repository(graphql_context).get_external_origin(),
+            repository_origin=infer_repository(graphql_context).get_remote_origin(),
             instigator_name="my_auto_materialize_sensor",
         )
 
@@ -431,12 +431,12 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 description=description,
                 unique_id=str(random.randint(0, 100000000)),
             ),
-            true_subset=AssetSubset(
-                asset_key=asset_key,
+            true_subset=SerializableEntitySubset(
+                key=asset_key,
                 value=partitions_def.subset_with_partition_keys(true_partition_keys),
             ),
-            candidate_subset=AssetSubset(
-                asset_key=asset_key,
+            candidate_subset=SerializableEntitySubset(
+                key=asset_key,
                 value=partitions_def.subset_with_partition_keys(candidate_partition_keys),
             )
             if candidate_partition_keys

@@ -1,31 +1,38 @@
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, NewType, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type, TypeVar
 
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
     PartitionDimensionDefinition,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindow,
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
+from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
+from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
-    from dagster._core.definitions.data_version import CachingStaleStatusResolver
+    from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+        ValidAssetSubset,
+    )
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.instance import DagsterInstance
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey, EntityKey)
 
 
 class TemporalContext(NamedTuple):
@@ -53,207 +60,13 @@ class TemporalContext(NamedTuple):
     last_event_id: Optional[int]
 
 
-# We reserve the right to constraints on the AssetSubset that we are going to use
-# in AssetSlice internals. Adding a NewType enforces that we do that conversion
-# in one spot (see _slice_from_subset)
-_AssetSliceCompatibleSubset = NewType("_AssetSliceCompatibleSubset", ValidAssetSubset)
-
-
-def _slice_from_subset(
-    asset_graph_view: "AssetGraphView", subset: AssetSubset
-) -> Optional["AssetSlice"]:
-    partitions_def = asset_graph_view.asset_graph.get(subset.asset_key).partitions_def
-    if subset.is_compatible_with_partitions_def(partitions_def):
-        return _slice_from_valid_subset(
-            asset_graph_view,
-            subset
-            if isinstance(subset, ValidAssetSubset)
-            else ValidAssetSubset(asset_key=subset.asset_key, value=subset.value),
-        )
-    else:
-        return None
-
-
-def _slice_from_valid_subset(
-    asset_graph_view: "AssetGraphView", subset: ValidAssetSubset
-) -> "AssetSlice":
-    return AssetSlice(asset_graph_view, _AssetSliceCompatibleSubset(subset))
-
-
-class AssetSlice:
-    """An asset slice represents a set of partitions for a given asset key. It is
-    tied to a particular instance of an AssetGraphView, and is read-only.
-
-    With an asset slice you are able to traverse the set of partitions resident
-    in an asset graph at any point in time.
-
-    ```python
-        asset_graph_view_t0 = AssetGraphView.for_test(defs, effective_dt=some_date())
-
-        some_asset_slice = asset_graph_view_to.get_asset_slice(some_asset.key)
-
-        for parent_slice in some_asset_slice.compute_parent_slices().values():
-            # do something with the parent slice
-    ```
-
-    AssetSlice is read-only and tied to a specific AssetGraphView. Therefore
-    we can safely use cached methods and properties at will. However different methods
-    have different performance characterics so we have the following conventions:
-
-    Naming conventions
-    * Properties are guaranteed to be fast.
-    * Methods prefixed with `get_` do some work in-memory but are not hugely expensive.
-    * Methods prefixed with `compute_` do potentially expensive work, like compute
-      partition mappings and query the instance.
-
-      We also use this prefix to indicate that they fully materialize partition sets
-      These can potentially be very expensive if the underlying partition set has
-      an in-memory representation that involves large time windows. I.e. if the
-      underlying PartitionsSubset in the ValidAssetSubset is a
-      TimeWindowPartitionsSubset. Usage of these methods should be avoided if
-      possible if you are potentially dealing with slices with large time-based
-      partition windows.
-    """
-
-    def __init__(
-        self, asset_graph_view: "AssetGraphView", compatible_subset: _AssetSliceCompatibleSubset
-    ):
-        self._asset_graph_view = asset_graph_view
-        self._compatible_subset = compatible_subset
-
-    def convert_to_valid_asset_subset(self) -> ValidAssetSubset:
-        return self._compatible_subset
-
-    # only works for partitioned assets for now
-    def compute_partition_keys(self) -> AbstractSet[str]:
-        return {
-            check.not_none(akpk.partition_key, "No None partition keys")
-            for akpk in self._compatible_subset.asset_partitions
-        }
-
-    def expensively_compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        # this method requires computing all partition keys of the definition, which
-        # may be expensive
-        return self._compatible_subset.asset_partitions
-
-    @property
-    def asset_key(self) -> AssetKey:
-        return self._compatible_subset.asset_key
-
-    @property
-    def parent_keys(self) -> AbstractSet[AssetKey]:
-        return self._asset_graph_view.asset_graph.get(self.asset_key).parent_keys
-
-    @property
-    def child_keys(self) -> AbstractSet[AssetKey]:
-        return self._asset_graph_view.asset_graph.get(self.asset_key).child_keys
-
-    @property
-    def _partitions_def(self) -> Optional["PartitionsDefinition"]:
-        return self._asset_graph_view.asset_graph.get(self.asset_key).partitions_def
-
-    @cached_method
-    def compute_parent_slice(self, parent_asset_key: AssetKey) -> "AssetSlice":
-        return self._asset_graph_view.compute_parent_asset_slice(parent_asset_key, self)
-
-    @cached_method
-    def compute_child_slice(self, child_asset_key: AssetKey) -> "AssetSlice":
-        return self._asset_graph_view.compute_child_asset_slice(child_asset_key, self)
-
-    @cached_method
-    def compute_parent_slices(self) -> Mapping[AssetKey, "AssetSlice"]:
-        return {ak: self.compute_parent_slice(ak) for ak in self.parent_keys}
-
-    @cached_method
-    def compute_child_slices(self) -> Mapping[AssetKey, "AssetSlice"]:
-        return {ak: self.compute_child_slice(ak) for ak in self.child_keys}
-
-    def compute_difference(self, other: "AssetSlice") -> "AssetSlice":
-        return _slice_from_valid_subset(
-            self._asset_graph_view, self._compatible_subset - other.convert_to_valid_asset_subset()
-        )
-
-    def compute_union(self, other: "AssetSlice") -> "AssetSlice":
-        return _slice_from_valid_subset(
-            self._asset_graph_view, self._compatible_subset | other.convert_to_valid_asset_subset()
-        )
-
-    def compute_intersection(self, other: "AssetSlice") -> "AssetSlice":
-        return _slice_from_valid_subset(
-            self._asset_graph_view, self._compatible_subset & other.convert_to_valid_asset_subset()
-        )
-
-    def compute_intersection_with_partition_keys(
-        self, partition_keys: AbstractSet[str]
-    ) -> "AssetSlice":
-        """Return a new AssetSlice with only the given partition keys if they are in the slice."""
-        return self._asset_graph_view.compute_intersection_with_partition_keys(partition_keys, self)
-
-    @property
-    def time_windows(self) -> Sequence[TimeWindow]:
-        """Get the time windows for the asset slice. Only supports explicitly time-windowed partitions for now."""
-        tw_partitions_def = check.not_none(
-            self._time_window_partitions_def_in_context(), "Must be time windowed."
-        )
-
-        if isinstance(self._compatible_subset.subset_value, BaseTimeWindowPartitionsSubset):
-            return [
-                tw.to_public_time_window()
-                for tw in self._compatible_subset.subset_value.included_time_windows
-            ]
-        elif isinstance(self._compatible_subset.subset_value, AllPartitionsSubset):
-            last_tw = tw_partitions_def.get_last_partition_window(
-                self._asset_graph_view.effective_dt
-            )
-            return [TimeWindow(datetime.min, last_tw.end)] if last_tw else []
-        elif isinstance(self._compatible_subset.subset_value, DefaultPartitionsSubset):
-            check.inst(
-                self._partitions_def,
-                MultiPartitionsDefinition,
-                "Must be multi-partition if we got here.",
-            )
-            tw_partition_keys = set()
-            for multi_partition_key in check.is_list(
-                list(self._compatible_subset.subset_value.get_partition_keys()),
-                MultiPartitionKey,
-                "Keys must be multi partition keys.",
-            ):
-                tm_partition_key = next(iter(multi_partition_key.keys_by_dimension.values()))
-                tw_partition_keys.add(tm_partition_key)
-
-            subset_from_tw = tw_partitions_def.subset_with_partition_keys(tw_partition_keys)
-            check.inst(
-                subset_from_tw, BaseTimeWindowPartitionsSubset, "Must be time window subset."
-            )
-            if isinstance(subset_from_tw, BaseTimeWindowPartitionsSubset):
-                return [tw.to_public_time_window() for tw in subset_from_tw.included_time_windows]
-            else:
-                check.failed(
-                    f"Unsupported subset value in generated subset {self._compatible_subset.subset_value} created by keys {tw_partition_keys}"
-                )
-
-        check.failed(f"Unsupported subset value: {self._compatible_subset.subset_value}")
-
-    def _time_window_partitions_def_in_context(self) -> Optional[TimeWindowPartitionsDefinition]:
-        pd = self._partitions_def
-        if isinstance(pd, TimeWindowPartitionsDefinition):
-            return pd
-        if isinstance(pd, MultiPartitionsDefinition):
-            return pd.time_window_partitions_def if pd.has_time_window_dimension else None
-        return None
-
-    @property
-    def is_empty(self) -> bool:
-        return self._compatible_subset.is_empty
-
-
-class AssetGraphView:
+class AssetGraphView(LoadingContext):
     """The Asset Graph View. It is a view of the asset graph from the perspective of a specific
     temporal context.
 
     If the user wants to get a new view of the asset graph with a new effective date or last event
     id, they should create a new instance of an AssetGraphView. If they do not they will get
-    incorrect results because the AssetGraphView and its associated classes (like AssetSlice)
+    incorrect results because the AssetGraphView and its associated classes (like EntitySubset)
     cache results based on the effective date and last event id.
 
     ```python
@@ -277,44 +90,46 @@ class AssetGraphView:
         effective_dt: Optional[datetime] = None,
         last_event_id: Optional[int] = None,
     ):
-        from dagster._core.definitions.data_version import CachingStaleStatusResolver
         from dagster._core.instance import DagsterInstance
 
         instance = instance or DagsterInstance.ephemeral()
-        stale_resolver = CachingStaleStatusResolver(
-            instance=instance,
-            asset_graph=defs.get_asset_graph(),
-        )
-        check.invariant(stale_resolver.instance_queryer, "Ensure instance queryer is constructed")
         return AssetGraphView(
-            stale_resolver=stale_resolver,
             temporal_context=TemporalContext(
                 effective_dt=effective_dt or get_current_datetime(),
                 last_event_id=last_event_id or instance.event_log_storage.get_maximum_record_id(),
             ),
+            instance=instance,
+            asset_graph=defs.get_asset_graph(),
         )
 
     def __init__(
         self,
         *,
         temporal_context: TemporalContext,
-        stale_resolver: "CachingStaleStatusResolver",
+        instance: "DagsterInstance",
+        asset_graph: "BaseAssetGraph",
     ):
-        # Current these properties have the ability to be lazily constructed.
-        # We instead are going to try to retain the invariant that they are
-        # constructed upfront so that initialization time is well-understood
-        # and deterministic. If there are cheap operations that do not
-        # require these instances, we should move them to a different abstraction.
+        from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-        # ensure it is already constructed rather than created on demand
-        check.invariant(stale_resolver._instance_queryer)  # noqa: SLF001
-        # ensure it is already constructed rather than created on demand
-        check.invariant(stale_resolver._asset_graph)  # noqa: SLF001
-
-        # stale resolver has a CachingInstanceQueryer which has a DagsterInstance
-        # so just passing the CachingStaleStatusResolver is enough
-        self._stale_resolver = stale_resolver
         self._temporal_context = temporal_context
+        self._instance = instance
+        self._loaders = {}
+        self._asset_graph = asset_graph
+
+        self._queryer = CachingInstanceQueryer(
+            instance=instance,
+            asset_graph=asset_graph,
+            loading_context=self,
+            evaluation_time=temporal_context.effective_dt,
+        )
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
+    @property
+    def loaders(self) -> Dict[Type, DataLoader]:
+        return self._loaders
 
     @property
     def effective_dt(self) -> datetime:
@@ -326,11 +141,7 @@ class AssetGraphView:
 
     @property
     def asset_graph(self) -> "BaseAssetGraph[BaseAssetNode]":
-        return self._stale_resolver.asset_graph
-
-    @property
-    def _queryer(self) -> "CachingInstanceQueryer":
-        return self._stale_resolver.instance_queryer
+        return self._asset_graph
 
     # In our transitional period there are lots of code path that take
     # a AssetGraphView and then call methods on the queryer. This is
@@ -339,86 +150,142 @@ class AssetGraphView:
     def get_inner_queryer_for_back_compat(self) -> "CachingInstanceQueryer":
         return self._queryer
 
-    def _get_partitions_def(self, asset_key: "AssetKey") -> Optional["PartitionsDefinition"]:
-        return self.asset_graph.get(asset_key).partitions_def
-
-    @cached_method
-    def get_asset_slice(self, *, asset_key: "AssetKey") -> "AssetSlice":
-        # not compute_asset_slice because dynamic partitions store
-        # is just passed to AssetSubset.all, not invoked
-        return _slice_from_valid_subset(
-            self,
-            AssetSubset.all(
-                asset_key=asset_key,
-                partitions_def=self._get_partitions_def(asset_key),
-                dynamic_partitions_store=self._queryer,
-                current_time=self.effective_dt,
-            ),
-        )
-
-    def get_asset_slice_from_subset(self, subset: AssetSubset) -> Optional["AssetSlice"]:
-        if subset.is_compatible_with_partitions_def(self._get_partitions_def(subset.asset_key)):
-            return _slice_from_subset(self, subset)
+    def _get_partitions_def(self, key: T_EntityKey) -> Optional["PartitionsDefinition"]:
+        if isinstance(key, AssetKey):
+            return self.asset_graph.get(key).partitions_def
         else:
             return None
 
-    def get_asset_slice_from_valid_subset(self, subset: ValidAssetSubset) -> "AssetSlice":
-        return _slice_from_valid_subset(self, subset)
-
-    def get_asset_slice_from_asset_partitions(
-        self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
-    ) -> "AssetSlice":
-        asset_keys = {akpk.asset_key for akpk in asset_partitions}
-        check.invariant(len(asset_keys) == 1, "Must have exactly one asset key")
-        asset_key = asset_keys.pop()
-        return _slice_from_valid_subset(
-            self,
-            ValidAssetSubset.from_asset_partitions_set(
-                asset_key=asset_key,
-                partitions_def=self._get_partitions_def(asset_key),
-                asset_partitions_set=asset_partitions,
-            ),
+    @cached_method
+    def get_full_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
+        partitions_def = self._get_partitions_def(key)
+        value = (
+            AllPartitionsSubset(
+                partitions_def=partitions_def,
+                dynamic_partitions_store=self._queryer,
+                current_time=self.effective_dt,
+            )
+            if partitions_def
+            else True
         )
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     @cached_method
-    def get_empty_slice(self, *, asset_key: AssetKey) -> AssetSlice:
-        return _slice_from_valid_subset(
-            self,
-            AssetSubset.empty(asset_key, self._get_partitions_def(asset_key)),
-        )
+    def get_empty_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
+        partitions_def = self._get_partitions_def(key)
+        value = partitions_def.empty_subset() if partitions_def else False
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
-    def compute_parent_asset_slice(
-        self, parent_asset_key: AssetKey, asset_slice: AssetSlice
-    ) -> AssetSlice:
-        return _slice_from_valid_subset(
-            self,
-            self.asset_graph.get_parent_asset_subset(
-                dynamic_partitions_store=self._queryer,
-                parent_asset_key=parent_asset_key,
-                child_asset_subset=asset_slice.convert_to_valid_asset_subset(),
-                current_time=self.effective_dt,
-            ),
-        )
+    def get_subset_from_serializable_subset(
+        self, serializable_subset: SerializableEntitySubset[T_EntityKey]
+    ) -> Optional[EntitySubset[T_EntityKey]]:
+        if serializable_subset.is_compatible_with_partitions_def(
+            self._get_partitions_def(serializable_subset.key)
+        ):
+            return EntitySubset(
+                self,
+                key=serializable_subset.key,
+                value=_ValidatedEntitySubsetValue(serializable_subset.value),
+            )
+        else:
+            return None
 
-    def compute_child_asset_slice(
-        self, child_asset_key: "AssetKey", asset_slice: AssetSlice
-    ) -> "AssetSlice":
-        return _slice_from_valid_subset(
-            self,
-            self.asset_graph.get_child_asset_subset(
+    def legacy_get_asset_subset_from_valid_subset(
+        self, subset: "ValidAssetSubset"
+    ) -> EntitySubset[AssetKey]:
+        return EntitySubset(self, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value))
+
+    def get_asset_subset_from_asset_partitions(
+        self, key: AssetKey, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+    ) -> EntitySubset[AssetKey]:
+        check.invariant(
+            all(akpk.asset_key == key for akpk in asset_partitions),
+            "All asset partitions must match input asset key.",
+        )
+        partition_keys = {
+            akpk.partition_key for akpk in asset_partitions if akpk.partition_key is not None
+        }
+        partitions_def = self._get_partitions_def(key)
+        value = (
+            partitions_def.subset_with_partition_keys(partition_keys)
+            if partitions_def
+            else bool(asset_partitions)
+        )
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def compute_parent_subset(
+        self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]
+    ) -> EntitySubset[AssetKey]:
+        check.invariant(
+            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
+        )
+        return self.compute_mapped_subset(parent_key, subset)
+
+    def compute_child_subset(
+        self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
+    ) -> EntitySubset[T_EntityKey]:
+        check.invariant(
+            child_key in self.asset_graph.get(subset.key).child_entity_keys,
+        )
+        return self.compute_mapped_subset(child_key, subset)
+
+    def compute_mapped_subset(
+        self, to_key: T_EntityKey, from_subset: EntitySubset
+    ) -> EntitySubset[T_EntityKey]:
+        from_key = from_subset.key
+        from_partitions_def = self.asset_graph.get(from_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+
+        partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
+
+        if from_key in self.asset_graph.get(to_key).parent_entity_keys:
+            if from_partitions_def is None or to_partitions_def is None:
+                return (
+                    self.get_empty_subset(key=to_key)
+                    if from_subset.is_empty
+                    else self.get_full_subset(key=to_key)
+                )
+            to_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
+                upstream_partitions_subset=from_subset.get_internal_subset_value(),
+                upstream_partitions_def=from_partitions_def,
+                downstream_partitions_def=to_partitions_def,
                 dynamic_partitions_store=self._queryer,
-                child_asset_key=child_asset_key,
                 current_time=self.effective_dt,
-                parent_asset_subset=asset_slice.convert_to_valid_asset_subset(),
-            ),
+            )
+        else:
+            if to_partitions_def is None or from_subset.is_empty:
+                return (
+                    self.get_empty_subset(key=to_key)
+                    if from_subset.is_empty
+                    else self.get_full_subset(key=to_key)
+                )
+            to_partitions_subset = (
+                partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                    downstream_partitions_subset=from_subset.get_internal_subset_value()
+                    if from_partitions_def is not None
+                    else None,
+                    downstream_partitions_def=from_partitions_def,
+                    upstream_partitions_def=to_partitions_def,
+                    dynamic_partitions_store=self._queryer,
+                    current_time=self.effective_dt,
+                ).partitions_subset
+            )
+
+        return EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(to_partitions_subset),
         )
 
     def compute_intersection_with_partition_keys(
-        self, partition_keys: AbstractSet[str], asset_slice: AssetSlice
-    ) -> "AssetSlice":
-        """Return a new AssetSlice with only the given partition keys if they are in the slice."""
+        self, partition_keys: AbstractSet[str], asset_subset: EntitySubset[AssetKey]
+    ) -> EntitySubset[AssetKey]:
+        """Return a new EntitySubset with only the given partition keys if they are in the subset."""
+        if not partition_keys:
+            return self.get_empty_subset(key=asset_subset.key)
+
         partitions_def = check.not_none(
-            self._get_partitions_def(asset_slice.asset_key), "Must have partitions def"
+            self._get_partitions_def(asset_subset.key), "Must have partitions def"
         )
         for partition_key in partition_keys:
             if not partitions_def.has_partition_key(
@@ -430,31 +297,28 @@ class AssetGraphView:
                     f"Partition key {partition_key} not in partitions def {partitions_def}"
                 )
 
-        return _slice_from_valid_subset(
-            self,
-            asset_slice.convert_to_valid_asset_subset()
-            & AssetSubset.from_partition_keys(
-                asset_slice.asset_key, partitions_def, partition_keys
-            ),
+        keys_subset = self.get_asset_subset_from_asset_partitions(
+            asset_subset.key, {AssetKeyPartitionKey(asset_subset.key, pk) for pk in partition_keys}
         )
+        return asset_subset.compute_intersection(keys_subset)
 
-    def compute_latest_time_window_slice(
+    def compute_latest_time_window_subset(
         self, asset_key: AssetKey, lookback_delta: Optional[timedelta] = None
-    ) -> AssetSlice:
-        """Compute the slice of the asset which exists within the latest time partition window. If
-        the asset has no time dimension, this will always return the full slice. If
+    ) -> EntitySubset[AssetKey]:
+        """Compute the subset of the asset which exists within the latest time partition window. If
+        the asset has no time dimension, this will always return the full subset. If
         lookback_delta is provided, all partitions that are up to that timedelta before the
         end of the latest time partition window will be included.
         """
         partitions_def = self._get_partitions_def(asset_key)
         time_partitions_def = get_time_partitions_def(partitions_def)
         if time_partitions_def is None:
-            # if the asset has no time dimension, then return a full slice
-            return self.get_asset_slice(asset_key=asset_key)
+            # if the asset has no time dimension, then return a full subset
+            return self.get_full_subset(key=asset_key)
 
         latest_time_window = time_partitions_def.get_last_partition_window(self.effective_dt)
         if latest_time_window is None:
-            return self.get_empty_slice(asset_key=asset_key)
+            return self.get_empty_subset(key=asset_key)
 
         # the time window in which to look for partitions
         time_window = (
@@ -471,18 +335,18 @@ class AssetGraphView:
         )
 
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            return self._build_time_partition_slice(asset_key, partitions_def, time_window)
+            return self._build_time_partition_subset(asset_key, partitions_def, time_window)
         elif isinstance(partitions_def, MultiPartitionsDefinition):
-            return self._build_multi_partition_slice(
+            return self._build_multi_partition_subset(
                 asset_key, self._get_multi_dim_info(asset_key), time_window
             )
         else:
             check.failed(f"Unsupported partitions_def: {partitions_def}")
 
-    def compute_missing_subslice(
-        self, asset_key: "AssetKey", from_slice: "AssetSlice"
-    ) -> "AssetSlice":
-        """Returns a slice which is the subset of the input slice that has never been materialized
+    def compute_missing_subset(
+        self, asset_key: "AssetKey", from_subset: EntitySubset[AssetKey]
+    ) -> EntitySubset[AssetKey]:
+        """Returns a subset which is the subset of the input subset that has never been materialized
         (if it is a materializable asset) or observered (if it is an observable asset).
         """
         # TODO: this logic should be simplified once we have a unified way of detecting both
@@ -492,53 +356,40 @@ class AssetGraphView:
         if self.asset_graph.get(asset_key).is_materializable:
             # cheap call which takes advantage of the partition status cache
             materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
-            materialized_slice = self.get_asset_slice_from_valid_subset(materialized_subset)
-            return from_slice.compute_difference(materialized_slice)
+            materialized_subset = EntitySubset(
+                self, key=asset_key, value=_ValidatedEntitySubsetValue(materialized_subset.value)
+            )
+            return from_subset.compute_difference(materialized_subset)
         else:
             # more expensive call
             missing_asset_partitions = {
                 ap
-                for ap in from_slice.convert_to_valid_asset_subset().asset_partitions
+                for ap in from_subset.expensively_compute_asset_partitions()
                 if not self._queryer.asset_partition_has_materialization_or_observation(ap)
             }
-            missing_subset = ValidAssetSubset.from_asset_partitions_set(
-                asset_key, self._get_partitions_def(asset_key), missing_asset_partitions
+            return self.get_asset_subset_from_asset_partitions(
+                key=asset_key, asset_partitions=missing_asset_partitions
             )
-            return self.get_asset_slice_from_valid_subset(missing_subset)
 
     @cached_method
-    def compute_in_progress_asset_slice(self, *, asset_key: "AssetKey") -> "AssetSlice":
-        return _slice_from_valid_subset(
-            self, self._queryer.get_in_progress_asset_subset(asset_key=asset_key)
-        )
+    def compute_in_progress_asset_subset(self, *, asset_key: AssetKey) -> EntitySubset[AssetKey]:
+        # part of in progress run
+        value = self._queryer.get_in_progress_asset_subset(asset_key=asset_key).value
+        return EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
 
     @cached_method
-    def compute_failed_asset_slice(self, *, asset_key: "AssetKey") -> "AssetSlice":
-        return _slice_from_valid_subset(
-            self, self._queryer.get_failed_asset_subset(asset_key=asset_key)
-        )
+    def compute_failed_asset_subset(self, *, asset_key: "AssetKey") -> EntitySubset[AssetKey]:
+        value = self._queryer.get_failed_asset_subset(asset_key=asset_key).value
+        return EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
 
     @cached_method
-    def compute_updated_since_cursor_slice(
+    def compute_updated_since_cursor_subset(
         self, *, asset_key: AssetKey, cursor: Optional[int]
-    ) -> AssetSlice:
-        subset = self._queryer.get_asset_subset_updated_after_cursor(
+    ) -> EntitySubset[AssetKey]:
+        value = self._queryer.get_asset_subset_updated_after_cursor(
             asset_key=asset_key, after_cursor=cursor
-        )
-        return self.get_asset_slice_from_valid_subset(subset)
-
-    @cached_method
-    def compute_parent_updated_since_cursor_slice(
-        self, *, asset_key: AssetKey, cursor: Optional[int]
-    ) -> AssetSlice:
-        result_slice = self.get_empty_slice(asset_key=asset_key)
-        for parent_key in self.asset_graph.get(asset_key).parent_keys:
-            result_slice = result_slice.compute_union(
-                self.compute_updated_since_cursor_slice(
-                    asset_key=parent_key, cursor=cursor
-                ).compute_child_slice(asset_key)
-            )
-        return result_slice
+        ).value
+        return EntitySubset(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
 
     class MultiDimInfo(NamedTuple):
         tw_dim: PartitionDimensionDefinition
@@ -565,30 +416,40 @@ class AssetGraphView:
             secondary_dim=partitions_def.secondary_dimension,
         )
 
-    def _build_time_partition_slice(
+    def _build_time_partition_subset(
         self,
         asset_key: AssetKey,
         partitions_def: TimeWindowPartitionsDefinition,
         time_window: TimeWindow,
-    ) -> "AssetSlice":
-        return self.get_asset_slice(asset_key=asset_key).compute_intersection_with_partition_keys(
-            set(partitions_def.get_partition_keys_in_time_window(time_window))
+    ) -> EntitySubset[AssetKey]:
+        return self.get_full_subset(key=asset_key).compute_intersection(
+            self.get_asset_subset_from_asset_partitions(
+                asset_key,
+                {
+                    AssetKeyPartitionKey(asset_key, pk)
+                    for pk in partitions_def.get_partition_keys_in_time_window(time_window)
+                },
+            )
         )
 
-    def _build_multi_partition_slice(
+    def _build_multi_partition_subset(
         self, asset_key: AssetKey, multi_dim_info: MultiDimInfo, time_window: TimeWindow
-    ) -> "AssetSlice":
+    ) -> EntitySubset[AssetKey]:
         # Note: Potential perf improvement here. There is no way to encode a cartesian product
         # in the underlying PartitionsSet. We could add a specialized PartitionsSubset
         # subclass that itself composed two PartitionsSubset to avoid materializing the entire
         # partitions range.
-        return self.get_asset_slice(asset_key=asset_key).compute_intersection_with_partition_keys(
+        return self.get_asset_subset_from_asset_partitions(
+            asset_key,
             {
-                MultiPartitionKey(
-                    {
-                        multi_dim_info.tw_dim.name: tw_pk,
-                        multi_dim_info.secondary_dim.name: secondary_pk,
-                    }
+                AssetKeyPartitionKey(
+                    asset_key,
+                    MultiPartitionKey(
+                        {
+                            multi_dim_info.tw_dim.name: tw_pk,
+                            multi_dim_info.secondary_dim.name: secondary_pk,
+                        }
+                    ),
                 )
                 for tw_pk in multi_dim_info.tw_partition_def.get_partition_keys_in_time_window(
                     time_window
@@ -597,5 +458,5 @@ class AssetGraphView:
                     current_time=self.effective_dt,
                     dynamic_partitions_store=self._queryer,
                 )
-            }
+            },
         )

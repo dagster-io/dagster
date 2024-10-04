@@ -1,8 +1,9 @@
 import base64
 import random
 import string
+import sys
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Iterator, List, Optional, Sequence, TypedDict
+from typing import Any, Dict, Generator, Iterator, List, Optional, Sequence, TextIO, TypedDict
 
 import boto3
 import dagster._check as check
@@ -13,6 +14,7 @@ from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
     PipesLogReader,
+    extract_message_or_forward_to_file,
     extract_message_or_forward_to_stdout,
 )
 from dagster_pipes import PipesDefaultMessageWriter
@@ -139,6 +141,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         log_stream: str,
         start_time: Optional[int] = None,
         end_time: Optional[int] = None,
+        output_file: TextIO = sys.stdout,
     ) -> None:
         """Reads logs from AWS CloudWatch and forwards them to Dagster for events extraction and logging.
 
@@ -151,6 +154,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
             end_time (Optional[int]): The end of the time range, expressed as the number of
                 milliseconds after ``Jan 1, 1970 00:00:00 UTC``. Events with a timestamp equal to or
                 later than this time are not included.
+            output_file: (Optional[TextIO]): A file to write the logs to. Defaults to sys.stdout.
         """
         handler = check.not_none(
             self._handler, "Can only consume logs within context manager scope."
@@ -161,7 +165,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         ):
             for event in events_batch:
                 for log_line in event["message"].splitlines():
-                    extract_message_or_forward_to_stdout(handler, log_line)
+                    extract_message_or_forward_to_file(handler, log_line, output_file)
 
     def no_messages_debug_text(self) -> str:
         return "Attempted to read messages by extracting them from CloudWatch logs directly."

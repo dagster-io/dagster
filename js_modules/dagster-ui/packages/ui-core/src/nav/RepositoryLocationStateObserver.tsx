@@ -7,7 +7,7 @@ import {
 } from './types/RepositoryLocationStateObserver.types';
 import {gql, useApolloClient, useSubscription} from '../apollo-client';
 import {LocationStateChangeEventType} from '../graphql/types';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
   subscription LocationStateChangeSubscription {

@@ -13,7 +13,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
-import {runsPathWithFilters} from '../runs/RunsFilterInput';
+import {getBackfillPath} from '../runs/RunsFeedUtils';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -72,14 +72,7 @@ export async function showBackfillSuccessToast(
   backfillId: string,
   isAssetBackfill: boolean,
 ) {
-  const url = isAssetBackfill
-    ? `/overview/backfills/${backfillId}`
-    : runsPathWithFilters([
-        {
-          token: 'tag',
-          value: `dagster/backfill=${backfillId}`,
-        },
-      ]);
+  const url = getBackfillPath(backfillId, isAssetBackfill);
   const [pathname, search] = url.split('?');
   await showSharedToaster({
     intent: 'success',

@@ -24,18 +24,18 @@ def test_peer_reflects_dag_completion_status_and_runs_check(
     instance = DagsterInstance.get()
 
     mat_event = instance.get_latest_materialization_event(
-        AssetKey(["airflow_instance", "dag", "rebuild_customers_list"])
+        AssetKey(["airflow_instance_one", "dag", "rebuild_customers_list"])
     )
     assert mat_event is None
 
     start_run_and_wait_for_completion("rebuild_customers_list")
 
     poll_for_materialization(
-        instance, target=AssetKey(["airflow_instance", "dag", "rebuild_customers_list"])
+        instance, target=AssetKey(["airflow_instance_one", "dag", "rebuild_customers_list"])
     )
 
     check_key = AssetCheckKey(
-        asset_key=AssetKey(["airflow_instance", "dag", "rebuild_customers_list"]),
+        asset_key=AssetKey(["airflow_instance_one", "dag", "rebuild_customers_list"]),
         name="validate_exported_csv",
     )
     check_result = poll_for_asset_check(instance, target=check_key)

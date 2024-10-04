@@ -6,9 +6,14 @@ from dagster._core.definitions.declarative_automation.operators.boolean_operator
     NotAutomationCondition as NotAutomationCondition,
     OrAutomationCondition as OrAutomationCondition,
 )
+from dagster._core.definitions.declarative_automation.operators.check_operators import (
+    AllChecksCondition as AllChecksCondition,
+    AnyChecksCondition as AnyChecksCondition,
+)
 from dagster._core.definitions.declarative_automation.operators.dep_operators import (
     AllDepsCondition as AllDepsCondition,
     AnyDepsCondition as AnyDepsCondition,
+    EntityMatchesCondition as EntityMatchesCondition,
 )
 from dagster._core.definitions.declarative_automation.operators.newly_true_operator import (
     NewlyTrueCondition as NewlyTrueCondition,

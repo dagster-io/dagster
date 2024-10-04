@@ -21,12 +21,12 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, AssetKeyOrCheckKey
-from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -69,10 +69,42 @@ class ParentsPartitionsResult(NamedTuple):
     required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
-class BaseAssetNode(ABC):
+class BaseEntityNode(ABC, Generic[T_EntityKey]):
+    key: T_EntityKey
+
+    @property
+    @abstractmethod
+    def partitions_def(self) -> Optional[PartitionsDefinition]: ...
+
+    @property
+    @abstractmethod
+    def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]: ...
+
+    @property
+    @abstractmethod
+    def automation_condition(self) -> Optional["AutomationCondition[T_EntityKey]"]: ...
+
+    @property
+    @abstractmethod
+    def parent_entity_keys(self) -> AbstractSet[EntityKey]: ...
+
+    @property
+    @abstractmethod
+    def child_entity_keys(self) -> AbstractSet[EntityKey]: ...
+
+
+class BaseAssetNode(BaseEntityNode[AssetKey]):
     key: AssetKey
     parent_keys: AbstractSet[AssetKey]
     child_keys: AbstractSet[AssetKey]
+
+    @property
+    def parent_entity_keys(self) -> AbstractSet[AssetKey]:
+        return self.parent_keys
+
+    @property
+    def child_entity_keys(self) -> AbstractSet[EntityKey]:
+        return self.child_keys | self.check_keys
 
     @property
     def has_self_dependency(self) -> bool:
@@ -120,23 +152,11 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def partitions_def(self) -> Optional[PartitionsDefinition]: ...
-
-    @property
-    @abstractmethod
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]: ...
-
-    @property
-    @abstractmethod
     def freshness_policy(self) -> Optional[FreshnessPolicy]: ...
 
     @property
     @abstractmethod
     def auto_materialize_policy(self) -> Optional["AutoMaterializePolicy"]: ...
-
-    @property
-    @abstractmethod
-    def automation_condition(self) -> Optional["AutomationCondition"]: ...
 
     @property
     @abstractmethod
@@ -160,7 +180,7 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def execution_set_asset_and_check_keys(
+    def execution_set_entity_keys(
         self,
     ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]: ...
 
@@ -168,27 +188,81 @@ class BaseAssetNode(ABC):
         return f"{self.__class__.__name__}<{self.key.to_user_string()}>"
 
 
+class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
+    def __init__(
+        self,
+        key: AssetCheckKey,
+        blocking: bool,
+        automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
+    ):
+        self.key = key
+        self.blocking = blocking
+        self._automation_condition = automation_condition
+
+    @property
+    def parent_entity_keys(self) -> AbstractSet[AssetKey]:
+        return {self.key.asset_key}
+
+    @property
+    def child_entity_keys(self) -> AbstractSet[EntityKey]:
+        return {self.key.asset_key}
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        # all checks are unpartitioned
+        return None
+
+    @property
+    def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]:
+        return {}
+
+    @property
+    def automation_condition(self) -> Optional["AutomationCondition[AssetCheckKey]"]:
+        return self._automation_condition
+
+
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
 
 
 class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     _asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
+    _asset_check_nodes_by_key: Mapping[AssetCheckKey, AssetCheckNode]
 
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:
         return self._asset_nodes_by_key.values()
 
+    @property
+    def nodes(self) -> Iterable[BaseEntityNode]:
+        return [*self._asset_nodes_by_key.values(), *self._asset_check_nodes_by_key.values()]
+
     def has(self, asset_key: AssetKey) -> bool:
         return asset_key in self._asset_nodes_by_key
 
-    def get(self, asset_key: AssetKey) -> T_AssetNode:
-        return self._asset_nodes_by_key[asset_key]
+    @overload
+    def get(self, key: AssetKey) -> T_AssetNode: ...
+
+    @overload
+    def get(self, key: AssetCheckKey) -> AssetCheckNode: ...
+
+    def get(self, key: EntityKey) -> Union[T_AssetNode, AssetCheckNode]:
+        if isinstance(key, AssetKey):
+            return self._asset_nodes_by_key[key]
+        else:
+            return self._asset_check_nodes_by_key[key]
 
     @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
         return {
             "upstream": {node.key: node.parent_keys for node in self.asset_nodes},
             "downstream": {node.key: node.child_keys for node in self.asset_nodes},
+        }
+
+    @cached_property
+    def entity_dep_graph(self) -> DependencyGraph[EntityKey]:
+        return {
+            "upstream": {node.key: node.parent_entity_keys for node in self.nodes},
+            "downstream": {node.key: node.child_entity_keys for node in self.nodes},
         }
 
     @cached_property
@@ -224,6 +298,18 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             item
             for items_in_level in toposort(self.asset_dep_graph["upstream"])
             for item in sorted(items_in_level)
+        ]
+
+    @cached_property
+    def toposorted_entity_keys(self) -> Sequence[EntityKey]:
+        """Return topologically sorted entity keys in graph. Keys with the same topological level are
+        sorted alphabetically to provide stability.
+        """
+        sort_key = lambda e: (e, None) if isinstance(e, AssetKey) else (e.asset_key, e.name)
+        return [
+            item
+            for items_in_level in toposort(self.entity_dep_graph["upstream"], sort_key=sort_key)
+            for item in sorted(items_in_level, key=sort_key)
         ]
 
     @cached_property
@@ -279,9 +365,9 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return {a.group_name for a in self.asset_nodes if a.group_name is not None}
 
     def get_partition_mapping(
-        self, asset_key: AssetKey, parent_asset_key: AssetKey
+        self, key: T_EntityKey, parent_asset_key: EntityKey
     ) -> PartitionMapping:
-        node = self.get(asset_key)
+        node = self.get(key)
         return infer_partition_mapping(
             node.partition_mappings.get(parent_asset_key),
             node.partitions_def,
@@ -330,73 +416,6 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             AssetKeyPartitionKey(asset_key, partition_key)
             for partition_key in partition_keys_in_range
         ]
-
-    def get_parent_asset_subset(
-        self,
-        child_asset_subset: ValidAssetSubset,
-        parent_asset_key: AssetKey,
-        dynamic_partitions_store: DynamicPartitionsStore,
-        current_time: datetime,
-    ) -> ValidAssetSubset:
-        """Given a child AssetSubset, returns the corresponding parent AssetSubset, based on the
-        relevant PartitionMapping.
-        """
-        child_asset_key = child_asset_subset.asset_key
-        child_partitions_def = self.get(child_asset_key).partitions_def
-        parent_partitions_def = self.get(parent_asset_key).partitions_def
-
-        if parent_partitions_def is None:
-            return ValidAssetSubset(
-                asset_key=parent_asset_key, value=not child_asset_subset.is_empty
-            )
-
-        partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
-        parent_partitions_subset = (
-            partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                child_asset_subset.subset_value if child_partitions_def is not None else None,
-                downstream_partitions_def=child_partitions_def,
-                upstream_partitions_def=parent_partitions_def,
-                dynamic_partitions_store=dynamic_partitions_store,
-                current_time=current_time,
-            )
-        ).partitions_subset
-
-        return ValidAssetSubset(asset_key=parent_asset_key, value=parent_partitions_subset)
-
-    def get_child_asset_subset(
-        self,
-        parent_asset_subset: ValidAssetSubset,
-        child_asset_key: AssetKey,
-        dynamic_partitions_store: DynamicPartitionsStore,
-        current_time: datetime,
-    ) -> ValidAssetSubset:
-        """Given a parent AssetSubset, returns the corresponding child AssetSubset, based on the
-        relevant PartitionMapping.
-        """
-        parent_asset_key = parent_asset_subset.asset_key
-        parent_partitions_def = self.get(parent_asset_key).partitions_def
-        child_partitions_def = self.get(child_asset_key).partitions_def
-
-        if parent_partitions_def is None:
-            if parent_asset_subset.size > 0:
-                return ValidAssetSubset.all(
-                    child_asset_key, child_partitions_def, dynamic_partitions_store, current_time
-                )
-            else:
-                return ValidAssetSubset.empty(child_asset_key, child_partitions_def)
-
-        if child_partitions_def is None:
-            return ValidAssetSubset(asset_key=child_asset_key, value=parent_asset_subset.size > 0)
-        else:
-            partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
-            child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
-                parent_asset_subset.subset_value,
-                parent_partitions_def,
-                downstream_partitions_def=child_partitions_def,
-                dynamic_partitions_store=dynamic_partitions_store,
-                current_time=current_time,
-            )
-            return ValidAssetSubset(asset_key=child_asset_key, value=child_partitions_subset)
 
     def get_children_partitions(
         self,
@@ -599,8 +618,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
     @abstractmethod
     def get_execution_set_asset_and_check_keys(
-        self, asset_key_or_check_key: AssetKeyOrCheckKey
-    ) -> AbstractSet[AssetKeyOrCheckKey]:
+        self, asset_key_or_check_key: EntityKey
+    ) -> AbstractSet[EntityKey]:
         """For a given asset/check key, return the set of asset/check keys that must be
         materialized/computed at the same time.
         """
@@ -782,10 +801,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         return result, failed_reasons
 
-    def split_asset_keys_by_repository(
-        self, asset_keys: AbstractSet[AssetKey]
-    ) -> Sequence[AbstractSet[AssetKey]]:
-        return [asset_keys]
+    def split_entity_keys_by_repository(
+        self, keys: AbstractSet[EntityKey]
+    ) -> Sequence[AbstractSet[EntityKey]]:
+        return [keys]
 
     def __hash__(self) -> int:
         return id(self)

@@ -32,6 +32,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
     partition_statuses_from_run_partition_data,
 )
+from dagster_graphql.implementation.utils import has_permission_for_asset_graph
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
@@ -118,6 +119,8 @@ class GrapheneBulkActionStatus(graphene.Enum):
     FAILED = "FAILED"
     CANCELED = "CANCELED"
     CANCELING = "CANCELING"
+    COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
+    COMPLETED_FAILED = "COMPLETED_FAILED"
 
     class Meta:
         name = "BulkActionStatus"
@@ -130,6 +133,10 @@ class GrapheneBulkActionStatus(graphene.Enum):
             return GrapheneRunStatus.STARTED  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_SUCCESS.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:  # pyright: ignore[reportAttributeAccessIssue]
@@ -371,7 +378,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     jobName = graphene.Field(
         graphene.String(),
-        description="Included to comply with RunsFeedEntry interface. Duplicate of partitionSetName.",
+        description="Included to comply with RunsFeedEntry interface.",
     )
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
@@ -386,7 +393,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         super().__init__(
             id=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
-            jobName=backfill_job.partition_set_name,
+            jobName=backfill_job.job_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
@@ -616,6 +623,13 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return None
 
     def resolve_hasCancelPermission(self, graphene_info: ResolveInfo) -> bool:
+        if self._backfill_job.is_asset_backfill:
+            return has_permission_for_asset_graph(
+                graphene_info,
+                graphene_info.context.asset_graph,
+                self._backfill_job.asset_selection,
+                Permissions.CANCEL_PARTITION_BACKFILL,
+            )
         if self._backfill_job.partition_set_origin is None:
             return graphene_info.context.has_permission(Permissions.CANCEL_PARTITION_BACKFILL)
         location_name = self._backfill_job.partition_set_origin.selector.location_name
@@ -624,6 +638,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_hasResumePermission(self, graphene_info: ResolveInfo) -> bool:
+        if self._backfill_job.is_asset_backfill:
+            return has_permission_for_asset_graph(
+                graphene_info,
+                graphene_info.context.asset_graph,
+                self._backfill_job.asset_selection,
+                Permissions.LAUNCH_PARTITION_BACKFILL,
+            )
+
         if self._backfill_job.partition_set_origin is None:
             return graphene_info.context.has_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
         location_name = self._backfill_job.partition_set_origin.selector.location_name

@@ -50,3 +50,5 @@ export type PreviousRunsForSensorQuery = {
         }>;
       };
 };
+
+export const PreviousRunsForSensorQueryVersion = 'f35e444f6c30827ce07db188568d5e62537b0f47e4b7e75d1b442e42c6353552';

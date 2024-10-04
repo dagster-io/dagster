@@ -43,22 +43,22 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
+    AssetCheckNodeSnap,
+    AssetNodeSnap,
     EnvVarConsumer,
-    ExternalAssetCheck,
-    ExternalAssetNode,
     ExternalJobData,
     ExternalJobRef,
-    ExternalPresetData,
     ExternalRepositoryData,
-    ExternalResourceData,
-    ExternalResourceValue,
-    ExternalSensorMetadata,
-    ExternalTargetData,
     NestedResource,
     PartitionSetSnap,
+    PresetSnap,
     ResourceJobUsageEntry,
+    ResourceSnap,
+    ResourceValueSnap,
     ScheduleSnap,
+    SensorMetadataSnap,
     SensorSnap,
+    TargetSnap,
 )
 from dagster._core.remote_representation.handle import (
     InstigatorHandle,
@@ -83,6 +83,7 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
@@ -94,11 +95,11 @@ _DELIMITER = "::"
 class CompoundID:
     """Compound ID object for the two id schemes that state is recorded in the database against."""
 
-    external_origin_id: str
+    remote_origin_id: str
     selector_id: str
 
     def to_string(self) -> str:
-        return f"{self.external_origin_id}{_DELIMITER}{self.selector_id}"
+        return f"{self.remote_origin_id}{_DELIMITER}{self.selector_id}"
 
     @staticmethod
     def from_string(serialized: str):
@@ -107,7 +108,7 @@ class CompoundID:
             raise DagsterInvariantViolationError(f"Invalid serialized InstigatorID: {serialized}")
 
         return CompoundID(
-            external_origin_id=parts[0],
+            remote_origin_id=parts[0],
             selector_id=parts[1],
         )
 
@@ -157,15 +158,15 @@ class ExternalRepository:
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        self._asset_jobs: Dict[str, List[ExternalAssetNode]] = {}
+        self._asset_jobs: Dict[str, List[AssetNodeSnap]] = {}
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
                 self._asset_jobs.setdefault(job_name, []).append(asset_node)
 
-        self._asset_check_jobs: Dict[str, List[ExternalAssetCheck]] = {}
-        for asset_check in external_repository_data.external_asset_checks or []:
-            for job_name in asset_check.job_names:
-                self._asset_check_jobs.setdefault(job_name, []).append(asset_check)
+        self._asset_check_jobs: Dict[str, List[AssetCheckNodeSnap]] = {}
+        for asset_check_node_snap in external_repository_data.external_asset_checks or []:
+            for job_name in asset_check_node_snap.job_names:
+                self._asset_check_jobs.setdefault(job_name, []).append(asset_check_node_snap)
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
@@ -234,26 +235,27 @@ class ExternalRepository:
 
             has_any_auto_observe_source_assets = False
 
-            existing_auto_materialize_sensors = {
+            existing_automation_condition_sensors = {
                 sensor_name: sensor
                 for sensor_name, sensor in sensor_datas.items()
-                if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
+                if sensor.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
             }
 
-            covered_asset_keys = set()
-            for sensor in existing_auto_materialize_sensors.values():
-                covered_asset_keys = covered_asset_keys.union(
-                    check.not_none(sensor.asset_selection).resolve(asset_graph)
+            covered_entity_keys: Set[EntityKey] = set()
+            for sensor in existing_automation_condition_sensors.values():
+                selection = check.not_none(sensor.asset_selection)
+                covered_entity_keys = covered_entity_keys.union(
+                    # for now, all asset checks are handled by the same asset as their asset
+                    selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
                 )
 
-            default_sensor_asset_keys = set()
-
-            for asset_key in asset_graph.materializable_asset_keys:
-                if not asset_graph.get(asset_key).auto_materialize_policy:
+            default_sensor_entity_keys = set()
+            for entity_key in asset_graph.materializable_asset_keys | asset_graph.asset_check_keys:
+                if not asset_graph.get(entity_key).automation_condition:
                     continue
 
-                if asset_key not in covered_asset_keys:
-                    default_sensor_asset_keys.add(asset_key)
+                if entity_key not in covered_entity_keys:
+                    default_sensor_entity_keys.add(entity_key)
 
             for asset_key in asset_graph.observable_asset_keys:
                 if (
@@ -264,18 +266,24 @@ class ExternalRepository:
 
                 has_any_auto_observe_source_assets = True
 
-                if asset_key not in covered_asset_keys:
-                    default_sensor_asset_keys.add(asset_key)
+                if asset_key not in covered_entity_keys:
+                    default_sensor_entity_keys.add(asset_key)
 
-            if default_sensor_asset_keys:
+            if default_sensor_entity_keys:
+                default_sensor_asset_check_keys = {
+                    key for key in default_sensor_entity_keys if isinstance(key, AssetCheckKey)
+                }
                 # Use AssetSelection.all if the default sensor is the only sensor - otherwise
                 # enumerate the assets that are not already included in some other
                 # non-default sensor
                 default_sensor_asset_selection = AssetSelection.all(
                     include_sources=has_any_auto_observe_source_assets
                 )
+                # if there are any asset checks, include them
+                if default_sensor_asset_check_keys:
+                    default_sensor_asset_selection |= AssetSelection.all_asset_checks()
 
-                for sensor in existing_auto_materialize_sensors.values():
+                for sensor in existing_automation_condition_sensors.values():
                     default_sensor_asset_selection = (
                         default_sensor_asset_selection - check.not_none(sensor.asset_selection)
                     )
@@ -367,39 +375,42 @@ class ExternalRepository:
         return self._handle
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            RepositorySelector(self._handle.location_name, self._handle.repository_name)
+    def selector(self) -> RepositorySelector:
+        return RepositorySelector(
+            location_name=self._handle.location_name,
+            repository_name=self._handle.repository_name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     def get_compound_id(self) -> CompoundID:
         return CompoundID(
-            external_origin_id=self.get_external_origin_id(),
+            remote_origin_id=self.get_remote_origin_id(),
             selector_id=self.selector_id,
         )
 
-    def get_external_origin(self) -> RemoteRepositoryOrigin:
-        return self.handle.get_external_origin()
+    def get_remote_origin(self) -> RemoteRepositoryOrigin:
+        return self.handle.get_remote_origin()
 
     def get_python_origin(self) -> RepositoryPythonOrigin:
         return self.handle.get_python_origin()
 
-    def get_external_origin_id(self) -> str:
+    def get_remote_origin_id(self) -> str:
         """A means of identifying the repository this ExternalRepository represents based on
         where it came from.
         """
-        return self.get_external_origin().get_id()
+        return self.get_remote_origin().get_id()
 
-    def get_external_asset_nodes(
-        self, job_name: Optional[str] = None
-    ) -> Sequence[ExternalAssetNode]:
+    def get_asset_node_snaps(self, job_name: Optional[str] = None) -> Sequence[AssetNodeSnap]:
         return (
             self.external_repository_data.external_asset_graph_data
             if job_name is None
             else self._asset_jobs.get(job_name, [])
         )
 
-    def get_external_asset_node(self, asset_key: AssetKey) -> Optional[ExternalAssetNode]:
+    def get_asset_node_snap(self, asset_key: AssetKey) -> Optional[AssetNodeSnap]:
         matching = [
             asset_node
             for asset_node in self.external_repository_data.external_asset_graph_data
@@ -407,9 +418,9 @@ class ExternalRepository:
         ]
         return matching[0] if matching else None
 
-    def get_external_asset_checks(
+    def get_asset_check_node_snaps(
         self, job_name: Optional[str] = None
-    ) -> Sequence[ExternalAssetCheck]:
+    ) -> Sequence[AssetCheckNodeSnap]:
         if job_name:
             return self._asset_check_jobs.get(job_name, [])
         else:
@@ -423,11 +434,14 @@ class ExternalRepository:
         """Returns a repository scoped RemoteAssetGraph."""
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
-        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=[
-                (self.handle, asset_node) for asset_node in self.get_external_asset_nodes()
+        return RemoteAssetGraph.from_repository_selectors_and_asset_node_snaps(
+            repo_selector_assets=[
+                (self.selector, node_snap) for node_snap in self.get_asset_node_snaps()
             ],
-            external_asset_checks=self.get_external_asset_checks(),
+            repo_selector_asset_checks=[
+                (self.selector, asset_check_node)
+                for asset_check_node in self.get_asset_check_node_snaps()
+            ],
         )
 
     def get_partition_names_for_asset_job(
@@ -456,16 +470,14 @@ class ExternalRepository:
         job_name: str,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> PartitionsDefinition:
-        asset_nodes = self.get_external_asset_nodes(job_name)
+        asset_nodes = self.get_asset_node_snaps(job_name)
         unique_partitions_defs: Set[PartitionsDefinition] = set()
         for asset_node in asset_nodes:
             if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
                 continue
 
-            if asset_node.partitions_def_data is not None:
-                unique_partitions_defs.add(
-                    asset_node.partitions_def_data.get_partitions_definition()
-                )
+            if asset_node.partitions is not None:
+                unique_partitions_defs.add(asset_node.partitions.get_partitions_definition())
 
         if len(unique_partitions_defs) == 1:
             return next(iter(unique_partitions_defs))
@@ -515,7 +527,10 @@ class ExternalJob(RepresentedJob):
         else:
             check.failed("Expected either job data or ref, got neither")
 
-        self._handle = JobHandle(self._name, repository_handle)
+        self._handle = JobHandle(
+            job_name=self._name,
+            repository_handle=repository_handle,
+        )
 
     @property
     def _job_index(self) -> JobIndex:
@@ -586,7 +601,7 @@ class ExternalJob(RepresentedJob):
         )
 
     @property
-    def active_presets(self) -> Sequence[ExternalPresetData]:
+    def active_presets(self) -> Sequence[PresetSnap]:
         return list(self._active_preset_dict.values())
 
     @property
@@ -601,7 +616,7 @@ class ExternalJob(RepresentedJob):
         check.str_param(preset_name, "preset_name")
         return preset_name in self._active_preset_dict
 
-    def get_preset(self, preset_name: str) -> ExternalPresetData:
+    def get_preset(self, preset_name: str) -> PresetSnap:
         check.str_param(preset_name, "preset_name")
         return self._active_preset_dict[preset_name]
 
@@ -612,6 +627,14 @@ class ExternalJob(RepresentedJob):
     @property
     def tags(self) -> Mapping[str, str]:
         return self._job_index.job_snapshot.tags
+
+    @property
+    def run_tags(self) -> Mapping[str, str]:
+        snapshot_tags = self._job_index.job_snapshot.run_tags
+        # Snapshot tags will be None for snapshots originating from old code servers before the
+        # introduction of run tags. In these cases, the job definition tags are treated as run tags
+        # to maintain backcompat.
+        return snapshot_tags if snapshot_tags is not None else self.tags
 
     @property
     def metadata(self) -> Mapping[str, MetadataValue]:
@@ -637,11 +660,11 @@ class ExternalJob(RepresentedJob):
         repository_python_origin = self.repository_handle.get_python_origin()
         return JobPythonOrigin(self.name, repository_python_origin)
 
-    def get_external_origin(self) -> RemoteJobOrigin:
-        return self.handle.get_external_origin()
+    def get_remote_origin(self) -> RemoteJobOrigin:
+        return self.handle.get_remote_origin()
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
 
 class ExternalExecutionPlan:
@@ -734,12 +757,13 @@ class ExternalExecutionPlan:
 class ExternalResource:
     """Represents a top-level resource in a repository, e.g. one passed through the Definitions API."""
 
-    def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
+    def __init__(self, external_resource_data: ResourceSnap, handle: RepositoryHandle):
         self._external_resource_data = check.inst_param(
-            external_resource_data, "external_resource_data", ExternalResourceData
+            external_resource_data, "external_resource_data", ResourceSnap
         )
         self._handle = InstigatorHandle(
-            self._external_resource_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+            instigator_name=self._external_resource_data.name,
+            repository_handle=check.inst_param(handle, "handle", RepositoryHandle),
         )
 
     @property
@@ -755,7 +779,7 @@ class ExternalResource:
         return self._external_resource_data.config_field_snaps
 
     @property
-    def configured_values(self) -> Dict[str, ExternalResourceValue]:
+    def configured_values(self) -> Dict[str, ResourceValueSnap]:
         return self._external_resource_data.configured_values
 
     @property
@@ -852,26 +876,34 @@ class ExternalSchedule:
     def handle(self) -> InstigatorHandle:
         return self._handle
 
-    def get_external_origin(self) -> RemoteInstigatorOrigin:
-        return self.handle.get_external_origin()
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self._external_schedule_data.tags
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    @property
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        return self._external_schedule_data.metadata
+
+    def get_remote_origin(self) -> RemoteInstigatorOrigin:
+        return self.handle.get_remote_origin()
+
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
     @property
     def selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_schedule_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            name=self._external_schedule_data.name,
         )
 
     @property
     def schedule_selector(self) -> ScheduleSelector:
         return ScheduleSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_schedule_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            schedule_name=self._external_schedule_data.name,
         )
 
     @cached_property
@@ -880,7 +912,7 @@ class ExternalSchedule:
 
     def get_compound_id(self) -> CompoundID:
         return CompoundID(
-            external_origin_id=self.get_external_origin_id(),
+            remote_origin_id=self.get_remote_origin_id(),
             selector_id=self.selector_id,
         )
 
@@ -902,7 +934,7 @@ class ExternalSchedule:
                 return stored_state
 
             return InstigatorState(
-                self.get_external_origin(),
+                self.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.DECLARED_IN_CODE,
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
@@ -920,7 +952,7 @@ class ExternalSchedule:
                 )
 
             return InstigatorState(
-                self.get_external_origin(),
+                self.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
@@ -970,19 +1002,19 @@ class ExternalSensor:
         target = self._get_single_target()
         return target.op_selection if target else None
 
-    def _get_single_target(self) -> Optional[ExternalTargetData]:
+    def _get_single_target(self) -> Optional[TargetSnap]:
         if self._external_sensor_data.target_dict:
             return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 
-    def get_target_data(self, job_name: Optional[str] = None) -> Optional[ExternalTargetData]:
+    def get_target(self, job_name: Optional[str] = None) -> Optional[TargetSnap]:
         if job_name:
             return self._external_sensor_data.target_dict[job_name]
         else:
             return self._get_single_target()
 
-    def get_external_targets(self) -> Sequence[ExternalTargetData]:
+    def get_targets(self) -> Sequence[TargetSnap]:
         return list(self._external_sensor_data.target_dict.values())
 
     @property
@@ -1002,26 +1034,26 @@ class ExternalSensor:
     def run_tags(self) -> Mapping[str, str]:
         return self._external_sensor_data.run_tags
 
-    def get_external_origin(self) -> RemoteInstigatorOrigin:
-        return self._handle.get_external_origin()
+    def get_remote_origin(self) -> RemoteInstigatorOrigin:
+        return self._handle.get_remote_origin()
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
     @property
     def selector(self) -> InstigatorSelector:
         return InstigatorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_sensor_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            name=self._external_sensor_data.name,
         )
 
     @property
     def sensor_selector(self) -> SensorSelector:
         return SensorSelector(
-            self.handle.location_name,
-            self.handle.repository_name,
-            self._external_sensor_data.name,
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            sensor_name=self._external_sensor_data.name,
         )
 
     @cached_property
@@ -1030,7 +1062,7 @@ class ExternalSensor:
 
     def get_compound_id(self) -> CompoundID:
         return CompoundID(
-            external_origin_id=self.get_external_origin_id(),
+            remote_origin_id=self.get_remote_origin_id(),
             selector_id=self.selector_id,
         )
 
@@ -1052,7 +1084,7 @@ class ExternalSensor:
                 stored_state
                 if stored_state
                 else InstigatorState(
-                    self.get_external_origin(),
+                    self.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.DECLARED_IN_CODE,
                     SensorInstigatorData(
@@ -1073,7 +1105,7 @@ class ExternalSensor:
                 )
 
             return InstigatorState(
-                self.get_external_origin(),
+                self.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.STOPPED,
                 SensorInstigatorData(
@@ -1083,8 +1115,12 @@ class ExternalSensor:
             )
 
     @property
-    def metadata(self) -> Optional[ExternalSensorMetadata]:
+    def metadata(self) -> Optional[SensorMetadataSnap]:
         return self._external_sensor_data.metadata
+
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self._external_sensor_data.tags
 
     @property
     def default_status(self) -> DefaultSensorStatus:
@@ -1097,7 +1133,8 @@ class ExternalPartitionSet:
             external_partition_set_data, "external_partition_set_data", PartitionSetSnap
         )
         self._handle = PartitionSetHandle(
-            external_partition_set_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+            partition_set_name=external_partition_set_data.name,
+            repository_handle=check.inst_param(handle, "handle", RepositoryHandle),
         )
 
     @property
@@ -1124,26 +1161,26 @@ class ExternalPartitionSet:
     def repository_handle(self) -> RepositoryHandle:
         return self._handle.repository_handle
 
-    def get_external_origin(self) -> RemotePartitionSetOrigin:
-        return self._handle.get_external_origin()
+    def get_remote_origin(self) -> RemotePartitionSetOrigin:
+        return self._handle.get_remote_origin()
 
-    def get_external_origin_id(self) -> str:
-        return self.get_external_origin().get_id()
+    def get_remote_origin_id(self) -> str:
+        return self.get_remote_origin().get_id()
 
     def has_partition_name_data(self) -> bool:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
-        return self._external_partition_set_data.external_partitions_data is not None
+        return self._external_partition_set_data.partitions is not None
 
     def has_partitions_definition(self) -> bool:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to get the
         # partitions definition
-        return self._external_partition_set_data.external_partitions_data is not None
+        return self._external_partition_set_data.partitions is not None
 
     def get_partitions_definition(self) -> PartitionsDefinition:
-        partitions_data = self._external_partition_set_data.external_partitions_data
+        partitions_data = self._external_partition_set_data.partitions
         if partitions_data is None:
             check.failed(
                 "Partition set does not have partition data, cannot get partitions definition"
@@ -1151,8 +1188,8 @@ class ExternalPartitionSet:
         return partitions_data.get_partitions_definition()
 
     def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
-        partitions_data = self._external_partition_set_data.external_partitions_data
-        if partitions_data is None:
+        partitions = self._external_partition_set_data.partitions
+        if partitions is None:
             check.failed(
                 "Partition set does not have partition data, cannot get partitions definition"
             )

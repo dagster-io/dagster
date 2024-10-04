@@ -16,7 +16,7 @@
     "@markdoc/markdoc": "latest",
     "@markdoc/next.js": "latest",
     "fast-glob": "^3.2.5",
-    "next": "^14.1.1",
+    "next": "^14.2.10",
     "prismjs": "latest",
     "react": "latest",
     "react-dom": "latest",

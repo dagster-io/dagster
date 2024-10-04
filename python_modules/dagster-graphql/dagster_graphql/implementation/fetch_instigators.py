@@ -5,6 +5,7 @@ from dagster._core.definitions.instigation_logger import get_instigation_log_rec
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation.external import CompoundID
+from dagster._core.scheduler.instigation import InstigatorStatus
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.instigation import (
@@ -29,10 +30,12 @@ def get_instigator_state_by_selector(
 
     if instigator_id:
         state = graphene_info.context.instance.get_instigator_state(
-            origin_id=instigator_id.external_origin_id,
+            origin_id=instigator_id.remote_origin_id,
             selector_id=instigator_id.selector_id,
         )
-        if state:
+        # if the state tells us the status on its own short cut and return it
+        # if its declared in code we need the full snapshot to resolve
+        if state and state.status in (InstigatorStatus.STOPPED, InstigatorStatus.RUNNING):
             return GrapheneInstigationState(state)
 
     location = graphene_info.context.get_code_location(selector.location_name)
@@ -41,14 +44,14 @@ def get_instigator_state_by_selector(
     if repository.has_external_sensor(selector.name):
         external_sensor = repository.get_external_sensor(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
-            external_sensor.get_external_origin_id(),
+            external_sensor.get_remote_origin_id(),
             external_sensor.selector_id,
         )
         current_state = external_sensor.get_current_instigator_state(stored_state)
     elif repository.has_external_schedule(selector.name):
         external_schedule = repository.get_external_schedule(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
-            external_schedule.get_external_origin_id(),
+            external_schedule.get_remote_origin_id(),
             external_schedule.selector_id,
         )
         current_state = external_schedule.get_current_instigator_state(stored_state)
@@ -68,7 +71,7 @@ def get_instigation_states_by_repository_id(
     )
 
     states = graphene_info.context.instance.all_instigator_state(
-        repository_origin_id=repository_id.external_origin_id,
+        repository_origin_id=repository_id.remote_origin_id,
         repository_selector_id=repository_id.selector_id,
     )
 

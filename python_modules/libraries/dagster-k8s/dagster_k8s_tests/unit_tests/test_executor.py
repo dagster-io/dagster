@@ -447,7 +447,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_code_location(workspace.code_location_names[0])
-            repo_handle = RepositoryHandle(
+            repo_handle = RepositoryHandle.from_location(
                 repository_name="bar_repo",
                 code_location=location,
             )
@@ -459,7 +459,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
             run = create_run_for_test(
                 k8s_instance,
                 job_name="bar",
-                external_job_origin=fake_external_job.get_external_origin(),
+                external_job_origin=fake_external_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
             list(

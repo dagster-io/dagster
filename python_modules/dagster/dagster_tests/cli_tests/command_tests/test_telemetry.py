@@ -3,7 +3,6 @@ import os
 import tempfile
 from difflib import SequenceMatcher
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 from click.testing import CliRunner
@@ -223,7 +222,7 @@ def test_get_stats_from_external_repo_partitions(instance):
         external_repository_data_from_def(
             Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -245,7 +244,7 @@ def test_get_stats_from_external_repo_multi_partitions(instance):
         external_repository_data_from_def(
             Definitions(assets=[multi_partitioned_asset]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -263,7 +262,7 @@ def test_get_stats_from_external_repo_source_assets(instance):
         external_repository_data_from_def(
             Definitions(assets=[source_asset1, asset1]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -283,7 +282,7 @@ def test_get_stats_from_external_repo_observable_source_assets(instance):
         external_repository_data_from_def(
             Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -302,7 +301,7 @@ def test_get_stats_from_external_repo_freshness_policies(instance):
         external_repository_data_from_def(
             Definitions(assets=[asset1, asset2]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -325,7 +324,7 @@ def test_get_status_from_external_repo_auto_materialize_policy(instance):
         external_repository_data_from_def(
             Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -344,7 +343,7 @@ def test_get_stats_from_external_repo_code_versions(instance):
         external_repository_data_from_def(
             Definitions(assets=[asset1, asset2]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -370,7 +369,7 @@ def test_get_stats_from_external_repo_code_checks(instance):
                 assets=[my_asset, my_other_asset], asset_checks=[my_check, my_check_2]
             ).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -389,7 +388,7 @@ def test_get_stats_from_external_repo_dbt(instance):
         external_repository_data_from_def(
             Definitions(assets=[asset1, asset2]).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -420,7 +419,7 @@ def test_get_stats_from_external_repo_resources(instance):
                 },
             ).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -466,7 +465,7 @@ def test_get_stats_from_external_repo_io_managers(instance):
                 },
             ).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -499,7 +498,7 @@ def test_get_stats_from_external_repo_functional_resources(instance):
                 },
             ).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -532,7 +531,7 @@ def test_get_stats_from_external_repo_functional_io_managers(instance):
                 },
             ).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -551,7 +550,7 @@ def test_get_stats_from_external_repo_pipes_client(instance):
                 },
             ).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)
@@ -610,7 +609,7 @@ def test_get_stats_from_external_repo_delayed_resource_configuration(instance):
                 },
             ).get_repository_def()
         ),
-        repository_handle=MagicMock(spec=RepositoryHandle),
+        repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
     stats = get_stats_from_external_repo(external_repo)

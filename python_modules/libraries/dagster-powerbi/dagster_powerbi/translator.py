@@ -1,12 +1,14 @@
 import re
 import urllib.parse
 from enum import Enum
-from typing import Any, Dict, Mapping, Sequence
+from typing import Any, Dict, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 
 
 def _get_last_filepath_component(path: str) -> str:
@@ -24,6 +26,7 @@ def _clean_asset_name(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_]+", "_", name)
 
 
+@whitelist_for_serdes
 class PowerBIContentType(Enum):
     """Enum representing each object in PowerBI's ontology, generically referred to as "content" by the API."""
 
@@ -33,6 +36,7 @@ class PowerBIContentType(Enum):
     DATA_SOURCE = "data_source"
 
 
+@whitelist_for_serdes
 @record
 class PowerBIContentData:
     """A record representing a piece of content in PowerBI.
@@ -42,17 +46,8 @@ class PowerBIContentData:
     content_type: PowerBIContentType
     properties: Dict[str, Any]
 
-    def to_cached_data(self) -> Dict[str, Any]:
-        return {"content_type": self.content_type.value, "properties": self.properties}
 
-    @classmethod
-    def from_cached_data(cls, data: Mapping[Any, Any]) -> "PowerBIContentData":
-        return cls(
-            content_type=PowerBIContentType(data["content_type"]),
-            properties=data["properties"],
-        )
-
-
+@whitelist_for_serdes
 @record
 class PowerBIWorkspaceData:
     """A record representing all content in a PowerBI workspace.
@@ -132,11 +127,13 @@ class DagsterPowerBITranslator:
             self.get_report_asset_key(self.workspace_data.reports_by_id[report_id])
             for report_id in tile_report_ids
         ]
+        url = data.properties.get("webUrl")
+        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_dashboard_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
             deps=report_keys,
+            metadata=metadata,
         )
 
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -146,11 +143,13 @@ class DagsterPowerBITranslator:
         dataset_id = data.properties["datasetId"]
         dataset_data = self.workspace_data.semantic_models_by_id.get(dataset_id)
         dataset_key = self.get_semantic_model_asset_key(dataset_data) if dataset_data else None
+        url = data.properties.get("webUrl")
+        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_report_asset_key(data),
             deps=[dataset_key] if dataset_key else None,
-            tags={"dagster/storage_kind": "powerbi"},
+            metadata=metadata,
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -162,11 +161,13 @@ class DagsterPowerBITranslator:
             self.get_data_source_asset_key(self.workspace_data.data_sources_by_id[source_id])
             for source_id in source_ids
         ]
+        url = data.properties.get("webUrl")
+        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
             deps=source_keys,
+            metadata=metadata,
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -184,5 +185,4 @@ class DagsterPowerBITranslator:
     def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
         return AssetSpec(
             key=self.get_data_source_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
         )

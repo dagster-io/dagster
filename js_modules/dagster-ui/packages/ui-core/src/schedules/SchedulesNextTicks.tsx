@@ -46,7 +46,7 @@ import {
   isThisThingAJob,
   useRepository,
   useRepositoryOptions,
-} from '../workspace/WorkspaceContext';
+} from '../workspace/WorkspaceContext/util';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -418,7 +418,7 @@ const NextTickDialog = ({
                     <td>
                       <ButtonLink
                         onClick={() => setSelectedRunRequest(runRequest)}
-                        underline={false}
+                        underline="never"
                       >
                         <Group direction="row" spacing={8} alignItems="center">
                           <Icon name="open_in_new" color={Colors.textLight()} />
@@ -433,7 +433,6 @@ const NextTickDialog = ({
                             <MenuLink
                               text="Open in Launchpad..."
                               icon="edit"
-                              target="_blank"
                               to={workspacePathFromAddress(
                                 repoAddress,
                                 `/${isJob ? 'jobs' : 'pipelines'}/${

@@ -36,3 +36,5 @@ export type AssetStaleStatusDataQuery = {
     }>;
   }>;
 };
+
+export const AssetStaleStatusDataQueryVersion = '0168440bb72ae79664e8ba33f41a85f99398d0838b0baaa611b16a4dbb15b004';

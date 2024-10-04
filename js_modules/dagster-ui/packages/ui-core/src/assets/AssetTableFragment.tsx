@@ -11,6 +11,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     isExecutable
     computeKind
     hasMaterializePermission
+    hasReportRunlessAssetEventPermission
     partitionDefinition {
       description
       dimensionTypes {

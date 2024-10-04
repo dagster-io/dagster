@@ -79,7 +79,9 @@ export const AssetNodeLineageGraph = ({
   return (
     <AssetGraphBackgroundContextMenu direction={direction} setDirection={setDirection}>
       <SVGViewport
-        ref={(r) => (viewportEl.current = r || undefined)}
+        ref={(r) => {
+          viewportEl.current = r || undefined;
+        }}
         interactor={SVGViewport.Interactors.PanAndZoom}
         defaultZoom="zoom-to-fit"
         graphWidth={layout.width}
@@ -113,7 +115,7 @@ export const AssetNodeLineageGraph = ({
                     e.stopPropagation();
                   }}
                 >
-                  <GroupOutline $minimal={scale < MINIMAL_SCALE} />
+                  <GroupOutline minimal={scale < MINIMAL_SCALE} />
                 </foreignObject>
               ))}
 

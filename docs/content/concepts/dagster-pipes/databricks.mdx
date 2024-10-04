@@ -120,9 +120,10 @@ Let's review what's happening in this code:
   The submitted task must:
 
   - **Specify `dagster-pipes` as a PyPI dependency**. You can include a version pin (e.g. `dagster-pipes==1.5.4`) if desired.
-  - **Use `new_cluster` as opposed to an existing cluster**. This is because environment variables are injected into the specification used to create the cluster.
   - Use a `spark_python_task`.
-  - **Optionally include `new_cluster.cluster_log_conf.dbfs`**. If set, the <PyObject object="PipesDatabricksClient" module="dagster_databricks" /> will automatically set up <PyObject object="PipesDbfsLogReader" module="dagster_databricks" /> objects for `stdout` and `stderr` of the driver node. These will periodically forward the `stdout` and `stderr` logs written by Databricks back to Dagster. **Note**: Because Databricks only updates these log files every five minutes, that is the maximum frequency at which Dagster can forward the logs.
+  - Specify either `new_cluster` (this is the **recommended approach**) or `existing_cluster_id`. The `new_cluster` field is used in this example.
+    - If `new_cluster` is set, then setting `new_cluster.cluster_log_conf.dbfs` enables the <PyObject object="PipesDatabricksClient" module="dagster_databricks" /> to automatically set up <PyObject object="PipesDbfsLogReader" module="dagster_databricks" /> objects for `stdout` and `stderr` of the driver process. These will periodically forward the `stdout` and `stderr` logs written by Databricks back to Dagster. **Note**: Because Databricks only updates these log files every five minutes, that is the maximum frequency at which Dagster can forward the logs.
+    - If `existing_cluster_id` is set, <PyObject object="PipesDatabricksClient" module="dagster_databricks" /> won't be able to forward `stdout` and `stderr` driver logs to Dagster. Using an existing cluster **requires passing an instance of <PyObject object="PipesCliArgsParamsLoader" module="dagster_pipes" /> to <PyObject object="open_dagster_pipes" module="dagster_pipes" />** in the Python script which is executed on Databricks. This is because setting environment variables is only possible when creating a new cluster, so we have to use the alternative method of passing Pipes parameters as command-line arguments.
 
 - **Defines an `extras` dictionary containing some arbitrary data (`some_parameter`).** This is where you can put various data, e.g. from the Dagster run config, that you want to be available in Databricks. Anything added here must be JSON-serializable.
 
@@ -214,7 +215,7 @@ Before we go any futher, let's review what this script does:
 
   Both objects write temporary files on DBFS for communication between the orchestration and external process. The <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" /> match a corresponding `PipesDbfsContextInjector` and `PipesDbfsMessageReader` on the orchestration end, which are instantiated inside the <PyObject object="PipesDatabricksClient" module="dagster_databricks" />.
 
-- **Passes the context loader and message writer to the <PyObject object="open_dagster_pipes" module="dagster_pipes" /> context manager**, which yields an instance of <PyObject object="PipesContext" module="dagster_pipes" /> called `pipes`.
+- **Passes the context loader and message writer to the <PyObject object="open_dagster_pipes" module="dagster_pipes" /> context manager**, which yields an instance of <PyObject object="PipesContext" module="dagster_pipes" /> called `pipes`. **Note**: when using `existing_cluster_id`, you must also import `PipesCliArgsParamsLoader` and pass an instance of it to `open_dagster_pipes` as the `params_loader` parameter.
 
   Inside the body of the context manager are various calls against `pipes` to retrieve an extra, log, and report an asset materialization. All of these calls will use the DBFS temporary file-based communications channels established by <PyObject object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject object="PipesDbfsMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes guide](/concepts/dagster-pipes).
 
@@ -289,7 +290,7 @@ To use <PyObject object="open_pipes_session" />:
 1. Your Databricks job be launched within the scope of the <PyObject object="open_pipes_session" /> context manager; and
 2. Your job is launched on a cluster containing the environment variables available on the yielded `pipes_session`
 
-While your Databricks code is running, any calls to `report_asset_materialization` in the external script are streamed back to Dagster, causing a `MaterializationResult` object to be buffered on the `pipes_session`. You can either:
+While your Databricks code is running, any calls to `report_asset_materialization` in the external script are streamed back to Dagster, causing a `MaterializeResult` object to be buffered on the `pipes_session`. You can either:
 
 - Leave these objects buffered until execution is complete (**Option 1** in below example code), or
 - Stream them to Dagster machinery during execution by calling `yield pipes_session.get_results()` (**Option 2**)

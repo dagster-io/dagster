@@ -40,6 +40,7 @@ interface Props {
   searchPath: string;
   isFiltered: boolean;
   kindFilter?: StaticSetFilter<string>;
+  isLoading: boolean;
 }
 
 export const AssetTable = ({
@@ -53,6 +54,7 @@ export const AssetTable = ({
   isFiltered,
   view,
   kindFilter,
+  isLoading,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -138,6 +140,7 @@ export const AssetTable = ({
         showRepoColumn
         view={view}
         kindFilter={kindFilter}
+        isLoading={isLoading}
       />
     );
   };
@@ -148,7 +151,7 @@ export const AssetTable = ({
         <Box
           background={Colors.backgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
-          padding={{vertical: 8, left: 24, right: 12}}
+          padding={{vertical: 12, horizontal: 24}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
         >
           {actionBarComponents}

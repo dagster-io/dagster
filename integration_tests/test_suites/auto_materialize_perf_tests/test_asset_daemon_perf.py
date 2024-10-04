@@ -11,8 +11,10 @@ from dagster import (
     HourlyPartitionsDefinition,
     PartitionKeyRange,
 )
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+    AutomationConditionEvaluator,
+)
 
 from auto_materialize_perf_tests.partition_mappings_galore_perf_scenario import (
     partition_mappings_galore_perf_scenario,
@@ -86,18 +88,12 @@ def test_auto_materialize_perf(scenario: PerfScenario):
     with scenario.instance_from_snapshot() as instance:
         start = time.time()
 
-        AssetDaemonContext(
-            evaluation_id=1,
+        AutomationConditionEvaluator(
+            entity_keys=AssetSelection.all().resolve(asset_graph),
             instance=instance,
             asset_graph=asset_graph,
+            allow_backfills=False,
             cursor=AssetDaemonCursor.empty(),
-            auto_materialize_asset_keys=AssetSelection.all().resolve(asset_graph),
-            materialize_run_tags=None,
-            auto_observe_asset_keys=set(),
-            observe_run_tags=None,
-            respect_materialization_data_versions=True,
-            logger=logging.getLogger("dagster.amp"),
-            evaluation_time=scenario.current_time,
         ).evaluate()
 
         end = time.time()

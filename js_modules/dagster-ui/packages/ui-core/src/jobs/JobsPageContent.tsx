@@ -24,11 +24,11 @@ import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 export const JobsPageContent = () => {
   const {
@@ -150,7 +150,7 @@ export const JobsPageContent = () => {
   return (
     <>
       <Box
-        padding={{horizontal: 24, vertical: 16}}
+        padding={{horizontal: 24, vertical: 12}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 0}}
       >
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>

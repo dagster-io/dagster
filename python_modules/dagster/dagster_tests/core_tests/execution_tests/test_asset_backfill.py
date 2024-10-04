@@ -38,6 +38,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -46,6 +47,7 @@ from dagster._core.definitions.selector import (
     PartitionRangeSelector,
     PartitionsByAssetSelector,
     PartitionsSelector,
+    RepositorySelector,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
@@ -55,7 +57,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.remote_representation.external_data import external_asset_nodes_from_defs
+from dagster._core.remote_representation.external_data import asset_node_snaps_from_repo
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -236,6 +238,18 @@ def test_from_asset_partitions_target_subset(
     )
 
 
+def _get_instance_queryer(
+    instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
+) -> CachingInstanceQueryer:
+    return AssetGraphView(
+        temporal_context=TemporalContext(
+            effective_dt=evaluation_time or get_current_datetime(), last_event_id=None
+        ),
+        instance=instance,
+        asset_graph=asset_graph,
+    ).get_inner_queryer_for_back_compat()
+
+
 def _single_backfill_iteration(
     backfill_id, backfill_data, asset_graph, instance, assets_by_repo_name
 ) -> AssetBackfillData:
@@ -250,7 +264,7 @@ def _single_backfill_iteration(
         assert asset_keys is not None
 
         assets = assets_by_repo_name[
-            asset_graph.get_repository_handle(asset_keys[0]).repository_name
+            asset_graph.get_repository_selector(asset_keys[0]).repository_name
         ]
 
         do_run(
@@ -265,10 +279,8 @@ def _single_backfill_iteration(
     return backfill_data.with_run_requests_submitted(
         result.run_requests,
         asset_graph,
-        instance_queryer=CachingInstanceQueryer(
-            instance=instance,
-            asset_graph=asset_graph,
-            evaluation_time=backfill_data.backfill_start_datetime,
+        instance_queryer=_get_instance_queryer(
+            instance, asset_graph, backfill_data.backfill_start_datetime
         ),
     )
 
@@ -543,7 +555,7 @@ def get_asset_graph(
             for assets_def in assets
             for dep_key in assets_def.dependency_keys
         )
-        return external_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
+        return remote_asset_graph_from_assets_by_repo_name(assets_by_repo_name)
 
 
 def execute_asset_backfill_iteration_consume_generator(
@@ -554,11 +566,12 @@ def execute_asset_backfill_iteration_consume_generator(
 ) -> AssetBackfillIterationResult:
     counter = Counter()
     traced_counter.set(counter)
+
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
-            instance_queryer=CachingInstanceQueryer(
+            instance_queryer=_get_instance_queryer(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
             asset_graph=asset_graph,
@@ -606,10 +619,8 @@ def run_backfill_to_completion(
         # iteration_count += 1
         assert result1.backfill_data != backfill_data
 
-        instance_queryer = CachingInstanceQueryer(
-            instance=instance,
-            asset_graph=asset_graph,
-            evaluation_time=backfill_data.backfill_start_datetime,
+        instance_queryer = _get_instance_queryer(
+            instance, asset_graph, evaluation_time=backfill_data.backfill_start_datetime
         )
 
         backfill_data_with_submitted_runs = result1.backfill_data.with_run_requests_submitted(
@@ -657,12 +668,12 @@ def run_backfill_to_completion(
             )
 
             assert all(
-                asset_graph.get_repository_handle(asset_keys[0])
-                == asset_graph.get_repository_handle(asset_key)
+                asset_graph.get_repository_selector(asset_keys[0])
+                == asset_graph.get_repository_selector(asset_key)
                 for asset_key in asset_keys
             )
             assets = assets_by_repo_name[
-                asset_graph.get_repository_handle(asset_keys[0]).repository_name
+                asset_graph.get_repository_selector(asset_keys[0]).repository_name
             ]
 
             do_run(
@@ -723,22 +734,21 @@ def _requested_asset_partitions_in_run_request(
     return requested_asset_partitions
 
 
-def external_asset_graph_from_assets_by_repo_name(
+def remote_asset_graph_from_assets_by_repo_name(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
 ) -> RemoteAssetGraph:
-    from_repository_handles_and_external_asset_nodes = []
+    from_repository_selectors_and_asset_node_snaps = []
 
     for repo_name, assets in assets_by_repo_name.items():
         repo = Definitions(assets=assets).get_repository_def()
-
-        external_asset_nodes = external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph)
-        repo_handle = MagicMock(repository_name=repo_name)
-        from_repository_handles_and_external_asset_nodes.extend(
-            [(repo_handle, asset_node) for asset_node in external_asset_nodes]
+        asset_node_snaps = asset_node_snaps_from_repo(repo)
+        selector = RepositorySelector(location_name="test", repository_name=repo_name)
+        from_repository_selectors_and_asset_node_snaps.extend(
+            [(selector, asset_node) for asset_node in asset_node_snaps]
         )
 
-    return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-        from_repository_handles_and_external_asset_nodes, external_asset_checks=[]
+    return RemoteAssetGraph.from_repository_selectors_and_asset_node_snaps(
+        from_repository_selectors_and_asset_node_snaps, []
     )
 
 
@@ -825,7 +835,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=static_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+        return remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     asset_graph1 = make_asset_graph1()
     assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph1) is True
@@ -838,7 +848,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=time_window_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+        return remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     asset_graph2 = make_asset_graph2()
     assert (
@@ -853,7 +863,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=static_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+        return remote_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
     asset_graph3 = make_asset_graph3()
 
@@ -867,7 +877,7 @@ def test_serialization(static_serialization, time_window_serialization):
         @asset(partitions_def=time_window_partitions)
         def static_asset(): ...
 
-        return external_asset_graph_from_assets_by_repo_name(
+        return remote_asset_graph_from_assets_by_repo_name(
             {"repo": [daily_asset_renamed, static_asset]}
         )
 
@@ -1130,7 +1140,7 @@ def test_asset_backfill_cancellation():
 
     assert len(instance.get_runs()) == 1
 
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
@@ -1215,7 +1225,7 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
         in asset_backfill_data.failed_and_downstream_subset
     )
 
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
@@ -1427,22 +1437,23 @@ def test_connected_assets_disconnected_partitions():
     asset_graph = get_asset_graph(assets_by_repo_name)
 
     backfill_start_datetime = create_datetime(2023, 10, 30, 0, 0, 0)
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
     asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
         asset_graph,
         instance_queryer,
         backfill_start_datetime.timestamp(),
         [
             PartitionsByAssetSelector(
-                foo.key, PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")])
+                asset_key=foo.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")]),
             ),
             PartitionsByAssetSelector(
-                foo_child.key,
-                PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
+                asset_key=foo_child.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
             ),
             PartitionsByAssetSelector(
-                foo_grandchild.key,
-                PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
+                asset_key=foo_grandchild.key,
+                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
             ),
         ],
     )

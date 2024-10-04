@@ -1,4 +1,5 @@
 import base64
+import dataclasses
 import datetime
 import logging
 import sys
@@ -11,11 +12,15 @@ from types import TracebackType
 from typing import Any, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
+)
+from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    AutomationTickEvaluationContext,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
@@ -303,7 +308,7 @@ class AutoMaterializeLaunchContext:
                 continue
             self._instance.purge_ticks(
                 (
-                    self._external_sensor.get_external_origin().get_id()
+                    self._external_sensor.get_remote_origin().get_id()
                     if self._external_sensor
                     else _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
                 ),
@@ -342,7 +347,7 @@ class AssetDaemon(DagsterDaemon):
     def _get_print_sensor_name(self, sensor: Optional[ExternalSensor]) -> str:
         if not sensor:
             return ""
-        repo_origin = sensor.get_external_origin().repository_origin
+        repo_origin = sensor.get_remote_origin().repository_origin
         repo_name = repo_origin.repository_name
         location_name = repo_origin.code_location_origin.location_name
         repo_name = (
@@ -571,7 +576,7 @@ class AssetDaemon(DagsterDaemon):
             elif not auto_materialize_state:
                 assert sensor.default_status == DefaultSensorStatus.RUNNING
                 auto_materialize_state = InstigatorState(
-                    sensor.get_external_origin(),
+                    sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.DECLARED_IN_CODE,
                     SensorInstigatorData(
@@ -624,7 +629,7 @@ class AssetDaemon(DagsterDaemon):
 
         for sensor, repo in sensors_and_repos:
             new_auto_materialize_state = InstigatorState(
-                sensor.get_external_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 (
                     InstigatorStatus.DECLARED_IN_CODE
@@ -714,7 +719,7 @@ class AssetDaemon(DagsterDaemon):
 
         if sensor:
             auto_materialize_instigator_state = check.not_none(
-                instance.get_instigator_state(sensor.get_external_origin_id(), sensor.selector_id)
+                instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
             )
             if is_under_min_interval(auto_materialize_instigator_state, sensor):
                 # check the since we might have been queued before processing
@@ -731,35 +736,37 @@ class AssetDaemon(DagsterDaemon):
             print_group_name = self._get_print_sensor_name(sensor)
 
             if sensor:
-                eligible_keys = check.not_none(sensor.asset_selection).resolve(
-                    check.not_none(repository).asset_graph
+                selection = check.not_none(sensor.asset_selection)
+                # resolve the selection against just the assets in the sensor's repository
+                repo_asset_graph = check.not_none(repository).asset_graph
+                eligible_keys = selection.resolve(repo_asset_graph) | selection.resolve_checks(
+                    repo_asset_graph
                 )
             else:
                 eligible_keys = asset_graph.all_asset_keys
 
-            auto_materialize_asset_keys = {
+            auto_materialize_entity_keys = {
                 target_key
                 for target_key in eligible_keys
                 if asset_graph.get(target_key).automation_condition is not None
             }
-            num_target_assets = len(auto_materialize_asset_keys)
+            num_target_entities = len(auto_materialize_entity_keys)
 
             auto_observe_asset_keys = {
                 key
                 for key in eligible_keys
-                if asset_graph.get(key).auto_observe_interval_minutes is not None
+                if isinstance(key, AssetKey)
+                and asset_graph.get(key).auto_observe_interval_minutes is not None
             }
             num_auto_observe_assets = len(auto_observe_asset_keys)
 
-            if not auto_materialize_asset_keys and not auto_observe_asset_keys:
-                self._logger.debug(
-                    f"No assets that require auto-materialize checks{print_group_name}"
-                )
+            if not auto_materialize_entity_keys and not auto_observe_asset_keys:
+                self._logger.debug(f"No assets/checks that require evaluation{print_group_name}")
                 yield
                 return
 
             self._logger.info(
-                f"Checking {num_target_assets} asset{'' if num_target_assets == 1 else 's'} and"
+                f"Checking {num_target_entities} assets/checks and"
                 f" {num_auto_observe_assets} observable source"
                 f" asset{'' if num_auto_observe_assets == 1 else 's'}{print_group_name}"
             )
@@ -773,8 +780,8 @@ class AssetDaemon(DagsterDaemon):
                     asset_graph,
                 )
 
-                instigator_origin_id = sensor.get_external_origin().get_id()
-                instigator_selector_id = sensor.get_external_origin().get_selector().get_id()
+                instigator_origin_id = sensor.get_remote_origin().get_id()
+                instigator_selector_id = sensor.get_remote_origin().get_selector().get_id()
                 instigator_name = sensor.name
             else:
                 stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, asset_graph)
@@ -872,7 +879,7 @@ class AssetDaemon(DagsterDaemon):
                     sensor,
                     workspace_process_context,
                     asset_graph,
-                    auto_materialize_asset_keys,
+                    auto_materialize_entity_keys,
                     stored_cursor,
                     auto_observe_asset_keys,
                     debug_crash_flags,
@@ -895,7 +902,7 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[ExternalSensor],
         workspace_process_context: IWorkspaceProcessContext,
         asset_graph: RemoteAssetGraph,
-        auto_materialize_asset_keys: Set[AssetKey],
+        auto_materialize_entity_keys: Set[EntityKey],
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: Set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
@@ -907,8 +914,6 @@ class AssetDaemon(DagsterDaemon):
         instance = workspace_process_context.instance
 
         schedule_storage = check.not_none(instance.schedule_storage)
-
-        request_backfills = instance.da_request_backfills()
 
         if is_retry:
             # Unfinished or retried tick already generated evaluations and run requests and cursor, now
@@ -922,19 +927,25 @@ class AssetDaemon(DagsterDaemon):
                         evaluation_id
                     )
                 )
-                evaluations_by_asset_key = {
-                    evaluation_record.asset_key: evaluation_record.get_evaluation_with_run_ids()
+                evaluations_by_key = {
+                    evaluation_record.key: evaluation_record.get_evaluation_with_run_ids()
                     for evaluation_record in evaluation_records
                 }
             else:
-                evaluations_by_asset_key = {}
+                evaluations_by_key = {}
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
-            run_requests, new_cursor, evaluations = AssetDaemonContext(
+            # mold this into a shape AutomationTickEvaluationContext expects
+            asset_selection = AssetSelection.keys(
+                *{key for key in auto_materialize_entity_keys if isinstance(key, AssetKey)}
+            ).without_checks() | AssetSelection.checks(
+                *{key for key in auto_materialize_entity_keys if isinstance(key, AssetCheckKey)}
+            )
+            run_requests, new_cursor, evaluations = AutomationTickEvaluationContext(
                 evaluation_id=evaluation_id,
                 asset_graph=asset_graph,
-                auto_materialize_asset_keys=auto_materialize_asset_keys,
+                asset_selection=asset_selection,
                 instance=instance,
                 cursor=stored_cursor,
                 materialize_run_tags={
@@ -945,32 +956,31 @@ class AssetDaemon(DagsterDaemon):
                     **sensor_tags,
                 },
                 observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
+                allow_backfills=False,
                 auto_observe_asset_keys=auto_observe_asset_keys,
-                respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
                 logger=self._logger,
-                request_backfills=request_backfills,
             ).evaluate()
 
             check.invariant(new_cursor.evaluation_id == evaluation_id)
 
             check_for_debug_crash(debug_crash_flags, "EVALUATIONS_FINISHED")
 
-            evaluations_by_asset_key = {
-                evaluation.asset_key: evaluation.with_run_ids(set()) for evaluation in evaluations
+            evaluations_by_key = {
+                evaluation.key: evaluation.with_run_ids(set()) for evaluation in evaluations
             }
 
             # Write the asset evaluations without run IDs first
             if schedule_storage.supports_auto_materialize_asset_evaluations:
                 schedule_storage.add_auto_materialize_asset_evaluations(
                     evaluation_id,
-                    list(evaluations_by_asset_key.values()),
+                    list(evaluations_by_key.values()),
                 )
                 check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 
-            if request_backfills:
-                reserved_run_ids = [make_new_backfill_id() for _ in range(len(run_requests))]
-            else:
-                reserved_run_ids = [make_new_run_id() for _ in range(len(run_requests))]
+            reserved_run_ids = [
+                make_new_backfill_id() if rr.requires_backfill_daemon() else make_new_run_id()
+                for rr in run_requests
+            ]
 
             # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
             tick = tick_context.set_run_requests(
@@ -984,7 +994,7 @@ class AssetDaemon(DagsterDaemon):
             # they determine that nothing needs to be retried
             if sensor:
                 state = instance.get_instigator_state(
-                    sensor.get_external_origin_id(), sensor.selector_id
+                    sensor.get_remote_origin_id(), sensor.selector_id
                 )
                 instance.update_instigator_state(
                     check.not_none(state).with_data(
@@ -1008,13 +1018,13 @@ class AssetDaemon(DagsterDaemon):
         self._logger.info(
             "Tick produced"
             f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
-            f" {len(evaluations_by_asset_key)} asset"
-            f" evaluation{'s' if len(evaluations_by_asset_key) != 1 else ''} for evaluation ID"
+            f" {len(evaluations_by_key)} asset"
+            f" evaluation{'s' if len(evaluations_by_key) != 1 else ''} for evaluation ID"
             f" {evaluation_id}{print_group_name}"
         )
 
         check.invariant(len(run_requests) == len(reserved_run_ids))
-        updated_evaluation_asset_keys = set()
+        updated_evaluation_keys = set()
 
         run_request_execution_data_cache = {}
         for i, (run_request, reserved_run_id) in enumerate(zip(run_requests, reserved_run_ids)):
@@ -1044,7 +1054,7 @@ class AssetDaemon(DagsterDaemon):
                         )
                     )
                 submitted_run_id = reserved_run_id
-                asset_keys = check.not_none(asset_graph_subset.asset_keys)
+                entity_keys = check.not_none(asset_graph_subset.asset_keys)
             else:
                 submitted_run = submit_asset_run(
                     run_id=reserved_run_id,
@@ -1064,24 +1074,27 @@ class AssetDaemon(DagsterDaemon):
                     logger=self._logger,
                 )
                 submitted_run_id = submitted_run.run_id
-                asset_keys = check.not_none(run_request.asset_selection)
+                entity_keys = [
+                    *(run_request.asset_selection or []),
+                    *(run_request.asset_check_keys or []),
+                ]
             # heartbeat after each submitted runs
             yield
 
             tick_context.add_run_info(run_id=submitted_run_id)
 
             # write the submitted run ID to any evaluations
-            for asset_key in asset_keys:
+            for entity_key in entity_keys:
                 # asset keys for observation runs don't have evaluations
-                if asset_key in evaluations_by_asset_key:
-                    evaluation = evaluations_by_asset_key[asset_key]
-                    evaluations_by_asset_key[asset_key] = evaluation._replace(
-                        run_ids=evaluation.run_ids | {submitted_run_id}
+                if entity_key in evaluations_by_key:
+                    evaluation = evaluations_by_key[entity_key]
+                    evaluations_by_key[entity_key] = dataclasses.replace(
+                        evaluation, run_ids=evaluation.run_ids | {submitted_run_id}
                     )
-                    updated_evaluation_asset_keys.add(asset_key)
+                    updated_evaluation_keys.add(entity_key)
 
         evaluations_to_update = [
-            evaluations_by_asset_key[asset_key] for asset_key in updated_evaluation_asset_keys
+            evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
         ]
         if evaluations_to_update:
             schedule_storage.add_auto_materialize_asset_evaluations(

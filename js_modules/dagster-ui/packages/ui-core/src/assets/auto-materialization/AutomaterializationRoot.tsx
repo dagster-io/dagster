@@ -14,14 +14,14 @@ import {useAutoMaterializeSensorFlag} from '../AutoMaterializeSensorFlag';
 // depending on their nav flag state.
 export const AutomaterializationRoot = () => {
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
-  const {flagSettingsPage} = useFeatureFlags();
+  const {flagLegacyNav} = useFeatureFlags();
   switch (automaterializeSensorsFlagState) {
     case 'unknown':
       return <div />; // Waiting for result
     case 'has-global-amp':
       return <GlobalAutomaterializationRoot />;
     case 'has-sensor-amp':
-      return <Redirect to={flagSettingsPage ? '/automation' : '/overview/sensors'} />;
+      return <Redirect to={flagLegacyNav ? '/overview/sensors' : '/automation'} />;
     default:
       assertUnreachable(automaterializeSensorsFlagState);
   }

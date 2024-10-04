@@ -1,10 +1,11 @@
 import logging
 import sys
 import time
-from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence, cast
+from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
@@ -15,7 +16,7 @@ from dagster._core.remote_representation import ExternalExecutionPlan, ExternalJ
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, hash_collection
+from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 EXECUTION_PLAN_CREATION_RETRIES = 1
 
@@ -37,17 +38,19 @@ def _get_implicit_job_name_for_assets(
     )
 
 
-def _get_execution_plan_asset_keys(
+def _get_execution_plan_entity_keys(
     execution_plan_snapshot: ExecutionPlanSnapshot,
-) -> AbstractSet[AssetKey]:
-    output_asset_keys = set()
+) -> AbstractSet[EntityKey]:
+    output_entity_keys = set()
     for step in execution_plan_snapshot.steps:
         if step.key in execution_plan_snapshot.step_keys_to_execute:
             for output in step.outputs:
-                asset_key = check.not_none(output.properties).asset_key
-                if asset_key:
-                    output_asset_keys.add(asset_key)
-    return output_asset_keys
+                output_properties = check.not_none(output.properties)
+                if output_properties.asset_key:
+                    output_entity_keys.add(output_properties.asset_key)
+                if output_properties.asset_check_key:
+                    output_entity_keys.add(output_properties.asset_check_key)
+    return output_entity_keys
 
 
 def _get_job_execution_data_from_run_request(
@@ -55,14 +58,20 @@ def _get_job_execution_data_from_run_request(
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
+    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
 ) -> RunRequestExecutionData:
-    repo_handle = asset_graph.get_repository_handle(
-        cast(Sequence[AssetKey], run_request.asset_selection)[0]
+    check.invariant(
+        len(run_request.entity_keys) > 0,
+        "Expected RunRequest to have an asset selection or asset check keys",
     )
-    location_name = repo_handle.code_location_origin.location_name
-    job_name = _get_implicit_job_name_for_assets(
-        asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
+    selector = asset_graph.get_repository_selector(run_request.entity_keys[0])
+    location_name = selector.location_name
+    job_name = (
+        _get_implicit_job_name_for_assets(asset_graph, run_request.asset_selection)
+        if run_request.asset_selection
+        # if we're only executing checks, then this must have been created after the single implicit
+        # asset job changes, so we don't need to do the more exhaustive check
+        else IMPLICIT_ASSET_JOB_NAME
     )
     if job_name is None:
         check.failed(
@@ -70,22 +79,17 @@ def _get_job_execution_data_from_run_request(
             f" {run_request.asset_selection}"
         )
 
-    if not run_request.asset_selection:
-        check.failed("Expected RunRequest to have an asset selection")
-
     pipeline_selector = JobSubsetSelector(
         location_name=location_name,
-        repository_name=repo_handle.repository_name,
+        repository_name=selector.repository_name,
         job_name=job_name,
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
         op_selection=None,
     )
 
-    selector_id = hash_collection(pipeline_selector)
-
-    if selector_id not in run_request_execution_data_cache:
-        code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
+    if pipeline_selector not in run_request_execution_data_cache:
+        code_location = workspace.get_code_location(selector.location_name)
         external_job = code_location.get_external_job(pipeline_selector)
 
         external_execution_plan = code_location.get_external_execution_plan(
@@ -96,12 +100,12 @@ def _get_job_execution_data_from_run_request(
             instance=instance,
         )
 
-        run_request_execution_data_cache[selector_id] = RunRequestExecutionData(
+        run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
             external_job,
             external_execution_plan,
         )
 
-    return run_request_execution_data_cache[selector_id]
+    return run_request_execution_data_cache[pipeline_selector]
 
 
 def _create_asset_run(
@@ -109,7 +113,7 @@ def _create_asset_run(
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
+    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -120,7 +124,7 @@ def _create_asset_run(
     """
     from dagster._daemon.controller import RELOAD_WORKSPACE_INTERVAL
 
-    if not run_request.asset_selection:
+    if not run_request.asset_selection and not run_request.asset_check_keys:
         check.failed("Expected RunRequest to have an asset selection")
 
     for i in range(EXECUTION_PLAN_CREATION_RETRIES + 1):
@@ -162,17 +166,20 @@ def _create_asset_run(
         check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
 
         if not should_retry:
-            execution_plan_asset_keys = _get_execution_plan_asset_keys(
+            execution_plan_entity_keys = _get_execution_plan_entity_keys(
                 check.not_none(execution_data).external_execution_plan.execution_plan_snapshot
             )
 
             if not all(
-                key in execution_plan_asset_keys
-                for key in check.not_none(run_request.asset_selection)
+                key in execution_plan_entity_keys
+                for key in [
+                    *(run_request.asset_selection or []),
+                    *(run_request.asset_check_keys or []),
+                ]
             ):
                 logger.warning(
-                    f"Execution plan targeted the following keys: {execution_plan_asset_keys}, "
-                    "which did not include all assets on the run request, "
+                    f"Execution plan targeted the following keys: {execution_plan_entity_keys}, "
+                    "which did not include all assets / checks on the run request, "
                     "possibly because the code server is out of sync with the daemon. The daemon "
                     "periodically refreshes its representation of the workspace every "
                     f"{RELOAD_WORKSPACE_INTERVAL} seconds - pausing long enough "
@@ -199,10 +206,14 @@ def _create_asset_run(
                 root_run_id=None,
                 parent_run_id=None,
                 status=DagsterRunStatus.NOT_STARTED,
-                external_job_origin=external_job.get_external_origin(),
+                external_job_origin=external_job.get_remote_origin(),
                 job_code_origin=external_job.get_python_origin(),
-                asset_selection=frozenset(run_request.asset_selection),
-                asset_check_selection=None,
+                asset_selection=frozenset(run_request.asset_selection)
+                if run_request.asset_selection
+                else None,
+                asset_check_selection=frozenset(run_request.asset_check_keys)
+                if run_request.asset_check_keys
+                else None,
                 asset_graph=asset_graph,
             )
 
@@ -232,7 +243,7 @@ def submit_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
-    run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
+    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
 ) -> DagsterRun:
@@ -241,9 +252,12 @@ def submit_asset_run(
     that the created run targets the given asset selection.
     """
     check.invariant(not run_request.run_config, "Asset run requests have no custom run config")
-    asset_keys = check.not_none(run_request.asset_selection)
+    entity_keys: Sequence[EntityKey] = [
+        *(run_request.asset_selection or []),
+        *(run_request.asset_check_keys or []),
+    ]
 
-    check.invariant(len(asset_keys) > 0)
+    check.invariant(len(entity_keys) > 0)
 
     # check if the run already exists
     existing_run = instance.get_run_by_id(run_id) if run_id else None
@@ -282,10 +296,10 @@ def submit_asset_run(
     check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
     check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
 
-    asset_key_str = ", ".join([asset_key.to_user_string() for asset_key in asset_keys])
+    asset_key_str = ", ".join([key.to_user_string() for key in entity_keys])
 
     logger.info(
-        f"Submitted run {run_to_submit.run_id} for assets {asset_key_str} with tags"
+        f"Submitted run {run_to_submit.run_id} for assets/checks {asset_key_str} with tags"
         f" {run_request.tags}"
     )
 

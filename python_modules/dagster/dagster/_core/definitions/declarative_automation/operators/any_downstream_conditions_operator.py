@@ -1,9 +1,10 @@
-from typing import AbstractSet, Optional, Sequence
+from typing import AbstractSet, Mapping, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
@@ -11,7 +12,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @record
-class DownstreamConditionWrapperCondition(AutomationCondition):
+class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
     True.
@@ -19,7 +20,6 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
 
     downstream_keys: Sequence[AssetKey]
     operand: AutomationCondition
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -33,22 +33,22 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
     def requires_cursor(self) -> bool:
         return False
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         child_result = self.operand.evaluate(
             context.for_child_condition(
-                child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
+                child_condition=self.operand,
+                child_index=0,
+                candidate_subset=context.candidate_subset,
             )
         )
         return AutomationResult(
-            context=context, true_slice=child_result.true_slice, child_results=[child_result]
+            context=context, true_subset=child_result.true_subset, child_results=[child_result]
         )
 
 
 @whitelist_for_serdes
 @record
-class AnyDownstreamConditionsCondition(AutomationCondition):
-    label: Optional[str] = None
-
+class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Any downstream conditions"
@@ -62,7 +62,7 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
         return False
 
     def _get_ignored_conditions(
-        self, context: AutomationContext
+        self, context: AutomationContext[AssetKey]
     ) -> AbstractSet[AutomationCondition]:
         """To avoid infinite recursion, we do not expand conditions which are already part of the
         evaluation hierarchy.
@@ -73,13 +73,22 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             ignored_conditions.add(context.condition)
         return ignored_conditions
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def _get_validated_downstream_conditions(
+        self, downstream_conditions: Mapping[AutomationCondition, AbstractSet[AssetKey]]
+    ) -> Mapping[AutomationCondition, AbstractSet[AssetKey]]:
+        return {
+            condition: keys
+            for condition, keys in downstream_conditions.items()
+            if not condition.has_rule_condition
+        }
+
+    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         ignored_conditions = self._get_ignored_conditions(context)
-        downstream_conditions = context.asset_graph.get_downstream_automation_conditions(
-            asset_key=context.asset_key
+        downstream_conditions = self._get_validated_downstream_conditions(
+            context.asset_graph.get_downstream_automation_conditions(asset_key=context.key)
         )
 
-        true_slice = context.get_empty_slice()
+        true_subset = context.get_empty_subset()
         child_results = []
         for i, (downstream_condition, asset_keys) in enumerate(
             sorted(downstream_conditions.items(), key=lambda x: sorted(x[1]))
@@ -92,11 +101,13 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             child_context = context.for_child_condition(
                 child_condition=child_condition,
                 child_index=i,
-                candidate_slice=context.candidate_slice,
+                candidate_subset=context.candidate_subset,
             )
             child_result = child_condition.evaluate(child_context)
 
             child_results.append(child_result)
-            true_slice = true_slice.compute_union(child_result.true_slice)
+            true_subset = true_subset.compute_union(child_result.true_subset)
 
-        return AutomationResult(context=context, true_slice=true_slice, child_results=child_results)
+        return AutomationResult(
+            context=context, true_subset=true_subset, child_results=child_results
+        )

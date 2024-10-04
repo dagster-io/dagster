@@ -13,6 +13,7 @@ from dagster import (
     DagsterEventType,
     DefaultRunLauncher,
     Output,
+    RetryPolicy,
     _check as check,
     _seven,
     file_relative_path,
@@ -51,7 +52,11 @@ def noop_job():
     pass
 
 
-@op
+@op(
+    retry_policy=RetryPolicy(
+        max_retries=2,
+    )
+)
 def crashy_op(_):
     os._exit(1)
 
@@ -205,7 +210,7 @@ def test_successful_run(
     dagster_run = instance.create_run_for_job(
         job_def=noop_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = dagster_run.run_id
@@ -265,7 +270,7 @@ def test_successful_run_from_pending(
         job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         op_selection=None,
@@ -343,7 +348,7 @@ def test_invalid_instance_run():
 
                         run = instance.create_run_for_job(
                             job_def=noop_job,
-                            external_job_origin=external_job.get_external_origin(),
+                            external_job_origin=external_job.get_remote_origin(),
                             job_code_origin=external_job.get_python_origin(),
                         )
                         with pytest.raises(
@@ -380,7 +385,7 @@ def test_crashy_run(
     run = instance.create_run_for_job(
         job_def=crashy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -409,6 +414,39 @@ def test_crashy_run(
 
     assert _message_exists(event_records, message)
 
+    if run_config is None:
+        # verify the step retried once before failing
+        run_logs = instance.all_logs(run_id)
+        _check_event_log_contains(
+            run_logs,
+            [
+                (
+                    "STEP_UP_FOR_RETRY",
+                    'Execution of step "crashy_op" failed and has requested a retry.',
+                ),
+                (
+                    "STEP_RESTARTED",
+                    'Started re-execution (attempt # 2) of step "crashy_op"',
+                ),
+                (
+                    "ENGINE_EVENT",
+                    "Multiprocess executor: child process for step crashy_op unexpectedly exited",
+                ),
+                (
+                    "STEP_UP_FOR_RETRY",
+                    'Execution of step "crashy_op" failed and has requested a retry.',
+                ),
+                (
+                    "STEP_RESTARTED",
+                    'Started re-execution (attempt # 3) of step "crashy_op"',
+                ),
+                (
+                    "STEP_FAILURE",
+                    'Execution of step "crashy_op" failed.',
+                ),
+            ],
+        )
+
 
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
@@ -429,7 +467,7 @@ def test_exity_run(
     run = instance.create_run_for_job(
         job_def=exity_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -489,7 +527,7 @@ def test_terminated_run(
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -592,7 +630,7 @@ def test_cleanup_after_force_terminate(
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -693,7 +731,7 @@ def test_single_op_selection_execution(
         job_def=math_diamond,
         run_config=run_config,
         op_selection=["return_one"],
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
@@ -732,7 +770,7 @@ def test_multi_op_selection_execution(
         job_def=math_diamond,
         run_config=run_config,
         op_selection=["return_one", "multiply_by_2"],
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
@@ -771,7 +809,7 @@ def test_job_that_fails_run_worker(
     run = instance.create_run_for_job(
         job_def=job_that_fails_run_worker,
         run_config={},
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
@@ -820,7 +858,7 @@ def test_engine_events(
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id

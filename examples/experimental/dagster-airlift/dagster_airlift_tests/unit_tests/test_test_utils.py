@@ -21,12 +21,14 @@ def test_test_instance() -> None:
         start_date=datetime(2022, 1, 1),
         end_date=datetime(2022, 1, 2),
     )
+    assert task_instance.logical_date == datetime(2022, 1, 1)
     dag_run = make_dag_run(
         dag_id="test_dag",
         run_id="test_run_id",
         start_date=datetime(2022, 1, 1),
         end_date=datetime(2022, 1, 2),
     )
+    assert dag_run.logical_date == datetime(2022, 1, 1)
     test_instance = AirflowInstanceFake(
         dag_infos=[dag_info],
         task_infos=[task_info],
@@ -43,6 +45,10 @@ def test_test_instance() -> None:
     # Task doesn't exist in instance
     with pytest.raises(ValueError):
         test_instance.get_task_info(dag_id="test_dag", task_id="nonexistent_task")
+
+    # Dag not in instance
+    with pytest.raises(ValueError):
+        test_instance.get_task_infos(dag_id="nonexistent_dag")
 
     # Task instance doesn't exist in instance (task id is wrong)
     with pytest.raises(ValueError):
@@ -90,6 +96,10 @@ def test_test_instance() -> None:
 
     # Can retrieve task info
     assert test_instance.get_task_info(dag_id="test_dag", task_id="test_task") == task_info
+
+    # Can retrieve task infos
+    assert test_instance.get_task_infos(dag_id="test_dag") == [task_info]
+
     # Can retrieve task instance
     assert (
         test_instance.get_task_instance(

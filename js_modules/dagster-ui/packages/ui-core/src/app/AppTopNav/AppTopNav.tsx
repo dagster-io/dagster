@@ -10,7 +10,6 @@ import {
   useRepositoryLocationReload,
 } from '../../nav/useRepositoryLocationReload';
 import {SearchDialog} from '../../search/SearchDialog';
-import {useFeatureFlags} from '../Flags';
 import {LayoutContext} from '../LayoutProvider';
 import {ShortcutHandler} from '../ShortcutHandler';
 import {WebSocketStatus} from '../WebSocketProvider';
@@ -56,7 +55,6 @@ export const AppTopNav = ({children, allowGlobalReload = false}: Props) => {
 
 export const AppTopNavLogo = () => {
   const {nav} = React.useContext(LayoutContext);
-  const {flagSettingsPage} = useFeatureFlags();
   const navButton = React.useRef<null | HTMLButtonElement>(null);
 
   const onToggle = React.useCallback(() => {
@@ -75,7 +73,7 @@ export const AppTopNavLogo = () => {
 
   return (
     <LogoContainer>
-      {!flagSettingsPage && nav.canOpen ? (
+      {nav.canOpen ? (
         <ShortcutHandler
           onShortcut={() => onToggle()}
           shortcutLabel="."
@@ -161,7 +159,7 @@ const GhostDaggy = () => (
 );
 
 const DaggyTooltip = styled(Tooltip)`
-  &.bp4-popover2-target {
+  &.bp5-popover-target {
     display: inline-flex;
   }
 `;

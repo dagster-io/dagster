@@ -47,7 +47,9 @@ def test_in_progress_static_partitioned() -> None:
     state = state.with_failed_run_for_asset("A", partition_key="1")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {AssetKeyPartitionKey(AssetKey("A"), "1")}
+    assert result.true_subset.expensively_compute_asset_partitions() == {
+        AssetKeyPartitionKey(AssetKey("A"), "1")
+    }
 
     # now that partition succeeds
     state = state.with_runs(run_request("A", partition_key="1"))

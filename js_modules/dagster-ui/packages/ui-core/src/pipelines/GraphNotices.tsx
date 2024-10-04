@@ -54,7 +54,7 @@ export const LoadingNotice = (props: {async: boolean; nodeType: 'asset' | 'op'})
   );
 };
 
-const LoadingContainer = styled.div`
+export const LoadingContainer = styled.div`
   background-color: ${Colors.backgroundDefault()};
   position: absolute;
   top: 57px;

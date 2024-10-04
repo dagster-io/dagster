@@ -700,3 +700,17 @@ def get_instance_operations_json():
             }
         ]
     }
+
+
+def get_destination_with_database_and_schema_json():
+    return {
+        "destinationId": "028fc82d-3a27-4fef-94a6-a22fbd45bac4",
+        "configuration": {
+            "database": "test_database",
+            "schema": "test_schema",
+        },
+    }
+
+
+def get_destination_without_database_and_schema_json():
+    return {"destinationId": "028fc82d-3a27-4fef-94a6-a22fbd45bac4", "configuration": {}}

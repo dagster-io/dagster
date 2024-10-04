@@ -47,10 +47,10 @@ from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
-    ExternalPartitionExecutionErrorData,
-    ExternalRepositoryErrorData,
-    ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionErrorData,
+    PartitionExecutionErrorSnap,
+    RepositoryErrorSnap,
+    ScheduleExecutionErrorSnap,
+    SensorExecutionErrorSnap,
     external_job_data_from_def,
     external_repository_data_from_def,
 )
@@ -642,7 +642,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "PartitionNames")
             serialized_response = serialize_value(
-                ExternalPartitionExecutionErrorData(
+                PartitionExecutionErrorSnap(
                     error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
@@ -682,7 +682,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "PartitionSetExecutionParams")
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
+                PartitionExecutionErrorSnap(
                     error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
@@ -708,7 +708,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "ExternalPartitionConfig")
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
+                PartitionExecutionErrorSnap(
                     error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
@@ -738,7 +738,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "ExternalPartitionTags")
             serialized_data = serialize_value(
-                ExternalPartitionExecutionErrorData(
+                PartitionExecutionErrorSnap(
                     error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
@@ -797,9 +797,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "Repository")
             return serialize_value(
-                ExternalRepositoryErrorData(
-                    error=serializable_error_info_from_exc_info(sys.exc_info())
-                )
+                RepositoryErrorSnap(error=serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
     def ExternalRepository(
@@ -905,7 +903,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "ScheduleExecution")
             return serialize_value(
-                ExternalScheduleExecutionErrorData(
+                ScheduleExecutionErrorSnap(
                     error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
@@ -933,7 +931,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "SensorExecution")
             return serialize_value(
-                ExternalSensorExecutionErrorData(
+                SensorExecutionErrorSnap(
                     error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )

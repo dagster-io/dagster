@@ -8,11 +8,13 @@ on:
       - .github/workflows/build-docs-revamp.yml
       - docs/docs-beta/**
       - examples/docs_beta_snippets/**
+      - docs/sphinx/**
   pull_request:
     paths:
       - docs/docs-beta/**
       - examples/docs_beta_snippets/**
       - .github/workflows/build-docs-revamp.yml
+      - docs/sphinx/**
 
 concurrency:
   group: ${{ github.workflow}}-${{github.ref}}
@@ -94,10 +96,8 @@ jobs:
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
-        if: |
-          github.event_name == 'pull_request' || 
-          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
-
+        # only deploy to production on master (TODO: switch to docs-prod when beta goes live)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -105,4 +105,3 @@ jobs:
           vercel-args: "--prod"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
-          alias-domains: dagster-docs-beta.dagster-docs.io

@@ -7,13 +7,6 @@ This guide will walk you through how to run the Dagster-specific components of a
 
 Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master/helm) for deploying Dagster that you can customize for your specific needs. For each Dagster component used by the Helm chart, Dagster publishes a corresponding image to [DockerHub](https://hub.docker.com/u/dagster).
 
-## What you'll learn
-
-- How to build a Docker image containing your Dagster project to deploy to your cluster
-- How to access and customize the Dagster-provided Helm charts
-- How to apply the configuration in the Helm charts to your Kubernetes cluster to deploy your Dagster project
-- How to connect to your deployed Dagster project
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -189,21 +182,19 @@ kubectl --namespace default port-forward $DAGSTER_WEBSERVER_POD_NAME 8080:80
 This command gets the full name of the `webserver` pod from the output of `kubectl get pods`, and then sets up port forwarding with the `kubectl port-forward` command.
 
 ### Step 6.2: Visit your Dagster deployment
+
 The webserver has been port-forwarded to `8080`, so you can visit the Dagster deployment by going to [http://127.0.0.1:8080](http://127.0.0.1:8080). You should see the Dagster landing page
 
-{/* TODO screenshot */}
-
+![Screenshot of Dagster landing page](/img/placeholder.svg)
 
 ### Step 6.3: Materialize an asset
 In the Dagster UI, navigate to the Asset catalog and click the **Materialize** button to materialize an asset. Dagster will start a Kubernetes job to materialize the asset. You can introspect on the Kubernetes cluster to see this job:
-
 
 ```bash
 $ kubectl get jobs
 NAME                                               COMPLETIONS   DURATION   AGE
 dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
 ```
-
 
 ## Next steps
 - Forwarding Dagster logs from a Kubernetes deployment to AWS, Azure, GCP

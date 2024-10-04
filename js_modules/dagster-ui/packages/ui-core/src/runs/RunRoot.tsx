@@ -1,16 +1,24 @@
-import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  FontFamily,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Tag,
+} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 
-import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
+import {RunAssetCheckTags} from './RunAssetCheckTags';
 import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
-import {assetKeysForRun} from './RunUtils';
+import {getBackfillPath} from './RunsFeedUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 import {gql, useQuery} from '../apollo-client';
@@ -20,7 +28,7 @@ import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWith
 import {InstigationSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
@@ -50,6 +58,11 @@ export const RunRoot = () => {
 
   const automaterializeTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
+    [run],
+  );
+
+  const backfillTag = useMemo(
+    () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
     [run],
   );
 
@@ -102,9 +115,28 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-              {runId.slice(0, 8)}
-            </Heading>
+            backfillTag ? (
+              <Heading>
+                <Link to="/runs" style={{color: Colors.textLight()}}>
+                  All runs
+                </Link>
+                {' / '}
+                <Link
+                  to={getBackfillPath(backfillTag.value, !!run?.assetSelection?.length)}
+                  style={{color: Colors.textLight()}}
+                >
+                  {backfillTag.value}
+                </Link>
+                {' / '}
+                {runId.slice(0, 8)}
+              </Heading>
+            ) : (
+              <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+                <Link to="/runs">All Runs</Link>
+                <span>/</span>
+                <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+              </Heading>
+            )
           }
           tags={
             run ? (
@@ -129,12 +161,8 @@ export const RunRoot = () => {
                     tickId={tickDetails.tickId}
                   />
                 ) : null}
-                {isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <AssetKeyTagCollection useTags assetKeys={assetKeysForRun(run)} />
-                ) : (
-                  <RunAssetTags run={run} />
-                )}
-                <AssetCheckTagCollection useTags assetChecks={run.assetCheckSelection} />
+                <RunAssetTags run={run} />
+                <RunAssetCheckTags run={run} />
                 <RunTimingTags run={run} loading={loading} />
                 {automaterializeTag && run.assetSelection?.length ? (
                   <AutomaterializeTagWithEvaluation

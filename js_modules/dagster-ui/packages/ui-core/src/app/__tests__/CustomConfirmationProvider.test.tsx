@@ -92,7 +92,7 @@ describe('CustomConfirmationProvider', () => {
     });
 
     await waitFor(() => {
-      const dialogContainers = document.querySelectorAll('.bp4-dialog');
+      const dialogContainers = document.querySelectorAll('.bp5-dialog');
       expect(dialogContainers).toHaveLength(0);
     });
   });

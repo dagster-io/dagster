@@ -1,19 +1,17 @@
-from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
 
-from dagster._record import record
+from typing_extensions import Annotated
+
+from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.selector import RepositorySelector
     from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
-    from dagster._core.remote_representation.external_data import (
-        ExternalAssetCheck,
-        ExternalAssetNode,
-    )
-    from dagster._core.remote_representation.handle import RepositoryHandle
+    from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
 
 
 # For locations that are loaded asynchronously
@@ -22,16 +20,21 @@ class CodeLocationLoadStatus(Enum):
     LOADED = "LOADED"  # Finished loading (may be an error)
 
 
-class CodeLocationEntry(NamedTuple):
-    origin: "CodeLocationOrigin"
-    code_location: Optional["CodeLocation"]
+@record
+class CodeLocationEntry:
+    origin: Annotated["CodeLocationOrigin", ImportFrom("dagster._core.remote_representation")]
+    code_location: Optional[
+        Annotated["CodeLocation", ImportFrom("dagster._core.remote_representation")]
+    ]
     load_error: Optional[SerializableErrorInfo]
     load_status: CodeLocationLoadStatus
     display_metadata: Mapping[str, str]
     update_timestamp: float
+    version_key: str
 
 
-class CodeLocationStatusEntry(NamedTuple):
+@record
+class CodeLocationStatusEntry:
     """Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
     to know whether the workspace needs reloading.
     """
@@ -39,6 +42,7 @@ class CodeLocationStatusEntry(NamedTuple):
     location_name: str
     load_status: CodeLocationLoadStatus
     update_timestamp: float
+    version_key: str
 
 
 @record
@@ -59,45 +63,23 @@ class WorkspaceSnapshot:
             for code_location in code_locations
             for repo in code_location.get_repositories().values()
         )
-        repo_handle_external_asset_nodes: Sequence[
-            Tuple["RepositoryHandle", "ExternalAssetNode"]
-        ] = []
-        asset_checks: Sequence["ExternalAssetCheck"] = []
+
+        repo_handle_assets: Sequence[Tuple["RepositorySelector", "AssetNodeSnap"]] = []
+        repo_handle_asset_checks: Sequence[Tuple["RepositorySelector", "AssetCheckNodeSnap"]] = []
 
         for repo in repos:
-            for external_asset_node in repo.get_external_asset_nodes():
-                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
+            for asset_node_snap in repo.get_asset_node_snaps():
+                repo_handle_assets.append((repo.selector, asset_node_snap))
+            for asset_check_node_snap in repo.get_asset_check_node_snaps():
+                repo_handle_asset_checks.append((repo.selector, asset_check_node_snap))
 
-            asset_checks.extend(repo.get_external_asset_checks())
-
-        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
-            external_asset_checks=asset_checks,
+        return RemoteAssetGraph.from_repository_selectors_and_asset_node_snaps(
+            repo_selector_assets=repo_handle_assets,
+            repo_selector_asset_checks=repo_handle_asset_checks,
         )
 
     def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
         return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})
-
-
-class IWorkspace(ABC):
-    """Manages a set of CodeLocations."""
-
-    @abstractmethod
-    def get_code_location(self, location_name: str) -> "CodeLocation":
-        """Return the CodeLocation for the given location name, or raise an error if there is an error loading it."""
-
-    @abstractmethod
-    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
-        """Return an entry for each location in the workspace."""
-
-    @abstractmethod
-    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
-        pass
-
-    @property
-    @abstractmethod
-    def asset_graph(self) -> "RemoteAssetGraph":
-        pass
 
 
 def location_status_from_location_entry(
@@ -107,4 +89,5 @@ def location_status_from_location_entry(
         location_name=entry.origin.location_name,
         load_status=entry.load_status,
         update_timestamp=entry.update_timestamp,
+        version_key=entry.version_key,
     )

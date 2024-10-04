@@ -11,6 +11,7 @@ from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import build_library_packages_steps
 from dagster_buildkite.steps.test_project import build_test_project_steps
 from dagster_buildkite.utils import (
+    UV_PIN,
     BuildkiteStep,
     CommandStep,
     GroupStep,
@@ -110,7 +111,7 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 CommandStepBuilder(":pyright: make pyright")
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-                    "pip install -U uv",
+                    f'pip install -U "{UV_PIN}"',
                     "make install_pyright",
                     "make pyright",
                 )
@@ -120,7 +121,7 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 CommandStepBuilder(":pyright: make rebuild_pyright_pins")
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-                    "pip install -U uv",
+                    f'pip install -U "{UV_PIN}"',
                     "make install_pyright",
                     "make rebuild_pyright_pins",
                 )

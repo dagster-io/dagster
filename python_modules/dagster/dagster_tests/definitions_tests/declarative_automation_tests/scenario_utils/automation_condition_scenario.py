@@ -7,19 +7,16 @@ import dagster._check as check
 import mock
 from dagster import AssetKey
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
 )
-from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
-    LegacyRuleEvaluationContext,
+from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+    AutomationConditionEvaluator,
 )
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
     AndAutomationCondition,
 )
@@ -28,7 +25,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.test_utils import freeze_time
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_state import (
     ScenarioState,
@@ -45,7 +41,7 @@ class FalseAutomationCondition(AutomationCondition):
         return ""
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
-        return AutomationResult(context, true_slice=context.get_empty_slice())
+        return AutomationResult(context, true_subset=context.get_empty_subset())
 
 
 @dataclass(frozen=True)
@@ -66,11 +62,7 @@ class AutomationConditionScenarioState(ScenarioState):
             ap_by_key[ap.asset_key].add(ap)
         return {
             asset_key: mock.MagicMock(
-                true_slice=asset_graph_view.get_asset_slice_from_subset(
-                    AssetSubset.from_asset_partitions_set(
-                        asset_key, asset_graph_view.asset_graph.get(asset_key).partitions_def, aps
-                    )
-                ),
+                true_subset=asset_graph_view.get_asset_subset_from_asset_partitions(asset_key, aps),
                 cursor=None,
             )
             for asset_key, aps in ap_by_key.items()
@@ -97,43 +89,20 @@ class AutomationConditionScenarioState(ScenarioState):
         ).asset_graph
 
         with freeze_time(self.current_time):
-            instance_queryer = CachingInstanceQueryer(
-                instance=self.instance, asset_graph=asset_graph
-            )
-            daemon_context = AssetDaemonContext(
-                evaluation_id=1,
-                instance=self.instance,
+            evaluator = AutomationConditionEvaluator(
                 asset_graph=asset_graph,
-                cursor=AssetDaemonCursor.empty(),
-                materialize_run_tags={},
-                observe_run_tags={},
-                auto_observe_asset_keys=None,
-                auto_materialize_asset_keys=None,
-                respect_materialization_data_versions=False,
-                logger=self.logger,
-                evaluation_time=self.current_time,
-                request_backfills=self.request_backfills,
-            )
-            legacy_context = LegacyRuleEvaluationContext.create_within_asset_daemon(
-                asset_key=asset_key,
-                condition=asset_condition,
-                previous_condition_cursor=self.condition_cursor,
-                instance_queryer=instance_queryer,
-                data_time_resolver=CachingDataTimeResolver(instance_queryer),
-                current_results_by_key={},
-                expected_data_time_mapping={},
-                daemon_context=daemon_context,
-            )
-            context = AutomationContext.create(
-                asset_key=asset_key,
-                asset_graph_view=daemon_context.asset_graph_view,
-                log=self.logger,
-                current_tick_results_by_key=self._get_current_results_by_key(
-                    daemon_context.asset_graph_view
+                instance=self.instance,
+                entity_keys=asset_graph.all_asset_keys,
+                cursor=AssetDaemonCursor.empty().with_updates(
+                    0, 0, [], [self.condition_cursor] if self.condition_cursor else []
                 ),
-                condition_cursor=self.condition_cursor,
-                legacy_context=legacy_context,
+                logger=self.logger,
+                allow_backfills=False,
             )
+            evaluator.current_results_by_key = self._get_current_results_by_key(
+                evaluator.asset_graph_view
+            )  # type: ignore
+            context = AutomationContext.create(key=asset_key, evaluator=evaluator)
 
             full_result = asset_condition.evaluate(context)
             new_state = dataclasses.replace(self, condition_cursor=full_result.get_new_cursor())

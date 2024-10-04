@@ -15,6 +15,7 @@ from dagster import (
     materialize,
 )
 from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.definitions.metadata.table import TableColumnConstraints
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resource import DbtCliResource
 from pytest_mock import MockFixture
@@ -62,6 +63,61 @@ def test_column_schema(
         if use_experimental_fetch_column_schema:
             cli_invocation = cli_invocation.fetch_column_metadata(with_column_lineage=False)
         yield from cli_invocation
+
+    customers_spec = my_dbt_assets.get_asset_spec(AssetKey(["customers"]))
+    customer_spec_table_schema = TableMetadataSet.extract(customers_spec.metadata).column_schema
+
+    # Ensure we get rich schema from schema.yml
+    expected_customer_spec_table_schema = TableSchema(
+        columns=[
+            TableColumn(
+                "customer_id",
+                type="?",
+                description="This is a unique identifier for a customer",
+                constraints=TableColumnConstraints(nullable=True, unique=False),
+                tags={"primary_key": ""},
+            ),
+            TableColumn(
+                "first_name",
+                type="?",
+                description="Customer's first name. PII.",
+                constraints=TableColumnConstraints(nullable=True, unique=False),
+                tags={"pii": ""},
+            ),
+            TableColumn(
+                "last_name",
+                type="?",
+                description="Customer's last name. PII.",
+                constraints=TableColumnConstraints(nullable=True, unique=False),
+                tags={"pii": ""},
+            ),
+            TableColumn(
+                "first_order",
+                type="?",
+                description="Date (UTC) of a customer's first order",
+                constraints=TableColumnConstraints(nullable=True, unique=False),
+            ),
+            TableColumn(
+                "most_recent_order",
+                type="?",
+                description="Date (UTC) of a customer's most recent order",
+                constraints=TableColumnConstraints(nullable=True, unique=False),
+            ),
+            TableColumn(
+                "number_of_orders",
+                type="?",
+                description="Count of the number of orders a customer has placed",
+                constraints=TableColumnConstraints(nullable=True, unique=False),
+            ),
+            TableColumn(
+                "total_order_amount",
+                type="?",
+                description="Total value (AUD) of a customer's orders",
+                constraints=TableColumnConstraints(nullable=True, unique=False),
+            ),
+        ]
+    )
+    assert customer_spec_table_schema == expected_customer_spec_table_schema
 
     result = materialize(
         [my_dbt_assets],

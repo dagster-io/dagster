@@ -178,7 +178,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.storage.sql import AlembicVersion
-    from dagster._core.workspace.workspace import IWorkspace
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
 
@@ -887,6 +887,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.run_monitoring_settings.get("cancel_timeout_seconds", 180)
 
     @property
+    def run_monitoring_max_runtime_seconds(self) -> int:
+        return self.run_monitoring_settings.get("max_runtime_seconds", 0)
+
+    @property
     def code_server_settings(self) -> Any:
         return self.get_settings("code_servers")
 
@@ -957,10 +961,6 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
         return self.get_settings("concurrency").get("default_op_concurrency_limit")
-
-    @property
-    def use_transitive_stale_causes(self) -> bool:
-        return False
 
     # python logs
 
@@ -1060,6 +1060,8 @@ class DagsterInstance(DynamicPartitionsStore):
             Optional[RunRecord]: The run record corresponding to the given id. If no run matching
                 the id is found, return `None`.
         """
+        if not run_id:
+            return None
         records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
         if not records:
             return None
@@ -1698,7 +1700,7 @@ class DagsterInstance(DynamicPartitionsStore):
             op_selection=parent_run.op_selection,
             asset_selection=parent_run.asset_selection,
             asset_check_selection=parent_run.asset_check_selection,
-            external_job_origin=external_job.get_external_origin(),
+            external_job_origin=external_job.get_remote_origin(),
             job_code_origin=external_job.get_python_origin(),
             asset_graph=code_location.get_repository(
                 external_job.repository_handle.repository_name
@@ -2595,7 +2597,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Runs coordinator
 
-    def submit_run(self, run_id: str, workspace: "IWorkspace") -> DagsterRun:
+    def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
         """Submit a pipeline run to the coordinator.
 
         This method delegates to the ``RunCoordinator``, configured on the instance, and will
@@ -2645,7 +2647,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Run launcher
 
-    def launch_run(self, run_id: str, workspace: "IWorkspace") -> DagsterRun:
+    def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
         """Launch a pipeline run.
 
         This method is typically called using `instance.submit_run` rather than being invoked
@@ -2691,7 +2693,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return run
 
-    def resume_run(self, run_id: str, workspace: "IWorkspace", attempt_number: int) -> DagsterRun:
+    def resume_run(
+        self, run_id: str, workspace: "BaseWorkspaceRequestContext", attempt_number: int
+    ) -> DagsterRun:
         """Resume a pipeline run.
 
         This method should be called on runs which have already been launched, but whose run workers
@@ -2804,7 +2808,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         stored_state = self.get_instigator_state(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
 
         computed_state = external_sensor.get_current_instigator_state(stored_state)
@@ -2814,7 +2818,7 @@ class DagsterInstance(DynamicPartitionsStore):
         if not stored_state:
             return self.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_external_origin(),
+                    external_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.RUNNING,
                     SensorInstigatorData(
@@ -2859,7 +2863,7 @@ class DagsterInstance(DynamicPartitionsStore):
             assert external_sensor
             return self.add_instigator_state(
                 InstigatorState(
-                    external_sensor.get_external_origin(),
+                    external_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     InstigatorStatus.STOPPED,
                     SensorInstigatorData(
@@ -2887,7 +2891,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         stored_state = self.get_instigator_state(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
+            external_sensor.get_remote_origin_id(), external_sensor.selector_id
         )
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
@@ -2899,7 +2903,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
             reset_state = self.add_instigator_state(
                 state=InstigatorState(
-                    external_sensor.get_external_origin(),
+                    external_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
                     new_status,
                     new_instigator_data,
@@ -3090,6 +3094,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.get_backfills(
             status=status, cursor=cursor, limit=limit, filters=filters
         )
+
+    def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
+        return self._run_storage.get_backfills_count(filters=filters)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._run_storage.get_backfill(backfill_id)

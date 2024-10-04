@@ -19,31 +19,29 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
-    AssetKeyOrCheckKey,
+    AssetCheckNode,
+    AssetKey,
     BaseAssetGraph,
     BaseAssetNode,
 )
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.handle import RepositoryHandle
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.external_data import (
-        ExternalAssetCheck,
-        ExternalAssetNode,
-    )
+    from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
     from dagster._core.selector.subset_selector import DependencyGraph
 
 
@@ -53,15 +51,15 @@ class RemoteAssetNode(BaseAssetNode):
         key: AssetKey,
         parent_keys: AbstractSet[AssetKey],
         child_keys: AbstractSet[AssetKey],
-        execution_set_keys: AbstractSet[AssetKeyOrCheckKey],
-        repo_node_pairs: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
+        execution_set_keys: AbstractSet[EntityKey],
+        repo_node_pairs: Sequence[Tuple[RepositorySelector, "AssetNodeSnap"]],
         check_keys: AbstractSet[AssetCheckKey],
     ):
         self.key = key
         self.parent_keys = parent_keys
         self.child_keys = child_keys
         self._repo_node_pairs = repo_node_pairs
-        self._external_asset_nodes = [node for _, node in repo_node_pairs]
+        self._asset_node_snaps = [node for _, node in repo_node_pairs]
         self._check_keys = check_keys
         self._execution_set_keys = execution_set_keys
 
@@ -69,55 +67,55 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def description(self) -> Optional[str]:
-        return self._priority_node.description
+        return self.priority_node_snap.description
 
     @property
     def group_name(self) -> str:
-        return self._priority_node.group_name or DEFAULT_GROUP_NAME
+        return self.priority_node_snap.group_name or DEFAULT_GROUP_NAME
 
     @cached_property
     def is_materializable(self) -> bool:
-        return any(node.is_materializable for node in self._external_asset_nodes)
+        return any(node.is_materializable for node in self._asset_node_snaps)
 
     @cached_property
     def is_observable(self) -> bool:
-        return any(node.is_observable for node in self._external_asset_nodes)
+        return any(node.is_observable for node in self._asset_node_snaps)
 
     @cached_property
     def is_external(self) -> bool:
-        return all(node.is_external for node in self._external_asset_nodes)
+        return all(node.is_external for node in self._asset_node_snaps)
 
     @cached_property
     def is_executable(self) -> bool:
-        return any(node.is_executable for node in self._external_asset_nodes)
+        return any(node.is_executable for node in self._asset_node_snaps)
 
     @property
     def metadata(self) -> ArbitraryMetadataMapping:
-        return self._priority_node.metadata
+        return self.priority_node_snap.metadata
 
     @property
     def tags(self) -> Mapping[str, str]:
-        return self._priority_node.tags or {}
+        return self.priority_node_snap.tags or {}
 
     @property
     def owners(self) -> Sequence[str]:
-        return self._priority_node.owners or []
+        return self.priority_node_snap.owners or []
 
     @property
     def is_partitioned(self) -> bool:
-        return self._priority_node.partitions_def_data is not None
+        return self.priority_node_snap.partitions is not None
 
     @cached_property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        external_def = self._priority_node.partitions_def_data
-        return external_def.get_partitions_definition() if external_def else None
+        partitions_snap = self.priority_node_snap.partitions
+        return partitions_snap.get_partitions_definition() if partitions_snap else None
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         if self.is_materializable:
             return {
-                dep.upstream_asset_key: dep.partition_mapping
-                for dep in self._materializable_node.dependencies
+                dep.parent_asset_key: dep.partition_mapping
+                for dep in self._materializable_node_snap.parent_edges
                 if dep.partition_mapping is not None
             }
         else:
@@ -127,34 +125,40 @@ class RemoteAssetNode(BaseAssetNode):
     def freshness_policy(self) -> Optional[FreshnessPolicy]:
         # It is currently not possible to access the freshness policy for an observation definition
         # if a materialization definition also exists. This needs to be fixed.
-        return self._priority_node.freshness_policy
+        return self.priority_node_snap.freshness_policy
 
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
-        return self._materializable_node.auto_materialize_policy if self.is_materializable else None
+        return (
+            self._materializable_node_snap.auto_materialize_policy
+            if self.is_materializable
+            else None
+        )
 
     @property
     def automation_condition(self) -> Optional[AutomationCondition]:
         if self.is_materializable:
-            return self._materializable_node.automation_condition
+            return self._materializable_node_snap.automation_condition
         elif self.is_observable:
-            return self._observable_node.automation_condition
+            return self._observable_node_snap.automation_condition
         else:
             return None
 
     @property
     def auto_observe_interval_minutes(self) -> Optional[float]:
-        return self._observable_node.auto_observe_interval_minutes if self.is_observable else None
+        return (
+            self._observable_node_snap.auto_observe_interval_minutes if self.is_observable else None
+        )
 
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
-        return self._materializable_node.backfill_policy if self.is_materializable else None
+        return self._materializable_node_snap.backfill_policy if self.is_materializable else None
 
     @property
     def code_version(self) -> Optional[str]:
         # It is currently not possible to access the code version for an observation definition if a
         # materialization definition also exists. This needs to be fixed.
-        return self._priority_node.code_version
+        return self.priority_node_snap.code_version
 
     @property
     def check_keys(self) -> AbstractSet[AssetCheckKey]:
@@ -162,10 +166,10 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {k for k in self.execution_set_asset_and_check_keys if isinstance(k, AssetKey)}
+        return {k for k in self.execution_set_entity_keys if isinstance(k, AssetKey)}
 
     @property
-    def execution_set_asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
+    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
         return self._execution_set_keys
 
     ##### REMOTE-SPECIFIC INTERFACE
@@ -174,10 +178,10 @@ class RemoteAssetNode(BaseAssetNode):
     def job_names(self) -> Sequence[str]:
         # It is currently not possible to access the job names for an observation definition if a
         # materialization definition also exists. This needs to be fixed.
-        return self._priority_node.job_names if self.is_executable else []
+        return self.priority_node_snap.job_names if self.is_executable else []
 
     @property
-    def priority_repository_handle(self) -> RepositoryHandle:
+    def priority_repository_selector(self) -> RepositorySelector:
         # This property supports existing behavior but it should be phased out, because it relies on
         # materialization nodes shadowing observation nodes that would otherwise be exposed.
         return next(
@@ -189,13 +193,15 @@ class RemoteAssetNode(BaseAssetNode):
         )
 
     @property
-    def repository_handles(self) -> Sequence[RepositoryHandle]:
-        return [repo_handle for repo_handle, _ in self._repo_node_pairs]
+    def repository_selectors(self) -> Sequence[RepositorySelector]:
+        return [repo_selector for repo_selector, _ in self._repo_node_pairs]
 
-    ##### HELPERS
+    @property
+    def repo_node_pairs(self) -> Sequence[Tuple[RepositorySelector, "AssetNodeSnap"]]:
+        return self._repo_node_pairs
 
     @cached_property
-    def _priority_node(self) -> "ExternalAssetNode":
+    def priority_node_snap(self) -> "AssetNodeSnap":
         # Return a materialization node if it exists, otherwise return an observable node if it
         # exists, otherwise return any node. This exists to preserve implicit behavior, where the
         # materialization node was previously preferred over the observable node. This is a
@@ -203,23 +209,25 @@ class RemoteAssetNode(BaseAssetNode):
         # either a materialization or observation node.
         return next(
             itertools.chain(
-                (node for node in self._external_asset_nodes if node.is_materializable),
-                (node for node in self._external_asset_nodes if node.is_observable),
-                (node for node in self._external_asset_nodes),
+                (node for node in self._asset_node_snaps if node.is_materializable),
+                (node for node in self._asset_node_snaps if node.is_observable),
+                (node for node in self._asset_node_snaps),
             )
         )
 
+    ##### HELPERS
+
     @cached_property
-    def _materializable_node(self) -> "ExternalAssetNode":
+    def _materializable_node_snap(self) -> "AssetNodeSnap":
         try:
-            return next(node for node in self._external_asset_nodes if node.is_materializable)
+            return next(node for node in self._asset_node_snaps if node.is_materializable)
         except StopIteration:
             check.failed("No materializable node found")
 
     @cached_property
-    def _observable_node(self) -> "ExternalAssetNode":
+    def _observable_node_snap(self) -> "AssetNodeSnap":
         try:
-            return next((node for node in self._external_asset_nodes if node.is_observable))
+            return next((node for node in self._asset_node_snaps if node.is_observable))
         except StopIteration:
             check.failed("No observable node found")
 
@@ -228,54 +236,68 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, RemoteAssetNode],
-        asset_checks_by_key: Mapping[AssetCheckKey, "ExternalAssetCheck"],
-        asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[AssetKeyOrCheckKey]],
+        asset_checks_by_key: Mapping[AssetCheckKey, "AssetCheckNodeSnap"],
+        asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[EntityKey]],
+        repository_selectors_by_asset_check_key: Mapping[AssetCheckKey, RepositorySelector],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_checks_by_key = asset_checks_by_key
+        self._asset_check_nodes_by_key = {
+            k: AssetCheckNode(k, v.blocking, v.automation_condition)
+            for k, v in asset_checks_by_key.items()
+        }
         self._asset_check_execution_sets_by_key = asset_check_execution_sets_by_key
+        self._repository_selectors_by_asset_check_key = repository_selectors_by_asset_check_key
 
     @classmethod
-    def from_repository_handles_and_external_asset_nodes(
+    def from_repository_selectors_and_asset_node_snaps(
         cls,
-        repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
-        external_asset_checks: Sequence["ExternalAssetCheck"],
+        repo_selector_assets: Sequence[Tuple[RepositorySelector, "AssetNodeSnap"]],
+        repo_selector_asset_checks: Sequence[Tuple[RepositorySelector, "AssetCheckNodeSnap"]],
     ) -> "RemoteAssetGraph":
-        _warn_on_duplicate_nodes(repo_handle_external_asset_nodes)
+        _warn_on_duplicate_nodes(repo_selector_assets)
 
         # Build an index of execution sets by key. An execution set is a set of assets and checks
-        # that must be executed together. ExternalAssetNodes and ExternalAssetChecks already have an
+        # that must be executed together. AssetNodeSnaps and AssetCheckNodeSnaps already have an
         # optional execution_set_identifier set. A null execution_set_identifier indicates that the
         # node or check can be executed independently.
-        execution_sets_by_key = _build_execution_set_index(
-            (node for _, node in repo_handle_external_asset_nodes),
-            external_asset_checks,
-        )
+        assets = [asset for _, asset in repo_selector_assets]
+        asset_checks = [asset_check for _, asset_check in repo_selector_asset_checks]
+        execution_sets_by_key = _build_execution_set_index(assets, asset_checks)
 
-        # Index all (RepositoryHandle, ExternalAssetNode) pairs by their asset key, then use this to
+        # Index all (RepositorySelector, AssetNodeSnap) pairs by their asset key, then use this to
         # build the set of RemoteAssetNodes (indexed by key). Each RemoteAssetNode wraps the set of
         # pairs for an asset key.
-        repo_node_pairs_by_key: Dict[
-            AssetKey, List[Tuple[RepositoryHandle, "ExternalAssetNode"]]
-        ] = defaultdict(list)
+        repo_node_pairs_by_key: Dict[AssetKey, List[Tuple[RepositorySelector, "AssetNodeSnap"]]] = (
+            defaultdict(list)
+        )
 
         # Build the dependency graph of asset keys.
-        all_keys = {node.asset_key for _, node in repo_handle_external_asset_nodes}
+        all_keys = {asset.asset_key for asset in assets}
         upstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
         downstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
 
-        for repo_handle, node in repo_handle_external_asset_nodes:
-            repo_node_pairs_by_key[node.asset_key].append((repo_handle, node))
-            for dep in node.dependencies:
-                upstream[node.asset_key].add(dep.upstream_asset_key)
-                downstream[dep.upstream_asset_key].add(node.asset_key)
+        for repo_selector, node in repo_selector_assets:
+            repo_node_pairs_by_key[node.asset_key].append((repo_selector, node))
+            for dep in node.parent_edges:
+                upstream[node.asset_key].add(dep.parent_asset_key)
+                downstream[dep.parent_asset_key].add(node.asset_key)
 
         dep_graph: DependencyGraph[AssetKey] = {"upstream": upstream, "downstream": downstream}
 
+        # Build the set of ExternalAssetChecks, indexed by key. Also the index of execution units for
+        # each asset check key.
         check_keys_by_asset_key: Dict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
-        for c in external_asset_checks:
-            check_keys_by_asset_key[c.asset_key].add(c.key)
+        asset_checks_by_key: Dict[AssetCheckKey, "AssetCheckNodeSnap"] = {}
+        repository_selectors_by_asset_check_key: Dict[AssetCheckKey, RepositorySelector] = {}
+        for repo_selector, asset_check in repo_selector_asset_checks:
+            asset_checks_by_key[asset_check.key] = asset_check
+            check_keys_by_asset_key[asset_check.asset_key].add(asset_check.key)
+            repository_selectors_by_asset_check_key[asset_check.key] = repo_selector
 
+        asset_check_execution_sets_by_key = {
+            k: v for k, v in execution_sets_by_key.items() if isinstance(k, AssetCheckKey)
+        }
         # Build the set of RemoteAssetNodes in topological order so that each node can hold
         # references to its parents.
         asset_nodes_by_key = {
@@ -290,47 +312,39 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
             for key, repo_node_pairs in repo_node_pairs_by_key.items()
         }
 
-        # Build the set of ExternalAssetChecks, indexed by key. Also the index of execution units for
-        # each asset check key.
-        asset_checks_by_key: Dict[AssetCheckKey, "ExternalAssetCheck"] = {}
-        for asset_check in external_asset_checks:
-            asset_checks_by_key[asset_check.key] = asset_check
-        asset_check_execution_sets_by_key = {
-            k: v for k, v in execution_sets_by_key.items() if isinstance(k, AssetCheckKey)
-        }
-
         return cls(
             asset_nodes_by_key,
             asset_checks_by_key,
             asset_check_execution_sets_by_key,
+            repository_selectors_by_asset_check_key,
         )
 
     ##### COMMON ASSET GRAPH INTERFACE
 
     def get_execution_set_asset_and_check_keys(
-        self, asset_or_check_key: AssetKeyOrCheckKey
-    ) -> AbstractSet[AssetKeyOrCheckKey]:
-        if isinstance(asset_or_check_key, AssetKey):
-            return self.get(asset_or_check_key).execution_set_asset_and_check_keys
+        self, entity_key: EntityKey
+    ) -> AbstractSet[EntityKey]:
+        if isinstance(entity_key, AssetKey):
+            return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
-            return self._asset_check_execution_sets_by_key[asset_or_check_key]
+            return self._asset_check_execution_sets_by_key[entity_key]
 
     ##### REMOTE-SPECIFIC METHODS
 
     @property
-    def external_asset_nodes_by_key(self) -> Mapping[AssetKey, "ExternalAssetNode"]:
+    def asset_node_snaps_by_key(self) -> Mapping[AssetKey, "AssetNodeSnap"]:
         # This exists to support existing callsites but it should be removed ASAP, since it exposes
-        # `ExternalAssetNode` instances directly. All sites using this should use RemoteAssetNode
+        # `AssetNodeSnap` instances directly. All sites using this should use RemoteAssetNode
         # instead.
-        return {k: node._priority_node for k, node in self._asset_nodes_by_key.items()}  # noqa: SLF001
+        return {k: node.priority_node_snap for k, node in self._asset_nodes_by_key.items()}
 
     @property
-    def asset_checks(self) -> Sequence["ExternalAssetCheck"]:
-        return list(dict.fromkeys(self._asset_checks_by_key.values()))
+    def asset_checks(self) -> Sequence["AssetCheckNodeSnap"]:
+        return list(self._asset_checks_by_key.values())
 
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        return {key for asset in self.asset_nodes for key in asset.check_keys}
+        return set(self._asset_checks_by_key.keys())
 
     def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if job_name in node.job_names}
@@ -340,11 +354,16 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         return {job_name for node in self.asset_nodes for job_name in node.job_names}
 
     @cached_property
-    def repository_handles_by_key(self) -> Mapping[AssetKey, RepositoryHandle]:
-        return {k: node.priority_repository_handle for k, node in self._asset_nodes_by_key.items()}
+    def repository_selectors_by_key(self) -> Mapping[EntityKey, RepositorySelector]:
+        return {
+            **{
+                k: node.priority_repository_selector for k, node in self._asset_nodes_by_key.items()
+            },
+            **self._repository_selectors_by_asset_check_key,
+        }
 
-    def get_repository_handle(self, asset_key: AssetKey) -> RepositoryHandle:
-        return self.get(asset_key).priority_repository_handle
+    def get_repository_selector(self, key: EntityKey) -> RepositorySelector:
+        return self.repository_selectors_by_key[key]
 
     def get_materialization_job_names(self, asset_key: AssetKey) -> Sequence[str]:
         """Returns the names of jobs that materialize this asset."""
@@ -372,35 +391,33 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         """
         return IMPLICIT_ASSET_JOB_NAME
 
-    def split_asset_keys_by_repository(
-        self, asset_keys: AbstractSet[AssetKey]
-    ) -> Sequence[AbstractSet[AssetKey]]:
-        asset_keys_by_repo = defaultdict(set)
-        for asset_key in asset_keys:
-            repo_handle = self.get_repository_handle(asset_key)
-            asset_keys_by_repo[(repo_handle.location_name, repo_handle.repository_name)].add(
-                asset_key
-            )
-        return list(asset_keys_by_repo.values())
+    def split_entity_keys_by_repository(
+        self, keys: AbstractSet[EntityKey]
+    ) -> Sequence[AbstractSet[EntityKey]]:
+        keys_by_repo = defaultdict(set)
+        for key in keys:
+            repo_selector = self.get_repository_selector(key)
+            keys_by_repo[(repo_selector.location_name, repo_selector.repository_name)].add(key)
+        return list(keys_by_repo.values())
 
 
 def _warn_on_duplicate_nodes(
-    repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
+    repo_selector_asset_node_snaps: Sequence[Tuple[RepositorySelector, "AssetNodeSnap"]],
 ) -> None:
     # Split the nodes into materializable, observable, and unexecutable nodes. Observable and
-    # unexecutable `ExternalAssetNode` represent both source and external assets-- the
-    # "External" in "ExternalAssetNode" is unrelated to the "external" in "external asset", this
-    # is just an unfortunate naming collision. `ExternalAssetNode` will be renamed eventually.
-    materializable_node_pairs: List[Tuple[RepositoryHandle, "ExternalAssetNode"]] = []
-    observable_node_pairs: List[Tuple[RepositoryHandle, "ExternalAssetNode"]] = []
-    unexecutable_node_pairs: List[Tuple[RepositoryHandle, "ExternalAssetNode"]] = []
-    for repo_handle, node in repo_handle_external_asset_nodes:
+    # unexecutable `AssetNodeSnap` represent both source and external assets-- the
+    # "External" in "AssetNodeSnap" is unrelated to the "external" in "external asset", this
+    # is just an unfortunate naming collision. `AssetNodeSnap` will be renamed eventually.
+    materializable_node_pairs: List[Tuple[RepositorySelector, "AssetNodeSnap"]] = []
+    observable_node_pairs: List[Tuple[RepositorySelector, "AssetNodeSnap"]] = []
+    unexecutable_node_pairs: List[Tuple[RepositorySelector, "AssetNodeSnap"]] = []
+    for repo_selector, node in repo_selector_asset_node_snaps:
         if node.is_source and node.is_observable:
-            observable_node_pairs.append((repo_handle, node))
+            observable_node_pairs.append((repo_selector, node))
         elif node.is_source:
-            unexecutable_node_pairs.append((repo_handle, node))
+            unexecutable_node_pairs.append((repo_selector, node))
         else:
-            materializable_node_pairs.append((repo_handle, node))
+            materializable_node_pairs.append((repo_selector, node))
 
     # It is possible for multiple nodes to exist that share the same key. This is invalid if
     # more than one node is materializable or if more than one node is observable. It is valid
@@ -411,17 +428,17 @@ def _warn_on_duplicate_nodes(
 
 
 def _warn_on_duplicates_within_subset(
-    node_pairs: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
+    node_pairs: Sequence[Tuple[RepositorySelector, "AssetNodeSnap"]],
     execution_type: AssetExecutionType,
 ) -> None:
-    repo_handles_by_asset_key: DefaultDict[AssetKey, List[RepositoryHandle]] = defaultdict(list)
-    for repo_handle, node in node_pairs:
-        repo_handles_by_asset_key[node.asset_key].append(repo_handle)
+    repo_selectors_by_asset_key: DefaultDict[AssetKey, List[RepositorySelector]] = defaultdict(list)
+    for repo_selector, node in node_pairs:
+        repo_selectors_by_asset_key[node.asset_key].append(repo_selector)
 
-    duplicates = {k: v for k, v in repo_handles_by_asset_key.items() if len(v) > 1}
+    duplicates = {k: v for k, v in repo_selectors_by_asset_key.items() if len(v) > 1}
     duplicate_lines = []
-    for asset_key, repo_handles in duplicates.items():
-        locations = [repo_handle.code_location_origin.location_name for repo_handle in repo_handles]
+    for asset_key, repo_selectors in duplicates.items():
+        locations = [repo_selector.location_name for repo_selector in repo_selectors]
         duplicate_lines.append(f"  {asset_key.to_string()}: {locations}")
     duplicate_str = "\n".join(duplicate_lines)
     if duplicates:
@@ -432,24 +449,24 @@ def _warn_on_duplicates_within_subset(
 
 
 def _build_execution_set_index(
-    external_asset_nodes: Iterable["ExternalAssetNode"],
-    external_asset_checks: Iterable["ExternalAssetCheck"],
-) -> Mapping[AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]]:
-    from dagster._core.remote_representation.external_data import ExternalAssetNode
+    asset_node_snaps: Iterable["AssetNodeSnap"],
+    asset_check_node_snaps: Iterable["AssetCheckNodeSnap"],
+) -> Mapping[EntityKey, AbstractSet[EntityKey]]:
+    from dagster._core.remote_representation.external_data import AssetNodeSnap
 
-    all_items = [*external_asset_nodes, *external_asset_checks]
+    all_items = [*asset_node_snaps, *asset_check_node_snaps]
 
-    execution_sets_by_id: Dict[str, Set[AssetKeyOrCheckKey]] = defaultdict(set)
+    execution_sets_by_id: Dict[str, Set[EntityKey]] = defaultdict(set)
     for item in all_items:
         id = item.execution_set_identifier
-        key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key
+        key = item.asset_key if isinstance(item, AssetNodeSnap) else item.key
         if id is not None:
             execution_sets_by_id[id].add(key)
 
-    execution_sets_by_key: Dict[AssetKeyOrCheckKey, Set[AssetKeyOrCheckKey]] = {}
+    execution_sets_by_key: Dict[EntityKey, Set[EntityKey]] = {}
     for item in all_items:
         id = item.execution_set_identifier
-        key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key
+        key = item.asset_key if isinstance(item, AssetNodeSnap) else item.key
         execution_sets_by_key[key] = execution_sets_by_id[id] if id is not None else {key}
 
     return execution_sets_by_key

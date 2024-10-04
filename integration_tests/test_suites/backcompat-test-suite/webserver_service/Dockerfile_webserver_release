@@ -2,7 +2,6 @@ FROM python:3.8-slim
 
 ARG WEBSERVER_VERSION
 ARG WEBSERVER_LIBRARY_VERSION
-ARG WEBSERVER_PACKAGE
 
 COPY pins.txt pins.txt
 
@@ -12,7 +11,7 @@ RUN pip install \
     dagster-postgres=="${WEBSERVER_LIBRARY_VERSION}" \
     dagster-docker=="${WEBSERVER_LIBRARY_VERSION}" \
     dagster-graphql=="${WEBSERVER_VERSION}" \
-    ${WEBSERVER_PACKAGE}=="${WEBSERVER_VERSION}"
+    dagster-webserver=="${WEBSERVER_VERSION}"
 
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/
 RUN mkdir -p $DAGSTER_HOME

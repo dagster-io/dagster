@@ -11,7 +11,9 @@
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
+)
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -140,8 +142,8 @@ def get_expected_data_time_for_asset_key(
             if isinstance(asset_graph, RemoteAssetGraph) and context.will_update_asset_partition(
                 AssetKeyPartitionKey(parent_key)
             ):
-                parent_repo = asset_graph.get_repository_handle(parent_key)
-                if parent_repo != asset_graph.get_repository_handle(asset_key):
+                parent_repo = asset_graph.get_repository_selector(parent_key)
+                if parent_repo != asset_graph.get_repository_selector(asset_key):
                     return context.data_time_resolver.get_current_data_time(asset_key, current_time)
             # find the minimum non-None data time of your parents
             parent_expected_data_time = context.expected_data_time_mapping.get(
@@ -227,9 +229,9 @@ def freshness_evaluation_results_for_asset_key(
         and expected_data_time >= execution_period.start
         and evaluation_data is not None
     ):
-        all_subset = AssetSubset.all(asset_key, None)
+        all_subset = ValidAssetSubset.all(asset_key, None)
         return (
-            AssetSubset.all(asset_key, None),
+            ValidAssetSubset.all(asset_key, None),
             [AssetSubsetWithMetadata(subset=all_subset, metadata=evaluation_data.metadata)],
         )
     else:

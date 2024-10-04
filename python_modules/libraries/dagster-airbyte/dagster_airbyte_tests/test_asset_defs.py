@@ -308,3 +308,53 @@ def test_built_airbyte_asset_with_downstream_asset():
     assert len(downstream_of_ab.input_names) == 2
     assert downstream_of_ab.op.ins["some_prefix_foo"].dagster_type.is_nothing
     assert downstream_of_ab.op.ins["some_prefix_bar"].dagster_type.is_nothing
+
+
+def test_built_airbyte_asset_relation_identifier():
+    destination_tables = ["foo", "bar"]
+
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        normalization_tables={"foo": {"baz"}},
+    )
+
+    # Check relation identifier metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+    for metadata in assets_def.metadata_by_key.values():
+        assert metadata.get("dagster/relation_identifier") is None
+
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        destination_database="test_database",
+        destination_schema="test_schema",
+    )
+
+    relation_identifiers = {"test_database.test_schema.foo", "test_database.test_schema.bar"}
+
+    # Check relation identifier metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+    for key, metadata in assets_def.metadata_by_key.items():
+        # Extract the table name from the asset key
+        table_name = key.path[-1]
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]
+
+    ab_assets = build_airbyte_assets(
+        "12345",
+        destination_tables=destination_tables,
+        destination_database="test_database",
+        destination_schema="test_schema",
+        normalization_tables={"foo": {"baz"}},
+    )
+
+    relation_identifiers.add("test_database.test_schema.foo.baz")
+
+    # Check relation identifier metadata is added correctly to asset def
+    assets_def = ab_assets[0]
+    for key, metadata in assets_def.metadata_by_key.items():
+        # Extract the table name from the asset key
+        table_name = key.path[-1]
+        assert metadata["dagster/relation_identifier"] in relation_identifiers
+        assert table_name in metadata["dagster/relation_identifier"]

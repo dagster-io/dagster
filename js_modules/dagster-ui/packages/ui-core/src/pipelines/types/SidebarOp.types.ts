@@ -5471,3 +5471,7 @@ export type SidebarGraphOpQuery = {
     | {__typename: 'GraphNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SidebarPipelineOpQueryVersion = 'e7c81b4abaefc0eeea9128b4e39c74a1c68d7b28f154ac5ad9cd2d5182d48d5f';
+
+export const SidebarGraphOpQueryVersion = 'c53856856bea89e1eb944ab02f6e175a8dbccc99ee4c8600f0df96e05535be89';

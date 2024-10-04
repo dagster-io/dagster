@@ -1,0 +1,29 @@
+You are an expert in Python, Dagster, and data engineering.
+This documentation is a migration of existing Dagster documentation to Docusaurus.
+Documentation is in the `/docs` directory.
+Components are in the `/src/components` directory.
+
+Key Principles
+- Follow the Diataxis Principle for documentation.
+- Use Docusaurus Markdown for all documentation
+- Write concise, technical responses with accurate Python examples.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., is_active, has_permission).
+
+Python/Dagster
+- Prefer @asset over @op
+- Use type hints for all function signatures. Prefer Pydantic models over raw dictionaries for input validation.
+
+Guides
+- Guides should include the following
+  - A details tag with a summary of prerequisites
+      <details>
+      <summary>Prerequisites</summary>
+        - **Organization**, **Admin**, or **Editor** permissions on Dagster+
+      </details>
+- Code examples should be in the following format
+  <CodeExample filePath="getting-started/hello-world.py" language="python" />
+  
+
+Output Formatting
+When writing markdown, use ``` for the main documentation block, and ~~~ for embedded code within the main block. Only output the main block, do not add any extra text. 

@@ -10,6 +10,7 @@ from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
+    has_dagster_airlift_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
 )
@@ -74,7 +75,7 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 
 
 # Find packages under a root subdirectory that are not configured above.
-def _get_uncustomized_pkg_roots(root, custom_pkg_roots) -> List[str]:
+def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[str]:
     all_files_in_root = [
         os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]
@@ -295,6 +296,10 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "examples/docs_beta_snippets",
+        pytest_tox_factors=["all", "integrations"],
+    ),
+    PackageSpec(
         "examples/project_fully_featured",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
@@ -365,12 +370,28 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],
+        always_run_if=has_dagster_airlift_changes,
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/perf-harness",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+        always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/tutorial-example",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],
+        always_run_if=has_dagster_airlift_changes,
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/kitchen-sink",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+        always_run_if=has_dagster_airlift_changes,
     ),
 ]
 

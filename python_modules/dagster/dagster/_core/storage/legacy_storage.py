@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tu
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
@@ -320,6 +321,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._storage.run_storage.get_backfills(
             cursor=cursor, limit=limit, filters=filters, status=status
         )
+
+    def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
+        return self._storage.run_storage.get_backfills_count(filters=filters)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)
@@ -810,10 +814,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key, limit, cursor
+            key, limit, cursor
         )
 
     def get_auto_materialize_evaluations_for_evaluation_id(

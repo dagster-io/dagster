@@ -1,6 +1,7 @@
 import os
 
 import mock
+import pytest
 from click.testing import CliRunner
 from dagster import DagsterEventType, job, op, reconstructable
 from dagster._cli import api
@@ -9,6 +10,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster._core.remote_representation import JobHandle
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
     ensure_dagster_tests_import,
@@ -277,7 +279,7 @@ def test_execute_run_cannot_load():
             ), f"no match, result: {result.stdout}"
 
 
-def runner_execute_step(runner, cli_args, env=None):
+def runner_execute_step(runner: CliRunner, cli_args, env=None):
     result = runner.invoke(api.execute_step_command, cli_args, env=env)
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
@@ -290,7 +292,7 @@ def runner_execute_step(runner, cli_args, env=None):
     return result
 
 
-def test_execute_step():
+def test_execute_step_success():
     with instance_for_test(
         overrides={
             "compute_logs": {
@@ -485,6 +487,52 @@ def test_execute_step_non_compressed():
             result = runner_execute_step(runner, [serialize_value(args)])
 
         assert "STEP_SUCCESS" in result.stdout
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        DagsterRunStatus.FAILURE,
+        DagsterRunStatus.CANCELED,
+        DagsterRunStatus.CANCELING,
+    ],
+)
+def test_execute_step_run_already_finished_or_canceling(status):
+    with instance_for_test(
+        overrides={
+            "compute_logs": {
+                "module": "dagster._core.storage.noop_compute_log_manager",
+                "class": "NoOpComputeLogManager",
+            }
+        }
+    ) as instance:
+        with get_foo_job_handle(instance) as job_handle:
+            runner = CliRunner()
+
+            run = create_run_for_test(
+                instance,
+                job_name="foo",
+                job_code_origin=job_handle.get_python_origin(),
+                status=status,
+            )
+
+            args = ExecuteStepArgs(
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
+                step_keys_to_execute=["do_something"],
+                instance_ref=instance.get_ref(),
+            )
+
+            runner_execute_step(runner, [serialize_value(args)])
+
+        all_logs = instance.all_logs(run.run_id)
+
+        assert not any("STEP_SUCCESS" in str(log) for log in all_logs)
+        assert any(
+            f"Skipping step execution for do_something since the run is in status {status}"
+            in str(log)
+            for log in all_logs
+        )
 
 
 def test_execute_step_1():

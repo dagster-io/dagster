@@ -48,6 +48,7 @@ export const AssetActionMenu = (props: Props) => {
           assetKey: {path},
           isPartitioned: !!definition?.partitionDefinition,
           repoAddress,
+          hasReportRunlessAssetEventPermission: !!definition?.hasReportRunlessAssetEventPermission,
         }
       : null,
   );

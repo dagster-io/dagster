@@ -4,43 +4,85 @@ sidebar_position: 50
 sidebar_label: "I/O managers"
 ---
 
-I/O managers in Dagster provide a way to separate the code that's responsible for logical data transformation from the code that's responsible for reading and writing the results.  This can help reduce boiler plate code and make it easy to swap out where your data is stored.
+I/O managers in Dagster allow you to keep the code for data processing separate from the code for reading and writing data. This reduces repetitive code and makes it easier to change where your data is stored.
+
+In many Dagster pipelines, assets can be broken down as the following steps:
+
+1. Reading data a some data store into memory
+2. Applying in-memory transform
+3. Writing the transformed data to a data store
+
+For assets that follow this pattern, an I/O manager can streamline the code that handles reading and writing data to and from a source.
 
 <details>
 <summary>Prerequisites</summary>
 
-- Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Resources](/concepts/resources)
+To follow the steps in this guide, you'll need familiarity with:
+
+- [Assets](/concepts/assets)
+- [Resources](/concepts/resources)
 </details>
 
-## Extract I/O logic from an asset into a reusable I/O manager
+## Before you begin
 
-In many Dagster pipelines, assets can be broken down as the following steps:
-1. reading data from some data store into memory
-2. applying some in-memory transform
-3. writing the transformed data to some data store
+**I/O managers aren't required to use Dagster, nor are they the best option in all scenarios.** If you find yourself writing the same code at the start and end of each asset to load and store data, an I/O manager may be useful. For example:
 
-Using an I/O manager can help simplify the code responsible for reading and writing the data to and from a data source for assets that follow this pattern.
+- You have assets that are stored in the same location and follow a consistent set of rules to determine the storage path
+- You have assets that are stored differently in local, staging, and production environments
+- You have assets that load upstream dependencies into memory to do the computation
 
-For example, both assets in the code below are constructing a DuckDB connection object, reading from an upstream table, applying some in-memory transform, and then writing the transformed result into a new table in DuckDB.
+**I/O managers may not be the best fit if:**
 
-<CodeExample filePath="guides/external-systems/assets-without-io-managers.py" language="python" title="Assets without I/O managers" />
+- You want to run SQL queries that create or update a table in a database
+- Your pipeline manages I/O on its own by using other libraries/tools that write to storage
+- Your assets won't fit in memory, such as a database table with billions of rows
 
-To switch to using I/O managers, we can use the DuckDB / Pandas I/O manager provided by the  `dagster_duckdb_pandas` package.  The I/O manager will be used to read and write data instead of the `DuckDBResource`.
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/asset-dependencies).
 
-To load an upstream asset using an I/O manager, that asset is specified as an input parameter to the asset function rather than within the `deps` list on the `@asset` decorator.  The `DuckDBPandasIOManager` reads the DuckDB table with the same name as the upstream asset and passes the data into the asset function as a Pandas DataFrame.
+## Using I/O managers in assets \{#io-in-assets}
 
-To store data using an I/O manager, return the data in the asset function. The data returned must be a valid type. The `DuckDBPandasIOManager` accepts Pandas data frames and writes them to DuckDB as a table with the same name as the asset.
+Consider the following example, which contains assets that construct a DuckDB connection object, read data from an upstream table, apply some in-memory transform, and write the result to a new table in DuckDB:
+
+<CodeExample filePath="guides/external-systems/assets-without-io-managers.py" language="python" />
+
+Using an I/O manager would remove the code that reads and writes data from the assets themselves, instead delegating it to the I/O manager. The assets would be left only with the code that applies transformations or retrieves the initial CSV file.
+
+<CodeExample filePath="guides/external-systems/assets-with-io-managers.py" language="python" />
+
+To load upstream assets using an I/O manager, specify the asset as an input parameter to the asset function. In this example, the `DuckDBPandasIOManager` I/O manager will read the DuckDB table with the same name as the upstream asset (`raw_sales_data`) and pass the data to `clean_sales_data` as a Pandas DataFrame.
+
+To store data using an I/O manager, return the data in the asset function. The returned data must be a valid type. This example uses Pandas DataFrames, which the `DuckDBPandasIOManager` will write to a DuckDB table with the same name as the asset.
 
 Refer to the individual I/O manager documentation for details on valid types and how they store data.
 
-<CodeExample filePath="guides/external-systems/assets-with-io-managers.py" language="python" title="Assets with I/O managers" />
+## Swapping data stores \{#swap-data-stores}
 
+With I/O managers, swapping data stores consists of changing the implementation of the I/O manager. The asset definitions, which only contain transformational logic, won't need to change.
 
-## Swapping data stores
+In the following example, a Snowflake I/O manager replaced the DuckDB I/O manager.
 
-With I/O managers, swapping data stores consists of changing the implementation of the I/O manager resource. The asset definitions, which only contain transformational logic, won't need to change.
+<CodeExample filePath="guides/external-systems/assets-with-snowflake-io-manager.py" language="python" />
 
-<CodeExample filePath="guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="Assets with Snowflake I/O manager" />
+## Built-in I/O managers \{#built-in}
 
-Dagster offers built-in [library implementations for I/O managers](/todo) for popular data stores and in-memory formats.
+Dagster offers built-in library implementations for I/O managers for popular data stores and in-memory formats.
+
+| Name                                                                                       | Description                                                                   |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="FilesystemIOManager" />                                 | Default I/O manager. Stores outputs as pickle files on the local file system. |
+| <PyObject module="dagster" object="InMemoryIOManager" />                                   | Stores outputs in memory. Primarily useful for unit testing.                  |
+| <PyObject module="dagster_aws.s3" object="S3PickleIOManager" />                            | Stores outputs as pickle files in Amazon Web Services S3.                     |
+| <PyObject module="dagster_azure.adls2" object="ConfigurablePickledObjectADLS2IOManager" /> | Stores outputs as pickle files in Azure ADLS2.                                |
+| <PyObject module="dagster_gcp" object="GCSPickleIOManager" />                              | Stores outputs as pickle files in Google Cloud Platform GCS.                  |
+| <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />                  | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            |
+| <PyObject module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />                | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           |
+| <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />           | Stores Pandas DataFrame outputs in Snowflake.                                 |
+| <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />         | Stores PySpark DataFrame outputs in Snowflake.                                |
+| <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
+| <PyObject module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
+| <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
+
+## Next steps
+
+- Learn to [connect databases](/guides/databases) with resources
+- Learn to [connect APIs](/guides/apis) with resources

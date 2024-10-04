@@ -13,6 +13,8 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.tags import build_kind_tag
 from dagster_embedded_elt.sling import SlingReplicationParam, sling_assets
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
@@ -232,7 +234,10 @@ def test_base_with_custom_tags_translator() -> None:
     def my_sling_assets(): ...
 
     for asset_key in my_sling_assets.keys:
-        assert my_sling_assets.tags_by_key[asset_key] == {"custom_tag": "custom_value"}
+        assert my_sling_assets.tags_by_key[asset_key] == {
+            "custom_tag": "custom_value",
+            **build_kind_tag("sling"),
+        }
 
 
 def test_base_with_default_meta_translator():
@@ -462,3 +467,35 @@ def test_subset_with_run_config(
     assert found_asset_keys == {
         AssetKey(["target", "main", "orders"]),
     }
+
+
+def test_relation_identifier(
+    csv_to_sqlite_dataworks_replication: SlingReplicationParam,
+    path_to_temp_sqlite_db: str,
+):
+    @sling_assets(replication_config=csv_to_sqlite_dataworks_replication)
+    def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
+        yield from sling.replicate(context=context)
+
+    sling_resource = SlingResource(
+        connections=[
+            SlingConnectionResource(type="file", name="SLING_FILE"),
+            SlingConnectionResource(
+                type="sqlite",
+                name="SLING_SQLITE",
+                connection_string=f"sqlite://{path_to_temp_sqlite_db}",
+            ),
+        ]
+    )
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        selection=[AssetKey(["target", "main", "orders"])],
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 1
+    assert asset_materializations[0].materialization.metadata[
+        "dagster/relation_identifier"
+    ] == TextMetadataValue(text="SLING_SQLITE.main.orders")

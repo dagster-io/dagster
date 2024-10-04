@@ -8,6 +8,7 @@ import {
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import {useCallback, useMemo} from 'react';
+import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
 import {
@@ -21,7 +22,6 @@ import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
@@ -31,7 +31,7 @@ import {
   useSuggestionFilter,
 } from '../ui/BaseFilters/useSuggestionFilter';
 import {TimeRangeState, useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
-import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 
 export interface RunsFilterInputProps {
   loading?: boolean;
@@ -50,7 +50,8 @@ export type RunFilterTokenType =
   | 'tag'
   | 'backfill'
   | 'created_date_before'
-  | 'created_date_after';
+  | 'created_date_after'
+  | 'show_runs_within_backfills';
 
 export type RunFilterToken = {
   token?: RunFilterTokenType;
@@ -90,6 +91,10 @@ const RUN_PROVIDERS_EMPTY = [
     token: 'created_date_after',
     values: () => [],
   },
+  {
+    token: 'show_runs_within_backfills',
+    values: () => [],
+  },
 ];
 
 /**
@@ -116,8 +121,11 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   );
 }
 
-export function runsPathWithFilters(filterTokens: RunFilterToken[]) {
-  return `/runs?${qs.stringify({q: tokensAsStringArray(filterTokens)}, {arrayFormat: 'brackets'})}`;
+export function runsPathWithFilters(filterTokens: RunFilterToken[], basePath: string = '/runs') {
+  return `${basePath}?${qs.stringify(
+    {q: tokensAsStringArray(filterTokens)},
+    {arrayFormat: 'brackets'},
+  )}`;
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
@@ -131,7 +139,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     if (item.token === 'created_date_before') {
       obj.createdBefore = parseInt(item.value);
     } else if (item.token === 'created_date_after') {
-      obj.updatedAfter = parseInt(item.value);
+      obj.createdAfter = parseInt(item.value);
     } else if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
@@ -149,6 +157,11 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       } else {
         obj.tags = [{key: key!, value}];
       }
+    } else if (item.token === 'show_runs_within_backfills') {
+      // the Runs filter expects a boolen on whether to **exclude** runs that are within
+      // backfills. The UI checkbox is whether to **show** runs within backfills, so we
+      // negate the value when creating the filter
+      obj.excludeSubruns = item.value === 'false';
     }
   }
 
@@ -178,7 +191,6 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     RunTagKeysQueryVariables
   >(RUN_TAG_KEYS_QUERY);
   const client = useApolloClient();
-  const {UserDisplay} = useLaunchPadHooks();
 
   const fetchTagValues = useCallback(
     async (tagKey: string) => {

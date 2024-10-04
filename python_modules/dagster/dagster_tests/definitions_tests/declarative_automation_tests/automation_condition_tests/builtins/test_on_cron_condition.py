@@ -33,7 +33,10 @@ def test_on_cron_unpartitioned() -> None:
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
     state = state.with_runs(
-        *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
+        *(
+            run_request(ak, pk)
+            for ak, pk in result.true_subset.expensively_compute_asset_partitions()
+        )
     )
 
     # now B has been materialized, so don't execute again
@@ -86,7 +89,10 @@ def test_on_cron_hourly_partitioned() -> None:
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
     state = state.with_runs(
-        *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
+        *(
+            run_request(ak, pk)
+            for ak, pk in result.true_subset.expensively_compute_asset_partitions()
+        )
     )
 
     # now B has been materialized, so don't execute again

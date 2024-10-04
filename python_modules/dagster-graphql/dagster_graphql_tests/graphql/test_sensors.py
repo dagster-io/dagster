@@ -169,6 +169,16 @@ query SensorQuery($sensorSelector: SensorSelector!) {
         }
       }
       sensorType
+      tags {
+        key
+        value
+      }
+      metadataEntries {
+        label
+        ... on TextMetadataEntry {
+          text
+        }
+      }
       assetSelection {
         assetSelectionString
         assetKeys {
@@ -528,12 +538,28 @@ query TickDynamicPartitionsRequestResultsQuery($sensorSelector: SensorSelector!)
 }
 """
 
+INSTIGATION_STATE_QUERY = """
+query InstigationStateQuery($instigationSelector: InstigationSelector! $id: String) {
+  instigationStateOrError(instigationSelector: $instigationSelector id: $id) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on InstigationState {
+        id
+        status
+    }
+  }
+}
+"""
+
 
 class TestSensors(NonLaunchableGraphQLContextTestMatrix):
     @pytest.mark.parametrize(
         "sensor_name, expected_type",
         [
-            ("always_no_config_sensor", "STANDARD"),
+            ("always_no_config_sensor_with_tags_and_metadata", "STANDARD"),
             ("run_status", "RUN_STATUS"),
             ("single_asset_sensor", "ASSET"),
             ("many_asset_sensor", "MULTI_ASSET"),
@@ -558,7 +584,9 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert sensor["sensorType"] == expected_type
 
     def test_dry_run(self, graphql_context: WorkspaceRequestContext):
-        instigator_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        instigator_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
         result = execute_dagster_graphql(
             graphql_context,
             SENSOR_DRY_RUN_MUTATION,
@@ -745,7 +773,9 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         }
 
     def test_get_sensor(self, graphql_context: WorkspaceRequestContext, snapshot):
-        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
         result = execute_dagster_graphql(
             graphql_context,
             GET_SENSOR_QUERY,
@@ -758,11 +788,15 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         sensor = result.data["sensorOrError"]
         snapshot.assert_match(sensor)
         assert sensor["sensorType"] == "STANDARD"
+        assert sensor["tags"] == [{"key": "foo", "value": "bar"}]
+        assert sensor["metadataEntries"] == [{"label": "foo", "text": "bar"}]
 
 
 class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
     def test_start_sensor_failure(self, graphql_context: WorkspaceRequestContext):
-        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
         result = execute_dagster_graphql(
             graphql_context,
             START_SENSORS_QUERY,
@@ -773,7 +807,9 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
         assert result.data["startSensor"]["__typename"] == "UnauthorizedError"
 
     def test_stop_sensor_failure(self, graphql_context: WorkspaceRequestContext):
-        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -797,7 +833,9 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
         assert stop_result.data["stopSensor"]["__typename"] == "UnauthorizedError"
 
     def test_set_cursor_failure(self, graphql_context: WorkspaceRequestContext):
-        selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -810,7 +848,9 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
 
 class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
     def test_start_sensor(self, graphql_context: WorkspaceRequestContext):
-        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
         result = execute_dagster_graphql(
             graphql_context,
             START_SENSORS_QUERY,
@@ -821,7 +861,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data["startSensor"]["sensorState"]["status"] == InstigatorStatus.RUNNING.value
 
     def test_stop_sensor(self, graphql_context: WorkspaceRequestContext):
-        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
 
         # start sensor
         start_result = execute_dagster_graphql(
@@ -870,7 +912,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             sensor = result.data["setSensorCursor"]
             return sensor["sensorState"]["typeSpecificData"]["lastCursor"]
 
-        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
         assert get_cursor(sensor_selector) is None
         set_cursor(sensor_selector, "new cursor value")
         assert get_cursor(sensor_selector) == "new cursor value"
@@ -927,7 +971,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         cid = CompoundID.from_string(sensor_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -935,7 +979,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
 
     def test_reset_sensor(self, graphql_context: WorkspaceRequestContext):
-        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        sensor_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor_with_tags_and_metadata"
+        )
         result = execute_dagster_graphql(
             graphql_context,
             GET_SENSOR_STATUS_QUERY,
@@ -965,7 +1011,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
         cid = CompoundID.from_string(sensor_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -981,7 +1027,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -1030,7 +1076,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         cid = CompoundID.from_string(sensor_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -1038,13 +1084,99 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert start_result.data["resetSensor"]["canReset"] is False
         assert start_result.data["resetSensor"]["sensorState"]["status"] == "RUNNING"
 
+    def test_sensor_with_default_status_stopped(self, graphql_context: WorkspaceRequestContext):
+        sensor_selector = infer_sensor_selector(graphql_context, "stopped_in_code_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_STATUS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert result.data["sensorOrError"]["defaultStatus"] == "STOPPED"
+        assert result.data["sensorOrError"]["canReset"] is False
+        assert result.data["sensorOrError"]["sensorState"]["status"] == "STOPPED"
+        assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is True
+        assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is True
+
+        sensor_id = result.data["sensorOrError"]["sensorState"]["id"]
+        instigation_selector = {
+            "name": sensor_selector["sensorName"],
+            "repositoryLocationName": sensor_selector["repositoryLocationName"],
+            "repositoryName": sensor_selector["repositoryName"],
+        }
+        state_result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATION_STATE_QUERY,
+            variables={
+                "instigationSelector": instigation_selector,
+                "id": sensor_id,
+            },
+        )
+        assert state_result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert state_result.data["instigationStateOrError"]["status"] == "STOPPED"
+
+        stop_result = execute_dagster_graphql(
+            graphql_context,
+            START_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert stop_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_STATUS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert result.data["sensorOrError"]["canReset"] is True
+
+        state_result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATION_STATE_QUERY,
+            variables={
+                "instigationSelector": instigation_selector,
+                "id": sensor_id,
+            },
+        )
+        assert state_result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert state_result.data["instigationStateOrError"]["status"] == "RUNNING"
+
+        # Now can be restarted
+        start_result = execute_dagster_graphql(
+            graphql_context,
+            RESET_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        cid = CompoundID.from_string(sensor_id)
+        instigator_state = graphql_context.instance.get_instigator_state(
+            cid.remote_origin_id, cid.selector_id
+        )
+
+        assert instigator_state
+        assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+        assert start_result.data["resetSensor"]["canReset"] is False
+        assert start_result.data["resetSensor"]["sensorState"]["status"] == "STOPPED"
+
+        state_result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATION_STATE_QUERY,
+            variables={
+                "instigationSelector": instigation_selector,
+                "id": sensor_id,
+            },
+        )
+        assert state_result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert state_result.data["instigationStateOrError"]["status"] == "STOPPED"
+
 
 def test_sensor_next_ticks(graphql_context: WorkspaceRequestContext):
     external_repository = graphql_context.get_code_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
-    sensor_name = "always_no_config_sensor"
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
@@ -1065,12 +1197,12 @@ def test_sensor_next_ticks(graphql_context: WorkspaceRequestContext):
     # test default sensor with no tick
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_error_sensor.get_external_origin(),
+            external_error_sensor.get_remote_origin(),
             InstigatorType.SENSOR,
             InstigatorStatus.RUNNING,
         )
@@ -1129,7 +1261,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
-    sensor_name = "always_no_config_sensor"
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
@@ -1144,7 +1276,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     # turn the sensor on
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 
@@ -1269,14 +1401,14 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         "repositoryLocationName": main_repo_location_name(),
         "repositoryName": main_repo_name(),
     }
-    sensor_name = "always_no_config_sensor"
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     # turn the sensor on
     graphql_context.instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 
@@ -1287,7 +1419,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     # create a started tick
     started_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
-            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_origin_id=external_sensor.get_remote_origin().get_id(),
             instigator_name=sensor_name,
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.STARTED,
@@ -1299,7 +1431,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     # create a skipped tick
     skipped_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
-            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_origin_id=external_sensor.get_remote_origin().get_id(),
             instigator_name=sensor_name,
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.SKIPPED,
@@ -1311,7 +1443,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     # create a failed tick
     failed_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
-            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_origin_id=external_sensor.get_remote_origin().get_id(),
             instigator_name=sensor_name,
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.FAILURE,
@@ -1459,7 +1591,7 @@ def test_sensor_tick_logs(graphql_context: WorkspaceRequestContext):
     # turn the sensor on
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 
@@ -1495,7 +1627,7 @@ def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceReq
     # turn the sensor on
     instance.add_instigator_state(
         InstigatorState(
-            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+            external_sensor.get_remote_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
     )
 
@@ -1531,23 +1663,32 @@ def test_asset_selection(graphql_context):
 
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
+
     assert (
         result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
-        == "fresh_diamond_bottom"
+        == "fresh_diamond_bottom or asset_with_automation_condition"
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
-        {"path": ["fresh_diamond_bottom"]}
+        {"path": ["asset_with_automation_condition"]},
+        {"path": ["fresh_diamond_bottom"]},
     ]
     assert result.data["sensorOrError"]["assetSelection"]["assets"] == [
         {
+            "key": {"path": ["asset_with_automation_condition"]},
+            "definition": {"assetKey": {"path": ["asset_with_automation_condition"]}},
+        },
+        {
             "key": {"path": ["fresh_diamond_bottom"]},
             "definition": {"assetKey": {"path": ["fresh_diamond_bottom"]}},
-        }
+        },
     ]
     assert result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["nodes"] == [
         {
+            "key": {"path": ["asset_with_automation_condition"]},
+        },
+        {
             "key": {"path": ["fresh_diamond_bottom"]},
-        }
+        },
     ]
 
 

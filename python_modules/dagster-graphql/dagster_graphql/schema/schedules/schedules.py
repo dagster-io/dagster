@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import dagster._check as check
 import graphene
@@ -9,6 +9,7 @@ from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
 
+from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
 from dagster_graphql.schema.errors import (
@@ -22,6 +23,8 @@ from dagster_graphql.schema.instigation import (
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
@@ -54,6 +57,8 @@ class GrapheneSchedule(graphene.ObjectType):
         lower_limit=graphene.Int(),
     )
     assetSelection = graphene.Field(GrapheneAssetSelection)
+    tags = non_null_list(GrapheneDefinitionTag)
+    metadataEntries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "Schedule"
@@ -221,6 +226,15 @@ class GrapheneSchedule(graphene.ObjectType):
         ]
 
         return tick_times
+
+    def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
+        return [
+            GrapheneDefinitionTag(key, value)
+            for key, value in (self._external_schedule.tags or {}).items()
+        ]
+
+    def resolve_metadataEntries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
+        return list(iterate_metadata_entries(self._external_schedule.metadata))
 
 
 class GrapheneScheduleOrError(graphene.Union):

@@ -35,8 +35,7 @@ import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
-import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
@@ -183,12 +182,10 @@ export const AppProvider = (props: AppProviderProps) => {
                           <CustomConfirmationProvider>
                             <AnalyticsContext.Provider value={analytics}>
                               <InstancePageContext.Provider value={instancePageValue}>
-                                <JobFeatureProvider>
-                                  <LayoutProvider>
-                                    <DagsterPlusLaunchPromotion />
-                                    {props.children}
-                                  </LayoutProvider>
-                                </JobFeatureProvider>
+                                <LayoutProvider>
+                                  <DagsterPlusLaunchPromotion />
+                                  {props.children}
+                                </LayoutProvider>
                               </InstancePageContext.Provider>
                             </AnalyticsContext.Provider>
                           </CustomConfirmationProvider>

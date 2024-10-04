@@ -22,6 +22,7 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           groupName: string;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
@@ -95,6 +96,11 @@ export type AssetViewDefinitionQuery = {
               description: string;
               decisionType: Types.AutoMaterializeDecisionType;
             }>;
+          } | null;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
           } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
@@ -16302,6 +16308,7 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;
@@ -16374,6 +16381,11 @@ export type AssetViewDefinitionNodeFragment = {
       description: string;
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
+  } | null;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
@@ -32435,3 +32447,5 @@ export type AssetViewDefinitionNodeFragment = {
       }
     | null;
 };
+
+export const AssetViewDefinitionQueryVersion = '932aa7a5c3d285d2a938c89f24eb6cab960123277a2abaab3027d80f944d0ddd';

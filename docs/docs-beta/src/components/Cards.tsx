@@ -3,15 +3,27 @@ import Link from '@docusaurus/Link';
 import Heading from '@theme/Heading';
 interface CardProps {
   title: string;
-  icon: string;
+  imagePath?: string;
   href: string;
   children: React.ReactNode;
 }
 
-const Card: React.FC<CardProps> = ({title, icon, href, children}) => (
+const Card: React.FC<CardProps> = ({title, imagePath, href, children}) => (
   <Link to={href} className="card">
+    {imagePath && (
+      <img
+        style={{
+          marginBottom: '6px',
+          background: 'var(--theme-color-background-default)',
+          transition: 'background 0.5s',
+        }}
+        src={`${imagePath}`}
+        alt={title}
+        width="56"
+        height="56"
+      />
+    )}
     <Heading as="h3">{title}</Heading>
-    <i className={`icon-${icon}`}></i>
     <p>{children}</p>
   </Link>
 );

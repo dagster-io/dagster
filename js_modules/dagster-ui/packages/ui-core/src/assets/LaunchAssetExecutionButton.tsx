@@ -12,6 +12,8 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
+import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
+import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {
@@ -40,6 +42,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
@@ -47,7 +50,6 @@ import {
   tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {PipelineSelector} from '../graphql/types';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
@@ -187,13 +189,12 @@ export const LaunchAssetExecutionButton = ({
         label: string;
         icon?: JSX.Element;
         onClick: () => void;
+        disabled?: boolean;
       }
   )[];
 }) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
-
-  const {MaterializeButton} = useLaunchPadHooks();
 
   const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
     React.useState<boolean>(false);
@@ -293,18 +294,29 @@ export const LaunchAssetExecutionButton = ({
                   onClick(firstOption.assetKeys, e, true);
                 }}
               />
-              {additionalDropdownOptions?.map((option) =>
-                'label' in option ? (
+              {additionalDropdownOptions?.map((option) => {
+                if (!('label' in option)) {
+                  return option;
+                }
+
+                const item = (
                   <MenuItem
                     key={option.label}
                     text={option.label}
                     icon={option.icon}
                     onClick={option.onClick}
+                    disabled={option.disabled}
                   />
+                );
+
+                return option.disabled ? (
+                  <Tooltip key={option.label} content={DEFAULT_DISABLED_REASON} placement="left">
+                    {item}
+                  </Tooltip>
                 ) : (
-                  option
-                ),
-              )}
+                  item
+                );
+              })}
             </Menu>
           }
         >
@@ -323,7 +335,6 @@ export const LaunchAssetExecutionButton = ({
 };
 
 export const useMaterializationAction = (preferredJobName?: string) => {
-  const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const client = useApolloClient();

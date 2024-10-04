@@ -9981,3 +9981,7 @@ export type RunLogsQuery = {
     | {__typename: 'PythonError'; message: string; stack: Array<string>}
     | {__typename: 'RunNotFoundError'};
 };
+
+export const PipelineRunLogsSubscriptionVersion = '24c8a33ddd3d1b204589488bc967577f5a3ff8d183d12591c7b74ca7bbd30458';
+
+export const RunLogsQueryVersion = 'a7e61774ee31f4b2f9c2354ce17ed62b14b404a11de9a576d66702b5664a059e';

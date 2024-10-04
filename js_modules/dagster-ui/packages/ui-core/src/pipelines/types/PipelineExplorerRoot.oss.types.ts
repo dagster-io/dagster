@@ -1601,3 +1601,5 @@ export type PipelineExplorerRootQuery = {
         }>;
       };
 };
+
+export const PipelineExplorerRootQueryVersion = 'f351896aa934dd97af817742b8d069bd5876a9315933e98aa988931c90ad17c2';

@@ -1,4 +1,15 @@
-import {Box, NonIdealState, SpinnerWithText, TextInput, Tooltip} from '@dagster-io/ui-components';
+import {
+  Body2,
+  Box,
+  Colors,
+  Heading,
+  Icon,
+  NonIdealState,
+  PageHeader,
+  SpinnerWithText,
+  TextInput,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
@@ -16,10 +27,10 @@ import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 type AutomationType = 'schedules' | 'sensors';
 
@@ -253,9 +264,23 @@ export const MergedAutomationRoot = () => {
             icon="search"
             title="No automations"
             description={
-              anyReposHidden
-                ? 'No automations were found in the selected code locations'
-                : 'No matching automations'
+              anyReposHidden ? (
+                'No automations were found in the selected code locations'
+              ) : (
+                <Body2>
+                  There are no automations in this deployment.{' '}
+                  <a
+                    href="https://docs.dagster.io/concepts/automation"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                      Learn more about automations
+                      <Icon name="open_in_new" color={Colors.linkDefault()} />
+                    </Box>
+                  </a>
+                </Body2>
+              )
             }
           />
         </Box>
@@ -282,8 +307,9 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <PageHeader title={<Heading>Automation</Heading>} />
       <Box
-        padding={{horizontal: 24, vertical: 16}}
+        padding={{horizontal: 24, vertical: 12}}
         flex={{
           direction: 'row',
           alignItems: 'center',
@@ -344,7 +370,7 @@ const buildBuckets = (
       const {name, schedules, sensors} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
 
-      if (sensors.length > 0) {
+      if (sensors.length > 0 || schedules.length > 0) {
         buckets.push({
           repoAddress,
           schedules,

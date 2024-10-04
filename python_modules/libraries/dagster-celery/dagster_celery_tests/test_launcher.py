@@ -91,7 +91,7 @@ def test_successful_run(
     dagster_run = instance.create_run_for_job(
         job_def=noop_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
     run_id = dagster_run.run_id
@@ -136,7 +136,7 @@ def test_crashy_run(
     run = instance.create_run_for_job(
         job_def=crashy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -182,7 +182,7 @@ def test_exity_run(
     run = instance.create_run_for_job(
         job_def=exity_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 
@@ -232,7 +232,7 @@ def test_terminated_run(
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_external_origin(),
+        external_job_origin=external_job.get_remote_origin(),
         job_code_origin=external_job.get_python_origin(),
     )
 

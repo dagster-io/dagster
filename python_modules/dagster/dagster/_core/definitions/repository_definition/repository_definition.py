@@ -24,6 +24,9 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+)
 from dagster._core.definitions.repository_definition.repository_data import (
     CachingRepositoryData,
     RepositoryData,
@@ -48,25 +51,39 @@ if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"cacheable_asset_data": "cached_data_by_key"},
+)
 class RepositoryLoadData(
     NamedTuple(
         "_RepositoryLoadData",
         [
-            ("cached_data_by_key", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
+            ("cacheable_asset_data", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
+            ("reconstruction_metadata", Mapping[str, Any]),
         ],
     )
 ):
-    def __new__(cls, cached_data_by_key: Mapping[str, Sequence[AssetsDefinitionCacheableData]]):
+    def __new__(
+        cls,
+        cacheable_asset_data: Optional[
+            Mapping[str, Sequence[AssetsDefinitionCacheableData]]
+        ] = None,
+        reconstruction_metadata: Optional[
+            Mapping[str, CodeLocationReconstructionMetadataValue]
+        ] = None,
+    ):
         return super(RepositoryLoadData, cls).__new__(
             cls,
-            cached_data_by_key=(
-                check.mapping_param(
-                    cached_data_by_key,
-                    "cached_data_by_key",
+            cacheable_asset_data=(
+                check.opt_mapping_param(
+                    cacheable_asset_data,
+                    "cacheable_asset_data",
                     key_type=str,
                     value_type=list,
                 )
+            ),
+            reconstruction_metadata=check.opt_mapping_param(
+                reconstruction_metadata, "reconstruction_metadata", key_type=str
             ),
         )
 
@@ -91,7 +108,8 @@ class RepositoryDefinition:
         name (str): The name of the repository.
         repository_data (RepositoryData): Contains the definitions making up the repository.
         description (Optional[str]): A string description of the repository.
-        metadata (Optional[MetadataMapping]): A map of arbitrary metadata for the repository.
+        metadata (Optional[MetadataMapping]): Arbitrary metadata for the repository. Not
+            displayed in the UI but accessible on RepositoryDefinition at runtime.
     """
 
     def __init__(
@@ -404,7 +422,7 @@ class PendingRepositoryDefinition:
         )
         self._name = name
         self._description = description
-        self._metadata = metadata
+        self._metadata = metadata or {}
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
@@ -416,12 +434,20 @@ class PendingRepositoryDefinition:
     def _compute_repository_load_data(self) -> RepositoryLoadData:
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
+        cacheable_asset_data = {
+            defn.unique_id: defn.compute_cacheable_data()
+            for defn in self._repository_definitions
+            if isinstance(defn, CacheableAssetsDefinition)
+        }
+
         return RepositoryLoadData(
-            cached_data_by_key={
-                defn.unique_id: defn.compute_cacheable_data()
-                for defn in self._repository_definitions
-                if isinstance(defn, CacheableAssetsDefinition)
-            }
+            cacheable_asset_data=cacheable_asset_data,
+            # Extract all CodeLocationReconstructionMetadataValue to make available for reconstruction
+            reconstruction_metadata={
+                k: v
+                for k, v in self._metadata.items()
+                if isinstance(v, CodeLocationReconstructionMetadataValue)
+            },
         )
 
     def _get_repository_definition(
@@ -434,14 +460,14 @@ class PendingRepositoryDefinition:
             if isinstance(defn, CacheableAssetsDefinition):
                 # should always have metadata for each cached defn at this point
                 check.invariant(
-                    defn.unique_id in repository_load_data.cached_data_by_key,
+                    defn.unique_id in repository_load_data.cacheable_asset_data,
                     "No metadata found for CacheableAssetsDefinition with unique_id"
                     f" {defn.unique_id}.",
                 )
                 # use the emtadata to generate definitions
                 resolved_definitions.extend(
                     defn.build_definitions(
-                        data=repository_load_data.cached_data_by_key[defn.unique_id]
+                        data=repository_load_data.cacheable_asset_data[defn.unique_id]
                     )
                 )
             else:

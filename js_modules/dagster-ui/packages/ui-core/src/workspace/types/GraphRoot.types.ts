@@ -1435,3 +1435,5 @@ export type GraphExplorerRootQuery = {
         }>;
       };
 };
+
+export const GraphExplorerRootQueryVersion = 'd413a7149d339afaa3e7b52caa8be6f62d6fcfe9ff25ab62e268d4e5c9785643';
