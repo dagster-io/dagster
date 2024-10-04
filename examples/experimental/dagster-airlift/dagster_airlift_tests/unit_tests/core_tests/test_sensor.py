@@ -20,6 +20,7 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.test_utils import freeze_time
@@ -83,7 +84,8 @@ def test_dag_and_task_metadata(init_load_context: None, instance: DagsterInstanc
             "Run Details",
             "Airflow Config",
             "Run Type",
-            "dagster-airlift/effective_timestamp",
+            "dagster-airlift/effective-timestamp",
+            "dagster-airlift/airflow-run-id",
         }
         assert set(dag_mat.metadata.keys()) == expected_dag_metadata_keys
         task_mat = result.asset_events[0]
@@ -97,7 +99,9 @@ def test_dag_and_task_metadata(init_load_context: None, instance: DagsterInstanc
             "Task Logs",
             "Airflow Config",
             "Run Type",
-            "dagster-airlift/effective_timestamp",
+            "dagster-airlift/effective-timestamp",
+            "dagster-airlift/airflow-run-id",
+            "dagster-airlift/airflow-task-instance-logical-date",
         }
         assert set(task_mat.metadata.keys()) == expected_task_metadata_keys
 
@@ -789,3 +793,230 @@ def test_dag_level_override_existing_runs(
         assert isinstance(result, SensorResult)
         assert len(result.asset_events) == 1
         assert result.asset_events[0].asset_key.to_user_string() == make_dag_key_str(dag_id)
+
+
+def test_default_time_partitioned_asset(init_load_context: None, instance: DagsterInstance) -> None:
+    """Test that a task instance for a time-partitioned asset is correctly ingested."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance(
+            dag_and_task_structure={
+                "dag": ["task"],
+            },
+            dag_runs=[
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 2, 5, tzinfo=timezone.utc),
+                    end_date=datetime(2021, 1, 2, 6, tzinfo=timezone.utc),
+                    logical_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                )
+            ],
+        ),
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc)
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 2, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(
+            repository_def=defs.get_repository_def(), instance=instance
+        )
+        result = sensor(sensor_context)
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 2
+        assert_expected_key_order(result.asset_events, ["a", "test_instance/dag/dag"])
+        a_asset_mat = result.asset_events[0]
+        assert isinstance(a_asset_mat, AssetMaterialization)
+        # We expect the partition to match the logical date.
+        assert a_asset_mat.partition == "2021-01-01"
+
+
+def test_before_start_of_partitioned_asset(
+    init_load_context: None, instance: DagsterInstance
+) -> None:
+    """We expect to throw an error if there is no matching partition after the start date."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance(
+            dag_and_task_structure={
+                "dag": ["task"],
+            },
+            dag_runs=[
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 1, 5, tzinfo=timezone.utc),
+                    end_date=datetime(2021, 1, 1, 6, tzinfo=timezone.utc),
+                    logical_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                )
+            ],
+        ),
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                # Partitions definition starts after the logical date.
+                                start_date=datetime(2021, 1, 2, tzinfo=timezone.utc)
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(
+            repository_def=defs.get_repository_def(), instance=instance
+        )
+        with pytest.raises(AirliftSensorEventTransformerError):
+            sensor(sensor_context)
+
+
+def test_logical_date_mismatch(init_load_context: None, instance: DagsterInstance) -> None:
+    """Test a logical date which does not align with the partition definition due to date mismatch."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance(
+            dag_and_task_structure={
+                "dag": ["task"],
+            },
+            dag_runs=[
+                make_dag_run(
+                    dag_id="dag",
+                    run_id="run-dag",
+                    start_date=datetime(2021, 1, 1, 5, tzinfo=timezone.utc),
+                    end_date=datetime(2021, 1, 1, 6, tzinfo=timezone.utc),
+                    # Logical date isn't aligned with midnight.
+                    logical_date=datetime(2021, 1, 1, 3, tzinfo=timezone.utc),
+                )
+            ],
+        ),
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc)
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(
+            repository_def=defs.get_repository_def(), instance=instance
+        )
+        with pytest.raises(AirliftSensorEventTransformerError):
+            sensor(sensor_context)
+
+
+def test_partition_offset_mismatch(init_load_context: None, instance: DagsterInstance) -> None:
+    """Test that partition offsets are respected when determining the partition corresponding to a logical date."""
+    airflow_instance = make_instance(
+        dag_and_task_structure={
+            "dag": ["task"],
+        },
+        dag_runs=[
+            make_dag_run(
+                dag_id="dag",
+                run_id="run-dag",
+                start_date=datetime(2021, 1, 1, 5, tzinfo=timezone.utc),
+                end_date=datetime(2021, 1, 1, 6, tzinfo=timezone.utc),
+                # Logical date is 3 AM.
+                logical_date=datetime(2021, 1, 1, 3, tzinfo=timezone.utc),
+            )
+        ],
+    )
+
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=airflow_instance,
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                                hour_offset=6,
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    # Due to differing hours offset, we expect an error to throw.
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(
+            repository_def=defs.get_repository_def(), instance=instance
+        )
+        with pytest.raises(AirliftSensorEventTransformerError):
+            sensor(sensor_context)
+
+    # now, align the offset and expect success.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=airflow_instance,
+        defs=dag_defs(
+            "dag",
+            task_defs(
+                "task",
+                Definitions(
+                    assets=[
+                        AssetSpec(
+                            key="a",
+                            partitions_def=DailyPartitionsDefinition(
+                                start_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+                                hour_offset=3,
+                            ),
+                        )
+                    ],
+                ),
+            ),
+        ),
+    )
+    assert defs.sensors
+    sensor = next(iter(defs.sensors))
+    with freeze_time(datetime(2021, 1, 1, 6, tzinfo=timezone.utc)):
+        sensor_context = build_sensor_context(
+            repository_def=defs.get_repository_def(), instance=instance
+        )
+        result = sensor(sensor_context)
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 2
+        assert_expected_key_order(result.asset_events, ["a", "test_instance/dag/dag"])
+        a_asset_mat = result.asset_events[0]
+        assert isinstance(a_asset_mat, AssetMaterialization)
+        # We expect the partition to match the logical date.
+        assert a_asset_mat.partition == "2021-01-01"

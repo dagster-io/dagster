@@ -2,7 +2,7 @@ from collections import defaultdict
 from functools import cached_property
 from typing import AbstractSet, Mapping, Set
 
-from dagster import AssetKey, Definitions
+from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -30,6 +30,10 @@ class AirflowDefinitionsData:
     @cached_property
     def mapping_info(self) -> AirliftMetadataMappingInfo:
         return AirliftMetadataMappingInfo(asset_specs=list(self.mapped_defs.get_all_asset_specs()))
+
+    @cached_property
+    def all_asset_specs_by_key(self) -> Mapping[AssetKey, AssetSpec]:
+        return {spec.key: spec for spec in self.mapped_defs.get_all_asset_specs()}
 
     def task_ids_in_dag(self, dag_id: str) -> Set[str]:
         return self.mapping_info.task_id_map[dag_id]

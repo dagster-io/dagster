@@ -28,7 +28,10 @@ from dagster._time import get_current_datetime
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.sensor.event_translation import DagsterEventTransformerFn
+from dagster_airlift.core.sensor.event_translation import (
+    DagsterEventTransformerFn,
+    default_event_transformer,
+)
 from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 from dagster_airlift.test import make_dag_run, make_instance
 
@@ -42,7 +45,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     dag_level_asset_overrides: Optional[Dict[str, List[str]]] = None,
-    event_transformer_fn: Optional[DagsterEventTransformerFn] = None,
+    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> RepositoryDefinition:
     defs = load_definitions_airflow_asset_graph(
         assets_per_task,
@@ -62,7 +65,7 @@ def load_definitions_airflow_asset_graph(
     create_runs: bool = True,
     create_assets_defs: bool = True,
     dag_level_asset_overrides: Optional[Dict[str, List[str]]] = None,
-    event_transformer_fn: Optional[DagsterEventTransformerFn] = None,
+    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> Definitions:
     assets = []
     dag_and_task_structure = defaultdict(list)
@@ -133,7 +136,7 @@ def build_and_invoke_sensor(
     instance: DagsterInstance,
     additional_defs: Definitions = Definitions(),
     dag_level_asset_overrides: Optional[Dict[str, List[str]]] = None,
-    event_transformer_fn: Optional[DagsterEventTransformerFn] = None,
+    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> Tuple[SensorResult, SensorEvaluationContext]:
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
         assets_per_task,
