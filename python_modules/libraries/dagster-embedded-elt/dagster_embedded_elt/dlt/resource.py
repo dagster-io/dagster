@@ -132,22 +132,39 @@ class DagsterDltResource(ConfigurableResource):
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
-        schema = dlt_pipeline.default_schema
+        schema: Optional[str] = None
+        for load_package in load_info_dict.get("load_packages", []):
+            for table in load_package.get("tables", []):
+                if table.get("name") == resource.table_name:
+                    schema = table.get("schema_name")
+                    break
+            if schema:
+                break
+
+        destination_name: Optional[str] = base_metadata.get("destination_name")
+        relation_identifier = None
+        if destination_name and schema:
+            relation_identifier = ".".join([destination_name, schema, str(resource.table_name)])
+
+        default_schema = dlt_pipeline.default_schema
         child_table_names = [
             name
-            for name in schema.data_table_names()
+            for name in default_schema.data_table_names()
             if name.startswith(f"{resource.table_name}__")
         ]
         child_table_schemas = {
-            table_name: self._extract_table_schema_metadata(table_name, schema)
+            table_name: self._extract_table_schema_metadata(table_name, default_schema)
             for table_name in child_table_names
         }
-        table_schema = self._extract_table_schema_metadata(str(resource.table_name), schema)
+        table_schema = self._extract_table_schema_metadata(str(resource.table_name), default_schema)
 
         base_metadata = {
             **child_table_schemas,
             **base_metadata,
-            **TableMetadataSet(column_schema=table_schema),
+            **TableMetadataSet(
+                column_schema=table_schema,
+                relation_identifier=relation_identifier,
+            ),
         }
 
         return base_metadata

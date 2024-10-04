@@ -16,8 +16,10 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (
     TableColumnConstraints,
     TableSchemaMetadataValue,
+    TextMetadataValue,
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
@@ -100,6 +102,9 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
         for materialization in materializations
         if materialization.asset_key == AssetKey("dlt_pipeline_repos")
     )
+    assert repos_materialization.metadata["dagster/relation_identifier"] == TextMetadataValue(
+        text="duckdb.pipeline.repos"
+    )
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
             columns=[
@@ -128,7 +133,9 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
                 TableColumn(
                     name="_dlt_id",
                     type="text",
-                    constraints=TableColumnConstraints(nullable=False, unique=True),
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=True, other=["row_key"]
+                    ),
                 ),
             ]
         ),
@@ -143,15 +150,17 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
                     constraints=TableColumnConstraints(nullable=True, unique=False),
                 ),
                 TableColumn(
-                    name="_dlt_id",
+                    name="_dlt_root_id",
                     type="text",
-                    constraints=TableColumnConstraints(nullable=False, unique=True),
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["root_key"]
+                    ),
                 ),
                 TableColumn(
                     name="_dlt_parent_id",
                     type="text",
                     constraints=TableColumnConstraints(
-                        nullable=False, unique=False, other=["foreign_key"]
+                        nullable=False, unique=False, other=["parent_key"]
                     ),
                 ),
                 TableColumn(
@@ -160,10 +169,10 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
                     constraints=TableColumnConstraints(nullable=False, unique=False),
                 ),
                 TableColumn(
-                    name="_dlt_root_id",
+                    name="_dlt_id",
                     type="text",
                     constraints=TableColumnConstraints(
-                        nullable=False, unique=False, other=["root_key"]
+                        nullable=False, unique=True, other=["row_key"]
                     ),
                 ),
             ]
@@ -230,7 +239,9 @@ def test_get_automation_condition(dlt_pipeline: Pipeline):
         assert "0 1 * * *" in str(item)
 
 
-def test_get_automation_condition_converts_auto_materialize_policy(dlt_pipeline: Pipeline):
+def test_get_automation_condition_converts_auto_materialize_policy(
+    dlt_pipeline: Pipeline,
+):
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
@@ -293,10 +304,7 @@ def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
 
         for key in example_pipeline_assets.asset_and_check_keys:
             if isinstance(key, AssetKey):
-                assert (
-                    example_pipeline_assets.tags_by_key[key].get("dagster/storage_kind")
-                    == destination_type
-                )
+                assert has_kind(example_pipeline_assets.tags_by_key[key], destination_type)
 
 
 def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
@@ -559,7 +567,11 @@ def test_with_owner_replacements(dlt_pipeline: Pipeline) -> None:
 
 
 def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
-    expected_tags = {"customized": "tag", "dagster/storage_kind": "duckdb"}
+    expected_tags = {
+        "customized": "tag",
+        **build_kind_tag("dlt"),
+        **build_kind_tag("duckdb"),
+    }
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_tags(self, _) -> Optional[Mapping[str, str]]:
