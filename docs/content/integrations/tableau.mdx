@@ -14,6 +14,10 @@ This guide provides instructions for using Dagster with Tableau. Your Tableau as
 
 - How to customize asset definition metadata for these Tableau assets.
 
+- How to refresh Tableau workbooks.
+
+- How to materialize Tableau sheets and dashboards.
+
 <details>
   <summary>Prerequisites</summary>
 
@@ -151,3 +155,28 @@ defs = Definitions.merge(
     marketing_team_workspace.build_defs(),
 )
 ```
+
+### Refresh and materialize Tableau assets
+
+You can use Dagster to refresh Tableau workbooks and materialize Tableau sheets and dashboards.
+
+```python file=/integrations/tableau/refresh-and-materialize-tableau-assets.py
+from dagster_tableau import TableauCloudWorkspace
+
+from dagster import EnvVar
+
+workspace = TableauCloudWorkspace(
+    connected_app_client_id=EnvVar("TABLEAU_CONNECTED_APP_CLIENT_ID"),
+    connected_app_secret_id=EnvVar("TABLEAU_CONNECTED_APP_SECRET_ID"),
+    connected_app_secret_value=EnvVar("TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    username=EnvVar("TABLEAU_USERNAME"),
+    site_name=EnvVar("TABLEAU_SITE_NAME"),
+    pod_name=EnvVar("TABLEAU_POD_NAME"),
+)
+
+defs = workspace.build_defs(
+    refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"]
+)
+```
+
+Note that only workbooks created with extracts can be refreshed using this method. See more about [refreshing data sources](https://help.tableau.com/current/pro/desktop/en-us/refreshing_data.htm) in Tableau documentation website.
