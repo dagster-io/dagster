@@ -445,9 +445,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         # Update job permissions
         if "job_permissions" in self.permissions:
             job_permissions = self._format_permissions(self.permissions["job_permissions"])
-            job_id = run_info.job_id
+            job_id = check.not_none(run_info.job_id, f"Databricks run {databricks_run_id} has null job_id")
             log.debug(f"Updating job permissions with following json: {job_permissions}")
-            client.permissions.update("jobs", job_id, access_control_list=job_permissions)
+            client.permissions.update("jobs", str(job_id), access_control_list=job_permissions)
             log.info("Successfully updated cluster permissions")
 
         # Update cluster permissions
