@@ -34,8 +34,10 @@ from dagster_airlift.constants import (
 from dagster_airlift.core import dag_defs, task_defs
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
-from dagster_airlift.core.sensor import AirflowPollingSensorCursor
-from dagster_airlift.core.sensor.builder import AirliftSensorEventTransformerError
+from dagster_airlift.core.sensor.sensor_builder import (
+    AirflowPollingSensorCursor,
+    AirliftSensorEventTransformerError,
+)
 from dagster_airlift.core.serialization.defs_construction import (
     key_for_automapped_task_asset,
     make_default_dag_asset_key,
