@@ -853,3 +853,22 @@ defs = Definitions.merge(
 ```
 
 </details>
+
+## Addendum: Dealing with changing Airflow
+
+In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database,
+so that repeat fetches of the code location don't require additional calls to Airflow's rest API. However, this means that
+the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
+
+- A new Airflow dag is added. The lineage information does not show up for this dag, and materializations are not recorded.
+- A dag is removed. The polling sensor begins failing, because there exist assets which expect that dag to exist.
+- The task dependency structure within a dag changes. This may result in `unsynced` statuses in Dagster, or missing materializations.
+  This is not an exhaustive list of problems, but most of the time the tell is that materializations are missing, or assets are missing.
+  When you find yourself in this state, you can force `dagster-airlift` to reload Airflow state by reloading the code location.
+  To do this, go to the `Deployment` tab on the top nav, and click `Redeploy` on the code location relevant to your asset. After some time,
+  the code location should be reloaded with refreshed state from Airflow.
+
+### Automating changes to code locations
+
+If changes to your Airflow instance are controlled via a ci/cd process, you can add a step to automatically induce a redeploy of the relevant code location.
+See the docs [here](https://docs.dagster.io/concepts/webserver/graphql-client#reloading-all-repositories-in-a-repository-location) on using the graphql client to do this.
