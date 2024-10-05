@@ -190,55 +190,28 @@ Then, we will construct our assets:
 
 ```python
 # observe.py
-import os
-from pathlib import Path
-
 from dagster import AssetSpec, Definitions
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
+    assets_with_task_mappings,
     build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
 )
-from dagster_airlift.dbt import dbt_defs
-from dagster_dbt import DbtProject
 
-
-def dbt_project_path() -> Path:
-    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
-    return Path(env_val)
+from .jaffle_shop import jaffle_shop_assets, jaffle_shop_resource
 
 
 def rebuild_customer_list_defs() -> Definitions:
-    return dag_defs(
-        "rebuild_customers_list",
-        task_defs(
-            "load_raw_customers",
-            Definitions(
-                assets=[
-                    AssetSpec(key=["raw_data", "raw_customers"]),
-                ]
-            ),
+    return Definitions(
+        assets=assets_with_task_mappings(
+            dag_id="rebuild_customers_list",
+            task_mappings={
+                "load_raw_customers": [AssetSpec(key=["raw_data", "raw_customers"])],
+                "build_dbt_models": [jaffle_shop_assets],
+                "export_customers": [AssetSpec(key="customers_csv", deps=["customers"])],
+            },
         ),
-        task_defs(
-            "build_dbt_models",
-            # load rich set of assets from dbt project
-            dbt_defs(
-                manifest=dbt_project_path() / "target" / "manifest.json",
-                project=DbtProject(dbt_project_path()),
-            ),
-        ),
-        task_defs(
-            "export_customers",
-            # encode dependency on customers table
-            Definitions(
-                assets=[
-                    AssetSpec(key="customers_csv", deps=["customers"]),
-                ]
-            ),
-        ),
+        resources={"dbt": jaffle_shop_resource()},
     )
 
 
@@ -451,84 +424,72 @@ import os
 from pathlib import Path
 
 from dagster import AssetSpec, Definitions, materialize, multi_asset
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
-)
-from dagster_airlift.dbt import dbt_defs
-from dagster_dbt import DbtProject
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 
 # Code also invoked from Airflow
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
 
-
-def dbt_project_path() -> Path:
-    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
-    return Path(env_val)
+from .jaffle_shop import jaffle_shop_assets, jaffle_shop_resource
 
 
 def airflow_dags_path() -> Path:
     return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
-def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
+def load_csv_to_duckdb_assets_def(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
     @multi_asset(name=f"load_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         load_csv_to_duckdb(args)
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
 
 
-def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> Definitions:
+def export_duckdb_to_csv_assets_def(
+    spec: AssetSpec, args: ExportDuckDbToCsvArgs
+) -> AssetsDefinition:
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         export_duckdb_to_csv(args)
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
 
 
 def rebuild_customer_list_defs() -> Definitions:
-    return dag_defs(
-        "rebuild_customers_list",
-        task_defs(
-            "load_raw_customers",
-            load_csv_to_duckdb_defs(
-                AssetSpec(key=["raw_data", "raw_customers"]),
-                LoadCsvToDuckDbArgs(
-                    table_name="raw_customers",
-                    csv_path=airflow_dags_path() / "raw_customers.csv",
-                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-                    names=["id", "first_name", "last_name"],
-                    duckdb_schema="raw_data",
-                    duckdb_database_name="jaffle_shop",
-                ),
-            ),
+    return Definitions(
+        assets=assets_with_task_mappings(
+            dag_id="rebuild_customers_list",
+            task_mappings={
+                "load_raw_customers": [
+                    load_csv_to_duckdb_assets_def(
+                        AssetSpec(key=["raw_data", "raw_customers"]),
+                        LoadCsvToDuckDbArgs(
+                            table_name="raw_customers",
+                            csv_path=airflow_dags_path() / "raw_customers.csv",
+                            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                            names=["id", "first_name", "last_name"],
+                            duckdb_schema="raw_data",
+                            duckdb_database_name="jaffle_shop",
+                        ),
+                    )
+                ],
+                "build_dbt_models": [jaffle_shop_assets],
+                "export_customers": [
+                    export_duckdb_to_csv_assets_def(
+                        AssetSpec(key="customers_csv", deps=["customers"]),
+                        ExportDuckDbToCsvArgs(
+                            table_name="customers",
+                            csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
+                            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                            duckdb_database_name="jaffle_shop",
+                        ),
+                    )
+                ],
+            },
         ),
-        task_defs(
-            "build_dbt_models",
-            # load rich set of assets from dbt project
-            dbt_defs(
-                manifest=dbt_project_path() / "target" / "manifest.json",
-                project=DbtProject(str(dbt_project_path().absolute())),
-            ),
-        ),
-        task_defs(
-            "export_customers",
-            export_duckdb_to_csv_defs(
-                AssetSpec(key="customers_csv", deps=["customers"]),
-                ExportDuckDbToCsvArgs(
-                    table_name="customers",
-                    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
-                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-                    duckdb_database_name="jaffle_shop",
-                ),
-            ),
-        ),
+        resources={"dbt": jaffle_shop_resource()},
     )
 
 
@@ -573,13 +534,14 @@ Next, we can strip the task associations from our Dagster definitions. This can 
 import os
 from pathlib import Path
 
-from dagster import AssetSelection, AssetSpec, Definitions, ScheduleDefinition, multi_asset
-from dagster_airlift.dbt import dbt_defs
-from dagster_dbt import DbtProject
+from dagster import AssetSpec, Definitions, ScheduleDefinition, multi_asset
+from dagster._core.definitions.assets import AssetsDefinition
 
 # Code also invoked from Airflow
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
+
+from .jaffle_shop import jaffle_shop_assets, jaffle_shop_resource
 
 
 def dbt_project_path() -> Path:
@@ -592,25 +554,27 @@ def airflow_dags_path() -> Path:
     return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
-def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
+def load_csv_to_duckdb_assets_def(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
     @multi_asset(name=f"load_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         load_csv_to_duckdb(args)
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
 
 
-def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> Definitions:
+def export_duckdb_to_csv_assets_def(
+    spec: AssetSpec, args: ExportDuckDbToCsvArgs
+) -> AssetsDefinition:
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         export_duckdb_to_csv(args)
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
 
 
-def rebuild_customers_list_defs() -> Definitions:
-    merged_defs = Definitions.merge(
-        load_csv_to_duckdb_defs(
+defs = Definitions(
+    assets=[
+        load_csv_to_duckdb_assets_def(
             AssetSpec(key=["raw_data", "raw_customers"]),
             LoadCsvToDuckDbArgs(
                 table_name="raw_customers",
@@ -621,11 +585,8 @@ def rebuild_customers_list_defs() -> Definitions:
                 duckdb_database_name="jaffle_shop",
             ),
         ),
-        dbt_defs(
-            manifest=dbt_project_path() / "target" / "manifest.json",
-            project=DbtProject(dbt_project_path().absolute()),
-        ),
-        export_duckdb_to_csv_defs(
+        jaffle_shop_assets,
+        export_duckdb_to_csv_assets_def(
             AssetSpec(key="customers_csv", deps=["customers"]),
             ExportDuckDbToCsvArgs(
                 table_name="customers",
@@ -634,21 +595,16 @@ def rebuild_customers_list_defs() -> Definitions:
                 duckdb_database_name="jaffle_shop",
             ),
         ),
-    )
-
-    rebuild_customers_list_schedule = ScheduleDefinition(
-        name="rebuild_customers_list_schedule",
-        target=AssetSelection.assets(*merged_defs.get_asset_graph().all_asset_keys),
-        cron_schedule="0 0 * * *",
-    )
-
-    return Definitions.merge(
-        merged_defs,
-        Definitions(schedules=[rebuild_customers_list_schedule]),
-    )
-
-
-defs = rebuild_customers_list_defs()
+    ],
+    resources={"dbt": jaffle_shop_resource()},
+    schedules=[
+        ScheduleDefinition(
+            name="rebuild_customers_list_schedule",
+            target="*",
+            cron_schedule="0 0 * * *",
+        )
+    ],
+)
 
 ```
 
@@ -691,19 +647,17 @@ def validate_exported_csv() -> AssetCheckResult:
     )
 
 
-defs = Definitions.merge(
-    build_defs_from_airflow_instance(
-        airflow_instance=AirflowInstance(
-            # other backends available (e.g. MwaaSessionAuthBackend)
-            auth_backend=BasicAuthBackend(
-                webserver_url="http://localhost:8080",
-                username="admin",
-                password="admin",
-            ),
-            name="airflow_instance_one",
-        )
+defs = build_defs_from_airflow_instance(
+    airflow_instance=AirflowInstance(
+        # other backends available (e.g. MwaaSessionAuthBackend)
+        auth_backend=BasicAuthBackend(
+            webserver_url="http://localhost:8080",
+            username="admin",
+            password="admin",
+        ),
+        name="airflow_instance_one",
     ),
-    Definitions(asset_checks=[validate_exported_csv]),
+    defs=Definitions(asset_checks=[validate_exported_csv]),
 )
 
 ```
@@ -730,45 +684,37 @@ from dagster import (
     materialize,
     multi_asset,
 )
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
-)
-from dagster_airlift.dbt import dbt_defs
-from dagster_dbt import DbtProject
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 
 # Code also invoked from Airflow
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
 
-
-def dbt_project_path() -> Path:
-    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
-    return Path(env_val)
+from .jaffle_shop import jaffle_shop_assets, jaffle_shop_resource
 
 
 def airflow_dags_path() -> Path:
     return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
-def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
+def load_csv_to_duckdb_assets_def(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> AssetsDefinition:
     @multi_asset(name=f"load_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         load_csv_to_duckdb(args)
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
 
 
-def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> Definitions:
+def export_duckdb_to_csv_assets_def(
+    spec: AssetSpec, args: ExportDuckDbToCsvArgs
+) -> AssetsDefinition:
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         export_duckdb_to_csv(args)
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
 
 
 @asset_check(asset=AssetKey(["customers_csv"]))
@@ -794,58 +740,52 @@ def validate_exported_csv() -> AssetCheckResult:
 
 
 def rebuild_customer_list_defs() -> Definitions:
-    return dag_defs(
-        "rebuild_customers_list",
-        task_defs(
-            "load_raw_customers",
-            load_csv_to_duckdb_defs(
-                AssetSpec(key=["raw_data", "raw_customers"]),
-                LoadCsvToDuckDbArgs(
-                    table_name="raw_customers",
-                    csv_path=airflow_dags_path() / "raw_customers.csv",
-                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-                    names=["id", "first_name", "last_name"],
-                    duckdb_schema="raw_data",
-                    duckdb_database_name="jaffle_shop",
-                ),
-            ),
+    return Definitions(
+        assets=assets_with_task_mappings(
+            dag_id="rebuild_customers_list",
+            task_mappings={
+                "load_raw_customers": [
+                    load_csv_to_duckdb_assets_def(
+                        AssetSpec(key=["raw_data", "raw_customers"]),
+                        LoadCsvToDuckDbArgs(
+                            table_name="raw_customers",
+                            csv_path=airflow_dags_path() / "raw_customers.csv",
+                            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                            names=["id", "first_name", "last_name"],
+                            duckdb_schema="raw_data",
+                            duckdb_database_name="jaffle_shop",
+                        ),
+                    )
+                ],
+                "build_dbt_models": [jaffle_shop_assets],
+                "export_customers": [
+                    export_duckdb_to_csv_assets_def(
+                        AssetSpec(key="customers_csv", deps=["customers"]),
+                        ExportDuckDbToCsvArgs(
+                            table_name="customers",
+                            csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
+                            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                            duckdb_database_name="jaffle_shop",
+                        ),
+                    )
+                ],
+            },
         ),
-        task_defs(
-            "build_dbt_models",
-            # load rich set of assets from dbt project
-            dbt_defs(
-                manifest=dbt_project_path() / "target" / "manifest.json",
-                project=DbtProject(str(dbt_project_path().absolute())),
-            ),
-        ),
-        task_defs(
-            "export_customers",
-            export_duckdb_to_csv_defs(
-                AssetSpec(key="customers_csv", deps=["customers"]),
-                ExportDuckDbToCsvArgs(
-                    table_name="customers",
-                    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
-                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-                    duckdb_database_name="jaffle_shop",
-                ),
-            ),
-        ),
+        asset_checks=[validate_exported_csv],
+        resources={"dbt": jaffle_shop_resource()},
     )
 
 
-defs = Definitions.merge(
-    build_defs_from_airflow_instance(
-        airflow_instance=AirflowInstance(
-            auth_backend=BasicAuthBackend(
-                webserver_url="http://localhost:8080",
-                username="admin",
-                password="admin",
-            ),
-            name="airflow_instance_one",
+defs = build_defs_from_airflow_instance(
+    airflow_instance=AirflowInstance(
+        auth_backend=BasicAuthBackend(
+            webserver_url="http://localhost:8080",
+            username="admin",
+            password="admin",
         ),
-        defs=rebuild_customer_list_defs(),
+        name="airflow_instance_one",
     ),
-    Definitions(asset_checks=[validate_exported_csv]),
+    defs=rebuild_customer_list_defs(),
 )
 
 
