@@ -44,6 +44,7 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from pydantic import ValidationError
@@ -634,6 +635,61 @@ def test_to_serializable_asset_selection():
     ).to_serializable_asset_selection(asset_graph) == (
         asset1_selection - AssetSelection.groups("b")
     )
+
+
+def test_replace_asset_keys():
+    @asset
+    def asset1(): ...
+
+    @asset
+    def asset2(): ...
+
+    @asset_check(asset="asset2")
+    def check1(): ...
+
+    asset_graph = AssetGraph.from_assets([asset1, asset2, check1])
+
+    @asset
+    def asset2_wrong(): ...
+
+    keys_selection1 = AssetSelection.keys(asset1.key, asset2_wrong.key)
+    with pytest.raises(DagsterInvalidSubsetError):
+        assert keys_selection1.resolve(asset_graph) == {
+            asset1.key,
+            asset2_wrong.key,
+        }
+
+    assert keys_selection1.replace_asset_keys({asset2_wrong.key: asset2.key}).resolve(
+        asset_graph
+    ) == {asset1.key, asset2.key}
+
+    assert AssetSelection.checks_for_assets(asset2_wrong).replace_asset_keys(
+        {asset2_wrong.key: asset2.key}
+    ).resolve_checks(asset_graph) == {AssetCheckKey(asset2.key, "check1")}
+
+    assert AssetSelection.checks(AssetCheckKey(asset2_wrong.key, "check1")).replace_asset_keys(
+        {asset2_wrong.key: asset2.key}
+    ).resolve_checks(asset_graph) == {AssetCheckKey(asset2.key, "check1")}
+
+    assert (keys_selection1 & AssetSelection.all()).replace_asset_keys(
+        {asset2_wrong.key: asset2.key}
+    ).resolve(asset_graph) == {asset1.key, asset2.key}
+
+    assert (keys_selection1 | AssetSelection.keys()).replace_asset_keys(
+        {asset2_wrong.key: asset2.key}
+    ).resolve(asset_graph) == {asset1.key, asset2.key}
+
+    assert (keys_selection1 - AssetSelection.keys()).replace_asset_keys(
+        {asset2_wrong.key: asset2.key}
+    ).resolve(asset_graph) == {asset1.key, asset2.key}
+
+    assert keys_selection1.downstream().replace_asset_keys({asset2_wrong.key: asset2.key}).resolve(
+        asset_graph
+    ) == {asset1.key, asset2.key}
+
+    assert keys_selection1.upstream().replace_asset_keys({asset2_wrong.key: asset2.key}).resolve(
+        asset_graph
+    ) == {asset1.key, asset2.key}
 
 
 def test_to_string_basic():
