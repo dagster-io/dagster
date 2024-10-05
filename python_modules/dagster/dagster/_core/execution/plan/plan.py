@@ -87,6 +87,10 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import toposort
 
 if TYPE_CHECKING:
+    from dagster._core.execution.context.system import (
+        PlanExecutionContext,
+        PlanOrchestrationContext,
+    )
     from dagster._core.execution.plan.active import ActiveExecution
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionPlanSnapshot,
@@ -892,6 +896,7 @@ class ExecutionPlan(
     def start(
         self,
         retry_mode: RetryMode,
+        plan_context: Union["PlanExecutionContext", "PlanOrchestrationContext"],
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
@@ -902,6 +907,7 @@ class ExecutionPlan(
         return ActiveExecution(
             self,
             retry_mode,
+            plan_context,
             sort_key_fn,
             max_concurrent,
             tag_concurrency_limits,
