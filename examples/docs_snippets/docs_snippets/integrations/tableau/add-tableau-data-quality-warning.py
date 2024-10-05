@@ -45,12 +45,10 @@ def tableau_run_failure_sensor(
 # We use Definitions.merge to combine the definitions from the Tableau workspace
 # and the Dagster definitions into a single set of definitions to load
 tableau_defs = workspace.build_defs()
-upstream_defs = (
-    Definitions(
-        assets=[upstream_asset],
-        sensors=[tableau_run_failure_sensor],
-        resources={"tableau": workspace},
-    ),
+upstream_defs = Definitions(
+    assets=[upstream_asset],
+    sensors=[tableau_run_failure_sensor],
+    resources={"tableau": workspace},
 )
 
 defs = Definitions.merge(tableau_defs, upstream_defs)
