@@ -238,6 +238,7 @@ For example, to change how the name of the asset is derived, you can override th
 
 ```python file=/integrations/embedded_elt/dlt_dagster_translator.py
 from collections.abc import Iterable
+from dlt.extract.resource import DltResource
 
 import dlt
 from dagster_embedded_elt.dlt import (
@@ -257,11 +258,11 @@ def example_dlt_source():
 
 
 class CustomDagsterDltTranslator(DagsterDltTranslator):
-    def get_asset_key(self, resource: DagsterDltResource) -> AssetKey:
+    def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Overrides asset key to be the dlt resource name."""
         return AssetKey(f"{resource.name}")
 
-    def get_deps_asset_keys(self, resource: DagsterDltResource) -> Iterable[AssetKey]:
+    def get_deps_asset_keys(self, resource: DltResource) -> Iterable[AssetKey]:
         """Overrides upstream asset key to be a single source asset."""
         return [AssetKey("common_upstream_dlt_dependency")]
 
