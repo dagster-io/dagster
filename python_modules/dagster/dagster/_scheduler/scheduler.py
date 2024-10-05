@@ -71,6 +71,10 @@ LAST_ITERATION_CHECKPOINT_JITTER_SECONDS = int(
     os.getenv("DAGSTER_SCHEDULE_CHECKPOINT_JITTER_SECONDS", "600")
 )
 
+RETAIN_ORPHANED_STATE_INTERVAL_SECONDS = int(
+    os.getenv("DAGSTER_SCHEDULE_ORPHANED_STATE_RETENTION_SECONDS", "43200")  # 12 hours
+)
+
 # How long to wait if an error is raised in the SchedulerDaemon iteration
 ERROR_INTERVAL_TIME = 5
 
@@ -282,8 +286,11 @@ def launch_scheduled_runs(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
-    schedules: Dict[str, ExternalSchedule] = {}
+    running_schedules: Dict[str, ExternalSchedule] = {}
+    all_workspace_schedule_selector_ids = set()
     error_locations = set()
+
+    now_timestamp = end_datetime_utc.timestamp()
 
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
@@ -291,37 +298,60 @@ def launch_scheduled_runs(
             for repo in code_location.get_repositories().values():
                 for schedule in repo.get_external_schedules():
                     selector_id = schedule.selector_id
+                    all_workspace_schedule_selector_ids.add(selector_id)
                     if schedule.get_current_instigator_state(
                         all_schedule_states.get(selector_id)
                     ).is_running:
-                        schedules[selector_id] = schedule
+                        running_schedules[selector_id] = schedule
+                    elif all_schedule_states.get(selector_id):
+                        schedule_state = all_schedule_states[selector_id]
+                        # If there is a DB row to update, see if we should still update the
+                        # last_iteration_timestamp
+                        _write_and_get_next_checkpoint_timestamp(
+                            instance,
+                            all_schedule_states[selector_id],
+                            cast(ScheduleInstigatorData, schedule_state.instigator_data),
+                            now_timestamp,
+                        )
+
         elif location_entry.load_error:
             error_locations.add(location_entry.origin.location_name)
 
-    # Remove any schedule states that were previously created with DECLARED_IN_CODE
-    # and can no longer be found in the workspace (so that if they are later added
-    # back again, their timestamps will start at the correct place)
+    # Remove any schedule states that were previously created and can no longer
+    # be found in the workspace (so that if they are later added back again,
+    # their timestamps will start at the correct place)
     states_to_delete = [
         schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
-        if selector_id not in schedules
-        and schedule_state.status == InstigatorStatus.DECLARED_IN_CODE
+        if selector_id not in all_workspace_schedule_selector_ids
     ]
     for state in states_to_delete:
         location_name = state.origin.repository_origin.code_location_origin.location_name
-        # don't clean up auto running state if its location is an error state
-        if location_name not in error_locations:
-            logger.info(
-                f"Removing state for automatically running schedule {state.instigator_name} "
-                f"that is no longer present in {location_name}."
-            )
-            instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
-    if not schedules:
+        if location_name in error_locations:
+            # don't clean up state if its location is an error state
+            continue
+
+        if (
+            isinstance(state.instigator_data, ScheduleInstigatorData)
+            and end_datetime_utc.timestamp()
+            < (state.instigator_data.last_iteration_timestamp or 0)
+            + RETAIN_ORPHANED_STATE_INTERVAL_SECONDS
+        ):
+            # don't clean up state if its last iteration time is within a grace period
+            continue
+
+        logger.info(
+            f"Removing state for schedule {state.instigator_name} that is "
+            f"no longer present in {location_name}."
+        )
+        instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
+
+    if not running_schedules:
         yield
         return
 
-    for external_schedule in schedules.values():
+    for external_schedule in running_schedules.values():
         error_info = None
         try:
             schedule_state = all_schedule_states.get(external_schedule.selector_id)
@@ -997,11 +1027,11 @@ def _write_and_get_next_checkpoint_timestamp(
     instigator_data: ScheduleInstigatorData,
     iteration_timestamp: float,
 ) -> float:
-    # Utility function that writes iteration timestamps for schedules that are running, to record a
+    # Utility function that writes iteration timestamps for schedules, to record a
     # successful iteration, regardless of whether or not a tick was processed or not.  This is so
-    # that when a cron schedule changes, we can modify the evaluation "start time" from the moment
-    # that the schedule was turned on to the last time that the schedule was processed in a valid
-    # state (even in between ticks).
+    # that when a cron schedule changes or a schedule changes state, we can modify the evaluation
+    # "start time" from the moment that the schedule was turned on to the last time that the
+    # schedule was processed in a valid state (even in between ticks).
 
     # Rather than logging every single iteration, we log every hour.  This means that if the cron
     # schedule changes to run to a time that is less than an hour ago, when the code location is
