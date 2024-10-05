@@ -589,9 +589,7 @@ class SensorDefinition(IHasInternalInit):
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
         metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
-            sensor. Values will be normalized to typed `MetadataValue` objects. Not currently
-            shown in the UI but available at runtime via
-            `SensorEvaluationContext.repository_def.get_sensor_def(<name>).metadata`.
+            sensor. Values will be normalized to typed `MetadataValue` objects.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the sensor will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
