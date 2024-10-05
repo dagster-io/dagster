@@ -5,6 +5,7 @@ import * as Types from '../../graphql/types';
 export type AssetPartitionDetailQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
   partitionKey: Types.Scalars['String']['input'];
+  eventLimit: Types.Scalars['Int']['input'];
 }>;
 
 export type AssetPartitionDetailQuery = {
@@ -443,6 +444,6 @@ export type AssetPartitionStaleQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetPartitionDetailQueryVersion = 'b49c58aafc8743640c067d5897b931ad98adcc3584193afad7fb96424a1ee010';
+export const AssetPartitionDetailQueryVersion = '080db74be8d44bd691f61a36925c983a4682962b9f9df5eecf6ce76b31b85ab4';
 
 export const AssetPartitionStaleQueryVersion = '4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764';
