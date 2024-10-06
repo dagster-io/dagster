@@ -4,6 +4,9 @@ global:
   dagsterHome: ""
   serviceAccountName: ""
   celeryConfigSecretName: ""
+  image:
+    tag: ""
+    repository: ""
 
 dagsterHome: "/opt/dagster/dagster_home"
 postgresqlSecretName: "dagster-postgresql-secret"
