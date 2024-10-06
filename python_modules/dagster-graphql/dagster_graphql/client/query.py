@@ -410,6 +410,9 @@ mutation($backfillParams: LaunchBackfillParams!) {
     ... on PartitionSetNotFoundError {
       message
     }
+    ... on PartitionKeyNotFoundError {
+      message
+    }
     ... on LaunchBackfillSuccess {
       backfillId
       launchedRunIds

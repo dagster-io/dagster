@@ -451,6 +451,19 @@ class GraphenePartitionSetNotFoundError(graphene.ObjectType):
         self.message = f"Partition set {self.partition_set_name} could not be found."
 
 
+class GraphenePartitionKeyNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "PartitionKeyNotFoundError"
+
+    partition_key = graphene.NonNull(graphene.String)
+
+    def __init__(self, partition_key):
+        super().__init__()
+        self.partition_key = check.str_param(partition_key, "partition_key")
+        self.message = f"Partition key `{self.partition_key}` could not be found."
+
+
 class GrapheneRepositoryNotFoundError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)

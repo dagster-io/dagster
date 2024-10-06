@@ -2193,6 +2193,7 @@ export type LaunchBackfillResult =
   | InvalidSubsetError
   | LaunchBackfillSuccess
   | NoModeProvidedError
+  | PartitionKeyNotFoundError
   | PartitionSetNotFoundError
   | PipelineNotFoundError
   | PresetNotFoundError
@@ -3151,6 +3152,12 @@ export enum PartitionDefinitionType {
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
 }
+
+export type PartitionKeyNotFoundError = Error & {
+  __typename: 'PartitionKeyNotFoundError';
+  message: Scalars['String']['output'];
+  partitionKey: Scalars['String']['output'];
+};
 
 export type PartitionKeyRange = {
   __typename: 'PartitionKeyRange';
@@ -10919,6 +10926,20 @@ export const buildPartitionDefinition = (
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
         : PartitionDefinitionType.DYNAMIC,
+  };
+};
+
+export const buildPartitionKeyNotFoundError = (
+  overrides?: Partial<PartitionKeyNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeyNotFoundError'} & PartitionKeyNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeyNotFoundError');
+  return {
+    __typename: 'PartitionKeyNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'cumque',
+    partitionKey:
+      overrides && overrides.hasOwnProperty('partitionKey') ? overrides.partitionKey! : 'qui',
   };
 };
 

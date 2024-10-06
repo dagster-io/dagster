@@ -1254,6 +1254,27 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             in result.data["launchPartitionBackfill"]["message"]
         )
 
+    def test_asset_job_backfill_with_nonexistent_partition_key(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        # launch a backfill for this partition set
+        launch_result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["nonexistent"],
+                }
+            },
+        )
+        assert (
+            launch_result.data["launchPartitionBackfill"]["__typename"]
+            == "PartitionKeyNotFoundError"
+        )
+
 
 class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
     def test_launch_from_failure(self, graphql_context):
