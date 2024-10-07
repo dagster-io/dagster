@@ -29,17 +29,15 @@ def validate_exported_csv() -> AssetCheckResult:
     )
 
 
-defs = Definitions.merge(
-    build_defs_from_airflow_instance(
-        airflow_instance=AirflowInstance(
-            # other backends available (e.g. MwaaSessionAuthBackend)
-            auth_backend=BasicAuthBackend(
-                webserver_url="http://localhost:8080",
-                username="admin",
-                password="admin",
-            ),
-            name="airflow_instance_one",
-        )
+defs = build_defs_from_airflow_instance(
+    airflow_instance=AirflowInstance(
+        # other backends available (e.g. MwaaSessionAuthBackend)
+        auth_backend=BasicAuthBackend(
+            webserver_url="http://localhost:8080",
+            username="admin",
+            password="admin",
+        ),
+        name="airflow_instance_one",
     ),
-    Definitions(asset_checks=[validate_exported_csv]),
+    defs=Definitions(asset_checks=[validate_exported_csv]),
 )
