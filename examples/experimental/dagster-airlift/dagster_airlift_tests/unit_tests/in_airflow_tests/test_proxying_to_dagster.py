@@ -5,7 +5,7 @@ import pytest
 from airflow.operators.python import PythonOperator
 from dagster._core.test_utils import environ
 from dagster_airlift.in_airflow import proxying_to_dagster
-from dagster_airlift.in_airflow.base_proxy_operator import BaseProxyToDagsterOperator
+from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
 from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState
 from dagster_airlift.test.shared_fixtures import VAR_DICT
 from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
@@ -67,7 +67,7 @@ def test_proxying_to_dagster(mock_airflow_variable: None) -> None:
     assert "0 Tasks Marked as Proxied to Dagster" in globals_fake["initially_not_proxied"].tags
 
     # Only the task marked as proxied should be replaced with a DagsterOperator
-    assert isinstance(globals_fake["task_is_proxied"].task_dict["task"], BaseProxyToDagsterOperator)
+    assert isinstance(globals_fake["task_is_proxied"].task_dict["task"], BaseDagsterAssetsOperator)
     assert isinstance(globals_fake["initially_not_proxied"].task_dict["task"], PythonOperator)
     assert isinstance(globals_fake["should_be_ignored"].task_dict["task"], PythonOperator)
 
@@ -100,10 +100,11 @@ def test_proxying_to_dagster(mock_airflow_variable: None) -> None:
 
     # Both tasks should be replaced with a DagsterOperator
     assert isinstance(
-        original_globals["task_is_proxied"].task_dict["task"], BaseProxyToDagsterOperator
+        original_globals["task_is_proxied"].task_dict["task"], BaseDagsterAssetsOperator
     )
     assert isinstance(
-        original_globals["initially_not_proxied"].task_dict["task"], BaseProxyToDagsterOperator
+        original_globals["initially_not_proxied"].task_dict["task"],
+        BaseDagsterAssetsOperator,
     )
     assert isinstance(original_globals["should_be_ignored"].task_dict["task"], PythonOperator)
 

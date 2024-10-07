@@ -1,4 +1,4 @@
-from dagster_airlift.in_airflow.base_proxy_operator import matched_dag_id_task_id
+from dagster_airlift.in_airflow.task_proxy_operator import matched_dag_id_task_id
 
 
 def test_parse_asset_node() -> None:
