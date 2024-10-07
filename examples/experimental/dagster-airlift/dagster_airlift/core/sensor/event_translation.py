@@ -36,10 +36,9 @@ def materializations_for_dag_run(
 ) -> Sequence[AssetMaterialization]:
     return [
         AssetMaterialization(
-            asset_key=airflow_data.asset_key_for_dag(dag_run.dag_id),
-            description=dag_run.note,
-            metadata=get_dag_run_metadata(dag_run),
+            asset_key=asset_key, description=dag_run.note, metadata=get_dag_run_metadata(dag_run)
         )
+        for asset_key in airflow_data.asset_keys_per_dag[dag_run.dag_id]
     ]
 
 
