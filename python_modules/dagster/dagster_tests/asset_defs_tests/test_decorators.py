@@ -861,7 +861,7 @@ def test_invalid_self_dep_no_time_dimension():
             del b
 
 
-def test_asset_in_nothing():
+def test_asset_in_nothing() -> None:
     @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
     def asset1(): ...
 

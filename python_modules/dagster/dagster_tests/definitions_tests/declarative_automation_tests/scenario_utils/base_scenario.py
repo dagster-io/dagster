@@ -622,7 +622,7 @@ def asset_def(
     else:
         non_argument_deps = None
         ins = {
-            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)  # type: ignore
+            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)
             for dep, partition_mapping in deps.items()
         }
 
