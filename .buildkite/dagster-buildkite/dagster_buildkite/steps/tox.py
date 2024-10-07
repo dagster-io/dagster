@@ -21,7 +21,6 @@ def build_tox_step(
     python_version: Optional[AvailablePythonVersion] = None,
     tox_file: Optional[str] = None,
     extra_commands_pre: Optional[List[str]] = None,
-    extra_commands_post: Optional[List[str]] = None,
     env_vars: Optional[List[str]] = None,
     dependencies: Optional[List[str]] = None,
     retries: Optional[int] = None,
@@ -54,7 +53,7 @@ def build_tox_step(
         f'pip install --force-reinstall "{UV_PIN}"',
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
-        *(extra_commands_post or []),
+        "git diff --exit-code",
     ]
 
     return (
