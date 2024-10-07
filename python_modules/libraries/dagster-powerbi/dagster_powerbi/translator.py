@@ -91,8 +91,11 @@ class PowerBIWorkspaceData:
         )
 
 
+PowerBIAssetType = Literal["dashboard", "report", "semantic_model", "data_source"]
+
+
 class PowerBITagSet(NamespacedTagSet):
-    asset_type: Optional[Literal["dashboard", "report", "semantic_model", "data_source"]] = None
+    asset_type: Optional[PowerBIAssetType] = None
 
     @classmethod
     def namespace(cls) -> str:

@@ -40,26 +40,26 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
         credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
-    all_assets = resource.build_defs().get_asset_graph().assets_defs
+    all_asset_specs = resource.build_asset_specs()
 
     # 1 dashboard, 1 report, 1 semantic model, 2 data sources
-    assert len(all_assets) == 5
+    assert len(all_asset_specs) == 5
 
     # Sanity check outputs, translator tests cover details here
-    dashboard_asset = next(asset for asset in all_assets if asset.key.path[0] == "dashboard")
+    dashboard_asset = next(asset for asset in all_asset_specs if asset.key.path[0] == "dashboard")
     assert dashboard_asset.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
 
-    report_asset = next(asset for asset in all_assets if asset.key.path[0] == "report")
+    report_asset = next(asset for asset in all_asset_specs if asset.key.path[0] == "report")
     assert report_asset.key.path == ["report", "Sales_Returns_Sample_v201912"]
 
     semantic_model_asset = next(
-        asset for asset in all_assets if asset.key.path[0] == "semantic_model"
+        asset for asset in all_asset_specs if asset.key.path[0] == "semantic_model"
     )
     assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
 
     data_source_assets = [
         asset
-        for asset in all_assets
+        for asset in all_asset_specs
         if asset.key.path[0] not in ("dashboard", "report", "semantic_model")
     ]
     assert len(data_source_assets) == 2
@@ -81,9 +81,8 @@ def state_derived_defs_two_workspaces() -> Definitions:
         credentials=PowerBIToken(api_token=EnvVar("FAKE_API_TOKEN")),
         workspace_id="c5322b8a-d7e1-42e8-be2b-a5e636ca3221",
     )
-    return Definitions.merge(
-        resource.build_defs(),
-        resource_second_workspace.build_defs(),
+    return Definitions(
+        assets=[*resource.build_asset_specs(), *resource_second_workspace.build_asset_specs()]
     )
 
 
@@ -160,14 +159,13 @@ def state_derived_defs() -> Definitions:
         credentials=PowerBIToken(api_token=fake_token),
         workspace_id="a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
     )
-    pbi_defs = resource.build_defs()
 
     @asset
     def my_materializable_asset(): ...
 
-    return Definitions.merge(
-        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
-        pbi_defs,
+    return Definitions(
+        assets=[*resource.build_asset_specs(), my_materializable_asset],
+        jobs=[define_asset_job("all_asset_job")],
     )
 
 
