@@ -34,6 +34,17 @@ def test_migrate_loads(airflow_instance) -> None:
     assert len(defs.get_all_asset_specs()) == 10
 
 
+def test_migrate_with_check_loads(airflow_instance) -> None:
+    from tutorial_example.dagster_defs.stages.migrate_with_check import defs
+
+    assert defs
+
+    Definitions.validate_loadable(defs)
+
+    # representation of dag + 9 assets
+    assert len(defs.get_all_asset_specs()) == 10
+
+
 def test_standalone_loads(airflow_instance) -> None:
     from tutorial_example.dagster_defs.stages.standalone import defs
 
