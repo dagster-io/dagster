@@ -72,7 +72,7 @@ class AirliftMetadataMappingInfo:
     @cached_property
     def downstream_deps(self) -> Dict[AssetKey, Set[AssetKey]]:
         downstreams = defaultdict(set)
-        for spec in self.mapped_asset_specs:
+        for spec in self.asset_specs:
             for dep in spec.deps:
                 downstreams[dep.asset_key].add(spec.key)
         return downstreams

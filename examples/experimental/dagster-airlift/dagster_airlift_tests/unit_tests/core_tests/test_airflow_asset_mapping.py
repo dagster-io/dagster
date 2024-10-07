@@ -163,7 +163,12 @@ def test_fetched_airflow_data() -> None:
 
 def test_produce_fetched_airflow_data() -> None:
     mapping_info = build_airlift_metadata_mapping_info(
-        defs=Definitions(assets=[airlift_asset_spec("asset1", "dag1", "task1")])
+        defs=Definitions(
+            assets=[
+                airlift_asset_spec("asset1", "dag1", "task1"),
+                AssetSpec("asset2", deps=[ak("asset1")]),
+            ]
+        )
     )
 
     instance = AirflowInstanceFake(
@@ -192,6 +197,8 @@ def test_produce_fetched_airflow_data() -> None:
     )
 
     assert len(fetched_airflow_data.mapping_info.mapped_asset_specs) == 1
+    assert len(fetched_airflow_data.mapping_info.asset_specs) == 2
+    assert fetched_airflow_data.mapping_info.downstream_deps == {ak("asset1"): {ak("asset2")}}
 
 
 def test_automapped_loaded_data() -> None:
