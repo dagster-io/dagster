@@ -3,6 +3,7 @@ from typing import List, Optional, Sequence
 
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -25,9 +26,9 @@ def specs_from_lakehouse(
     ]
 
 
-def defs_from_lakehouse(
+def lakehouse_assets_def(
     *, specs: Sequence[AssetSpec], csv_path: Path, duckdb_path: Path, columns: List[str]
-) -> Definitions:
+) -> AssetsDefinition:
     @multi_asset(specs=specs)
     def _multi_asset() -> None:
         load_csv_to_duckdb(
@@ -36,7 +37,19 @@ def defs_from_lakehouse(
             columns=columns,
         )
 
-    return Definitions(assets=[_multi_asset])
+    return _multi_asset
+
+
+def defs_from_lakehouse(
+    *, specs: Sequence[AssetSpec], csv_path: Path, duckdb_path: Path, columns: List[str]
+) -> Definitions:
+    return Definitions(
+        assets=[
+            lakehouse_assets_def(
+                specs=specs, csv_path=csv_path, duckdb_path=duckdb_path, columns=columns
+            )
+        ]
+    )
 
 
 def lakehouse_existence_check(csv_path: Path, duckdb_path: Path) -> AssetChecksDefinition:
