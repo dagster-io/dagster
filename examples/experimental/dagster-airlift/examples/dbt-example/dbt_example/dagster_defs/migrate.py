@@ -6,11 +6,7 @@ from dagster_airlift.core import (
     build_defs_from_airflow_instance,
 )
 
-from dbt_example.dagster_defs.lakehouse import (
-    lakehouse_assets_def,
-    lakehouse_existence_check,
-    specs_from_lakehouse,
-)
+from dbt_example.dagster_defs.lakehouse import lakehouse_assets_def, lakehouse_existence_check
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
@@ -33,7 +29,6 @@ defs = build_defs_from_airflow_instance(
                 task_mappings={
                     "load_iris": [
                         lakehouse_assets_def(
-                            specs=specs_from_lakehouse(csv_path=CSV_PATH),
                             csv_path=CSV_PATH,
                             duckdb_path=DB_PATH,
                             columns=IRIS_COLUMNS,
