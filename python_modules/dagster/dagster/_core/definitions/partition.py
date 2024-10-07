@@ -1337,6 +1337,6 @@ class AllPartitionsSubset(
         return self.partitions_def.empty_subset()
 
     def to_serializable_subset(self) -> PartitionsSubset:
-        return self.partitions_def.subset_with_partition_keys(
-            self.get_partition_keys()
+        return self.partitions_def.subset_with_all_partitions(
+            current_time=self.current_time, dynamic_partitions_store=self.dynamic_partitions_store
         ).to_serializable_subset()

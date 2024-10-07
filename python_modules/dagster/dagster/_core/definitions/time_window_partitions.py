@@ -964,6 +964,22 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
 
+    def subset_with_all_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        first_window = self.get_first_partition_window(current_time)
+        last_window = self.get_last_partition_window(current_time)
+        windows = (
+            []
+            if first_window is None or last_window is None
+            else [TimeWindow(first_window.start, last_window.end)]
+        )
+        return TimeWindowPartitionsSubset(
+            partitions_def=self, num_partitions=None, included_time_windows=windows
+        )
+
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
