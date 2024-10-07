@@ -33,6 +33,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
@@ -109,7 +110,8 @@ class PartitionMapping(ABC):
 
 
 @whitelist_for_serdes
-class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
+@record
+class IdentityPartitionMapping(PartitionMapping):
     """Expects that the upstream and downstream assets are partitioned in the same way, and maps
     partitions in the downstream asset to the same partition in the upstream asset.
     """
@@ -176,7 +178,8 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
 
 
 @whitelist_for_serdes
-class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
+@record
+class AllPartitionMapping(PartitionMapping):
     """Maps every partition in the downstream asset to every partition in the upstream asset.
 
     Commonly used in the case when the downstream asset is not partitioned, in which the entire
@@ -229,7 +232,8 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
 
 
 @whitelist_for_serdes
-class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping", [])):
+@record
+class LastPartitionMapping(PartitionMapping):
     """Maps all dependencies to the last partition in the upstream asset.
 
     Commonly used in the case when the downstream asset is not partitioned, in which the entire
@@ -278,12 +282,8 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
 
 
 @whitelist_for_serdes
-class SpecificPartitionsPartitionMapping(
-    PartitionMapping,
-    NamedTuple(
-        "_SpecificPartitionsPartitionMapping", [("partition_keys", PublicAttr[Sequence[str]])]
-    ),
-):
+@record
+class SpecificPartitionsPartitionMapping(PartitionMapping):
     """Maps to a specific subset of partitions in the upstream asset.
 
     Example:
@@ -303,6 +303,8 @@ class SpecificPartitionsPartitionMapping(
             def a_downstream(upstream):
                 ...
     """
+
+    partition_keys: PublicAttr[Sequence[str]]
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -592,13 +594,8 @@ class BaseMultiPartitionMapping(ABC):
 
 @experimental
 @whitelist_for_serdes
-class MultiToSingleDimensionPartitionMapping(
-    BaseMultiPartitionMapping,
-    PartitionMapping,
-    NamedTuple(
-        "_MultiToSingleDimensionPartitionMapping", [("partition_dimension_name", Optional[str])]
-    ),
-):
+@record
+class MultiToSingleDimensionPartitionMapping(BaseMultiPartitionMapping, PartitionMapping):
     """Defines a correspondence between an single-dimensional partitions definition
     and a MultiPartitionsDefinition. The single-dimensional partitions definition must be
     a dimension of the MultiPartitionsDefinition.
@@ -614,13 +611,7 @@ class MultiToSingleDimensionPartitionMapping(
             MultiPartitionsDefinition that matches the single-dimension partitions definition.
     """
 
-    def __new__(cls, partition_dimension_name: Optional[str] = None):
-        return super(MultiToSingleDimensionPartitionMapping, cls).__new__(
-            cls,
-            partition_dimension_name=check.opt_str_param(
-                partition_dimension_name, "partition_dimension_name"
-            ),
-        )
+    partition_dimension_name: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -647,15 +638,8 @@ class MultiToSingleDimensionPartitionMapping(
 
 
 @whitelist_for_serdes
-class DimensionPartitionMapping(
-    NamedTuple(
-        "_DimensionPartitionMapping",
-        [
-            ("dimension_name", str),
-            ("partition_mapping", PartitionMapping),
-        ],
-    )
-):
+@record
+class DimensionPartitionMapping:
     """A helper class for MultiPartitionMapping that defines a partition mapping used to calculate
     the dependent partition keys in the selected downstream MultiPartitions definition dimension.
 
@@ -665,30 +649,14 @@ class DimensionPartitionMapping(
             the downstream dimension partitions from the upstream dimension partitions and vice versa.
     """
 
-    def __new__(
-        cls,
-        dimension_name: str,
-        partition_mapping: PartitionMapping,
-    ):
-        return super(DimensionPartitionMapping, cls).__new__(
-            cls,
-            dimension_name=check.str_param(dimension_name, "dimension_name"),
-            partition_mapping=check.inst_param(
-                partition_mapping, "partition_mapping", PartitionMapping
-            ),
-        )
+    dimension_name: str
+    partition_mapping: PartitionMapping
 
 
 @experimental
 @whitelist_for_serdes
-class MultiPartitionMapping(
-    BaseMultiPartitionMapping,
-    PartitionMapping,
-    NamedTuple(
-        "_MultiPartitionMapping",
-        [("downstream_mappings_by_upstream_dimension", Mapping[str, DimensionPartitionMapping])],
-    ),
-):
+@record
+class MultiPartitionMapping(BaseMultiPartitionMapping, PartitionMapping):
     """Defines a correspondence between two MultiPartitionsDefinitions.
 
     Accepts a mapping of upstream dimension name to downstream DimensionPartitionMapping, representing
@@ -766,18 +734,7 @@ class MultiPartitionMapping(
             containing the downstream dimension name and partition mapping.
     """
 
-    def __new__(
-        cls, downstream_mappings_by_upstream_dimension: Mapping[str, DimensionPartitionMapping]
-    ):
-        return super(MultiPartitionMapping, cls).__new__(
-            cls,
-            downstream_mappings_by_upstream_dimension=check.mapping_param(
-                downstream_mappings_by_upstream_dimension,
-                "downstream_mappings_by_upstream_dimension",
-                key_type=str,
-                value_type=DimensionPartitionMapping,
-            ),
-        )
+    downstream_mappings_by_upstream_dimension: Mapping[str, DimensionPartitionMapping]
 
     @property
     def description(self) -> str:
