@@ -64,47 +64,51 @@ export const ScheduledRunListRoot = () => {
       </Box>
       <Loading queryResult={queryResult} allowStaleData>
         {(result) => {
-          const {repositoriesOrError, instance} = result;
-          if (repositoriesOrError.__typename !== 'RepositoryConnection') {
-            const message =
-              repositoriesOrError.__typename === 'PythonError'
-                ? repositoriesOrError.message
-                : 'Repository not found';
-            return (
-              <Alert
-                intent="warning"
-                title={
-                  <Group direction="row" spacing={4}>
-                    <div>Could not load scheduled ticks.</div>
-                    <ButtonLink
-                      color={Colors.linkDefault()}
-                      underline="always"
-                      onClick={() => {
-                        showCustomAlert({
-                          title: 'Python error',
-                          body: message,
-                        });
-                      }}
-                    >
-                      View error
-                    </ButtonLink>
-                  </Group>
-                }
-              />
-            );
-          }
-          return (
-            <>
-              <SchedulerInfo
-                daemonHealth={instance.daemonHealth}
-                padding={{vertical: 16, horizontal: 24}}
-              />
-              <SchedulesNextTicks repos={repositoriesOrError.nodes} />
-            </>
-          );
+          return <ScheduledRunList result={result} />;
         }}
       </Loading>
     </Page>
+  );
+};
+
+export const ScheduledRunList = ({result}: {result: ScheduledRunsListQuery}) => {
+  const {repositoriesOrError, instance} = result;
+  if (repositoriesOrError.__typename !== 'RepositoryConnection') {
+    const message =
+      repositoriesOrError.__typename === 'PythonError'
+        ? repositoriesOrError.message
+        : 'Repository not found';
+    return (
+      <Alert
+        intent="warning"
+        title={
+          <Group direction="row" spacing={4}>
+            <div>Could not load scheduled ticks.</div>
+            <ButtonLink
+              color={Colors.linkDefault()}
+              underline="always"
+              onClick={() => {
+                showCustomAlert({
+                  title: 'Python error',
+                  body: message,
+                });
+              }}
+            >
+              View error
+            </ButtonLink>
+          </Group>
+        }
+      />
+    );
+  }
+  return (
+    <>
+      <SchedulerInfo
+        daemonHealth={instance.daemonHealth}
+        padding={{vertical: 16, horizontal: 24}}
+      />
+      <SchedulesNextTicks repos={repositoriesOrError.nodes} />
+    </>
   );
 };
 
@@ -112,7 +116,7 @@ export const ScheduledRunListRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default ScheduledRunListRoot;
 
-const SCHEDULED_RUNS_LIST_QUERY = gql`
+export const SCHEDULED_RUNS_LIST_QUERY = gql`
   query ScheduledRunsListQuery {
     instance {
       id
