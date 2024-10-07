@@ -1035,7 +1035,7 @@ class GrapheneQuery(graphene.ObjectType):
             results = []
             for remote_node in remote_nodes:
                 if remote_node:
-                    repo_handle = remote_node.priority_repository_selector
+                    repo_handle = remote_node.priority_repository_handle
                     code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
                     results.append(
                         (
@@ -1082,7 +1082,7 @@ class GrapheneQuery(graphene.ObjectType):
 
         nodes = [
             GrapheneAssetNode(
-                repository_selector=repo.selector,
+                repository_handle=repo.handle,
                 asset_node_snap=asset_node_snap,
                 asset_checks_loader=asset_checks_loader,
                 depended_by_loader=depended_by_loader,
