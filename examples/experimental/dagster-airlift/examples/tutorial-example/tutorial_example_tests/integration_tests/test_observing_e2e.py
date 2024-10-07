@@ -21,7 +21,7 @@ def test_observe_reflects_dag_completion_status(airflow_instance: None, dagster_
     from tutorial_example.dagster_defs.stages.observe import defs
 
     all_keys = [spec.key for spec in defs.get_all_asset_specs()]
-    assert len(all_keys) == 10
+    assert len(all_keys) == 10, f"Expected 10 keys, got {len(all_keys)}"
 
     mat_events = instance.get_latest_materialization_events(asset_keys=all_keys)
     for key, event in mat_events.items():
