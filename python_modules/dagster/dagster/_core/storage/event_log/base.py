@@ -643,6 +643,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         partitions_defs: Sequence[Optional[PartitionsDefinition]],
     ) -> Sequence[Optional["AssetStatusCacheValue"]]:
         """Get the cached status information for each asset."""
+        check.param_invariant(len(asset_keys) == len(partitions_defs), "asset_keys")
+
         values = []
         for asset_key, partitions_def in zip(asset_keys, partitions_defs):
             values.append(
