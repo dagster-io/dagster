@@ -1,9 +1,7 @@
-import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
-import {useContext, useState} from 'react';
+import {useState} from 'react';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {
-  AssetsInScope,
   LAUNCH_ASSET_LOADER_QUERY,
   buildAssetCollisionsAlert,
   executionParamsForAssetJob,
@@ -16,14 +14,13 @@ import {
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
-import {ApolloClient, useApolloClient} from '../apollo-client';
-import {CloudOSSContext} from '../app/CloudOSSContext';
+import {useApolloClient} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
-type ObserveAssetsState =
+export type ObserveAssetsState =
   | {type: 'none'}
   | {type: 'loading'}
   | {type: 'error'; error: string}
@@ -37,7 +34,7 @@ export const useObserveAction = (preferredJobName?: string) => {
   const client = useApolloClient();
   const [state, setState] = useState<ObserveAssetsState>({type: 'none'});
 
-  const onClick = async (assetKeys: AssetKey[], e: React.MouseEvent<any>) => {
+  const onClick = async (assetKeys: AssetKey[], _: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
       return;
     }
@@ -45,7 +42,7 @@ export const useObserveAction = (preferredJobName?: string) => {
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys},
+      variables: {assetKeys: assetKeys.map(asAssetKeyInput)},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {
@@ -55,9 +52,8 @@ export const useObserveAction = (preferredJobName?: string) => {
     }
 
     const assets = result.data.assetNodes;
-    const forceLaunchpad = e.shiftKey;
 
-    const next = await stateForObservingAssets(client, assets, forceLaunchpad, preferredJobName);
+    const next = await stateForObservingAssets(assets, preferredJobName);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -79,68 +75,8 @@ export const useObserveAction = (preferredJobName?: string) => {
   return {onClick, loading: state.type === 'loading'};
 };
 
-export const LaunchAssetObservationButton = ({
-  scope,
-  preferredJobName,
-  primary = false,
-}: {
-  scope: AssetsInScope;
-  primary?: boolean;
-  preferredJobName?: string;
-}) => {
-  const {onClick, loading} = useObserveAction(preferredJobName);
-  const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
-
-  const {
-    featureContext: {canSeeMaterializeAction},
-  } = useContext(CloudOSSContext);
-
-  if (!canSeeMaterializeAction) {
-    return null;
-  }
-
-  if (!scopeAssets.length) {
-    return <></>;
-  }
-
-  const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
-  const label =
-    'selected' in scope
-      ? `Observe selected${count}`
-      : scope.skipAllTerm
-      ? `Observe${count}`
-      : `Observe sources ${count}`;
-
-  const hasMaterializePermission = scopeAssets.every((a) => a.hasMaterializePermission);
-  if (!hasMaterializePermission) {
-    return (
-      <Tooltip content="You do not have permission to observe source assets">
-        <Button
-          intent={primary ? 'primary' : undefined}
-          icon={<Icon name="observation" />}
-          disabled
-        >
-          {label}
-        </Button>
-      </Tooltip>
-    );
-  }
-
-  return (
-    <Button
-      intent={primary ? 'primary' : undefined}
-      onClick={(e) => onClick(scopeAssets.map(asAssetKeyInput), e)}
-      icon={loading ? <Spinner purpose="body-text" /> : <Icon name="observation" />}
-    >
-      {label}
-    </Button>
-  );
-};
-
 async function stateForObservingAssets(
-  _client: ApolloClient<any>,
   assets: LaunchAssetExecutionAssetNodeFragment[],
-  _forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<ObserveAssetsState> {
   if (assets.some((x) => !x.isObservable)) {

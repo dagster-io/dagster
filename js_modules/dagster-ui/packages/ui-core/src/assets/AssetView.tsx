@@ -19,7 +19,6 @@ import {useAllAssets} from './AssetsCatalogTable';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -279,7 +278,12 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   }, [path, selectedTab, setCurrentPage]);
 
   const wipe = useWipeModal(
-    definition ? {assetKey: definition.assetKey, repository: definition.repository} : null,
+    definition && !definition.isObservable
+      ? {
+          assetKey: definition.assetKey,
+          repository: definition.repository,
+        }
+      : null,
     refresh,
   );
 
@@ -292,7 +296,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   );
 
   const reportEvents = useReportEventsModal(
-    definition && repoAddress
+    definition && !definition.isObservable && repoAddress
       ? {
           assetKey: definition.assetKey,
           isPartitioned: definition.isPartitioned,
@@ -336,13 +340,8 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
           </div>
         }
         right={
-          <Box flex={{direction: 'row'}}>
-            {cachedOrLiveDefinition && cachedOrLiveDefinition.isObservable ? (
-              <LaunchAssetObservationButton
-                primary
-                scope={{all: [cachedOrLiveDefinition], skipAllTerm: true}}
-              />
-            ) : cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 && upstream ? (
+          <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
+            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 && upstream ? (
               <LaunchAssetExecutionButton
                 scope={{all: [cachedOrLiveDefinition]}}
                 showChangedAndMissingOption={false}
