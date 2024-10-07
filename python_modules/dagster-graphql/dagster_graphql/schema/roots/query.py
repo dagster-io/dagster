@@ -382,6 +382,7 @@ class GrapheneQuery(graphene.ObjectType):
     runsFeedCountOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsFeedCountOrError),
         filter=graphene.Argument(GrapheneRunsFilter),
+        includeRunsFromBackfills=graphene.Boolean(),
         description="Retrieve the number of entries for the Runs Feed after applying a filter.",
     )
     runTagKeysOrError = graphene.Field(
@@ -869,10 +870,15 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_runsFeedCountOrError(
         self,
         graphene_info: ResolveInfo,
+        includeRunsFromBackfills: bool,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
-        return GrapheneRunsFeedCount(get_runs_feed_count(graphene_info, selector))
+        return GrapheneRunsFeedCount(
+            get_runs_feed_count(
+                graphene_info, selector, include_runs_from_backfills=includeRunsFromBackfills
+            )
+        )
 
     @capture_error
     def resolve_partitionSetsOrError(
