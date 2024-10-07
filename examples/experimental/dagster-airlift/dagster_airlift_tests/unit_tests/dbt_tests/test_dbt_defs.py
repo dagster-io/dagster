@@ -7,7 +7,7 @@ import pytest
 from dagster import AssetSpec, Definitions
 from dagster._core.test_utils import environ
 from dagster_airlift.core import build_defs_from_airflow_instance
-from dagster_airlift.core.dag_defs import dag_defs, task_defs
+from dagster_airlift.core.top_level_dag_def_api import dag_defs, task_defs
 from dagster_airlift.dbt import dbt_defs
 from dagster_airlift.test import make_instance
 from dagster_dbt.dbt_project import DbtProject

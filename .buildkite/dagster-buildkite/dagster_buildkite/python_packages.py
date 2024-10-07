@@ -30,7 +30,7 @@ class PythonPackage:
             # distribution if our setup.py doesn't implement setup() correctly
             reload(distutils_core)
 
-            distribution = distutils_core.run_setup(str(setup_path), stop_after="init")
+            distribution = distutils_core.run_setup(str(setup_path / "setup.py"), stop_after="init")
 
             self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
             self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
@@ -52,7 +52,7 @@ class PythonPackage:
                 self._extras_require = {}
             else:
                 self.name = project["name"]
-                self._install_requires = project["dependnecies"]
+                self._install_requires = project["dependencies"]
                 self._extras_require = project.get("optional-dependencies", {})
 
     @property
@@ -146,13 +146,18 @@ class PythonPackages:
             ["git", "ls-files", "."],
             cwd=str(git_info.directory),
         ).decode("utf-8")
+        processed = set()
         packages = []
         for file in output.split("\n"):
-            path = git_info.directory / Path(file)
-            if path.is_dir() and (
-                (path / "setup.py").exists() or (path / "pyproject.toml").exists()
-            ):
-                packages.append(PythonPackage(path))
+            if not file:
+                continue
+            path_dir = (git_info.directory / Path(file)).parents[0]
+            if str(path_dir) in processed:
+                continue
+            processed |= {str(path_dir)}
+            assert path_dir.is_dir()
+            if (path_dir / "setup.py").exists() or (path_dir / "pyproject.toml").exists():
+                packages.append(PythonPackage(path_dir))
 
         for package in sorted(packages):
             logging.info("  - " + package.name)

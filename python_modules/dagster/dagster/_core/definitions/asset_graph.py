@@ -357,8 +357,8 @@ def executable_in_same_run(
 
     # if operating on a RemoteAssetGraph, must share a repository handle
     if isinstance(asset_graph, RemoteAssetGraph):
-        child_handle = asset_graph.get_repository_handle(child_key)
-        parent_handle = asset_graph.get_repository_handle(parent_key)
+        child_handle = asset_graph.get_repository_selector(child_key)
+        parent_handle = asset_graph.get_repository_selector(parent_key)
         if child_handle != parent_handle:
             return False
 

@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
@@ -26,7 +26,6 @@ import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNo
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
-import {useCachedAssets} from './AssetsCatalogTable';
 import {EvaluationUserLabel} from './AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {LargeCollapsibleSection} from './LargeCollapsibleSection';
@@ -41,7 +40,7 @@ import {buildConsolidatedColumnSchema} from './buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPathToString';
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
-import {AssetTableFragment} from './types/AssetTableFragment.types';
+import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {useLatestPartitionEvents} from './useLatestPartitionEvents';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -119,6 +118,7 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
 export const AssetNodeOverview = ({
   assetKey,
   assetNode,
+  cachedAssetNode,
   upstream,
   downstream,
   liveData,
@@ -126,13 +126,18 @@ export const AssetNodeOverview = ({
 }: {
   assetKey: AssetKey;
   assetNode: AssetNodeDefinitionFragment | undefined | null;
+  cachedAssetNode: AssetTableDefinitionFragment | undefined | null;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
 }) => {
-  const repoAddress = assetNode
-    ? buildRepoAddress(assetNode.repository.name, assetNode.repository.location.name)
+  const cachedOrLiveAssetNode = assetNode ?? cachedAssetNode;
+  const repoAddress = cachedOrLiveAssetNode
+    ? buildRepoAddress(
+        cachedOrLiveAssetNode.repository.name,
+        cachedOrLiveAssetNode.repository.location.name,
+      )
     : null;
   const location = useRepositoryLocationForAddress(repoAddress);
 
@@ -141,24 +146,9 @@ export const AssetNodeOverview = ({
   const configType = assetNode?.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
   const visibleJobNames =
-    assetNode?.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName)) || [];
+    cachedOrLiveAssetNode?.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName)) || [];
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
-
-  const [cachedAsset, setCachedAsset] = useState<AssetTableFragment | undefined>();
-  useCachedAssets({
-    onAssetsLoaded: useCallback(
-      (data) => {
-        for (const asset of data) {
-          if (JSON.stringify(asset.key.path) === JSON.stringify(assetKey.path)) {
-            setCachedAsset(asset);
-            return;
-          }
-        }
-      },
-      [assetKey.path],
-    ),
-  });
 
   const {materialization, observation, loading} = useLatestPartitionEvents(
     assetKey,
@@ -171,11 +161,7 @@ export const AssetNodeOverview = ({
     observations,
     loading: materializationsLoading,
   } = useRecentAssetEvents(
-    (!cachedAsset && !assetNode) ||
-      cachedAsset?.definition?.partitionDefinition ||
-      assetNode?.isPartitioned
-      ? undefined
-      : assetNode?.assetKey,
+    cachedOrLiveAssetNode?.partitionDefinition ? undefined : cachedOrLiveAssetNode?.assetKey,
     {},
     {assetHasDefinedPartitions: false},
   );
@@ -191,7 +177,7 @@ export const AssetNodeOverview = ({
     ),
   );
 
-  if (loading || !assetNode) {
+  if (loading || !cachedOrLiveAssetNode) {
     return <AssetNodeOverviewLoading />;
   }
 
@@ -214,7 +200,10 @@ export const AssetNodeOverview = ({
           </Subtitle2>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
-              <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
+              <SimpleStakeholderAssetStatus
+                liveData={liveData}
+                assetNode={assetNode ?? cachedAssetNode!}
+              />
             ) : (
               <NoValue />
             )}
@@ -229,7 +218,7 @@ export const AssetNodeOverview = ({
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"
-              assetKey={assetNode.assetKey}
+              assetKey={cachedOrLiveAssetNode.assetKey}
             />
           </Box>
         ) : undefined}
@@ -242,11 +231,11 @@ export const AssetNodeOverview = ({
           </Box>
         ) : undefined}
       </Box>
-      {assetNode.isPartitioned ? null : (
+      {cachedOrLiveAssetNode.isPartitioned ? null : (
         <RecentUpdatesTimeline
           materializations={materializations}
           observations={observations}
-          assetKey={assetNode.assetKey}
+          assetKey={cachedOrLiveAssetNode.assetKey}
           loading={materializationsLoading}
         />
       )}
@@ -254,8 +243,8 @@ export const AssetNodeOverview = ({
   );
 
   const renderDescriptionSection = () =>
-    assetNode.description ? (
-      <Description description={assetNode.description} maxHeight={260} />
+    cachedOrLiveAssetNode.description ? (
+      <Description description={cachedOrLiveAssetNode.description} maxHeight={260} />
     ) : (
       <SectionEmptyState
         title="No description found"
@@ -297,18 +286,20 @@ export const AssetNodeOverview = ({
     </>
   );
 
-  const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
-  const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+  const storageKindTag = cachedOrLiveAssetNode.tags?.find(isCanonicalStorageKindTag);
+  const filteredTags = cachedOrLiveAssetNode.tags?.filter(
+    (tag) => tag.key !== 'dagster/storage_kind',
+  );
 
   const nonSystemTags = filteredTags?.filter((tag) => !isSystemTag(tag));
   const systemTags = filteredTags?.filter(isSystemTag);
 
-  const relationIdentifierMetadata = assetNode.metadataEntries?.find(
+  const relationIdentifierMetadata = assetNode?.metadataEntries?.find(
     isCanonicalRelationIdentifierEntry,
   );
-  const uriMetadata = assetNode.metadataEntries?.find(isCanonicalUriEntry);
+  const uriMetadata = assetNode?.metadataEntries?.find(isCanonicalUriEntry);
 
-  const codeSource = assetNode.metadataEntries?.find((m) => isCanonicalCodeSourceEntry(m)) as
+  const codeSource = assetNode?.metadataEntries?.find((m) => isCanonicalCodeSourceEntry(m)) as
     | CodeReferencesMetadataEntry
     | undefined;
 
@@ -316,8 +307,13 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Group">
         <Tag icon="asset_group">
-          <Link to={workspacePathFromAddress(repoAddress!, `/asset-groups/${assetNode.groupName}`)}>
-            {assetNode.groupName}
+          <Link
+            to={workspacePathFromAddress(
+              repoAddress!,
+              `/asset-groups/${cachedOrLiveAssetNode.groupName}`,
+            )}
+          >
+            {cachedOrLiveAssetNode.groupName}
           </Link>
         </Tag>
       </AttributeAndValue>
@@ -325,7 +321,7 @@ export const AssetNodeOverview = ({
       <AttributeAndValue label="Code location">
         <Box flex={{direction: 'column'}}>
           <AssetDefinedInMultipleReposNotice
-            assetKey={assetNode.assetKey}
+            assetKey={cachedOrLiveAssetNode.assetKey}
             loadedFromRepo={repoAddress!}
           />
           <RepositoryLink repoAddress={repoAddress!} />
@@ -337,9 +333,9 @@ export const AssetNodeOverview = ({
         </Box>
       </AttributeAndValue>
       <AttributeAndValue label="Owners">
-        {assetNode.owners &&
-          assetNode.owners.length > 0 &&
-          assetNode.owners.map((owner, idx) =>
+        {cachedOrLiveAssetNode.owners &&
+          cachedOrLiveAssetNode.owners.length > 0 &&
+          cachedOrLiveAssetNode.owners.map((owner, idx) =>
             owner.__typename === 'UserAssetOwner' ? (
               <UserAssetOwnerWrapper key={idx}>
                 <UserDisplay key={idx} email={owner.email} size="very-small" />
@@ -352,18 +348,18 @@ export const AssetNodeOverview = ({
           )}
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
-        {assetNode.computeKind && (
+        {cachedOrLiveAssetNode.computeKind && (
           <AssetKind
             style={{position: 'relative'}}
-            kind={assetNode.computeKind}
+            kind={cachedOrLiveAssetNode.computeKind}
             reduceColor
             linkToFilteredAssetsTable
           />
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Kinds">
-        {(assetNode.kinds.length > 1 || !assetNode.computeKind) &&
-          assetNode.kinds.map((kind) => (
+        {(cachedOrLiveAssetNode.kinds.length > 1 || !cachedOrLiveAssetNode.computeKind) &&
+          cachedOrLiveAssetNode.kinds.map((kind) => (
             <AssetKind
               key={kind}
               style={{position: 'relative'}}
@@ -449,31 +445,43 @@ export const AssetNodeOverview = ({
       },
       {
         label: 'Sensors',
-        children: sensors.length > 0 && (
-          <ScheduleOrSensorTag repoAddress={repoAddress!} sensors={sensors} showSwitch={false} />
+        children: assetNode ? (
+          sensors.length > 0 ? (
+            <ScheduleOrSensorTag repoAddress={repoAddress!} sensors={sensors} showSwitch={false} />
+          ) : null
+        ) : (
+          <SectionSkeleton />
         ),
       },
       {
         label: 'Schedules',
-        children: schedules.length > 0 && (
-          <ScheduleOrSensorTag
-            repoAddress={repoAddress!}
-            schedules={schedules}
-            showSwitch={false}
-          />
+        children: assetNode ? (
+          schedules.length > 0 && (
+            <ScheduleOrSensorTag
+              repoAddress={repoAddress!}
+              schedules={schedules}
+              showSwitch={false}
+            />
+          )
+        ) : (
+          <SectionSkeleton />
         ),
       },
       {
         label: 'Freshness policy',
-        children: assetNode.freshnessPolicy && (
-          <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+        children: assetNode ? (
+          assetNode?.freshnessPolicy && (
+            <Body>{freshnessPolicyDescription(assetNode.freshnessPolicy)}</Body>
+          )
+        ) : (
+          <SectionSkeleton />
         ),
       },
     ];
 
     if (
       attributes.every((props) => isEmptyChildren(props.children)) &&
-      !assetNode.autoMaterializePolicy
+      !cachedOrLiveAssetNode.autoMaterializePolicy
     ) {
       return (
         <SectionEmptyState
@@ -483,11 +491,11 @@ export const AssetNodeOverview = ({
         />
       );
     } else {
-      if (assetNode.automationCondition && assetNode.automationCondition.label) {
+      if (assetNode?.automationCondition && assetNode?.automationCondition.label) {
         return (
           <EvaluationUserLabel
-            userLabel={assetNode.automationCondition.label}
-            expandedLabel={assetNode.automationCondition.expandedLabel}
+            userLabel={assetNode?.automationCondition.label}
+            expandedLabel={assetNode?.automationCondition.expandedLabel}
           />
         );
       }
@@ -502,81 +510,89 @@ export const AssetNodeOverview = ({
     );
   };
 
-  const renderComputeDetailsSection = () => (
-    <Box flex={{direction: 'column', gap: 12}}>
-      <AttributeAndValue label="Computed by">
-        <Tag>
-          <UnderlyingOpsOrGraph
-            assetNode={assetNode}
-            repoAddress={repoAddress!}
-            hideIfRedundant={false}
-          />
-        </Tag>
-      </AttributeAndValue>
+  const renderComputeDetailsSection = () => {
+    if (!assetNode) {
+      return <SectionSkeleton />;
+    }
+    return (
+      <Box flex={{direction: 'column', gap: 12}}>
+        <AttributeAndValue label="Computed by">
+          <Tag>
+            <UnderlyingOpsOrGraph
+              assetNode={assetNode}
+              repoAddress={repoAddress!}
+              hideIfRedundant={false}
+            />
+          </Tag>
+        </AttributeAndValue>
 
-      <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
+        <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
 
-      <AttributeAndValue label="Resources">
-        {[...assetNode.requiredResources]
-          .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
-          .map((resource) => (
-            <Tag key={resource.resourceKey}>
-              <Box flex={{gap: 4, alignItems: 'center'}}>
-                <Icon name="resource" color={Colors.accentGray()} />
-                {repoAddress ? (
-                  <Link
-                    to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
-                  >
-                    {resource.resourceKey}
-                  </Link>
-                ) : (
-                  resource.resourceKey
-                )}
-              </Box>
-            </Tag>
-          ))}
-      </AttributeAndValue>
+        <AttributeAndValue label="Resources">
+          {[...assetNode.requiredResources]
+            .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+            .map((resource) => (
+              <Tag key={resource.resourceKey}>
+                <Box flex={{gap: 4, alignItems: 'center'}}>
+                  <Icon name="resource" color={Colors.accentGray()} />
+                  {repoAddress ? (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/resources/${resource.resourceKey}`,
+                      )}
+                    >
+                      {resource.resourceKey}
+                    </Link>
+                  ) : (
+                    resource.resourceKey
+                  )}
+                </Box>
+              </Tag>
+            ))}
+        </AttributeAndValue>
 
-      <AttributeAndValue label="Config schema">
-        {assetConfigSchema && (
-          <ButtonLink
-            onClick={() => {
-              showCustomAlert({
-                title: 'Config schema',
-                body: (
-                  <ConfigTypeSchema
-                    type={assetConfigSchema}
-                    typesInScope={assetConfigSchema.recursiveConfigTypes}
-                  />
-                ),
-              });
-            }}
-          >
-            View config details
-          </ButtonLink>
-        )}
-      </AttributeAndValue>
+        <AttributeAndValue label="Config schema">
+          {assetConfigSchema && (
+            <ButtonLink
+              onClick={() => {
+                showCustomAlert({
+                  title: 'Config schema',
+                  body: (
+                    <ConfigTypeSchema
+                      type={assetConfigSchema}
+                      typesInScope={assetConfigSchema.recursiveConfigTypes}
+                    />
+                  ),
+                });
+              }}
+            >
+              View config details
+            </ButtonLink>
+          )}
+        </AttributeAndValue>
 
-      <AttributeAndValue label="Type">
-        {assetType && assetType.displayName !== 'Any' && (
-          <ButtonLink
-            onClick={() => {
-              showCustomAlert({
-                title: 'Type summary',
-                body: <DagsterTypeSummary type={assetType} />,
-              });
-            }}
-          >
-            View type details
-          </ButtonLink>
-        )}
-      </AttributeAndValue>
+        <AttributeAndValue label="Type">
+          {assetType && assetType.displayName !== 'Any' && (
+            <ButtonLink
+              onClick={() => {
+                showCustomAlert({
+                  title: 'Type summary',
+                  body: <DagsterTypeSummary type={assetType} />,
+                });
+              }}
+            >
+              View type details
+            </ButtonLink>
+          )}
+        </AttributeAndValue>
 
-      <AttributeAndValue label="Backfill policy">
-        {assetNode.backfillPolicy?.description}
-      </AttributeAndValue>
-    </Box>
-  );
+        <AttributeAndValue label="Backfill policy">
+          {assetNode.backfillPolicy?.description}
+        </AttributeAndValue>
+      </Box>
+    );
+  };
 
   return (
     <AssetNodeOverviewContainer
@@ -592,7 +608,7 @@ export const AssetNodeOverview = ({
             <LargeCollapsibleSection header="Columns" icon="view_column">
               <TableSchemaAssetContext.Provider
                 value={{
-                  assetKey: assetNode.assetKey,
+                  assetKey: cachedOrLiveAssetNode.assetKey,
                   materializationMetadataEntries: materialization?.metadataEntries,
                 }}
               >
@@ -605,7 +621,7 @@ export const AssetNodeOverview = ({
           )}
           <LargeCollapsibleSection header="Metadata" icon="view_list">
             <AssetEventMetadataEntriesTable
-              assetKey={assetNode.assetKey}
+              assetKey={cachedOrLiveAssetNode.assetKey}
               showHeader
               showTimestamps
               showFilter
@@ -613,7 +629,7 @@ export const AssetNodeOverview = ({
               observations={[]}
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
-              assetHasDefinedPartitions={!!assetNode.partitionDefinition}
+              assetHasDefinedPartitions={!!cachedOrLiveAssetNode.partitionDefinition}
               repoAddress={repoAddress}
               event={materialization || observation || null}
               emptyState={
@@ -630,7 +646,7 @@ export const AssetNodeOverview = ({
             icon="account_tree"
             right={
               <Link
-                to={globalAssetGraphPathForAssetsAndDescendants([assetNode.assetKey])}
+                to={globalAssetGraphPathForAssetsAndDescendants([cachedOrLiveAssetNode.assetKey])}
                 onClick={(e) => e.stopPropagation()}
               >
                 <Box flex={{gap: 4, alignItems: 'center'}}>View in graph</Box>
@@ -649,7 +665,7 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection header="Automation details" icon="auto_materialize_policy">
             {renderAutomationDetailsSection()}
           </LargeCollapsibleSection>
-          {assetNode.isExecutable ? (
+          {cachedOrLiveAssetNode.isExecutable ? (
             <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
               {renderComputeDetailsSection()}
             </LargeCollapsibleSection>
@@ -724,7 +740,7 @@ const AttributeAndValue = ({
   }
 
   return (
-    <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
+    <Box flex={{direction: 'column', gap: 6, alignItems: 'stretch'}}>
       <Subtitle2>{label}</Subtitle2>
       <Body2 style={{maxWidth: '100%'}}>
         <Box flex={{gap: 4, wrap: 'wrap'}}>{children}</Box>
@@ -901,3 +917,11 @@ const UserAssetOwnerWrapper = styled.div`
     background-color: ${Colors.backgroundGray()};
   }
 `;
+
+const SectionSkeleton = () => (
+  <Box flex={{direction: 'column', gap: 6}} style={{width: '100%'}}>
+    <Skeleton $height={16} $width="90%" />
+    <Skeleton $height={16} />
+    <Skeleton $height={16} $width="60%" />
+  </Box>
+);

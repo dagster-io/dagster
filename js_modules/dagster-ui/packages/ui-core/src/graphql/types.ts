@@ -3973,6 +3973,7 @@ export type QueryRunsFeedCountOrErrorArgs = {
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   filter?: InputMaybe<RunsFilter>;
+  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
   limit: Scalars['Int']['input'];
 };
 
@@ -4789,7 +4790,6 @@ export type RunsFeedEntry = {
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
-  excludeSubruns?: InputMaybe<Scalars['Boolean']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
   runIds?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -13648,8 +13648,6 @@ export const buildRunsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
-    excludeSubruns:
-      overrides && overrides.hasOwnProperty('excludeSubruns') ? overrides.excludeSubruns! : false,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'voluptas',

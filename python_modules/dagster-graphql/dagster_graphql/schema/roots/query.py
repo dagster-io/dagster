@@ -376,6 +376,7 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         filter=graphene.Argument(GrapheneRunsFilter),
+        includeRunsFromBackfills=graphene.Boolean(),
         description="Retrieve entries for the Runs Feed after applying a filter, cursor and limit.",
     )
     runsFeedCountOrError = graphene.Field(
@@ -852,12 +853,17 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         limit: int,
+        includeRunsFromBackfills: bool,
         cursor: Optional[str] = None,
         filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
     ):
         selector = filter.to_selector() if filter is not None else None
         return get_runs_feed_entries(
-            graphene_info=graphene_info, cursor=cursor, limit=limit, filters=selector
+            graphene_info=graphene_info,
+            cursor=cursor,
+            limit=limit,
+            filters=selector,
+            include_runs_from_backfills=includeRunsFromBackfills,
         )
 
     def resolve_runsFeedCountOrError(
@@ -1023,10 +1029,15 @@ class GrapheneQuery(graphene.ObjectType):
             results = []
             for remote_node in remote_nodes:
                 if remote_node:
-                    repo_handle = remote_node.priority_repository_handle
+                    repo_handle = remote_node.priority_repository_selector
                     code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
-                    repo = code_loc.get_repository(repo_handle.repository_name)
-                    results.append((code_loc, repo, remote_node.priority_node_snap))
+                    results.append(
+                        (
+                            code_loc,
+                            code_loc.get_repository(repo_handle.repository_name),
+                            remote_node.priority_node_snap,
+                        )
+                    )
 
         # Filter down to requested asset keys
         results = [
@@ -1065,9 +1076,8 @@ class GrapheneQuery(graphene.ObjectType):
 
         nodes = [
             GrapheneAssetNode(
-                code_loc,
-                repo,
-                asset_node_snap,
+                repository_selector=repo.selector,
+                asset_node_snap=asset_node_snap,
                 asset_checks_loader=asset_checks_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,

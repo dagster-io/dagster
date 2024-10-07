@@ -117,6 +117,8 @@ class GithubClient:
             headers=headers,
         )
         request.raise_for_status()
+        if "errors" in request.json():
+            raise RuntimeError(request.json()["errors"])
         return request.json()
 
     def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
@@ -158,6 +160,65 @@ class GithubClient:
             },
             installation_id=installation_id,
         )
+
+    def create_ref(
+        self,
+        repo_name: str,
+        repo_owner: str,
+        source: str,
+        target: str,
+        installation_id=None,
+    ):
+        if installation_id is None:
+            installation_id = self.default_installation_id
+        res = self.execute(
+            query="""
+            query get_repo_and_source_ref($repo_name: String!, $repo_owner: String!, $source: String!) {
+                repository(name: $repo_name, owner: $repo_owner) {
+                    id
+                    ref(qualifiedName: $source) {
+                        target {
+                            oid
+                        }
+                    }
+                }
+            }
+            """,
+            variables={
+                "repo_name": repo_name,
+                "repo_owner": repo_owner,
+                "source": source,
+            },
+            installation_id=installation_id,
+        )
+
+        branch = self.execute(
+            query="""
+                mutation CreateRef($id: ID!, $name: String!, $oid: GitObjectID!) {
+                createRef(input: {
+                    repositoryId: $id,
+                    name: $name,
+                    oid: $oid
+                }) {
+                    clientMutationId,
+                    ref {
+                        id
+                        name
+                        target {
+                            oid
+                        }
+                    }
+                }
+                }
+            """,
+            variables={
+                "id": res["data"]["repository"]["id"],
+                "name": target,
+                "oid": res["data"]["repository"]["ref"]["target"]["oid"],
+            },
+            installation_id=installation_id,
+        )
+        return branch
 
 
 class GithubResource(ConfigurableResource):

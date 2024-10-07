@@ -7,7 +7,7 @@ from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
 from dagster._time import get_current_datetime
 from dagster_airlift.in_airflow import proxying_to_dagster
-from dagster_airlift.proxied_state import load_proxied_state_from_yaml
+from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from dbt_example.shared.lakehouse_utils import load_csv_to_duckdb
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 

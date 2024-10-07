@@ -1,22 +1,16 @@
 import datetime
-import json
 import time
 from abc import ABC
 from typing import Any, Dict, List, Sequence
 
 import requests
+from dagster import _check as check
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
 from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
-from dagster_airlift.proxied_state import (
-    AirflowProxiedState,
-    DagProxiedState,
-    load_proxied_state_from_yaml,
-)
-from dagster_airlift.utils import get_local_proxied_state_dir
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
@@ -84,19 +78,6 @@ class AirflowInstance:
             raise DagsterError(
                 "Failed to fetch variables. Status code: {response.status_code}, Message: {response.text}"
             )
-
-    def get_proxied_state(self) -> AirflowProxiedState:
-        local_migration_dir = get_local_proxied_state_dir()
-        if local_migration_dir is not None:
-            return load_proxied_state_from_yaml(local_migration_dir)
-        variables = self.list_variables()
-        dag_dict = {}
-        for var_dict in variables:
-            if var_dict["key"].endswith("_dagster_proxied_state"):
-                dag_id = var_dict["key"].replace("_dagster_proxied_state", "")
-                proxied_dict = json.loads(var_dict["value"])
-                dag_dict[dag_id] = DagProxiedState.from_dict(proxied_dict)
-        return AirflowProxiedState(dags=dag_dict)
 
     def get_task_instance_batch(
         self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
@@ -338,6 +319,20 @@ class TaskInstance:
         return f"{self.details_url}&tab=logs"
 
     @property
+    def logical_date(self) -> datetime.datetime:
+        """Returns the airflow-coined "logical date" from the task instance metadata.
+        The logical date refers to the starting time of the "data interval" that the overall dag run is processing.
+        In airflow < 2.2, this was set as the execution_date parameter in the task instance metadata.
+        """
+        # In airflow < 2.2, execution_date is set instead of logical_date.
+        logical_date_str = check.not_none(
+            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
+            "Expected one of execution_date or logical_date to be returned from the airflow rest API when querying for task information.",
+        )
+
+        return datetime.datetime.fromisoformat(logical_date_str)
+
+    @property
     def start_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["start_date"])
 
@@ -380,6 +375,20 @@ class DagRun:
     @property
     def config(self) -> Dict[str, Any]:
         return self.metadata["conf"]
+
+    @property
+    def logical_date(self) -> datetime.datetime:
+        """Returns the airflow-coined "logical date" from the dag run metadata.
+        The logical date refers to the starting time of the "data interval" that the dag run is processing.
+        In airflow < 2.2, this was set as the execution_date parameter in the dag run metadata.
+        """
+        # In airflow < 2.2, execution_date is set instead of logical_date.
+        logical_date_str = check.not_none(
+            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
+            "Expected one of execution_date or logical_date to be returned from the airflow rest API when querying for dag information.",
+        )
+
+        return datetime.datetime.fromisoformat(logical_date_str)
 
     @property
     def start_date(self) -> datetime.datetime:

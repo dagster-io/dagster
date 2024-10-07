@@ -16,7 +16,9 @@ from typing import (
 import dagster._seven as seven
 from dagster import (
     AssetKey,
+    DagsterEventType,
     DagsterInstance,
+    DagsterRun,
     MultiPartitionsDefinition,
     _check as check,
 )
@@ -36,7 +38,6 @@ from dagster._core.definitions.time_window_partitions import (
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.event_api import AssetRecordsFilter
-from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
@@ -196,23 +197,20 @@ def _graphene_asset_node(
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
-    repo_handle = remote_node.priority_repository_handle
-    code_location = graphene_info.context.get_code_location(repo_handle.location_name)
-    repo = code_location.get_repository(repo_handle.repository_name)
+    selector = remote_node.priority_repository_selector
     base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return GrapheneAssetNode(
-        code_location,
-        repo,
-        remote_node.priority_node_snap,
+        repository_selector=selector,
+        asset_node_snap=remote_node.priority_node_snap,
         asset_checks_loader=asset_checks_loader,
         depended_by_loader=depended_by_loader,
         stale_status_loader=stale_status_loader,
         dynamic_partitions_loader=dynamic_partitions_loader,
         # base_deployment_context will be None if we are not in a branch deployment
         asset_graph_differ=AssetGraphDiffer.from_external_repositories(
-            code_location_name=code_location.name,
-            repository_name=repo.name,
+            code_location_name=selector.location_name,
+            repository_name=selector.repository_name,
             branch_workspace=graphene_info.context,
             base_workspace=base_deployment_context,
         )
@@ -400,20 +398,39 @@ def get_asset_observations(
     return [event_record.event_log_entry for event_record in event_records]
 
 
-def get_assets_for_run_id(graphene_info: "ResolveInfo", run_id: str) -> Sequence["GrapheneAsset"]:
+def get_assets_for_run(graphene_info: "ResolveInfo", run: DagsterRun) -> Sequence["GrapheneAsset"]:
     from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
 
-    check.str_param(run_id, "run_id")
+    run_id = run.run_id
 
-    records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_EVENTS)
-    asset_keys = set(
-        [
-            record.get_dagster_event().asset_key
-            for record in records
-            if record.is_dagster_event and record.get_dagster_event().asset_key
-        ]
-    )
-    return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
+    # Fetch observations and materialization events from run
+    event_log_records = [
+        *graphene_info.context.instance.get_records_for_run(
+            run_id,
+            of_type=DagsterEventType.ASSET_MATERIALIZATION,
+        ).records,
+        *graphene_info.context.instance.get_records_for_run(
+            run_id,
+            of_type=DagsterEventType.ASSET_OBSERVATION,
+        ).records,
+    ]
+
+    asset_keys = {
+        record.event_log_entry.dagster_event.asset_key
+        for record in event_log_records
+        if record.event_log_entry.dagster_event
+    }
+
+    # Fetch planned asset keys from execution plan snapshot
+    if run.execution_plan_snapshot_id:
+        execution_plan_snapshot = check.not_none(
+            graphene_info.context.instance.get_execution_plan_snapshot(
+                run.execution_plan_snapshot_id
+            )
+        )
+        asset_keys.update(execution_plan_snapshot.asset_selection)
+
+    return [GrapheneAsset(key=asset_key) for asset_key in asset_keys if asset_key]
 
 
 def get_unique_asset_id(

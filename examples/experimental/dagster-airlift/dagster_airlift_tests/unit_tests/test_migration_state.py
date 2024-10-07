@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from dagster_airlift.core import load_proxied_state_from_yaml
-from dagster_airlift.proxied_state import (
+from dagster_airlift.in_airflow.proxied_state import (
     AirflowProxiedState,
     DagProxiedState,
     ProxiedStateParsingError,
     TaskProxiedState,
+    load_proxied_state_from_yaml,
 )
 
 

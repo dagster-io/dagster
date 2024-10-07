@@ -1,18 +1,24 @@
 import datetime
+import logging
+import time
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Type, Union, cast
+from typing import List, Mapping, Optional, Sequence, Type, Union
 
 import jwt
 import requests
+import tableauserverclient as TSC
 from dagster import (
     AssetsDefinition,
     ConfigurableResource,
     Definitions,
+    Failure,
     ObserveResult,
+    Output,
     _check as check,
     external_assets_from_specs,
+    get_dagster_logger,
     multi_asset,
 )
 from dagster._annotations import experimental
@@ -22,6 +28,7 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
+from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
@@ -30,7 +37,8 @@ from dagster_tableau.translator import (
     TableauWorkspaceData,
 )
 
-TABLEAU_REST_API_VERSION = "3.23"
+DEFAULT_POLL_INTERVAL_SECONDS = 10
+DEFAULT_POLL_TIMEOUT = 600
 
 
 @experimental
@@ -48,88 +56,143 @@ class BaseTableauClient:
         self.connected_app_secret_value = connected_app_secret_value
         self.username = username
         self.site_name = site_name
-        self._api_token = None
-        self._site_id = None
+        self._server = TSC.Server(self.base_url)
+        self._server.use_server_version()
 
     @property
     @abstractmethod
-    def rest_api_base_url(self) -> str:
+    def base_url(self) -> str:
         raise NotImplementedError()
 
     @property
-    @abstractmethod
-    def metadata_api_base_url(self) -> str:
-        raise NotImplementedError()
-
-    def _fetch_json(
-        self,
-        url: str,
-        data: Optional[Mapping[str, object]] = None,
-        method: str = "GET",
-        with_auth_header: bool = True,
-    ) -> Mapping[str, object]:
-        """Fetch JSON data from the Tableau APIs given the URL. Raises an exception if the request fails.
-
-        Args:
-            url (str): The url to fetch data from.
-            data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
-            method (str): The HTTP method to use for the request.
-            with_auth_header (bool): Whether to add X-Tableau-Auth header to the request. Enabled by default.
-
-        Returns:
-            Dict[str, Any]: The JSON data returned from the API.
-        """
-        response = self._make_request(
-            url=url, data=data, method=method, with_auth_header=with_auth_header
-        )
-        return response.json()
-
-    def _make_request(
-        self,
-        url: str,
-        data: Optional[Mapping[str, object]] = None,
-        method: str = "GET",
-        with_auth_header: bool = True,
-    ) -> requests.Response:
-        headers: Mapping[str, object] = {
-            "accept": "application/json",
-            "content-type": "application/json",
-        }
-        if with_auth_header:
-            headers = {**headers, "X-tableau-auth": self._api_token}
-        request_args: Dict[str, Any] = dict(
-            method=method,
-            url=url,
-            headers=headers,
-        )
-        if data:
-            request_args = {**request_args, "json": data}
-        response = requests.request(**request_args)
-        response.raise_for_status()
-        return response
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
 
     @cached_method
-    def get_workbooks(self) -> Mapping[str, object]:
+    def get_workbooks(self) -> List[TSC.WorkbookItem]:
         """Fetches a list of all Tableau workbooks in the workspace."""
-        endpoint = self._with_site_id("workbooks")
-        return self._fetch_json(url=f"{self.rest_api_base_url}/{endpoint}")
+        workbooks, _ = self._server.workbooks.get()
+        return workbooks
 
     @cached_method
     def get_workbook(self, workbook_id) -> Mapping[str, object]:
         """Fetches information, including sheets, dashboards and data sources, for a given workbook."""
-        data = {"query": self.workbook_graphql_query, "variables": {"luid": workbook_id}}
-        return self._fetch_json(url=self.metadata_api_base_url, data=data, method="POST")
+        return self._server.metadata.query(
+            query=self.workbook_graphql_query, variables={"luid": workbook_id}
+        )
 
     @cached_method
     def get_view(
         self,
         view_id: str,
-    ) -> Mapping[str, object]:
+    ) -> TSC.ViewItem:
         """Fetches information for a given view."""
-        endpoint = self._with_site_id(f"views/{view_id}")
-        return self._fetch_json(url=f"{self.rest_api_base_url}/{endpoint}")
+        return self._server.views.get_by_id(view_id)
 
-    def sign_in(self) -> Mapping[str, object]:
+    def get_job(
+        self,
+        job_id: str,
+    ) -> TSC.JobItem:
+        """Fetches information for a given job."""
+        return self._server.jobs.get_by_id(job_id)
+
+    def cancel_job(
+        self,
+        job_id: str,
+    ) -> requests.Response:
+        """Cancels a given job."""
+        return self._server.jobs.cancel(job_id)
+
+    def refresh_workbook(self, workbook_id) -> TSC.JobItem:
+        """Refreshes all extracts for a given workbook and return the JobItem object."""
+        return self._server.workbooks.refresh(workbook_id)
+
+    def refresh_and_poll(
+        self,
+        workbook_id: str,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Optional[str]:
+        job = self.refresh_workbook(workbook_id)
+
+        if not poll_interval:
+            poll_interval = DEFAULT_POLL_INTERVAL_SECONDS
+        if not poll_timeout:
+            poll_timeout = DEFAULT_POLL_TIMEOUT
+
+        self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
+        start = time.monotonic()
+
+        try:
+            while True:
+                if poll_timeout and start + poll_timeout < time.monotonic():
+                    raise Failure(
+                        f"Timeout: Tableau job {job.id} is not ready after the timeout"
+                        f" {poll_timeout} seconds"
+                    )
+                time.sleep(poll_interval)
+                job = self.get_job(job_id=job.id)
+
+                if job.finish_code == -1:
+                    # -1 is the default value for JobItem.finish_code, when the job is in progress
+                    continue
+                elif job.finish_code == TSC.JobItem.FinishCode.Success:
+                    break
+                elif job.finish_code == TSC.JobItem.FinishCode.Failed:
+                    raise Failure(f"Job failed: {job.id}")
+                elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
+                    raise Failure(f"Job was cancelled: {job.id}")
+                else:
+                    raise Failure(
+                        f"Encountered unexpected finish code `{job.finish_code}` for job {job.id}"
+                    )
+        finally:
+            # if Tableau sync has not completed, make sure to cancel it so that it doesn't outlive
+            # the python process
+            if job.finish_code not in (
+                TSC.JobItem.FinishCode.Success,
+                TSC.JobItem.FinishCode.Failed,
+                TSC.JobItem.FinishCode.Cancelled,
+            ):
+                self.cancel_job(job.id)
+
+        return job.workbook_id
+
+    def add_data_quality_warning_to_data_source(
+        self,
+        data_source_id: str,
+        warning_type: Optional[TSC.DQWItem.WarningType] = None,
+        message: Optional[str] = None,
+        active: Optional[bool] = None,
+        severe: Optional[bool] = None,
+    ) -> Sequence[TSC.DQWItem]:
+        """Add a data quality warning to a data source.
+
+        Args:
+            data_source_id (str): The ID of the data source for which a data quality warning is to be added.
+            warning_type (Optional[tableauserverclient.DQWItem.WarningType]): The warning type
+                for the data quality warning. Defaults to `TSC.DQWItem.WarningType.WARNING`.
+            message (Optional[str]): The message for the data quality warning. Defaults to `None`.
+            active (Optional[bool]): Whether the data quality warning is active or not. Defaults to `True`.
+            severe (Optional[bool]): Whether the data quality warning is sever or not. Defaults to `False`.
+
+        Returns:
+            Sequence[tableauserverclient.DQWItem]: The list of tableauserverclient.DQWItems which
+                exist for the data source.
+        """
+        data_source: TSC.DatasourceItem = self._server.datasources.get_by_id(
+            datasource_id=data_source_id
+        )
+        warning: TSC.DQWItem = TSC.DQWItem(
+            warning_type=str(warning_type) or TSC.DQWItem.WarningType.WARNING,
+            message=message,
+            active=active or True,
+            severe=severe or False,
+        )
+        return self._server.datasources.add_dqw(item=data_source, warning=warning)
+
+    def sign_in(self) -> Auth.contextmgr:
         """Sign in to the site in Tableau."""
         jwt_token = jwt.encode(
             {
@@ -138,38 +201,15 @@ class BaseTableauClient:
                 "jti": str(uuid.uuid4()),
                 "aud": "tableau",
                 "sub": self.username,
-                "scp": ["tableau:content:read"],
+                "scp": ["tableau:content:read", "tableau:tasks:run"],
             },
             self.connected_app_secret_value,
             algorithm="HS256",
             headers={"kid": self.connected_app_secret_id, "iss": self.connected_app_client_id},
         )
-        data = {
-            "credentials": {
-                "jwt": jwt_token,
-                "site": {"contentUrl": self.site_name},
-            }
-        }
-        response = self._fetch_json(
-            url=f"{self.rest_api_base_url}/auth/signin",
-            data=data,
-            method="POST",
-            with_auth_header=False,
-        )
 
-        response = cast(Dict[str, Any], response)
-        self._api_token = response["credentials"]["token"]
-        self._site_id = response["credentials"]["site"]["id"]
-        return response
-
-    def sign_out(self) -> None:
-        """Sign out from the site in Tableau."""
-        self._make_request(url=f"{self.rest_api_base_url}/auth/signout", method="POST")
-        self._api_token = None
-        self._site_id = None
-
-    def _with_site_id(self, endpoint: str) -> str:
-        return f"sites/{self._site_id}/{endpoint}"
+        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)  # pyright: ignore (reportAttributeAccessIssue)
+        return self._server.auth.sign_in(tableau_auth)
 
     @property
     def workbook_graphql_query(self) -> str:
@@ -234,14 +274,9 @@ class TableauCloudClient(BaseTableauClient):
         )
 
     @property
-    def rest_api_base_url(self) -> str:
-        """REST API base URL for Tableau Cloud."""
-        return f"https://{self.pod_name}.online.tableau.com/api/{TABLEAU_REST_API_VERSION}"
-
-    @property
-    def metadata_api_base_url(self) -> str:
-        """Metadata API base URL for Tableau Cloud."""
-        return f"https://{self.pod_name}.online.tableau.com/api/metadata/graphql"
+    def base_url(self) -> str:
+        """Base URL for Tableau Cloud."""
+        return f"https://{self.pod_name}.online.tableau.com"
 
 
 @experimental
@@ -269,14 +304,9 @@ class TableauServerClient(BaseTableauClient):
         )
 
     @property
-    def rest_api_base_url(self) -> str:
-        """REST API base URL for Tableau Server."""
-        return f"https://{self.server_name}/api/{TABLEAU_REST_API_VERSION}"
-
-    @property
-    def metadata_api_base_url(self) -> str:
-        """Metadata API base URL for Tableau Server."""
-        return f"https://{self.server_name}/api/metadata/graphql"
+    def base_url(self) -> str:
+        """Base URL for Tableau Cloud."""
+        return f"https://{self.server_name}"
 
 
 @experimental
@@ -308,11 +338,8 @@ class BaseTableauWorkspace(ConfigurableResource):
     def get_client(self):
         if not self._client:
             self.build_client()
-        self._client.sign_in()
-        try:
+        with self._client.sign_in():
             yield self._client
-        finally:
-            self._client.sign_out()
 
     def fetch_tableau_workspace_data(
         self,
@@ -324,8 +351,7 @@ class BaseTableauWorkspace(ConfigurableResource):
             TableauWorkspaceData: A snapshot of the Tableau workspace's content.
         """
         with self.get_client() as client:
-            workbooks_data = client.get_workbooks()["workbooks"]
-            workbook_ids = [workbook["id"] for workbook in workbooks_data["workbook"]]
+            workbook_ids = [workbook.id for workbook in client.get_workbooks()]
 
             workbooks_by_id = {}
             sheets_by_id = {}
@@ -380,12 +406,23 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def build_assets(
         self,
+        refreshable_workbook_ids: Sequence[str],
         dagster_tableau_translator: Type[DagsterTableauTranslator],
     ) -> Sequence[CacheableAssetsDefinition]:
         """Returns a set of CacheableAssetsDefinition which will load Tableau content from
         the workspace and translates it into AssetSpecs, using the provided translator.
 
         Args:
+            refreshable_workbook_ids (Sequence[str]): A list of workbook IDs. The workbooks provided must
+                have extracts as data sources and be refreshable in Tableau.
+
+                When materializing your Tableau assets, the workbooks provided are refreshed,
+                refreshing their sheets and dashboards before pulling their data in Dagster.
+
+                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+                and only works for workbooks for which the data sources are extracts.
+                See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
+                for documentation.
             dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
                 to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
 
@@ -393,15 +430,31 @@ class BaseTableauWorkspace(ConfigurableResource):
             Sequence[CacheableAssetsDefinition]: A list of CacheableAssetsDefinitions which
                 will load the Tableau content.
         """
-        return [TableauCacheableAssetsDefinition(self, dagster_tableau_translator)]
+        return [
+            TableauCacheableAssetsDefinition(
+                self, refreshable_workbook_ids, dagster_tableau_translator
+            )
+        ]
 
     def build_defs(
-        self, dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator
+        self,
+        refreshable_workbook_ids: Optional[Sequence[str]] = None,
+        dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
     ) -> Definitions:
         """Returns a Definitions object which will load Tableau content from
         the workspace and translate it into assets, using the provided translator.
 
         Args:
+            refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
+                have extracts as data sources and be refreshable in Tableau.
+
+                When materializing your Tableau assets, the workbooks provided are refreshed,
+                refreshing their sheets and dashboards before pulling their data in Dagster.
+
+                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
+                and only works for workbooks for which the data sources are extracts.
+                See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
+                for documentation.
             dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
                 to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
 
@@ -409,7 +462,10 @@ class BaseTableauWorkspace(ConfigurableResource):
             Definitions: A Definitions object which will build and return the Power BI content.
         """
         defs = Definitions(
-            assets=self.build_assets(dagster_tableau_translator=dagster_tableau_translator)
+            assets=self.build_assets(
+                refreshable_workbook_ids=refreshable_workbook_ids or [],
+                dagster_tableau_translator=dagster_tableau_translator,
+            ),
         )
         return defs
 
@@ -453,8 +509,14 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 
 
 class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
-    def __init__(self, workspace: BaseTableauWorkspace, translator: Type[DagsterTableauTranslator]):
+    def __init__(
+        self,
+        workspace: BaseTableauWorkspace,
+        refreshable_workbook_ids: Sequence[str],
+        translator: Type[DagsterTableauTranslator],
+    ):
         self._workspace = workspace
+        self._refreshable_workbook_ids = refreshable_workbook_ids
         self._translator_cls = translator
         super().__init__(unique_id=self._workspace.site_name)
 
@@ -517,27 +579,52 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
         def _assets(tableau: BaseTableauWorkspace):
             with tableau.get_client() as client:
+                refreshed_workbooks = set()
+                for refreshable_workbook_id in self._refreshable_workbook_ids:
+                    refreshed_workbooks.add(client.refresh_and_poll(refreshable_workbook_id))
                 for view_id, view_content_data in [
                     *workspace_data.sheets_by_id.items(),
                     *workspace_data.dashboards_by_id.items(),
                 ]:
-                    data = client.get_view(view_id)["view"]
+                    data = client.get_view(view_id)
                     if view_content_data.content_type == TableauContentType.SHEET:
                         asset_key = translator.get_sheet_asset_key(view_content_data)
                     elif view_content_data.content_type == TableauContentType.DASHBOARD:
                         asset_key = translator.get_dashboard_asset_key(view_content_data)
                     else:
                         check.assert_never(view_content_data.content_type)
-                    yield ObserveResult(
-                        asset_key=asset_key,
-                        metadata={
-                            "workbook_id": data["workbook"]["id"],
-                            "owner_id": data["owner"]["id"],
-                            "name": data["name"],
-                            "contentUrl": data["contentUrl"],
-                            "createdAt": data["createdAt"],
-                            "updatedAt": data["updatedAt"],
-                        },
-                    )
+                    if view_content_data.properties["workbook"]["luid"] in refreshed_workbooks:
+                        yield Output(
+                            value=None,
+                            output_name="__".join(asset_key.path),
+                            metadata={
+                                "workbook_id": data.workbook_id,
+                                "owner_id": data.owner_id,
+                                "name": data.name,
+                                "contentUrl": data.content_url,
+                                "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                                if data.created_at
+                                else None,
+                                "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
+                                if data.updated_at
+                                else None,
+                            },
+                        )
+                    else:
+                        yield ObserveResult(
+                            asset_key=asset_key,
+                            metadata={
+                                "workbook_id": data.workbook_id,
+                                "owner_id": data.owner_id,
+                                "name": data.name,
+                                "contentUrl": data.content_url,
+                                "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
+                                if data.created_at
+                                else None,
+                                "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
+                                if data.updated_at
+                                else None,
+                            },
+                        )
 
         return [_assets]

@@ -1,8 +1,9 @@
 from dagster import AssetDep, Definitions, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.partition_mapping import StaticPartitionMapping
+from dagster._core.definitions.partition_mapping import LastPartitionMapping, StaticPartitionMapping
 from dagster._core.instance import DagsterInstance
 from dagster._time import create_datetime
 
@@ -61,13 +62,10 @@ def test_subset_traversal_static_partitions() -> None:
     # from full up to down
     up_subset = asset_graph_view_t0.get_full_subset(key=up_numbers.key)
     assert up_subset.expensively_compute_partition_keys() == {"1", "2", "3"}
-    assert up_subset.compute_child_subset(
-        down_letters.key
-    ).expensively_compute_partition_keys() == {
-        "a",
-        "b",
-        "c",
-    }
+    assert (
+        up_subset.compute_child_subset(down_letters.key).expensively_compute_partition_keys()
+        == set()
+    )
 
     # from full up to down
     down_subset = asset_graph_view_t0.get_full_subset(key=down_letters.key)
@@ -100,9 +98,12 @@ def test_subset_traversal_static_partitions() -> None:
     )
 
     # subset of up to subset of down
-    assert up_subset.compute_intersection_with_partition_keys({"2"}).compute_child_subset(
-        down_letters.key
-    ).expensively_compute_partition_keys() == {"b"}
+    assert (
+        up_subset.compute_intersection_with_partition_keys({"2"})
+        .compute_child_subset(down_letters.key)
+        .expensively_compute_partition_keys()
+        == set()
+    )
 
     # subset of down to subset of up
     assert down_subset.compute_intersection_with_partition_keys({"b"}).compute_parent_subset(
@@ -134,3 +135,37 @@ def test_only_partition_keys() -> None:
     ).compute_intersection_with_partition_keys({"3"}).expensively_compute_partition_keys() == set(
         ["3"]
     )
+
+
+def test_upstream_of_unpartitioned_partition_mapping() -> None:
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def upstream() -> None: ...
+
+    @asset(
+        deps=[AssetDep(upstream, partition_mapping=LastPartitionMapping())],
+    )
+    def unpartitioned() -> None: ...
+
+    defs = Definitions([upstream, unpartitioned])
+    instance = DagsterInstance.ephemeral()
+    asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+    unpartitioned_full = asset_graph_view.get_full_subset(key=unpartitioned.key)
+    unpartitioned_empty = asset_graph_view.get_empty_subset(key=unpartitioned.key)
+
+    upstream_full = asset_graph_view.get_full_subset(key=upstream.key)
+    upstream_empty = asset_graph_view.get_empty_subset(key=upstream.key)
+    upstream_last = asset_graph_view.get_asset_subset_from_asset_partitions(
+        key=upstream.key, asset_partitions={AssetKeyPartitionKey(upstream.key, "c")}
+    )
+
+    assert upstream_full.compute_child_subset(child_key=unpartitioned.key) == unpartitioned_full
+    assert upstream_last.compute_child_subset(child_key=unpartitioned.key) == unpartitioned_full
+
+    assert (
+        unpartitioned_full.compute_parent_subset(
+            parent_key=upstream.key
+        ).expensively_compute_asset_partitions()
+        == upstream_last.expensively_compute_asset_partitions()
+    )
+    assert unpartitioned_empty.compute_parent_subset(parent_key=upstream.key) == upstream_empty

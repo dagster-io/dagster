@@ -13,6 +13,7 @@ from dagster._core.definitions.declarative_automation.operators.check_operators 
 from dagster._core.definitions.declarative_automation.operators.dep_operators import (
     AllDepsCondition as AllDepsCondition,
     AnyDepsCondition as AnyDepsCondition,
+    EntityMatchesCondition as EntityMatchesCondition,
 )
 from dagster._core.definitions.declarative_automation.operators.newly_true_operator import (
     NewlyTrueCondition as NewlyTrueCondition,

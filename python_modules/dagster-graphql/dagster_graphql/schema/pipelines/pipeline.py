@@ -25,7 +25,7 @@ from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
 from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id
-from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id, get_unique_asset_id
+from dagster_graphql.implementation.fetch_assets import get_assets_for_run, get_unique_asset_id
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline
@@ -79,6 +79,7 @@ from dagster_graphql.schema.tags import GraphenePipelineTag
 from dagster_graphql.schema.util import ResolveInfo, get_compute_log_manager, non_null_list
 
 if TYPE_CHECKING:
+    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
     from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
 
@@ -214,19 +215,15 @@ class GrapheneAsset(graphene.ObjectType):
     class Meta:
         name = "Asset"
 
-    def __init__(self, key, definition=None):
+    def __init__(self, key, definition: Optional["GrapheneAssetNode"] = None):
         super().__init__(key=key, definition=definition)
         self._definition = definition
 
-    def resolve_id(self, _):
+    def resolve_id(self, _) -> str:
         # If the asset is not a SDA asset (has no definition), the id is the asset key
-        # Else, return a unique idenitifer containing the repository location and name
+        # Else, return a unique identifier containing the repository location and name
         if self._definition:
-            return get_unique_asset_id(
-                self.key,
-                self._definition.repository_location.name,
-                self._definition.external_repository.name,
-            )
+            return self._definition.id
         return get_unique_asset_id(self.key)
 
     def resolve_assetMaterializations(
@@ -545,7 +542,7 @@ class GrapheneRun(graphene.ObjectType):
         )
 
     def resolve_assets(self, graphene_info: ResolveInfo):
-        return get_assets_for_run_id(graphene_info, self.run_id)
+        return get_assets_for_run(graphene_info, self.dagster_run)
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo):
         return get_asset_checks_for_run_id(graphene_info, self.run_id)

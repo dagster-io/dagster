@@ -31,7 +31,7 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) =
   }
 };
 
-export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
+export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfills: boolean) => {
   const queryResult = useQuery<RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables>(
     RUN_FEED_TABS_COUNT_QUERY,
     {
@@ -62,7 +62,11 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
   const urlForStatus = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
-    return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], getRunFeedPath());
+    return runsPathWithFilters(
+      [...statusTokens, ...tokensMinusStatus],
+      getRunFeedPath(),
+      includeRunsFromBackfills,
+    );
   };
 
   const tabs = (
@@ -79,7 +83,13 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}) => {
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink id="scheduled" title="Scheduled" to={`${getRunFeedPath()}scheduled`} />
+      <TabLink
+        id="scheduled"
+        title="Scheduled"
+        to={`${getRunFeedPath()}scheduled?${
+          includeRunsFromBackfills ? 'show_runs_within_backfills=true' : ''
+        }`}
+      />
     </Tabs>
   );
 

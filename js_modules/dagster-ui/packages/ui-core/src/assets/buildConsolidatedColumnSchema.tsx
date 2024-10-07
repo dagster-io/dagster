@@ -18,7 +18,7 @@ export function buildConsolidatedColumnSchema({
   materialization:
     | Pick<AssetDefinitionWithMetadata['assetMaterializations'][0], 'metadataEntries' | 'timestamp'>
     | undefined;
-  definition: Pick<AssetDefinitionWithMetadata, 'metadataEntries'> | undefined;
+  definition: Pick<AssetDefinitionWithMetadata, 'metadataEntries'> | null | undefined;
   definitionLoadTimestamp: number | undefined;
 }) {
   const materializationTableSchema = materialization?.metadataEntries?.find(

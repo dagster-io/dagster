@@ -58,6 +58,7 @@ from dagster._core.definitions.utils import (
     validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -100,6 +101,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[Sequence[str]] = ...,
+    kinds: Optional[AbstractSet[str]] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -109,6 +111,7 @@ def asset(
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
+@experimental_param(param="kinds")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
 )
@@ -147,6 +150,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
+    kinds: Optional[AbstractSet[str]] = None,
     # TODO: FOU-243
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
@@ -228,6 +232,8 @@ def asset(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
+            will be made visible in the Dagster UI.
 
     Examples:
         .. code-block:: python
@@ -243,13 +249,22 @@ def asset(
     )
     resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
 
+    if compute_kind and kinds:
+        raise DagsterInvalidDefinitionError(
+            "Cannot specify compute_kind and kinds on the @asset decorator."
+        )
+    tags_with_kinds = {
+        **(validate_tags_strict(tags) or {}),
+        **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
+    }
+
     args = AssetDecoratorArgs(
         name=name,
         key_prefix=key_prefix,
         ins=ins or {},
         deps=upstream_asset_deps or [],
         metadata=metadata,
-        tags=tags,
+        tags=tags_with_kinds,
         description=description,
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,

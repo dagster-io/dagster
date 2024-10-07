@@ -3,7 +3,7 @@ from typing import Dict
 
 from setuptools import find_packages, setup
 
-NON_EDITABLE_INSTALL_DAGSTER_PIN = ">=1.8.8"
+NON_EDITABLE_INSTALL_DAGSTER_PIN = ">=1.8.10"
 
 
 def get_version() -> str:
@@ -28,7 +28,7 @@ airflow_dep_list = [
 
 setup(
     name="dagster-airlift",
-    version="0.0.24",
+    version="0.0.25",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",

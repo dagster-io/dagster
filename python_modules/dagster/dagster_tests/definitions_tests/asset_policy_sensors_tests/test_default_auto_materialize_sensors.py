@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 import pytest
 from dagster import (
     AssetKey,
@@ -18,10 +16,6 @@ from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import (
-    RegisteredCodeLocationOrigin,
-    RemoteRepositoryOrigin,
-)
 from dagster._core.test_utils import instance_for_test
 
 
@@ -95,13 +89,10 @@ def instance_without_auto_materialize_sensors():
 
 def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors):
     instance = instance_with_auto_materialize_sensors
-
-    repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
-        code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
+    repo_handle = RepositoryHandle.for_test(
+        location_name="foo_location",
         repository_name="bar_repo",
     )
-
     external_repo = ExternalRepository(
         external_repository_data_from_def(
             defs.get_repository_def(),
@@ -134,9 +125,8 @@ def test_default_auto_materialize_sensors_without_observable(
 ):
     instance = instance_with_auto_materialize_sensors
 
-    repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
-        code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
+    repo_handle = RepositoryHandle.for_test(
+        location_name="foo_location",
         repository_name="bar_repo",
     )
 
@@ -161,9 +151,8 @@ def test_default_auto_materialize_sensors_without_observable(
 
 
 def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
-    repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
-        code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
+    repo_handle = RepositoryHandle.for_test(
+        location_name="foo_location",
         repository_name="bar_repo",
     )
 
@@ -197,10 +186,8 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
         ],
         sensors=[normal_sensor, auto_materialize_sensor],
     )
-
-    repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
-        code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
+    repo_handle = RepositoryHandle.for_test(
+        location_name="foo_location",
         repository_name="bar_repo",
     )
 
@@ -269,9 +256,8 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
         sensors=[normal_sensor, auto_materialize_sensor],
     )
 
-    repo_handle = MagicMock(spec=RepositoryHandle)
-    repo_handle.get_remote_origin.return_value = RemoteRepositoryOrigin(
-        code_location_origin=RegisteredCodeLocationOrigin(location_name="foo_location"),
+    repo_handle = RepositoryHandle.for_test(
+        location_name="foo_location",
         repository_name="bar_repo",
     )
 

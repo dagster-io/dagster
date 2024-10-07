@@ -167,30 +167,32 @@ export const ComputeLogToolbar = ({
     >
       <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
         {steps ? (
-          <Suggest
-            resetOnClose
-            inputProps={{placeholder: 'Select a step…'}}
-            activeItem={computeLogFileKey}
-            selectedItem={computeLogFileKey}
-            disabled={!steps.length}
-            items={Object.keys(logCaptureSteps)}
-            noResults="No matching steps"
-            inputValueRenderer={(item) => fileKeyText(item)}
-            itemPredicate={(query, item) =>
-              fileKeyText(item).toLocaleLowerCase().includes(query.toLocaleLowerCase())
-            }
-            itemRenderer={(item, itemProps) => (
-              <MenuItem
-                active={itemProps.modifiers.active}
-                onClick={(e) => itemProps.handleClick(e)}
-                text={fileKeyText(item)}
-                key={item}
-              />
-            )}
-            onItemSelect={(fileKey) => {
-              onSetComputeLogKey(fileKey);
-            }}
-          />
+          <div style={{width: 200}}>
+            <Suggest
+              resetOnClose
+              inputProps={{placeholder: 'Select a step…'}}
+              activeItem={computeLogFileKey}
+              selectedItem={computeLogFileKey}
+              disabled={!steps.length}
+              items={Object.keys(logCaptureSteps)}
+              noResults="No matching steps"
+              inputValueRenderer={(item) => fileKeyText(item)}
+              itemPredicate={(query, item) =>
+                fileKeyText(item).toLocaleLowerCase().includes(query.toLocaleLowerCase())
+              }
+              itemRenderer={(item, itemProps) => (
+                <MenuItem
+                  active={itemProps.modifiers.active}
+                  onClick={(e) => itemProps.handleClick(e)}
+                  text={fileKeyText(item)}
+                  key={item}
+                />
+              )}
+              onItemSelect={(fileKey) => {
+                onSetComputeLogKey(fileKey);
+              }}
+            />
+          </div>
         ) : undefined}
 
         {!steps ? <Box>Step: {(logCaptureInfo?.stepKeys || []).join(', ')}</Box> : undefined}

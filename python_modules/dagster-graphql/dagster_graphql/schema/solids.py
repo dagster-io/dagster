@@ -455,9 +455,8 @@ class ISolidDefinitionMixin:
 
             return [
                 GrapheneAssetNode(
-                    location,
-                    ext_repo,
-                    node,
+                    repository_selector=ext_repo.selector,
+                    asset_node_snap=node,
                     asset_checks_loader=asset_checks_loader,
                     # base_deployment_context will be None if we are not in a branch deployment
                     asset_graph_differ=AssetGraphDiffer.from_external_repositories(

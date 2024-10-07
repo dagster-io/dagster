@@ -10,7 +10,12 @@ from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 from requests import Response
 
-from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    DAG_ID_TAG_KEY,
+    DAG_RUN_ID_TAG_KEY,
+    TASK_ID_TAG_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 
@@ -85,9 +90,12 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             json={"query": ASSET_NODES_QUERY},
             timeout=3,
         )
+        logger.info(f"Fetching asset nodes for {dag_id}/{task_id}")
         asset_nodes_data = self.get_valid_graphql_response(response, "assetNodes")
+        logger.info(f"Got response {asset_nodes_data}")
         for asset_node in asset_nodes_data:
-            if matched_dag_id_task_id(asset_node, dag_id, task_id):
+            # jobs can be empty if it is an external asset (e.g. an automapped task)
+            if matched_dag_id_task_id(asset_node, dag_id, task_id) and asset_node["jobs"]:
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
                 job_name = asset_node["jobs"][0]["name"]
@@ -104,10 +112,17 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         dag_run_id = dag_run.run_id
 
         triggered_runs = []
+        tags = {
+            DAG_ID_TAG_KEY: dag_id,
+            DAG_RUN_ID_TAG_KEY: dag_run_id,
+            TASK_ID_TAG_KEY: task_id,
+        }
         for (repo_location, repo_name, job_name), asset_keys in assets_to_trigger.items():
             execution_params = {
                 "mode": "default",
-                "executionMetadata": {"tags": [{"key": DAG_RUN_ID_TAG_KEY, "value": dag_run_id}]},
+                "executionMetadata": {
+                    "tags": [{"key": key, "value": value} for key, value in tags.items()]
+                },
                 "runConfigData": "{}",
                 "selector": {
                     "repositoryLocationName": repo_location,

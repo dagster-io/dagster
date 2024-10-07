@@ -70,8 +70,15 @@ def test_migrated_dagster_print_materializes(
             assert mat_event_log_entry.asset_materialization
             dagster_run_id = mat_event_log_entry.run_id
 
-            # test for dag run-tag-id
+            all_materializations = dagster_instance.fetch_materializations(
+                records_filter=expected_asset_key, limit=10
+            )
+
+            assert all_materializations
+
+            assert dagster_run_id
             dagster_run = dagster_instance.get_run_by_id(dagster_run_id)
+            assert dagster_run
             run_ids = dagster_instance.get_run_ids()
             assert dagster_run, f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
             assert (

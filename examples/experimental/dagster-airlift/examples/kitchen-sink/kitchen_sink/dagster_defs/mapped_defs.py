@@ -1,4 +1,3 @@
-# ruff: noqa: T201
 from dagster import Definitions, asset
 from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
@@ -8,11 +7,13 @@ from .airflow_instance import local_airflow_instance
 
 @asset
 def print_asset() -> None:
+    # ruff: noqa: T201
     print("Hello, world!")
 
 
 @asset(description="Asset one is materialized by multiple airflow tasks")
 def asset_one() -> None:
+    # ruff: noqa: T201
     print("Materialized asset one")
 
 

@@ -216,59 +216,66 @@ class AssetGraphView(LoadingContext):
     def compute_parent_subset(
         self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]
     ) -> EntitySubset[AssetKey]:
-        child_key = subset.key
-        child_partitions_def = self.asset_graph.get(child_key).partitions_def
-        parent_partitions_def = self.asset_graph.get(parent_key).partitions_def
-
-        if parent_partitions_def is None or subset.is_empty:
-            return (
-                self.get_empty_subset(key=parent_key)
-                if subset.is_empty
-                else self.get_full_subset(key=parent_key)
-            )
-
-        partition_mapping = self.asset_graph.get_partition_mapping(child_key, parent_key)
-        parent_partitions_subset = (
-            partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                subset.get_internal_subset_value() if child_partitions_def is not None else None,
-                downstream_partitions_def=child_partitions_def,
-                upstream_partitions_def=parent_partitions_def,
-                dynamic_partitions_store=self._queryer,
-                current_time=self.effective_dt,
-            )
-        ).partitions_subset
-
-        return EntitySubset(
-            self, key=parent_key, value=_ValidatedEntitySubsetValue(parent_partitions_subset)
+        check.invariant(
+            parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
         )
+        return self.compute_mapped_subset(parent_key, subset)
 
     def compute_child_subset(
         self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
     ) -> EntitySubset[T_EntityKey]:
-        parent_key = subset.key
-        parent_partitions_def = self.asset_graph.get(parent_key).partitions_def
-        child_partitions_def = self.asset_graph.get(child_key).partitions_def
+        check.invariant(
+            child_key in self.asset_graph.get(subset.key).child_entity_keys,
+        )
+        return self.compute_mapped_subset(child_key, subset)
 
-        if parent_partitions_def is None or child_partitions_def is None:
-            return (
-                self.get_empty_subset(key=child_key)
-                if subset.is_empty
-                else self.get_full_subset(key=child_key)
-            )
-        else:
-            partition_mapping = self.asset_graph.get_partition_mapping(child_key, parent_key)
-            child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
-                subset.get_internal_subset_value(),
-                parent_partitions_def,
-                downstream_partitions_def=child_partitions_def,
+    def compute_mapped_subset(
+        self, to_key: T_EntityKey, from_subset: EntitySubset
+    ) -> EntitySubset[T_EntityKey]:
+        from_key = from_subset.key
+        from_partitions_def = self.asset_graph.get(from_key).partitions_def
+        to_partitions_def = self.asset_graph.get(to_key).partitions_def
+
+        partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
+
+        if from_key in self.asset_graph.get(to_key).parent_entity_keys:
+            if from_partitions_def is None or to_partitions_def is None:
+                return (
+                    self.get_empty_subset(key=to_key)
+                    if from_subset.is_empty
+                    else self.get_full_subset(key=to_key)
+                )
+            to_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
+                upstream_partitions_subset=from_subset.get_internal_subset_value(),
+                upstream_partitions_def=from_partitions_def,
+                downstream_partitions_def=to_partitions_def,
                 dynamic_partitions_store=self._queryer,
                 current_time=self.effective_dt,
             )
-            return EntitySubset(
-                self,
-                key=child_key,
-                value=_ValidatedEntitySubsetValue(child_partitions_subset),
+        else:
+            if to_partitions_def is None or from_subset.is_empty:
+                return (
+                    self.get_empty_subset(key=to_key)
+                    if from_subset.is_empty
+                    else self.get_full_subset(key=to_key)
+                )
+            to_partitions_subset = (
+                partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                    downstream_partitions_subset=from_subset.get_internal_subset_value()
+                    if from_partitions_def is not None
+                    else None,
+                    downstream_partitions_def=from_partitions_def,
+                    upstream_partitions_def=to_partitions_def,
+                    dynamic_partitions_store=self._queryer,
+                    current_time=self.effective_dt,
+                ).partitions_subset
             )
+
+        return EntitySubset(
+            self,
+            key=to_key,
+            value=_ValidatedEntitySubsetValue(to_partitions_subset),
+        )
 
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str], asset_subset: EntitySubset[AssetKey]

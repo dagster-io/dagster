@@ -375,13 +375,15 @@ class ExternalRepository:
         return self._handle
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            RepositorySelector(
-                location_name=self._handle.location_name,
-                repository_name=self._handle.repository_name,
-            ),
+    def selector(self) -> RepositorySelector:
+        return RepositorySelector(
+            location_name=self._handle.location_name,
+            repository_name=self._handle.repository_name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     def get_compound_id(self) -> CompoundID:
         return CompoundID(
@@ -432,12 +434,12 @@ class ExternalRepository:
         """Returns a repository scoped RemoteAssetGraph."""
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
-        return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
-            repo_handle_assets=[
-                (self.handle, node_snap) for node_snap in self.get_asset_node_snaps()
+        return RemoteAssetGraph.from_repository_selectors_and_asset_node_snaps(
+            repo_selector_assets=[
+                (self.selector, node_snap) for node_snap in self.get_asset_node_snaps()
             ],
-            repo_handle_asset_checks=[
-                (self.handle, asset_check_node)
+            repo_selector_asset_checks=[
+                (self.selector, asset_check_node)
                 for asset_check_node in self.get_asset_check_node_snaps()
             ],
         )
