@@ -3,7 +3,7 @@ from typing import Any, Dict, Mapping, Set
 from dagster import AssetKey, JsonMetadataValue, MarkdownMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 
-from dagster_airlift.constants import STANDALONE_DAG_ID_METADATA_KEY
+from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo
 
 
@@ -18,7 +18,7 @@ def dag_asset_metadata(dag_info: DagInfo, source_code: str) -> Mapping[str, Any]
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
         "Dag ID": dag_info.dag_id,
         "Link to DAG": UrlMetadataValue(dag_info.url),
-        STANDALONE_DAG_ID_METADATA_KEY: dag_info.dag_id,
+        DAG_MAPPING_METADATA_KEY: [{"dag_id": dag_info.dag_id}],
     }
     # Attempt to retrieve source code from the DAG.
     metadata["Source Code"] = MarkdownMetadataValue(
