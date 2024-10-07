@@ -36,7 +36,7 @@ from dagster._core.instance import DagsterInstance, MayHaveInstanceWeakref, T_Da
 from dagster._core.loader import InstanceLoadableBy
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
-from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._utils import PrintFn
@@ -45,6 +45,7 @@ from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
 class EventLogConnection(NamedTuple):
@@ -636,11 +637,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def default_run_scoped_event_tailer_offset(self) -> int:
         return 0
 
-    @abstractmethod
     def get_updated_asset_status_cache_values(
         self,
         asset_keys: Sequence[AssetKey],
-        partitions_def: Sequence[Optional[PartitionsDefinition]],
-    ) -> Mapping[AssetKey, Optional[AssetStatusCacheValue]]:
+        partitions_defs: Sequence[Optional[PartitionsDefinition]],
+    ) -> Sequence[Optional["AssetStatusCacheValue"]]:
         """Get the cached status information for each asset."""
-        raise NotImplementedError()
+        values = []
+        for asset_key, partitions_def in zip(asset_keys, partitions_defs):
+            values.append(
+                get_and_update_asset_status_cache_value(self._instance, asset_key, partitions_def)
+            )
+        return values
