@@ -46,6 +46,9 @@ BULK_ACTION_COMPLETED_STATUSES = [
     BulkActionStatus.COMPLETED,
     BulkActionStatus.FAILED,
     BulkActionStatus.CANCELED,
+    BulkActionStatus.COMPLETED_SUCCESS,
+    BulkActionStatus.COMPLETED_SUCCESS,
+    BulkActionStatus.COMPLETED_FAILED,
 ]
 
 
