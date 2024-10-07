@@ -1532,7 +1532,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 10
 
     def test_retry_asset_backfill(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_asset_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1607,7 +1606,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_successful_asset_backfill(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_successful_asset_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1664,7 +1662,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
                 "backfillId": backfill_id,
             },
         )
-        # TestLaunchDaemonBackfillFromFailure::test_retry_successful_asset_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         assert not result.errors
         assert result.data
         assert result.data["retryPartitionBackfill"]["__typename"] == "PythonError"
@@ -1674,7 +1671,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_retry_asset_backfill_still_in_progress(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_asset_backfill_still_in_progress[sqlite_with_default_run_launcher_managed_grpc_env]
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1763,7 +1759,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_asset_backfill_twice(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_asset_backfill_twice[sqlite_with_default_run_launcher_managed_grpc_env]
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1883,7 +1878,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert second_retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_job_backfill(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         repository_selector = infer_repository_selector(graphql_context)
         partition_set_selector = {
             "repositorySelector": repository_selector,
@@ -1948,7 +1942,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["fromFailure"]
 
     def test_retry_in_progress_job_backfill(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_in_progress_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         repository_selector = infer_repository_selector(graphql_context)
         partition_set_selector = {
             "repositorySelector": repository_selector,
@@ -2012,7 +2005,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_job_backfill_twice(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_in_progress_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         repository_selector = infer_repository_selector(graphql_context)
         partition_set_selector = {
             "repositorySelector": repository_selector,
@@ -2085,7 +2077,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert second_retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
     def test_retry_successful_job_backfill(self, graphql_context):
-        # TestLaunchDaemonBackfillFromFailure::test_retry_successful_job_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         repository_selector = infer_repository_selector(graphql_context)
         partition_set_selector = {
             "repositorySelector": repository_selector,
