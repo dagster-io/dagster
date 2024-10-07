@@ -962,13 +962,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     def resolve_repository(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.external import GrapheneRepository
 
-        handle = self._external_job.repository_handle
-        location = graphene_info.context.get_code_location(handle.location_name)
-        return GrapheneRepository(
-            graphene_info.context,
-            location.get_repository(handle.repository_name),
-            location,
-        )
+        return GrapheneRepository(self._external_job.repository_handle)
 
     @capture_error
     def resolve_partitionKeysOrError(

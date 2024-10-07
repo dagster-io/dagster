@@ -37,7 +37,6 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
@@ -61,6 +60,7 @@ from dagster._core.remote_representation.external_data import (
     TargetSnap,
 )
 from dagster._core.remote_representation.handle import (
+    CompoundID,
     InstigatorHandle,
     JobHandle,
     PartitionSetHandle,
@@ -77,7 +77,6 @@ from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnapshot
 from dagster._core.utils import toposort
-from dagster._record import record
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
@@ -87,35 +86,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
-
-_DELIMITER = "::"
-
-
-@record
-class CompoundID:
-    """Compound ID object for the two id schemes that state is recorded in the database against."""
-
-    remote_origin_id: str
-    selector_id: str
-
-    def to_string(self) -> str:
-        return f"{self.remote_origin_id}{_DELIMITER}{self.selector_id}"
-
-    @staticmethod
-    def from_string(serialized: str):
-        parts = serialized.split(_DELIMITER)
-        if len(parts) != 2:
-            raise DagsterInvariantViolationError(f"Invalid serialized InstigatorID: {serialized}")
-
-        return CompoundID(
-            remote_origin_id=parts[0],
-            selector_id=parts[1],
-        )
-
-    @staticmethod
-    def is_valid_string(serialized: str):
-        parts = serialized.split(_DELIMITER)
-        return len(parts) == 2
 
 
 class ExternalRepository:
