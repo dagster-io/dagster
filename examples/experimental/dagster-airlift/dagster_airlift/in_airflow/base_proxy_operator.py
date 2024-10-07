@@ -3,7 +3,8 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Mapping, Sequence, Set, Tuple, Type
+from collections import defaultdict
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Sequence, Set, Tuple, Type
 
 import requests
 from airflow.models.operator import BaseOperator
@@ -36,6 +37,10 @@ def matched_dag_id_task_id(asset_node: Mapping[str, Any], dag_id: str, task_id: 
                 return True
 
     return False
+
+
+# A job in dagster is uniquely defined by (location_name, repository_name, job_name).
+DagsterJobIdentifier = Tuple[str, str, str]
 
 
 class BaseProxyToDagsterOperator(BaseOperator, ABC):
@@ -140,41 +145,44 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             TASK_ID_TAG_KEY: self.get_airflow_task_id(context),
         }
 
+    def filter_asset_nodes(
+        self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
+    ) -> Iterable[Mapping[str, Any]]:
+        for asset_node in asset_nodes:
+            if (
+                matched_dag_id_task_id(
+                    asset_node, self.get_airflow_dag_id(context), self.get_airflow_task_id(context)
+                )
+                and asset_node["jobs"]
+            ):
+                yield asset_node
+
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
         """Launches runs for the given task in Dagster."""
         session = self._get_validated_session(context)
         dagster_url = self.get_dagster_url(context)
 
-        assets_to_trigger = {}  # key is (repo_location, repo_name, job_name), value is list of asset keys
+        assets_to_trigger_per_job: Dict[DagsterJobIdentifier, List[Sequence[str]]] = defaultdict(
+            list
+        )
         asset_nodes_data = self.get_all_asset_nodes(session, dagster_url, context)
         logger.info(f"Got response {asset_nodes_data}")
-        for asset_node in asset_nodes_data:
-            # jobs can be empty if it is an external asset (e.g. an automapped task)
-            if matched_dag_id_task_id(asset_node, dag_id, task_id) and asset_node["jobs"]:
-                repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
-                repo_name = asset_node["jobs"][0]["repository"]["name"]
-                job_name = asset_node["jobs"][0]["name"]
-                if (repo_location, repo_name, job_name) not in assets_to_trigger:
-                    assets_to_trigger[(repo_location, repo_name, job_name)] = []
-                assets_to_trigger[(repo_location, repo_name, job_name)].append(
-                    asset_node["assetKey"]["path"]
-                )
-        logger.debug(f"Found assets to trigger: {assets_to_trigger}")
+        for asset_node in self.filter_asset_nodes(context, asset_nodes_data):
+            assets_to_trigger_per_job[_build_dagster_job_identifier(asset_node)].append(
+                asset_node["assetKey"]["path"]
+            )
+        logger.debug(f"Found {len(assets_to_trigger_per_job)} jobs to trigger")
 
         triggered_runs = []
-        for (repo_location, repo_name, job_name), asset_key_paths in assets_to_trigger.items():
-            logger.debug(
-                f"Triggering run for {repo_location}/{repo_name}/{job_name} with assets {asset_key_paths}"
-            )
+        for job_identifier, asset_key_paths in assets_to_trigger_per_job.items():
+            logger.debug(f"Triggering run for {job_identifier} with assets {asset_key_paths}")
             run_id = self.launch_dagster_run(
                 context,
                 session,
                 dagster_url,
                 _build_dagster_run_execution_params(
                     self.default_dagster_run_tags(context),
-                    repo_location,
-                    repo_name,
-                    job_name,
+                    job_identifier,
                     asset_key_paths,
                 ),
             )
@@ -204,13 +212,19 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         return self.launch_runs_for_task(context, dag_id, task_id)
 
 
+def _build_dagster_job_identifier(asset_node: Mapping[str, Any]) -> DagsterJobIdentifier:
+    location_name = asset_node["jobs"][0]["repository"]["location"]["name"]
+    repository_name = asset_node["jobs"][0]["repository"]["name"]
+    job_name = asset_node["jobs"][0]["name"]
+    return (location_name, repository_name, job_name)
+
+
 def _build_dagster_run_execution_params(
     tags: Mapping[str, Any],
-    location_name: str,
-    repository_name: str,
-    job_name: str,
+    job_identifier: DagsterJobIdentifier,
     asset_key_paths: Sequence[Sequence[str]],
 ) -> Dict[str, Any]:
+    location_name, repository_name, job_name = job_identifier
     return {
         "mode": "default",
         "executionMetadata": {
