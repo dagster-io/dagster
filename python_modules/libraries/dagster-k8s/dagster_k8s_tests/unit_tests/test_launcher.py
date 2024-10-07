@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from unittest import mock
 
@@ -19,11 +18,7 @@ from dagster._grpc.types import ExecuteRunArgs
 from dagster._utils.hosted_user_process import external_job_from_recon_job
 from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
-from dagster_k8s.job import (
-    DAGSTER_PG_PASSWORD_ENV_VAR,
-    UserDefinedDagsterK8sConfig,
-    get_job_name_from_run_id,
-)
+from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, get_job_name_from_run_id
 from kubernetes import __version__ as kubernetes_version
 from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.models.v1_job_status import V1JobStatus
@@ -324,11 +319,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         }
     }
 
-    run_tags_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"working_dir": "my_working_dir"},
-    )
-    user_defined_k8s_config_json = json.dumps(run_tags_k8s_config.to_dict())
-    run_tags = {"dagster-k8s/config": user_defined_k8s_config_json}
+    run_tags = {"dagster-k8s/config": {"container_config": {"working_dir": "my_working_dir"}}}
 
     # Create fake external job.
     recon_job = reconstructable(fake_job)
@@ -424,12 +415,13 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
     }
-    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"image": expected_image, "resources": expected_resources},
-        pod_spec_config={"scheduler_name": "test-scheduler-2"},
-    )
-    user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
-    tags = {"dagster-k8s/config": user_defined_k8s_config_json}
+
+    tags = {
+        "dagster-k8s/config": {
+            "container_config": {"image": expected_image, "resources": expected_resources},
+            "pod_spec_config": {"scheduler_name": "test-scheduler-2"},
+        }
+    }
 
     # Create fake external job.
     recon_job = reconstructable(fake_job)

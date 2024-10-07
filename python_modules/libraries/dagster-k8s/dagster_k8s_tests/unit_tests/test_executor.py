@@ -65,15 +65,7 @@ THIRD_RESOURCES_TAGS = {
     resource_defs={"io_manager": fs_io_manager},
 )
 def bar_with_resources():
-    expected_resources = RESOURCE_TAGS
-    user_defined_k8s_config_with_resources = UserDefinedDagsterK8sConfig(
-        container_config={"resources": expected_resources},
-    )
-    user_defined_k8s_config_with_resources_json = json.dumps(
-        user_defined_k8s_config_with_resources.to_dict()
-    )
-
-    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_resources_json})
+    @op(tags={"dagster-k8s/config": {"container_config": {"resources": RESOURCE_TAGS}}})
     def foo():
         return 1
 
@@ -111,15 +103,7 @@ def bar_with_tags_in_job_and_op():
     resource_defs={"io_manager": fs_io_manager},
 )
 def bar_with_images():
-    # Construct Dagster op tags with user defined k8s config.
-    user_defined_k8s_config_with_image = UserDefinedDagsterK8sConfig(
-        container_config={"image": "new-image"},
-    )
-    user_defined_k8s_config_with_image_json = json.dumps(
-        user_defined_k8s_config_with_image.to_dict()
-    )
-
-    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_image_json})
+    @op(tags={"dagster-k8s/config": {"container_config": {"image": "new-image"}}})
     def foo():
         return 1
 

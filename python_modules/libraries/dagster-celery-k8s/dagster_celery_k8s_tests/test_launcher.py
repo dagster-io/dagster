@@ -1,4 +1,3 @@
-import json
 from unittest import mock
 
 import pytest
@@ -25,7 +24,6 @@ from dagster_celery_k8s.launcher import (
     _get_validated_celery_k8s_executor_config,
 )
 from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
 from dagster_test.test_project import get_test_project_workspace_and_external_job
 
 
@@ -328,12 +326,12 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
     }
-    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"image": expected_image, "resources": expected_resources},
-    )
-    user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
-    tags = {"dagster-k8s/config": user_defined_k8s_config_json}
-
+    tags = {
+        "dagster-k8s/config": {
+            "container_config": {"image": expected_image, "resources": expected_resources},
+            "pod_spec_config": {"scheduler_name": "test-scheduler-2"},
+        }
+    }
     # Create fake external job.
     recon_job = reconstructable(fake_job)
     recon_repo = recon_job.repository
