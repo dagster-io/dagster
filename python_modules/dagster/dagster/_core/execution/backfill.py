@@ -42,7 +42,7 @@ class BulkActionStatus(Enum):
         return BulkActionStatus(graphql_str)
 
 
-BULK_ACTION_COMPLETED_STATUSES = [
+BULK_ACTION_TERMINAL_STATUSES = [
     BulkActionStatus.COMPLETED,
     BulkActionStatus.FAILED,
     BulkActionStatus.CANCELED,
