@@ -11,7 +11,7 @@ from dagster._core.errors import (
 from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import (
-    BULK_ACTION_COMPLETED_STATUSES,
+    BULK_ACTION_TERMINAL_STATUSES,
     BulkActionStatus,
     PartitionBackfill,
 )
@@ -357,7 +357,7 @@ def retry_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    if backfill.status not in BULK_ACTION_COMPLETED_STATUSES:
+    if backfill.status not in BULK_ACTION_TERMINAL_STATUSES:
         raise DagsterInvariantViolationError(
             f"Cannot retry backfill {backfill_id} because it is still in progress."
         )
