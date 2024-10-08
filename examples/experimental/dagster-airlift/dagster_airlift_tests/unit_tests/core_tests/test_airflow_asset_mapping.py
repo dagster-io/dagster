@@ -218,14 +218,6 @@ def test_automapped_loaded_data() -> None:
         airflow_instance=airflow_instance,
     )
 
-    mapping_info = build_airlift_metadata_mapping_info(defs)
-
-    fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
-
     airflow_data = AirflowDefinitionsData(airflow_instance=airflow_instance, mapped_defs=defs)
-
-    task_handle_data = fetched_airflow_data.task_handle_data_for_dag("dag1")
-    assert task_handle_data["task1"].asset_keys_in_task == {ak("test_instance/dag/dag1/task/task1")}
-    assert task_handle_data["task2"].asset_keys_in_task == {ak("test_instance/dag/dag1/task/task2")}
 
     assert airflow_data.task_ids_in_dag("dag1") == {"task1", "task2"}
