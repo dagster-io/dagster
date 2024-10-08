@@ -3735,7 +3735,7 @@ type Mutation {
   ): ReportRunlessAssetEventsResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
-  retryPartitionBackfill(backfillId: String!): RetryBackfillResult!
+  retryPartitionBackfill(backfillId: String!): LaunchBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
   logTelemetry(
     action: String!
@@ -3814,12 +3814,6 @@ type ReportRunlessAssetEventsSuccess {
 union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError
 
 type ResumeBackfillSuccess {
-  backfillId: String!
-}
-
-union RetryBackfillResult = RetryBackfillSuccess | UnauthorizedError | PythonError
-
-type RetryBackfillSuccess {
   backfillId: String!
 }
 
