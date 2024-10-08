@@ -50,7 +50,6 @@ from dagster_graphql.schema.backfill import (
     GrapheneCancelBackfillResult,
     GrapheneLaunchBackfillResult,
     GrapheneResumeBackfillResult,
-    GrapheneRetryBackfillResult,
 )
 from dagster_graphql.schema.errors import (
     GrapheneAssetNotFoundError,
@@ -371,7 +370,7 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
 class GrapheneRetryBackfillMutation(graphene.Mutation):
     """Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions."""
 
-    Output = graphene.NonNull(GrapheneRetryBackfillResult)
+    Output = graphene.NonNull(GrapheneLaunchBackfillResult)
 
     class Arguments:
         backfillId = graphene.NonNull(graphene.String)
