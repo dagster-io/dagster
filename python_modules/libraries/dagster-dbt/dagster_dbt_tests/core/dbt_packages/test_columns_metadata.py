@@ -30,7 +30,7 @@ pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
 def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
+        yield from dbt.cli(["build"], context=context).stream(fetch_additional_metadata=False)
 
     result = materialize(
         [my_dbt_assets],
@@ -59,7 +59,7 @@ def test_column_schema(
 
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        cli_invocation = dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream(fetch_additional_metadata=False)
         if use_experimental_fetch_column_schema:
             cli_invocation = cli_invocation.fetch_column_metadata(with_column_lineage=False)
         yield from cli_invocation
@@ -166,7 +166,7 @@ def test_exception_fetch_column_schema_with_adapter(
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from (
             dbt.cli(["build"], context=context)
-            .stream()
+            .stream(fetch_additional_metadata=False)
             .fetch_column_metadata(with_column_lineage=False)
         )
 
@@ -206,7 +206,7 @@ def test_exception_column_schema(
 
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        cli_invocation = dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream(fetch_additional_metadata=False)
         if use_experimental_fetch_column_schema:
             cli_invocation = cli_invocation.fetch_column_metadata(with_column_lineage=False)
         yield from cli_invocation
@@ -233,7 +233,7 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
                 json.dumps({"dagster_enable_parent_relation_metadata_collection": False}),
             ],
             context=context,
-        ).stream()
+        ).stream(fetch_additional_metadata=False)
 
     result = materialize(
         [my_dbt_assets],
@@ -267,7 +267,7 @@ def test_exception_column_lineage(
 
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        cli_invocation = dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream(fetch_additional_metadata=False)
         if use_experimental_fetch_column_schema:
             cli_invocation = cli_invocation.fetch_column_metadata(with_column_lineage=False)
         yield from cli_invocation
@@ -516,7 +516,7 @@ def test_column_lineage_real_warehouse(
         seed_cli_invocation = dbt.cli(
             ["seed"],
             context=context,
-        ).stream()
+        ).stream(fetch_additional_metadata=False)
         if fetch_row_counts:
             seed_cli_invocation = seed_cli_invocation.fetch_row_counts()
         seed_cli_invocation = seed_cli_invocation.fetch_column_metadata()
@@ -525,7 +525,7 @@ def test_column_lineage_real_warehouse(
         cli_invocation = dbt.cli(
             ["build", "--exclude", "resource_type:seed", *excluded_models],
             context=context,
-        ).stream()
+        ).stream(fetch_additional_metadata=False)
         if fetch_row_counts:
             cli_invocation = cli_invocation.fetch_row_counts()
         cli_invocation = cli_invocation.fetch_column_metadata()
@@ -614,7 +614,7 @@ def test_column_lineage(
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        cli_invocation = dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream(fetch_additional_metadata=False)
         if use_async_fetch_column_schema:
             cli_invocation = cli_invocation.fetch_column_metadata()
         yield from cli_invocation
