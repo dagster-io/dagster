@@ -406,3 +406,64 @@ def retry_partition_backfill(
 
     graphene_info.context.instance.add_backfill(new_backfill)
     return GrapheneRetryBackfillSuccess(backfill_id=new_backfill.backfill_id)
+
+
+def reexecute_partition_backfill(
+    graphene_info: "ResolveInfo", backfill_id: str
+) -> "GrapheneRetryBackfillSuccess":
+    from dagster_graphql.schema.backfill import GrapheneRetryBackfillSuccess
+
+    backfill = graphene_info.context.instance.get_backfill(backfill_id)
+    if not backfill:
+        check.failed(f"No backfill found for id: {backfill_id}")
+
+    if backfill.is_asset_backfill:
+        asset_backfill_data = backfill.get_asset_backfill_data(graphene_info.context.asset_graph)
+        asset_graph = graphene_info.context.asset_graph
+        assert_permission_for_asset_graph(
+            graphene_info,
+            asset_graph,
+            list(asset_backfill_data.target_subset.asset_keys),
+            Permissions.LAUNCH_PARTITION_BACKFILL,
+        )
+
+        new_backfill = PartitionBackfill.from_asset_graph_subset(
+            backfill_id=make_new_backfill_id(),
+            asset_graph_subset=asset_backfill_data.target_subset,
+            dynamic_partitions_store=graphene_info.context.instance,
+            tags={
+                **backfill.tags,
+                PARENT_BACKFILL_ID_TAG: backfill.backfill_id,
+                ROOT_BACKFILL_ID_TAG: backfill.tags.get(ROOT_BACKFILL_ID_TAG, backfill.backfill_id),
+            },
+            backfill_timestamp=get_current_timestamp(),
+            title=f"Re-execution of {backfill.title}" if backfill.title else None,
+            description=backfill.description,
+        )
+    else:  # job backfill
+        partition_set_origin = check.not_none(backfill.partition_set_origin)
+        location_name = partition_set_origin.selector.location_name
+        assert_permission_for_location(
+            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
+        )
+
+        new_backfill = PartitionBackfill(
+            backfill_id=make_new_backfill_id(),
+            partition_set_origin=backfill.partition_set_origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=backfill.partition_names,
+            from_failure=False,
+            reexecution_steps=backfill.reexecution_steps,
+            tags={
+                **backfill.tags,
+                PARENT_BACKFILL_ID_TAG: backfill.backfill_id,
+                ROOT_BACKFILL_ID_TAG: backfill.tags.get(ROOT_BACKFILL_ID_TAG, backfill.backfill_id),
+            },
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=backfill.asset_selection,
+            title=f"Re-execution of {backfill.title}" if backfill.title else None,
+            description=backfill.description,
+        )
+
+    graphene_info.context.instance.add_backfill(new_backfill)
+    return GrapheneRetryBackfillSuccess(backfill_id=new_backfill.backfill_id)
