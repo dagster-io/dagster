@@ -2193,7 +2193,7 @@ export type LaunchBackfillResult =
   | InvalidSubsetError
   | LaunchBackfillSuccess
   | NoModeProvidedError
-  | PartitionKeyNotFoundError
+  | PartitionKeysNotFoundError
   | PartitionSetNotFoundError
   | PipelineNotFoundError
   | PresetNotFoundError
@@ -3153,12 +3153,6 @@ export enum PartitionDefinitionType {
   TIME_WINDOW = 'TIME_WINDOW',
 }
 
-export type PartitionKeyNotFoundError = Error & {
-  __typename: 'PartitionKeyNotFoundError';
-  message: Scalars['String']['output'];
-  partitionKey: Scalars['String']['output'];
-};
-
 export type PartitionKeyRange = {
   __typename: 'PartitionKeyRange';
   end: Scalars['String']['output'];
@@ -3167,6 +3161,12 @@ export type PartitionKeyRange = {
 
 export type PartitionKeys = {
   __typename: 'PartitionKeys';
+  partitionKeys: Array<Scalars['String']['output']>;
+};
+
+export type PartitionKeysNotFoundError = Error & {
+  __typename: 'PartitionKeysNotFoundError';
+  message: Scalars['String']['output'];
   partitionKeys: Array<Scalars['String']['output']>;
 };
 
@@ -10929,20 +10929,6 @@ export const buildPartitionDefinition = (
   };
 };
 
-export const buildPartitionKeyNotFoundError = (
-  overrides?: Partial<PartitionKeyNotFoundError>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'PartitionKeyNotFoundError'} & PartitionKeyNotFoundError => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('PartitionKeyNotFoundError');
-  return {
-    __typename: 'PartitionKeyNotFoundError',
-    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'cumque',
-    partitionKey:
-      overrides && overrides.hasOwnProperty('partitionKey') ? overrides.partitionKey! : 'qui',
-  };
-};
-
 export const buildPartitionKeyRange = (
   overrides?: Partial<PartitionKeyRange>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10964,6 +10950,20 @@ export const buildPartitionKeys = (
   relationshipsToOmit.add('PartitionKeys');
   return {
     __typename: 'PartitionKeys',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
+export const buildPartitionKeysNotFoundError = (
+  overrides?: Partial<PartitionKeysNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeysNotFoundError'} & PartitionKeysNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeysNotFoundError');
+  return {
+    __typename: 'PartitionKeysNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'minima',
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };

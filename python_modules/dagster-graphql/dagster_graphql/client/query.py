@@ -410,7 +410,7 @@ mutation($backfillParams: LaunchBackfillParams!) {
     ... on PartitionSetNotFoundError {
       message
     }
-    ... on PartitionKeyNotFoundError {
+    ... on PartitionKeysNotFoundError {
       message
     }
     ... on LaunchBackfillSuccess {

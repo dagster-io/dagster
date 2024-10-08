@@ -588,14 +588,18 @@ def test_launch_asset_backfill_with_nonexistent_partition_key():
                 LAUNCH_PARTITION_BACKFILL_MUTATION,
                 variables={
                     "backfillParams": {
-                        "partitionNames": ["nonexistent"],
+                        "partitionNames": ["a", "nonexistent1", "nonexistent2"],
                         "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
                     }
                 },
             )
             assert (
                 launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
-                == "PartitionKeyNotFoundError"
+                == "PartitionKeysNotFoundError"
+            )
+            assert (
+                "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
             )
 
 

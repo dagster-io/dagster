@@ -26,7 +26,7 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PartitionSetNotFoundError {
         message
       }
-      ... on PartitionKeyNotFoundError {
+      ... on PartitionKeysNotFoundError {
         message
       }
       ... on InvalidStepError {

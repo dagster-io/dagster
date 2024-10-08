@@ -1718,7 +1718,7 @@ type AssetKey {
 union LaunchBackfillResult =
     LaunchBackfillSuccess
   | PartitionSetNotFoundError
-  | PartitionKeyNotFoundError
+  | PartitionKeysNotFoundError
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -1731,9 +1731,9 @@ union LaunchBackfillResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
-type PartitionKeyNotFoundError implements Error {
+type PartitionKeysNotFoundError implements Error {
   message: String!
-  partitionKey: String!
+  partitionKeys: [String!]!
 }
 
 type LaunchBackfillSuccess {

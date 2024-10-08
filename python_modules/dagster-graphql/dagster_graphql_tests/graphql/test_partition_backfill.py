@@ -1266,13 +1266,17 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                         "repositorySelector": repository_selector,
                         "partitionSetName": "integers_partition_set",
                     },
-                    "partitionNames": ["nonexistent"],
+                    "partitionNames": ["1", "nonexistent1", "nonexistent2"],
                 }
             },
         )
         assert (
             launch_result.data["launchPartitionBackfill"]["__typename"]
-            == "PartitionKeyNotFoundError"
+            == "PartitionKeysNotFoundError"
+        )
+        assert (
+            "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+            in launch_result.data["launchPartitionBackfill"]["message"]
         )
 
 

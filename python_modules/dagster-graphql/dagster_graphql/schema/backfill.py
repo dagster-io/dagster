@@ -39,7 +39,7 @@ from dagster_graphql.schema.errors import (
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
     GrapheneInvalidSubsetError,
-    GraphenePartitionKeyNotFoundError,
+    GraphenePartitionKeysNotFoundError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
@@ -84,7 +84,7 @@ class GrapheneLaunchBackfillResult(graphene.Union):
         types = (
             GrapheneLaunchBackfillSuccess,
             GraphenePartitionSetNotFoundError,
-            GraphenePartitionKeyNotFoundError,
+            GraphenePartitionKeysNotFoundError,
         ) + pipeline_execution_error_types
         name = "LaunchBackfillResult"
 
