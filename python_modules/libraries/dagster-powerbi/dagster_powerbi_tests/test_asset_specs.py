@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 import responses
-from dagster import materialize
+from dagster import materialize, multi_asset
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -42,8 +42,8 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
     )
     all_asset_specs = resource.build_asset_specs()
 
-    # 1 dashboard, 1 report, 1 semantic model, 2 data sources
-    assert len(all_asset_specs) == 5
+    # 1 dashboard, 1 report, 1 semantic model
+    assert len(all_asset_specs) == 3
 
     # Sanity check outputs, translator tests cover details here
     dashboard_asset = next(asset for asset in all_asset_specs if asset.key.path[0] == "dashboard")
@@ -55,17 +55,12 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
     semantic_model_asset = next(
         asset for asset in all_asset_specs if asset.key.path[0] == "semantic_model"
     )
-    assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
-
-    data_source_assets = [
-        asset
-        for asset in all_asset_specs
-        if asset.key.path[0] not in ("dashboard", "report", "semantic_model")
+    assert semantic_model_asset.key.path == [
+        "semantic_model",
+        "Sales_Returns_Sample_v201912",
     ]
-    assert len(data_source_assets) == 2
 
-    data_source_keys = {spec.key for spec in data_source_assets}
-    assert data_source_keys == {
+    assert {dep.asset_key for dep in semantic_model_asset.deps} == {
         AssetKey(["data_27_09_2019_xlsx"]),
         AssetKey(["sales_marketing_datas_xlsx"]),
     }
@@ -82,7 +77,10 @@ def state_derived_defs_two_workspaces() -> Definitions:
         workspace_id="c5322b8a-d7e1-42e8-be2b-a5e636ca3221",
     )
     return Definitions(
-        assets=[*resource.build_asset_specs(), *resource_second_workspace.build_asset_specs()]
+        assets=[
+            *resource.build_asset_specs(),
+            *resource_second_workspace.build_asset_specs(),
+        ]
     )
 
 
@@ -111,18 +109,17 @@ def test_refreshable_semantic_model(
         workspace_id=workspace_id,
         refresh_poll_interval=0,
     )
-    all_assets = (
-        resource.build_defs(enable_refresh_semantic_models=True).get_asset_graph().assets_defs
-    )
+    semantic_model_specs = resource.build_assets_specs(asset_types={"semantic_model"})
+    assert len(semantic_model_specs) == 1
 
-    # 1 dashboard, 1 report, 1 semantic model, 2 data sources
-    assert len(all_assets) == 5
+    assert semantic_model_specs[0].key.path == [
+        "semantic_model",
+        "Sales_Returns_Sample_v201912",
+    ]
 
-    semantic_model_asset = next(
-        asset for asset in all_assets if asset.key.path[0] == "semantic_model"
-    )
-    assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
-    assert semantic_model_asset.is_executable
+    @multi_asset(specs=semantic_model_specs, can_subset=True)
+    def semantic_model_assets_def(context):
+        yield from resource.refresh(context=context).stream()
 
     # materialize the semantic model
 
@@ -143,12 +140,17 @@ def test_refreshable_semantic_model(
         method=responses.GET,
         url=f"{BASE_API_URL}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
         json={
-            "value": [{"status": "Completed" if success else "Failed", "serviceExceptionJson": {}}]
+            "value": [
+                {
+                    "status": "Completed" if success else "Failed",
+                    "serviceExceptionJson": {},
+                }
+            ]
         },
         status=200,
     )
 
-    result = materialize([semantic_model_asset], raise_on_error=False)
+    result = materialize([semantic_model_assets_def], raise_on_error=False)
     assert result.success is success
 
 

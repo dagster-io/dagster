@@ -3,10 +3,16 @@ import re
 import time
 from dataclasses import dataclass
 from functools import cached_property
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Type
+from typing import AbstractSet, Any, Dict, Iterable, Mapping, Optional, Sequence, Type
 
 import requests
-from dagster import AssetSpec, ConfigurableResource, Definitions
+from dagster import (
+    AssetExecutionContext,
+    AssetSpec,
+    ConfigurableResource,
+    Definitions,
+    MaterializeResult,
+)
 from dagster._annotations import public
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -176,6 +182,10 @@ class PowerBIWorkspace(ConfigurableResource):
             error = last_refresh.get("serviceExceptionJson")
             raise Failure(f"Refresh failed: {error}")
 
+    @public
+    def refresh(self, context: AssetExecutionContext) -> PowerBIRefreshInvocation:
+        pass
+
     @cached_method
     def _get_reports(self) -> Mapping[str, Any]:
         """Fetches a list of all PowerBI reports in the workspace."""
@@ -280,13 +290,23 @@ class PowerBIWorkspace(ConfigurableResource):
         Returns:
             Sequence[AssetSpec]: A sequence of AssetSpecs corresponding to entities in Power BI.
         """
+        all_specs = self._build_defs(
+            dagster_powerbi_translator=dagster_powerbi_translator
+        ).get_all_asset_specs()
+        resolved_asset_types: AbstractSet[PowerBIAssetType] = (
+            asset_types if asset_types is not None else {"report", "dashboard", "semantic_model"}
+        )
         return [
             spec
-            for spec in self._build_defs(
-                dagster_powerbi_translator=dagster_powerbi_translator
-            ).get_all_asset_specs()
-            if asset_types is None or PowerBITagSet.extract(spec.tags).asset_type in asset_types
+            for spec in all_specs
+            if PowerBITagSet.extract(spec.tags).asset_type in resolved_asset_types
         ]
+
+
+class PowerBIRefreshInvocation:
+    @public
+    def stream(self) -> Iterable[MaterializeResult]:
+        pass
 
 
 @dataclass
