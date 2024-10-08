@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import Dict, List, Set
+from typing import AbstractSet, Dict, List, Set
 
 from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
@@ -9,7 +9,6 @@ from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
 from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
     KeyScopedDataItem,
-    MappedAirflowTaskData,
     SerializedAirflowDefinitionsData,
     SerializedDagData,
     SerializedTaskHandleData,
@@ -90,16 +89,9 @@ class FetchedAirflowData:
     mapping_info: AirliftMetadataMappingInfo
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
+    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
         return {
-            spec.key: [
-                MappedAirflowTaskData(
-                    task_handle=task_handle,
-                    task_info=self.task_info_map[task_handle.dag_id][task_handle.task_id],
-                )
-                for task_handle in task_handles_for_spec(spec)
-            ]
-            for spec in self.mapping_info.mapped_asset_specs
+            spec.key: task_handles_for_spec(spec) for spec in self.mapping_info.mapped_asset_specs
         }
 
     def task_handle_data_for_dag(self, dag_id: str) -> Dict[str, SerializedTaskHandleData]:
