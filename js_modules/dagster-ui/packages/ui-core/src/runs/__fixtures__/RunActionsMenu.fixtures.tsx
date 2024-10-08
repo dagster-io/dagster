@@ -34,6 +34,7 @@ export const buildRunActionsMenuFragment = ({hasReExecutePermission}: RunConfigI
     canTerminate: true,
     hasDeletePermission: true,
     hasReExecutePermission,
+    hasRunMetricsEnabled: true,
     hasTerminatePermission: true,
     mode: 'default',
     rootRunId: 'abcdef12',
