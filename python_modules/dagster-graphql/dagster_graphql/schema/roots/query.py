@@ -90,7 +90,7 @@ from dagster_graphql.implementation.fetch_schedules import (
 from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from dagster_graphql.implementation.fetch_solids import get_graph_or_error
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
+from dagster_graphql.implementation.loader import StaleStatusLoader
 from dagster_graphql.implementation.run_config_schema import resolve_run_config_schema_or_error
 from dagster_graphql.implementation.utils import (
     capture_error,
@@ -995,16 +995,11 @@ class GrapheneQuery(graphene.ObjectType):
                 return []
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            asset_node_snaps = repo.get_asset_node_snaps()
-            results = (
-                [
-                    (repo_loc, repo, asset_node)
-                    for asset_node in asset_node_snaps
-                    if asset_node.group_name == group_name
-                ]
-                if asset_node_snaps
-                else []
-            )
+            remote_nodes = [
+                remote_node
+                for remote_node in repo.asset_graph.asset_nodes
+                if remote_node.group_name == group_name
+            ]
         elif pipeline is not None:
             job_name = pipeline.pipelineName
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
@@ -1014,57 +1009,40 @@ class GrapheneQuery(graphene.ObjectType):
                 return []
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
-
-            asset_node_snaps = repo.get_asset_node_snaps(job_name)
-            results = (
-                [(repo_loc, repo, asset_node) for asset_node in asset_node_snaps]
-                if asset_node_snaps
-                else []
-            )
+            remote_nodes = [
+                remote_node
+                for remote_node in repo.asset_graph.asset_nodes
+                if job_name in remote_node.job_names
+            ]
         else:
             if not use_all_asset_keys and resolved_asset_keys:
-                remote_nodes = [
+                fetched_nodes = [
                     graphene_info.context.get_asset_node(asset_key)
                     for asset_key in resolved_asset_keys
                 ]
+                remote_nodes = [node for node in fetched_nodes if node]
             else:
                 remote_nodes = [
                     remote_node for remote_node in graphene_info.context.asset_graph.asset_nodes
                 ]
 
-            results = []
-            for remote_node in remote_nodes:
-                if remote_node:
-                    repo_handle = remote_node.priority_repository_handle
-                    code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
-                    results.append(
-                        (
-                            code_loc,
-                            code_loc.get_repository(repo_handle.repository_name),
-                            remote_node.priority_node_snap,
-                        )
-                    )
-
         # Filter down to requested asset keys
         results = [
-            scoped_tuple
-            for scoped_tuple in results
-            if use_all_asset_keys
-            or scoped_tuple[2].asset_key in check.not_none(resolved_asset_keys)
+            remote_node
+            for remote_node in remote_nodes
+            if use_all_asset_keys or remote_node.key in check.not_none(resolved_asset_keys)
         ]
 
         if not results:
             return []
 
-        final_keys = [scoped_tuple[2].asset_key for scoped_tuple in results]
+        final_keys = [node.key for node in results]
         AssetRecord.prepare(graphene_info.context, final_keys)
 
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
             asset_keys=final_keys,
         )
-
-        depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
         def load_asset_graph() -> RemoteAssetGraph:
             if repo is not None:
@@ -1082,23 +1060,21 @@ class GrapheneQuery(graphene.ObjectType):
 
         nodes = [
             GrapheneAssetNode(
-                repository_handle=repo.handle,
-                asset_node_snap=asset_node_snap,
+                remote_node=remote_node,
                 asset_checks_loader=asset_checks_loader,
-                depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
                 # base_deployment_context will be None if we are not in a branch deployment
                 asset_graph_differ=AssetGraphDiffer.from_external_repositories(
-                    code_location_name=code_loc.name,
-                    repository_name=repo.name,
+                    code_location_name=remote_node.priority_repository_handle.location_name,
+                    repository_name=remote_node.priority_repository_handle.repository_name,
                     branch_workspace=graphene_info.context,
                     base_workspace=base_deployment_context,
                 )
                 if base_deployment_context is not None
                 else None,
             )
-            for (code_loc, repo, asset_node_snap) in results
+            for remote_node in results
         ]
         return sorted(nodes, key=lambda node: node.id)
 
