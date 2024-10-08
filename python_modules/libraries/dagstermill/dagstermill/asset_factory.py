@@ -175,7 +175,7 @@ def define_dagstermill_asset(
         io_manager_key, "io_manager_key", default="output_notebook_io_manager"
     )
 
-    user_tags = normalize_tags(op_tags).tags
+    user_tags = normalize_tags(op_tags)
     if op_tags is not None:
         check.invariant(
             "notebook_path" not in op_tags,

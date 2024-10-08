@@ -737,7 +737,7 @@ class SensorDefinition(IHasInternalInit):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
-        self._tags = normalize_tags(tags).tags
+        self._tags = normalize_tags(tags)
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)  # type: ignore  # (pyright bug)
         )

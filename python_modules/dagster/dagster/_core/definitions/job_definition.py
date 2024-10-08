@@ -63,12 +63,7 @@ from dagster._core.definitions.resource_requirement import (
     ensure_requirements_satisfied,
 )
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.utils import (
-    DEFAULT_IO_MANAGER_KEY,
-    NormalizedTags,
-    check_valid_name,
-    normalize_tags,
-)
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_name, normalize_tags
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -134,8 +129,8 @@ class JobDefinition(IHasInternalInit):
         ] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
-        run_tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        run_tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
@@ -178,8 +173,8 @@ class JobDefinition(IHasInternalInit):
         # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
 
-        self._tags = tags.tags if isinstance(tags, NormalizedTags) else normalize_tags(tags).tags
-        self._run_tags = run_tags.tags if isinstance(run_tags, NormalizedTags) else run_tags
+        self._tags = normalize_tags(tags)
+        self._run_tags = run_tags  # don't normalize to preserve None
 
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -279,8 +274,8 @@ class JobDefinition(IHasInternalInit):
         ],
         description: Optional[str],
         partitions_def: Optional[PartitionsDefinition],
-        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
-        run_tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
+        tags: Optional[Mapping[str, Any]],
+        run_tags: Optional[Mapping[str, Any]],
         metadata: Optional[Mapping[str, RawMetadataValue]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],
@@ -333,7 +328,7 @@ class JobDefinition(IHasInternalInit):
         if self._run_tags is None:
             return self.tags
         else:
-            return normalize_tags({**self._graph_def.tags, **self._run_tags}).tags
+            return normalize_tags({**self._graph_def.tags, **self._run_tags})
 
     # This property exists for backcompat purposes. If it is False, then we omit run_tags when
     # generating a job snapshot. This lets host processes distinguish between None and {} `run_tags`

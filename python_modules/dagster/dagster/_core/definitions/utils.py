@@ -10,12 +10,10 @@ from typing import (
     Iterable,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Tuple,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -160,27 +158,17 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return f"{name}({props_str})"
 
 
-class NormalizedTags(NamedTuple):
-    tags: Mapping[str, str]
-
-    def with_normalized_tags(self, normalized_tags: "NormalizedTags") -> "NormalizedTags":
-        return NormalizedTags({**self.tags, **normalized_tags.tags})
-
-
 def normalize_tags(
-    tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
+    tags: Optional[Mapping[str, Any]],
     allow_reserved_tags: bool = True,
     warn_on_deprecated_tags: bool = True,
     warning_stacklevel: int = 4,
-) -> NormalizedTags:
+) -> Mapping[str, str]:
     """Normalizes JSON-object tags into string tags and warns on deprecated tags.
 
     New tags properties should _not_ use this function, because it doesn't hard error on tags that
     are no longer supported.
     """
-    if isinstance(tags, NormalizedTags):
-        return tags
-
     valid_tags: Dict[str, str] = {}
     invalid_tag_keys = []
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
@@ -221,7 +209,7 @@ def normalize_tags(
     if not allow_reserved_tags:
         check_reserved_tags(valid_tags)
 
-    return NormalizedTags(valid_tags)
+    return valid_tags
 
 
 # Inspired by allowed Kubernetes labels:

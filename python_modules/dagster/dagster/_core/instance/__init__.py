@@ -1493,7 +1493,7 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(status, "status", DagsterRunStatus)
         check.opt_mapping_param(tags, "tags", key_type=str)
 
-        validated_tags = normalize_tags(tags, warn_on_deprecated_tags=False).tags
+        validated_tags = normalize_tags(tags, warn_on_deprecated_tags=False)
 
         check.opt_str_param(root_run_id, "root_run_id")
         check.opt_str_param(parent_run_id, "parent_run_id")

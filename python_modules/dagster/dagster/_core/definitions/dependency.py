@@ -147,7 +147,7 @@ class Node(ABC):
             "graph_definition",
             GraphDefinition,
         )
-        self._additional_tags = normalize_tags(tags).tags
+        self._additional_tags = normalize_tags(tags)
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 

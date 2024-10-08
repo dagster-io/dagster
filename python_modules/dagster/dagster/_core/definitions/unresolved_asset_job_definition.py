@@ -388,9 +388,9 @@ def define_asset_job(
         selection=resolved_selection,
         config=config,
         description=description,
-        tags=normalize_tags(tags).tags,
+        tags=normalize_tags(tags),
         # Need to preserve None value
-        run_tags=normalize_tags(run_tags).tags if run_tags is not None else None,
+        run_tags=normalize_tags(run_tags) if run_tags is not None else None,
         metadata=metadata,
         partitions_def=partitions_def,
         executor_def=executor_def,
