@@ -23,7 +23,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
+from dagster._core.definitions.selector import JobSelector, JobSubsetSelector, RepositorySelector
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -231,7 +231,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_job(self, selector: JobSubsetSelector) -> bool:
+    def has_external_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> bool:
         check.inst_param(selector, "selector", JobSubsetSelector)
         if not self.has_code_location(selector.location_name):
             return False
@@ -241,7 +241,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selector.repository_name
         ).has_external_job(selector.job_name)
 
-    def get_full_external_job(self, selector: JobSubsetSelector) -> RemoteJob:
+    def get_full_external_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> RemoteJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
