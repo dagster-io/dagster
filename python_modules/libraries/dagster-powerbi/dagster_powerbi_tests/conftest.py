@@ -2,7 +2,7 @@ from typing import Iterator
 
 import pytest
 import responses
-from dagster_powerbi.resource import BASE_API_URL
+from dagster_powerbi.resource import BASE_API_URL, generate_data_source_id
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
 SAMPLE_DASH = {
@@ -117,7 +117,11 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
     sample_semantic_model = SAMPLE_SEMANTIC_MODEL.copy()
 
     sample_data_sources = SAMPLE_DATA_SOURCES
-    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in sample_data_sources]
+    data_sources = [
+        ds if "datasourceId" in ds else {"datasourceId": generate_data_source_id(ds), **ds}
+        for ds in sample_data_sources
+    ]
+    sample_semantic_model["sources"] = [ds["datasourceId"] for ds in data_sources]
 
     return PowerBIWorkspaceData(
         workspace_id=workspace_id,
@@ -140,7 +144,7 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
             ds["datasourceId"]: PowerBIContentData(
                 content_type=PowerBIContentType.DATA_SOURCE, properties=ds
             )
-            for ds in sample_data_sources
+            for ds in data_sources
         },
     )
 

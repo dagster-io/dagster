@@ -2,7 +2,6 @@ import abc
 import json
 import re
 import time
-import uuid
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, Dict, Mapping, Optional, Type, cast
@@ -15,6 +14,7 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._core.definitions.events import Failure
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
+from dagster._utils.security import non_secure_md5_hash_str
 from pydantic import Field, PrivateAttr
 
 from dagster_powerbi.translator import (
@@ -38,7 +38,7 @@ def generate_data_source_id(data_source: Dict[str, Any]) -> str:
     We use this for cases where the API does not provide a unique ID for a data source.
     This ID is never surfaced to the user and is only used internally to track dependencies.
     """
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, json.dumps(data_source, sort_keys=True)))
+    return non_secure_md5_hash_str(json.dumps(data_source, sort_keys=True).encode())
 
 
 
