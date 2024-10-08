@@ -17,7 +17,6 @@ import {Link} from 'react-router-dom';
 import {AllIndividualEventsButton} from './AllIndividualEventsButton';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
-import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {StaleReasonsTag} from './Stale';
@@ -372,10 +371,6 @@ export const AssetPartitionDetail = ({
           repoAddress={repoAddress}
           showDescriptions
         />
-      </Box>
-      <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>Source data</Subheading>
-        <AssetMaterializationUpstreamData timestamp={latest?.timestamp} assetKey={assetKey} />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
         <Subheading>Tags</Subheading>

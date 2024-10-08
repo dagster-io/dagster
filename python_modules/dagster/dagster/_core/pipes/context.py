@@ -1,7 +1,20 @@
+import os
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import cached_property
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    TypedDict,
+    Union,
+    cast,
+)
 
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
@@ -52,6 +65,14 @@ if TYPE_CHECKING:
 
 
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
+
+
+class PipesLaunchedData(TypedDict):
+    """Payload generated in the orchestration process after external process startup
+    containing arbitrary information about the external process.
+    """
+
+    extras: Mapping[str, Any]
 
 
 class PipesMessageHandler:
@@ -140,7 +161,9 @@ class PipesMessageHandler:
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
         if self._received_closed_msg:
-            self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
+            self._context.log.warning(
+                f"[pipes] unexpected message received after closed: `{message}`"
+            )
 
         method = cast(Method, message["method"])
         if method == "opened":
@@ -237,6 +260,11 @@ class PipesMessageHandler:
             ),
         )
 
+    def on_launched(self, launched_payload: PipesLaunchedData) -> None:
+        """Hook that is called if `PipesSession.report_launched()` is called."""
+        self._context.log.info("[pipes] additional launch_payload reported")
+        self._message_reader.on_launched(launched_payload)
+
 
 @dataclass
 class PipesSession:
@@ -274,6 +302,59 @@ class PipesSession:
     context_injector_params: PipesParams
     message_reader_params: PipesParams
     context: OpExecutionContext
+
+    @cached_property
+    def default_remote_invocation_info(self) -> Dict[str, str]:
+        """Key-value pairs encoding metadata about the launching Dagster process, typically attached to the remote
+        environment.
+
+        Remote execution environments commonly have their own concepts of tags or labels. It's useful to include
+        Dagster-specific metadata in these environments to help with debugging, monitoring, and linking remote
+        resources back to Dagster. For example, the Kubernetes Pipes client is using these tags as Kubernetes labels.
+
+        By default the tags include:
+        * dagster/run-id
+        * dagster/job
+
+        And, if available:
+        * dagster/code-location
+        * dagster/user
+        * dagster/partition-key
+
+        And, for Dagster+ deployments:
+        * dagster/deployment-name
+        * dagster/git-repo
+        * dagster/git-branch
+        * dagster/git-sha
+        """
+        tags = {
+            "dagster/run-id": self.context.run_id,
+            "dagster/job": self.context.job_name,
+        }
+
+        if self.context.dagster_run.external_job_origin:
+            tags["dagster/code-location"] = (
+                self.context.dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+            )
+
+        if user := self.context.get_tag("dagster/user"):
+            tags["dagster/user"] = user
+
+        if self.context.has_partition_key:
+            tags["dagster/partition-key"] = self.context.partition_key
+
+        # now using the walrus operator for os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME")
+
+        for env_var, tag in {
+            "DAGSTER_CLOUD_DEPLOYMENT_NAME": "deployment-name",
+            "DAGSTER_CLOUD_GIT_REPO": "git-repo",
+            "DAGSTER_CLOUD_GIT_BRANCH": "git-branch",
+            "DAGSTER_CLOUD_GIT_SHA": "git-sha",
+        }.items():
+            if value := os.getenv(env_var):
+                tags[f"dagster/{tag}"] = value
+
+        return tags
 
     @public
     def get_bootstrap_env_vars(self) -> Mapping[str, str]:
@@ -372,6 +453,18 @@ class PipesSession:
         Returns: Sequence[Any]
         """
         return self.message_handler.get_custom_messages()
+
+    def report_launched(self, launched_payload: PipesLaunchedData):
+        """Submit arbitrary information about the launched process to Pipes.
+
+        This hook is not necessarily called in every pipes session. It is useful primarily when we wish to
+        condition the behavior of Pipes on some parameter that is only available after
+        external process launch (such as a run id in the external system). The code calling `open_pipes_session()`
+        is responsible for calling `PipesSession.report_launched()`.
+
+        Passes the `launched_payload` to the message reader's `on_launched` method.
+        """
+        self.message_handler.on_launched(launched_payload)
 
 
 def build_external_execution_context_data(

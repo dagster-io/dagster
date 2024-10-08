@@ -8,12 +8,14 @@ from dagster import (
     MaterializeResult,
     MetadataValue,
     OpExecutionContext,
+    TableColumnConstraints,
     _check as check,
 )
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
+from dlt.common.schema import Schema
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
@@ -23,6 +25,7 @@ from dagster_embedded_elt.dlt.constants import (
     META_KEY_SOURCE,
     META_KEY_TRANSLATOR,
 )
+from dagster_embedded_elt.dlt.dlt_event_iterator import DltEventIterator, DltEventType
 from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
@@ -66,6 +69,23 @@ class DagsterDltResource(ConfigurableResource):
                 return value
 
         return {k: _recursive_cast(v) for k, v in mapping.items()}
+
+    def _extract_table_schema_metadata(self, table_name: str, schema: Schema) -> TableSchema:
+        # Pyright does not detect the default value from 'pop' and 'get'
+        return TableSchema(
+            columns=[
+                TableColumn(
+                    name=column.pop("name", ""),  # type: ignore
+                    type=column.pop("data_type", "string"),  # type: ignore
+                    constraints=TableColumnConstraints(
+                        nullable=column.pop("nullable", True),  # type: ignore
+                        unique=column.pop("unique", False),  # type: ignore
+                        other=[*column.keys()],  # e.g. "primary_key" or "foreign_key"
+                    ),
+                )
+                for column in schema.get_table_columns(table_name).values()
+            ]
+        )
 
     def extract_resource_metadata(
         self,
@@ -113,16 +133,39 @@ class DagsterDltResource(ConfigurableResource):
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
-        table_columns = [
-            TableColumn(name=column.get("name"), type=column.get("data_type"))
-            for pkg in load_info_dict.get("load_packages", [])
-            for table in pkg.get("tables", [])
-            for column in table.get("columns", [])
-            if table.get("name") == resource.table_name
+        schema: Optional[str] = None
+        for load_package in load_info_dict.get("load_packages", []):
+            for table in load_package.get("tables", []):
+                if table.get("name") == resource.table_name:
+                    schema = table.get("schema_name")
+                    break
+            if schema:
+                break
+
+        destination_name: Optional[str] = base_metadata.get("destination_name")
+        relation_identifier = None
+        if destination_name and schema:
+            relation_identifier = ".".join([destination_name, schema, str(resource.table_name)])
+
+        default_schema = dlt_pipeline.default_schema
+        child_table_names = [
+            name
+            for name in default_schema.data_table_names()
+            if name.startswith(f"{resource.table_name}__")
         ]
+        child_table_schemas = {
+            table_name: self._extract_table_schema_metadata(table_name, default_schema)
+            for table_name in child_table_names
+        }
+        table_schema = self._extract_table_schema_metadata(str(resource.table_name), default_schema)
+
         base_metadata = {
+            **child_table_schemas,
             **base_metadata,
-            **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
+            **TableMetadataSet(
+                column_schema=table_schema,
+                relation_identifier=relation_identifier,
+            ),
         }
 
         return base_metadata
@@ -135,7 +178,7 @@ class DagsterDltResource(ConfigurableResource):
         dlt_pipeline: Optional[Pipeline] = None,
         dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
         **kwargs,
-    ) -> Iterator[Union[MaterializeResult, AssetMaterialization]]:
+    ) -> DltEventIterator[DltEventType]:
         """Runs the dlt pipeline with subset support.
 
         Args:
@@ -146,7 +189,7 @@ class DagsterDltResource(ConfigurableResource):
             **kwargs (dict[str, Any]): Keyword args passed to pipeline `run` method
 
         Returns:
-            Iterator[Union[MaterializeResult, AssetMaterialization]]: An iterator of MaterializeResult or AssetMaterialization
+            DltEventIterator[DltEventType]: An iterator of MaterializeResult or AssetMaterialization
 
         """
         # This resource can be used in both `asset` and `op` definitions. In the context of an asset
@@ -177,7 +220,39 @@ class DagsterDltResource(ConfigurableResource):
 
         # Default to base translator if undefined
         dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
+        return DltEventIterator(
+            self._run(
+                context=context,
+                dlt_source=dlt_source,
+                dlt_pipeline=dlt_pipeline,
+                dagster_dlt_translator=dagster_dlt_translator,
+                **kwargs,
+            ),
+            context=context,
+            dlt_pipeline=dlt_pipeline,
+        )
 
+    def _run(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        dlt_source: DltSource,
+        dlt_pipeline: Pipeline,
+        dagster_dlt_translator: DagsterDltTranslator,
+        **kwargs,
+    ) -> Iterator[DltEventType]:
+        """Runs the dlt pipeline with subset support.
+
+        Args:
+            context (Union[OpExecutionContext, AssetExecutionContext]): Asset or op execution context
+            dlt_source (Optional[DltSource]): optional dlt source if resource is used from an `@op`
+            dlt_pipeline (Optional[Pipeline]): optional dlt pipeline if resource is used from an `@op`
+            dagster_dlt_translator (Optional[DagsterDltTranslator]): optional dlt translator if resource is used from an `@op`
+            **kwargs (dict[str, Any]): Keyword args passed to pipeline `run` method
+
+        Returns:
+            DltEventIterator[DltEventType]: An iterator of MaterializeResult or AssetMaterialization
+
+        """
         asset_key_dlt_source_resource_mapping = {
             dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
             for dlt_source_resource in dlt_source.selected_resources.values()
@@ -207,7 +282,10 @@ class DagsterDltResource(ConfigurableResource):
 
         has_asset_def: bool = bool(context and context.has_assets_def)
 
-        for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
+        for (
+            asset_key,
+            dlt_source_resource,
+        ) in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(
                 context, dlt_source_resource, load_info, dlt_pipeline
             )

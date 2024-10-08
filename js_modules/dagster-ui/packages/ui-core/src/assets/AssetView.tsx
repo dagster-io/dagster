@@ -15,14 +15,15 @@ import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './AssetNodeOverview';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlotsPage} from './AssetPlotsPage';
 import {AssetTabs} from './AssetTabs';
+import {useAllAssets} from './AssetsCatalogTable';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
+import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {
   AssetViewDefinitionNodeFragment,
   AssetViewDefinitionQuery,
@@ -46,6 +47,7 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface Props {
@@ -60,8 +62,10 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
   // Load the asset definition
-  const {definition, definitionQueryResult, lastMaterialization} =
+  const {cachedDefinition, definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
+
+  const cachedOrLiveDefinition = definition ?? cachedDefinition;
 
   useEffect(() => {
     // If the asset exists, add it to the recently visited list
@@ -74,7 +78,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     }
   }, [definitionQueryResult, writeAssetVisit, assetKey.path]);
 
-  const tabList = useTabBuilder({definition, params});
+  const tabList = useTabBuilder({definition: cachedOrLiveDefinition, params});
 
   const defaultTab = 'overview';
   const selectedTab = params.view || defaultTab;
@@ -103,10 +107,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     ? healthRefreshHintFromLiveData(liveData)
     : lastMaterialization?.timestamp;
 
-  const isLoading =
-    definitionQueryResult.loading &&
-    !definitionQueryResult.previousData &&
-    !definitionQueryResult.data;
+  const isLoading = !definitionQueryResult.previousData && !definitionQueryResult.data;
 
   const renderOverviewTab = () => {
     if (!definition && !isLoading) {
@@ -118,6 +119,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
       <AssetNodeOverview
         assetKey={assetKey}
         assetNode={definition}
+        cachedAssetNode={cachedDefinition}
         upstream={upstream}
         downstream={downstream}
         liveData={liveData}
@@ -276,7 +278,12 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   }, [path, selectedTab, setCurrentPage]);
 
   const wipe = useWipeModal(
-    definition ? {assetKey: definition.assetKey, repository: definition.repository} : null,
+    definition && !definition.isObservable
+      ? {
+          assetKey: definition.assetKey,
+          repository: definition.repository,
+        }
+      : null,
     refresh,
   );
 
@@ -289,7 +296,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   );
 
   const reportEvents = useReportEventsModal(
-    definition && repoAddress
+    definition && !definition.isObservable && repoAddress
       ? {
           assetKey: definition.assetKey,
           isPartitioned: definition.isPartitioned,
@@ -316,29 +323,27 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
         headerBreadcrumbs={headerBreadcrumbs}
         tags={
           <AssetViewPageHeaderTags
-            definition={definition}
+            definition={cachedOrLiveDefinition}
             liveData={liveData}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
           />
         }
         tabs={
-          <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
-            <AssetTabs selectedTab={selectedTab} tabs={tabList} />
-            <Box padding={{bottom: 8}}>
-              <AssetLiveDataRefreshButton />
+          <div>
+            <IndeterminateLoadingBar loading={isLoading} />
+            <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+              <AssetTabs selectedTab={selectedTab} tabs={tabList} />
+              <Box padding={{bottom: 8}}>
+                <AssetLiveDataRefreshButton />
+              </Box>
             </Box>
-          </Box>
+          </div>
         }
         right={
-          <Box flex={{direction: 'row'}}>
-            {definition && definition.isObservable ? (
-              <LaunchAssetObservationButton
-                primary
-                scope={{all: [definition], skipAllTerm: true}}
-              />
-            ) : definition && definition.jobNames.length > 0 && upstream ? (
+          <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
+            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 && upstream ? (
               <LaunchAssetExecutionButton
-                scope={{all: [definition]}}
+                scope={{all: [cachedOrLiveDefinition]}}
                 showChangedAndMissingOption={false}
                 additionalDropdownOptions={[
                   ...reportEvents.dropdownOptions,
@@ -438,6 +443,13 @@ function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) 
 }
 
 const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
+  const {assets} = useAllAssets();
+  const cachedDefinition = useMemo(
+    () =>
+      assets?.find((asset) => tokenForAssetKey(asset.key) === tokenForAssetKey(assetKey))
+        ?.definition,
+    [assetKey, assets],
+  );
   const result = useQuery<AssetViewDefinitionQuery, AssetViewDefinitionQueryVariables>(
     ASSET_VIEW_DEFINITION_QUERY,
     {
@@ -453,6 +465,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
       definitionQueryResult: result,
       definition: null,
       lastMaterialization: null,
+      cachedDefinition,
     };
   }
 
@@ -460,6 +473,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
     definitionQueryResult: result,
     definition: asset.definition,
     lastMaterialization: asset.assetMaterializations ? asset.assetMaterializations[0] : null,
+    cachedDefinition,
   };
 };
 
@@ -555,7 +569,7 @@ const AssetViewPageHeaderTags = ({
   liveData,
   onShowUpstream,
 }: {
-  definition: AssetViewDefinitionNodeFragment | null;
+  definition: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment | null | undefined;
   liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
 }) => {

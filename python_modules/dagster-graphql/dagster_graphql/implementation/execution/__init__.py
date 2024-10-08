@@ -32,8 +32,12 @@ from starlette.concurrency import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.errors import GrapheneUnsupportedOperationError
+    from dagster_graphql.schema.errors import (
+        GrapheneAssetNotFoundError,
+        GrapheneUnsupportedOperationError,
+    )
     from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
+
 
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
@@ -334,9 +338,14 @@ async def gen_captured_log_data(
 
 def wipe_assets(
     graphene_info: "ResolveInfo", asset_partition_ranges: Sequence[AssetPartitionWipeRange]
-) -> Union["GrapheneAssetWipeSuccess", "GrapheneUnsupportedOperationError"]:
+) -> Union[
+    "GrapheneAssetWipeSuccess", "GrapheneUnsupportedOperationError", "GrapheneAssetNotFoundError"
+]:
     from dagster_graphql.schema.backfill import GrapheneAssetPartitionRange
-    from dagster_graphql.schema.errors import GrapheneUnsupportedOperationError
+    from dagster_graphql.schema.errors import (
+        GrapheneAssetNotFoundError,
+        GrapheneUnsupportedOperationError,
+    )
     from dagster_graphql.schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
@@ -345,6 +354,9 @@ def wipe_assets(
         if apr.partition_range is None:
             whole_assets_to_wipe.append(apr.asset_key)
         else:
+            if apr.asset_key not in graphene_info.context.asset_graph.asset_node_snaps_by_key:
+                return GrapheneAssetNotFoundError(asset_key=apr.asset_key)
+
             node = graphene_info.context.asset_graph.asset_node_snaps_by_key[apr.asset_key]
             partitions_def = check.not_none(node.partitions).get_partitions_definition()
             partition_keys = partitions_def.get_partition_keys_in_range(apr.partition_range)

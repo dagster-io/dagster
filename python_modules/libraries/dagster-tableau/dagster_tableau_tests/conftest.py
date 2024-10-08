@@ -1,10 +1,9 @@
-import contextlib
+# ruff: noqa: SLF001
+
 import uuid
-from typing import Callable, Iterator, Union
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
-import responses
-from dagster_tableau.resources import TableauCloudClient, TableauServerClient
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
 FAKE_CONNECTED_APP_CLIENT_ID = uuid.uuid4().hex
@@ -130,6 +129,138 @@ def dashboard_id_fixture() -> str:
     return "c9bf8403-5daf-427a-b3d6-2ce9bed7798f"
 
 
+@pytest.fixture(name="job_id")
+def job_id_fixture() -> str:
+    return uuid.uuid4().hex
+
+
+@pytest.fixture(name="sign_in", autouse=True)
+def sign_in_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.sign_in") as mocked_function:
+        yield mocked_function
+
+
+@pytest.fixture(name="get_workbooks", autouse=True)
+def get_workbooks_fixture(build_workbook_item):
+    with patch("dagster_tableau.resources.BaseTableauClient.get_workbooks") as mocked_function:
+        mocked_function.return_value = [build_workbook_item()]
+        yield mocked_function
+
+
+@pytest.fixture(name="get_workbook", autouse=True)
+def get_workbook_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.get_workbook") as mocked_function:
+        mocked_function.return_value = {"data": {"workbooks": [SAMPLE_WORKBOOK]}}
+        yield mocked_function
+
+
+@pytest.fixture(name="get_view", autouse=True)
+def get_view_fixture(build_view_item):
+    with patch("dagster_tableau.resources.BaseTableauClient.get_view") as mocked_function:
+        mocked_function.return_value = build_view_item()
+        yield mocked_function
+
+
+@pytest.fixture(name="get_job", autouse=True)
+def get_job_fixture(workbook_id, job_id):
+    with patch("dagster_tableau.resources.BaseTableauClient.get_job") as mocked_function:
+        type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
+        type(mocked_function.return_value).finish_code = PropertyMock(return_value=0)
+        type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
+        yield mocked_function
+
+
+@pytest.fixture(name="refresh_workbook", autouse=True)
+def refresh_workbook_fixture(workbook_id, job_id):
+    with patch("dagster_tableau.resources.BaseTableauClient.refresh_workbook") as mocked_function:
+        type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
+        type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
+        type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
+        yield mocked_function
+
+
+@pytest.fixture(name="cancel_job", autouse=True)
+def cancel_job_fixture():
+    with patch("dagster_tableau.resources.BaseTableauClient.cancel_job") as mocked_function:
+        yield mocked_function
+
+
+@pytest.fixture(name="build_workbook_item", autouse=True)
+def build_workbook_item_fixture():
+    with patch("dagster_tableau.resources.TSC.WorkbookItem") as mocked_class:
+        type(mocked_class.return_value).id = PropertyMock(
+            return_value=SAMPLE_WORKBOOKS["workbooks"]["workbook"][0]["id"]
+        )
+        yield mocked_class
+
+
+@pytest.fixture(name="build_view_item", autouse=True)
+def build_view_item_fixture():
+    with patch("dagster_tableau.resources.TSC.ViewItem") as mocked_class:
+        mock_sheet = MagicMock()
+        type(mock_sheet.return_value).workbook_id = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["workbook"]["id"]
+        )
+        type(mock_sheet.return_value).owner_id = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["owner"]["id"]
+        )
+        type(mock_sheet.return_value).name = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["name"]
+        )
+        type(mock_sheet.return_value).content_url = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["contentUrl"]
+        )
+        type(mock_sheet.return_value).created_at = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["createdAt"]
+        )
+        type(mock_sheet.return_value).updated_at = PropertyMock(
+            return_value=SAMPLE_VIEW_SHEET["view"]["updatedAt"]
+        )
+        mock_dashboard = MagicMock()
+        type(mock_dashboard.return_value).workbook_id = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["workbook"]["id"]
+        )
+        type(mock_dashboard.return_value).owner_id = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["owner"]["id"]
+        )
+        type(mock_dashboard.return_value).name = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["name"]
+        )
+        type(mock_dashboard.return_value).content_url = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["contentUrl"]
+        )
+        type(mock_dashboard.return_value).created_at = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["createdAt"]
+        )
+        type(mock_dashboard.return_value).updated_at = PropertyMock(
+            return_value=SAMPLE_VIEW_DASHBOARD["view"]["updatedAt"]
+        )
+        mocked_class.side_effect = [mock_sheet, mock_dashboard]
+        yield mocked_class
+
+
+@pytest.fixture(name="get_data_source_by_id", autouse=True)
+def get_data_source_by_id_fixture():
+    with patch(
+        "dagster_tableau.resources.TSC.server.endpoint.datasources_endpoint.Datasources.get_by_id"
+    ) as mocked_function:
+        yield mocked_function
+
+
+@pytest.fixture(name="build_data_quality_warning_item", autouse=True)
+def build_data_quality_warning_item_fixture():
+    with patch("dagster_tableau.resources.TSC.DQWItem") as mocked_class:
+        yield mocked_class
+
+
+@pytest.fixture(name="add_data_quality_warning", autouse=True)
+def add_data_quality_warning_fixture():
+    with patch(
+        "dagster_tableau.resources.TSC.server.endpoint.datasources_endpoint.Datasources.add_dqw"
+    ) as mocked_function:
+        yield mocked_function
+
+
 @pytest.fixture(
     name="workspace_data",
 )
@@ -157,61 +288,3 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
             )
         },
     )
-
-
-@pytest.fixture(
-    name="workspace_data_api_mocks_fn",
-)
-def workspace_data_api_mocks_fn_fixture(
-    site_id: str, api_token: str, sheet_id: str, dashboard_id: str
-) -> Callable:
-    @contextlib.contextmanager
-    def _method(
-        client: Union[TableauCloudClient, TableauServerClient],
-        site_id: str = site_id,
-        api_token: str = api_token,
-        sheet_id: str = sheet_id,
-        dashbord_id: str = dashboard_id,
-        include_views: bool = False,
-    ) -> Iterator[responses.RequestsMock]:
-        with responses.RequestsMock() as response:
-            response.add(
-                method=responses.POST,
-                url=f"{client.rest_api_base_url}/auth/signin",
-                json={"credentials": {"site": {"id": site_id}, "token": api_token}},
-                status=200,
-            )
-            response.add(
-                method=responses.GET,
-                url=f"{client.rest_api_base_url}/sites/{site_id}/workbooks",
-                json=SAMPLE_WORKBOOKS,
-                status=200,
-            )
-            response.add(
-                method=responses.POST,
-                url=f"{client.metadata_api_base_url}",
-                json={"data": {"workbooks": [SAMPLE_WORKBOOK]}},
-                status=200,
-            )
-            response.add(
-                method=responses.POST,
-                url=f"{client.rest_api_base_url}/auth/signout",
-                status=200,
-            )
-            if include_views:
-                response.add(
-                    method=responses.GET,
-                    url=f"{client.rest_api_base_url}/sites/{site_id}/views/{sheet_id}",
-                    json=SAMPLE_VIEW_SHEET,
-                    status=200,
-                )
-                response.add(
-                    method=responses.GET,
-                    url=f"{client.rest_api_base_url}/sites/{site_id}/views/{dashbord_id}",
-                    json=SAMPLE_VIEW_DASHBOARD,
-                    status=200,
-                )
-
-            yield response
-
-    return _method

@@ -8,6 +8,44 @@ from dagster import ConfigurableResource, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
+GET_REPO_ID_QUERY = """
+query get_repo_id($repo_name: String!, $repo_owner: String!) {
+  repository(name: $repo_name, owner: $repo_owner) {
+    id
+  }
+}
+"""
+
+CREATE_PULL_REQUEST_MUTATION = """
+mutation CreatePullRequest(
+  $base_repo_id: ID!,
+  $base_ref_name: String!,
+  $head_repo_id: ID!,
+  $head_ref_name: String!,
+  $title: String!,
+  $body: String,
+  $maintainer_can_modify: Boolean,
+  $draft: Boolean
+) {
+  createPullRequest(input: {
+    repositoryId: $base_repo_id,
+    baseRefName: $base_ref_name,
+    headRepositoryId: $head_repo_id,
+    headRefName: $head_ref_name,
+    title: $title,
+    body: $body,
+    maintainerCanModify: $maintainer_can_modify,
+    draft: $draft
+  }) {
+    clientMutationId
+    pullRequest {
+      id
+      url
+    }
+  }
+}
+"""
+
 
 def to_seconds(dt):
     return (dt - datetime(1970, 1, 1)).total_seconds()
@@ -117,19 +155,15 @@ class GithubClient:
             headers=headers,
         )
         request.raise_for_status()
+        if "errors" in request.json():
+            raise RuntimeError(request.json()["errors"])
         return request.json()
 
     def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
         if installation_id is None:
             installation_id = self.default_installation_id
         res = self.execute(
-            query="""
-            query get_repo_id($repo_name: String!, $repo_owner: String!) {
-                repository(name: $repo_name, owner: $repo_owner) {
-                    id
-                }
-            }
-            """,
+            query=GET_REPO_ID_QUERY,
             variables={"repo_name": repo_name, "repo_owner": repo_owner},
             installation_id=installation_id,
         )
@@ -158,6 +192,107 @@ class GithubClient:
             },
             installation_id=installation_id,
         )
+
+    def create_ref(
+        self,
+        repo_name: str,
+        repo_owner: str,
+        source: str,
+        target: str,
+        installation_id=None,
+    ):
+        if installation_id is None:
+            installation_id = self.default_installation_id
+        res = self.execute(
+            query="""
+            query get_repo_and_source_ref($repo_name: String!, $repo_owner: String!, $source: String!) {
+                repository(name: $repo_name, owner: $repo_owner) {
+                    id
+                    ref(qualifiedName: $source) {
+                        target {
+                            oid
+                        }
+                    }
+                }
+            }
+            """,
+            variables={
+                "repo_name": repo_name,
+                "repo_owner": repo_owner,
+                "source": source,
+            },
+            installation_id=installation_id,
+        )
+
+        branch = self.execute(
+            query="""
+                mutation CreateRef($id: ID!, $name: String!, $oid: GitObjectID!) {
+                createRef(input: {
+                    repositoryId: $id,
+                    name: $name,
+                    oid: $oid
+                }) {
+                    clientMutationId,
+                    ref {
+                        id
+                        name
+                        target {
+                            oid
+                        }
+                    }
+                }
+                }
+            """,
+            variables={
+                "id": res["data"]["repository"]["id"],
+                "name": target,
+                "oid": res["data"]["repository"]["ref"]["target"]["oid"],
+            },
+            installation_id=installation_id,
+        )
+        return branch
+
+    def create_pull_request(
+        self,
+        base_repo_name: str,
+        base_repo_owner: str,
+        base_ref_name: str,
+        head_repo_name: str,
+        head_repo_owner: str,
+        head_ref_name: str,
+        title: str,
+        body: Optional[str] = None,
+        maintainer_can_modify: Optional[bool] = None,
+        draft: Optional[bool] = None,
+        installation_id: Optional[int] = None,
+    ):
+        if installation_id is None:
+            installation_id = self.default_installation_id
+        base = self.execute(
+            query=GET_REPO_ID_QUERY,
+            variables={"repo_name": base_repo_name, "repo_owner": base_repo_owner},
+            installation_id=installation_id,
+        )
+        head = self.execute(
+            query=GET_REPO_ID_QUERY,
+            variables={"repo_name": head_repo_name, "repo_owner": head_repo_owner},
+            installation_id=installation_id,
+        )
+        pull_request = self.execute(
+            query=CREATE_PULL_REQUEST_MUTATION,
+            variables={
+                "base_repo_id": base["data"]["repository"]["id"],
+                "base_ref_name": base_ref_name,
+                "head_repo_id": head["data"]["repository"]["id"],
+                "head_ref_name": head_ref_name,
+                "title": title,
+                "body": body,
+                "maintainer_can_modify": maintainer_can_modify,
+                "draft": draft,
+            },
+            installation_id=installation_id,
+        )
+        return pull_request
 
 
 class GithubResource(ConfigurableResource):

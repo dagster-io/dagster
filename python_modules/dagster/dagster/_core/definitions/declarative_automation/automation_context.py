@@ -68,7 +68,7 @@ class AutomationContext(Generic[T_EntityKey]):
         condition = check.not_none(
             evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition
         )
-        condition_unqiue_id = condition.get_unique_id(parent_unique_id=None, index=None)
+        condition_unqiue_id = condition.get_node_unique_id(parent_unique_id=None, index=None)
 
         if condition.has_rule_condition and evaluator.allow_backfills:
             raise DagsterInvalidDefinitionError(
@@ -96,7 +96,7 @@ class AutomationContext(Generic[T_EntityKey]):
         child_index: int,
         candidate_subset: EntitySubset[U_EntityKey],
     ) -> "AutomationContext[U_EntityKey]":
-        condition_unqiue_id = child_condition.get_unique_id(
+        condition_unqiue_id = child_condition.get_node_unique_id(
             parent_unique_id=self.condition_unique_id, index=child_index
         )
         return AutomationContext(

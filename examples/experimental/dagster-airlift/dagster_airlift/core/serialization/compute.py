@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 
 from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
@@ -17,7 +17,6 @@ from dagster_airlift.core.serialization.serialized_data import (
     TaskInfo,
 )
 from dagster_airlift.core.utils import is_mapped_asset_spec, spec_iterator, task_handles_for_spec
-from dagster_airlift.proxied_state import AirflowProxiedState
 
 
 @record
@@ -34,7 +33,7 @@ class AirliftMetadataMappingInfo:
 
     @cached_property
     def task_id_map(self) -> Dict[str, Set[str]]:
-        """Mapping of dag_id to set of task_ids in that dag."""
+        """Mapping of dag_id to set of task_ids in that dag. This only contains task ids mapped to assets in this object."""
         task_id_map_data = {
             dag_id: set(ta_map.keys()) for dag_id, ta_map in self.asset_key_map.items()
         }
@@ -88,21 +87,7 @@ def build_airlift_metadata_mapping_info(defs: Definitions) -> AirliftMetadataMap
 class FetchedAirflowData:
     dag_infos: Dict[str, DagInfo]
     task_info_map: Dict[str, Dict[str, TaskInfo]]
-    proxied_state: AirflowProxiedState
     mapping_info: AirliftMetadataMappingInfo
-
-    @cached_property
-    def proxied_state_map(self) -> Dict[str, Dict[str, Optional[bool]]]:
-        proxied_state_map: Dict[str, Dict[str, Optional[bool]]] = defaultdict(dict)
-        for spec in self.mapping_info.mapped_asset_specs:
-            for task_handle in task_handles_for_spec(spec):
-                dag_id, task_id = task_handle
-                proxied_state_map[task_handle.dag_id][task_handle.task_id] = None
-                proxied_state_for_task = self.proxied_state.get_task_proxied_state(
-                    dag_id=dag_id, task_id=task_id
-                )
-                proxied_state_map[dag_id][task_id] = proxied_state_for_task
-        return proxied_state_map
 
     @cached_property
     def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
@@ -111,7 +96,6 @@ class FetchedAirflowData:
                 MappedAirflowTaskData(
                     task_handle=task_handle,
                     task_info=self.task_info_map[task_handle.dag_id][task_handle.task_id],
-                    proxied=self.proxied_state_map[task_handle.dag_id][task_handle.task_id],
                 )
                 for task_handle in task_handles_for_spec(spec)
             ]
@@ -121,7 +105,6 @@ class FetchedAirflowData:
     def task_handle_data_for_dag(self, dag_id: str) -> Dict[str, SerializedTaskHandleData]:
         return {
             task_id: SerializedTaskHandleData(
-                proxied_state=self.proxied_state_map[dag_id].get(task_id),
                 asset_keys_in_task=self.mapping_info.asset_key_map[dag_id][task_id],
             )
             for task_id in self.mapping_info.task_id_map[dag_id]
@@ -139,12 +122,9 @@ def fetch_all_airflow_data(
             for task_info in airflow_instance.get_task_infos(dag_id=dag_id)
         }
 
-    proxied_state = airflow_instance.get_proxied_state()
-
     return FetchedAirflowData(
         dag_infos=dag_infos,
         task_info_map=task_info_map,
-        proxied_state=proxied_state,
         mapping_info=mapping_info,
     )
 

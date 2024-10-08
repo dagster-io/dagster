@@ -9,35 +9,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.operators.dep_operators import (
+    EntityMatchesCondition,
+)
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
-
-
-@record
-class CheckConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
-    check_key: AssetCheckKey
-    operand: AutomationCondition[AssetCheckKey]
-
-    @property
-    def description(self) -> str:
-        return f"{self.check_key.to_user_string()}"
-
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
-        # only evaluate parents of the current candidates
-
-        check_candidate_subset = context.candidate_subset.compute_child_subset(self.check_key)
-        check_context = context.for_child_condition(
-            child_condition=self.operand, child_index=0, candidate_subset=check_candidate_subset
-        )
-
-        # evaluate condition against the check
-        check_result = self.operand.evaluate(check_context)
-
-        # find all parents of the check subset
-        true_subset = check_result.true_subset.compute_parent_subset(context.key)
-        return AutomationResult(
-            context=context, true_subset=true_subset, child_results=[check_result]
-        )
 
 
 @whitelist_for_serdes
@@ -92,9 +68,7 @@ class AnyChecksCondition(ChecksCondition):
         for i, check_key in enumerate(
             sorted(self._get_check_keys(context.key, context.asset_graph))
         ):
-            check_condition = CheckConditionWrapperCondition(
-                check_key=check_key, operand=self.operand
-            )
+            check_condition = EntityMatchesCondition(key=check_key, operand=self.operand)
             check_result = check_condition.evaluate(
                 context.for_child_condition(
                     child_condition=check_condition,
@@ -127,9 +101,7 @@ class AllChecksCondition(ChecksCondition):
         for i, check_key in enumerate(
             sorted(self._get_check_keys(context.key, context.asset_graph))
         ):
-            check_condition = CheckConditionWrapperCondition(
-                check_key=check_key, operand=self.operand
-            )
+            check_condition = EntityMatchesCondition(key=check_key, operand=self.operand)
             check_result = check_condition.evaluate(
                 context.for_child_condition(
                     child_condition=check_condition,

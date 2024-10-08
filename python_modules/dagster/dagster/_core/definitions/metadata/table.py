@@ -114,7 +114,7 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 # ########################
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(skip_when_empty_fields={"tags"})
 class TableColumn(
     NamedTuple(
         "TableColumn",

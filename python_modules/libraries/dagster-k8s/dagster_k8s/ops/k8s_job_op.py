@@ -163,6 +163,7 @@ def execute_k8s_job(
     job_spec_config: Optional[Dict[str, Any]] = None,
     k8s_job_name: Optional[str] = None,
     merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
+    delete_failed_k8s_jobs: Optional[bool] = True,
     _kubeconfig_file_context: Optional[str] = None,
 ):
     """This function is a utility for executing a Kubernetes job from within a Dagster op.
@@ -239,6 +240,11 @@ def execute_k8s_job(
             are recursively merged, appending list fields together and merging dictionary fields.
             Setting it to SHALLOW will make the dictionaries shallowly merged - any shared values
             in the dictionaries will be replaced by the values set on this op.
+        delete_failed_k8s_jobs (bool): Whether to immediately delete failed Kubernetes jobs. If False,
+            failed jobs will remain accessible through the Kubernetes API until deleted by a user or cleaned up by the
+            .spec.ttlSecondsAfterFinished parameter of the job.
+            (https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/).
+            Defaults to True.
     """
     run_container_context = K8sContainerContext.create_for_run(
         context.dagster_run,
@@ -410,10 +416,11 @@ def execute_k8s_job(
             num_pods_to_wait_for=num_pods_to_wait_for,
         )
     except (DagsterExecutionInterruptedError, Exception) as e:
-        context.log.info(
-            f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception"
-        )
-        api_client.delete_job(job_name=job_name, namespace=namespace)
+        if delete_failed_k8s_jobs:
+            context.log.info(
+                f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception"
+            )
+            api_client.delete_job(job_name=job_name, namespace=namespace)
         raise e
 
 

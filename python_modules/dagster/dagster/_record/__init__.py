@@ -137,6 +137,7 @@ def _namedtuple_record_transform(
         "__iter__": _banned_iter,
         "__getitem__": _banned_idx,
         "__hidden_iter__": base.__iter__,
+        "__hidden_replace__": base._replace,
         _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
         _RECORD_ANNOTATIONS_FIELD: field_set,
         _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
@@ -187,6 +188,7 @@ def _namedtuple_record_transform(
         # For regular @records, which may inherit from other records, put new on the generated class to avoid
         # MRO resolving to the wrong NT base
         new_class_dict["__new__"] = generated_new
+        new_class_dict["_make"] = base._make
 
     new_type = type(
         cls.__name__,
@@ -358,13 +360,37 @@ def as_dict_for_new(obj) -> Mapping[str, Any]:
     return from_obj
 
 
-def copy(obj: TVal, **kwargs) -> TVal:
-    """Create a copy of this record instance, with new values specified as key word args."""
-    return obj.__class__(
+def copy(record: TVal, **kwargs) -> TVal:
+    """Create a new instance of this record type using its constructor with
+    the original records values overrode with new values specified as key args.
+    """
+    return record.__class__(
         **{
-            **as_dict_for_new(obj),
+            **as_dict_for_new(record),
             **kwargs,
         }
+    )
+
+
+def replace(obj: TVal, **kwargs) -> TVal:
+    """Create a new instance of this record type using the record constructor directly,
+    (bypassing any custom __new__ impl) with the original records values overrode with
+    new values specified by keyword args.
+
+    This emulates the behavior of namedtuple _replace.
+    """
+    check.invariant(is_record(obj))
+    cls = obj.__class__
+
+    # if we have runtime type checking, go through that to vet new field values
+    if hasattr(cls, _CHECKED_NEW):
+        target = _CHECKED_NEW
+    else:
+        target = _NAMED_TUPLE_BASE_NEW_FIELD
+
+    return getattr(cls, target)(
+        obj.__class__,
+        **{**as_dict(obj), **kwargs},
     )
 
 
@@ -379,7 +405,7 @@ class LegacyNamedTupleMixin(ABC):
     """
 
     def _replace(self, **kwargs):
-        return copy(self, **kwargs)
+        return replace(self, **kwargs)
 
     def _asdict(self):
         return as_dict(self)

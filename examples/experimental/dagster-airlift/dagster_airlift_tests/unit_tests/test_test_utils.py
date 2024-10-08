@@ -21,12 +21,14 @@ def test_test_instance() -> None:
         start_date=datetime(2022, 1, 1),
         end_date=datetime(2022, 1, 2),
     )
+    assert task_instance.logical_date == datetime(2022, 1, 1)
     dag_run = make_dag_run(
         dag_id="test_dag",
         run_id="test_run_id",
         start_date=datetime(2022, 1, 1),
         end_date=datetime(2022, 1, 2),
     )
+    assert dag_run.logical_date == datetime(2022, 1, 1)
     test_instance = AirflowInstanceFake(
         dag_infos=[dag_info],
         task_infos=[task_info],

@@ -569,11 +569,15 @@ export function usePartitionHealthData(
     });
   }, [assetKeyJSON, cacheClearStrategy, client.cache]);
 
+  const [loading, setLoading] = useState(true);
+  useBlockTraceUntilTrue('usePartitionHealthData', !loading);
+
   // Refresh state health ranges, one asset key at a time. This kicks off one
   // request and then missingKeyJSON updates when that is complete, kicking
   // off the next query.
   useMemo(() => {
     if (!missingKeyJSON) {
+      setLoading(false);
       return;
     }
     const loadKey: AssetKey = JSON.parse(missingKeyJSON);

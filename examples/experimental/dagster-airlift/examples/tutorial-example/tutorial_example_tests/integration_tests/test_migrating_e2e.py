@@ -35,62 +35,22 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        proxied_state = instance.get_proxied_state()
-        assert not proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="load_raw_customers"
-        )
-        assert not proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="build_dbt_models"
-        )
-        assert not proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="export_customers"
-        )
 
     with mark_tasks_migrated({"load_raw_customers"}):
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
 
         assert dag.dag_id == "rebuild_customers_list"
-        proxied_state = instance.get_proxied_state()
-        assert proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="load_raw_customers"
-        )
-        assert not proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="build_dbt_models"
-        )
-        assert not proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="export_customers"
-        )
 
     with mark_tasks_migrated({"build_dbt_models"}):
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        proxied_state = instance.get_proxied_state()
-        assert not proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="load_raw_customers"
-        )
-        assert proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="build_dbt_models"
-        )
-        assert not proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="export_customers"
-        )
 
     with mark_tasks_migrated({"load_raw_customers", "build_dbt_models", "export_customers"}):
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        proxied_state = instance.get_proxied_state()
-        assert proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="load_raw_customers"
-        )
-        assert proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="build_dbt_models"
-        )
-        assert proxied_state.get_task_proxied_state(
-            dag_id="rebuild_customers_list", task_id="export_customers"
-        )
 
 
 @pytest.fixture(name="dagster_defs_path")

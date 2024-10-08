@@ -2350,7 +2350,6 @@ input RunsFilter {
   createdBefore: Float
   createdAfter: Float
   mode: String
-  excludeSubruns: Boolean
 }
 
 input PipelineSelector {
@@ -3287,8 +3286,13 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  runsFeedOrError(limit: Int!, cursor: String, filter: RunsFilter): RunsFeedConnectionOrError!
-  runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
+  runsFeedOrError(
+    limit: Int!
+    cursor: String
+    filter: RunsFilter
+    includeRunsFromBackfills: Boolean
+  ): RunsFeedConnectionOrError!
+  runsFeedCountOrError(filter: RunsFilter, includeRunsFromBackfills: Boolean): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!

@@ -54,6 +54,17 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         key_prefix = "".join(random.choices(string.ascii_letters, k=30))
         yield {"bucket": self.bucket, "key_prefix": key_prefix}
 
+    def messages_are_readable(self, params: PipesParams) -> bool:
+        key_prefix = params.get("key_prefix")
+        if key_prefix is not None:
+            try:
+                self.client.head_object(Bucket=self.bucket, Key=f"{key_prefix}/1.json")
+                return True
+            except ClientError:
+                return False
+        else:
+            return False
+
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         key = f"{params['key_prefix']}/{index}.json"
         try:

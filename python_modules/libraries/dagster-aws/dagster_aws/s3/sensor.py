@@ -1,33 +1,35 @@
+from typing import Optional
+
 import boto3
 import dagster._check as check
 
-MAX_KEYS = 1000
+
+class ClientException(Exception):
+    pass
 
 
-def get_s3_keys(bucket, prefix="", since_key=None, s3_session=None):
+def get_s3_keys(
+    bucket: str,
+    prefix: str = "",
+    since_key: Optional[str] = None,
+    s3_session: Optional[boto3.Session] = None,
+):
     check.str_param(bucket, "bucket")
     check.str_param(prefix, "prefix")
     check.opt_str_param(since_key, "since_key")
 
     if not s3_session:
-        s3_session = boto3.resource("s3", use_ssl=True, verify=True).meta.client
+        s3_session = boto3.client("s3", use_ssl=True, verify=True)
 
-    cursor = ""
+    if not s3_session:
+        raise ClientException("Failed to initialize s3 client")
+
+    paginator = s3_session.get_paginator("list_objects_v2")  # type: ignore
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
+
     contents = []
-
-    while True:
-        response = s3_session.list_objects_v2(
-            Bucket=bucket,
-            Delimiter="",
-            MaxKeys=MAX_KEYS,
-            Prefix=prefix,
-            StartAfter=cursor,
-        )
-        contents.extend(response.get("Contents", []))
-        if response["KeyCount"] < MAX_KEYS:
-            break
-
-        cursor = response["Contents"][-1]["Key"]
+    for page in page_iterator:
+        contents.extend(page.get("Contents", []))
 
     sorted_keys = [obj["Key"] for obj in sorted(contents, key=lambda x: x["LastModified"])]
 
