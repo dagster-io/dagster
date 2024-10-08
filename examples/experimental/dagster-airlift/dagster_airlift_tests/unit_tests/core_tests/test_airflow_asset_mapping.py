@@ -156,9 +156,7 @@ def test_fetched_airflow_data() -> None:
 
     all_mapped_tasks = fetched_airflow_data.all_mapped_tasks
     assert all_mapped_tasks.keys() == {ak("asset1"), ak("asset2")}
-    assert all_mapped_tasks[ak("asset1")][0].task_handle == TaskHandle(
-        dag_id="dag1", task_id="task1"
-    )
+    assert all_mapped_tasks[ak("asset1")] == {TaskHandle(dag_id="dag1", task_id="task1")}
 
 
 def test_produce_fetched_airflow_data() -> None:

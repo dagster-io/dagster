@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Mapping, Set
+from typing import AbstractSet, Any, Callable, Dict, Mapping, Set
 
 from dagster import (
     AssetKey,
@@ -14,9 +14,9 @@ from dagster._core.storage.tags import KIND_PREFIX
 from dagster_airlift.constants import AUTOMAPPED_TASK_METADATA_KEY
 from dagster_airlift.core.dag_asset import dag_asset_metadata, dag_description
 from dagster_airlift.core.serialization.serialized_data import (
-    MappedAirflowTaskData,
     SerializedAirflowDefinitionsData,
     SerializedDagData,
+    TaskHandle,
     TaskInfo,
 )
 from dagster_airlift.core.utils import (
@@ -26,13 +26,11 @@ from dagster_airlift.core.utils import (
 )
 
 
-def tags_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, str]:
-    return {}
-
-
-def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, Any]:
-    mapped_task = tasks[0]
-    task_info = mapped_task.task_info
+def metadata_for_mapped_tasks(
+    tasks: AbstractSet[TaskHandle], serialized_data: SerializedAirflowDefinitionsData
+) -> Mapping[str, Any]:
+    mapped_task = next(iter(tasks))
+    task_info = serialized_data.dag_datas[mapped_task.dag_id].task_infos[mapped_task.task_id]
     task_level_metadata = {
         "Task Info (raw)": JsonMetadataValue(task_info.metadata),
         "Dag ID": task_info.dag_id,
@@ -43,11 +41,12 @@ def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str
 
 
 def enrich_spec_with_airflow_metadata(
-    spec: AssetSpec, tasks: List[MappedAirflowTaskData]
+    spec: AssetSpec,
+    tasks: AbstractSet[TaskHandle],
+    serialized_data: SerializedAirflowDefinitionsData,
 ) -> AssetSpec:
     return spec._replace(
-        tags={**spec.tags, **tags_for_mapped_tasks(tasks)},
-        metadata={**spec.metadata, **metadata_for_mapped_tasks(tasks)},
+        metadata={**spec.metadata, **metadata_for_mapped_tasks(tasks, serialized_data)},
     )
 
 
@@ -70,7 +69,11 @@ def get_airflow_data_to_spec_mapper(
 
     def _fn(spec: AssetSpec) -> AssetSpec:
         mapped_tasks = serialized_data.all_mapped_tasks.get(spec.key)
-        return enrich_spec_with_airflow_metadata(spec, mapped_tasks) if mapped_tasks else spec
+        return (
+            enrich_spec_with_airflow_metadata(spec, mapped_tasks, serialized_data)
+            if mapped_tasks
+            else spec
+        )
 
     return _fn
 
