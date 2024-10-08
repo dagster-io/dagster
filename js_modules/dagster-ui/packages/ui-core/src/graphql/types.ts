@@ -2193,6 +2193,7 @@ export type LaunchBackfillResult =
   | InvalidSubsetError
   | LaunchBackfillSuccess
   | NoModeProvidedError
+  | PartitionKeysNotFoundError
   | PartitionSetNotFoundError
   | PipelineNotFoundError
   | PresetNotFoundError
@@ -3160,6 +3161,12 @@ export type PartitionKeyRange = {
 
 export type PartitionKeys = {
   __typename: 'PartitionKeys';
+  partitionKeys: Array<Scalars['String']['output']>;
+};
+
+export type PartitionKeysNotFoundError = Error & {
+  __typename: 'PartitionKeysNotFoundError';
+  message: Scalars['String']['output'];
   partitionKeys: Array<Scalars['String']['output']>;
 };
 
@@ -10945,6 +10952,20 @@ export const buildPartitionKeys = (
   relationshipsToOmit.add('PartitionKeys');
   return {
     __typename: 'PartitionKeys',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
+export const buildPartitionKeysNotFoundError = (
+  overrides?: Partial<PartitionKeysNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeysNotFoundError'} & PartitionKeysNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeysNotFoundError');
+  return {
+    __typename: 'PartitionKeysNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'minima',
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };
