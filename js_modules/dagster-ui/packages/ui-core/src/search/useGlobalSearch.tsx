@@ -21,6 +21,7 @@ import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Util
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetOwner, DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
+import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -39,12 +40,6 @@ export const linkToAssetTableWithKindFilter = (kind: string) => {
 export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
   return `/assets?${qs.stringify({
     tags: JSON.stringify([tag]),
-  })}`;
-};
-
-export const linkToAssetTableWithOwnerFilter = (owner: string) => {
-  return `/assets?${qs.stringify({
-    owners: JSON.stringify([owner]),
   })}`;
 };
 
@@ -275,10 +270,10 @@ const secondaryDataToSearchResults = (
 
     const ownerResults: SearchResult[] = countsBySection.countsByOwner.map(
       ({owner, assetCount}) => ({
-        label: owner,
+        label: assetOwnerAsString(owner),
         description: '',
         type: AssetFilterSearchResultType.Owner,
-        href: linkToAssetTableWithOwnerFilter(owner),
+        href: linkToAssetTableWithAssetOwnerFilter(owner),
         numResults: assetCount,
       }),
     );
