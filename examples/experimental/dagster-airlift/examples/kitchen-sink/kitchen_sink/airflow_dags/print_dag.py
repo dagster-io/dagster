@@ -15,7 +15,7 @@ default_args = {
     "owner": "airflow",
     "depends_on_past": False,
     "start_date": datetime(2023, 1, 1),
-    "retries": 1,
+    "retries": 0,
 }
 
 

@@ -124,12 +124,6 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
             TASK_ID_TAG_KEY: self.get_airflow_task_id(context),
         }
 
-    def ensure_executable(self, asset_node: Mapping[str, Any]) -> None:
-        if not asset_node["jobs"]:
-            raise Exception(
-                f"Asset node {asset_node} has no jobs, and therefore cannot be executed."
-            )
-
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
         """Launches runs for the given task in Dagster."""
         session = self._get_validated_session(context)
@@ -140,8 +134,14 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
         )
         asset_nodes_data = self.get_all_asset_nodes(session, dagster_url, context)
         logger.info(f"Got response {asset_nodes_data}")
-        for asset_node in self.filter_asset_nodes(context, asset_nodes_data):
-            self.ensure_executable(asset_node)
+        filtered_asset_nodes = [
+            asset_node
+            for asset_node in self.filter_asset_nodes(context, asset_nodes_data)
+            if _is_asset_node_executable(asset_node)
+        ]
+        if not filtered_asset_nodes:
+            raise Exception(f"No asset nodes found to trigger for task {dag_id}.{task_id}")
+        for asset_node in filtered_asset_nodes:
             assets_to_trigger_per_job[_build_dagster_job_identifier(asset_node)].append(
                 asset_node["assetKey"]["path"]
             )
@@ -213,3 +213,7 @@ def _build_dagster_run_execution_params(
             "assetCheckSelection": [],
         },
     }
+
+
+def _is_asset_node_executable(asset_node: Mapping[str, Any]) -> bool:
+    return bool(asset_node["jobs"])

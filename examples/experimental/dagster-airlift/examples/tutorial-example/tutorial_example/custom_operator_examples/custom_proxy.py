@@ -3,11 +3,11 @@ from pathlib import Path
 import requests
 from airflow import DAG
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import BaseDagsterAssetsOperator, proxying_to_dagster
+from dagster_airlift.in_airflow import BaseProxyTaskToDagsterOperator, proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 
 
-class CustomProxyToDagsterOperator(BaseDagsterAssetsOperator):
+class CustomProxyToDagsterOperator(BaseProxyTaskToDagsterOperator):
     def get_dagster_session(self, context: Context) -> requests.Session:
         if "var" not in context:
             raise ValueError("No variables found in context")
