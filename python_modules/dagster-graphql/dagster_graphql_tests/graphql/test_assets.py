@@ -105,6 +105,9 @@ WIPE_ASSETS = """
             ... on UnsupportedOperationError {
               message
             }
+            ... on AssetNotFoundError {
+              message
+            }
             ... on AssetWipeSuccess {
                 assetPartitionRanges {
                     assetKey {
@@ -2864,6 +2867,25 @@ class TestAssetWipe(ExecutingGraphQLContextTestMatrix):
         assert result.data["wipeAssets"]
         assert result.data["wipeAssets"]["__typename"] == "UnsupportedOperationError"
         assert "Partitioned asset wipe is not supported yet" in result.data["wipeAssets"]["message"]
+
+        # wipe for non-existant asset
+        result = execute_dagster_graphql(
+            graphql_context,
+            WIPE_ASSETS,
+            variables={
+                "assetPartitionRanges": [
+                    {
+                        "assetKey": {"path": ["does_not_exist"]},
+                        "partitions": {"range": {"start": "0", "end": "0"}},
+                    }
+                ]
+            },
+        )
+
+        assert result.data
+        assert result.data["wipeAssets"]
+        assert result.data["wipeAssets"]["__typename"] == "AssetNotFoundError"
+        assert 'Asset key ["does_not_exist"] not found' in result.data["wipeAssets"]["message"]
 
 
 class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
