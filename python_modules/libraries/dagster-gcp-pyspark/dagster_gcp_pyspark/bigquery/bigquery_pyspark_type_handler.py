@@ -62,9 +62,12 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_bigquery_write_options(context.resource_config, table_slice)
 
-        with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
+        if context.resource_config["auto_capitalize_columns"]:
+            df = obj.toDF(*[c.upper() for c in obj.columns])
+        else:
+            df = obj
 
-        with_uppercase_cols.write.format("bigquery").options(**options).mode("append").save()
+        df.write.format("bigquery").options(**options).mode("append").save()
 
         return {
             "dataframe_columns": MetadataValue.table_schema(
@@ -90,7 +93,9 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
             .load(BigQueryClient.get_select_statement(table_slice))
         )
 
-        return df.toDF(*[c.lower() for c in df.columns])
+        if context.resource_config["auto_capitalize_columns"]:
+            return df.toDF(*[c.lower() for c in df.columns])
+        return df
 
     @property
     def supported_types(self):

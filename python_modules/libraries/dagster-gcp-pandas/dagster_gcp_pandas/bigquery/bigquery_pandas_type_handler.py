@@ -45,10 +45,13 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ):
         """Stores the pandas DataFrame in BigQuery."""
-        with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
+        if context.resource_config["auto_capitalize_columns"]:
+            df = obj.rename(str.upper, copy=False, axis="columns")
+        else:
+            df = obj
 
         job = connection.load_table_from_dataframe(
-            dataframe=with_uppercase_cols,
+            dataframe=df,
             destination=f"{table_slice.schema}.{table_slice.table}",
             project=table_slice.database,
             location=context.resource_config.get("location") if context.resource_config else None,
@@ -89,7 +92,8 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             timeout=context.resource_config.get("timeout") if context.resource_config else None,
         ).to_dataframe()
 
-        result.columns = map(str.lower, result.columns)
+        if context.resource_config["auto_capitalize_columns"]:
+            result.columns = map(str.lower, result.columns)
         return result
 
     @property

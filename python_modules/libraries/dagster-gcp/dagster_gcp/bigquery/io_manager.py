@@ -301,6 +301,10 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " queries (loading and reading from tables)."
         ),
     )
+    auto_capitalize_column_names = Field(
+        default=True,
+        description="If True, convert all column names to all capital letters. Defaults to True.",
+    )
 
     @staticmethod
     @abstractmethod
