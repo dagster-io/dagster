@@ -177,11 +177,11 @@ def test_get_repository_selector(instance) -> None:
     asset_graph = _make_context(instance, ["defs1", "defs2"]).asset_graph
 
     assert asset_graph.get_materialization_job_names(asset1.key) == ["__ASSET_JOB"]
-    repo_handle1 = asset_graph.get_repository_selector(asset1.key)
+    repo_handle1 = asset_graph.get_repository_handle(asset1.key)
     assert repo_handle1.repository_name == "__repository__"
 
     assert asset_graph.get_materialization_job_names(asset1.key) == ["__ASSET_JOB"]
-    repo_handle2 = asset_graph.get_repository_selector(asset2.key)
+    repo_handle2 = asset_graph.get_repository_handle(asset2.key)
     assert repo_handle2.repository_name == "__repository__"
 
 

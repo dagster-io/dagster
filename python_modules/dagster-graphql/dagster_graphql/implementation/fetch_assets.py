@@ -197,11 +197,11 @@ def _graphene_asset_node(
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
-    selector = remote_node.priority_repository_selector
+    handle = remote_node.priority_repository_handle
     base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return GrapheneAssetNode(
-        repository_selector=selector,
+        repository_handle=handle,
         asset_node_snap=remote_node.priority_node_snap,
         asset_checks_loader=asset_checks_loader,
         depended_by_loader=depended_by_loader,
@@ -209,8 +209,8 @@ def _graphene_asset_node(
         dynamic_partitions_loader=dynamic_partitions_loader,
         # base_deployment_context will be None if we are not in a branch deployment
         asset_graph_differ=AssetGraphDiffer.from_external_repositories(
-            code_location_name=selector.location_name,
-            repository_name=selector.repository_name,
+            code_location_name=handle.location_name,
+            repository_name=handle.repository_name,
             branch_workspace=graphene_info.context,
             base_workspace=base_deployment_context,
         )

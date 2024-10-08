@@ -1564,7 +1564,7 @@ def can_run_with_parent(
             False,
             f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different backfill policies so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key} is materialized.",
         )
-    if parent_node.priority_repository_selector != candidate_node.priority_repository_selector:
+    if parent_node.priority_repository_handle != candidate_node.priority_repository_handle:
         return (
             False,
             f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} are in different code locations so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized.",

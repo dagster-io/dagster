@@ -391,7 +391,7 @@ class GrapheneRepository(graphene.ObjectType):
         )
         return [
             GrapheneAssetNode(
-                repository_selector=self._repository.selector,
+                repository_handle=self._repository.handle,
                 asset_node_snap=asset_node_snap,
                 asset_checks_loader=asset_checks_loader,
                 stale_status_loader=self._stale_status_loader,
