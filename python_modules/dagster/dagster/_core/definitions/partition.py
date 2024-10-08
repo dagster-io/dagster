@@ -32,7 +32,6 @@ from dagster._core.definitions.dynamic_partitions_request import (
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
@@ -44,6 +43,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import normalize_renamed_param
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"

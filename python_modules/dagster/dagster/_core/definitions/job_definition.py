@@ -63,7 +63,7 @@ from dagster._core.definitions.resource_requirement import (
     ensure_requirements_satisfied,
 )
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_name, normalize_tags
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_name
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -82,6 +82,7 @@ from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot

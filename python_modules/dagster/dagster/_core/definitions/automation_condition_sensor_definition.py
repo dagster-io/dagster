@@ -14,7 +14,8 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext,
     SensorType,
 )
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
+from dagster._utils.tags import normalize_tags
 
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):

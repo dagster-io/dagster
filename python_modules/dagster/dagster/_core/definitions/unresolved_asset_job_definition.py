@@ -17,9 +17,9 @@ from dagster._core.definitions.partition import PartitionedConfig, PartitionsDef
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition

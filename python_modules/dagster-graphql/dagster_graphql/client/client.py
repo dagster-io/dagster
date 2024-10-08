@@ -6,7 +6,7 @@ import requests.exceptions
 from dagster import DagsterRunStatus
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
-from dagster._core.definitions.utils import normalize_tags
+from dagster._utils.tags import normalize_tags
 from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.exceptions import TransportServerError

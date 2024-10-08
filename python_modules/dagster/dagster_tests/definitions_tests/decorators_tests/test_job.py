@@ -2,9 +2,9 @@ import logging
 import warnings
 
 from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._core.utils import coerce_valid_log_level
+from dagster._utils.tags import normalize_tags
 
 
 def test_basic_job():

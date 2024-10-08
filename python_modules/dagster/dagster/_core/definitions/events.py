@@ -750,7 +750,7 @@ UserEvent = Union[AssetMaterialization, AssetObservation, ExpectationResult]
 
 
 def validate_asset_event_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
-    from dagster._core.definitions.utils import validate_tag_strict
+    from dagster._utils.tags import validate_tag_strict
 
     if tags is None:
         return None
