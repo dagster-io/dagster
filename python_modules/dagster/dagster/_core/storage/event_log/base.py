@@ -637,7 +637,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def default_run_scoped_event_tailer_offset(self) -> int:
         return 0
 
-    def get_updated_asset_status_cache_values(
+    def get_asset_status_cache_values(
         self,
         asset_keys: Sequence[AssetKey],
         partitions_defs: Sequence[Optional[PartitionsDefinition]],

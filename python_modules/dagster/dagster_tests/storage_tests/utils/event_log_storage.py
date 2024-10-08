@@ -60,6 +60,7 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     PartitionKeysTimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
@@ -6012,3 +6013,33 @@ class TestEventLogStorage:
                 )
                 == set()
             )
+
+    def test_get_updated_asset_status_cache_values(
+        self, instance: DagsterInstance, storage: EventLogStorage
+    ):
+        asset_keys = [AssetKey("hourly"), AssetKey("daily"), AssetKey("static")]
+        partition_defs = [
+            HourlyPartitionsDefinition("2020-01-01-00:00"),
+            DailyPartitionsDefinition("2020-01-01"),
+            StaticPartitionsDefinition(["a", "b", "c"]),
+        ]
+
+        assert storage.get_asset_status_cache_values(asset_keys, partition_defs) == [
+            None,
+            None,
+            None,
+        ]
+
+        instance.report_runless_asset_event(
+            AssetMaterialization(asset_key="hourly", partition="2020-01-01-00:00")
+        )
+        instance.report_runless_asset_event(
+            AssetMaterialization(asset_key="daily", partition="2020-01-01"),
+        )
+        instance.report_runless_asset_event(AssetMaterialization(asset_key="static", partition="a"))
+
+        for i, value in enumerate(
+            storage.get_asset_status_cache_values(asset_keys, partition_defs)
+        ):
+            assert value is not None
+            assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1
