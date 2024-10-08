@@ -134,6 +134,7 @@ export type AssetCheckExecutionFragment = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -156,6 +157,7 @@ export type AssetCheckExecutionFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -313,6 +315,7 @@ export type AssetCheckDetailsQuery = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -335,6 +338,7 @@ export type AssetCheckDetailsQuery = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -352,4 +356,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = '371e01d6e3718d0ef48652ec614938af424d77ce9bc4e459f0f43c21309aedda';
+export const AssetCheckDetailsQueryVersion = 'cd819f22153881236f41678c6cd032658ff58a79c62fc480ff9b82a3a3acc446';

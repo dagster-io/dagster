@@ -161,6 +161,11 @@ export type AssetChecksQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -186,6 +191,11 @@ export type AssetChecksQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -227,4 +237,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = 'c72f90a5642aff4514b7b7e7529a960554d75aa0543485a8d6e40c613385df65';
+export const AssetChecksQueryVersion = 'b5e8d4663f4f77f439dc8b9424966d7298d69987c67d3033d715c13ad2856ae5';

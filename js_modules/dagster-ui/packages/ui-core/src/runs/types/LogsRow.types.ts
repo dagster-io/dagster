@@ -161,6 +161,7 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -183,6 +184,7 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -338,6 +340,7 @@ export type LogsRowStructuredFragment_EngineEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -360,6 +363,7 @@ export type LogsRowStructuredFragment_EngineEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -520,6 +524,7 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -542,6 +547,7 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -686,6 +692,7 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -708,6 +715,7 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -844,6 +852,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -866,6 +875,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -999,6 +1009,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -1021,6 +1032,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1213,6 +1225,7 @@ export type LogsRowStructuredFragment_HandledOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1235,6 +1248,7 @@ export type LogsRowStructuredFragment_HandledOutputEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1410,6 +1424,7 @@ export type LogsRowStructuredFragment_LoadedInputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1432,6 +1447,7 @@ export type LogsRowStructuredFragment_LoadedInputEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1589,6 +1605,7 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1611,6 +1628,7 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1752,6 +1770,7 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -1774,6 +1793,7 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1909,6 +1929,7 @@ export type LogsRowStructuredFragment_ObservationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1931,6 +1952,7 @@ export type LogsRowStructuredFragment_ObservationEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2068,6 +2090,7 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2090,6 +2113,7 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2236,6 +2260,7 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2258,6 +2283,7 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2394,6 +2420,7 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2416,6 +2443,7 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2650,6 +2678,7 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -2672,6 +2701,7 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2809,6 +2839,7 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2831,6 +2862,7 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2967,6 +2999,7 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2989,6 +3022,7 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };

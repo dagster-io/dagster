@@ -74,6 +74,7 @@ fragment metadataEntryFragment on MetadataEntry {
           name
           type
           constraints { nullable unique other }
+          tags { key value }
         }
       }
     }
@@ -85,6 +86,7 @@ fragment metadataEntryFragment on MetadataEntry {
         name
         type
         constraints { nullable unique other }
+        tags { key value }
       }
     }
   }
