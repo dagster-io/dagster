@@ -14,20 +14,19 @@ def test_test_instance() -> None:
     """Test the AirflowInstanceFake class."""
     dag_info = make_dag_info(dag_id="test_dag", file_token="test_file_token")
     task_info = make_task_info(dag_id="test_dag", task_id="test_task")
-    task_instance = make_task_instance(
-        dag_id="test_dag",
-        task_id="test_task",
-        run_id="test_run_id",
-        start_date=datetime(2022, 1, 1),
-        end_date=datetime(2022, 1, 2),
-    )
-    assert task_instance.logical_date == datetime(2022, 1, 1)
     dag_run = make_dag_run(
         dag_id="test_dag",
         run_id="test_run_id",
         start_date=datetime(2022, 1, 1),
         end_date=datetime(2022, 1, 2),
     )
+    task_instance = make_task_instance(
+        dag_run=dag_run,
+        task_id="test_task",
+        start_date=datetime(2022, 1, 1),
+        end_date=datetime(2022, 1, 2),
+    )
+    assert task_instance.logical_date == datetime(2022, 1, 1)
     assert dag_run.logical_date == datetime(2022, 1, 1)
     test_instance = AirflowInstanceFake(
         dag_infos=[dag_info],

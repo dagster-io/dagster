@@ -26,9 +26,9 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._core.test_utils import instance_for_test
 from dagster._time import get_current_datetime
 from dagster_airlift.core import (
+    DagsterEventTransformerFn,
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.sensor.event_translation import DagsterEventTransformerFn
 from dagster_airlift.core.utils import metadata_for_task_mapping
 from dagster_airlift.test import make_dag_run, make_instance
 

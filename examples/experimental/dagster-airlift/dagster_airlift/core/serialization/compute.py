@@ -14,7 +14,11 @@ from dagster_airlift.core.serialization.serialized_data import (
     TaskHandle,
     TaskInfo,
 )
-from dagster_airlift.core.utils import is_mapped_asset_spec, spec_iterator, task_handles_for_spec
+from dagster_airlift.core.utils import (
+    is_task_mapped_asset_spec,
+    spec_iterator,
+    task_handles_for_spec,
+)
 
 
 @record
@@ -23,7 +27,7 @@ class AirliftMetadataMappingInfo:
 
     @cached_property
     def mapped_asset_specs(self) -> List[AssetSpec]:
-        return [spec for spec in self.asset_specs if is_mapped_asset_spec(spec)]
+        return [spec for spec in self.asset_specs if is_task_mapped_asset_spec(spec)]
 
     @cached_property
     def dag_ids(self) -> Set[str]:
@@ -53,7 +57,7 @@ class AirliftMetadataMappingInfo:
         """Mapping of dag_id to task_id to set of asset_keys mapped from that task."""
         asset_key_map: Dict[str, Dict[str, Set[AssetKey]]] = defaultdict(lambda: defaultdict(set))
         for spec in self.asset_specs:
-            if is_mapped_asset_spec(spec):
+            if is_task_mapped_asset_spec(spec):
                 for task_handle in task_handles_for_spec(spec):
                     asset_key_map[task_handle.dag_id][task_handle.task_id].add(spec.key)
         return asset_key_map

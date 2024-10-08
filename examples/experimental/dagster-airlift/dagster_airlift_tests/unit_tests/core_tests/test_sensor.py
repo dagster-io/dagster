@@ -78,7 +78,6 @@ def test_dag_and_task_metadata(init_load_context: None, instance: DagsterInstanc
             "Start Date",
             "End Date",
             "Run Metadata (raw)",
-            "Creation Timestamp",
             "Run Details",
             "Airflow Config",
             "Run Type",
@@ -91,7 +90,6 @@ def test_dag_and_task_metadata(init_load_context: None, instance: DagsterInstanc
             "Start Date",
             "End Date",
             "Run Metadata (raw)",
-            "Creation Timestamp",
             "Run Details",
             "Task Logs",
             "Airflow Config",
@@ -109,7 +107,6 @@ def test_dag_and_task_metadata(init_load_context: None, instance: DagsterInstanc
             task_mat.metadata["End Date"].value
             == (freeze_datetime - timedelta(seconds=1)).timestamp()
         )
-        assert task_mat.metadata["Creation Timestamp"].value == freeze_datetime.timestamp()
         assert (
             task_mat.metadata["Run Details"].value
             == "[View Run](http://dummy.domain/dags/dag/grid?dag_run_id=run-dag&task_id=task)"
@@ -127,7 +124,6 @@ def test_dag_and_task_metadata(init_load_context: None, instance: DagsterInstanc
             == (freeze_datetime - timedelta(minutes=10)).timestamp()
         )
         assert dag_mat.metadata["End Date"].value == freeze_datetime.timestamp()
-        assert dag_mat.metadata["Creation Timestamp"].value == freeze_datetime.timestamp()
         assert (
             dag_mat.metadata["Run Details"].value
             == "[View Run](http://dummy.domain/dags/dag/grid?dag_run_id=run-dag&tab=details)"

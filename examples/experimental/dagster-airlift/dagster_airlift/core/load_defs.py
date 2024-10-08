@@ -12,9 +12,9 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.sensor.event_translation import DagsterEventTransformerFn
 from dagster_airlift.core.sensor.sensor_builder import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    DagsterEventTransformerFn,
     build_airflow_polling_sensor_defs,
 )
 from dagster_airlift.core.serialization.compute import compute_serialized_data
