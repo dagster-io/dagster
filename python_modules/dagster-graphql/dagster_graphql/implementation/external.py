@@ -114,11 +114,7 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> "GrapheneRepositoryConne
 
     return GrapheneRepositoryConnection(
         nodes=[
-            GrapheneRepository(
-                workspace_context=graphene_info.context,
-                repository=repository,
-                repository_location=location,
-            )
+            GrapheneRepository(repository.handle)
             for location in graphene_info.context.code_locations
             for repository in location.get_repositories().values()
         ]
@@ -137,9 +133,7 @@ def fetch_repository(
         repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             return GrapheneRepository(
-                workspace_context=graphene_info.context,
-                repository=repo_loc.get_repository(repository_selector.repository_name),
-                repository_location=repo_loc,
+                repo_loc.get_repository(repository_selector.repository_name).handle,
             )
 
     raise UserFacingGraphQLError(

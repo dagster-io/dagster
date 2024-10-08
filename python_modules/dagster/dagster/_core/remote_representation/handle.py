@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Mapping, Optional
 import dagster._check as check
 from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
@@ -52,6 +53,12 @@ class RepositoryHandle:
         return RepositorySelector(
             location_name=self.location_name,
             repository_name=self.repository_name,
+        )
+
+    def get_compound_id(self) -> "CompoundID":
+        return CompoundID(
+            remote_origin_id=self.get_remote_origin().get_id(),
+            selector_id=self.to_selector().selector_id,
         )
 
     @staticmethod
@@ -158,3 +165,33 @@ class PartitionSetHandle:
         return self.repository_handle.get_remote_origin().get_partition_set_origin(
             self.partition_set_name
         )
+
+
+_DELIMITER = "::"
+
+
+@record
+class CompoundID:
+    """Compound ID object for the two id schemes that state is recorded in the database against."""
+
+    remote_origin_id: str
+    selector_id: str
+
+    def to_string(self) -> str:
+        return f"{self.remote_origin_id}{_DELIMITER}{self.selector_id}"
+
+    @staticmethod
+    def from_string(serialized: str):
+        parts = serialized.split(_DELIMITER)
+        if len(parts) != 2:
+            raise DagsterInvariantViolationError(f"Invalid serialized InstigatorID: {serialized}")
+
+        return CompoundID(
+            remote_origin_id=parts[0],
+            selector_id=parts[1],
+        )
+
+    @staticmethod
+    def is_valid_string(serialized: str):
+        parts = serialized.split(_DELIMITER)
+        return len(parts) == 2

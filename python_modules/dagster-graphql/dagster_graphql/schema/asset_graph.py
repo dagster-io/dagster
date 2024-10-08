@@ -1280,11 +1280,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return None
 
     def resolve_repository(self, graphene_info: ResolveInfo) -> "GrapheneRepository":
-        return external.GrapheneRepository(
-            graphene_info.context,
-            graphene_info.context.get_repository(self._repository_selector),
-            graphene_info.context.get_code_location(self._repository_selector.location_name),
-        )
+        return external.GrapheneRepository(self._repository_handle)
 
     def resolve_required_resources(
         self, graphene_info: ResolveInfo
