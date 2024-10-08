@@ -27,7 +27,7 @@ from dagster._utils.merger import merge_dicts
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
-    USER_DEFINED_K8S_CONFIG_SCHEMA,
+    USER_DEFINED_K8S_JOB_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
     UserDefinedDagsterK8sConfig,
     construct_dagster_k8s_job,
@@ -69,7 +69,7 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
         ),
         "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         "step_k8s_config": Field(
-            USER_DEFINED_K8S_CONFIG_SCHEMA,
+            USER_DEFINED_K8S_JOB_CONFIG_SCHEMA,
             is_required=False,
             description="Raw Kubernetes configuration for each step launched by the executor.",
         ),
