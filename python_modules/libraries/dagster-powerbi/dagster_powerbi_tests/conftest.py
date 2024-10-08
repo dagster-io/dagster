@@ -91,7 +91,6 @@ SAMPLE_DATA_SOURCES = [
     {
         "datasourceType": "File",
         "connectionDetails": {"path": "c:\\users\\mimyersm\\desktop\\sales & marketing datas.xlsx"},
-        "datasourceId": "46c83f90-3eaa-4658-b716-2307bc56e74d",
         "gatewayId": "40800873-8e0d-4152-86e3-e6edeb2a738c",
     },
 ]
