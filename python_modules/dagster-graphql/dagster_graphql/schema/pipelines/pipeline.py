@@ -19,8 +19,9 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
     RunsFilter,
 )
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
+from dagster._utils.tags import get_boolean_tag_value
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
@@ -82,6 +83,11 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
     from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
+UNSTARTED_STATUSES = [
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.NOT_STARTED,
+    DagsterRunStatus.STARTING,
+]
 
 STARTED_STATUSES = {
     DagsterRunStatus.STARTED,
@@ -384,6 +390,7 @@ class GrapheneRun(graphene.ObjectType):
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
     rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
+    hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -623,6 +630,13 @@ class GrapheneRun(graphene.ObjectType):
         for concurrency_key, count in self.dagster_run.run_op_concurrency.root_key_counts.items():
             root_concurrency_keys.extend([concurrency_key] * count)
         return root_concurrency_keys
+
+    def resolve_hasRunMetricsEnabled(self, graphene_info: ResolveInfo):
+        if self.dagster_run.status in UNSTARTED_STATUSES:
+            return False
+
+        run_tags = self.dagster_run.tags
+        return any(get_boolean_tag_value(run_tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
 
 class GrapheneIPipelineSnapshotMixin:

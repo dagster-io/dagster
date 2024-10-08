@@ -1,6 +1,7 @@
 import copy
 import tempfile
 
+import pytest
 import yaml
 from dagster import AssetMaterialization, Output, define_asset_job, job, op, repository
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -289,6 +290,22 @@ query RunLogsQuery($afterCursor:String, $limit:Int, $runId: ID!) {
         }
       }
     }
+}
+"""
+
+RUN_METRICS_QUERY = """
+query RunQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        runId
+        tags {
+          key
+          value
+        }
+        hasRunMetricsEnabled
+    }
+  }
 }
 """
 
@@ -981,3 +998,47 @@ def test_run_has_concurrency_slots():
                 assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
                 assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]
                 assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
+
+
+@pytest.mark.parametrize(
+    "run_tag, run_tag_value, run_metrics_enabled, failure_message",
+    [
+        (None, None, False, "run_metrics tag not present should result to false"),
+        (".dagster/run_metrics", "true", True, "run_metrics tag set to true should result to true"),
+        (
+            ".dagster/run_metrics",
+            "false",
+            False,
+            "run_metrics tag set to falsy value should result to false",
+        ),
+        (
+            "dagster/run_metrics",
+            "true",
+            True,
+            "public run_metrics tag set to true should result to true",
+        ),
+    ],
+)
+def test_run_has_run_metrics_enabled(run_tag, run_tag_value, run_metrics_enabled, failure_message):
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        tags = (
+            {
+                run_tag: run_tag_value,
+            }
+            if run_tag
+            else {}
+        )
+        run = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED, tags=tags
+        )
+
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                RUN_METRICS_QUERY,
+                variables={"runId": run.run_id},
+            )
+            assert result.data
+            has_run_metrics_enabled = result.data["pipelineRunOrError"]["hasRunMetricsEnabled"]
+            assert has_run_metrics_enabled == run_metrics_enabled, failure_message

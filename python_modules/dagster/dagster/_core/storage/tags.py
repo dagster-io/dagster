@@ -90,6 +90,12 @@ USER_EDITABLE_SYSTEM_TAGS = [
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
 ]
 
+# Supports for the public tag is deprecated
+RUN_METRIC_TAGS = [
+    f"{HIDDEN_TAG_PREFIX}run_metrics",
+    f"{SYSTEM_TAG_PREFIX}run_metrics",
+]
+
 
 class TagType(Enum):
     # Custom tag provided by a user
