@@ -11,7 +11,6 @@ from dagster_airlift.core.serialization.serialized_data import (
     KeyScopedDataItem,
     SerializedAirflowDefinitionsData,
     SerializedDagData,
-    SerializedTaskHandleData,
     TaskHandle,
     TaskInfo,
 )
@@ -94,14 +93,6 @@ class FetchedAirflowData:
             spec.key: task_handles_for_spec(spec) for spec in self.mapping_info.mapped_asset_specs
         }
 
-    def task_handle_data_for_dag(self, dag_id: str) -> Dict[str, SerializedTaskHandleData]:
-        return {
-            task_id: SerializedTaskHandleData(
-                asset_keys_in_task=self.mapping_info.asset_key_map[dag_id][task_id],
-            )
-            for task_id in self.mapping_info.task_id_map[dag_id]
-        }
-
 
 def fetch_all_airflow_data(
     airflow_instance: AirflowInstance, mapping_info: AirliftMetadataMappingInfo
@@ -135,7 +126,6 @@ def compute_serialized_data(
         dag_datas={
             dag_id: SerializedDagData(
                 dag_id=dag_id,
-                task_handle_data=fetched_airflow_data.task_handle_data_for_dag(dag_id),
                 dag_info=dag_info,
                 source_code=airflow_instance.get_dag_source_code(dag_info.metadata["file_token"]),
                 leaf_asset_keys=get_leaf_assets_for_dag(
