@@ -301,9 +301,9 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " queries (loading and reading from tables)."
         ),
     )
-    auto_capitalize_column_names = Field(
+    auto_capitalize_column_names: bool = Field(
         default=True,
-        description="If True, convert all column names to all capital letters. Defaults to True.",
+        description="If True, convert all column names to all capital letters. Defaults to True for Pandas and Pyspark TypeHandlers, ignored for Polars TypeHandler.",
     )
 
     @staticmethod

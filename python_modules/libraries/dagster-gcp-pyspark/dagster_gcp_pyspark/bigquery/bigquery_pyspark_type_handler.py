@@ -62,7 +62,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_bigquery_write_options(context.resource_config, table_slice)
 
-        if context.resource_config["auto_capitalize_columns"]:
+        if context.resource_config["auto_capitalize_column_names"]:
             df = obj.toDF(*[c.upper() for c in obj.columns])
         else:
             df = obj
@@ -93,7 +93,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
             .load(BigQueryClient.get_select_statement(table_slice))
         )
 
-        if context.resource_config["auto_capitalize_columns"]:
+        if context.resource_config["auto_capitalize_column_names"]:
             return df.toDF(*[c.lower() for c in df.columns])
         return df
 
