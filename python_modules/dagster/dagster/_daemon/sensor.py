@@ -38,7 +38,6 @@ from dagster._core.definitions.dynamic_partitions_request import (
 from dagster._core.definitions.run_request import DagsterRunReaction, InstigatorType, RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterError,
@@ -1308,15 +1307,13 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    job_tags = normalize_tags(
-        external_job.run_tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
-    )
-    tags = merge_dicts(
-        merge_dicts(job_tags, run_request.tags),
+    tags = {
+        **(external_job.run_tags or {}),
+        **run_request.tags,
         # this gets applied in the sensor definition too, but we apply it here for backcompat
         # with sensors before the tag was added to the sensor definition
-        DagsterRun.tags_for_sensor(external_sensor),
-    )
+        **DagsterRun.tags_for_sensor(external_sensor),
+    }
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 
