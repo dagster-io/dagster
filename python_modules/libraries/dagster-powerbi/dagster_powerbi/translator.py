@@ -3,9 +3,13 @@ import urllib.parse
 from enum import Enum
 from typing import Any, Dict, Literal, Optional, Sequence
 
-from dagster import _check as check
+from dagster import (
+    UrlMetadataValue,
+    _check as check,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
@@ -99,6 +103,14 @@ class PowerBITagSet(NamespacedTagSet):
         return "dagster-powerbi"
 
 
+class PowerBIMetadataSet(NamespacedMetadataSet):
+    web_url: Optional[UrlMetadataValue] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster-powerbi"
+
+
 class DagsterPowerBITranslator:
     """Translator class which converts raw response data from the PowerBI API into AssetSpecs.
     Subclass this class to implement custom logic for each type of PowerBI content.
@@ -125,7 +137,10 @@ class DagsterPowerBITranslator:
 
     def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
         return AssetKey(
-            ["dashboard", _clean_asset_name(_remove_file_ext(data.properties["displayName"]))]
+            [
+                "dashboard",
+                _clean_asset_name(_remove_file_ext(data.properties["displayName"])),
+            ]
         )
 
     def get_dashboard_spec(self, data: PowerBIContentData) -> AssetSpec:
@@ -137,12 +152,11 @@ class DagsterPowerBITranslator:
             for report_id in tile_report_ids
         ]
         url = data.properties.get("webUrl")
-        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_dashboard_asset_key(data),
             deps=report_keys,
-            metadata=metadata,
+            metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="dashboard")},
         )
 
@@ -154,12 +168,11 @@ class DagsterPowerBITranslator:
         dataset_data = self.workspace_data.semantic_models_by_id.get(dataset_id)
         dataset_key = self.get_semantic_model_asset_key(dataset_data) if dataset_data else None
         url = data.properties.get("webUrl")
-        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_report_asset_key(data),
             deps=[dataset_key] if dataset_key else None,
-            metadata=metadata,
+            metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="report")},
         )
 
@@ -173,12 +186,11 @@ class DagsterPowerBITranslator:
             for source_id in source_ids
         ]
         url = data.properties.get("webUrl")
-        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
             deps=source_keys,
-            metadata=metadata,
+            metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="semantic_model")},
         )
 
