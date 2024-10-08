@@ -3735,7 +3735,7 @@ type Mutation {
   ): ReportRunlessAssetEventsResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
-  retryPartitionBackfill(backfillId: String!): LaunchBackfillResult!
+  reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
   logTelemetry(
     action: String!

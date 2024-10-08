@@ -16,6 +16,7 @@ from dagster._core.execution.backfill import (
     PartitionBackfill,
 )
 from dagster._core.execution.job_backfill import submit_backfill_runs
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
 from dagster._core.storage.tags import PARENT_BACKFILL_ID_TAG, ROOT_BACKFILL_ID_TAG
 from dagster._core.utils import make_new_backfill_id
@@ -41,7 +42,6 @@ if TYPE_CHECKING:
         GrapheneCancelBackfillSuccess,
         GrapheneLaunchBackfillSuccess,
         GrapheneResumeBackfillSuccess,
-        GrapheneRetryBackfillSuccess,
     )
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
     from dagster_graphql.schema.util import ResolveInfo
@@ -349,44 +349,45 @@ def resume_partition_backfill(
 
 
 def retry_partition_backfill(
-    graphene_info: "ResolveInfo", backfill_id: str
-) -> "GrapheneRetryBackfillSuccess":
-    from dagster_graphql.schema.backfill import GrapheneRetryBackfillSuccess
+    graphene_info: "ResolveInfo", backfill_id: str, strategy: str
+) -> "GrapheneLaunchBackfillSuccess":
+    from dagster_graphql.schema.backfill import GrapheneLaunchBackfillSuccess
 
     backfill = graphene_info.context.instance.get_backfill(backfill_id)
+    from_failure = ReexecutionStrategy(strategy) == ReexecutionStrategy.FROM_FAILURE
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
     if backfill.status not in BULK_ACTION_TERMINAL_STATUSES:
         raise DagsterInvariantViolationError(
-            f"Cannot retry backfill {backfill_id} because it is still in progress."
+            f"Cannot re-execute backfill {backfill_id} because it is still in progress."
         )
 
     if backfill.is_asset_backfill:
         asset_backfill_data = backfill.get_asset_backfill_data(graphene_info.context.asset_graph)
-        # determine the subset that should be retried by removing the successfully materialized subset from
-        # the target subset. This ensures that if the backfill was canceled or marked failed that all
-        # non-materialized asset partitions will be retried. asset_backfill_data.failed_and_downstream_asset
-        # only contains asset partitions who's materialization runs failed and their downsteam assets, not
-        # asset partitions that never got materialization runs.
-        not_materialized_assets = (
-            asset_backfill_data.target_subset - asset_backfill_data.materialized_subset
-        )
-        if not_materialized_assets.num_partitions_and_non_partitioned_assets == 0:
+        assets_to_request = asset_backfill_data.target_subset
+        if from_failure:
+            # determine the subset that should be retried by removing the successfully materialized subset from
+            # the target subset. This ensures that if the backfill was canceled or marked failed that all
+            # non-materialized asset partitions will be retried. asset_backfill_data.failed_and_downstream_asset
+            # only contains asset partitions who's materialization runs failed and their downsteam assets, not
+            # asset partitions that never got materialization runs.
+            assets_to_request = assets_to_request - asset_backfill_data.materialized_subset
+        if assets_to_request.num_partitions_and_non_partitioned_assets == 0:
             raise DagsterInvariantViolationError(
-                "Cannot retry an asset backfill that has no missing materializations."
+                "Cannot re-execute from failure an asset backfill that has no missing materializations."
             )
         asset_graph = graphene_info.context.asset_graph
         assert_permission_for_asset_graph(
             graphene_info,
             asset_graph,
-            list(not_materialized_assets.asset_keys),
+            list(assets_to_request.asset_keys),
             Permissions.LAUNCH_PARTITION_BACKFILL,
         )
 
         new_backfill = PartitionBackfill.from_asset_graph_subset(
             backfill_id=make_new_backfill_id(),
-            asset_graph_subset=not_materialized_assets,
+            asset_graph_subset=assets_to_request,
             dynamic_partitions_store=graphene_info.context.instance,
             tags={
                 **backfill.tags,
@@ -394,7 +395,7 @@ def retry_partition_backfill(
                 ROOT_BACKFILL_ID_TAG: backfill.tags.get(ROOT_BACKFILL_ID_TAG, backfill.backfill_id),
             },
             backfill_timestamp=get_current_timestamp(),
-            title=f"Retry of {backfill.title}" if backfill.title else None,
+            title=f"Re-execution of {backfill.title}" if backfill.title else None,
             description=backfill.description,
         )
     else:  # job backfill
@@ -409,7 +410,7 @@ def retry_partition_backfill(
             partition_set_origin=backfill.partition_set_origin,
             status=BulkActionStatus.REQUESTED,
             partition_names=backfill.partition_names,
-            from_failure=True,
+            from_failure=from_failure,
             reexecution_steps=backfill.reexecution_steps,
             tags={
                 **backfill.tags,
@@ -418,9 +419,9 @@ def retry_partition_backfill(
             },
             backfill_timestamp=get_current_timestamp(),
             asset_selection=backfill.asset_selection,
-            title=f"Retry of {backfill.title}" if backfill.title else None,
+            title=f"Re-execution of {backfill.title}" if backfill.title else None,
             description=backfill.description,
         )
 
     graphene_info.context.instance.add_backfill(new_backfill)
-    return GrapheneRetryBackfillSuccess(backfill_id=new_backfill.backfill_id)
+    return GrapheneLaunchBackfillSuccess(backfill_id=new_backfill.backfill_id)
