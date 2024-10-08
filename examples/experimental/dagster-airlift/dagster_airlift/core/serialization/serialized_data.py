@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Set
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Set, Union
 
 from dagster import (
     AssetKey,
@@ -46,6 +46,14 @@ class DagInfo:
 class TaskHandle(NamedTuple):
     dag_id: str
     task_id: str
+
+
+@whitelist_for_serdes
+class DagHandle(NamedTuple):
+    dag_id: str
+
+
+AirflowEntityHandle = Union[TaskHandle, DagHandle]
 
 
 ###################################################################################################

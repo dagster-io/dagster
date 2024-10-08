@@ -9,7 +9,6 @@ from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.serialization.compute import AirliftMetadataMappingInfo
 from dagster_airlift.core.serialization.serialized_data import TaskHandle
-from dagster_airlift.core.utils import is_mapped_asset_spec, task_handles_for_spec
 
 
 @record
@@ -26,21 +25,23 @@ class AirflowDefinitionsData:
         return AirliftMetadataMappingInfo(asset_specs=list(self.mapped_defs.get_all_asset_specs()))
 
     def task_ids_in_dag(self, dag_id: str) -> Set[str]:
-        return self.mapping_info.task_id_map[dag_id]
+        return {
+            task_handle.task_id
+            for task_handle in self.mapping_info.mapped_task_handles
+            if task_handle.dag_id == dag_id
+        }
 
     @property
     def dag_ids_with_mapped_asset_keys(self) -> AbstractSet[str]:
-        return self.mapping_info.dag_ids
+        return {handle.dag_id for handle in self.mapping_info.asset_key_map.keys()}
 
     @cached_property
     def asset_keys_per_task_handle(self) -> Mapping[TaskHandle, AbstractSet[AssetKey]]:
-        asset_keys_per_handle = defaultdict(set)
-        for spec in self.mapped_defs.get_all_asset_specs():
-            if is_mapped_asset_spec(spec):
-                task_handles = task_handles_for_spec(spec)
-                for task_handle in task_handles:
-                    asset_keys_per_handle[task_handle].add(spec.key)
-        return asset_keys_per_handle
+        return {
+            handle: keys
+            for handle, keys in self.mapping_info.asset_key_map.items()
+            if isinstance(handle, TaskHandle)
+        }
 
     @cached_property
     def asset_keys_per_dag(self) -> Mapping[str, AbstractSet[AssetKey]]:

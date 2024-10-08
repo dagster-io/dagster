@@ -11,10 +11,14 @@ from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 
-from dagster_airlift.constants import AIRFLOW_SOURCE_METADATA_KEY_PREFIX, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
+    DAG_MAPPING_METADATA_KEY,
+    TASK_MAPPING_METADATA_KEY,
+)
 
 if TYPE_CHECKING:
-    from dagster_airlift.core.serialization.serialized_data import TaskHandle
+    from dagster_airlift.core.serialization.serialized_data import AirflowEntityHandle
 
 
 def convert_to_valid_dagster_name(name: str) -> str:
@@ -51,16 +55,24 @@ def get_metadata_key(instance_name: str) -> str:
 
 
 def is_mapped_asset_spec(spec: AssetSpec) -> bool:
-    return TASK_MAPPING_METADATA_KEY in spec.metadata
+    return TASK_MAPPING_METADATA_KEY in spec.metadata or DAG_MAPPING_METADATA_KEY in spec.metadata
 
 
-def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
-    from dagster_airlift.core.serialization.serialized_data import TaskHandle
+def is_not_doubly_mapped(spec: AssetSpec) -> bool:
+    return not (
+        TASK_MAPPING_METADATA_KEY in spec.metadata and DAG_MAPPING_METADATA_KEY in spec.metadata
+    )
+
+
+def airflow_handles_for_spec(spec: AssetSpec) -> Set["AirflowEntityHandle"]:
+    from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
 
     check.param_invariant(is_mapped_asset_spec(spec), "spec", "Must be mappped spec")
-    task_handles = []
-    for task_handle_dict in spec.metadata[TASK_MAPPING_METADATA_KEY]:
-        task_handles.append(
-            TaskHandle(dag_id=task_handle_dict["dag_id"], task_id=task_handle_dict["task_id"])
-        )
-    return set(task_handles)
+    check.param_invariant(
+        is_not_doubly_mapped(spec),
+        "spec",
+        "AssetSpec cannot have both task and dag mappings. An asset should map either to dags or tasks, but not to both.",
+    )
+    if TASK_MAPPING_METADATA_KEY in spec.metadata:
+        return {TaskHandle(**handle) for handle in spec.metadata[TASK_MAPPING_METADATA_KEY]}
+    return {DagHandle(dag_id=dag_id) for dag_id in spec.metadata[DAG_MAPPING_METADATA_KEY]}
