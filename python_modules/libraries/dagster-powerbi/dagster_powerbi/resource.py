@@ -41,7 +41,6 @@ def generate_data_source_id(data_source: Dict[str, Any]) -> str:
     return non_secure_md5_hash_str(json.dumps(data_source, sort_keys=True).encode())
 
 
-
 class PowerBICredentials(ConfigurableResource, abc.ABC):
     @property
     def api_token(self) -> str: ...
