@@ -41,8 +41,8 @@ def test_build_task_mapping_info_no_mapping() -> None:
         defs=Definitions(assets=[AssetSpec("asset1"), AssetSpec("asset2")])
     )
     assert len(spec_mapping_info.dag_ids) == 0
-    assert not (spec_mapping_info.asset_key_map)
-    assert not (spec_mapping_info.task_handle_map)
+    assert not (spec_mapping_info.handle_to_asset_keys)
+    assert not (spec_mapping_info.asset_key_to_handles)
 
 
 def test_build_single_task_spec() -> None:
@@ -52,8 +52,8 @@ def test_build_single_task_spec() -> None:
     assert spec_mapping_info.dag_ids == {"dag1"}
     assert spec_mapping_info.task_id_map == {"dag1": {"task1"}}
     assert spec_mapping_info.asset_keys_per_dag_id == {"dag1": {ak("asset1")}}
-    assert spec_mapping_info.asset_key_map == {"dag1": {"task1": {ak("asset1")}}}
-    assert spec_mapping_info.task_handle_map == {
+    assert spec_mapping_info.handle_to_asset_keys == {TaskHandle("dag1", "task1"): {ak("asset1")}}
+    assert spec_mapping_info.asset_key_to_handles == {
         ak("asset1"): set([TaskHandle(dag_id="dag1", task_id="task1")])
     }
 
@@ -76,12 +76,12 @@ def test_task_with_multiple_assets() -> None:
         "dag1": {ak("asset1"), ak("asset2"), ak("asset3")},
         "dag2": {ak("asset4")},
     }
-    assert spec_mapping_info.asset_key_map == {
-        "dag1": {"task1": {ak("asset1"), ak("asset2"), ak("asset3")}},
-        "dag2": {"task1": {ak("asset4")}},
+    assert spec_mapping_info.handle_to_asset_keys == {
+        TaskHandle("dag1", "task1"): {ak("asset1"), ak("asset2"), ak("asset3")},
+        TaskHandle("dag2", "task1"): {ak("asset4")},
     }
 
-    assert spec_mapping_info.task_handle_map == {
+    assert spec_mapping_info.asset_key_to_handles == {
         ak("asset1"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
         ak("asset2"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
         ak("asset3"): set([TaskHandle(dag_id="dag1", task_id="task1")]),
@@ -111,12 +111,12 @@ def test_map_multiple_tasks_to_single_asset() -> None:
         "dag2": {ak("asset1")},
     }
 
-    assert spec_mapping_info.asset_key_map == {
-        "dag1": {"task1": {ak("asset1")}},
-        "dag2": {"task1": {ak("asset1")}},
+    assert spec_mapping_info.handle_to_asset_keys == {
+        TaskHandle("dag1", "task1"): {ak("asset1")},
+        TaskHandle("dag2", "task1"): {ak("asset1")},
     }
 
-    assert spec_mapping_info.task_handle_map == {
+    assert spec_mapping_info.asset_key_to_handles == {
         ak("asset1"): set(
             [TaskHandle(dag_id="dag1", task_id="task1"), TaskHandle(dag_id="dag2", task_id="task1")]
         )
@@ -154,7 +154,7 @@ def test_fetched_airflow_data() -> None:
         ),
     )
 
-    all_mapped_tasks = fetched_airflow_data.all_mapped_tasks
+    all_mapped_tasks = fetched_airflow_data.all_mapped_handles
     assert all_mapped_tasks.keys() == {ak("asset1"), ak("asset2")}
     assert all_mapped_tasks[ak("asset1")] == {TaskHandle(dag_id="dag1", task_id="task1")}
 

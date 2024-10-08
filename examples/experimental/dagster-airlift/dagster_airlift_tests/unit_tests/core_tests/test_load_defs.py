@@ -23,7 +23,7 @@ from dagster._utils.test.definitions import (
     scoped_reconstruction_metadata,
     unwrap_reconstruction_metadata,
 )
-from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY, TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
     dag_defs,
@@ -40,6 +40,7 @@ from dagster_airlift.core.serialization.defs_construction import (
     make_default_dag_asset_key,
 )
 from dagster_airlift.core.serialization.serialized_data import (
+    DagHandle,
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
@@ -81,6 +82,16 @@ def a():
 
 
 b_spec = AssetSpec(key="b")
+
+
+def asset_spec(defs: Definitions, key: AssetKey):
+    return next(
+        iter(
+            spec
+            for spec in defs.get_repository_def().assets_defs_by_key[key].specs
+            if spec.key == key
+        )
+    )
 
 
 @asset_check(asset=a)
@@ -449,6 +460,27 @@ def test_multiple_tasks_to_single_asset_metadata() -> None:
     ]
 
 
+def test_dag_level_asset_mapping() -> None:
+    instance = make_instance({"dag1": ["task1"], "dag2": ["task2"]})
+
+    @asset(metadata={DAG_MAPPING_METADATA_KEY: [{"dag_id": "dag1"}]})
+    def an_asset() -> None: ...
+
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance, defs=Definitions(assets=[an_asset])
+    )
+
+    assert defs.assets
+    assert len(list(defs.assets)) == 3  # two auto-created dag assets and one mapped asset
+
+    an_asset_spec = asset_spec(defs, AssetKey("an_asset"))
+    assert an_asset_spec.metadata[DAG_MAPPING_METADATA_KEY] == [{"dag_id": "dag1"}]
+    dag1_spec = asset_spec(defs, make_test_dag_asset_key("dag1"))
+    assert dag1_spec.deps == [AssetDep(AssetKey("an_asset"))]
+    dag2_spec = asset_spec(defs, make_test_dag_asset_key("dag2"))
+    assert dag2_spec.deps == []
+
+
 def test_automapped_build() -> None:
     airflow_instance = make_instance(
         dag_and_task_structure={"dag1": ["task1", "task2", "standalone"]},
@@ -549,14 +581,23 @@ def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
     Definitions.validate_loadable(defs)
 
     mapping_info = build_airlift_metadata_mapping_info(defs)
-    assert mapping_info.asset_keys_per_dag_id["other_dag"] == {AssetKey("single_targeted_asset")}
-    assert mapping_info.asset_keys_per_dag_id["weekly_dag"] == {AssetKey("double_targeted_asset")}
-    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {AssetKey("double_targeted_asset")}
+    assert mapping_info.asset_keys_per_dag_id["other_dag"] == {
+        AssetKey("single_targeted_asset"),
+        make_test_dag_asset_key("other_dag"),
+    }
+    assert mapping_info.asset_keys_per_dag_id["weekly_dag"] == {
+        AssetKey("double_targeted_asset"),
+        make_test_dag_asset_key("weekly_dag"),
+    }
+    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {
+        AssetKey("double_targeted_asset"),
+        make_test_dag_asset_key("daily_dag"),
+    }
 
-    assert mapping_info.task_handle_map[AssetKey("single_targeted_asset")] == {
+    assert mapping_info.asset_key_to_handles[AssetKey("single_targeted_asset")] == {
         TaskHandle(dag_id="other_dag", task_id="task1")
     }
-    assert mapping_info.task_handle_map[AssetKey("double_targeted_asset")] == {
+    assert mapping_info.asset_key_to_handles[AssetKey("double_targeted_asset")] == {
         TaskHandle(dag_id="weekly_dag", task_id="task1"),
         TaskHandle(dag_id="daily_dag", task_id="task1"),
     }
@@ -600,15 +641,25 @@ def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
     assert mapping_info.asset_keys_per_dag_id["weekly_dag"] == {
         AssetKey("other_asset"),
         AssetKey("double_targeted_asset"),
+        make_test_dag_asset_key("weekly_dag"),
     }
-    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {AssetKey("double_targeted_asset")}
+    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {
+        AssetKey("double_targeted_asset"),
+        make_test_dag_asset_key("daily_dag"),
+    }
 
-    assert mapping_info.task_handle_map[AssetKey("other_asset")] == {
+    assert mapping_info.asset_key_to_handles[AssetKey("other_asset")] == {
         TaskHandle(dag_id="weekly_dag", task_id="task_for_other_asset")
     }
-    assert mapping_info.task_handle_map[AssetKey("double_targeted_asset")] == {
+    assert mapping_info.asset_key_to_handles[AssetKey("double_targeted_asset")] == {
         TaskHandle(dag_id="weekly_dag", task_id="task1"),
         TaskHandle(dag_id="daily_dag", task_id="task1"),
+    }
+    assert mapping_info.asset_key_to_handles[make_test_dag_asset_key("weekly_dag")] == {
+        DagHandle(dag_id="weekly_dag")
+    }
+    assert mapping_info.asset_key_to_handles[make_test_dag_asset_key("daily_dag")] == {
+        DagHandle(dag_id="daily_dag")
     }
 
 
@@ -650,15 +701,22 @@ def test_mixed_multiple_task_single_task_mapping_same_task() -> None:
     assert mapping_info.asset_keys_per_dag_id["weekly_dag"] == {
         AssetKey("other_asset"),
         AssetKey("double_targeted_asset"),
+        make_test_dag_asset_key("weekly_dag"),
     }
-    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {AssetKey("double_targeted_asset")}
+    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {
+        AssetKey("double_targeted_asset"),
+        make_test_dag_asset_key("daily_dag"),
+    }
 
-    assert mapping_info.task_handle_map[AssetKey("other_asset")] == {
+    assert mapping_info.asset_key_to_handles[AssetKey("other_asset")] == {
         TaskHandle(dag_id="weekly_dag", task_id="task1")
     }
-    assert mapping_info.task_handle_map[AssetKey("double_targeted_asset")] == {
+    assert mapping_info.asset_key_to_handles[AssetKey("double_targeted_asset")] == {
         TaskHandle(dag_id="weekly_dag", task_id="task1"),
         TaskHandle(dag_id="daily_dag", task_id="task1"),
+    }
+    assert mapping_info.asset_key_to_handles[make_test_dag_asset_key("weekly_dag")] == {
+        DagHandle(dag_id="weekly_dag")
     }
 
 
