@@ -19,6 +19,7 @@ from dagster_graphql.implementation.execution import (
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill,
     create_and_launch_partition_backfill,
+    reexecute_partition_backfill,
     resume_partition_backfill,
     retry_partition_backfill,
 )
@@ -382,6 +383,23 @@ class GrapheneRetryBackfillMutation(graphene.Mutation):
     @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
     def mutate(self, graphene_info: ResolveInfo, backfillId: str):
         return retry_partition_backfill(graphene_info, backfillId)
+
+
+class GrapheneReexecuteBackfillMutation(graphene.Mutation):
+    """Re-executes a backfill. Re-executing a backfill will create a new backfill that targets the same partitions as the existing backfill."""
+
+    Output = graphene.NonNull(GrapheneLaunchBackfillResult)
+
+    class Arguments:
+        backfillId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "RetryBackfillMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
+    def mutate(self, graphene_info: ResolveInfo, backfillId: str):
+        return reexecute_partition_backfill(graphene_info, backfillId)
 
 
 class GrapheneAddDynamicPartitionMutation(graphene.Mutation):

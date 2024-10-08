@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill as cancel_partition_backfill,
     create_and_launch_partition_backfill as create_and_launch_partition_backfill,
+    reexecute_partition_backfill as reexecute_partition_backfill,
     resume_partition_backfill as resume_partition_backfill,
     retry_partition_backfill as retry_partition_backfill,
 )
