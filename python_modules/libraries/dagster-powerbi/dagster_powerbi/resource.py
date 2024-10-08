@@ -158,7 +158,7 @@ class PowerBIWorkspace(ConfigurableResource):
             method="POST",
             endpoint=f"datasets/{dataset_id}/refreshes",
             json={"notifyOption": "NoNotification"},
-            group_scoped=False,
+            group_scoped=True,
         )
         if response.status_code != 202:
             raise Failure(f"Refresh failed to start: {response.content}")
@@ -175,7 +175,7 @@ class PowerBIWorkspace(ConfigurableResource):
 
             last_refresh = self._fetch_json(
                 f"datasets/{dataset_id}/refreshes",
-                group_scoped=False,
+                group_scoped=True,
             )["value"][0]
             status = last_refresh["status"]
 
