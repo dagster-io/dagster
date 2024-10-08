@@ -2621,13 +2621,13 @@ export type Mutation = {
   launchRun: LaunchRunResult;
   launchRunReexecution: LaunchRunReexecutionResult;
   logTelemetry: LogTelemetryMutationResult;
+  reexecutePartitionBackfill: LaunchBackfillResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   resetSchedule: ScheduleMutationResult;
   resetSensor: SensorOrError;
   resumePartitionBackfill: ResumeBackfillResult;
-  retryPartitionBackfill: LaunchBackfillResult;
   scheduleDryRun: ScheduleDryRunResult;
   sensorDryRun: SensorDryRunResult;
   setAutoMaterializePaused: Scalars['Boolean']['output'];
@@ -2711,6 +2711,10 @@ export type MutationLogTelemetryArgs = {
   metadata: Scalars['String']['input'];
 };
 
+export type MutationReexecutePartitionBackfillArgs = {
+  reexecutionParams?: InputMaybe<ReexecutionParams>;
+};
+
 export type MutationReloadRepositoryLocationArgs = {
   repositoryLocationName: Scalars['String']['input'];
 };
@@ -2728,10 +2732,6 @@ export type MutationResetSensorArgs = {
 };
 
 export type MutationResumePartitionBackfillArgs = {
-  backfillId: Scalars['String']['input'];
-};
-
-export type MutationRetryPartitionBackfillArgs = {
   backfillId: Scalars['String']['input'];
 };
 
@@ -10223,6 +10223,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('LogTelemetrySuccess')
         ? ({} as LogTelemetrySuccess)
         : buildLogTelemetrySuccess({}, relationshipsToOmit),
+    reexecutePartitionBackfill:
+      overrides && overrides.hasOwnProperty('reexecutePartitionBackfill')
+        ? overrides.reexecutePartitionBackfill!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     reloadRepositoryLocation:
       overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
         ? overrides.reloadRepositoryLocation!
@@ -10259,12 +10265,6 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
-    retryPartitionBackfill:
-      overrides && overrides.hasOwnProperty('retryPartitionBackfill')
-        ? overrides.retryPartitionBackfill!
-        : relationshipsToOmit.has('ConflictingExecutionParamsError')
-        ? ({} as ConflictingExecutionParamsError)
-        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     scheduleDryRun:
       overrides && overrides.hasOwnProperty('scheduleDryRun')
         ? overrides.scheduleDryRun!
