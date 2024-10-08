@@ -1,4 +1,5 @@
 import abc
+import json
 import re
 import time
 import uuid
@@ -32,8 +33,13 @@ def _clean_op_name(name: str) -> str:
     return re.sub(r"[^a-z0-9A-Z]+", "_", name)
 
 
-def hash_json(json: Dict[str, Any]) -> str:
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(json)))
+def generate_data_source_id(data_source: Dict[str, Any]) -> str:
+    """Generates a unique ID for a data source based on its properties.
+    We use this for cases where the API does not provide a unique ID for a data source.
+    This ID is never surfaced to the user and is only used internally to track dependencies.
+    """
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, json.dumps(data_source, sort_keys=True)))
+
 
 
 class PowerBICredentials(ConfigurableResource, abc.ABC):
@@ -229,20 +235,22 @@ class PowerBIWorkspace(ConfigurableResource):
             for data in self._get_reports()["value"]
         ]
         semantic_models_data = self._get_semantic_models()["value"]
-        data_sources_by_id = {}
+        data_sources = []
         for dataset in semantic_models_data:
             dataset_sources = self._get_semantic_model_sources(dataset["id"])["value"]
 
             dataset_sources_with_id = [
                 source
                 if "datasourceId" in source
-                else {"datasourceId": hash_json(source), **source}
+                else {"datasourceId": generate_data_source_id(source), **source}
                 for source in dataset_sources
             ]
             dataset["sources"] = [source["datasourceId"] for source in dataset_sources_with_id]
             for data_source in dataset_sources_with_id:
-                data_sources_by_id[data_source["datasourceId"]] = PowerBIContentData(
-                    content_type=PowerBIContentType.DATA_SOURCE, properties=data_source
+                data_sources.append(
+                    PowerBIContentData(
+                        content_type=PowerBIContentType.DATA_SOURCE, properties=data_source
+                    )
                 )
         semantic_models = [
             PowerBIContentData(content_type=PowerBIContentType.SEMANTIC_MODEL, properties=dataset)
@@ -250,7 +258,7 @@ class PowerBIWorkspace(ConfigurableResource):
         ]
         return PowerBIWorkspaceData.from_content_data(
             self.workspace_id,
-            dashboards + reports + semantic_models + list(data_sources_by_id.values()),
+            dashboards + reports + semantic_models + data_sources,
         )
 
     @public
