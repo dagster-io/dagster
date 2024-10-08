@@ -356,6 +356,12 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
             params["path"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
             yield params
 
+    def messages_are_readable(self, params: PipesParams) -> bool:
+        try:
+            return self.dbfs_client.get_status(params["path"]) is not None
+        except Exception:
+            return False
+
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
         try:
