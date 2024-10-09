@@ -1,8 +1,10 @@
+import contextlib
 import urllib.parse
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Type
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Type
 
 import requests
 from dagster import ConfigurableResource
@@ -11,6 +13,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
+from requests import HTTPError
 from sqlglot import exp, parse_one
 
 from dagster_sigma.translator import (
@@ -52,6 +55,10 @@ class SigmaOrganization(ConfigurableResource):
     )
     client_id: str = Field(..., description="A client ID with access to the Sigma API.")
     client_secret: str = Field(..., description="A client secret with access to the Sigma API.")
+    warn_on_lineage_fetch_error: bool = Field(
+        default=False,
+        description="Whether to warn rather than raise when lineage data cannot be fetched for an element.",
+    )
 
     _api_token: Optional[str] = PrivateAttr(None)
 
@@ -126,6 +133,16 @@ class SigmaOrganization(ConfigurableResource):
     def _fetch_queries_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
         return self._fetch_json(f"workbooks/{workbook_id}/queries")["entries"]
 
+    @contextlib.contextmanager
+    def try_except_http_warn(self, should_catch: bool, msg: str) -> Iterator[None]:
+        try:
+            yield
+        except HTTPError as e:
+            if should_catch:
+                warnings.warn(f"{msg} {e}")
+            else:
+                raise
+
     @cached_method
     def _fetch_dataset_upstreams_by_inode(self) -> Mapping[str, AbstractSet[str]]:
         """Builds a mapping of dataset inodes to the upstream inputs they depend on.
@@ -152,32 +169,36 @@ class SigmaOrganization(ConfigurableResource):
                     # We extract the list of dataset dependencies from the lineage of each element
                     # If there is a single dataset dependency, we can then know the queries for that element
                     # are associated with that dataset
-                    lineage = self._fetch_lineage_for_element(
-                        workbook["workbookId"], element["elementId"]
-                    )
-                    dataset_dependencies = [
-                        dep
-                        for dep in lineage["dependencies"].values()
-                        if dep.get("type") == "dataset"
-                    ]
-                    if len(dataset_dependencies) != 1:
-                        continue
-
-                    inode = dataset_dependencies[0]["nodeId"]
-                    for query in queries_by_element_id[element["elementId"]]:
-                        # Use sqlglot to extract the tables used in each query and add them to the dataset's
-                        # list of dependencies
-                        table_deps = set(
-                            [
-                                f"{table.catalog}.{table.db}.{table.this}"
-                                for table in list(parse_one(query["sql"]).find_all(exp.Table))
-                                if table.catalog
-                            ]
+                    with self.try_except_http_warn(
+                        self.warn_on_lineage_fetch_error,
+                        f"Failed to fetch lineage for element {element['elementId']} in workbook {workbook['workbookId']}",
+                    ):
+                        lineage = self._fetch_lineage_for_element(
+                            workbook["workbookId"], element["elementId"]
                         )
+                        dataset_dependencies = [
+                            dep
+                            for dep in lineage["dependencies"].values()
+                            if dep.get("type") == "dataset"
+                        ]
+                        if len(dataset_dependencies) != 1:
+                            continue
 
-                        deps_by_dataset_inode[inode] = deps_by_dataset_inode[inode].union(
-                            table_deps
-                        )
+                        inode = dataset_dependencies[0]["nodeId"]
+                        for query in queries_by_element_id[element["elementId"]]:
+                            # Use sqlglot to extract the tables used in each query and add them to the dataset's
+                            # list of dependencies
+                            table_deps = set(
+                                [
+                                    f"{table.catalog}.{table.db}.{table.this}"
+                                    for table in list(parse_one(query["sql"]).find_all(exp.Table))
+                                    if table.catalog
+                                ]
+                            )
+
+                            deps_by_dataset_inode[inode] = deps_by_dataset_inode[inode].union(
+                                table_deps
+                            )
 
         return deps_by_dataset_inode
 
@@ -232,12 +253,16 @@ class SigmaOrganization(ConfigurableResource):
                 elements = self._fetch_elements_for_page(workbook["workbookId"], page["pageId"])
                 for element in elements:
                     # We extract the list of dataset dependencies from the lineage of each workbook.
-                    lineage = self._fetch_lineage_for_element(
-                        workbook["workbookId"], element["elementId"]
-                    )
-                    for inode, item in lineage["dependencies"].items():
-                        if item.get("type") == "dataset":
-                            workbook_deps.add(item["nodeId"])
+                    with self.try_except_http_warn(
+                        self.warn_on_lineage_fetch_error,
+                        f"Failed to fetch lineage for element {element['elementId']} in workbook {workbook['workbookId']}",
+                    ):
+                        lineage = self._fetch_lineage_for_element(
+                            workbook["workbookId"], element["elementId"]
+                        )
+                        for inode, item in lineage["dependencies"].items():
+                            if item.get("type") == "dataset":
+                                workbook_deps.add(item["nodeId"])
 
             workbooks.append(
                 SigmaWorkbook(
