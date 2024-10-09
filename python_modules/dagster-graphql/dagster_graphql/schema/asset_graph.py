@@ -17,6 +17,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.selector import JobSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
@@ -417,9 +418,12 @@ class GrapheneAssetNode(graphene.ObjectType):
                 len(self._asset_node_snap.job_names) >= 1,
                 "Asset must be part of at least one job",
             )
-            self._external_job = graphene_info.context.get_repository(
-                self._repository_selector
-            ).get_full_external_job(self._asset_node_snap.job_names[0])
+            selector = JobSelector(
+                location_name=self._repository_selector.location_name,
+                repository_name=self._repository_selector.repository_name,
+                job_name=self._asset_node_snap.job_names[0],
+            )
+            self._external_job = graphene_info.context.get_full_external_job(selector)
         return self._external_job
 
     def get_node_definition_snap(
