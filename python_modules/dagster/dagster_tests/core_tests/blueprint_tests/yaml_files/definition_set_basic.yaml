@@ -1,0 +1,12 @@
+contents:
+  - key: asset1
+  - key: asset2
+  - key: asset3
+metadata:
+  foo: bar
+group_name: my_asset_group
+code_version: "v1"
+owners: ["rex@dagsterlabs.com"]
+tags:
+  tag1: value1
+  tag2: value2
