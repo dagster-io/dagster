@@ -439,6 +439,15 @@ You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_
 
 You'll note that we proxied a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI, but execution of `build_dbt_models` has moved to Dagster.
 
+#### Provided common operators
+
+As mentioned, `dagster-airlift` provides a set of common operators which are intended to be replacements for common airflow operator types.
+
+- _BashOperator for dbt_, _Astronomer Cosmos_: `dagster_airlift.dbt.dbt_defs`
+- _K8sPodOperator_: `dagster_airlift.k8s.k8s_pod_defs`
+- _PythonOperator_: Behavior can be replicated by calling the `python_callable` argument from within an `asset` or `multi_asset` decorated function.
+  For more information, we recommend checking out the docstrings of these respective APIs.
+
 #### Migrating the remaining custom operators
 
 For all other operator types, we will need to build our own asset definitions. We recommend creating a factory function whose arguments match the inputs to your Airflow operator. Then, you can use this factory to build definitions for each Airflow task.
