@@ -1556,7 +1556,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["numCancelable"] == 10
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 10
 
-    def test_retry_asset_backfill(self, graphql_context):
+    def test_reexecute_asset_backfill_from_failure(self, graphql_context):
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1621,16 +1621,39 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         retry_backfill_id = result.data["reexecutePartitionBackfill"]["backfillId"]
 
         first_backfill = graphql_context.instance.get_backfill(backfill_id)
-        retried_backfill = graphql_context.instance.get_backfill(retry_backfill_id)
+        retried_from_failure_backfill = graphql_context.instance.get_backfill(retry_backfill_id)
 
         assert (
             first_backfill.asset_backfill_data.failed_and_downstream_subset
+            == retried_from_failure_backfill.asset_backfill_data.target_subset
+        )
+        assert retried_from_failure_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_from_failure_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={
+                "reexecutionParams": {"parentRunId": backfill_id, "strategy": "ALL_STEPS"},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["reexecutePartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        retry_backfill_id = result.data["reexecutePartitionBackfill"]["backfillId"]
+
+        first_backfill = graphql_context.instance.get_backfill(backfill_id)
+        retried_backfill = graphql_context.instance.get_backfill(retry_backfill_id)
+
+        assert (
+            first_backfill.asset_backfill_data.target_subset
             == retried_backfill.asset_backfill_data.target_subset
         )
         assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
-    def test_retry_successful_asset_backfill(self, graphql_context):
+    def test_reexecute_successful_asset_backfill(self, graphql_context):
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1695,7 +1718,29 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             in result.data["reexecutePartitionBackfill"]["message"]
         )
 
-    def test_retry_asset_backfill_still_in_progress(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={
+                "reexecutionParams": {"parentRunId": backfill_id, "strategy": "ALL_STEPS"},
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["reexecutePartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        retry_backfill_id = result.data["reexecutePartitionBackfill"]["backfillId"]
+
+        first_backfill = graphql_context.instance.get_backfill(backfill_id)
+        retried_backfill = graphql_context.instance.get_backfill(retry_backfill_id)
+
+        assert (
+            first_backfill.asset_backfill_data.target_subset
+            == retried_backfill.asset_backfill_data.target_subset
+        )
+        assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
+
+    def test_reexecute_asset_backfill_still_in_progress(self, graphql_context):
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1756,7 +1801,20 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["reexecutePartitionBackfill"]["__typename"] == "PythonError"
         assert "still in progress" in result.data["reexecutePartitionBackfill"]["message"]
 
-        # once teh first backfill is in a completed state, we can retry it
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={
+                "reexecutionParams": {"parentRunId": backfill_id, "strategy": "ALL_STEPS"},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["reexecutePartitionBackfill"]["__typename"] == "PythonError"
+        assert "still in progress" in result.data["reexecutePartitionBackfill"]["message"]
+
+        # once the first backfill is in a completed state, we can retry it
         backfill = graphql_context.instance.get_backfill(backfill_id)
         graphql_context.instance.update_backfill(backfill.with_status(BulkActionStatus.FAILED))
 
@@ -1765,6 +1823,29 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             RETRY_BACKFILL_MUTATION,
             variables={
                 "reexecutionParams": {"parentRunId": backfill_id, "strategy": "FROM_FAILURE"},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["reexecutePartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        retry_backfill_id = result.data["reexecutePartitionBackfill"]["backfillId"]
+
+        first_backfill = graphql_context.instance.get_backfill(backfill_id)
+        retried_from_failure_backfill = graphql_context.instance.get_backfill(retry_backfill_id)
+
+        assert (
+            first_backfill.asset_backfill_data.failed_and_downstream_subset
+            == retried_from_failure_backfill.asset_backfill_data.target_subset
+        )
+        assert retried_from_failure_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_from_failure_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={
+                "reexecutionParams": {"parentRunId": backfill_id, "strategy": "ALL_STEPS"},
             },
         )
 
@@ -1783,7 +1864,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
-    def test_retry_asset_backfill_twice(self, graphql_context):
+    def test_reexecute_asset_backfill_twice(self, graphql_context):
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
         asset_graph = repository.asset_graph
@@ -1949,6 +2030,37 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert result.data["reexecutePartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        retried_from_failure_backfill_id = result.data["reexecutePartitionBackfill"]["backfillId"]
+        retried_from_failure_backfill = graphql_context.instance.get_backfill(
+            retried_from_failure_backfill_id
+        )
+
+        assert retried_from_failure_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_from_failure_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": retried_from_failure_backfill_id},
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
+        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
+        assert result.data["partitionBackfillOrError"]["fromFailure"]
+
+        # re-execute  (without the failure file)
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={"reexecutionParams": {"parentRunId": backfill_id, "strategy": "ALL_STEPS"}},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["reexecutePartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
         retried_backfill_id = result.data["reexecutePartitionBackfill"]["backfillId"]
         retried_backfill = graphql_context.instance.get_backfill(retried_backfill_id)
 
@@ -2013,6 +2125,17 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["reexecutePartitionBackfill"]["__typename"] == "PythonError"
         assert "still in progress" in result.data["reexecutePartitionBackfill"]["message"]
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={"reexecutionParams": {"parentRunId": backfill_id, "strategy": "ALL_STEPS"}},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["reexecutePartitionBackfill"]["__typename"] == "PythonError"
+        assert "still in progress" in result.data["reexecutePartitionBackfill"]["message"]
+
         # mark backfill as complete and confirm that we can retry it
         backfill = graphql_context.instance.get_backfill(backfill_id)
         graphql_context.instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
@@ -2024,6 +2147,24 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             variables={
                 "reexecutionParams": {"parentRunId": backfill_id, "strategy": "FROM_FAILURE"}
             },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["reexecutePartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        retried_from_failure_backfill_id = result.data["reexecutePartitionBackfill"]["backfillId"]
+        retried_from_failure_backfill = graphql_context.instance.get_backfill(
+            retried_from_failure_backfill_id
+        )
+
+        assert retried_from_failure_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
+        assert retried_from_failure_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
+
+        # re-execute (without the failure file)
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={"reexecutionParams": {"parentRunId": backfill_id, "strategy": "ALL_STEPS"}},
         )
 
         assert not result.errors
