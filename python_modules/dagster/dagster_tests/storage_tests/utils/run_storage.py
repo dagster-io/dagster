@@ -1032,6 +1032,24 @@ class TestRunStorage:
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
 
+    def test_delete_multiple(self, storage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete runs")
+
+        assert storage
+        run_ids = []
+        for _ in range(3):
+            run_id = make_new_run_id()
+            storage.add_run(TestRunStorage.build_run(run_id=run_id, job_name="some_pipeline"))
+            run_ids.append(run_id)
+
+        storage.add_run(
+            TestRunStorage.build_run(run_id=make_new_run_id(), job_name="some_pipeline")
+        )
+        assert len(storage.get_runs()) == 4
+        storage.delete_runs(run_ids)
+        assert len(storage.get_runs()) == 1
+
     def test_delete_with_tags(self, storage: RunStorage):
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete runs")
@@ -1050,6 +1068,34 @@ class TestRunStorage:
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
         assert run_id not in [key for key, value in storage.get_run_tags(tag_keys=[run_id])]
+
+    def test_delete_multiple_with_tags(self, storage: RunStorage):
+        if not self.can_delete_runs():
+            pytest.skip("storage cannot delete runs")
+
+        assert storage
+        run_ids = []
+        for _ in range(3):
+            run_id = make_new_run_id()
+            storage.add_run(
+                TestRunStorage.build_run(
+                    run_id=run_id,
+                    job_name="some_pipeline",
+                    tags={run_id: run_id},
+                )
+            )
+            run_ids.append(run_id)
+
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=make_new_run_id(),
+                job_name="some_pipeline",
+                tags={"not_deleted": "true"},
+            )
+        )
+        assert len(storage.get_runs()) == 4
+        storage.delete_runs(run_ids)
+        assert len(storage.get_runs()) == 1
 
     def test_wipe_tags(self, storage: RunStorage):
         if not self.can_delete_runs():
