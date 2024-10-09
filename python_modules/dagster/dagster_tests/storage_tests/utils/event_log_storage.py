@@ -6017,14 +6017,13 @@ class TestEventLogStorage:
     def test_get_updated_asset_status_cache_values(
         self, instance: DagsterInstance, storage: EventLogStorage
     ):
-        asset_keys = [AssetKey("hourly"), AssetKey("daily"), AssetKey("static")]
-        partition_defs = [
-            HourlyPartitionsDefinition("2020-01-01-00:00"),
-            DailyPartitionsDefinition("2020-01-01"),
-            StaticPartitionsDefinition(["a", "b", "c"]),
-        ]
+        partition_defs_by_key = {
+            AssetKey("hourly"): HourlyPartitionsDefinition("2020-01-01-00:00"),
+            AssetKey("daily"): DailyPartitionsDefinition("2020-01-01"),
+            AssetKey("static"): StaticPartitionsDefinition(["a", "b", "c"]),
+        }
 
-        assert storage.get_asset_status_cache_values(asset_keys, partition_defs) == [
+        assert storage.get_asset_status_cache_values(partition_defs_by_key) == [
             None,
             None,
             None,
@@ -6038,8 +6037,7 @@ class TestEventLogStorage:
         )
         instance.report_runless_asset_event(AssetMaterialization(asset_key="static", partition="a"))
 
-        for i, value in enumerate(
-            storage.get_asset_status_cache_values(asset_keys, partition_defs)
-        ):
+        partition_defs = list(partition_defs_by_key.values())
+        for i, value in enumerate(storage.get_asset_status_cache_values(partition_defs_by_key)):
             assert value is not None
             assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1
