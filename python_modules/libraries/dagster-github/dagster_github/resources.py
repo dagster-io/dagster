@@ -197,7 +197,7 @@ class GithubClient:
     def execute(
         self,
         query: str,
-        variables: Dict[str, Any],
+        variables: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
         installation_id: Optional[int] = None,
     ) -> Dict[str, Any]:
@@ -211,13 +211,18 @@ class GithubClient:
 
         self.__check_installation_tokens(installation_id)
         headers["Authorization"] = f"token {self.installation_tokens[installation_id]['value']}"
+
+        json: Dict[str, Any] = {"query": query}
+        if variables:
+            json["variables"] = variables
+
         request = requests.post(
             (
                 "https://api.github.com/graphql"
                 if self.hostname is None
                 else f"https://{self.hostname}/api/graphql"
             ),
-            json={"query": query, "variables": variables},
+            json=json,
             headers=headers,
         )
         request.raise_for_status()
