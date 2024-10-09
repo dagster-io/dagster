@@ -49,6 +49,7 @@ resource_config = {
     "user": "user_abc",
     "password": "password_abc",
     "warehouse": "warehouse_abc",
+    "auto_capitalize_column_names": True,
 }
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
