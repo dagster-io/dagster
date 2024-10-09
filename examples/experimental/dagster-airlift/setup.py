@@ -49,6 +49,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
+    requires=["click"],
     extras_require={
         "core": [
             f"dagster{pin}",
@@ -60,6 +61,11 @@ setup(
         "dbt": ["dagster-dbt"],
         "k8s": ["dagster-k8s"],
         "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3", "dagster-webserver"],
+    },
+    entry_points={
+        "console_scripts": [
+            "dagster-airlift = dagster_airlift.cli:cli",
+        ]
     },
     zip_safe=False,
 )
