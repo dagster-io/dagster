@@ -7,7 +7,7 @@ from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
 from dagster._core.storage.daemon_cursor import DaemonCursorStorage
 from dagster._core.storage.dagster_run import (
     DagsterRun,
@@ -204,7 +204,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
     def add_snapshot(
         self,
-        snapshot: Union[JobSnapshot, ExecutionPlanSnapshot],
+        snapshot: Union[JobSnap, ExecutionPlanSnapshot],
         snapshot_id: Optional[str] = None,
     ) -> None:
         """Add a snapshot to the storage.
@@ -216,7 +216,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
                 in debugging, where we might want to import a historical run whose snapshots were
                 calculated using a different hash function than the current code.
         """
-        if isinstance(snapshot, JobSnapshot):
+        if isinstance(snapshot, JobSnap):
             self.add_job_snapshot(snapshot, snapshot_id)
         else:
             self.add_execution_plan_snapshot(snapshot, snapshot_id)
@@ -236,7 +236,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
+    def add_job_snapshot(self, job_snapshot: JobSnap, snapshot_id: Optional[str] = None) -> str:
         """Add a pipeline snapshot to the run store.
 
         Pipeline snapshots are content-addressable, meaning
@@ -256,7 +256,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnap:
         """Fetch a snapshot by ID.
 
         Args:

@@ -62,7 +62,7 @@ def test_job_with_valid_subset_snapshot_api_grpc(instance):
         assert external_job_subset_result.success is True
         assert external_job_subset_result.external_job_data.name == "foo"
         assert (
-            external_job_subset_result.external_job_data.parent_job_snapshot
+            external_job_subset_result.external_job_data.parent_job
             == code_location.get_repository("bar_repo").get_full_external_job("foo").job_snapshot
         )
 
@@ -78,7 +78,7 @@ def test_job_with_valid_subset_snapshot_without_parent_snapshot(instance):
         assert isinstance(external_job_subset_result, ExternalJobSubsetResult)
         assert external_job_subset_result.success is True
         assert external_job_subset_result.external_job_data.name == "foo"
-        assert not external_job_subset_result.external_job_data.parent_job_snapshot
+        assert not external_job_subset_result.external_job_data.parent_job
 
 
 def test_job_with_invalid_subset_snapshot_api_grpc(instance):

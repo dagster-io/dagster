@@ -46,7 +46,7 @@ from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
     PartitionSetExecutionParamSnap,
 )
-from dagster._core.snap import JobSnapshot, NodeInvocationSnap
+from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
@@ -165,10 +165,10 @@ def execute_print_command(instance, verbose, cli_args, print_fn):
 
 
 def print_ops(
-    job_snapshot: JobSnapshot,
+    job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
 ):
-    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
     check.callable_param(print_fn, "print_fn")
 
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
@@ -181,10 +181,10 @@ def print_ops(
 
 
 def print_job(
-    job_snapshot: JobSnapshot,
+    job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
 ):
-    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
     check.callable_param(print_fn, "print_fn")
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line(f"Job: {job_snapshot.name}")
@@ -216,10 +216,10 @@ def format_description(desc: str, indent: str):
 
 def print_op(
     printer: IndentingPrinter,
-    job_snapshot: JobSnapshot,
+    job_snapshot: JobSnap,
     node_invocation_snap: NodeInvocationSnap,
 ) -> None:
-    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
     check.inst_param(node_invocation_snap, "node_invocation_snap", NodeInvocationSnap)
     printer.line(f"Op: {node_invocation_snap.node_name}")
     with printer.with_indent():

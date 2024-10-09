@@ -26,14 +26,14 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.remote_representation import ExternalJobData, external_repository_data_from_def
+from dagster._core.remote_representation import JobDataSnap, external_repository_data_from_def
 from dagster._core.remote_representation.external_data import (
     NestedResource,
     NestedResourceType,
     ResourceJobUsageEntry,
     ResourceSnap,
 )
-from dagster._core.snap import JobSnapshot
+from dagster._core.snap import JobSnap
 
 
 def test_repository_snap_all_props():
@@ -53,10 +53,10 @@ def test_repository_snap_all_props():
 
     assert external_repo_data.name == "noop_repo"
     assert len(external_repo_data.external_job_datas) == 1
-    assert isinstance(external_repo_data.external_job_datas[0], ExternalJobData)
+    assert isinstance(external_repo_data.external_job_datas[0], JobDataSnap)
 
-    job_snapshot = external_repo_data.external_job_datas[0].job_snapshot
-    assert isinstance(job_snapshot, JobSnapshot)
+    job_snapshot = external_repo_data.external_job_datas[0].job
+    assert isinstance(job_snapshot, JobSnap)
     assert job_snapshot.name == "noop_job"
     assert job_snapshot.description is None
     assert job_snapshot.tags == {}
