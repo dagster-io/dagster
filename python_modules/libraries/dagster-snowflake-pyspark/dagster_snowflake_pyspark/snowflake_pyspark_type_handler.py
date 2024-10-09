@@ -69,9 +69,10 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_snowflake_options(context.resource_config, table_slice)
 
-        with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
+        if context.resource_config["auto_capitalize_column_names"]:
+            obj = obj.toDF(*[c.upper() for c in obj.columns])
 
-        with_uppercase_cols.write.format(SNOWFLAKE_CONNECTOR).options(**options).option(
+        obj.write.format(SNOWFLAKE_CONNECTOR).options(**options).option(
             "dbtable", table_slice.table
         ).mode("append").save()
 
@@ -99,7 +100,9 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             .option("query", SnowflakeDbClient.get_select_statement(table_slice))
             .load()
         )
-        return df.toDF(*[c.lower() for c in df.columns])
+        if context.resource_config["auto_capitalize_column_names"]:
+            return df.toDF(*[c.lower() for c in df.columns])
+        return df
 
     @property
     def supported_types(self):

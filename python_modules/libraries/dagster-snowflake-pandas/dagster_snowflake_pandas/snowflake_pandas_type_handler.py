@@ -104,19 +104,21 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         from snowflake import connector
 
         connector.paramstyle = "pyformat"
-        with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
+        if context.resource_config["auto_capitalize_column_names"]:
+            obj = obj.rename(str.upper, copy=False, axis="columns")
+
         column_types = _get_table_column_types(table_slice, connection)
         if context.resource_config and context.resource_config.get(
             "store_timestamps_as_strings", False
         ):
-            with_uppercase_cols = with_uppercase_cols.apply(
+            obj = obj.apply(
                 lambda x: _convert_timestamp_to_string(x, column_types, table_slice.table),
                 axis="index",
             )
 
         write_pandas(
             conn=connection,
-            df=with_uppercase_cols,
+            df=obj,
             # originally we used pd.to_sql with pd_writer method to write the df to snowflake. pd_writer
             # forced the database, schema, and table name to be uppercase, so we mimic that behavior here for feature parity
             # in the future we could allow non-uppercase names
@@ -158,7 +160,9 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             "store_timestamps_as_strings", False
         ):
             result = result.apply(_convert_string_to_timestamp, axis="index")
-        result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
+
+        if context.resource_config["auto_capitalize_column_names"]:
+            result.columns = map(str.lower, result.columns)
         return result
 
     @property
