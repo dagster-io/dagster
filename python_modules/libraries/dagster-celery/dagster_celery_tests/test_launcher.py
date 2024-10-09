@@ -82,7 +82,7 @@ def test_successful_run(
     workspace: WorkspaceRequestContext,
     run_config,
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
         .get_full_job("noop_job")
@@ -91,8 +91,8 @@ def test_successful_run(
     dagster_run = instance.create_run_for_job(
         job_def=noop_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run_id = dagster_run.run_id
 
@@ -127,7 +127,7 @@ def test_crashy_run(
 ):
     logger = logging.getLogger()
 
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
         .get_full_job("crashy_job")
@@ -136,8 +136,8 @@ def test_crashy_run(
     run = instance.create_run_for_job(
         job_def=crashy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -173,7 +173,7 @@ def test_exity_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
         .get_full_job("exity_job")
@@ -182,8 +182,8 @@ def test_exity_run(
     run = instance.create_run_for_job(
         job_def=exity_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -224,7 +224,7 @@ def test_terminated_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
         .get_full_job("sleepy_job")
@@ -232,8 +232,8 @@ def test_terminated_run(
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id

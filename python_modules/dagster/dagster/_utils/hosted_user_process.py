@@ -36,7 +36,7 @@ def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "Reconstruct
     )
 
 
-def external_job_from_recon_job(
+def remote_job_from_recon_job(
     recon_job: ReconstructableJob,
     op_selection: Optional[Iterable[str]],
     repository_handle: RepositoryHandle,

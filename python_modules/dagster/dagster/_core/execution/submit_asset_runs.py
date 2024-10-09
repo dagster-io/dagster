@@ -22,7 +22,7 @@ EXECUTION_PLAN_CREATION_RETRIES = 1
 
 
 class RunRequestExecutionData(NamedTuple):
-    external_job: RemoteJob
+    remote_job: RemoteJob
     external_execution_plan: RemoteExecutionPlan
 
 
@@ -90,10 +90,10 @@ def _get_job_execution_data_from_run_request(
 
     if pipeline_selector not in run_request_execution_data_cache:
         code_location = workspace.get_code_location(handle.location_name)
-        external_job = code_location.get_external_job(pipeline_selector)
+        remote_job = code_location.get_external_job(pipeline_selector)
 
         external_execution_plan = code_location.get_external_execution_plan(
-            external_job,
+            remote_job,
             {},
             step_keys_to_execute=None,
             known_state=None,
@@ -101,7 +101,7 @@ def _get_job_execution_data_from_run_request(
         )
 
         run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
-            external_job,
+            remote_job,
             external_execution_plan,
         )
 
@@ -189,14 +189,14 @@ def _create_asset_run(
                 should_retry = True
 
         if not should_retry:
-            external_job = check.not_none(execution_data).external_job
+            remote_job = check.not_none(execution_data).remote_job
             external_execution_plan = check.not_none(execution_data).external_execution_plan
 
             run = instance.create_run(
-                job_snapshot=external_job.job_snapshot,
+                job_snapshot=remote_job.job_snapshot,
                 execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-                parent_job_snapshot=external_job.parent_job_snapshot,
-                job_name=external_job.name,
+                parent_job_snapshot=remote_job.parent_job_snapshot,
+                job_name=remote_job.name,
                 run_id=run_id,
                 resolved_op_selection=None,
                 op_selection=None,
@@ -206,8 +206,8 @@ def _create_asset_run(
                 root_run_id=None,
                 parent_run_id=None,
                 status=DagsterRunStatus.NOT_STARTED,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
                 asset_selection=frozenset(run_request.asset_selection)
                 if run_request.asset_selection
                 else None,

@@ -9,12 +9,12 @@ from dagster._utils.merger import merge_dicts
 from utils import start_daemon
 
 
-def create_run(instance: DagsterInstance, external_job: RemoteJob, **kwargs: Any) -> DagsterRun:
+def create_run(instance: DagsterInstance, remote_job: RemoteJob, **kwargs: Any) -> DagsterRun:
     job_args = merge_dicts(
         {
             "job_name": "foo_job",
-            "external_job_origin": external_job.get_remote_origin(),
-            "job_code_origin": external_job.get_python_origin(),
+            "remote_job_origin": remote_job.get_remote_origin(),
+            "job_code_origin": remote_job.get_python_origin(),
         },
         kwargs,
     )
@@ -31,13 +31,13 @@ def assert_events_in_order(logs, expected_events):
 def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_example_repo):
     external_schedule = foo_example_repo.get_schedule("always_run_schedule")
     external_sensor = foo_example_repo.get_sensor("always_on_sensor")
-    external_job = foo_example_repo.get_full_job("foo_job")
+    remote_job = foo_example_repo.get_full_job("foo_job")
 
     instance.start_schedule(external_schedule)
     instance.start_sensor(external_sensor)
 
     with start_daemon(timeout=180, workspace_file=file_relative_path(__file__, "repo.py")):
-        run = create_run(instance, external_job)
+        run = create_run(instance, remote_job)
         instance.submit_run(run.run_id, foo_example_workspace)
 
         runs = [
@@ -65,9 +65,9 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
 def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
     with start_daemon(workspace_file=file_relative_path(__file__, "repo.py")):
-        external_job = foo_example_repo.get_full_job("foo_job")
+        remote_job = foo_example_repo.get_full_job("foo_job")
 
-        run = create_run(instance, external_job)
+        run = create_run(instance, remote_job)
 
         instance.submit_run(run.run_id, foo_example_workspace)
 

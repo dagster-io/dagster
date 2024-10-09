@@ -702,13 +702,13 @@ def _submit_run_request(
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
     )
-    external_job = code_location.get_external_job(job_subset_selector)
+    remote_job = code_location.get_external_job(job_subset_selector)
     run = _get_or_create_sensor_run(
         logger,
         instance,
         code_location,
         external_sensor,
-        external_job,
+        remote_job,
         run_id,
         run_request,
         target_data,
@@ -1260,7 +1260,7 @@ def _get_or_create_sensor_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: RemoteSensor,
-    external_job: RemoteJob,
+    remote_job: RemoteJob,
     run_id: str,
     run_request: RunRequest,
     target_data: TargetSnap,
@@ -1283,7 +1283,7 @@ def _get_or_create_sensor_run(
     logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        instance, code_location, external_sensor, external_job, run_id, run_request, target_data
+        instance, code_location, external_sensor, remote_job, run_id, run_request, target_data
     )
 
 
@@ -1291,7 +1291,7 @@ def _create_sensor_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: RemoteSensor,
-    external_job: RemoteJob,
+    remote_job: RemoteJob,
     run_id: str,
     run_request: RunRequest,
     target_data: TargetSnap,
@@ -1299,7 +1299,7 @@ def _create_sensor_run(
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     external_execution_plan = code_location.get_external_execution_plan(
-        external_job,
+        remote_job,
         run_request.run_config,
         step_keys_to_execute=None,
         known_state=None,
@@ -1308,7 +1308,7 @@ def _create_sensor_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     tags = {
-        **(external_job.run_tags or {}),
+        **(remote_job.run_tags or {}),
         **run_request.tags,
         # this gets applied in the sensor definition too, but we apply it here for backcompat
         # with sensors before the tag was added to the sensor definition
@@ -1323,7 +1323,7 @@ def _create_sensor_run(
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
-            "pipeline_name_hash": hash_name(external_job.name),
+            "pipeline_name_hash": hash_name(remote_job.name),
             "repo_hash": hash_name(code_location.name),
         },
     )
@@ -1332,18 +1332,18 @@ def _create_sensor_run(
         job_name=target_data.job_name,
         run_id=run_id,
         run_config=run_request.run_config,
-        resolved_op_selection=external_job.resolved_op_selection,
+        resolved_op_selection=remote_job.resolved_op_selection,
         step_keys_to_execute=None,
         status=DagsterRunStatus.NOT_STARTED,
         op_selection=target_data.op_selection,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        job_snapshot=external_job.job_snapshot,
+        job_snapshot=remote_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        parent_job_snapshot=remote_job.parent_job_snapshot,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
@@ -1351,6 +1351,6 @@ def _create_sensor_run(
             frozenset(run_request.asset_check_keys) if run_request.asset_check_keys else None
         ),
         asset_graph=code_location.get_repository(
-            external_job.repository_handle.repository_name
+            remote_job.repository_handle.repository_name
         ).asset_graph,
     )

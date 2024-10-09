@@ -76,7 +76,7 @@ class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
         run_id = create_run_for_test(
             graphql_context.instance,
             "eventually_successful",
-            external_job_origin=external_job_origin,
+            remote_job_origin=external_job_origin,
         ).run_id
 
         result = execute_dagster_graphql(

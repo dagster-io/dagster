@@ -733,14 +733,14 @@ def _submit_run_request(
             workspace_process_context, external_schedule
         )
 
-        external_job = code_location.get_external_job(job_subset_selector)
+        remote_job = code_location.get_external_job(job_subset_selector)
 
         run = _create_scheduler_run(
             instance,
             schedule_time,
             code_location,
             external_schedule,
-            external_job,
+            remote_job,
             run_request,
         )
 
@@ -925,7 +925,7 @@ def _create_scheduler_run(
     schedule_time: datetime.datetime,
     code_location: CodeLocation,
     external_schedule: RemoteSchedule,
-    external_job: RemoteJob,
+    remote_job: RemoteJob,
     run_request: RunRequest,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
@@ -934,7 +934,7 @@ def _create_scheduler_run(
     schedule_tags = run_request.tags
 
     external_execution_plan = code_location.get_external_execution_plan(
-        external_job,
+        remote_job,
         run_config,
         step_keys_to_execute=None,
         known_state=None,
@@ -942,7 +942,7 @@ def _create_scheduler_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     tags = {
-        **external_job.run_tags,
+        **remote_job.run_tags,
         **schedule_tags,
     }
 
@@ -957,7 +957,7 @@ def _create_scheduler_run(
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
             "repo_hash": hash_name(code_location.name),
-            "pipeline_name_hash": hash_name(external_job.name),
+            "pipeline_name_hash": hash_name(remote_job.name),
         },
     )
 
@@ -965,24 +965,24 @@ def _create_scheduler_run(
         job_name=external_schedule.job_name,
         run_id=None,
         run_config=run_config,
-        resolved_op_selection=external_job.resolved_op_selection,
+        resolved_op_selection=remote_job.resolved_op_selection,
         step_keys_to_execute=None,
-        op_selection=external_job.op_selection,
+        op_selection=remote_job.op_selection,
         status=DagsterRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        job_snapshot=external_job.job_snapshot,
+        job_snapshot=remote_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        parent_job_snapshot=remote_job.parent_job_snapshot,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
         asset_check_selection=None,
         asset_graph=code_location.get_repository(
-            external_job.repository_handle.repository_name
+            remote_job.repository_handle.repository_name
         ).asset_graph,
     )
 

@@ -7,7 +7,7 @@ from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.execution.run_lifecycle import create_valid_pipeline_run
-from dagster_graphql.implementation.external import get_external_job_or_raise
+from dagster_graphql.implementation.external import get_remote_job_or_raise
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
@@ -46,10 +46,10 @@ def do_launch(
         )
         check.str_param(execution_metadata.root_run_id, "root_run_id")
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
-    external_job = get_external_job_or_raise(graphene_info, execution_params.selector)
+    remote_job = get_remote_job_or_raise(graphene_info, execution_params.selector)
     code_location = graphene_info.context.get_code_location(execution_params.selector.location_name)
     dagster_run = create_valid_pipeline_run(
-        graphene_info.context, external_job, execution_params, code_location
+        graphene_info.context, remote_job, execution_params, code_location
     )
 
     return graphene_info.context.instance.submit_run(
@@ -103,12 +103,12 @@ def launch_reexecution_from_parent_run(
     )
 
     repo_location = graphene_info.context.get_code_location(selector.location_name)
-    external_pipeline = get_external_job_or_raise(graphene_info, selector)
+    external_pipeline = get_remote_job_or_raise(graphene_info, selector)
 
     run = instance.create_reexecuted_run(
         parent_run=cast(DagsterRun, parent_run),
         code_location=repo_location,
-        external_job=external_pipeline,
+        remote_job=external_pipeline,
         strategy=ReexecutionStrategy(strategy),
         use_parent_run_tags=True,  # inherit whatever tags were set on the parent run at launch time
     )

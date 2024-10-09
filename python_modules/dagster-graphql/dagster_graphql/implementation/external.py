@@ -24,22 +24,20 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def get_full_external_job_or_raise(
+def get_full_remote_job_or_raise(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
 ) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_external_job_or_raise(graphene_info, selector, ignore_subset=True)
+    return _get_remote_job_or_raise(graphene_info, selector, ignore_subset=True)
 
 
-def get_external_job_or_raise(
-    graphene_info: "ResolveInfo", selector: JobSubsetSelector
-) -> RemoteJob:
+def get_remote_job_or_raise(graphene_info: "ResolveInfo", selector: JobSubsetSelector) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_external_job_or_raise(graphene_info, selector)
+    return _get_remote_job_or_raise(graphene_info, selector)
 
 
-def _get_external_job_or_raise(
+def _get_remote_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector, ignore_subset: bool = False
 ) -> RemoteJob:
     from dagster_graphql.schema.errors import (
@@ -49,14 +47,14 @@ def _get_external_job_or_raise(
     from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
 
     ctx = graphene_info.context
-    if not ctx.has_external_job(selector):
+    if not ctx.has_job(selector):
         raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
     elif ignore_subset:
-        external_job = ctx.get_full_external_job(selector)
+        remote_job = ctx.get_full_job(selector)
     else:
         code_location = ctx.get_code_location(selector.location_name)
         try:
-            external_job = code_location.get_external_job(selector)
+            remote_job = code_location.get_external_job(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             raise UserFacingGraphQLError(
@@ -65,29 +63,29 @@ def _get_external_job_or_raise(
                         message=error_info.message,
                         cause_message=f"\n{error_info.cause.message}" if error_info.cause else "",
                     ),
-                    pipeline=GraphenePipeline(ctx.get_full_external_job(selector)),
+                    pipeline=GraphenePipeline(ctx.get_full_job(selector)),
                 )
             )
 
-    return external_job
+    return remote_job
 
 
-def ensure_valid_config(external_job: RemoteJob, run_config: object) -> object:
+def ensure_valid_config(remote_job: RemoteJob, run_config: object) -> object:
     from dagster_graphql.schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
-    check.inst_param(external_job, "external_job", RemoteJob)
+    check.inst_param(remote_job, "remote_job", RemoteJob)
     # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
-        config_schema_snapshot=external_job.config_schema_snapshot,
-        config_type_key=check.not_none(external_job.root_config_key),
+        config_schema_snapshot=remote_job.config_schema_snapshot,
+        config_type_key=check.not_none(remote_job.root_config_key),
         config_value=run_config,
     )
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid.for_validation_errors(
-                external_job, validated_config.errors
+                remote_job, validated_config.errors
             )
         )
 
@@ -102,7 +100,7 @@ def get_external_execution_plan_or_raise(
     known_state: Optional[KnownExecutionState],
 ) -> RemoteExecutionPlan:
     return graphql_context.get_external_execution_plan(
-        external_job=external_pipeline,
+        remote_job=external_pipeline,
         run_config=run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,

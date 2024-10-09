@@ -137,14 +137,14 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
 
 class ReOriginatedExternalJobForTest(RemoteJob):
     def __init__(
-        self, external_job: RemoteJob, container_image=None, container_context=None, filename=None
+        self, remote_job: RemoteJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
         super(ReOriginatedExternalJobForTest, self).__init__(
-            external_job.job_data_snap,
-            external_job.repository_handle,
+            remote_job.job_data_snap,
+            remote_job.repository_handle,
         )
 
     def get_python_origin(self):
@@ -247,9 +247,7 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
 
 
 @contextmanager
-def get_test_project_external_job_hierarchy(
-    instance, job_name, container_image=None, filename=None
-):
+def get_test_project_remote_job_hierarchy(instance, job_name, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         repo = location.get_repository("demo_execution_repo")
@@ -265,10 +263,10 @@ def get_test_project_external_repo(instance, container_image=None, filename=None
 
 
 @contextmanager
-def get_test_project_workspace_and_external_job(
+def get_test_project_workspace_and_remote_job(
     instance, job_name, container_image=None, filename=None
 ):
-    with get_test_project_external_job_hierarchy(instance, job_name, container_image, filename) as (
+    with get_test_project_remote_job_hierarchy(instance, job_name, container_image, filename) as (
         workspace,
         _location,
         _repo,

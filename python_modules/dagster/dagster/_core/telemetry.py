@@ -590,22 +590,22 @@ def get_resource_stats(external_resources: Sequence["RemoteResource"]) -> Mappin
 def log_external_repo_stats(
     instance: DagsterInstance,
     source: str,
-    external_repo: "RemoteRepository",
-    external_job: Optional["RemoteJob"] = None,
+    remote_repo: "RemoteRepository",
+    remote_job: Optional["RemoteJob"] = None,
 ):
     from dagster._core.remote_representation.external import RemoteJob, RemoteRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
-    check.inst_param(external_repo, "external_repo", RemoteRepository)
-    check.opt_inst_param(external_job, "external_job", RemoteJob)
+    check.inst_param(remote_repo, "external_repo", RemoteRepository)
+    check.opt_inst_param(remote_job, "remote_job", RemoteJob)
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        job_name_hash = hash_name(external_job.name) if external_job else ""
-        repo_hash = hash_name(external_repo.name)
-        location_name_hash = hash_name(external_repo.handle.location_name)
+        job_name_hash = hash_name(remote_job.name) if remote_job else ""
+        repo_hash = hash_name(remote_repo.name)
+        location_name_hash = hash_name(remote_repo.handle.location_name)
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -614,7 +614,7 @@ def log_external_repo_stats(
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
                 metadata={
-                    **get_stats_from_external_repo(external_repo),
+                    **get_stats_from_external_repo(remote_repo),
                     "source": source,
                     "pipeline_name_hash": job_name_hash,
                     "repo_hash": repo_hash,
@@ -714,7 +714,7 @@ def log_workspace_stats(
 
     for code_location in request_context.code_locations:
         for external_repo in code_location.get_repositories().values():
-            log_external_repo_stats(instance, source="dagit", external_repo=external_repo)
+            log_external_repo_stats(instance, source="dagit", remote_repo=external_repo)
 
 
 def log_action(

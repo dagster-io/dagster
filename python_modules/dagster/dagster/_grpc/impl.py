@@ -287,10 +287,10 @@ def get_external_pipeline_subset_result(
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
         )
-        external_job_data = external_job_data_from_def(
+        job_data_snap = external_job_data_from_def(
             definition, include_parent_snapshot=include_parent_snapshot
         )
-        return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
+        return ExternalJobSubsetResult(success=True, external_job_data=job_data_snap)
     except Exception:
         return ExternalJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())

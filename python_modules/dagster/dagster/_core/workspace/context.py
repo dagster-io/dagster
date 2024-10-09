@@ -231,7 +231,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> bool:
+    def has_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> bool:
         check.inst_param(selector, "selector", JobSubsetSelector)
         if not self.has_code_location(selector.location_name):
             return False
@@ -241,7 +241,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selector.repository_name
         ).has_job(selector.job_name)
 
-    def get_full_external_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> RemoteJob:
+    def get_full_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> RemoteJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
@@ -250,15 +250,13 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_external_execution_plan(
         self,
-        external_job: RemoteJob,
+        remote_job: RemoteJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
     ) -> RemoteExecutionPlan:
-        return self.get_code_location(
-            external_job.handle.location_name
-        ).get_external_execution_plan(
-            external_job=external_job,
+        return self.get_code_location(remote_job.handle.location_name).get_external_execution_plan(
+            remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,

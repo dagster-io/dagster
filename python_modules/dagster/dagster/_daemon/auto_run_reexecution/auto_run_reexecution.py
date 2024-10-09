@@ -141,7 +141,7 @@ def retry_run(
         )
         return
 
-    external_job = code_location.get_external_job(
+    remote_job = code_location.get_external_job(
         JobSubsetSelector(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,
@@ -158,7 +158,7 @@ def retry_run(
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_job=external_job,
+        remote_job=remote_job,
         strategy=strategy,
         extra_tags=tags,
         use_parent_run_tags=True,

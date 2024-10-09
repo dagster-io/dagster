@@ -203,15 +203,13 @@ def test_successful_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
-        workspace.get_code_location("test").get_repository("nope").get_full_job("noop_job")
-    )
+    remote_job = workspace.get_code_location("test").get_repository("nope").get_full_job("noop_job")
 
     dagster_run = instance.create_run_for_job(
         job_def=noop_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run_id = dagster_run.run_id
 
@@ -234,9 +232,9 @@ def test_successful_run_from_pending(
 ):
     run_id = make_new_run_id()
     code_location = pending_workspace.get_code_location("test2")
-    external_job = code_location.get_repository("pending").get_full_job("my_cool_asset_job")
+    remote_job = code_location.get_repository("pending").get_full_job("my_cool_asset_job")
     external_execution_plan = code_location.get_external_execution_plan(
-        external_job=external_job,
+        remote_job=remote_job,
         run_config={},
         step_keys_to_execute=None,
         known_state=None,
@@ -265,16 +263,16 @@ def test_successful_run_from_pending(
         tags=None,
         root_run_id=None,
         parent_run_id=None,
-        job_snapshot=external_job.job_snapshot,
+        job_snapshot=remote_job.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        parent_job_snapshot=remote_job.parent_job_snapshot,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         asset_selection=None,
         op_selection=None,
         asset_check_selection=None,
         asset_graph=code_location.get_repository(
-            external_job.repository_handle.repository_name
+            remote_job.repository_handle.repository_name
         ).asset_graph,
     )
 
@@ -338,7 +336,7 @@ def test_invalid_instance_run():
                         ),
                     ) as workspace_process_context:
                         workspace = workspace_process_context.create_request_context()
-                        external_job = (
+                        remote_job = (
                             workspace.get_code_location("test")
                             .get_repository("nope")
                             .get_full_job("noop_job")
@@ -346,8 +344,8 @@ def test_invalid_instance_run():
 
                         run = instance.create_run_for_job(
                             job_def=noop_job,
-                            external_job_origin=external_job.get_remote_origin(),
-                            job_code_origin=external_job.get_python_origin(),
+                            remote_job_origin=remote_job.get_remote_origin(),
+                            job_code_origin=remote_job.get_python_origin(),
                         )
                         with pytest.raises(
                             DagsterLaunchFailedError,
@@ -374,15 +372,15 @@ def test_crashy_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test").get_repository("nope").get_full_job("crashy_job")
     )
 
     run = instance.create_run_for_job(
         job_def=crashy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -454,15 +452,15 @@ def test_exity_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test").get_repository("nope").get_full_job("exity_job")
     )
 
     run = instance.create_run_for_job(
         job_def=exity_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -513,14 +511,14 @@ def test_terminated_run(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test").get_repository("nope").get_full_job("sleepy_job")
     )
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -614,14 +612,14 @@ def test_cleanup_after_force_terminate(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test").get_repository("nope").get_full_job("sleepy_job")
     )
     run = instance.create_run_for_job(
         job_def=sleepy_job,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -712,15 +710,15 @@ def test_single_op_selection_execution(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test").get_repository("nope").get_full_job("math_diamond")
     )
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
         op_selection=["return_one"],
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run_id = run.run_id
 
@@ -748,7 +746,7 @@ def test_multi_op_selection_execution(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test").get_repository("nope").get_full_job("math_diamond")
     )
 
@@ -756,8 +754,8 @@ def test_multi_op_selection_execution(
         job_def=math_diamond,
         run_config=run_config,
         op_selection=["return_one", "multiply_by_2"],
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run_id = run.run_id
 
@@ -787,7 +785,7 @@ def test_job_that_fails_run_worker(
     instance: DagsterInstance,
     workspace: WorkspaceRequestContext,
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_job("job_that_fails_run_worker")
@@ -795,8 +793,8 @@ def test_job_that_fails_run_worker(
     run = instance.create_run_for_job(
         job_def=job_that_fails_run_worker,
         run_config={},
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run_id = run.run_id
 
@@ -836,14 +834,14 @@ def test_engine_events(
     workspace: WorkspaceRequestContext,
     run_config: Mapping[str, Any],
 ):
-    external_job = (
+    remote_job = (
         workspace.get_code_location("test").get_repository("nope").get_full_job("math_diamond")
     )
     run = instance.create_run_for_job(
         job_def=math_diamond,
         run_config=run_config,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     run_id = run.run_id
 

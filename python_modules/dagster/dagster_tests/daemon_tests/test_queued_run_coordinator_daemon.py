@@ -97,7 +97,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def create_run(self, instance, job_handle, **kwargs):
         create_run_for_test(
             instance,
-            external_job_origin=job_handle.get_remote_origin(),
+            remote_job_origin=job_handle.get_remote_origin(),
             job_code_origin=job_handle.get_python_origin(),
             job_name="foo",
             **kwargs,
@@ -106,7 +106,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def create_queued_run(self, instance, job_handle, **kwargs):
         run = create_run_for_test(
             instance,
-            external_job_origin=job_handle.get_remote_origin(),
+            remote_job_origin=job_handle.get_remote_origin(),
             job_code_origin=job_handle.get_python_origin(),
             job_name="foo",
             status=DagsterRunStatus.NOT_STARTED,
@@ -140,7 +140,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         )
         run = create_run_for_test(
             instance,
-            external_job_origin=subset_job.get_remote_origin(),
+            remote_job_origin=subset_job.get_remote_origin(),
             job_code_origin=subset_job.get_python_origin(),
             job_name=subset_job.name,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
@@ -156,7 +156,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         return [run.run_id for run in runs_queue]
 
     def get_external_concurrency_job(self, workspace):
-        return workspace.get_full_external_job(
+        return workspace.get_full_job(
             JobSubsetSelector(
                 location_name="test",
                 repository_name="__repository__",
@@ -939,7 +939,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     ):
         run_id_1 = make_new_run_id()
         workspace = concurrency_limited_workspace_context.create_request_context()
-        external_job = workspace.get_full_external_job(
+        external_job = workspace.get_full_job(
             JobSubsetSelector(
                 location_name="test",
                 repository_name="__repository__",
