@@ -1,4 +1,5 @@
 import inspect
+import os
 from abc import ABC
 from collections import namedtuple
 from functools import partial
@@ -434,7 +435,13 @@ class JitCheckedNew:
         self._compiled = False
 
     def __call__(self, cls, *args, **kwargs):
-        check.invariant(self._compiled is False, "failed to set compiled __new__ appropriately")
+        if _do_defensive_checks():
+            # this condition can happen during races in threaded envs so only
+            # invariant when opted-in
+            check.invariant(
+                self._compiled is False,
+                "failed to set compiled __new__ appropriately",
+            )
 
         # update the context with callsite locals/globals to resolve
         # ForwardRefs that were unavailable at definition time.
@@ -583,3 +590,7 @@ def _defines_own_new(cls) -> bool:
         return False
 
     return qualname_parts[-2] == cls.__name__
+
+
+def _do_defensive_checks():
+    return bool(os.getenv("DAGSTER_RECORD_DEFENSIVE_CHECKS"))

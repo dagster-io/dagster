@@ -1,3 +1,4 @@
+import os
 import pickle
 from abc import ABC, abstractmethod
 from functools import cached_property
@@ -824,3 +825,8 @@ def test_replace() -> None:
     assert replaced == obj
     replaced.boop()
     assert replaced.__class__ is obj.__class__
+
+
+def test_defensive_checks_running():
+    # make sure we have enabled defensive checks in test, ideally as broadly as possible
+    assert os.getenv("DAGSTER_RECORD_DEFENSIVE_CHECKS") == "true"
