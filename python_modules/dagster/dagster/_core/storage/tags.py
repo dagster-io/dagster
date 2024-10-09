@@ -1,7 +1,5 @@
 from enum import Enum
 
-import dagster._check as check
-
 SYSTEM_TAG_PREFIX = "dagster/"
 HIDDEN_TAG_PREFIX = ".dagster/"
 
@@ -119,14 +117,3 @@ def get_tag_type(tag):
         return TagType.HIDDEN
     else:
         return TagType.USER_PROVIDED
-
-
-def check_reserved_tags(tags):
-    check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
-
-    for tag in tags.keys():
-        if tag not in USER_EDITABLE_SYSTEM_TAGS:
-            check.invariant(
-                not tag.startswith(SYSTEM_TAG_PREFIX),
-                desc=f"Attempted to set tag with reserved system prefix: {tag}",
-            )

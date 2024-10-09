@@ -76,7 +76,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-from dagster._utils.tags import validate_tags_strict
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
 if TYPE_CHECKING:
@@ -1711,7 +1711,7 @@ def _asset_specs_from_attr_key_params(
     )
 
     for tags in (tags_by_key or {}).values():
-        validate_tags_strict(tags)
+        normalize_tags(tags, strict=True)
     validated_tags_by_key = tags_by_key or {}
 
     validated_descriptions_by_key = check.opt_mapping_param(

@@ -113,7 +113,7 @@ def test_job_system_tags():
     def basic_job():
         basic()
 
-    normalize_tags(basic_job.tags, allow_reserved_tags=False)
+    normalize_tags(basic_job.tags, allow_private_system_tags=False)
 
 
 def test_invalid_tag_keys():

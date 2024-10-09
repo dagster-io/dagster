@@ -127,7 +127,9 @@ def schedule(
                 " to ScheduleDefinition. Must provide only one of the two."
             )
         elif tags:
-            validated_tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=3)
+            validated_tags = normalize_tags(
+                tags, allow_private_system_tags=False, warning_stacklevel=3
+            )
 
         context_param_name = get_context_param_name(fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
@@ -163,7 +165,10 @@ def schedule(
                     evaluated_run_config = copy.deepcopy(result)
                     evaluated_tags = (
                         validated_tags
-                        or (tags_fn and normalize_tags(tags_fn(context), allow_reserved_tags=False))
+                        or (
+                            tags_fn
+                            and normalize_tags(tags_fn(context), allow_private_system_tags=False)
+                        )
                         or None
                     )
                     yield RunRequest(
