@@ -1808,11 +1808,33 @@ class TestRunStorage:
             backfill_timestamp=time.time(),
         )
         storage.add_backfill(two)
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=make_new_run_id(),
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: two.backfill_id},
+            )
+        )
+
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=make_new_run_id(),
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={},
+            )
+        )
 
         storage.delete_backfill("one")
         assert storage.get_backfill("one") is None
 
         assert storage.get_backfill("two").backfill_id == "two"
+
+        assert len(storage.get_runs()) == 2
+        storage.delete_backfill("two")
+        assert storage.get_backfill("two") is None
+        assert len(storage.get_runs()) == 1
 
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)

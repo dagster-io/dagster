@@ -1025,6 +1025,9 @@ class SqlRunStorage(RunStorage):
 
     def delete_backfill(self, backfill_id: str) -> None:
         check.str_param(backfill_id, "backfill_id")
+        runs_in_backfill = self.get_run_ids(filters=RunsFilter.for_backfill(backfill_id))
+        for run_id in runs_in_backfill:
+            self.delete_run(run_id)
         query = db.delete(BulkActionsTable).where(BulkActionsTable.c.key == backfill_id)
         with self.connect() as conn:
             conn.execute(query)
