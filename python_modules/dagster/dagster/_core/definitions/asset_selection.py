@@ -2,7 +2,7 @@ import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
+from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -14,6 +14,7 @@ from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
+    asset_keys_from_defs_and_coercibles,
     key_prefix_from_coercible,
 )
 from dagster._core.definitions.assets import AssetsDefinition
@@ -134,18 +135,7 @@ class AssetSelection(ABC, DagsterModel):
                 asset_key_list = [AssetKey(["a"]), AssetKey(["b"])]
                 AssetSelection.assets(*asset_key_list)
         """
-        selected_keys: List[AssetKey] = []
-        for el in assets_defs:
-            if isinstance(el, AssetsDefinition):
-                selected_keys.extend(el.keys)
-            else:
-                selected_keys.append(
-                    AssetKey.from_user_string(el)
-                    if isinstance(el, str)
-                    else AssetKey.from_coercible(el)
-                )
-
-        return KeysAssetSelection(selected_keys=selected_keys)
+        return KeysAssetSelection(selected_keys=asset_keys_from_defs_and_coercibles(assets_defs))
 
     @public
     @staticmethod
@@ -260,10 +250,17 @@ class AssetSelection(ABC, DagsterModel):
 
     @public
     @staticmethod
-    def checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeysSelection":
-        """Returns a selection with the asset checks that target the provided assets."""
+    def checks_for_assets(
+        *assets_defs: Union[AssetsDefinition, CoercibleToAssetKey],
+    ) -> "AssetChecksForAssetKeysSelection":
+        """Returns a selection with the asset checks that target the provided assets.
+
+        Args:
+            *assets_defs (Union[AssetsDefinition, str, Sequence[str], AssetKey]): The assets to
+                select checks for.
+        """
         return AssetChecksForAssetKeysSelection(
-            selected_asset_keys=[key for assets_def in assets_defs for key in assets_def.keys]
+            selected_asset_keys=asset_keys_from_defs_and_coercibles(assets_defs)
         )
 
     @public
