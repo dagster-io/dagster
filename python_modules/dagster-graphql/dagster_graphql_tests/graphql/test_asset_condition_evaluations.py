@@ -695,6 +695,14 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert rootNode["numTrue"] == 0
         assert len(rootNode["childUniqueIds"]) == 5
 
+        def _get_node(id):
+            return next(n for n in record["evaluationNodes"] if n["uniqueId"] == id)
+
+        not_any_deps_missing_node = _get_node(rootNode["childUniqueIds"][2])
+        any_deps_missing_node = _get_node(not_any_deps_missing_node["childUniqueIds"][0])
+        up_node = _get_node(any_deps_missing_node["childUniqueIds"][0])
+        assert up_node["expandedLabel"] == ["up", "((missing) AND (NOT (will_be_requested)))"]
+
         evaluationId = record["evaluationId"]
         uniqueId = rootNode["uniqueId"]
         results = execute_dagster_graphql(
