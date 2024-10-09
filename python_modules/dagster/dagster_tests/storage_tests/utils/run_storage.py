@@ -1808,14 +1808,15 @@ class TestRunStorage:
             backfill_timestamp=time.time(),
         )
         storage.add_backfill(two)
-        storage.add_run(
-            TestRunStorage.build_run(
-                run_id=make_new_run_id(),
-                job_name="some_pipeline",
-                status=DagsterRunStatus.SUCCESS,
-                tags={BACKFILL_ID_TAG: two.backfill_id},
+        for _ in range(3):
+            storage.add_run(
+                TestRunStorage.build_run(
+                    run_id=make_new_run_id(),
+                    job_name="some_pipeline",
+                    status=DagsterRunStatus.SUCCESS,
+                    tags={BACKFILL_ID_TAG: two.backfill_id},
+                )
             )
-        )
 
         storage.add_run(
             TestRunStorage.build_run(
@@ -1831,7 +1832,7 @@ class TestRunStorage:
 
         assert storage.get_backfill("two").backfill_id == "two"
 
-        assert len(storage.get_runs()) == 2
+        assert len(storage.get_runs()) == 4
         storage.delete_backfill("two")
         assert storage.get_backfill("two") is None
         assert len(storage.get_runs()) == 1
