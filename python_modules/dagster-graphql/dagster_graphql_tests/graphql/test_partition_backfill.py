@@ -1714,7 +1714,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["reexecutePartitionBackfill"]["__typename"] == "PythonError"
         assert (
-            "Cannot re-execute an asset backfill that has no missing materializations"
+            "Cannot re-execute from failure an asset backfill that has no missing materializations"
             in result.data["reexecutePartitionBackfill"]["message"]
         )
 
@@ -1858,7 +1858,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         retried_backfill = graphql_context.instance.get_backfill(retry_backfill_id)
 
         assert (
-            first_backfill.asset_backfill_data.failed_and_downstream_subset
+            first_backfill.asset_backfill_data.target_subset
             == retried_backfill.asset_backfill_data.target_subset
         )
         assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
@@ -1964,7 +1964,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             RETRY_BACKFILL_MUTATION,
             variables={
-                "reexecutionParams": {"parentRunId": backfill_id, "strategy": "FROM_FAILURE"},
+                "reexecutionParams": {"parentRunId": retry_backfill_id, "strategy": "FROM_FAILURE"},
             },
         )
 
@@ -2078,7 +2078,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
         assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
-        assert result.data["partitionBackfillOrError"]["fromFailure"]
+        assert not result.data["partitionBackfillOrError"]["fromFailure"]
 
     def test_retry_in_progress_job_backfill(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
