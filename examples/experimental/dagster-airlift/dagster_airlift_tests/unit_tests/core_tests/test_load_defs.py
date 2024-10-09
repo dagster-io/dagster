@@ -43,6 +43,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
+from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.core.utils import is_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
@@ -711,8 +712,13 @@ def test_automapped_dag_with_two_tasks_plus_explicit_defs() -> None:
     explicit_asset_1 = AssetKey("explicit_asset1")
     full_defs = build_full_automapped_dags_from_airflow_instance(
         airflow_instance=airflow_instance,
-        defs=dag_defs(
-            "dag1", task_defs("task1", Definitions(assets=[AssetSpec(explicit_asset_1)]))
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag1",
+                task_mappings={
+                    "task1": [AssetSpec(explicit_asset_1)],
+                },
+            )
         ),
     )
 
