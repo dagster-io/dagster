@@ -23,20 +23,29 @@ class TaskProxiedState(NamedTuple):
 
 
 class DagProxiedState(NamedTuple):
+    proxied: Optional[bool]
     tasks: Dict[str, TaskProxiedState]
 
     @staticmethod
     def from_dict(dag_dict: Dict[str, Sequence[Dict[str, Any]]]) -> "DagProxiedState":
-        if "tasks" not in dag_dict:
+        if "tasks" not in dag_dict and "proxied" not in dag_dict:
             raise Exception(
-                f"Expected a 'tasks' key in the dag dictionary. Instead; got: {dag_dict}"
+                f"Expected a 'tasks' or 'proxied' top-level key in the dag dictionary. Instead; got: {dag_dict}"
             )
-        task_list = dag_dict["tasks"]
+        if "tasks" in dag_dict and "proxied" in dag_dict:
+            raise Exception(
+                f"Expected only one of 'tasks' or 'proxied' top-level keys in the dag dictionary. Instead; got: {dag_dict}"
+            )
         task_proxied_states = {}
-        for task_dict in task_list:
-            task_state = TaskProxiedState.from_dict(task_dict)
-            task_proxied_states[task_state.task_id] = task_state
-        return DagProxiedState(tasks=task_proxied_states)
+        if "tasks" in dag_dict:
+            task_list = dag_dict["tasks"]
+            for task_dict in task_list:
+                task_state = TaskProxiedState.from_dict(task_dict)
+                task_proxied_states[task_state.task_id] = task_state
+        dag_proxied_state = dag_dict.get("proxied")
+        if dag_proxied_state not in [True, False, None]:
+            raise Exception("Expected 'proxied' key to be a boolean or None")
+        return DagProxiedState(tasks=task_proxied_states, proxied=dag_proxied_state)
 
     def to_dict(self) -> Dict[str, Sequence[Dict[str, Any]]]:
         return {"tasks": [task_state.to_dict() for task_state in self.tasks.values()]}
