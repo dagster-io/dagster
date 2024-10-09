@@ -373,7 +373,6 @@ class GrapheneReexecuteBackfillMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneLaunchBackfillResult)
 
     class Arguments:
-        # backfillId = graphene.NonNull(graphene.String)
         reexecutionParams = graphene.Argument(GrapheneReexecutionParams)
 
     class Meta:
@@ -384,7 +383,7 @@ class GrapheneReexecuteBackfillMutation(graphene.Mutation):
     def mutate(
         self,
         graphene_info: ResolveInfo,
-        reexecutionParams: Optional[GrapheneReexecutionParams] = None,
+        reexecutionParams: GrapheneReexecutionParams,
     ):
         return retry_partition_backfill(
             graphene_info,
