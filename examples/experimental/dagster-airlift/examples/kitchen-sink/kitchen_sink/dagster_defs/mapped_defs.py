@@ -1,5 +1,10 @@
 from dagster import Definitions, asset
-from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster_airlift.core import (
+    assets_with_dag_mappings,
+    build_defs_from_airflow_instance,
+    dag_defs,
+    task_defs,
+)
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 
 from .airflow_instance import local_airflow_instance
@@ -22,6 +27,11 @@ def asset_one() -> None:
     print("Materialized asset one")
 
 
+@asset(description="Asset two is materialized by an overridden dag")
+def asset_two() -> None:
+    print("Materialized asset two")
+
+
 def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
         airflow_instance=local_airflow_instance(),
@@ -38,6 +48,7 @@ def build_mapped_defs() -> Definitions:
                     {"dag_id": "daily_dag", "task_id": "asset_one_daily"},
                 ],
             ),
+            Definitions(assets=assets_with_dag_mappings({"overridden_dag": [asset_two]})),
         ),
     )
 
