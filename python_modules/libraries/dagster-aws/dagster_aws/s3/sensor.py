@@ -1,12 +1,11 @@
-from collections import namedtuple
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import boto3
 import dagster._check as check
 from dagster._annotations import deprecated
 
-Object = namedtuple("Object", ["key", "last_modified"])
+from dagster_aws._stubs import ObjectTypeDef
 
 
 class ClientException(Exception):
@@ -19,7 +18,7 @@ def get_objects(
     since_key: Optional[str] = None,
     since_last_modified: Optional[str] = None,
     client=None,
-) -> List[Object]:
+) -> List[ObjectTypeDef]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
 
     Args:
@@ -39,30 +38,33 @@ def get_objects(
     check.opt_str_param(since_last_modified, "since_last_modified")
 
     if not client:
+        client = boto3.client("s3")
+
+    if not client:
         raise ClientException("Failed to initialize s3 client")
 
     paginator = client.get_paginator("list_objects_v2")
     page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="")
 
-    objects = []
+    objects: List[ObjectTypeDef] = []
     for page in page_iterator:
         contents = page.get("Contents", [])
-        objects.extend([Object(obj.get("Key"), obj.get("LastModified")) for obj in contents])
+        objects.extend([ObjectTypeDef(obj) for obj in contents])
 
-    if since_key and not any(obj.key == since_key for obj in objects):
+    if since_key and not any(obj.get("Key") == since_key for obj in objects):
         raise Exception("Provided `since_key` is not present in list of objects")
 
-    sorted_objects = [obj for obj in sorted(objects, key=lambda x: x.last_modified)]
+    sorted_objects = [obj for obj in sorted(objects, key=lambda x: x.get("LastModified"))]
 
     if since_key and since_key:
         for idx, obj in enumerate(sorted_objects):
-            if obj.key == since_key:
+            if obj.get("Key") == since_key:
                 return sorted_objects[idx + 1 :]
 
     if since_last_modified:
         since_last_modified_dt = datetime.fromisoformat(since_last_modified)
         for idx, obj in enumerate(sorted_objects):
-            if obj.last_modified >= since_last_modified_dt:
+            if obj.get("LastModified") >= since_last_modified_dt:
                 return sorted_objects[idx + 1 :]
 
     return sorted_objects
@@ -73,7 +75,7 @@ def get_s3_keys(
     bucket: str,
     prefix: str = "",
     since_key: Optional[str] = None,
-    s3_session: Optional[boto3.Session] = None,
+    s3_session: Optional[Any] = None,
 ) -> List[str]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
 
@@ -88,11 +90,11 @@ def get_s3_keys(
         prefix (str): s3 object prefix
         since_key (Optional[str]): retrieve objects after the modified date of this key
         since_last_modified (Optional[str]): retrieve objects after this timestamp
-        s3_session (Optional[boto3.Session]): s3 client
+        s3_session (Optional[boto3.Client]): s3 client
 
     Returns:
         List of object keys in S3.
 
     """
     objects = get_objects(bucket=bucket, prefix=prefix, since_key=since_key, client=s3_session)
-    return [obj.key for obj in objects]
+    return [obj.get("Key") for obj in objects]
