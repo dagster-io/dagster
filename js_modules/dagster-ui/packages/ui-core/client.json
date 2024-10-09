@@ -39,7 +39,7 @@
   "AssetChecksQuery": "b5e8d4663f4f77f439dc8b9424966d7298d69987c67d3033d715c13ad2856ae5",
   "AssetDaemonTicksQuery": "399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788",
   "AssetGroupAndLocationQuery": "584b27ecda9ff883e92f2d8858520a543ea0be07d39e1b4c0fc5d802231bb602",
-  "AssetColumnLineage": "c88c38558eb5d45b3c51b125853bc0df120213c4b8f5933a264525c3689bcef1",
+  "AssetColumnLineage": "ce1683cb51cf7ac96c82f05bbf5f1cc2df57ce6c944615109e30dc6d93246dc4",
   "GetAutoMaterializePausedQuery": "50f74183f54031274136ab855701d01f26642a6d958d7452ae13aa6c40ca349d",
   "SetAutoMaterializePausedMutation": "144afc0d6f43dfa6d437c0e7f621e4f19ffb48c7f75669d2e3d742c115aa7b4b",
   "AssetOverviewMetadataEventsQuery": "95837aa7d438974ed0f6f8ec9c72f59bcdb8af12091ede4e334aa24e4f6844de",

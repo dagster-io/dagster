@@ -6,7 +6,7 @@ import {
 } from './types/useColumnLineageDataForAssets.types';
 import {gql, useApolloClient} from '../../apollo-client';
 import {toGraphId} from '../../asset-graph/Utils';
-import {AssetKeyInput} from '../../graphql/types';
+import {AssetKeyInput, DefinitionTag, TableColumnLineageMetadataEntry} from '../../graphql/types';
 import {isCanonicalColumnLineageEntry} from '../../metadata/TableSchema';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
@@ -15,6 +15,7 @@ export type AssetColumnLineageLocalColumn = {
   name: string;
   type: string | null;
   description: string | null;
+  tags: DefinitionTag[];
   asOf: string | undefined; // materialization timestamp
   upstream: {
     assetKey: AssetKeyInput;
@@ -23,7 +24,10 @@ export type AssetColumnLineageLocalColumn = {
 };
 
 export type AssetColumnLineageLocal = {
-  [column: string]: AssetColumnLineageLocalColumn;
+  columns: {
+    [column: string]: AssetColumnLineageLocalColumn;
+  };
+  hasLineage: boolean;
 };
 
 export type AssetColumnLineages = {[graphId: string]: AssetColumnLineageLocal | undefined};
@@ -38,12 +42,13 @@ const getColumnLineage = (
   asset: AssetColumnLineageQuery['assetNodes'][0],
 ): AssetColumnLineageLocal => {
   const materialization = asset.assetMaterializations[0];
-  const lineageMetadata = materialization?.metadataEntries.find(isCanonicalColumnLineageEntry);
-  if (!lineageMetadata) {
-    // Note: We return empty rather than undefined / null so the hook does not try to fetch
-    // this again as if it were still missing
-    return {};
-  }
+
+  const definitionLineageMetadata = asset.metadataEntries.find(isCanonicalColumnLineageEntry);
+  const materializationLineageMetadata = materialization?.metadataEntries.find(
+    isCanonicalColumnLineageEntry,
+  );
+  const lineageMetadata: TableColumnLineageMetadataEntry | undefined =
+    materializationLineageMetadata || definitionLineageMetadata;
 
   const {tableSchema} = buildConsolidatedColumnSchema({
     materialization,
@@ -55,18 +60,30 @@ const getColumnLineage = (
     ? Object.fromEntries(tableSchema.schema.columns.map((col) => [col.name, col]))
     : {};
 
-  return Object.fromEntries(
-    lineageMetadata.lineage.map(({columnName, columnDeps}) => [
-      columnName,
-      {
-        name: columnName,
-        asOf: materialization?.timestamp,
-        type: schemaParsed[columnName]?.type || null,
-        description: schemaParsed[columnName]?.description || null,
-        upstream: columnDeps,
-      },
-    ]),
-  );
+  const lineageByName = lineageMetadata?.lineage
+    ? Object.fromEntries(lineageMetadata.lineage.map((l) => [l.columnName, l]))
+    : {};
+
+  const columnNames: string[] = !!lineageMetadata
+    ? Object.keys(lineageByName)
+    : Object.keys(schemaParsed);
+
+  return {
+    hasLineage: !!lineageMetadata,
+    columns: Object.fromEntries(
+      columnNames.map((columnName) => [
+        columnName,
+        {
+          name: columnName,
+          asOf: materialization?.timestamp,
+          type: schemaParsed[columnName]?.type || null,
+          description: schemaParsed[columnName]?.description || null,
+          upstream: lineageByName[columnName]?.columnDeps || [],
+          tags: schemaParsed[columnName]?.tags || [],
+        },
+      ]),
+    ),
+  };
 };
 
 export function useColumnLineageDataForAssets(assetKeys: AssetKeyInput[]) {
@@ -124,6 +141,21 @@ const ASSET_COLUMN_LINEAGE_QUERY = gql`
               name
               type
               description
+              tags {
+                key
+                value
+              }
+            }
+          }
+        }
+        ... on TableColumnLineageMetadataEntry {
+          lineage {
+            columnName
+            columnDeps {
+              assetKey {
+                path
+              }
+              columnName
             }
           }
         }
@@ -140,6 +172,10 @@ const ASSET_COLUMN_LINEAGE_QUERY = gql`
                 name
                 type
                 description
+                tags {
+                  key
+                  value
+                }
               }
             }
           }
