@@ -11,8 +11,8 @@ from dagster._api.snapshot_repository import (
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
-    ExternalRepositoryData,
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    RepositorySnap,
 )
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import JobDataSnap
@@ -35,7 +35,7 @@ def test_streaming_external_repositories_api_grpc(instance):
 
         external_repository_data = external_repo_datas["bar_repo"]
 
-        assert isinstance(external_repository_data, ExternalRepositoryData)
+        assert isinstance(external_repository_data, RepositorySnap)
         assert external_repository_data.name == "bar_repo"
         assert external_repository_data.metadata == {
             "string": TextMetadataValue("foo"),
@@ -117,7 +117,7 @@ def test_giant_external_repository_streaming_grpc():
 
             external_repository_data = external_repos_data["giant_repo"]
 
-            assert isinstance(external_repository_data, ExternalRepositoryData)
+            assert isinstance(external_repository_data, RepositorySnap)
             assert external_repository_data.name == "giant_repo"
 
 
@@ -143,12 +143,9 @@ def test_defer_snapshots(instance: DagsterInstance):
             )
             return deserialize_value(reply.serialized_job_data, JobDataSnap)
 
-        external_repository_data = deserialize_value(ser_repo_data, ExternalRepositoryData)
-        assert (
-            external_repository_data.external_job_refs
-            and len(external_repository_data.external_job_refs) == 6
-        )
-        assert external_repository_data.external_job_datas is None
+        external_repository_data = deserialize_value(ser_repo_data, RepositorySnap)
+        assert external_repository_data.job_refs and len(external_repository_data.job_refs) == 6
+        assert external_repository_data.job_datas is None
 
         repo = ExternalRepository(
             external_repository_data,

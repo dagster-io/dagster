@@ -6,7 +6,7 @@ from dagster._check.functions import CheckError
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.remote_representation.external_data import (
-    ExternalRepositoryData,
+    RepositorySnap,
     external_repository_data_from_def,
 )
 from dagster._serdes import serialize_value
@@ -118,8 +118,8 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
     )
     assert isinstance(serialized, str)
     deserialized = deserialize_value(serialized)
-    assert isinstance(deserialized, ExternalRepositoryData)
-    external_assets = deserialized.external_asset_graph_data
+    assert isinstance(deserialized, RepositorySnap)
+    external_assets = deserialized.asset_nodes
     assert len(external_assets) == 1
     automation_condition = external_assets[0].automation_condition
     # it does not make its way onto the ExternalAssetNode
