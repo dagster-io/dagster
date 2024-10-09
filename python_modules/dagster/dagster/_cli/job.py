@@ -95,7 +95,7 @@ def execute_list_command(cli_args, print_fn):
             print_fn(title)
             print_fn("*" * len(title))
             first = True
-            for job in external_repository.get_all_external_jobs():
+            for job in external_repository.get_all_jobs():
                 job_title = f"Job: {job.name}"
 
                 if not first:
@@ -631,7 +631,7 @@ def _execute_backfill_command_at_location(
     job_partition_set = next(
         (
             external_partition_set
-            for external_partition_set in external_repo.get_external_partition_sets()
+            for external_partition_set in external_repo.get_partition_sets()
             if external_partition_set.job_name == external_job.name
         ),
         None,

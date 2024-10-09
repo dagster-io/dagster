@@ -143,7 +143,7 @@ class ReOriginatedExternalJobForTest(RemoteJob):
         self._container_context = container_context
         self._filename = filename or "repo.py"
         super(ReOriginatedExternalJobForTest, self).__init__(
-            external_job.external_job_data,
+            external_job.job_data_snap,
             external_job.repository_handle,
         )
 
@@ -198,7 +198,7 @@ class ReOriginatedExternalScheduleForTest(RemoteSchedule):
     ):
         self._container_image = container_image
         super(ReOriginatedExternalScheduleForTest, self).__init__(
-            external_schedule._external_schedule_data,  # noqa: SLF001
+            external_schedule._schedule_snap,  # noqa: SLF001
             external_schedule.handle.repository_handle,
         )
 
@@ -253,7 +253,7 @@ def get_test_project_external_job_hierarchy(
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         repo = location.get_repository("demo_execution_repo")
-        job = repo.get_full_external_job(job_name)
+        job = repo.get_full_job(job_name)
         yield workspace, location, repo, job
 
 
@@ -284,7 +284,7 @@ def get_test_project_external_schedule(
     with get_test_project_external_repo(
         instance, container_image=container_image, filename=filename
     ) as (_, repo):
-        yield repo.get_external_schedule(schedule_name)
+        yield repo.get_schedule(schedule_name)
 
 
 def get_test_project_docker_image():

@@ -133,7 +133,7 @@ def create_and_launch_partition_backfill(
         repository = location.get_repository(repository_selector.repository_name)
         matches = [
             partition_set
-            for partition_set in repository.get_external_partition_sets()
+            for partition_set in repository.get_partition_sets()
             if partition_set.name == partition_set_selector.get("partitionSetName")
         ]
         if not matches:

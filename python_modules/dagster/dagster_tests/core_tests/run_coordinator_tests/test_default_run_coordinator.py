@@ -48,7 +48,7 @@ def test_submit_run(instance: DagsterInstance, coodinator: DefaultRunCoordinator
         external_job = (
             workspace.get_code_location("bar_code_location")
             .get_repository("bar_repo")
-            .get_full_external_job("foo")
+            .get_full_job("foo")
         )
 
         run = _create_run(instance, external_job)
@@ -67,7 +67,7 @@ def test_submit_run_checks_status(instance: DagsterInstance, coodinator: Default
         external_job = (
             workspace.get_code_location("bar_code_location")
             .get_repository("bar_repo")
-            .get_full_external_job("foo")
+            .get_full_job("foo")
         )
 
         run = _create_run(instance, external_job, status=DagsterRunStatus.STARTED)

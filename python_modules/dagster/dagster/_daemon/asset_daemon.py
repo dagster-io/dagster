@@ -483,7 +483,7 @@ class AssetDaemon(DagsterDaemon):
                 code_location = location_entry.code_location
                 if code_location:
                     for repo in code_location.get_repositories().values():
-                        for sensor in repo.get_external_sensors():
+                        for sensor in repo.get_sensors():
                             if sensor.sensor_type.is_handled_by_asset_daemon:
                                 eligible_sensors_and_repos.append((sensor, repo))
 

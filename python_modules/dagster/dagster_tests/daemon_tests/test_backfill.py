@@ -507,7 +507,7 @@ def test_simple_backfill(
     workspace_context: WorkspaceProcessContext,
     external_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    external_partition_set = external_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -540,7 +540,7 @@ def test_canceled_backfill(
     workspace_context: WorkspaceProcessContext,
     external_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    external_partition_set = external_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -576,7 +576,7 @@ def test_failure_backfill(
     external_repo: RemoteRepository,
 ):
     output_file = _failure_flag_file()
-    external_partition_set = external_repo.get_external_partition_set(
+    external_partition_set = external_repo.get_partition_set(
         "conditional_failure_job_partition_set"
     )
     instance.add_backfill(
@@ -679,7 +679,7 @@ def test_job_backfill_status(
     workspace_context: WorkspaceProcessContext,
     external_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    external_partition_set = external_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -737,7 +737,7 @@ def test_partial_backfill(
     workspace_context: WorkspaceProcessContext,
     external_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_external_partition_set("partial_job_partition_set")
+    external_partition_set = external_repo.get_partition_set("partial_job_partition_set")
 
     # create full runs, where every step is executed
     instance.add_backfill(
@@ -829,7 +829,7 @@ def test_large_backfill(
     workspace_context: WorkspaceProcessContext,
     external_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_external_partition_set("config_job_partition_set")
+    external_partition_set = external_repo.get_partition_set("config_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -1066,9 +1066,7 @@ def test_backfill_from_partitioned_job(
     external_repo: RemoteRepository,
 ):
     partition_keys = my_config.partitions_def.get_partition_keys()
-    external_partition_set = external_repo.get_external_partition_set(
-        "comp_always_succeed_partition_set"
-    )
+    external_partition_set = external_repo.get_partition_set("comp_always_succeed_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="partition_schedule_from_job",
@@ -1103,7 +1101,7 @@ def test_backfill_with_asset_selection(
     assert job_def
     asset_job_name = job_def.name
     partition_set_name = f"{asset_job_name}_partition_set"
-    external_partition_set = external_repo.get_external_partition_set(partition_set_name)
+    external_partition_set = external_repo.get_partition_set(partition_set_name)
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="backfill_with_asset_selection",
@@ -1270,9 +1268,7 @@ def test_backfill_from_failure_for_subselection(
     run = next(iter(instance.get_runs()))
     assert run.status == DagsterRunStatus.FAILURE
 
-    external_partition_set = external_repo.get_external_partition_set(
-        "parallel_failure_job_partition_set"
-    )
+    external_partition_set = external_repo.get_partition_set("parallel_failure_job_partition_set")
 
     instance.add_backfill(
         PartitionBackfill(
@@ -1955,7 +1951,7 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
 
 # Job must have a partitions definition with a-b-c-d partitions
 def _get_abcd_job_backfill(external_repo: RemoteRepository, job_name: str) -> PartitionBackfill:
-    external_partition_set = external_repo.get_external_partition_set(f"{job_name}_partition_set")
+    external_partition_set = external_repo.get_partition_set(f"{job_name}_partition_set")
     return PartitionBackfill(
         backfill_id="simple",
         partition_set_origin=external_partition_set.get_remote_origin(),

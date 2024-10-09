@@ -66,7 +66,7 @@ def test_terminate_kills_subproc():
             external_job = (
                 workspace.get_code_location("test")
                 .get_repository("sleepy_repo")
-                .get_full_external_job("sleepy_job")
+                .get_full_job("sleepy_job")
             )
             dagster_run = instance.create_run_for_job(
                 job_def=sleepy_job,

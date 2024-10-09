@@ -49,7 +49,7 @@ def test_run_always_finishes():
                 external_job = (
                     workspace.get_code_location("test")
                     .get_repository("nope")
-                    .get_full_external_job("slow_job")
+                    .get_full_job("slow_job")
                 )
 
                 dagster_run = instance.create_run_for_job(
@@ -108,7 +108,7 @@ def test_run_from_pending_repository():
                 workspace = workspace_process_context.create_request_context()
 
                 code_location = workspace.get_code_location("test2")
-                external_job = code_location.get_repository("pending").get_full_external_job(
+                external_job = code_location.get_repository("pending").get_full_job(
                     "my_cool_asset_job"
                 )
                 external_execution_plan = code_location.get_external_execution_plan(
@@ -212,7 +212,7 @@ def test_terminate_after_shutdown():
             external_job = (
                 workspace.get_code_location("test")
                 .get_repository("nope")
-                .get_full_external_job("sleepy_job")
+                .get_full_job("sleepy_job")
             )
 
             dagster_run = instance.create_run_for_job(
@@ -235,7 +235,7 @@ def test_terminate_after_shutdown():
             external_job = (
                 workspace.get_code_location("test")
                 .get_repository("nope")
-                .get_full_external_job("math_diamond")
+                .get_full_job("math_diamond")
             )
 
             doomed_to_fail_dagster_run = instance.create_run_for_job(
@@ -284,7 +284,7 @@ def test_server_down():
                 external_job = (
                     workspace.get_code_location("test")
                     .get_repository("nope")
-                    .get_full_external_job("sleepy_job")
+                    .get_full_job("sleepy_job")
                 )
 
                 dagster_run = instance.create_run_for_job(

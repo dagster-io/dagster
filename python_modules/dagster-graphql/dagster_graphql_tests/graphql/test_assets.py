@@ -3041,7 +3041,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
         # Create two enqueued runs
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        job = repository.get_full_external_job("hanging_job")
+        job = repository.get_full_job("hanging_job")
 
         queued_runs = []
 

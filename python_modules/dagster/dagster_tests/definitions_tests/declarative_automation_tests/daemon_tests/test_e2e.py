@@ -54,9 +54,7 @@ def _get_all_sensors(context: WorkspaceRequestContext) -> Sequence[RemoteSensor]
     external_sensors = []
     for cl_name in context.get_code_location_entries():
         external_sensors.extend(
-            next(
-                iter(context.get_code_location(cl_name).get_repositories().values())
-            ).get_external_sensors()
+            next(iter(context.get_code_location(cl_name).get_repositories().values())).get_sensors()
         )
     return external_sensors
 

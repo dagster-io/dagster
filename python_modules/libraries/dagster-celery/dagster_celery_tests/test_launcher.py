@@ -85,7 +85,7 @@ def test_successful_run(
     external_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("noop_job")
+        .get_full_job("noop_job")
     )
 
     dagster_run = instance.create_run_for_job(
@@ -130,7 +130,7 @@ def test_crashy_run(
     external_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("crashy_job")
+        .get_full_job("crashy_job")
     )
 
     run = instance.create_run_for_job(
@@ -176,7 +176,7 @@ def test_exity_run(
     external_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("exity_job")
+        .get_full_job("exity_job")
     )
 
     run = instance.create_run_for_job(
@@ -227,7 +227,7 @@ def test_terminated_run(
     external_job = (
         workspace.get_code_location("test")
         .get_repository("celery_test_repository")
-        .get_full_external_job("sleepy_job")
+        .get_full_job("sleepy_job")
     )
     run = instance.create_run_for_job(
         job_def=sleepy_job,

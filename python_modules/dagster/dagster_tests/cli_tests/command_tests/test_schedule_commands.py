@@ -191,7 +191,7 @@ def test_schedules_logs(gen_schedule_args):
 
 def test_check_repo_and_scheduler_no_external_schedules():
     repository = mock.MagicMock(spec=RemoteRepository)
-    repository.get_external_schedules.return_value = []
+    repository.get_schedules.return_value = []
     instance = mock.MagicMock(spec=DagsterInstance)
     with pytest.raises(click.UsageError, match="There are no schedules defined for repository"):
         check_repo_and_scheduler(repository, instance)
@@ -200,7 +200,7 @@ def test_check_repo_and_scheduler_no_external_schedules():
 def test_check_repo_and_scheduler_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
         repository = mock.MagicMock(spec=RemoteRepository)
-        repository.get_external_schedules.return_value = [mock.MagicMock()]
+        repository.get_schedules.return_value = [mock.MagicMock()]
         instance = mock.MagicMock(spec=DagsterInstance)
 
         with pytest.raises(

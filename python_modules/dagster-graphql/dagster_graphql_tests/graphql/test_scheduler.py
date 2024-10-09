@@ -540,7 +540,7 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     ).get_repository(main_repo_name())
 
     results = result.data["schedulesOrError"]["results"]
-    assert len(results) == len(external_repository.get_external_schedules())
+    assert len(results) == len(external_repository.get_schedules())
 
     for schedule in results:
         if schedule["name"] == "timezone_schedule_with_tags_and_metadata":

@@ -29,7 +29,7 @@ def schedule_cli():
 def print_changes(external_repository, instance, print_fn=print, preview=False):
     debug_info = instance.scheduler_debug_info()
     errors = debug_info.errors
-    external_schedules = external_repository.get_external_schedules()
+    external_schedules = external_repository.get_schedules()
     schedule_states = instance.all_instigator_state(
         external_repository.get_remote_origin_id(),
         external_repository.selector_id,
@@ -115,7 +115,7 @@ def check_repo_and_scheduler(repository: RemoteRepository, instance: DagsterInst
 
     repository_name = repository.name
 
-    if not repository.get_external_schedules():
+    if not repository.get_schedules():
         raise click.UsageError(f"There are no schedules defined for repository {repository_name}.")
 
     if not os.getenv("DAGSTER_HOME"):
@@ -175,7 +175,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(title)
                 print_fn("*" * len(title))
 
-            repo_schedules = external_repo.get_external_schedules()
+            repo_schedules = external_repo.get_schedules()
             stored_schedules_by_origin_id = {
                 stored_schedule_state.instigator_origin_id: stored_schedule_state
                 for stored_schedule_state in instance.all_instigator_state(
@@ -246,7 +246,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
             repository_name = external_repo.name
 
             if all_flag:
-                for external_schedule in external_repo.get_external_schedules():
+                for external_schedule in external_repo.get_schedules():
                     try:
                         instance.start_schedule(external_schedule)
                     except DagsterInvariantViolationError as ex:
@@ -255,7 +255,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                 print_fn(f"Started all schedules for repository {repository_name}")
             else:
                 try:
-                    instance.start_schedule(external_repo.get_external_schedule(schedule_name))
+                    instance.start_schedule(external_repo.get_schedule(schedule_name))
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -278,7 +278,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
             check_repo_and_scheduler(external_repo, instance)
 
             try:
-                external_schedule = external_repo.get_external_schedule(schedule_name)
+                external_schedule = external_repo.get_schedule(schedule_name)
                 instance.stop_schedule(
                     external_schedule.get_remote_origin_id(),
                     external_schedule.selector_id,
@@ -321,7 +321,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
 
             logs_path = os.path.join(
                 instance.logs_path_for_schedule(
-                    external_repo.get_external_schedule(schedule_name).get_remote_origin_id()
+                    external_repo.get_schedule(schedule_name).get_remote_origin_id()
                 )
             )
 
@@ -387,7 +387,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 ):
                     if schedule_state.status == InstigatorStatus.RUNNING:
                         try:
-                            external_schedule = external_repo.get_external_schedule(
+                            external_schedule = external_repo.get_schedule(
                                 schedule_state.instigator_name
                             )
                             instance.stop_schedule(
@@ -401,7 +401,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
                 print_fn(f"Restarted all running schedules for repository {repository_name}")
             else:
-                external_schedule = external_repo.get_external_schedule(schedule_name)
+                external_schedule = external_repo.get_schedule(schedule_name)
                 schedule_state = instance.get_instigator_state(
                     external_schedule.get_remote_origin_id(),
                     external_schedule.selector_id,

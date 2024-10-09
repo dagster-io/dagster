@@ -208,7 +208,7 @@ def _create_run(
     external_job = (
         workspace.get_code_location("test")
         .get_repository("concurrency_repo")
-        .get_full_external_job(job_def.name)
+        .get_full_job(job_def.name)
     )
     run = instance.create_run_for_job(
         job_def=job_def,

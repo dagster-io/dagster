@@ -910,7 +910,7 @@ def create_repo_run(instance):
     ) as workspace_process_context:
         context = workspace_process_context.create_request_context()
         repo = context.code_locations[0].get_repository("my_repo")
-        external_job = repo.get_full_external_job("my_job")
+        external_job = repo.get_full_job("my_job")
         run = create_run_for_test(
             instance,
             job_name="my_job",

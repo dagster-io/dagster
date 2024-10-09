@@ -29,9 +29,9 @@ def assert_events_in_order(logs, expected_events):
 
 
 def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_example_repo):
-    external_schedule = foo_example_repo.get_external_schedule("always_run_schedule")
-    external_sensor = foo_example_repo.get_external_sensor("always_on_sensor")
-    external_job = foo_example_repo.get_full_external_job("foo_job")
+    external_schedule = foo_example_repo.get_schedule("always_run_schedule")
+    external_sensor = foo_example_repo.get_sensor("always_on_sensor")
+    external_job = foo_example_repo.get_full_job("foo_job")
 
     instance.start_schedule(external_schedule)
     instance.start_sensor(external_sensor)
@@ -65,7 +65,7 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
 def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
     with start_daemon(workspace_file=file_relative_path(__file__, "repo.py")):
-        external_job = foo_example_repo.get_full_external_job("foo_job")
+        external_job = foo_example_repo.get_full_job("foo_job")
 
         run = create_run(instance, external_job)
 

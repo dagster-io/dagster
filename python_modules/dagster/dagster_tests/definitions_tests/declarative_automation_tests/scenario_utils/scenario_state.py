@@ -433,7 +433,7 @@ class ScenarioState:
             workspace = workspace_context.create_request_context()
             sensor = next(
                 iter(workspace.get_code_location("test_location").get_repositories().values())
-            ).get_external_sensor(sensor_name)
+            ).get_sensor(sensor_name)
             assert sensor
             yield sensor
 

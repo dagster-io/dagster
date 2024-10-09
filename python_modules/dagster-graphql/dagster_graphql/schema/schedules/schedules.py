@@ -135,7 +135,7 @@ class GrapheneSchedule(graphene.ObjectType):
         repository = graphene_info.context.get_code_location(
             self._external_schedule.handle.location_name
         ).get_repository(self._external_schedule.handle.repository_name)
-        external_partition_set = repository.get_external_partition_set(
+        external_partition_set = repository.get_partition_set(
             self._external_schedule.partition_set_name
         )
 

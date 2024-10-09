@@ -89,7 +89,7 @@ def test_failure_recovery_before_run_created(
 
     freeze_datetime = initial_datetime
 
-    external_schedule = external_repo.get_external_schedule("simple_schedule")
+    external_schedule = external_repo.get_schedule("simple_schedule")
     with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 
@@ -160,7 +160,7 @@ def test_failure_recovery_after_run_created(
     # it will just re-launch the already-created run when it runs again
     initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
-    external_schedule = external_repo.get_external_schedule("simple_schedule")
+    external_schedule = external_repo.get_schedule("simple_schedule")
     with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 
@@ -247,7 +247,7 @@ def test_failure_recovery_after_tick_success(
 ):
     initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
-    external_schedule = external_repo.get_external_schedule("simple_schedule")
+    external_schedule = external_repo.get_schedule("simple_schedule")
     with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 
@@ -330,7 +330,7 @@ def test_failure_recovery_between_multi_runs(
 ):
     initial_datetime = create_datetime(year=2019, month=2, day=28, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
-    external_schedule = external_repo.get_external_schedule("multi_run_schedule")
+    external_schedule = external_repo.get_schedule("multi_run_schedule")
     with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 

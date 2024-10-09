@@ -153,7 +153,7 @@ def test_defer_snapshots(instance: DagsterInstance):
             instance=instance,
             ref_to_data_fn=_ref_to_data,
         )
-        jobs = repo.get_all_external_jobs()
+        jobs = repo.get_all_jobs()
         assert len(jobs) == 6
         assert _state.get("cnt", 0) == 0
 
@@ -177,6 +177,6 @@ def test_defer_snapshots(instance: DagsterInstance):
         assert _state.get("cnt", 0) == 1
 
         # refetching job should share fetched data
-        job = repo.get_all_external_jobs()[0]
+        job = repo.get_all_jobs()[0]
         _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1

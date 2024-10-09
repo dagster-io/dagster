@@ -41,15 +41,15 @@ def get_instigator_state_by_selector(
     location = graphene_info.context.get_code_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
-    if repository.has_external_sensor(selector.name):
-        external_sensor = repository.get_external_sensor(selector.name)
+    if repository.has_sensor(selector.name):
+        external_sensor = repository.get_sensor(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
             external_sensor.get_remote_origin_id(),
             external_sensor.selector_id,
         )
         current_state = external_sensor.get_current_instigator_state(stored_state)
-    elif repository.has_external_schedule(selector.name):
-        external_schedule = repository.get_external_schedule(selector.name)
+    elif repository.has_schedule(selector.name):
+        external_schedule = repository.get_schedule(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
             external_schedule.get_remote_origin_id(),
             external_schedule.selector_id,
