@@ -17,7 +17,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.remote_representation import CodeLocation, ExternalRepository
+from dagster._core.remote_representation import CodeLocation, RemoteRepository
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
@@ -79,10 +79,10 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
-    repositories: Dict[str, ExternalRepository]
+    repositories: Dict[str, RemoteRepository]
     code_location: CodeLocation
 
-    def get_single_repository(self) -> ExternalRepository:
+    def get_single_repository(self) -> RemoteRepository:
         assert len(self.repositories) == 1
         return next(iter(self.repositories.values()))
 
@@ -91,7 +91,7 @@ class CodeLocationInfoForSensorTest(NamedTuple):
 def instance_with_single_code_location_multiple_repos_with_sensors(
     overrides: Optional[Mapping[str, Any]] = None,
     workspace_load_target: Optional[WorkspaceLoadTarget] = None,
-) -> Iterator[Tuple[DagsterInstance, WorkspaceProcessContext, Dict[str, ExternalRepository]]]:
+) -> Iterator[Tuple[DagsterInstance, WorkspaceProcessContext, Dict[str, RemoteRepository]]]:
     with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
         assert len(many_tuples) == 1
         location_info = next(iter(many_tuples.values()))
@@ -131,7 +131,7 @@ def test_run_status_sensor(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
@@ -253,7 +253,7 @@ def test_run_failure_sensor(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
@@ -309,7 +309,7 @@ def test_run_failure_sensor_that_fails(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
@@ -385,7 +385,7 @@ def test_run_failure_sensor_filtered(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
@@ -472,7 +472,7 @@ def test_run_failure_sensor_filtered(
 def test_run_failure_sensor_overfetch(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     with environ(
         {
@@ -1517,7 +1517,7 @@ def test_partitioned_job_run_status_sensor(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
@@ -1704,7 +1704,7 @@ def test_logging_run_status_sensor(
     executor: Optional[ThreadPoolExecutor],
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):

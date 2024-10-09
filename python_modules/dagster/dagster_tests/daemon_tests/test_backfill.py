@@ -52,8 +52,8 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation import (
-    ExternalRepository,
     InProcessCodeLocationOrigin,
+    RemoteRepository,
     RemoteRepositoryOrigin,
 )
 from dagster._core.storage.compute_log_manager import ComputeIOType
@@ -505,7 +505,7 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
 def test_simple_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
@@ -538,7 +538,7 @@ def test_simple_backfill(
 def test_canceled_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
@@ -573,7 +573,7 @@ def test_canceled_backfill(
 def test_failure_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     output_file = _failure_flag_file()
     external_partition_set = external_repo.get_external_partition_set(
@@ -677,7 +677,7 @@ def test_failure_backfill(
 def test_job_backfill_status(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
@@ -735,7 +735,7 @@ def test_job_backfill_status(
 def test_partial_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     external_partition_set = external_repo.get_external_partition_set("partial_job_partition_set")
 
@@ -827,7 +827,7 @@ def test_partial_backfill(
 def test_large_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     external_partition_set = external_repo.get_external_partition_set("config_job_partition_set")
     instance.add_backfill(
@@ -1063,7 +1063,7 @@ def test_unloadable_backfill_retry(
 def test_backfill_from_partitioned_job(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     partition_keys = my_config.partitions_def.get_partition_keys()
     external_partition_set = external_repo.get_external_partition_set(
@@ -1095,7 +1095,7 @@ def test_backfill_from_partitioned_job(
 def test_backfill_with_asset_selection(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
@@ -1137,7 +1137,7 @@ def test_backfill_with_asset_selection(
 def test_pure_asset_backfill_with_multiple_assets_selected(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     asset_selection = [
         AssetKey("asset_a"),
@@ -1207,7 +1207,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
 def test_pure_asset_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     del external_repo
 
@@ -1256,7 +1256,7 @@ def test_pure_asset_backfill(
 def test_backfill_from_failure_for_subselection(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     parallel_failure_job.execute_in_process(
         partition_key="one",
@@ -1954,7 +1954,7 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
 
 
 # Job must have a partitions definition with a-b-c-d partitions
-def _get_abcd_job_backfill(external_repo: ExternalRepository, job_name: str) -> PartitionBackfill:
+def _get_abcd_job_backfill(external_repo: RemoteRepository, job_name: str) -> PartitionBackfill:
     external_partition_set = external_repo.get_external_partition_set(f"{job_name}_partition_set")
     return PartitionBackfill(
         backfill_id="simple",
@@ -1971,7 +1971,7 @@ def _get_abcd_job_backfill(external_repo: ExternalRepository, job_name: str) -> 
 def test_asset_job_backfill_single_run(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     backfill = _get_abcd_job_backfill(external_repo, "bp_single_run_asset_job")
     assert instance.get_runs_count() == 0
@@ -1989,7 +1989,7 @@ def test_asset_job_backfill_single_run(
 def test_asset_job_backfill_single_run_multiple_iterations(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     """Tests that job backfills correctly find existing runs for partitions in the backfill and don't
     relaunch those partitions. This is a regression test for a bug where the backfill would relaunch
@@ -2050,7 +2050,7 @@ def test_asset_job_backfill_single_run_multiple_iterations(
 def test_asset_job_backfill_multi_run(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     backfill = _get_abcd_job_backfill(external_repo, "bp_multi_run_asset_job")
     assert instance.get_runs_count() == 0
@@ -2072,7 +2072,7 @@ def test_asset_job_backfill_multi_run(
 def test_asset_job_backfill_default(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     backfill = _get_abcd_job_backfill(external_repo, "bp_none_asset_job")
     assert instance.get_runs_count() == 0
@@ -2520,7 +2520,7 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
 def test_backfill_with_title_and_description(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     asset_selection = [
         AssetKey("asset_a"),
@@ -2586,7 +2586,7 @@ def test_backfill_with_title_and_description(
 def test_old_dynamic_partitions_job_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     backfill = _get_abcd_job_backfill(external_repo, "old_dynamic_partitions_job")
     assert instance.get_runs_count() == 0
@@ -2599,7 +2599,7 @@ def test_old_dynamic_partitions_job_backfill(
 def test_asset_backfill_logs(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     # need to override this method on the instance since it defaults ot False in OSS. When we enable this
     # feature in OSS we can remove this override
@@ -2681,7 +2681,7 @@ def test_asset_backfill_logs(
 def test_asset_backfill_from_asset_graph_subset(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     del external_repo
 
@@ -2734,7 +2734,7 @@ def test_asset_backfill_from_asset_graph_subset(
 def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     del external_repo
 

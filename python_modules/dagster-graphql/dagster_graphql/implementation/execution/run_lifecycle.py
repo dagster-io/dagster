@@ -5,7 +5,7 @@ from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import CodeLocation
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.utils import make_new_run_id
@@ -60,7 +60,7 @@ def is_resume_retry(execution_params: ExecutionParams) -> bool:
 
 def create_valid_pipeline_run(
     graphql_context: BaseWorkspaceRequestContext,
-    external_pipeline: ExternalJob,
+    external_pipeline: RemoteJob,
     execution_params: ExecutionParams,
     code_location: CodeLocation,
 ) -> DagsterRun:

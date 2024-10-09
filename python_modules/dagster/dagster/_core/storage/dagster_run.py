@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.instance import DagsterInstance
-    from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
+    from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
     from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import InstigatorState
 
@@ -486,13 +486,13 @@ class DagsterRun(
 
     @staticmethod
     def tags_for_schedule(
-        schedule: Union["InstigatorState", "ExternalSchedule", "ScheduleDefinition"],
+        schedule: Union["InstigatorState", "RemoteSchedule", "ScheduleDefinition"],
     ) -> Mapping[str, str]:
         return {SCHEDULE_NAME_TAG: schedule.name}
 
     @staticmethod
     def tags_for_sensor(
-        sensor: Union["InstigatorState", "ExternalSensor", "SensorDefinition"],
+        sensor: Union["InstigatorState", "RemoteSensor", "SensorDefinition"],
     ) -> Mapping[str, str]:
         return {SENSOR_NAME_TAG: sensor.name}
 
@@ -575,13 +575,13 @@ class RunsFilter(IHaveNew):
 
     @staticmethod
     def for_schedule(
-        schedule: Union["ExternalSchedule", "InstigatorState", "ScheduleDefinition"],
+        schedule: Union["RemoteSchedule", "InstigatorState", "ScheduleDefinition"],
     ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
 
     @staticmethod
     def for_sensor(
-        sensor: Union["ExternalSensor", "InstigatorState", "SensorDefinition"],
+        sensor: Union["RemoteSensor", "InstigatorState", "SensorDefinition"],
     ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
 

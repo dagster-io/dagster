@@ -11,7 +11,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import CodeLocation, ExternalJob, ExternalPartitionSet
+from dagster._core.remote_representation import CodeLocation, RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import PartitionSetExecutionParamSnap
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
@@ -133,7 +133,7 @@ def execute_job_backfill_iteration(
 
 def _get_partition_set(
     workspace_process_context: IWorkspaceProcessContext, backfill_job: PartitionBackfill
-) -> ExternalPartitionSet:
+) -> RemotePartitionSet:
     origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
 
     location_name = origin.repository_origin.code_location_origin.location_name
@@ -182,7 +182,7 @@ def _get_partitions_chunk(
     logger: logging.Logger,
     backfill_job: PartitionBackfill,
     chunk_size: int,
-    partition_set: ExternalPartitionSet,
+    partition_set: RemotePartitionSet,
 ) -> Tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
     partition_names = cast(Sequence[str], backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
@@ -391,8 +391,8 @@ def submit_backfill_runs(
 def create_backfill_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
-    external_pipeline: ExternalJob,
-    external_partition_set: ExternalPartitionSet,
+    external_pipeline: RemoteJob,
+    external_partition_set: RemotePartitionSet,
     backfill_job: PartitionBackfill,
     partition_key_or_range: Union[str, PartitionKeyRange],
     run_tags: Mapping[str, str],
@@ -499,11 +499,11 @@ def create_backfill_run(
 
 def _fetch_last_run(
     instance: DagsterInstance,
-    external_partition_set: ExternalPartitionSet,
+    external_partition_set: RemotePartitionSet,
     partition_key_or_range: Union[str, PartitionKeyRange],
 ) -> Optional[DagsterRun]:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
+    check.inst_param(external_partition_set, "external_partition_set", RemotePartitionSet)
     check.str_param(partition_key_or_range, "partition_name")
 
     tags = (

@@ -17,7 +17,7 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalPartitionSet
+from dagster._core.remote_representation.external import RemotePartitionSet
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import (
@@ -406,7 +406,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             assetCheckSelection=[],
         )
 
-    def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[ExternalPartitionSet]:
+    def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[RemotePartitionSet]:
         if self._backfill_job.partition_set_origin is None:
             return None
 
@@ -465,7 +465,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._partition_run_data
 
     def _get_partition_run_data_for_ranged_job_backfill(
-        self, instance: DagsterInstance, partition_set: ExternalPartitionSet
+        self, instance: DagsterInstance, partition_set: RemotePartitionSet
     ) -> Sequence[RunPartitionData]:
         partitions_def = partition_set.get_partitions_definition()
         records = instance.get_run_records(

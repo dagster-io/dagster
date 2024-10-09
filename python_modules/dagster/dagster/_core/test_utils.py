@@ -60,7 +60,7 @@ from dagster._core.instance_for_test import (
     instance_for_test as instance_for_test,
 )
 from dagster._core.launcher import RunLauncher
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
@@ -527,7 +527,7 @@ def create_test_daemon_workspace_context(
 
 def load_external_repo(
     workspace_context: WorkspaceProcessContext, repo_name: str
-) -> ExternalRepository:
+) -> RemoteRepository:
     code_location_entry = next(
         iter(workspace_context.create_request_context().get_code_location_entries().values())
     )

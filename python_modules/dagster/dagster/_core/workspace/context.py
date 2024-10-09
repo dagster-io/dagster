@@ -31,12 +31,12 @@ from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation import (
     CodeLocation,
     CodeLocationOrigin,
-    ExternalExecutionPlan,
-    ExternalJob,
     GrpcServerCodeLocation,
+    RemoteExecutionPlan,
+    RemoteJob,
     RepositoryHandle,
 )
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -241,7 +241,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selector.repository_name
         ).has_external_job(selector.job_name)
 
-    def get_full_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
+    def get_full_external_job(self, selector: JobSubsetSelector) -> RemoteJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
@@ -250,11 +250,11 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_external_execution_plan(
         self,
-        external_job: ExternalJob,
+        external_job: RemoteJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-    ) -> ExternalExecutionPlan:
+    ) -> RemoteExecutionPlan:
         return self.get_code_location(
             external_job.handle.location_name
         ).get_external_execution_plan(
@@ -342,7 +342,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
         return self.get_workspace_snapshot().asset_graph.get(asset_key)
 
-    def get_repository(self, selector: RepositorySelector) -> ExternalRepository:
+    def get_repository(self, selector: RepositorySelector) -> RemoteRepository:
         return self.get_code_location(selector.location_name).get_repository(
             selector.repository_name
         )

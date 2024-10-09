@@ -12,7 +12,7 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalExecutionPlan, ExternalJob
+from dagster._core.remote_representation import RemoteExecutionPlan, RemoteJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
@@ -22,8 +22,8 @@ EXECUTION_PLAN_CREATION_RETRIES = 1
 
 
 class RunRequestExecutionData(NamedTuple):
-    external_job: ExternalJob
-    external_execution_plan: ExternalExecutionPlan
+    external_job: RemoteJob
+    external_execution_plan: RemoteExecutionPlan
 
 
 def _get_implicit_job_name_for_assets(

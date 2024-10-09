@@ -6,7 +6,7 @@ from signal import Signals
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG
@@ -78,7 +78,7 @@ def _test_launch_scheduled_runs_in_subprocess(
 @pytest.mark.parametrize("executor", get_schedule_executor_names())
 def test_failure_recovery_before_run_created(
     instance: DagsterInstance,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     crash_location: str,
     crash_signal: Signals,
     executor: ThreadPoolExecutor,
@@ -151,7 +151,7 @@ def test_failure_recovery_before_run_created(
 @pytest.mark.parametrize("executor", get_schedule_executor_names())
 def test_failure_recovery_after_run_created(
     instance: DagsterInstance,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     crash_location: str,
     crash_signal: Signals,
     executor: ThreadPoolExecutor,
@@ -240,7 +240,7 @@ def test_failure_recovery_after_run_created(
 @pytest.mark.parametrize("executor", get_schedule_executor_names())
 def test_failure_recovery_after_tick_success(
     instance: DagsterInstance,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     crash_location: str,
     crash_signal: Signals,
     executor: ThreadPoolExecutor,
@@ -323,7 +323,7 @@ def test_failure_recovery_after_tick_success(
 @pytest.mark.parametrize("executor", get_schedule_executor_names())
 def test_failure_recovery_between_multi_runs(
     instance: DagsterInstance,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     crash_location: str,
     crash_signal: Signals,
     executor: ThreadPoolExecutor,

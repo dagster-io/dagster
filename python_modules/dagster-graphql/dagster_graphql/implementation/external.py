@@ -5,8 +5,8 @@ import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.remote_representation import ExternalJob
-from dagster._core.remote_representation.external import ExternalExecutionPlan
+from dagster._core.remote_representation import RemoteJob
+from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -27,21 +27,21 @@ if TYPE_CHECKING:
 def get_full_external_job_or_raise(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
-) -> ExternalJob:
+) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
     return _get_external_job_or_raise(graphene_info, selector, ignore_subset=True)
 
 
 def get_external_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector
-) -> ExternalJob:
+) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
     return _get_external_job_or_raise(graphene_info, selector)
 
 
 def _get_external_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector, ignore_subset: bool = False
-) -> ExternalJob:
+) -> RemoteJob:
     from dagster_graphql.schema.errors import (
         GrapheneInvalidSubsetError,
         GraphenePipelineNotFoundError,
@@ -72,10 +72,10 @@ def _get_external_job_or_raise(
     return external_job
 
 
-def ensure_valid_config(external_job: ExternalJob, run_config: object) -> object:
+def ensure_valid_config(external_job: RemoteJob, run_config: object) -> object:
     from dagster_graphql.schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
-    check.inst_param(external_job, "external_job", ExternalJob)
+    check.inst_param(external_job, "external_job", RemoteJob)
     # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
@@ -96,11 +96,11 @@ def ensure_valid_config(external_job: ExternalJob, run_config: object) -> object
 
 def get_external_execution_plan_or_raise(
     graphql_context: BaseWorkspaceRequestContext,
-    external_pipeline: ExternalJob,
+    external_pipeline: RemoteJob,
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
-) -> ExternalExecutionPlan:
+) -> RemoteExecutionPlan:
     return graphql_context.get_external_execution_plan(
         external_job=external_pipeline,
         run_config=run_config,

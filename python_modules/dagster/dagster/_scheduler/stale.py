@@ -4,14 +4,14 @@ import dagster._check as check
 from dagster._core.definitions.data_version import CachingStaleStatusResolver, StaleStatus
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
+from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
 from dagster._core.workspace.context import WorkspaceProcessContext
 
 
 def resolve_stale_or_missing_assets(
     context: WorkspaceProcessContext,
     run_request: RunRequest,
-    instigator: Union[ExternalSensor, ExternalSchedule],
+    instigator: Union[RemoteSensor, RemoteSchedule],
 ) -> Sequence[AssetKey]:
     request_context = context.create_request_context()
     asset_graph = request_context.asset_graph

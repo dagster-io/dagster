@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -23,7 +23,7 @@ from dagster_tests.scheduler_tests.test_scheduler_run import (
 def test_non_utc_timezone_run(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that schedule runs at the expected time in a non-UTC timezone
@@ -87,7 +87,7 @@ def test_non_utc_timezone_run(
 def test_differing_timezones(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Two schedules, one using US/Central, the other on US/Eastern
@@ -201,7 +201,7 @@ def test_differing_timezones(
 def test_different_days_in_different_timezones(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     freeze_datetime = datetime.datetime(
@@ -261,7 +261,7 @@ def test_different_days_in_different_timezones(
 def test_hourly_dst_spring_forward(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that an hourly schedule still runs hourly during the spring DST transition
@@ -334,7 +334,7 @@ def test_hourly_dst_spring_forward(
 def test_hourly_dst_fall_back(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that an hourly schedule still runs hourly during the fall DST transition
@@ -416,7 +416,7 @@ def test_hourly_dst_fall_back(
 def test_daily_dst_spring_forward(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that a daily schedule still runs once per day during the spring DST transition
@@ -483,7 +483,7 @@ def test_daily_dst_spring_forward(
 def test_daily_dst_fall_back(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that a daily schedule still runs once per day during the fall DST transition
@@ -550,7 +550,7 @@ def test_daily_dst_fall_back(
 def test_execute_during_dst_transition_spring_forward(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that a daily schedule that is supposed to execute at a time that is skipped
@@ -631,7 +631,7 @@ def test_execute_during_dst_transition_spring_forward(
 def test_execute_during_dst_transition_fall_back(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # A schedule that runs daily during a time that occurs twice during a fall DST transition

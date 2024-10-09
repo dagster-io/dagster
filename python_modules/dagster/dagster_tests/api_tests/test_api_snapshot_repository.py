@@ -14,7 +14,7 @@ from dagster._core.remote_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RepositorySnap,
 )
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import JobDataSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
@@ -147,7 +147,7 @@ def test_defer_snapshots(instance: DagsterInstance):
         assert external_repository_data.job_refs and len(external_repository_data.job_refs) == 6
         assert external_repository_data.job_datas is None
 
-        repo = ExternalRepository(
+        repo = RemoteRepository(
             external_repository_data,
             RepositoryHandle.from_location(repository_name="bar_repo", code_location=code_location),
             instance=instance,

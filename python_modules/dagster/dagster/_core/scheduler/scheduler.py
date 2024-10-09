@@ -9,7 +9,7 @@ from dagster._config import Field, IntSource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalSchedule
+from dagster._core.remote_representation import RemoteSchedule
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -64,7 +64,7 @@ class Scheduler(abc.ABC):
     """
 
     def start_schedule(
-        self, instance: DagsterInstance, external_schedule: ExternalSchedule
+        self, instance: DagsterInstance, external_schedule: RemoteSchedule
     ) -> InstigatorState:
         """Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
 
@@ -76,7 +76,7 @@ class Scheduler(abc.ABC):
 
         """
         check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
+        check.inst_param(external_schedule, "external_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(
             external_schedule.get_remote_origin_id(), external_schedule.selector_id
@@ -110,7 +110,7 @@ class Scheduler(abc.ABC):
         instance: DagsterInstance,
         schedule_origin_id: str,
         schedule_selector_id: str,
-        external_schedule: Optional[ExternalSchedule],
+        external_schedule: Optional[RemoteSchedule],
     ) -> InstigatorState:
         """Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
 
@@ -120,7 +120,7 @@ class Scheduler(abc.ABC):
             schedule_origin_id (string): The id of the schedule target to stop running.
         """
         check.str_param(schedule_origin_id, "schedule_origin_id")
-        check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
+        check.opt_inst_param(external_schedule, "external_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(schedule_origin_id, schedule_selector_id)
 
@@ -154,7 +154,7 @@ class Scheduler(abc.ABC):
         return stopped_state
 
     def reset_schedule(
-        self, instance: DagsterInstance, external_schedule: ExternalSchedule
+        self, instance: DagsterInstance, external_schedule: RemoteSchedule
     ) -> InstigatorState:
         """If the given schedule has a default schedule status, then update the status to
         `InstigatorStatus.DECLARED_IN_CODE` in schedule storage.
@@ -166,7 +166,7 @@ class Scheduler(abc.ABC):
             external_schedule (ExternalSchedule): The schedule to reset.
         """
         check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
+        check.inst_param(external_schedule, "external_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(
             external_schedule.get_remote_origin_id(), external_schedule.selector_id

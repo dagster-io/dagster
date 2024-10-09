@@ -29,9 +29,9 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalSchedule
+from dagster._core.remote_representation import RemoteSchedule
 from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -77,7 +77,7 @@ ERROR_INTERVAL_TIME = 5
 class _ScheduleLaunchContext(AbstractContextManager):
     def __init__(
         self,
-        external_schedule: ExternalSchedule,
+        external_schedule: RemoteSchedule,
         tick: InstigatorTick,
         instance: DagsterInstance,
         logger: logging.Logger,
@@ -174,7 +174,7 @@ class ScheduleIterationTimes(NamedTuple):
     next_iteration_timestamp: float
     last_iteration_timestamp: float
 
-    def should_run_next_iteration(self, schedule: ExternalSchedule, now_timestamp: float):
+    def should_run_next_iteration(self, schedule: RemoteSchedule, now_timestamp: float):
         if schedule.cron_schedule != self.cron_schedule:
             # cron schedule has changed - always run next iteration to check
             return True
@@ -281,7 +281,7 @@ def launch_scheduled_runs(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
-    schedules: Dict[str, ExternalSchedule] = {}
+    schedules: Dict[str, RemoteSchedule] = {}
     error_locations = set()
 
     for location_entry in workspace_snapshot.values():
@@ -446,7 +446,7 @@ def launch_scheduled_runs(
 def launch_scheduled_runs_for_schedule(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    external_schedule: ExternalSchedule,
+    external_schedule: RemoteSchedule,
     schedule_state: InstigatorState,
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
@@ -481,7 +481,7 @@ def launch_scheduled_runs_for_schedule(
 def launch_scheduled_runs_for_schedule_iterator(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    external_schedule: ExternalSchedule,
+    external_schedule: RemoteSchedule,
     schedule_state: InstigatorState,
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
@@ -693,7 +693,7 @@ class SubmitRunRequestResult(NamedTuple):
 def _submit_run_request(
     run_request: RunRequest,
     workspace_process_context: IWorkspaceProcessContext,
-    external_schedule: ExternalSchedule,
+    external_schedule: RemoteSchedule,
     schedule_time: datetime.datetime,
     logger,
     debug_crash_flags,
@@ -768,7 +768,7 @@ def _submit_run_request(
 
 def _get_code_location_for_schedule(
     workspace_process_context: IWorkspaceProcessContext,
-    external_schedule: ExternalSchedule,
+    external_schedule: RemoteSchedule,
 ) -> CodeLocation:
     schedule_origin = external_schedule.get_remote_origin()
     return workspace_process_context.create_request_context().get_code_location(
@@ -779,7 +779,7 @@ def _get_code_location_for_schedule(
 def _schedule_runs_at_time(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    external_schedule: ExternalSchedule,
+    external_schedule: RemoteSchedule,
     schedule_time: datetime.datetime,
     timezone_str: str,
     tick_context: _ScheduleLaunchContext,
@@ -884,7 +884,7 @@ def _schedule_runs_at_time(
 
 def _get_existing_run_for_request(
     instance: DagsterInstance,
-    external_schedule: ExternalSchedule,
+    external_schedule: RemoteSchedule,
     schedule_time: datetime.datetime,
     run_request: RunRequest,
 ) -> Optional[DagsterRun]:
@@ -924,8 +924,8 @@ def _create_scheduler_run(
     instance: DagsterInstance,
     schedule_time: datetime.datetime,
     code_location: CodeLocation,
-    external_schedule: ExternalSchedule,
-    external_job: ExternalJob,
+    external_schedule: RemoteSchedule,
+    external_job: RemoteJob,
     run_request: RunRequest,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id

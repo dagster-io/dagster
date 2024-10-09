@@ -10,7 +10,7 @@ from dagster import (
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.remote_representation.external_data import (
     AssetChildEdgeSnap,
     AssetNodeSnap,
@@ -45,7 +45,7 @@ class RepositoryScopedBatchLoader:
     cache.
     """
 
-    def __init__(self, instance: DagsterInstance, external_repository: ExternalRepository):
+    def __init__(self, instance: DagsterInstance, external_repository: RemoteRepository):
         self._instance = instance
         self._repository = external_repository
         self._data: Dict[RepositoryDataType, Dict[str, List[Any]]] = {}

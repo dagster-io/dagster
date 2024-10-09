@@ -34,8 +34,8 @@ from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUn
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalSensor
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation import RemoteSensor
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -219,7 +219,7 @@ class AutoMaterializeLaunchContext:
     def __init__(
         self,
         tick: InstigatorTick,
-        external_sensor: Optional[ExternalSensor],
+        external_sensor: Optional[RemoteSensor],
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
@@ -344,7 +344,7 @@ class AssetDaemon(DagsterDaemon):
     def daemon_type(cls) -> str:
         return "ASSET"
 
-    def _get_print_sensor_name(self, sensor: Optional[ExternalSensor]) -> str:
+    def _get_print_sensor_name(self, sensor: Optional[RemoteSensor]) -> str:
         if not sensor:
             return ""
         repo_origin = sensor.get_remote_origin().repository_origin
@@ -470,9 +470,7 @@ class AssetDaemon(DagsterDaemon):
 
         if not self._initialized_evaluation_id:
             self._initialize_evaluation_id(instance)
-        sensors_and_repos: Sequence[
-            Tuple[Optional[ExternalSensor], Optional[ExternalRepository]]
-        ] = []
+        sensors_and_repos: Sequence[Tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
 
         if use_auto_materialize_sensors:
             workspace_snapshot = {
@@ -615,7 +613,7 @@ class AssetDaemon(DagsterDaemon):
     def _create_initial_sensor_cursors_from_raw_cursor(
         self,
         instance: DagsterInstance,
-        sensors_and_repos: Sequence[Tuple[ExternalSensor, ExternalRepository]],
+        sensors_and_repos: Sequence[Tuple[RemoteSensor, RemoteRepository]],
         all_auto_materialize_states: Mapping[str, InstigatorState],
         pre_sensor_cursor: AssetDaemonCursor,
     ) -> Mapping[str, InstigatorState]:
@@ -688,8 +686,8 @@ class AssetDaemon(DagsterDaemon):
     def _process_auto_materialize_tick(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-        repository: Optional[ExternalRepository],
-        sensor: Optional[ExternalSensor],
+        repository: Optional[RemoteRepository],
+        sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
         return list(
@@ -704,8 +702,8 @@ class AssetDaemon(DagsterDaemon):
     def _process_auto_materialize_tick_generator(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-        repository: Optional[ExternalRepository],
-        sensor: Optional[ExternalSensor],
+        repository: Optional[RemoteRepository],
+        sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
     ):
         evaluation_time = get_current_datetime()
@@ -899,7 +897,7 @@ class AssetDaemon(DagsterDaemon):
         self,
         tick_context: AutoMaterializeLaunchContext,
         tick: InstigatorTick,
-        sensor: Optional[ExternalSensor],
+        sensor: Optional[RemoteSensor],
         workspace_process_context: IWorkspaceProcessContext,
         asset_graph: RemoteAssetGraph,
         auto_materialize_entity_keys: Set[EntityKey],

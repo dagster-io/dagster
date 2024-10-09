@@ -7,12 +7,12 @@ that have been persisted. e.g. HistoricalPipeline
 """
 
 from dagster._core.remote_representation.external import (
-    ExternalExecutionPlan as ExternalExecutionPlan,
-    ExternalJob as ExternalJob,
-    ExternalPartitionSet as ExternalPartitionSet,
-    ExternalRepository as ExternalRepository,
-    ExternalSchedule as ExternalSchedule,
-    ExternalSensor as ExternalSensor,
+    RemoteExecutionPlan as RemoteExecutionPlan,
+    RemoteJob as RemoteJob,
+    RemotePartitionSet as RemotePartitionSet,
+    RemoteRepository as RemoteRepository,
+    RemoteSchedule as RemoteSchedule,
+    RemoteSensor as RemoteSensor,
 )
 from dagster._core.remote_representation.external_data import (
     ExecutionParamsErrorSnap as ExecutionParamsErrorSnap,

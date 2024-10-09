@@ -133,12 +133,12 @@ if TYPE_CHECKING:
     from dagster._core.launcher import RunLauncher
     from dagster._core.remote_representation import (
         CodeLocation,
-        ExternalJob,
-        ExternalSensor,
         HistoricalJob,
+        RemoteJob,
         RemoteJobOrigin,
+        RemoteSensor,
     )
-    from dagster._core.remote_representation.external import ExternalSchedule
+    from dagster._core.remote_representation.external import RemoteSchedule
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
@@ -1621,7 +1621,7 @@ class DagsterInstance(DynamicPartitionsStore):
         *,
         parent_run: DagsterRun,
         code_location: "CodeLocation",
-        external_job: "ExternalJob",
+        external_job: "RemoteJob",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Mapping[str, Any]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
@@ -1629,11 +1629,11 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> DagsterRun:
         from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
         from dagster._core.execution.plan.state import KnownExecutionState
-        from dagster._core.remote_representation import CodeLocation, ExternalJob
+        from dagster._core.remote_representation import CodeLocation, RemoteJob
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)
-        check.inst_param(external_job, "external_job", ExternalJob)
+        check.inst_param(external_job, "external_job", RemoteJob)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
         check.opt_mapping_param(run_config, "run_config", key_type=str)
@@ -2756,20 +2756,20 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Scheduler
 
-    def start_schedule(self, external_schedule: "ExternalSchedule") -> "InstigatorState":
+    def start_schedule(self, external_schedule: "RemoteSchedule") -> "InstigatorState":
         return self._scheduler.start_schedule(self, external_schedule)  # type: ignore
 
     def stop_schedule(
         self,
         schedule_origin_id: str,
         schedule_selector_id: str,
-        external_schedule: Optional["ExternalSchedule"],
+        external_schedule: Optional["RemoteSchedule"],
     ) -> "InstigatorState":
         return self._scheduler.stop_schedule(  # type: ignore
             self, schedule_origin_id, schedule_selector_id, external_schedule
         )
 
-    def reset_schedule(self, external_schedule: "ExternalSchedule") -> "InstigatorState":
+    def reset_schedule(self, external_schedule: "RemoteSchedule") -> "InstigatorState":
         return self._scheduler.reset_schedule(self, external_schedule)  # type: ignore
 
     def scheduler_debug_info(self) -> "SchedulerDebugInfo":
@@ -2800,7 +2800,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Schedule / Sensor Storage
 
-    def start_sensor(self, external_sensor: "ExternalSensor") -> "InstigatorState":
+    def start_sensor(self, external_sensor: "RemoteSensor") -> "InstigatorState":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler.instigation import (
             InstigatorState,
@@ -2841,7 +2841,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         instigator_origin_id: str,
         selector_id: str,
-        external_sensor: Optional["ExternalSensor"],
+        external_sensor: Optional["RemoteSensor"],
     ) -> "InstigatorState":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler.instigation import (
@@ -2876,7 +2876,7 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             return self.update_instigator_state(stored_state.with_status(InstigatorStatus.STOPPED))
 
-    def reset_sensor(self, external_sensor: "ExternalSensor") -> "InstigatorState":
+    def reset_sensor(self, external_sensor: "RemoteSensor") -> "InstigatorState":
         """If the given sensor has a default sensor status, then update the status to
         `InstigatorStatus.DECLARED_IN_CODE` in instigator storage.
 

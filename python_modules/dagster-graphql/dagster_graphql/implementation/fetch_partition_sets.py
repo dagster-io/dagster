@@ -5,7 +5,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._core.remote_representation import RemotePartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
@@ -94,13 +94,13 @@ def get_partition_set(
 def get_partition_by_name(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
-    partition_set: ExternalPartitionSet,
+    partition_set: RemotePartitionSet,
     partition_name: str,
 ) -> "GraphenePartition":
     from dagster_graphql.schema.partition_sets import GraphenePartition
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
+    check.inst_param(partition_set, "partition_set", RemotePartitionSet)
     check.str_param(partition_name, "partition_name")
     return GraphenePartition(
         external_repository_handle=repository_handle,
@@ -168,7 +168,7 @@ def get_partition_tags(
 
 def get_partitions(
     repository_handle: RepositoryHandle,
-    partition_set: ExternalPartitionSet,
+    partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
@@ -177,7 +177,7 @@ def get_partitions(
     from dagster_graphql.schema.partition_sets import GraphenePartition, GraphenePartitions
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
+    check.inst_param(partition_set, "partition_set", RemotePartitionSet)
 
     partition_names = apply_cursor_limit_reverse(partition_names, cursor, limit, reverse)
 
@@ -195,10 +195,10 @@ def get_partitions(
 
 def get_partition_set_partition_statuses(
     graphene_info: ResolveInfo,
-    external_partition_set: ExternalPartitionSet,
+    external_partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
 ) -> Sequence["GraphenePartitionStatus"]:
-    check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
+    check.inst_param(external_partition_set, "external_partition_set", RemotePartitionSet)
 
     repository_handle = external_partition_set.repository_handle
     partition_set_name = external_partition_set.name
@@ -288,7 +288,7 @@ def partition_status_counts_from_run_partition_data(
 
 def get_partition_set_partition_runs(
     graphene_info: ResolveInfo,
-    partition_set: ExternalPartitionSet,
+    partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
 ) -> Sequence["GraphenePartitionRun"]:
     from dagster_graphql.schema.partition_sets import GraphenePartitionRun

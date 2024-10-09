@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Sequence
 import graphene
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from dagster_graphql.implementation.utils import capture_error
@@ -21,7 +21,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
     assets = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneAsset")
     assetsOrError = graphene.NonNull("dagster_graphql.schema.roots.assets.GrapheneAssetsOrError")
 
-    def __init__(self, asset_selection: AssetSelection, external_repository: ExternalRepository):
+    def __init__(self, asset_selection: AssetSelection, external_repository: RemoteRepository):
         self._asset_selection = asset_selection
         self._external_repository = external_repository
 

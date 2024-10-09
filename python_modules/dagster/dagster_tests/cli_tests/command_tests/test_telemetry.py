@@ -31,7 +31,7 @@ from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
@@ -218,7 +218,7 @@ def test_get_stats_from_external_repo_partitions(instance):
     @asset
     def asset3(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2, asset3]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
@@ -238,7 +238,7 @@ def test_get_stats_from_external_repo_multi_partitions(instance):
     )
     def multi_partitioned_asset(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[multi_partitioned_asset]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
@@ -254,7 +254,7 @@ def test_get_stats_from_external_repo_source_assets(instance):
     @asset
     def asset1(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[source_asset1, asset1]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
@@ -272,7 +272,7 @@ def test_get_stats_from_external_repo_observable_source_assets(instance):
     @asset
     def asset1(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
         ),
@@ -291,7 +291,7 @@ def test_get_stats_from_external_repo_freshness_policies(instance):
     @asset
     def asset2(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
@@ -312,7 +312,7 @@ def test_get_status_from_external_repo_auto_materialize_policy(instance):
     @asset(auto_materialize_policy=AutoMaterializePolicy.eager())
     def asset3(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2, asset3]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
@@ -329,7 +329,7 @@ def test_get_stats_from_external_repo_code_versions(instance):
     @asset
     def asset2(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
@@ -351,7 +351,7 @@ def test_get_stats_from_external_repo_code_checks(instance):
     @asset
     def my_other_asset(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[my_asset, my_other_asset], asset_checks=[my_check, my_check_2]
@@ -372,7 +372,7 @@ def test_get_stats_from_external_repo_dbt(instance):
     @asset
     def asset2(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
@@ -395,7 +395,7 @@ def test_get_stats_from_external_repo_resources(instance):
     @asset
     def asset1(my_resource: MyResource, custom_resource: CustomResource): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -441,7 +441,7 @@ def test_get_stats_from_external_repo_io_managers(instance):
     @asset
     def asset1(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -474,7 +474,7 @@ def test_get_stats_from_external_repo_functional_resources(instance):
     @asset(required_resource_keys={"my_resource", "custom_resource"})
     def asset1(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -507,7 +507,7 @@ def test_get_stats_from_external_repo_functional_io_managers(instance):
     @asset
     def asset1(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1],
@@ -528,7 +528,7 @@ def test_get_stats_from_external_repo_functional_io_managers(instance):
 
 
 def test_get_stats_from_external_repo_pipes_client(instance):
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 resources={
@@ -583,7 +583,7 @@ def test_get_stats_from_external_repo_delayed_resource_configuration(instance):
     @asset(required_resource_keys={"my_other_resource"})
     def asset2(): ...
 
-    external_repo = ExternalRepository(
+    external_repo = RemoteRepository(
         RepositorySnap.from_def(
             Definitions(
                 assets=[asset1, asset2],

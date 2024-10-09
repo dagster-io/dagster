@@ -67,11 +67,11 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.events import DagsterEventType
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation import (
-    ExternalSensor,
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
+    RemoteSensor,
 )
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
@@ -1221,7 +1221,7 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
 def test_sensors_keyed_on_selector_not_origin(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
@@ -1267,7 +1267,7 @@ def test_bad_load_sensor_repository(
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ):
     freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
 
@@ -2729,7 +2729,7 @@ def test_status_in_code_sensor(executor, instance):
             assert reset_instigator_state
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
-            running_to_not_running_sensor = ExternalSensor(
+            running_to_not_running_sensor = RemoteSensor(
                 external_sensor_data=copy(
                     running_sensor._external_sensor_data,  # noqa: SLF001
                     default_status=DefaultSensorStatus.STOPPED,
@@ -3032,7 +3032,7 @@ def test_sensor_logging_on_tick_failure(
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ) -> None:
     external_sensor = external_repo.get_external_sensor("logging_fail_tick_sensor")
     instance.add_instigator_state(
@@ -3461,7 +3461,7 @@ def test_sensor_run_tags(
     executor: ThreadPoolExecutor,
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: ExternalRepository,
+    external_repo: RemoteRepository,
 ) -> None:
     freeze_datetime = create_datetime(year=2019, month=2, day=27)
     with freeze_time(freeze_datetime):

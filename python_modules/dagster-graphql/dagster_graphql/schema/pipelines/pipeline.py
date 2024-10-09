@@ -6,7 +6,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.events import DagsterEventType
-from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
+from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     PartitionExecutionErrorSnap,
@@ -507,7 +507,7 @@ class GrapheneRun(graphene.ObjectType):
         )
         return (
             GrapheneExecutionPlan(
-                ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
+                RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
             )
             if execution_plan_snapshot
             else None
@@ -790,7 +790,7 @@ class GrapheneIPipelineSnapshotMixin:
         self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
     ) -> Sequence[GrapheneRun]:
         pipeline = self.get_represented_job()
-        if isinstance(pipeline, ExternalJob):
+        if isinstance(pipeline, RemoteJob):
             runs_filter = RunsFilter(
                 job_name=pipeline.name,
                 tags={
@@ -805,7 +805,7 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_schedules(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
-        if not isinstance(represented_pipeline, ExternalJob):
+        if not isinstance(represented_pipeline, RemoteJob):
             # this is an historical pipeline snapshot, so there are not any associated running
             # schedules
             return []
@@ -816,7 +816,7 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_sensors(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
-        if not isinstance(represented_pipeline, ExternalJob):
+        if not isinstance(represented_pipeline, RemoteJob):
             # this is an historical pipeline snapshot, so there are not any associated running
             # sensors
             return []
@@ -934,9 +934,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(self, external_job: ExternalJob):
+    def __init__(self, external_job: RemoteJob):
         super().__init__()
-        self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
+        self._external_job = check.inst_param(external_job, "external_job", RemoteJob)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_job.get_remote_origin_id()
@@ -1014,7 +1014,7 @@ class GrapheneJob(GraphenePipeline):
     # doesn't inherit from base class
     def __init__(self, external_job):
         super().__init__()
-        self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
+        self._external_job = check.inst_param(external_job, "external_job", RemoteJob)
 
 
 class GrapheneGraph(graphene.ObjectType):
@@ -1034,8 +1034,8 @@ class GrapheneGraph(graphene.ObjectType):
     )
     modes = non_null_list(GrapheneMode)
 
-    def __init__(self, external_job: ExternalJob, solid_handle_id=None):
-        self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
+    def __init__(self, external_job: RemoteJob, solid_handle_id=None):
+        self._external_job = check.inst_param(external_job, "external_job", RemoteJob)
         self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
         super().__init__()
 
