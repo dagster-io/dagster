@@ -14,7 +14,6 @@ from typing import (
 )
 from unittest.mock import MagicMock, patch
 
-import mock
 import pytest
 from dagster import (
     AssetIn,
@@ -24,7 +23,6 @@ from dagster import (
     DagsterInstance,
     DagsterRunStatus,
     DailyPartitionsDefinition,
-    Definitions,
     HourlyPartitionsDefinition,
     LastPartitionMapping,
     Nothing,
@@ -41,6 +39,7 @@ from dagster import (
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.decorators.repository_decorator import repository
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
@@ -56,8 +55,6 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.remote_representation.external_data import asset_node_snaps_from_repo
-from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -65,7 +62,12 @@ from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.test_utils import environ, freeze_time, instance_for_test
+from dagster._core.test_utils import (
+    environ,
+    freeze_time,
+    instance_for_test,
+    mock_workspace_from_repos,
+)
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp
 from dagster._utils import Counter, traced_counter
@@ -293,9 +295,9 @@ def _single_backfill_iteration_create_but_do_not_submit_runs(
     backfill_id, backfill_data, asset_graph, instance, assets_by_repo_name
 ) -> AssetBackfillData:
     # Patch the run execution to not actually execute the run, but instead just create it
-    with mock.patch(
+    with patch(
         "dagster._core.execution.execute_in_process.ExecuteRunWithPlanIterable",
-        return_value=mock.MagicMock(),
+        return_value=MagicMock(),
     ):
         return _single_backfill_iteration(
             backfill_id, backfill_data, asset_graph, instance, assets_by_repo_name
@@ -741,19 +743,16 @@ def _requested_asset_partitions_in_run_request(
 def remote_asset_graph_from_assets_by_repo_name(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
 ) -> RemoteAssetGraph:
-    from_repository_handles_and_asset_node_snaps = []
-
+    repos = []
     for repo_name, assets in assets_by_repo_name.items():
-        repo = Definitions(assets=assets).get_repository_def()
-        asset_node_snaps = asset_node_snaps_from_repo(repo)
-        handle = RepositoryHandle.for_test(location_name="test", repository_name=repo_name)
-        from_repository_handles_and_asset_node_snaps.extend(
-            [(handle, asset_node) for asset_node in asset_node_snaps]
-        )
 
-    return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
-        from_repository_handles_and_asset_node_snaps, []
-    )
+        @repository(name=repo_name)
+        def repo(assets=assets):
+            return assets
+
+        repos.append(repo)
+
+    return RemoteAssetGraph.from_workspace_snapshot(mock_workspace_from_repos(repos))
 
 
 @pytest.mark.parametrize(

@@ -396,15 +396,7 @@ class RemoteRepository:
         """Returns a repository scoped RemoteAssetGraph."""
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
-        return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
-            repo_handle_assets=[
-                (self.handle, node_snap) for node_snap in self.get_asset_node_snaps()
-            ],
-            repo_handle_asset_checks=[
-                (self.handle, asset_check_node)
-                for asset_check_node in self.get_asset_check_node_snaps()
-            ],
-        )
+        return RemoteAssetGraph.from_remote_repository(self)
 
     def get_partition_names_for_asset_job(
         self,

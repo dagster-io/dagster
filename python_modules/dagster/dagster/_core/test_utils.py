@@ -47,6 +47,9 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -61,6 +64,9 @@ from dagster._core.instance_for_test import (
 )
 from dagster._core.launcher import RunLauncher
 from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
@@ -68,6 +74,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace.workspace import CodeLocationEntry, WorkspaceSnapshot
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._time import create_datetime, get_timezone
@@ -763,3 +770,21 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
 
 
 class TestType: ...
+
+
+def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> WorkspaceSnapshot:
+    remote_repos = {}
+    for repo in repos:
+        remote_repos[repo.name] = RemoteRepository(
+            RepositorySnap.from_def(repo),
+            repository_handle=RepositoryHandle.for_test(
+                location_name="test",
+                repository_name=repo.name,
+            ),
+            instance=DagsterInstance.ephemeral(),
+        )
+    mock_entry = unittest.mock.MagicMock(spec=CodeLocationEntry)
+    mock_location = unittest.mock.MagicMock(spec=CodeLocation)
+    mock_location.get_repositories.return_value = remote_repos
+    type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
+    return WorkspaceSnapshot(code_location_entries={"test": mock_entry})
