@@ -1023,6 +1023,12 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
+    def delete_backfill(self, backfill_id: str) -> None:
+        check.str_param(backfill_id, "backfill_id")
+        query = db.delete(BulkActionsTable).where(BulkActionsTable.c.key == backfill_id)
+        with self.connect() as conn:
+            conn.execute(query)
+
     def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
 

@@ -335,6 +335,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         return self._storage.run_storage.update_backfill(partition_backfill)
 
+    def delete_backfill(self, backfill_id: str) -> None:
+        return self._storage.run_storage.delete_backfill(backfill_id)
+
     def get_run_partition_data(self, runs_filter: "RunsFilter") -> Sequence["RunPartitionData"]:
         return self._storage.run_storage.get_run_partition_data(runs_filter)
 

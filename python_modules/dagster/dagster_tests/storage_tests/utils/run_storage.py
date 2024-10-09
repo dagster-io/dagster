@@ -1781,6 +1781,39 @@ class TestRunStorage:
         )
         assert backfills_for_id[0].backfill_id == backfill.backfill_id
 
+    def test_delete_backfill(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        one = PartitionBackfill(
+            "one",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+
+        storage.add_backfill(one)
+
+        two = PartitionBackfill(
+            "two",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(two)
+
+        storage.delete_backfill("one")
+        assert storage.get_backfill("one") is None
+
+        assert storage.get_backfill("two").backfill_id == "two"
+
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
 
