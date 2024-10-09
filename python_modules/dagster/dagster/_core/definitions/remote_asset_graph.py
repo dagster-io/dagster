@@ -1,6 +1,7 @@
 import itertools
 import warnings
 from collections import defaultdict
+from enum import Enum
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -39,6 +40,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.workspace.workspace import WorkspaceSnapshot
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
@@ -232,14 +234,23 @@ class RemoteAssetNode(BaseAssetNode):
             check.failed("No observable node found")
 
 
+class RemoteAssetGraphScope(Enum):
+    """Was this asset graph built from a single repository or all repositories across the whole workspace."""
+
+    REPOSITORY = "REPOSITORY"
+    WORKSPACE = "WORKSPACE"
+
+
 class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def __init__(
         self,
+        scope: RemoteAssetGraphScope,
         asset_nodes_by_key: Mapping[AssetKey, RemoteAssetNode],
         asset_checks_by_key: Mapping[AssetCheckKey, "AssetCheckNodeSnap"],
         asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[EntityKey]],
         repository_handles_by_asset_check_key: Mapping[AssetCheckKey, RepositoryHandle],
     ):
+        self._scope = scope
         self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_checks_by_key = asset_checks_by_key
         self._asset_check_nodes_by_key = {
@@ -250,8 +261,49 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         self._repository_handles_by_asset_check_key = repository_handles_by_asset_check_key
 
     @classmethod
-    def from_repository_handles_and_asset_node_snaps(
+    def from_remote_repository(cls, repo: RemoteRepository):
+        return cls._build(
+            scope=RemoteAssetGraphScope.REPOSITORY,
+            repo_handle_assets=[
+                (repo.handle, node_snap) for node_snap in repo.get_asset_node_snaps()
+            ],
+            repo_handle_asset_checks=[
+                (repo.handle, asset_check_node)
+                for asset_check_node in repo.get_asset_check_node_snaps()
+            ],
+        )
+
+    @classmethod
+    def from_workspace_snapshot(cls, workspace: WorkspaceSnapshot):
+        code_locations = (
+            location_entry.code_location
+            for location_entry in workspace.code_location_entries.values()
+            if location_entry.code_location
+        )
+        repos = (
+            repo
+            for code_location in code_locations
+            for repo in code_location.get_repositories().values()
+        )
+
+        repo_handle_assets: Sequence[Tuple["RepositoryHandle", "AssetNodeSnap"]] = []
+        repo_handle_asset_checks: Sequence[Tuple["RepositoryHandle", "AssetCheckNodeSnap"]] = []
+        for repo in repos:
+            for asset_node_snap in repo.get_asset_node_snaps():
+                repo_handle_assets.append((repo.handle, asset_node_snap))
+            for asset_check_node_snap in repo.get_asset_check_node_snaps():
+                repo_handle_asset_checks.append((repo.handle, asset_check_node_snap))
+
+        return cls._build(
+            scope=RemoteAssetGraphScope.WORKSPACE,
+            repo_handle_assets=repo_handle_assets,
+            repo_handle_asset_checks=repo_handle_asset_checks,
+        )
+
+    @classmethod
+    def _build(
         cls,
+        scope: RemoteAssetGraphScope,
         repo_handle_assets: Sequence[Tuple[RepositoryHandle, "AssetNodeSnap"]],
         repo_handle_asset_checks: Sequence[Tuple[RepositoryHandle, "AssetCheckNodeSnap"]],
     ) -> "RemoteAssetGraph":
@@ -313,6 +365,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         }
 
         return cls(
+            scope,
             asset_nodes_by_key,
             asset_checks_by_key,
             asset_check_execution_sets_by_key,
