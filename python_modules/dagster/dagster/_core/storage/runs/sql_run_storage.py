@@ -562,6 +562,12 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             conn.execute(query)
 
+    def delete_runs(self, run_ids: Sequence[str]) -> None:
+        check.list_param(run_ids, "run_ids", of_type=str)
+        query = db.delete(RunsTable).where(RunsTable.c.run_id.in_(run_ids))
+        with self.connect() as conn:
+            conn.execute(query)
+
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._has_snapshot_id(job_snapshot_id)
