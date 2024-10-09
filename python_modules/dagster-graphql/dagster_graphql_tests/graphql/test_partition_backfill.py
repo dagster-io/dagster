@@ -177,6 +177,21 @@ RETRY_BACKFILL_MUTATION = """
   }
 """
 
+DELETE_BACKFILL_MUTATION = """
+  mutation($backfillId: String!) {
+    deletePartitionBackfill(backfillId: $backfillId) {
+      __typename
+      ... on DeleteBackfillSuccess {
+        backfillId
+      }
+      ... on PythonError {
+        message
+        stack
+      }
+    }
+  }
+"""
+
 
 GET_PARTITION_BACKFILLS_QUERY = """
   query PartitionBackfillsQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
@@ -2302,3 +2317,71 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
 
         assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
+
+    def test_delete_asset_backfill(self, graphql_context):
+        # TestLaunchDaemonBackfillFromFailure::test_delete_asset_backfill
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
+        asset_graph = repository.asset_graph
+
+        asset_keys = [
+            AssetKey("unpartitioned_upstream_of_partitioned"),
+            AssetKey("upstream_daily_partitioned_asset"),
+            AssetKey("downstream_weekly_partitioned_asset"),
+        ]
+        partitions = ["2023-01-09"]
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "partitionNames": partitions,
+                    "assetSelection": [asset_key.to_graphql_input() for asset_key in asset_keys],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _mock_asset_backfill_runs(
+            graphql_context,
+            AssetKey("unpartitioned_upstream_of_partitioned"),
+            asset_graph,
+            backfill_id,
+            DagsterRunStatus.SUCCESS,
+            None,
+        )
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+        _mock_asset_backfill_runs(
+            graphql_context,
+            AssetKey("upstream_daily_partitioned_asset"),
+            asset_graph,
+            backfill_id,
+            DagsterRunStatus.FAILURE,
+            "2023-01-09",
+        )
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+
+        backfill = graphql_context.instance.get_backfill(backfill_id)
+        graphql_context.instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            DELETE_BACKFILL_MUTATION,
+            variables={
+                "backfillId": backfill_id,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        if result.data["deletePartitionBackfill"]["__typename"] == "PythonError":
+            assert False, result.data["deletePartitionBackfill"]["message"]
+        assert result.data["deletePartitionBackfill"]["__typename"] == "DeleteBackfillSuccess"
+        assert backfill_id == result.data["reexecutePartitionBackfill"]["backfillId"]
+
+        assert graphql_context.instance.get_backfill(backfill_id) is None
