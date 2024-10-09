@@ -374,7 +374,7 @@ def test_github_resource_raises_on_errors():
                 status=200,
                 json={"errors": [{"type": "error", "message": "message"}]},
             )
-            github.execute("", "")
+            github.execute("query")
 
     with pytest.raises(RuntimeError):
         wrap_op_in_graph_and_execute(

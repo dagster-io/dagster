@@ -1,10 +1,11 @@
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import jwt
 import requests
 from dagster import ConfigurableResource, resource
+from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
@@ -12,6 +13,55 @@ GET_REPO_ID_QUERY = """
 query get_repo_id($repo_name: String!, $repo_owner: String!) {
   repository(name: $repo_name, owner: $repo_owner) {
     id
+  }
+}
+"""
+
+GET_REPO_AND_REF_QUERY = """
+query get_repo_and_ref($repo_name: String!, $repo_owner: String!, $source: String!) {
+  repository(name: $repo_name, owner: $repo_owner) {
+    id
+    ref(qualifiedName: $source) {
+      target {
+        oid
+      }
+    }
+  }
+}
+"""
+
+CREATE_ISSUE_MUTATION = """
+mutation CreateIssue($id: ID!, $title: String!, $body: String!) {
+  createIssue(input: {
+    repositoryId: $id,
+    title: $title,
+    body: $body
+  }) {
+    clientMutationId,
+    issue {
+      body
+      title
+      url
+    }
+  }
+}
+"""
+
+CREATE_REF_MUTATION = """
+mutation CreateRef($id: ID!, $name: String!, $oid: GitObjectID!) {
+  createRef(input: {
+    repositoryId: $id,
+    name: $name,
+    oid: $oid
+  }) {
+    clientMutationId,
+    ref {
+      id
+      name
+      target {
+        oid
+      }
+    }
   }
 }
 """
@@ -47,23 +97,28 @@ mutation CreatePullRequest(
 """
 
 
-def to_seconds(dt):
+def to_seconds(dt: datetime) -> float:
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
 class GithubClient:
     def __init__(
-        self, client, app_id, app_private_rsa_key, default_installation_id, hostname=None
+        self,
+        client: requests.Session,
+        app_id: int,
+        app_private_rsa_key: str,
+        default_installation_id: Optional[int],
+        hostname: Optional[str] = None,
     ) -> None:
         self.client = client
         self.app_private_rsa_key = app_private_rsa_key
         self.app_id = app_id
         self.default_installation_id = default_installation_id
-        self.installation_tokens = {}
-        self.app_token = {}
+        self.installation_tokens: Dict[Any, Any] = {}
+        self.app_token: Dict[str, Any] = {}
         self.hostname = hostname
 
-    def __set_app_token(self):
+    def __set_app_token(self) -> None:
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
         # needing to self-sign a JWT
         now = int(time.time())
@@ -86,17 +141,17 @@ class GithubClient:
             "expires": expires,
         }
 
-    def __check_app_token(self):
+    def __check_app_token(self) -> None:
         if ("expires" not in self.app_token) or (
             self.app_token["expires"] < (int(time.time()) + 60)
         ):
             self.__set_app_token()
 
-    def get_installations(self, headers=None):
+    def get_installations(self, headers: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if headers is None:
             headers = {}
         self.__check_app_token()
-        headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
+        headers["Authorization"] = f"Bearer {self.app_token['value']}"
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = self.client.get(
             (
@@ -109,11 +164,13 @@ class GithubClient:
         request.raise_for_status()
         return request.json()
 
-    def __set_installation_token(self, installation_id, headers=None):
+    def __set_installation_token(
+        self, installation_id: int, headers: Optional[Dict[str, Any]] = None
+    ) -> None:
         if headers is None:
             headers = {}
         self.__check_app_token()
-        headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
+        headers["Authorization"] = f"Bearer {self.app_token['value']}"
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = requests.post(
             (
@@ -130,28 +187,42 @@ class GithubClient:
             "expires": to_seconds(datetime.strptime(auth["expires_at"], "%Y-%m-%dT%H:%M:%SZ")),
         }
 
-    def __check_installation_tokens(self, installation_id):
+    def __check_installation_tokens(self, installation_id: int) -> None:
         if (installation_id not in self.installation_tokens) or (
             self.installation_tokens[installation_id]["expires"] < (int(time.time()) + 60)
         ):
             self.__set_installation_token(installation_id)
 
-    def execute(self, query, variables, headers=None, installation_id=None):
+    @public
+    def execute(
+        self,
+        query: str,
+        variables: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        installation_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
         if headers is None:
             headers = {}
         if installation_id is None:
-            installation_id = self.default_installation_id
+            if self.default_installation_id:
+                installation_id = self.default_installation_id
+            else:
+                raise RuntimeError("No installation_id provided")
+
         self.__check_installation_tokens(installation_id)
-        headers["Authorization"] = "token {}".format(
-            self.installation_tokens[installation_id]["value"]
-        )
+        headers["Authorization"] = f"token {self.installation_tokens[installation_id]['value']}"
+
+        json: Dict[str, Any] = {"query": query}
+        if variables:
+            json["variables"] = variables
+
         request = requests.post(
             (
                 "https://api.github.com/graphql"
                 if self.hostname is None
                 else f"https://{self.hostname}/api/graphql"
             ),
-            json={"query": query, "variables": variables},
+            json=json,
             headers=headers,
         )
         request.raise_for_status()
@@ -159,9 +230,15 @@ class GithubClient:
             raise RuntimeError(request.json()["errors"])
         return request.json()
 
-    def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
-        if installation_id is None:
-            installation_id = self.default_installation_id
+    @public
+    def create_issue(
+        self,
+        repo_name: str,
+        repo_owner: str,
+        title: str,
+        body: str,
+        installation_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
         res = self.execute(
             query=GET_REPO_ID_QUERY,
             variables={"repo_name": repo_name, "repo_owner": repo_owner},
@@ -169,22 +246,7 @@ class GithubClient:
         )
 
         return self.execute(
-            query="""
-                mutation CreateIssue($id: ID!, $title: String!, $body: String!) {
-                createIssue(input: {
-                    repositoryId: $id,
-                    title: $title,
-                    body: $body
-                }) {
-                    clientMutationId,
-                    issue {
-                        body
-                        title
-                        url
-                    }
-                }
-                }
-            """,
+            query=CREATE_ISSUE_MUTATION,
             variables={
                 "id": res["data"]["repository"]["id"],
                 "title": title,
@@ -193,6 +255,7 @@ class GithubClient:
             installation_id=installation_id,
         )
 
+    @public
     def create_ref(
         self,
         repo_name: str,
@@ -200,22 +263,9 @@ class GithubClient:
         source: str,
         target: str,
         installation_id=None,
-    ):
-        if installation_id is None:
-            installation_id = self.default_installation_id
+    ) -> Dict[str, Any]:
         res = self.execute(
-            query="""
-            query get_repo_and_source_ref($repo_name: String!, $repo_owner: String!, $source: String!) {
-                repository(name: $repo_name, owner: $repo_owner) {
-                    id
-                    ref(qualifiedName: $source) {
-                        target {
-                            oid
-                        }
-                    }
-                }
-            }
-            """,
+            query=GET_REPO_AND_REF_QUERY,
             variables={
                 "repo_name": repo_name,
                 "repo_owner": repo_owner,
@@ -225,24 +275,7 @@ class GithubClient:
         )
 
         branch = self.execute(
-            query="""
-                mutation CreateRef($id: ID!, $name: String!, $oid: GitObjectID!) {
-                createRef(input: {
-                    repositoryId: $id,
-                    name: $name,
-                    oid: $oid
-                }) {
-                    clientMutationId,
-                    ref {
-                        id
-                        name
-                        target {
-                            oid
-                        }
-                    }
-                }
-                }
-            """,
+            query=CREATE_REF_MUTATION,
             variables={
                 "id": res["data"]["repository"]["id"],
                 "name": target,
@@ -252,6 +285,7 @@ class GithubClient:
         )
         return branch
 
+    @public
     def create_pull_request(
         self,
         base_repo_name: str,
@@ -265,9 +299,7 @@ class GithubClient:
         maintainer_can_modify: Optional[bool] = None,
         draft: Optional[bool] = None,
         installation_id: Optional[int] = None,
-    ):
-        if installation_id is None:
-            installation_id = self.default_installation_id
+    ) -> Dict[str, Any]:
         base = self.execute(
             query=GET_REPO_ID_QUERY,
             variables={"repo_name": base_repo_name, "repo_owner": base_repo_owner},
@@ -324,6 +356,7 @@ class GithubResource(ConfigurableResource):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @public
     def get_client(self) -> GithubClient:
         return GithubClient(
             client=requests.Session(),
