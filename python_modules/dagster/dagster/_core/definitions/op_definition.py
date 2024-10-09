@@ -47,7 +47,9 @@ OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
 @deprecated_param(
-    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead."
+    param="version",
+    breaking_version="2.0",
+    additional_warn_text="Use `code_version` instead.",
 )
 class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
