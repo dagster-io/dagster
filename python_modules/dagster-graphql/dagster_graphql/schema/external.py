@@ -373,10 +373,10 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
     def resolve_assetNodes(self, graphene_info: ResolveInfo):
-        asset_node_snaps = self.get_repository(graphene_info).get_asset_node_snaps()
+        remote_nodes = self.get_repository(graphene_info).asset_graph.asset_nodes
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[node.asset_key for node in asset_node_snaps],
+            asset_keys=[node.key for node in remote_nodes],
         )
 
         asset_graph_differ = None
@@ -401,14 +401,13 @@ class GrapheneRepository(graphene.ObjectType):
 
         return [
             GrapheneAssetNode(
-                repository_handle=self._handle,
-                asset_node_snap=asset_node_snap,
+                remote_node=remote_node,
                 asset_checks_loader=asset_checks_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
                 asset_graph_differ=asset_graph_differ,
             )
-            for asset_node_snap in self.get_repository(graphene_info).get_asset_node_snaps()
+            for remote_node in remote_nodes
         ]
 
     def resolve_assetGroups(self, graphene_info: ResolveInfo):

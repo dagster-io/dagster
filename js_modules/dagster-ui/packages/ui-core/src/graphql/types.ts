@@ -338,7 +338,6 @@ export type AssetConnection = {
 export type AssetDependency = {
   __typename: 'AssetDependency';
   asset: AssetNode;
-  inputName: Scalars['String']['output'];
   partitionMapping: Maybe<PartitionMapping>;
 };
 
@@ -6288,8 +6287,6 @@ export const buildAssetDependency = (
         : relationshipsToOmit.has('AssetNode')
         ? ({} as AssetNode)
         : buildAssetNode({}, relationshipsToOmit),
-    inputName:
-      overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'aspernatur',
     partitionMapping:
       overrides && overrides.hasOwnProperty('partitionMapping')
         ? overrides.partitionMapping!

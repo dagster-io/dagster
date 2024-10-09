@@ -53,7 +53,7 @@ from dagster._core.storage.partition_status_cache import (
     is_cacheable_partition_type,
 )
 
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
+from dagster_graphql.implementation.loader import StaleStatusLoader
 
 if TYPE_CHECKING:
     from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
@@ -184,7 +184,6 @@ def _graphene_asset_node(
     graphene_info: "ResolveInfo",
     remote_node: RemoteAssetNode,
     asset_checks_loader: "AssetChecksLoader",
-    depended_by_loader: Optional[CrossRepoAssetDependedByLoader],
     stale_status_loader: Optional[StaleStatusLoader],
     dynamic_partitions_loader: CachingDynamicPartitionsLoader,
 ):
@@ -194,10 +193,8 @@ def _graphene_asset_node(
     base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return GrapheneAssetNode(
-        repository_handle=handle,
-        asset_node_snap=remote_node.priority_node_snap,
+        remote_node=remote_node,
         asset_checks_loader=asset_checks_loader,
-        depended_by_loader=depended_by_loader,
         stale_status_loader=stale_status_loader,
         dynamic_partitions_loader=dynamic_partitions_loader,
         # base_deployment_context will be None if we are not in a branch deployment
@@ -220,8 +217,6 @@ def get_asset_nodes_by_asset_key(
     """
     from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 
-    depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
-
     stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
         asset_graph=lambda: graphene_info.context.asset_graph,
@@ -240,7 +235,6 @@ def get_asset_nodes_by_asset_key(
             graphene_info,
             remote_node,
             asset_checks_loader=asset_checks_loader,
-            depended_by_loader=depended_by_loader,
             stale_status_loader=stale_status_loader,
             dynamic_partitions_loader=dynamic_partitions_loader,
         )
@@ -268,7 +262,6 @@ def get_asset_node(
             asset_graph=lambda: graphene_info.context.asset_graph,
             loading_context=graphene_info.context,
         ),
-        depended_by_loader=None,
         asset_checks_loader=AssetChecksLoader(
             context=graphene_info.context,
             asset_keys=[asset_key],
@@ -297,7 +290,6 @@ def get_asset(
             graphene_info,
             remote_node,
             stale_status_loader=None,
-            depended_by_loader=None,
             asset_checks_loader=AssetChecksLoader(
                 context=graphene_info.context,
                 asset_keys=[asset_key],

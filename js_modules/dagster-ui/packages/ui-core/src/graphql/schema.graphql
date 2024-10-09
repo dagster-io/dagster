@@ -714,7 +714,6 @@ enum ChangeReason {
 
 type AssetDependency {
   asset: AssetNode!
-  inputName: String!
   partitionMapping: PartitionMapping
 }
 

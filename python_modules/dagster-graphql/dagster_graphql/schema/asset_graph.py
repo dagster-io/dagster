@@ -16,7 +16,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteAssetNode
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
@@ -31,7 +31,6 @@ from dagster._core.remote_representation.external_data import (
     StaticPartitionsSnap,
     TimeWindowPartitionsSnap,
 )
-from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
@@ -49,7 +48,7 @@ from dagster_graphql.implementation.fetch_assets import (
     get_freshness_info,
     get_partition_subsets,
 )
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
+from dagster_graphql.implementation.loader import StaleStatusLoader
 from dagster_graphql.schema import external
 from dagster_graphql.schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
@@ -152,49 +151,33 @@ class GrapheneAssetDependency(graphene.ObjectType):
         name = "AssetDependency"
 
     asset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
-    inputName = graphene.NonNull(graphene.String)
     partitionMapping = graphene.Field(GraphenePartitionMapping)
 
     def __init__(
         self,
         *,
-        repository_handle: RepositoryHandle,
-        input_name: Optional[str],
         asset_key: AssetKey,
         asset_checks_loader: AssetChecksLoader,
-        depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        self._repository_handle = check.inst_param(
-            repository_handle, "repository_handle", RepositoryHandle
-        )
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         self._asset_checks_loader = check.inst_param(
             asset_checks_loader, "asset_checks_loader", AssetChecksLoader
         )
-        self._depended_by_loader = check.opt_inst_param(
-            depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
-        )
         self._partition_mapping = check.opt_inst_param(
             partition_mapping, "partition_mapping", PartitionMapping
         )
-        super().__init__(inputName=input_name)
+        super().__init__()
 
     def resolve_asset(self, graphene_info: ResolveInfo):
-        repo = graphene_info.context.get_repository(self._repository_handle.to_selector())
-        asset_node = repo.get_asset_node_snap(self._asset_key)
-        if not asset_node and self._depended_by_loader:
-            # Only load from dependency loader if asset node cannot be found in current repository
-            asset_node = self._depended_by_loader.get_sink_asset(self._asset_key)
-        asset_node = check.not_none(asset_node)
+        remote_node = check.not_none(graphene_info.context.get_asset_node(self._asset_key))
         return GrapheneAssetNode(
-            repository_handle=self._repository_handle,
-            asset_node_snap=asset_node,
+            remote_node=remote_node,
             asset_checks_loader=self._asset_checks_loader,
         )
 
     def resolve_partitionMapping(
-        self, _graphene_info: ResolveInfo
+        self, graphene_info: ResolveInfo
     ) -> Optional[GraphenePartitionMapping]:
         if self._partition_mapping:
             return GraphenePartitionMapping(self._partition_mapping)
@@ -333,26 +316,20 @@ class GrapheneAssetNode(graphene.ObjectType):
     def __init__(
         self,
         *,
-        repository_handle: RepositoryHandle,
-        asset_node_snap: AssetNodeSnap,
+        remote_node: RemoteAssetNode,
         asset_checks_loader: AssetChecksLoader,
-        depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         stale_status_loader: Optional[StaleStatusLoader] = None,
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
         asset_graph_differ: Optional[AssetGraphDiffer] = None,
     ):
         from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
-        self._repository_handle = check.inst_param(
-            repository_handle,
-            "repository_handle",
-            RepositoryHandle,
-        )
-        self._repository_selector = repository_handle.to_selector()
-        self._asset_node_snap = check.inst_param(asset_node_snap, "asset_node_snap", AssetNodeSnap)
-        self._depended_by_loader = check.opt_inst_param(
-            depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
-        )
+        self._remote_node = check.inst_param(remote_node, "remote_node", RemoteAssetNode)
+
+        self._asset_node_snap = remote_node.priority_node_snap
+        self._repository_handle = remote_node.priority_repository_handle
+        self._repository_selector = self._repository_handle.to_selector()
+
         self._stale_status_loader = check.opt_inst_param(
             stale_status_loader,
             "stale_status_loader",
@@ -372,18 +349,18 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         super().__init__(
             id=get_unique_asset_id(
-                asset_node_snap.asset_key,
-                repository_handle.location_name,
-                repository_handle.repository_name,
+                self._asset_node_snap.asset_key,
+                self._repository_handle.location_name,
+                self._repository_handle.repository_name,
             ),
-            assetKey=asset_node_snap.asset_key,
-            description=asset_node_snap.description,
-            opName=asset_node_snap.op_name,
-            opVersion=asset_node_snap.code_version,
-            groupName=asset_node_snap.group_name,
+            assetKey=self._asset_node_snap.asset_key,
+            description=self._asset_node_snap.description,
+            opName=self._asset_node_snap.op_name,
+            opVersion=self._asset_node_snap.code_version,
+            groupName=self._asset_node_snap.group_name,
             owners=[
                 self._graphene_asset_owner_from_owner_str(owner)
-                for owner in (asset_node_snap.owners or [])
+                for owner in (self._asset_node_snap.owners or [])
             ],
         )
 
@@ -788,61 +765,24 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_dependedBy(self, graphene_info: ResolveInfo) -> List[GrapheneAssetDependency]:
-        # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.
-        # In order to avoid recomputing workspace-wide values per asset node, we add a loader
-        # that batch loads all cross-repo dependencies for the whole workspace.
-        _depended_by_loader = check.not_none(
-            self._depended_by_loader,
-            "depended_by_loader must exist in order to resolve dependedBy nodes",
-        )
-
-        depended_by_asset_nodes = [
-            *_depended_by_loader.get_cross_repo_dependent_assets(
-                self._repository_selector.location_name,
-                self._repository_selector.repository_name,
-                self._asset_node_snap.asset_key,
-            ),
-            *self._asset_node_snap.child_edges,
-        ]
-
-        if not depended_by_asset_nodes:
+        if not self._remote_node.child_keys:
             return []
 
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[dep.child_asset_key for dep in depended_by_asset_nodes],
+            asset_keys=self._remote_node.child_keys,
         )
 
         return [
             GrapheneAssetDependency(
-                repository_handle=self._repository_handle,
-                input_name=dep.input_name,
-                asset_key=dep.child_asset_key,
+                asset_key=asset_key,
                 asset_checks_loader=asset_checks_loader,
-                depended_by_loader=_depended_by_loader,
             )
-            for dep in depended_by_asset_nodes
+            for asset_key in self._remote_node.child_keys
         ]
 
     def resolve_dependedByKeys(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneAssetKey]:
-        # CrossRepoAssetDependedByLoader class loads all cross-repo asset dependencies workspace-wide.
-        # In order to avoid recomputing workspace-wide values per asset node, we add a loader
-        # that batch loads all cross-repo dependencies for the whole workspace.
-        depended_by_loader = check.not_none(
-            self._depended_by_loader,
-            "depended_by_loader must exist in order to resolve dependedBy nodes",
-        )
-
-        depended_by_asset_nodes = [
-            *depended_by_loader.get_cross_repo_dependent_assets(
-                self._repository_selector.location_name,
-                self._repository_selector.repository_name,
-                self._asset_node_snap.asset_key,
-            ),
-            *self._asset_node_snap.child_edges,
-        ]
-
-        return [GrapheneAssetKey(path=dep.child_asset_key.path) for dep in depended_by_asset_nodes]
+        return [GrapheneAssetKey(path=key.path) for key in self._remote_node.child_keys]
 
     def resolve_dependencyKeys(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneAssetKey]:
         return [
@@ -851,22 +791,21 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_dependencies(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetDependency]:
-        if not self._asset_node_snap.parent_edges:
+        if not self._remote_node.parent_keys:
             return []
 
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[dep.parent_asset_key for dep in self._asset_node_snap.parent_edges],
+            asset_keys=self._remote_node.parent_keys,
         )
+
         return [
             GrapheneAssetDependency(
-                repository_handle=self._repository_handle,
-                input_name=dep.input_name,
-                asset_key=dep.parent_asset_key,
+                asset_key=key,
                 asset_checks_loader=asset_checks_loader,
-                partition_mapping=dep.partition_mapping,
+                partition_mapping=self._remote_node.partition_mappings.get(key),
             )
-            for dep in self._asset_node_snap.parent_edges
+            for key in self._remote_node.parent_keys
         ]
 
     def resolve_freshnessInfo(
