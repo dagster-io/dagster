@@ -280,6 +280,11 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         description="Optional parameter to specify the authentication mechanism to use.",
     )
 
+    auto_capitalize_column_names: bool = Field(
+        default=True,
+        description="If True, convert all column names to all capital letters. Defaults to True.",
+    )
+
     @staticmethod
     @abstractmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
