@@ -18,6 +18,7 @@ from dagster._core.execution.backfill import (
 from dagster._core.execution.job_backfill import submit_backfill_runs
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARENT_BACKFILL_ID_TAG, ROOT_BACKFILL_ID_TAG
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.backfill import (
         GrapheneAssetPartitions,
         GrapheneCancelBackfillSuccess,
+        GrapheneDeleteBackfillSuccess,
         GrapheneLaunchBackfillSuccess,
         GrapheneResumeBackfillSuccess,
     )
@@ -425,3 +427,44 @@ def retry_partition_backfill(
 
     graphene_info.context.instance.add_backfill(new_backfill)
     return GrapheneLaunchBackfillSuccess(backfill_id=new_backfill.backfill_id)
+
+
+def delete_partition_backfill(
+    graphene_info: "ResolveInfo", backfill_id: str
+) -> "GrapheneDeleteBackfillSuccess":
+    from dagster_graphql.schema.roots.mutation import GrapheneDeleteBackfillSuccess
+
+    backfill = graphene_info.context.instance.get_backfill(backfill_id)
+    if not backfill:
+        check.failed(f"No backfill found for id: {backfill_id}")
+
+    if backfill.status not in BULK_ACTION_TERMINAL_STATUSES:
+        # TODO - cancel the backfill if not in terminal state?
+        raise DagsterInvariantViolationError(
+            f"Cannot re-execute backfill {backfill_id} because it is still in progress."
+        )
+
+    if backfill.is_asset_backfill:
+        asset_graph = graphene_info.context.asset_graph
+        assert_permission_for_asset_graph(
+            graphene_info,
+            asset_graph,
+            backfill.asset_selection,
+            Permissions.DELETE_PARTITION_BACKFILL,
+        )
+    else:
+        partition_set_origin = check.not_none(backfill.partition_set_origin)
+        location_name = partition_set_origin.selector.location_name
+        assert_permission_for_location(
+            graphene_info, Permissions.DELETE_PARTITION_BACKFILL, location_name
+        )
+
+    runs_in_backfill = graphene_info.context.instance.get_run_ids(
+        filters=RunsFilter.for_backfill(backfill_id)
+    )
+    for run_id in runs_in_backfill:
+        graphene_info.context.instance.delete_run(run_id)
+
+    graphene_info.context.instance.delete_backfill(backfill_id)
+
+    return GrapheneDeleteBackfillSuccess(backfill_id=backfill_id)

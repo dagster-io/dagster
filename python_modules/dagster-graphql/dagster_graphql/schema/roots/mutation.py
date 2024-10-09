@@ -19,6 +19,7 @@ from dagster_graphql.implementation.execution import (
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill,
     create_and_launch_partition_backfill,
+    delete_partition_backfill,
     resume_partition_backfill,
     retry_partition_backfill,
 )
@@ -389,6 +390,52 @@ class GrapheneReexecuteBackfillMutation(graphene.Mutation):
             graphene_info,
             backfill_id=reexecutionParams["parentRunId"],
             strategy=reexecutionParams["strategy"],
+        )
+
+
+class GrapheneDeleteBackfillSuccess(graphene.ObjectType):
+    """Output indicating that a backfill was deleted."""
+
+    backfillId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DeleteBackfillSuccess"
+
+
+class GrapheneDeleteBackfillResult(graphene.Union):
+    """The output from deleting a backfill."""
+
+    class Meta:
+        types = (
+            GrapheneDeleteBackfillSuccess,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            # GrapheneBackfillNotFoundError,
+        )
+        name = "DeleteBackfillResult"
+
+
+class GrapheneDeleteBackfillMutation(graphene.Mutation):
+    """Deletes a backfill and all of the runs it launched."""
+
+    Output = graphene.NonNull(GrapheneDeleteBackfillResult)
+
+    class Arguments:
+        backfillId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DeleteBackfillMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.DELETE_PARTITION_BACKFILL)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        backfillId: str,
+    ):
+        return delete_partition_backfill(
+            graphene_info,
+            backfill_id=backfillId,
         )
 
 
@@ -1009,6 +1056,7 @@ class GrapheneMutation(graphene.ObjectType):
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
     reexecutePartitionBackfill = GrapheneReexecuteBackfillMutation.Field()
     cancelPartitionBackfill = GrapheneCancelBackfillMutation.Field()
+    deletePartitionBackfill = GrapheneDeleteBackfillMutation.Field()
     logTelemetry = GrapheneLogTelemetryMutation.Field()
     setNuxSeen = GrapheneSetNuxSeenMutation.Field()
     addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()

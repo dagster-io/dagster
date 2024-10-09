@@ -3737,6 +3737,7 @@ type Mutation {
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+  deletePartitionBackfill(backfillId: String!): DeleteBackfillResult!
   logTelemetry(
     action: String!
     clientId: String!
@@ -3820,6 +3821,12 @@ type ResumeBackfillSuccess {
 union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonError
 
 type CancelBackfillSuccess {
+  backfillId: String!
+}
+
+union DeleteBackfillResult = DeleteBackfillSuccess | UnauthorizedError | PythonError
+
+type DeleteBackfillSuccess {
   backfillId: String!
 }
 
