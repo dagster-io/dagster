@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Sequence
 
 from setuptools import find_packages, setup
 
@@ -17,14 +17,11 @@ def get_version() -> str:
 ver = get_version()
 pin = "" if ver == "1!0+dev" else NON_EDITABLE_INSTALL_DAGSTER_PIN
 
-airflow_dep_list = [
-    "apache-airflow>=2.0.0,<2.8",
-    # Flask-session 0.6 is incompatible with certain airflow-provided test
-    # utilities.
-    "flask-session<0.6.0",
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-    "pendulum>=2.0.0,<3.0.0",
-]
+
+def get_airflow_dep_list() -> Sequence[str]:
+    req_file = Path(__file__).parent / "airflow_requirements.txt"
+    return [line for line in req_file.read_text().split("\n") if line and not line.startswith("#")]
+
 
 setup(
     name="dagster-airlift",
@@ -53,13 +50,27 @@ setup(
         "core": [
             f"dagster{pin}",
         ],
-        "in-airflow": airflow_dep_list,
+        # [in-airflow] doesn't directly have a dependency on airflow because Airflow cannot be installed via setup.py reliably. Instead, users need to install from a constraints
+        # file as recommended by the Airflow project.
+        "in-airflow": [],
+        # [tutorial] includes additional dependencies needed to run the tutorial. Namely, the dagster-webserver and the constrained airflow packages.
+        "tutorial": [
+            "dagster-webserver",
+            *get_airflow_dep_list(),
+        ],
         "mwaa": [
             "boto3>=1.18.0"
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
         "dbt": ["dagster-dbt"],
         "k8s": ["dagster-k8s"],
-        "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3", "dagster-webserver"],
+        "test": [
+            "pytest",
+            "dagster-dbt",
+            "dbt-duckdb",
+            "boto3",
+            "dagster-webserver",
+            *get_airflow_dep_list(),
+        ],
     },
     zip_safe=False,
 )

@@ -63,7 +63,19 @@ def instantiate_dagster_operator(
     base_operator_args, base_operator_args_with_defaults = get_params(BaseOperator.__init__)
     init_kwargs = {}
 
-    ignore_args = ["kwargs", "args", "dag"]
+    ignore_args = [
+        # These don't make sense in context to copy
+        "kwargs",
+        "args",
+        "dag",
+        # The weight rule stored on the base operator is a private subclass of PriorityWeightStrategy,
+        # which satisfies the type signature of the constructor, but fails the validation process in
+        # the constructor. See https://github.com/apache/airflow/blob/2b15e9f26fee27b6c1fbc8167d0e0558198ffa7a/airflow/task/priority_strategy.py#L127
+        # for more details.
+        # We could likely add custom handling here to support the parameter.
+        # For now, we ignore it, as it's currently an experimental feature in Airflow.
+        "weight_rule",
+    ]
     for arg in base_operator_args:
         if arg in ignore_args or getattr(original_task, arg, None) is None:
             continue
