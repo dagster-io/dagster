@@ -582,3 +582,38 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
                 prev_time = next_time
 
             start_timestamp = start_timestamp - timestamp_interval
+
+
+def test_last_day_of_month_cron_schedule():
+    # L means last day of month
+    execution_timezone = "Europe/Berlin"
+    cron_string = "*/15 13 L * *"
+
+    expected_datetimes = [
+        create_datetime(2023, 10, 31, 13, 0, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 10, 31, 13, 15, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 10, 31, 13, 30, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 10, 31, 13, 45, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 11, 30, 13, 0, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 11, 30, 13, 15, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 11, 30, 13, 30, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 11, 30, 13, 45, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 12, 31, 13, 0, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 12, 31, 13, 15, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 12, 31, 13, 30, 0, tz="Europe/Berlin"),
+        create_datetime(2023, 12, 31, 13, 45, 0, tz="Europe/Berlin"),
+    ]
+
+    start_timestamp = expected_datetimes[0].timestamp() - 1
+
+    cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+
+    for i in range(len(expected_datetimes)):
+        assert next(cron_iter) == expected_datetimes[i]
+
+    end_timestamp = expected_datetimes[-1].timestamp() + 1
+
+    cron_iter = reverse_cron_string_iterator(end_timestamp, cron_string, execution_timezone)
+
+    for i in range(len(expected_datetimes)):
+        assert next(cron_iter) == expected_datetimes[-(i + 1)]
