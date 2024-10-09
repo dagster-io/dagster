@@ -54,7 +54,9 @@ setup(
             f"dagster{pin}",
         ],
         "in-airflow": airflow_dep_list,
-        "mwaa": ["boto3"],
+        "mwaa": [
+            "boto3>=1.18.0"
+        ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
         "dbt": ["dagster-dbt"],
         "k8s": ["dagster-k8s"],
         "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3", "dagster-webserver"],

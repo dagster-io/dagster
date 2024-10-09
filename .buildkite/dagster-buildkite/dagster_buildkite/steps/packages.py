@@ -361,7 +361,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-airlift",
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_8,
             AvailablePythonVersion.V3_12,
         ],
     ),
