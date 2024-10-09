@@ -4,11 +4,11 @@ from unittest import mock
 
 from dagster import daily_partitioned_config, job, op, repository
 from dagster._core.definitions.decorators.schedule_decorator import schedule
-from dagster._core.remote_representation import (
-    external_job_data_from_def,
-    external_repository_data_from_def,
+from dagster._core.remote_representation import external_job_data_from_def
+from dagster._core.remote_representation.external_data import (
+    RepositorySnap,
+    TimeWindowPartitionsSnap,
 )
-from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
 from dagster._core.snap.job_snapshot import create_job_snapshot_id
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -50,7 +50,7 @@ def test_external_repository_data(snapshot):
     def repo():
         return [foo_job, foo_schedule]
 
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.get_job_data("foo_job")
     assert external_repo_data.get_schedule("foo_schedule")
 

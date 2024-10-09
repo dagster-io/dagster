@@ -4,10 +4,8 @@ from unittest import mock
 
 from dagster import file_relative_path, repository
 from dagster._core.code_pointer import CodePointer
-from dagster._core.remote_representation import (
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-    external_repository_data_from_def,
-)
+from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster._grpc.types import ListRepositoriesResponse
@@ -302,7 +300,7 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
                 def new_repo():
                     return []
 
-                new_repo_data = external_repository_data_from_def(new_repo)
+                new_repo_data = RepositorySnap.from_def(new_repo)
 
                 external_repository_mock.return_value = {"new_repo": new_repo_data}
 

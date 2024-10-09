@@ -49,10 +49,10 @@ from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
     PartitionExecutionErrorSnap,
     RepositoryErrorSnap,
+    RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
     external_job_data_from_def,
-    external_repository_data_from_def,
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
@@ -789,7 +789,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             return serialize_value(
-                external_repository_data_from_def(
+                RepositorySnap.from_def(
                     self._get_repo_for_origin(repository_origin),
                     defer_snapshots=request.defer_snapshots,
                 )

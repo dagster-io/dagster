@@ -26,10 +26,11 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.remote_representation import JobDataSnap, external_repository_data_from_def
+from dagster._core.remote_representation import JobDataSnap
 from dagster._core.remote_representation.external_data import (
     NestedResource,
     NestedResourceType,
+    RepositorySnap,
     ResourceJobUsageEntry,
     ResourceSnap,
 )
@@ -49,7 +50,7 @@ def test_repository_snap_all_props():
     def noop_repo():
         return [noop_job]
 
-    external_repo_data = external_repository_data_from_def(noop_repo)
+    external_repo_data = RepositorySnap.from_def(noop_repo)
 
     assert external_repo_data.name == "noop_repo"
     assert len(external_repo_data.job_datas) == 1
@@ -82,13 +83,13 @@ def test_repository_snap_definitions_resources_basic():
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    repo_snap = RepositorySnap.from_def(repo)
 
-    assert len(external_repo_data.resources) == 1
-    assert external_repo_data.resources[0].name == "foo"
-    assert external_repo_data.resources[0].resource_snapshot.name == "foo"
-    assert external_repo_data.resources[0].resource_snapshot.description is None
-    assert external_repo_data.resources[0].configured_values == {}
+    assert len(repo_snap.resources) == 1
+    assert repo_snap.resources[0].name == "foo"
+    assert repo_snap.resources[0].resource_snapshot.name == "foo"
+    assert repo_snap.resources[0].resource_snapshot.description is None
+    assert repo_snap.resources[0].configured_values == {}
 
 
 def test_repository_snap_definitions_resources_nested() -> None:
@@ -104,7 +105,7 @@ def test_repository_snap_definitions_resources_nested() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 1
@@ -137,7 +138,7 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 2
@@ -179,7 +180,7 @@ def test_repository_snap_definitions_function_style_resources_nested() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 2
@@ -227,7 +228,7 @@ def test_repository_snap_definitions_resources_nested_many() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 2
@@ -271,7 +272,7 @@ def test_repository_snap_definitions_resources_complex():
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
 
     assert len(external_repo_data.resources) == 1
     assert external_repo_data.resources[0].name == "foo"
@@ -296,7 +297,7 @@ def test_repository_snap_empty():
     def empty_repo():
         return []
 
-    external_repo_data = external_repository_data_from_def(empty_repo)
+    external_repo_data = RepositorySnap.from_def(empty_repo)
     assert external_repo_data.name == "empty_repo"
     assert len(external_repo_data.job_datas) == 0
     assert len(external_repo_data.resources) == 0
@@ -362,7 +363,7 @@ def test_repository_snap_definitions_env_vars() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.utilized_env_vars
 
     env_vars = dict(external_repo_data.utilized_env_vars)
@@ -406,7 +407,7 @@ def test_repository_snap_definitions_resources_assets_usage() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 3
@@ -455,7 +456,7 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 1
@@ -511,7 +512,7 @@ def test_repository_snap_definitions_resources_job_op_usage() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 2
@@ -571,7 +572,7 @@ def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 2
@@ -612,7 +613,7 @@ def test_asset_check():
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
 
     assert len(external_repo_data.asset_check_nodes) == 2
     assert external_repo_data.asset_check_nodes[0].name == "my_asset_check"
@@ -638,7 +639,7 @@ def test_asset_check_in_asset_op():
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
 
     assert len(external_repo_data.asset_check_nodes) == 3
     assert external_repo_data.asset_check_nodes[0].name == "my_asset_check"
@@ -667,7 +668,7 @@ def test_asset_check_multiple_jobs():
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.asset_check_nodes
     assert len(external_repo_data.asset_check_nodes) == 2
     assert external_repo_data.asset_check_nodes[0].name == "my_asset_check"
@@ -690,7 +691,7 @@ def test_asset_check_multi_asset():
     defs = Definitions(assets=[my_multi_asset])
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.asset_check_nodes
     assert len(external_repo_data.asset_check_nodes) == 1
     assert external_repo_data.asset_check_nodes[0].name == "check_1"
@@ -736,7 +737,7 @@ def test_repository_snap_definitions_resources_schedule_sensor_usage():
     )
 
     repo = resolve_pending_repo_if_required(defs)
-    external_repo_data = external_repository_data_from_def(repo)
+    external_repo_data = RepositorySnap.from_def(repo)
     assert external_repo_data.resources
 
     assert len(external_repo_data.resources) == 3
