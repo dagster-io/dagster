@@ -33,12 +33,8 @@ spec:
           securityContext: {{ $_.Values.dagsterWebserver.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $_.Values.dagsterWebserver.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $_.Values.dagsterWebserver.image) | quote }}
-          {{- if .Values.migrate.customMigrateCommand }}
-          command: {{- toYaml .Values.migrate.customMigrateCommand | nindent 12 }}
-          {{- else }}
           command: ["dagster"]
           args: ["instance", "migrate"]
-          {{- end }}
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:

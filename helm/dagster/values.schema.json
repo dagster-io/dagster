@@ -554,8 +554,8 @@
                         }
                     ]
                 },
-                "extraInitContainers": {
-                    "title": "Extrainitcontainers",
+                "extraPrependedInitContainers": {
+                    "title": "Extraprependedinitcontainers",
                     "items": {
                         "$ref": "#/definitions/InitContainer"
                     },
@@ -841,10 +841,6 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
-                },
-                "pgIsReadyCommandOverride": {
-                    "title": "Pgisreadycommandoverride",
-                    "type": "string"
                 },
                 "postgresqlHost": {
                     "title": "Postgresqlhost",
@@ -3033,8 +3029,8 @@
                         }
                     ]
                 },
-                "extraInitContainers": {
-                    "title": "Extrainitcontainers",
+                "extraPrependedInitContainers": {
+                    "title": "Extraprependedinitcontainers",
                     "items": {
                         "$ref": "#/definitions/InitContainer"
                     },
@@ -3094,13 +3090,6 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
-                },
-                "customMigrateCommand": {
-                    "title": "Custommigratecommand",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "extraContainers": {
                     "title": "Extracontainers",

@@ -105,11 +105,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "dagster.postgresql.pgisready" -}}
-{{- if .Values.postgresql.pgIsReadyCommandOverride }}
-{{- .Values.postgresql.pgIsReadyCommandOverride }}
-{{- else }}
 until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }} -U {{ .Values.postgresql.postgresqlUsername }}; do echo waiting for database; sleep 2; done;
-{{- end -}}
 {{- end -}}
 
 {{/*

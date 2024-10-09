@@ -115,7 +115,7 @@ class Daemon(BaseModel):
     volumes: Optional[List[kubernetes.Volume]]
     initContainerResources: Optional[kubernetes.Resources]
     extraContainers: Optional[List[kubernetes.Container]]
-    extraInitContainers: Optional[List[kubernetes.InitContainer]]
+    extraPrependedInitContainers: Optional[List[kubernetes.InitContainer]]
 
     class Config:
         extra = Extra.forbid

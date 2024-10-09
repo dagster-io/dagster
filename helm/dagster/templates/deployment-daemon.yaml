@@ -49,8 +49,8 @@ spec:
       securityContext:
         {{- toYaml .Values.dagsterDaemon.podSecurityContext | nindent 8 }}
       initContainers:
-        {{- if .Values.dagsterDaemon.extraInitContainers }}
-        {{- range $container := .Values.dagsterDaemon.extraInitContainers }}
+        {{- if .Values.dagsterDaemon.extraPrependedInitContainers }}
+        {{- range $container := .Values.dagsterDaemon.extraPrependedInitContainers }}
         - {{ toYaml $container | nindent 10 | trim }}
         {{- end }}
         {{- end }}
