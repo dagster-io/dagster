@@ -147,3 +147,41 @@ def test_dagster_weekly_daily_materializes(
     assert final_result.records[0].event_log_entry
     assert dag_id_of_mat(final_result.records[0].event_log_entry) == "daily_dag"
     assert dag_id_of_mat(final_result.records[1].event_log_entry) == "weekly_dag"
+
+
+def test_migrated_overridden_dag_materializes(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Test that assets are properly materialized from an overridden dag."""
+    from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
+
+    af_instance = local_airflow_instance()
+
+    expected_mats_per_dag = {
+        "overridden_dag": [AssetKey("asset_two")],
+    }
+    for dag_id, expected_asset_keys in expected_mats_per_dag.items():
+        airflow_run_id = af_instance.trigger_dag(dag_id=dag_id)
+        af_instance.wait_for_run_completion(dag_id=dag_id, run_id=airflow_run_id, timeout=60)
+        dagster_instance = DagsterInstance.get()
+
+        for expected_asset_key in expected_asset_keys:
+            mat_event_log_entry = poll_for_materialization(dagster_instance, expected_asset_key)
+            assert mat_event_log_entry.asset_materialization
+            assert mat_event_log_entry.asset_materialization.asset_key == expected_asset_key
+
+            assert mat_event_log_entry.asset_materialization
+            dagster_run_id = mat_event_log_entry.run_id
+
+            # test for dag run-tag-id
+            dagster_run = dagster_instance.get_run_by_id(dagster_run_id)
+            run_ids = dagster_instance.get_run_ids()
+            assert dagster_run, f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
+            assert (
+                DAG_RUN_ID_TAG_KEY in dagster_run.tags
+            ), f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
+            assert (
+                dagster_run.tags[DAG_RUN_ID_TAG_KEY] == airflow_run_id
+            ), "dagster run tag does not match dag run id"
