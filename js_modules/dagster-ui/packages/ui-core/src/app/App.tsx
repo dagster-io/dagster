@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import {getFeatureFlags, setFeatureFlags, useFeatureFlags} from './Flags';
 import {LayoutContext} from './LayoutProvider';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {LeftNav} from '../nav/LeftNav';
+import {LEFT_NAV_WIDTH, LeftNav} from '../nav/LeftNav';
 
 interface Props {
   banner?: React.ReactNode;
@@ -25,13 +25,15 @@ export const App = ({banner, children}: Props) => {
   );
 
   const onClickMain = React.useCallback(() => {
-    nav.close();
+    if (nav.isSmallScreen) {
+      nav.close();
+    }
   }, [nav]);
 
   return (
     <Container>
       <LeftNav />
-      <Main $navOpen={nav.isOpen} onClick={onClickMain}>
+      <Main $smallScreen={nav.isSmallScreen} $navOpen={nav.isOpen} onClick={onClickMain}>
         <div>{banner}</div>
         {!flagLegacyNav && !didDismissNavAlert ? (
           <ExperimentalNavAlert setDidDismissNavAlert={setDidDismissNavAlert} />
@@ -88,12 +90,25 @@ const ExperimentalNavAlert = (props: AlertProps) => {
   );
 };
 
-const Main = styled.div<{$navOpen: boolean}>`
+const Main = styled.div<{$smallScreen: boolean; $navOpen: boolean}>`
   height: 100%;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: 100%;
+
+  ${({$navOpen, $smallScreen}) => {
+    if ($smallScreen || !$navOpen) {
+      return `
+        margin-left: 0;
+        width: 100%;
+      `;
+    }
+
+    return `
+      margin-left: ${LEFT_NAV_WIDTH}px;
+      width: calc(100% - ${LEFT_NAV_WIDTH}px);
+    `;
+  }}
 `;
 
 const Container = styled.div`
