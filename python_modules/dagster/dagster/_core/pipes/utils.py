@@ -653,6 +653,18 @@ def _join_thread(thread: Thread, thread_name: str) -> None:
         raise DagsterPipesExecutionError(f"Timed out waiting for {thread_name} thread to finish.")
 
 
+def forward_only_logs_to_file(log_line: str, file: IO[str]):
+    """Will write the log line to the file if it is not a Pipes message."""
+    try:
+        message = json.loads(log_line)
+        if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
+            return
+        else:
+            file.writelines((log_line, "\n"))
+    except Exception:
+        file.writelines((log_line, "\n"))
+
+
 def extract_message_or_forward_to_file(
     handler: "PipesMessageHandler", log_line: str, file: IO[str]
 ):

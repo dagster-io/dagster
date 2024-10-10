@@ -45,11 +45,11 @@ setup(
         "redshift": ["psycopg2-binary"],
         "pyspark": ["dagster-pyspark"],
         "stubs": [
-            "boto3-stubs-lite[ecs,glue,emr-serverless]",
+            "boto3-stubs-lite[ecs,glue,emr-serverless,logs]",
         ],
         "test": [
             "botocore!=1.32.1",
-            "moto[s3,server,glue,emrserverless]>=2.2.8,<5.0",
+            "moto[s3,server,glue,emrserverless,logs]>=2.2.8,<5.0",
             "requests-mock",
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
         ],
