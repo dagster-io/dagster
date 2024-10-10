@@ -16,9 +16,8 @@ from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
-@whitelist_for_serdes
 @record
-class ChecksCondition(BuiltinAutomationCondition[AssetKey]):
+class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
     operand: AutomationCondition[AssetCheckKey]
 
     blocking_only: bool = False
@@ -52,7 +51,7 @@ class ChecksCondition(BuiltinAutomationCondition[AssetKey]):
 
 @whitelist_for_serdes
 @record
-class AnyChecksCondition(ChecksCondition):
+class AnyChecksCondition(ChecksAutomationCondition):
     @property
     def base_description(self) -> str:
         return "Any"
@@ -85,7 +84,7 @@ class AnyChecksCondition(ChecksCondition):
 
 @whitelist_for_serdes
 @record
-class AllChecksCondition(ChecksCondition):
+class AllChecksCondition(ChecksAutomationCondition):
     @property
     def base_description(self) -> str:
         return "All"
