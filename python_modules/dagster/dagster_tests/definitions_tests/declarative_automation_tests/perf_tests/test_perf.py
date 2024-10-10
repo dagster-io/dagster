@@ -6,6 +6,8 @@ from dagster import (
     HourlyPartitionsDefinition,
     evaluate_automation_conditions,
 )
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.instance import DagsterInstance
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 
@@ -26,7 +28,17 @@ def test_eager_perf() -> None:
         auto_materialize_policy=AutomationCondition.eager().as_auto_materialize_policy(),
     )
 
+    defs = Definitions(assets=assets)
+
     instance = DagsterInstance.ephemeral()
+
+    for asset_key in defs.get_asset_graph().all_asset_keys:
+        instance.report_runless_asset_event(
+            AssetMaterialization(
+                asset_key=asset_key, partition=hourly_partitions_def.get_last_partition_key()
+            )
+        )
+
     cursor = None
     start = time.time()
     for _ in range(2):
