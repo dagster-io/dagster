@@ -1830,7 +1830,9 @@ class TestRunStorage:
         storage.delete_backfill("one")
         assert storage.get_backfill("one") is None
 
-        assert storage.get_backfill("two").backfill_id == "two"
+        res = storage.get_backfill("two")
+        assert res
+        assert res.backfill_id == "two"
 
         assert len(storage.get_runs()) == 4
         storage.delete_backfill("two")
