@@ -122,7 +122,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
     def submit_run(self, instance, external_job, workspace, **kwargs):
         location = workspace.get_code_location(external_job.handle.location_name)
-        subset_job = location.get_external_job(
+        subset_job = location.get_job(
             JobSubsetSelector(
                 location_name=location.name,
                 repository_name=external_job.handle.repository_name,
@@ -131,7 +131,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 asset_selection=kwargs.get("asset_selection"),
             )
         )
-        external_execution_plan = location.get_external_execution_plan(
+        external_execution_plan = location.get_execution_plan(
             subset_job,
             {},
             step_keys_to_execute=None,
@@ -155,7 +155,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def get_run_ids(self, runs_queue):
         return [run.run_id for run in runs_queue]
 
-    def get_external_concurrency_job(self, workspace):
+    def get_concurrency_job(self, workspace):
         return workspace.get_full_job(
             JobSubsetSelector(
                 location_name="test",
@@ -856,7 +856,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     ):
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         workspace = concurrency_limited_workspace_context.create_request_context()
-        external_job = self.get_external_concurrency_job(workspace)
+        external_job = self.get_concurrency_job(workspace)
         foo_key = AssetKey(["prefix", "foo_limited_asset"])
 
         self.submit_run(
@@ -905,7 +905,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     ):
         run_id_1, run_id_2 = [make_new_run_id() for _ in range(2)]
         workspace = concurrency_limited_workspace_context.create_request_context()
-        external_job = self.get_external_concurrency_job(workspace)
+        external_job = self.get_concurrency_job(workspace)
         foo_key = AssetKey(["prefix", "foo_limited_asset"])
         bar_key = AssetKey(["prefix", "bar_limited_asset"])
 
@@ -969,7 +969,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         run_id_1, run_id_2 = [make_new_run_id() for _ in range(2)]
         workspace = concurrency_limited_workspace_context.create_request_context()
         foo_key = AssetKey(["prefix", "foo_limited_asset"])
-        external_job = self.get_external_concurrency_job(workspace)
+        external_job = self.get_concurrency_job(workspace)
         self.submit_run(
             instance, external_job, workspace, run_id=run_id_1, asset_selection=set([foo_key])
         )
@@ -1015,7 +1015,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         workspace = concurrency_limited_workspace_context.create_request_context()
         foo_key = AssetKey(["prefix", "foo_limited_asset"])
-        external_job = self.get_external_concurrency_job(workspace)
+        external_job = self.get_concurrency_job(workspace)
         self.submit_run(
             instance, external_job, workspace, run_id=run_id_1, asset_selection=set([foo_key])
         )
@@ -1046,7 +1046,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         workspace = concurrency_limited_workspace_context.create_request_context()
         foo_key = AssetKey(["prefix", "foo_limited_asset"])
-        external_job = self.get_external_concurrency_job(workspace)
+        external_job = self.get_concurrency_job(workspace)
         self.submit_run(
             instance, external_job, workspace, run_id=run_id_1, asset_selection=set([foo_key])
         )
@@ -1109,7 +1109,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     ):
         run_id_1 = make_new_run_id()
         workspace = concurrency_limited_workspace_context.create_request_context()
-        external_job = self.get_external_concurrency_job(workspace)
+        external_job = self.get_concurrency_job(workspace)
         foo_key = AssetKey(["prefix", "foo_limited_asset"])
 
         # foo is blocked, but bar is not

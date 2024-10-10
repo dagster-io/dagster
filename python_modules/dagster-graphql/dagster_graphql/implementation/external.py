@@ -54,7 +54,7 @@ def _get_remote_job_or_raise(
     else:
         code_location = ctx.get_code_location(selector.location_name)
         try:
-            remote_job = code_location.get_external_job(selector)
+            remote_job = code_location.get_job(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             raise UserFacingGraphQLError(
