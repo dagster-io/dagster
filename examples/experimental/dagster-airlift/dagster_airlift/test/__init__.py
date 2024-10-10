@@ -7,3 +7,8 @@ from .airflow_test_instance import (
     make_task_info as make_task_info,
     make_task_instance as make_task_instance,
 )
+from .test_utils import (
+    airlift_root as airlift_root,
+    configured_airflow_home as configured_airflow_home,
+    remove_airflow_home_remnants as remove_airflow_home_remnants,
+)
