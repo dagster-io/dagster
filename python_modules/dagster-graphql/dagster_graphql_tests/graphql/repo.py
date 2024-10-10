@@ -101,7 +101,12 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
-from dagster._core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
+from dagster._core.definitions.sensor_definition import (
+    RunRequest,
+    SensorDefinition,
+    SensorType,
+    SkipReason,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.log_manager import coerce_valid_log_level
@@ -1250,7 +1255,9 @@ def define_sensors():
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
         asset_selection=AssetSelection.assets(
-            "fresh_diamond_bottom", "asset_with_automation_condition"
+            "fresh_diamond_bottom",
+            "asset_with_automation_condition",
+            "asset_with_custom_automation_condition",
         ),
     )
 
@@ -2166,6 +2173,12 @@ test_repo._name = "test_repo"  # noqa: SLF001
 
 
 def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
+    if isinstance(instigator, SensorDefinition) and instigator.sensor_type in (
+        # these contain asset selections, which are invalid with the dict repo
+        SensorType.AUTOMATION,
+        SensorType.AUTO_MATERIALIZE,
+    ):
+        return True
     try:
         return instigator.job_name in asset_job_names or instigator.has_anonymous_job
     except DagsterInvalidDefinitionError:  # thrown when `job_name` is invalid

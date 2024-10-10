@@ -11,17 +11,20 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     TypeVar,
+    Union,
     cast,
 )
 
 import yaml
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.utils import is_valid_email
-from dagster._utils.warnings import deprecation_warning
+from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -59,10 +62,16 @@ MAX_TITLE_LENGTH = 100
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import AssetKey
+    from dagster._core.definitions.asset_selection import AssetSelection
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
     )
+    from dagster._core.definitions.sensor_definition import SensorDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
+    from dagster._core.remote_representation.external import RemoteSensor
 
 
 class NoValueSentinel:
@@ -311,3 +320,89 @@ T = TypeVar("T")
 def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
     """Dedupe definitions by reference equality."""
     return list({id(obj): obj for obj in objects}.values()) if objects is not None else []
+
+
+def add_default_automation_condition_sensor(
+    sensors: Sequence["SensorDefinition"],
+    assets: Iterable[Union["AssetsDefinition", "SourceAsset"]],
+    asset_checks: Iterable["AssetsDefinition"],
+) -> Sequence["SensorDefinition"]:
+    """Adds a default automation condition sensor if the provided sensors do not already handle all
+    provided assets.
+    """
+    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.automation_condition_sensor_definition import (
+        DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+        AutomationConditionSensorDefinition,
+    )
+
+    with disable_dagster_warnings():
+        asset_graph = AssetGraph.from_assets([*assets, *asset_checks])
+        sensor_selection = get_default_automation_condition_sensor_selection(sensors, asset_graph)
+        if sensor_selection:
+            default_sensor = AutomationConditionSensorDefinition(
+                DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME, asset_selection=sensor_selection
+            )
+            sensors = [*sensors, default_sensor]
+
+    return sensors
+
+
+def get_default_automation_condition_sensor_selection(
+    sensors: Sequence[Union["SensorDefinition", "RemoteSensor"]], asset_graph: "BaseAssetGraph"
+) -> Optional["AssetSelection"]:
+    from dagster._core.definitions.asset_selection import AssetSelection
+    from dagster._core.definitions.sensor_definition import SensorType
+
+    automation_condition_sensors = sorted(
+        (
+            s
+            for s in sensors
+            if s.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
+        ),
+        key=lambda s: s.name,
+    )
+
+    automation_condition_keys = set()
+    for k in asset_graph.materializable_asset_keys | asset_graph.asset_check_keys:
+        if asset_graph.get(k).automation_condition is not None:
+            automation_condition_keys.add(k)
+
+    has_auto_observe_keys = False
+    for k in asset_graph.observable_asset_keys:
+        if (
+            # for backcompat, treat auto-observe assets as if they have a condition
+            asset_graph.get(k).automation_condition is not None
+            or asset_graph.get(k).auto_observe_interval_minutes is not None
+        ):
+            has_auto_observe_keys = True
+            automation_condition_keys.add(k)
+
+    # get the set of keys that are handled by an existing sensor
+    covered_keys: Set[EntityKey] = set()
+    for sensor in automation_condition_sensors:
+        selection = check.not_none(sensor.asset_selection)
+        covered_keys = covered_keys.union(
+            selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
+        )
+
+    default_sensor_keys = automation_condition_keys - covered_keys
+    if len(default_sensor_keys) > 0:
+        # Use AssetSelection.all if the default sensor is the only sensor - otherwise
+        # enumerate the assets that are not already included in some other
+        # non-default sensor
+        default_sensor_asset_selection = AssetSelection.all(include_sources=has_auto_observe_keys)
+
+        # if there are any asset checks, include checks in the selection
+        if any(isinstance(k, AssetCheckKey) for k in default_sensor_keys):
+            default_sensor_asset_selection |= AssetSelection.all_asset_checks()
+
+        # remove any selections that are already covered
+        for sensor in automation_condition_sensors:
+            default_sensor_asset_selection = default_sensor_asset_selection - check.not_none(
+                sensor.asset_selection
+            )
+        return default_sensor_asset_selection
+    # no additional sensor required
+    else:
+        return None

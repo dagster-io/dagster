@@ -621,3 +621,15 @@ def test_500_eager_assets_user_code(capsys) -> None:
     # more specific check
     for line in capsys.readouterr():
         assert "RESOURCE_EXHAUSTED" not in line
+
+
+def test_simple_old_code_server() -> None:
+    with get_grpc_workspace_request_context(
+        "old_code_server_simulation"
+    ) as context, get_threadpool_executor() as executor:
+        time = datetime.datetime(2024, 8, 16, 1, 35)
+        with freeze_time(time):
+            # initial evaluation
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
