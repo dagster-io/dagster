@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import Optional
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
     BuiltinAutomationCondition,
@@ -62,7 +62,7 @@ class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
 @whitelist_for_serdes
 @record
-class MissingAutomationCondition(SubsetAutomationCondition[AssetKey]):
+class MissingAutomationCondition(SubsetAutomationCondition):
     @property
     def description(self) -> str:
         return "Missing"
@@ -71,15 +71,15 @@ class MissingAutomationCondition(SubsetAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "missing"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
         return context.asset_graph_view.compute_missing_subset(
-            context.key, from_subset=context.candidate_subset
+            key=context.key, from_subset=context.candidate_subset
         )
 
 
 @whitelist_for_serdes
 @record
-class InProgressAutomationCondition(SubsetAutomationCondition[AssetKey]):
+class InProgressAutomationCondition(SubsetAutomationCondition):
     @property
     def description(self) -> str:
         return "Part of an in-progress run"
@@ -88,28 +88,28 @@ class InProgressAutomationCondition(SubsetAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "in_progress"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
-        return context.asset_graph_view.compute_in_progress_asset_subset(asset_key=context.key)
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return context.asset_graph_view.compute_in_progress_subset(key=context.key)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="FailedAutomationCondition")
 @record
-class FailedAutomationCondition(SubsetAutomationCondition[AssetKey]):
+class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
     @property
     def description(self) -> str:
-        return "Latest run failed"
+        return "Latest execution failed"
 
     @property
     def name(self) -> str:
-        return "failed"
+        return "execution_failed"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
-        return context.asset_graph_view.compute_failed_asset_subset(asset_key=context.key)
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return context.asset_graph_view.compute_execution_failed_subset(key=context.key)
 
 
 @whitelist_for_serdes
 @record
-class WillBeRequestedCondition(SubsetAutomationCondition[AssetKey]):
+class WillBeRequestedCondition(SubsetAutomationCondition):
     @property
     def description(self) -> str:
         return "Will be requested this tick"
@@ -129,7 +129,7 @@ class WillBeRequestedCondition(SubsetAutomationCondition[AssetKey]):
             parent_key=context.key,
         )
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
         current_result = context.current_results_by_key.get(context.key)
         if (
             current_result
@@ -143,7 +143,7 @@ class WillBeRequestedCondition(SubsetAutomationCondition[AssetKey]):
 
 @whitelist_for_serdes
 @record
-class NewlyRequestedCondition(SubsetAutomationCondition[AssetKey]):
+class NewlyRequestedCondition(SubsetAutomationCondition):
     @property
     def description(self) -> str:
         return "Was requested on the previous tick"
@@ -152,13 +152,13 @@ class NewlyRequestedCondition(SubsetAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "newly_requested"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
         return context.previous_requested_subset or context.get_empty_subset()
 
 
 @whitelist_for_serdes
 @record
-class NewlyUpdatedCondition(SubsetAutomationCondition[AssetKey]):
+class NewlyUpdatedCondition(SubsetAutomationCondition):
     @property
     def description(self) -> str:
         return "Updated since previous tick"
@@ -167,14 +167,13 @@ class NewlyUpdatedCondition(SubsetAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "newly_updated"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
         # if it's the first time evaluating, just return the empty subset
-        if context.previous_evaluation_time is None:
+        if context.previous_temporal_context is None:
             return context.get_empty_subset()
-        else:
-            return context.asset_graph_view.compute_updated_since_cursor_subset(
-                asset_key=context.key, cursor=context.previous_max_storage_id
-            )
+        return context.asset_graph_view.compute_updated_since_temporal_context_subset(
+            key=context.key, temporal_context=context.previous_temporal_context
+        )
 
 
 @whitelist_for_serdes
@@ -214,7 +213,7 @@ class CronTickPassedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class InLatestTimeWindowCondition(SubsetAutomationCondition[AssetKey]):
+class InLatestTimeWindowCondition(SubsetAutomationCondition):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
 
     @staticmethod
@@ -247,7 +246,33 @@ class InLatestTimeWindowCondition(SubsetAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "in_latest_time_window"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
         return context.asset_graph_view.compute_latest_time_window_subset(
             context.key, lookback_delta=self.lookback_timedelta
+        )
+
+
+@whitelist_for_serdes
+@record
+class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
+    passed: bool
+
+    @property
+    def name(self) -> str:
+        return "check_passed" if self.passed else "check_failed"
+
+    def compute_subset(
+        self, context: AutomationContext[AssetCheckKey]
+    ) -> EntitySubset[AssetCheckKey]:
+        from dagster._core.storage.asset_check_execution_record import (
+            AssetCheckExecutionResolvedStatus,
+        )
+
+        target_status = (
+            AssetCheckExecutionResolvedStatus.SUCCEEDED
+            if self.passed
+            else AssetCheckExecutionResolvedStatus.FAILED
+        )
+        return context.asset_graph_view.compute_subset_with_status(
+            key=context.key, status=target_status
         )
