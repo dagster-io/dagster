@@ -38,11 +38,11 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
         ("dd74c7cfe19d869931ea4aad9ee10127", SC.on_cron("0 * * * *"), two_parents, False),
         ("861f8e40d4624d49c4ebdd034c8e1e84", SC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
-        ("b5cb0d7a1c627bd2c9e7c6da3313ab71", SC.eager(), one_parent, False),
-        ("7802a65024d04bbe44a3e0e541c0a577", SC.eager(), one_parent, True),
-        ("5d9c70da7ecca9e40f32c1ad99956b5d", SC.eager(), one_parent_daily, False),
-        ("904bac575906542d28b9e069129dad37", SC.eager(), two_parents, False),
-        ("3ef1d373a2b38752ad8e23fe9c053d9f", SC.eager(), two_parents_daily, False),
+        ("dfb268e321e2e7aa7b0e2e71fa674e06", SC.eager(), one_parent, False),
+        ("781252e1a53db1ecd5938b0da61dba0b", SC.eager(), one_parent, True),
+        ("293186887409aac2fe99b09bd633c64b", SC.eager(), one_parent_daily, False),
+        ("c92d9d5181b4d0a6c7ab5d1c6e26962a", SC.eager(), two_parents, False),
+        ("911bcc4f8904ec6dae85f6aaf78f5ee5", SC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
         ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, False),
         ("6d7809c4949e3d812d7eddfb1b60d529", SC.missing(), one_parent, True),
