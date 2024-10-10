@@ -39,6 +39,7 @@ from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
+    DagsterInvalidInvocationError,
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import IHaveNew, record_custom
@@ -743,22 +744,18 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
         start_time = self.start_time_for_partition_key(partition_key_range.start)
-        check.invariant(
-            start_time.timestamp() >= self.start.timestamp(),
-            (
+        if not (start_time.timestamp() >= self.start.timestamp()):
+            raise DagsterInvalidInvocationError(
                 f"Partition key range start {partition_key_range.start} is before "
                 f"the partitions definition start time {self.start}"
-            ),
-        )
+            )
         end_time = self.end_time_for_partition_key(partition_key_range.end)
         if self.end:
-            check.invariant(
-                end_time.timestamp() <= self.end.timestamp(),
-                (
+            if not (end_time.timestamp() <= self.end.timestamp()):
+                raise DagsterInvalidInvocationError(
                     f"Partition key range end {partition_key_range.end} is after the "
                     f"partitions definition end time {self.end}"
-                ),
-            )
+                )
 
         return self.get_partition_keys_in_time_window(TimeWindow(start_time, end_time))
 
