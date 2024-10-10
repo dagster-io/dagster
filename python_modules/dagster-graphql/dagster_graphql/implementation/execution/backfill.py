@@ -469,4 +469,4 @@ def delete_partition_backfill(
 
     graphene_info.context.instance.delete_backfill(backfill_id)
 
-    return GrapheneDeleteBackfillSuccess(backfill_id=backfill_id)
+    return GrapheneDeleteBackfillSuccess(backfillId=backfill_id)
