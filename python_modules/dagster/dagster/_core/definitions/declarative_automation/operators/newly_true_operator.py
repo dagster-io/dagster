@@ -19,10 +19,6 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition[T_EntityKey]
 
     @property
-    def description(self) -> str:
-        return "Condition newly became true."
-
-    @property
     def name(self) -> str:
         return "NEWLY_TRUE"
 

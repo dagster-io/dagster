@@ -124,7 +124,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
-        parts = [str(parent_unique_id), str(index), self.__class__.__name__, self.description]
+        parts = [str(parent_unique_id), str(index), self.name]
         return non_secure_md5_hash_str("".join(parts).encode())
 
     def get_unique_id(
@@ -453,9 +453,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             CronTickPassedCondition,
         )
 
-        return CronTickPassedCondition(
-            cron_schedule=cron_schedule, cron_timezone=cron_timezone
-        ).with_label(f"cron_tick_passed({cron_schedule}, {cron_timezone})")
+        return CronTickPassedCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
     @experimental
     @staticmethod
