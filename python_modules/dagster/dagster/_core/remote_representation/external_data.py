@@ -409,13 +409,13 @@ class JobDataSnap:
 
 @whitelist_for_serdes(
     storage_name="ExternalPipelineSubsetResult",
-    storage_field_names={"external_job_data": "external_pipeline_data"},
+    storage_field_names={"job_data_snap": "external_pipeline_data"},
 )
 @record
-class ExternalJobSubsetResult:
+class RemoteJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
-    external_job_data: Optional[JobDataSnap] = None
+    job_data_snap: Optional[JobDataSnap] = None
 
 
 @whitelist_for_serdes

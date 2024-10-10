@@ -17,7 +17,6 @@ from dagster._core.remote_representation.external import (
 from dagster._core.remote_representation.external_data import (
     ExecutionParamsErrorSnap as ExecutionParamsErrorSnap,
     ExecutionParamsSnap as ExecutionParamsSnap,
-    ExternalJobSubsetResult as ExternalJobSubsetResult,
     JobDataSnap as JobDataSnap,
     JobRefSnap as JobRefSnap,
     PartitionConfigSnap as PartitionConfigSnap,
@@ -27,6 +26,7 @@ from dagster._core.remote_representation.external_data import (
     PartitionSetSnap as PartitionSetSnap,
     PartitionTagsSnap as PartitionTagsSnap,
     PresetSnap as PresetSnap,
+    RemoteJobSubsetResult as RemoteJobSubsetResult,
     RepositoryErrorSnap as RepositoryErrorSnap,
     RepositorySnap as RepositorySnap,
     ScheduleExecutionErrorSnap as ScheduleExecutionErrorSnap,
