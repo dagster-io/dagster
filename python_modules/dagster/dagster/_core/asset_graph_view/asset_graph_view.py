@@ -29,7 +29,6 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
 from dagster._core.loader import LoadingContext
-from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
@@ -399,6 +398,8 @@ class AssetGraphView(LoadingContext):
         return self.compute_subset_with_status(key, None)
 
     def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
         partitions_def = self._get_partitions_def(key)
         if partitions_def:
             cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
@@ -419,6 +420,8 @@ class AssetGraphView(LoadingContext):
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
         partitions_def = self._get_partitions_def(key)
         if partitions_def:
             cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
@@ -436,6 +439,8 @@ class AssetGraphView(LoadingContext):
         """Returns a subset which is the subset of the input subset that has never been materialized
         (if it is a materializable asset) or observered (if it is an observable asset).
         """
+        from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+
         # TODO: this logic should be simplified once we have a unified way of detecting both
         # materializations and observations through the parittion status cache. at that point, the
         # definition will slightly change to search for materializations and observations regardless
@@ -445,12 +450,13 @@ class AssetGraphView(LoadingContext):
             partitions_def = self._get_partitions_def(key)
             if partitions_def:
                 cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
-                if cache_value is None:
-                    value = partitions_def.empty_subset()
-                else:
-                    value = cache_value.deserialize_materialized_partition_subsets(partitions_def)
-            else:
-                value = self._queryer.get_materialized_asset_subset(asset_key=key).value
+                return (
+                    cache_value.get_materialized_subset(self, key, partitions_def)
+                    if cache_value
+                    else self.get_empty_subset(key=key)
+                )
+
+            value = self._queryer.get_materialized_asset_subset(asset_key=key).value
             materialized_subset = EntitySubset(
                 self, key=key, value=_ValidatedEntitySubsetValue(value)
             )
