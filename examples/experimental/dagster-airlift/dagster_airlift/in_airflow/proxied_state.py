@@ -69,6 +69,22 @@ class AirflowProxiedState(NamedTuple):
     def dag_has_proxied_state(self, dag_id: str) -> bool:
         return self.get_proxied_dict_for_dag(dag_id) is not None
 
+    def dag_proxies_at_task_level(self, dag_id: str) -> bool:
+        """Dags can proxy on either a task-by-task basis, or for the entire dag at once.
+        We use the proxied state to determine which is the case for a given dag. If the dag's proxied state
+        is None, then we assume the dag proxies at the task level. If the dag's proxied state is a boolean,
+        then we assume the dag proxies at the dag level.
+        """
+        return self.dags[dag_id].proxied is None
+
+    def dag_proxies_at_dag_level(self, dag_id: str) -> bool:
+        """Dags can proxy on either a task-by-task basis, or for the entire dag at once.
+        We use the proxied state to determine which is the case for a given dag. If the dag's proxied state
+        is None, then we assume the dag proxies at the task level. If the dag's proxied state is a boolean,
+        then we assume the dag proxies at the dag level.
+        """
+        return self.dags[dag_id].proxied is not None
+
     def get_proxied_dict_for_dag(
         self, dag_id: str
     ) -> Optional[Dict[str, Sequence[Dict[str, Any]]]]:
