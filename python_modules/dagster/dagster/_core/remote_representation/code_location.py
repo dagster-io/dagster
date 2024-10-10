@@ -46,7 +46,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import RepositoryPythonOrigin
-from dagster._core.remote_representation import ExternalJobSubsetResult
+from dagster._core.remote_representation import RemoteJobSubsetResult
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
@@ -157,7 +157,7 @@ class CodeLocation(AbstractContextManager):
         repo_handle = self.get_repository(selector.repository_name).handle
 
         subset_result = self.get_subset_remote_job_result(selector)
-        job_data_snap = subset_result.external_job_data
+        job_data_snap = subset_result.job_data_snap
         if job_data_snap is None:
             error = check.not_none(subset_result.error)
             if error.cls_name == "DagsterInvalidSubsetError":
@@ -171,7 +171,7 @@ class CodeLocation(AbstractContextManager):
         return RemoteJob(job_data_snap, repo_handle)
 
     @abstractmethod
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> ExternalJobSubsetResult:
+    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         """Returns a snapshot about an RemoteJob with an op selection, which requires
         access to the underlying JobDefinition. Callsites should likely use
         `get_remote_job` instead.
@@ -444,7 +444,7 @@ class InProcessCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, RemoteRepository]:
         return self._repositories
 
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> ExternalJobSubsetResult:
+    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -861,9 +861,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
         return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
-    def get_subset_remote_job_result(
-        self, selector: JobSubsetSelector
-    ) -> "ExternalJobSubsetResult":
+    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> "RemoteJobSubsetResult":
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -881,11 +879,11 @@ class GrpcServerCodeLocation(CodeLocation):
             asset_selection=selector.asset_selection,
             asset_check_selection=selector.asset_check_selection,
         )
-        if subset.external_job_data:
+        if subset.job_data_snap:
             full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
             subset = copy(
                 subset,
-                external_job_data=copy(subset.external_job_data, parent_job=full_job.job_snapshot),
+                job_data_snap=copy(subset.job_data_snap, parent_job=full_job.job_snapshot),
             )
 
         return subset

@@ -46,8 +46,8 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_representation.external_data import (
-    ExternalJobSubsetResult,
     PartitionExecutionErrorSnap,
+    RemoteJobSubsetResult,
     RepositoryErrorSnap,
     RepositorySnap,
     ScheduleExecutionErrorSnap,
@@ -770,7 +770,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "JobSubset")
             serialized_external_pipeline_subset_result = serialize_value(
-                ExternalJobSubsetResult(
+                RemoteJobSubsetResult(
                     success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
