@@ -252,7 +252,7 @@ def materializations_and_requests_from_batch_iter(
     airflow_data: AirflowDefinitionsData,
 ) -> Iterator[Optional[BatchResult]]:
     runs = airflow_data.airflow_instance.get_dag_runs_batch(
-        dag_ids=list(airflow_data.all_dag_ids),
+        dag_ids=list(airflow_data.dag_ids_with_mapped_asset_keys),
         end_date_gte=datetime_from_timestamp(end_date_gte),
         end_date_lte=datetime_from_timestamp(end_date_lte),
         offset=offset,
