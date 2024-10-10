@@ -130,13 +130,9 @@ class WillBeRequestedCondition(SubsetAutomationCondition):
         )
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        current_result = context.current_results_by_key.get(context.key)
-        if (
-            current_result
-            and current_result.true_subset
-            and self._executable_with_root_context_key(context)
-        ):
-            return current_result.true_subset
+        current_result = context.request_subsets_by_key.get(context.key)
+        if current_result and self._executable_with_root_context_key(context):
+            return current_result
         else:
             return context.get_empty_subset()
 
