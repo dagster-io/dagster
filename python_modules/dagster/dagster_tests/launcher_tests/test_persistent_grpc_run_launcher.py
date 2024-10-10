@@ -111,7 +111,7 @@ def test_run_from_pending_repository():
                 remote_job = code_location.get_repository("pending").get_full_job(
                     "my_cool_asset_job"
                 )
-                external_execution_plan = code_location.get_external_execution_plan(
+                external_execution_plan = code_location.get_execution_plan(
                     remote_job=remote_job,
                     run_config={},
                     step_keys_to_execute=None,

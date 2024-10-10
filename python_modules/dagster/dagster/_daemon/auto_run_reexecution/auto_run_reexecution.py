@@ -141,7 +141,7 @@ def retry_run(
         )
         return
 
-    remote_job = code_location.get_external_job(
+    remote_job = code_location.get_job(
         JobSubsetSelector(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,

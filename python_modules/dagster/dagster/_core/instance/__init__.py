@@ -1677,7 +1677,7 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 
-        remote_execution_plan = code_location.get_external_execution_plan(
+        remote_execution_plan = code_location.get_execution_plan(
             remote_job,
             run_config,
             step_keys_to_execute=step_keys_to_execute,

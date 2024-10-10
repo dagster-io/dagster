@@ -467,9 +467,9 @@ def _create_run(
         op_selection=op_selection,
     )
 
-    remote_job = code_location.get_external_job(job_subset_selector)
+    remote_job = code_location.get_job(job_subset_selector)
 
-    execution_plan = code_location.get_external_execution_plan(
+    execution_plan = code_location.get_execution_plan(
         remote_job,
         run_config,
         step_keys_to_execute=None,
@@ -646,7 +646,7 @@ def _execute_backfill_command_at_location(
     )
 
     try:
-        partition_names_or_error = code_location.get_external_partition_names(
+        partition_names_or_error = code_location.get_partition_names(
             repository_handle=repo_handle,
             job_name=remote_job.name,
             instance=instance,
@@ -689,13 +689,11 @@ def _execute_backfill_command_at_location(
             backfill_timestamp=get_current_timestamp(),
         )
         try:
-            partition_execution_data = (
-                code_location.get_external_partition_set_execution_param_data(
-                    repository_handle=repo_handle,
-                    partition_set_name=job_partition_set.name,
-                    partition_names=partition_names,
-                    instance=instance,
-                )
+            partition_execution_data = code_location.get_partition_set_execution_params(
+                repository_handle=repo_handle,
+                partition_set_name=job_partition_set.name,
+                partition_names=partition_names,
+                instance=instance,
             )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
