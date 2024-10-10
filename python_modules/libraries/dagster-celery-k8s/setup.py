@@ -33,9 +33,9 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-k8s{pin}",
-        f"dagster-celery{pin}",
+        "dagster==1.8.11",
+        "dagster-k8s==0.24.11",
+        "dagster-celery==0.24.11",
     ],
     zip_safe=False,
 )
