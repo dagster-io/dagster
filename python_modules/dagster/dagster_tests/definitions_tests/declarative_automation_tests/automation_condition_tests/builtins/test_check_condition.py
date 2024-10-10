@@ -1,8 +1,18 @@
 import pytest
-from dagster import AutomationCondition
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster import (
+    AssetCheckKey,
+    AssetCheckResult,
+    AssetCheckSpec,
+    AssetKey,
+    AssetMaterialization,
+    AssetSpec,
+    AutomationCondition,
+    DagsterInstance,
+    Definitions,
+    asset,
+    asset_check,
+    evaluate_automation_conditions,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 
@@ -104,3 +114,88 @@ def test_any_checks_match_basic() -> None:
     # there is no upstream check for D
     state, result = state.evaluate("D")
     assert result.true_subset.size == 0
+
+
+def test_all_deps_blocking_checks_passed_condition() -> None:
+    @asset
+    def A() -> None: ...
+
+    @asset(deps=[A], automation_condition=AutomationCondition.all_deps_blocking_checks_passed())
+    def B() -> None: ...
+
+    @asset_check(asset=A, blocking=True)
+    def blocking1(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    @asset_check(asset=A, blocking=True)
+    def blocking2(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    @asset_check(asset=A, blocking=False)
+    def nonblocking1(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    @asset_check(asset=B, blocking=True)
+    def blocking3(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    defs = Definitions(assets=[A, B], asset_checks=[blocking1, blocking2, blocking3, nonblocking1])
+    instance = DagsterInstance.ephemeral()
+
+    # no checks evaluated
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # blocking1 passes, still not all of them
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={blocking1.check_key}
+    ).execute_in_process(tags={"passed": ""}, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # blocking2 passes, now all have passed
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={blocking2.check_key}
+    ).execute_in_process(tags={"passed": ""}, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # blocking3 fails, no impact (as it's not on a dep)
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={blocking3.check_key}
+    ).execute_in_process(instance=instance, raise_on_error=False)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # nonblocking1 fails, no impact (as it's non-blocking)
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={nonblocking1.check_key}
+    ).execute_in_process(instance=instance, raise_on_error=False)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # now A gets rematerialized, blocking checks haven't been executed yet
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # blocking1 passes, but blocking2 fails
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={blocking1.check_key}
+    ).execute_in_process(tags={"passed": ""}, instance=instance)
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={blocking2.check_key}
+    ).execute_in_process(instance=instance, raise_on_error=False)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # now blocking2 passes
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={blocking2.check_key}
+    ).execute_in_process(tags={"passed": ""}, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
