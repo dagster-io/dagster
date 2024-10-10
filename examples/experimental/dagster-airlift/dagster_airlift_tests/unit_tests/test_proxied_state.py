@@ -24,13 +24,15 @@ def test_proxied_state() -> None:
                     "first_task": TaskProxiedState(task_id="first_task", proxied=True),
                     "second_task": TaskProxiedState(task_id="second_task", proxied=False),
                     "third_task": TaskProxiedState(task_id="third_task", proxied=True),
-                }
+                },
+                proxied=None,
             ),
             "second": DagProxiedState(
                 tasks={
                     "some_task": TaskProxiedState("some_task", proxied=True),
                     "other_task": TaskProxiedState("other_task", proxied=False),
-                }
+                },
+                proxied=None,
             ),
         }
     )
@@ -58,3 +60,23 @@ tasks:
     assert dag_proxied_state.is_task_proxied("load_raw_customers") is False
     assert dag_proxied_state.is_task_proxied("build_dbt_models") is False
     assert dag_proxied_state.is_task_proxied("export_customers") is True
+
+
+def test_dag_level_proxied_state_from_yaml() -> None:
+    proxied_state_dict = yaml.safe_load("""
+proxied: True
+""")
+    dag_proxied_state = DagProxiedState.from_dict(proxied_state_dict)
+    assert dag_proxied_state.proxied is True
+
+    proxied_state_dict = yaml.safe_load("""
+proxied: False
+""")
+    dag_proxied_state = DagProxiedState.from_dict(proxied_state_dict)
+    assert dag_proxied_state.proxied is False
+
+    proxied_state_dict = yaml.safe_load("""
+proxied: Fish
+""")
+    with pytest.raises(Exception, match="Expected 'proxied' key to be a boolean or None"):
+        DagProxiedState.from_dict(proxied_state_dict)
