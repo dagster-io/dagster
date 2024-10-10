@@ -1,18 +1,38 @@
 import datetime
-from abc import abstractmethod
 from typing import Optional
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.definitions.asset_key import AssetCheckKey, T_EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
+    SubsetAutomationCondition,
+)
 from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
+
+
+@whitelist_for_serdes
+@record
+class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
+    @property
+    def name(self) -> str:
+        return "code_version_changed"
+
+    def evaluate(self, context: AutomationContext) -> AutomationResult[AssetKey]:
+        previous_code_version = context.cursor
+        current_code_version = context.asset_graph.get(context.key).code_version
+        if previous_code_version is None or previous_code_version == current_code_version:
+            true_subset = context.get_empty_subset()
+        else:
+            true_subset = context.candidate_subset
+
+        return AutomationResult(context, true_subset, cursor=current_code_version)
 
 
 @record
@@ -31,29 +51,6 @@ class InitialEvaluationCondition(BuiltinAutomationCondition):
         else:
             subset = context.get_empty_subset()
         return AutomationResult(context, subset, cursor=condition_tree_id)
-
-
-@record
-class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
-    """Base class for simple conditions which compute a simple subset of the asset graph."""
-
-    @property
-    def requires_cursor(self) -> bool:
-        return False
-
-    @abstractmethod
-    def compute_subset(
-        self, context: AutomationContext[T_EntityKey]
-    ) -> EntitySubset[T_EntityKey]: ...
-
-    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
-        # don't compute anything if there are no candidates
-        if context.candidate_subset.is_empty:
-            true_subset = context.get_empty_subset()
-        else:
-            true_subset = self.compute_subset(context)
-
-        return AutomationResult(context, true_subset)
 
 
 @whitelist_for_serdes

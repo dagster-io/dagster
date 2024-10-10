@@ -1,5 +1,4 @@
 from dagster._core.definitions.declarative_automation.operands import (
-    CodeVersionChangedCondition as CodeVersionChangedCondition,
     CronTickPassedCondition as CronTickPassedCondition,
     ExecutionFailedAutomationCondition as ExecutionFailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
@@ -8,6 +7,9 @@ from dagster._core.definitions.declarative_automation.operands import (
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,
+)
+from dagster._core.definitions.declarative_automation.operands.operands import (
+    CodeVersionChangedCondition as CodeVersionChangedCondition,
 )
 from dagster._core.definitions.declarative_automation.operators import (
     AllDepsCondition as AllDepsCondition,
