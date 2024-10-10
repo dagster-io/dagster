@@ -2,11 +2,14 @@ import logging
 import os
 import subprocess
 import sys
+import tempfile
 import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional
 
 import click
+import yaml
 
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -21,6 +24,11 @@ from dagster._cli.workspace.cli_target import (
     working_directory_option,
     workspace_option,
 )
+from dagster._core.remote_representation.origin import (
+    GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
@@ -123,10 +131,9 @@ def dev_command(
     logger = logging.getLogger("dagster")
 
     # Sanity check workspace args
-    get_workspace_load_target(kwargs)
+    workspace_target = get_workspace_load_target(kwargs)
 
     dagster_home_path = os.getenv("DAGSTER_HOME")
-
     dagster_yaml_path = os.path.join(os.getcwd(), "dagster.yaml")
 
     has_local_dagster_yaml = os.path.exists(dagster_yaml_path)
@@ -141,102 +148,111 @@ def dev_command(
 
     with get_possibly_temporary_instance_for_cli("dagster dev", logger=logger) as instance:
         logger.info("Launching Dagster services...")
+        with WorkspaceProcessContext(
+            instance, workspace_target, code_server_log_level=code_server_log_level
+        ) as context:
+            with _temp_grpc_socket_workspace_file(context) as workspace_file:
+                args = [
+                    "--instance-ref",
+                    serialize_value(instance.get_ref()),
+                    "--workspace",
+                    workspace_file,
+                ]
 
-        args = [
-            "--instance-ref",
-            serialize_value(instance.get_ref()),
-            "--code-server-log-level",
-            code_server_log_level,
-        ]
+                if kwargs.get("use_ssl"):
+                    args.extend(["--use-ssl"])
 
-        if kwargs.get("workspace"):
-            for workspace in check.tuple_elem(kwargs, "workspace"):
-                args.extend(["--workspace", workspace])
-
-        if kwargs.get("python_file"):
-            for python_file in check.tuple_elem(kwargs, "python_file"):
-                args.extend(["--python-file", python_file])
-
-        if kwargs.get("module_name"):
-            for module_name in check.tuple_elem(kwargs, "module_name"):
-                args.extend(["--module-name", module_name])
-
-        if kwargs.get("working_directory"):
-            args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
-
-        if kwargs.get("grpc_port"):
-            args.extend(["--grpc-port", str(kwargs["grpc_port"])])
-
-        if kwargs.get("grpc_host"):
-            args.extend(["--grpc-host", str(kwargs["grpc_host"])])
-
-        if kwargs.get("grpc_socket"):
-            args.extend(["--grpc-socket", str(kwargs["grpc_socket"])])
-
-        if kwargs.get("use_ssl"):
-            args.extend(["--use-ssl"])
-
-        webserver_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagster_webserver"]
-            + (["--port", port] if port else [])
-            + (["--host", host] if host else [])
-            + (["--dagster-log-level", log_level])
-            + (["--log-format", log_format])
-            + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
-            + args
-        )
-        daemon_process = open_ipc_subprocess(
-            [
-                sys.executable,
-                "-m",
-                "dagster._daemon",
-                "run",
-                "--log-level",
-                log_level,
-                "--log-format",
-                log_format,
-            ]
-            + args
-        )
-        try:
-            while True:
-                time.sleep(_CHECK_SUBPROCESS_INTERVAL)
-
-                if webserver_process.poll() is not None:
-                    raise Exception(
-                        "dagster-webserver process shut down unexpectedly with return code"
-                        f" {webserver_process.returncode}"
+                webserver_process = open_ipc_subprocess(
+                    [sys.executable, "-m", "dagster_webserver"]
+                    + (["--port", port] if port else [])
+                    + (["--host", host] if host else [])
+                    + (["--dagster-log-level", log_level])
+                    + (["--log-format", log_format])
+                    + (
+                        ["--live-data-poll-rate", live_data_poll_rate]
+                        if live_data_poll_rate
+                        else []
                     )
-
-                if daemon_process.poll() is not None:
-                    raise Exception(
-                        "dagster-daemon process shut down unexpectedly with return code"
-                        f" {daemon_process.returncode}"
-                    )
-
-        except KeyboardInterrupt:
-            logger.info("KeyboardInterrupt received")
-        except:
-            logger.exception("An unexpected exception has occurred")
-        finally:
-            logger.info("Shutting down Dagster services...")
-            interrupt_ipc_subprocess(daemon_process)
-            interrupt_ipc_subprocess(webserver_process)
-
-            try:
-                webserver_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                logger.warning(
-                    "dagster-webserver process did not terminate cleanly, killing the process"
+                    + args
                 )
-                webserver_process.kill()
-
-            try:
-                daemon_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                logger.warning(
-                    "dagster-daemon process did not terminate cleanly, killing the process"
+                daemon_process = open_ipc_subprocess(
+                    [
+                        sys.executable,
+                        "-m",
+                        "dagster._daemon",
+                        "run",
+                        "--log-level",
+                        log_level,
+                        "--log-format",
+                        log_format,
+                    ]
+                    + args
                 )
-                daemon_process.kill()
+                try:
+                    while True:
+                        time.sleep(_CHECK_SUBPROCESS_INTERVAL)
 
-            logger.info("Dagster services shut down.")
+                        if webserver_process.poll() is not None:
+                            raise Exception(
+                                "dagster-webserver process shut down unexpectedly with return code"
+                                f" {webserver_process.returncode}"
+                            )
+
+                        if daemon_process.poll() is not None:
+                            raise Exception(
+                                "dagster-daemon process shut down unexpectedly with return code"
+                                f" {daemon_process.returncode}"
+                            )
+
+                except KeyboardInterrupt:
+                    logger.info("KeyboardInterrupt received")
+                except:
+                    logger.exception("An unexpected exception has occurred")
+                finally:
+                    logger.info("Shutting down Dagster services...")
+                    interrupt_ipc_subprocess(daemon_process)
+                    interrupt_ipc_subprocess(webserver_process)
+
+                    try:
+                        webserver_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        logger.warning(
+                            "dagster-webserver process did not terminate cleanly, killing the process"
+                        )
+                        webserver_process.kill()
+
+                    try:
+                        daemon_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        logger.warning(
+                            "dagster-daemon process did not terminate cleanly, killing the process"
+                        )
+                        daemon_process.kill()
+
+                    logger.info("Dagster services shut down.")
+
+
+@contextmanager
+def _temp_grpc_socket_workspace_file(context: WorkspaceProcessContext) -> Iterator[str]:
+    location_specs = []
+    with tempfile.NamedTemporaryFile(mode="w+") as temp_file:
+        for origin in context._origins:  # noqa: SLF001
+            if isinstance(origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+                grpc_endpoint = context._grpc_server_registry.get_grpc_endpoint(origin)  # noqa: SLF001
+                server_spec = {
+                    "location_name": origin.location_name,
+                    "socket": grpc_endpoint.socket,
+                }
+            elif isinstance(origin, GrpcServerCodeLocationOrigin):
+                server_spec = {
+                    "location_name": origin.location_name,
+                    "host": origin.host,
+                    "port": origin.port,
+                }
+            else:
+                check.failed(f"Unexpected origin type {origin}")
+            location_specs.append({"grpc_server": server_spec})
+
+        temp_file.write(yaml.dump({"load_from": location_specs}))
+        temp_file.flush()
+        yield temp_file.name
