@@ -436,7 +436,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Returns an AutomationCondition that is true if the target's code version has been changed
         since the previous tick.
         """
-        from dagster._core.definitions.declarative_automation.operands import (
+        from dagster._core.definitions.declarative_automation.operands.operands import (
             CodeVersionChangedCondition,
         )
 
