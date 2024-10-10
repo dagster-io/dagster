@@ -40,6 +40,7 @@ interface TokenizingFieldProps {
   onChangeBeforeCommit?: boolean;
   addOnBlur?: boolean;
   onFocus?: () => void;
+  onBlur?: () => void;
 
   placeholder?: string;
   loading?: boolean;
@@ -124,6 +125,7 @@ export const TokenizingField = ({
   onChange,
   onChangeBeforeCommit,
   onFocus,
+  onBlur,
   onTextChange,
   placeholder,
   addOnBlur,
@@ -429,6 +431,7 @@ export const TokenizingField = ({
               onConfirmText(typed);
             }
             setOpen(false);
+            onBlur && onBlur();
           },
         }}
         $maxWidth={fullwidth ? '100%' : undefined}
