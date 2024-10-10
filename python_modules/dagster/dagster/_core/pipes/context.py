@@ -332,9 +332,9 @@ class PipesSession:
             "dagster/job": self.context.job_name,
         }
 
-        if self.context.dagster_run.external_job_origin:
+        if self.context.dagster_run.remote_job_origin:
             tags["dagster/code-location"] = (
-                self.context.dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+                self.context.dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
 
         if user := self.context.get_tag("dagster/user"):

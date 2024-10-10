@@ -86,7 +86,7 @@ def launch_reexecution_from_parent_run(
     parent_run = check.not_none(
         instance.get_run_by_id(parent_run_id), f"Could not find parent run with id: {parent_run_id}"
     )
-    origin = check.not_none(parent_run.external_job_origin)
+    origin = check.not_none(parent_run.remote_job_origin)
     selector = JobSubsetSelector(
         location_name=origin.repository_origin.code_location_origin.location_name,
         repository_name=origin.repository_origin.repository_name,
