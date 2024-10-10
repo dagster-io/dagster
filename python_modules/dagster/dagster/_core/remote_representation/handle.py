@@ -12,11 +12,13 @@ from dagster._core.remote_representation.origin import (
     RemoteRepositoryOrigin,
 )
 from dagster._record import IHaveNew, record, record_custom
+from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
 
 
+@whitelist_for_serdes
 @record
 class RepositoryHandle:
     repository_name: str

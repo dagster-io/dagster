@@ -16,6 +16,8 @@ from typing import (
     Tuple,
 )
 
+from typing_extensions import Annotated
+
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
@@ -39,29 +41,42 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._record import ImportFrom, record
+from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
     from dagster._core.selector.subset_selector import DependencyGraph
 
 
+@whitelist_for_serdes
+@record
+class RepositoryScopedAssetNode:
+    handle: RepositoryHandle
+    asset: Annotated[
+        "AssetNodeSnap",
+        ImportFrom("dagster._core.remote_representation.external_data"),
+    ]
+
+
+@whitelist_for_serdes
+@record
 class RemoteAssetNode(BaseAssetNode):
-    def __init__(
-        self,
-        key: AssetKey,
-        parent_keys: AbstractSet[AssetKey],
-        child_keys: AbstractSet[AssetKey],
-        execution_set_keys: AbstractSet[EntityKey],
-        repo_node_pairs: Sequence[Tuple[RepositoryHandle, "AssetNodeSnap"]],
-        check_keys: AbstractSet[AssetCheckKey],
-    ):
-        self.key = key
-        self.parent_keys = parent_keys
-        self.child_keys = child_keys
-        self._repo_node_pairs = repo_node_pairs
-        self._asset_node_snaps = [node for _, node in repo_node_pairs]
-        self._check_keys = check_keys
-        self._execution_set_keys = execution_set_keys
+    key: AssetKey
+    parent_keys: AbstractSet[AssetKey]
+    child_keys: AbstractSet[AssetKey]
+    execution_set_entity_keys: AbstractSet[EntityKey]
+    scoped_asset_nodes: Sequence[RepositoryScopedAssetNode]
+    check_keys: AbstractSet[AssetCheckKey]
+
+    def __hash__(self):
+        # we create sets of these objects in the context of asset graphs but don't want to
+        # enforce that all recursively contained types are hashable so use object hash instead
+        return object.__hash__(self)
+
+    @property
+    def _asset_node_snaps(self) -> Sequence["AssetNodeSnap"]:
+        return [n.asset for n in self.scoped_asset_nodes]
 
     ##### COMMON ASSET NODE INTERFACE
 
@@ -161,16 +176,8 @@ class RemoteAssetNode(BaseAssetNode):
         return self.priority_node_snap.code_version
 
     @property
-    def check_keys(self) -> AbstractSet[AssetCheckKey]:
-        return self._check_keys
-
-    @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
         return {k for k in self.execution_set_entity_keys if isinstance(k, AssetKey)}
-
-    @property
-    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
-        return self._execution_set_keys
 
     ##### REMOTE-SPECIFIC INTERFACE
 
@@ -182,38 +189,32 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def priority_repository_handle(self) -> RepositoryHandle:
-        # This property supports existing behavior but it should be phased out, because it relies on
-        # materialization nodes shadowing observation nodes that would otherwise be exposed.
-        return next(
-            itertools.chain(
-                (repo for repo, node in self._repo_node_pairs if node.is_materializable),
-                (repo for repo, node in self._repo_node_pairs if node.is_observable),
-                (repo for repo, node in self._repo_node_pairs),
-            )
-        )
+        return self._priority_scoped_node.handle
 
     @property
     def repository_handles(self) -> Sequence[RepositoryHandle]:
-        return [repo_handle for repo_handle, _ in self._repo_node_pairs]
-
-    @property
-    def repo_node_pairs(self) -> Sequence[Tuple[RepositoryHandle, "AssetNodeSnap"]]:
-        return self._repo_node_pairs
+        return [node.handle for node in self.scoped_asset_nodes]
 
     @cached_property
-    def priority_node_snap(self) -> "AssetNodeSnap":
+    def _priority_scoped_node(self) -> RepositoryScopedAssetNode:
         # Return a materialization node if it exists, otherwise return an observable node if it
         # exists, otherwise return any node. This exists to preserve implicit behavior, where the
         # materialization node was previously preferred over the observable node. This is a
         # temporary measure until we can appropriately scope the accessors that could apply to
         # either a materialization or observation node.
+        # This property supports existing behavior but it should be phased out, because it relies on
+        # materialization nodes shadowing observation nodes that would otherwise be exposed.
         return next(
             itertools.chain(
-                (node for node in self._asset_node_snaps if node.is_materializable),
-                (node for node in self._asset_node_snaps if node.is_observable),
-                (node for node in self._asset_node_snaps),
+                (node for node in self.scoped_asset_nodes if node.asset.is_materializable),
+                (node for node in self.scoped_asset_nodes if node.asset.is_observable),
+                (node for node in self.scoped_asset_nodes),
             )
         )
+
+    @property
+    def priority_node_snap(self) -> "AssetNodeSnap":
+        return self._priority_scoped_node.asset
 
     ##### HELPERS
 
@@ -305,8 +306,11 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
                 key=key,
                 parent_keys=dep_graph["upstream"][key],
                 child_keys=dep_graph["downstream"][key],
-                execution_set_keys=execution_sets_by_key[key],
-                repo_node_pairs=repo_node_pairs,
+                execution_set_entity_keys=execution_sets_by_key[key],
+                scoped_asset_nodes=[
+                    RepositoryScopedAssetNode(asset=asset, handle=handle)
+                    for handle, asset in repo_node_pairs
+                ],
                 check_keys=check_keys_by_asset_key[key],
             )
             for key, repo_node_pairs in repo_node_pairs_by_key.items()
