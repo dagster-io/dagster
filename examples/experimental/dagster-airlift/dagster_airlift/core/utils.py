@@ -50,6 +50,10 @@ def metadata_for_task_mapping(*, task_id: str, dag_id: str) -> dict:
     return {TASK_MAPPING_METADATA_KEY: [{"dag_id": dag_id, "task_id": task_id}]}
 
 
+def metadata_for_dag_mapping(*, dag_id: str) -> dict:
+    return {DAG_MAPPING_METADATA_KEY: [{"dag_id": dag_id}]}
+
+
 def get_metadata_key(instance_name: str) -> str:
     return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
 
