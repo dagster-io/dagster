@@ -17,6 +17,8 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.definitions.utils import check_valid_name
 from dagster._utils.tags import normalize_tags
 
+DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME = "default_automation_condition_sensor"
+
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
     from dagster._core.definitions.automation_tick_evaluation_context import (

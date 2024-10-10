@@ -20,6 +20,9 @@ import dagster._check as check
 from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -37,6 +40,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
+from dagster._core.definitions.utils import get_default_automation_condition_sensor_selection
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
@@ -82,7 +86,6 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
@@ -185,9 +188,6 @@ class RemoteRepository:
     def get_utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
         return self._utilized_env_vars
 
-    def get_default_auto_materialize_sensor_name(self) -> str:
-        return "default_automation_condition_sensor"
-
     @property
     @cached_method
     def _sensors(self) -> Dict[str, "RemoteSensor"]:
@@ -196,81 +196,28 @@ class RemoteRepository:
             for sensor_snap in self.repository_snap.sensors
         }
 
-        if self._instance.auto_materialize_use_sensors:
-            asset_graph = self.asset_graph
-
-            has_any_auto_observe_source_assets = False
-
-            existing_automation_condition_sensors = {
-                sensor_name: sensor
-                for sensor_name, sensor in sensor_datas.items()
-                if sensor.sensor_type in (SensorType.AUTO_MATERIALIZE, SensorType.AUTOMATION)
-            }
-
-            covered_entity_keys: Set[EntityKey] = set()
-            for sensor in existing_automation_condition_sensors.values():
-                selection = check.not_none(sensor.asset_selection)
-                covered_entity_keys = covered_entity_keys.union(
-                    # for now, all asset checks are handled by the same asset as their asset
-                    selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
-                )
-
-            default_sensor_entity_keys = set()
-            for entity_key in asset_graph.materializable_asset_keys | asset_graph.asset_check_keys:
-                if not asset_graph.get(entity_key).automation_condition:
-                    continue
-
-                if entity_key not in covered_entity_keys:
-                    default_sensor_entity_keys.add(entity_key)
-
-            for asset_key in asset_graph.observable_asset_keys:
-                if (
-                    asset_graph.get(asset_key).auto_observe_interval_minutes is None
-                    and asset_graph.get(asset_key).automation_condition is None
-                ):
-                    continue
-
-                has_any_auto_observe_source_assets = True
-
-                if asset_key not in covered_entity_keys:
-                    default_sensor_entity_keys.add(asset_key)
-
-            if default_sensor_entity_keys:
-                default_sensor_asset_check_keys = {
-                    key for key in default_sensor_entity_keys if isinstance(key, AssetCheckKey)
-                }
-                # Use AssetSelection.all if the default sensor is the only sensor - otherwise
-                # enumerate the assets that are not already included in some other
-                # non-default sensor
-                default_sensor_asset_selection = AssetSelection.all(
-                    include_sources=has_any_auto_observe_source_assets
-                )
-                # if there are any asset checks, include them
-                if default_sensor_asset_check_keys:
-                    default_sensor_asset_selection |= AssetSelection.all_asset_checks()
-
-                for sensor in existing_automation_condition_sensors.values():
-                    default_sensor_asset_selection = (
-                        default_sensor_asset_selection - check.not_none(sensor.asset_selection)
-                    )
-
-                default_sensor_data = SensorSnap(
-                    name=self.get_default_auto_materialize_sensor_name(),
-                    job_name=None,
-                    op_selection=None,
-                    asset_selection=default_sensor_asset_selection,
-                    mode=None,
-                    min_interval=30,
-                    description=None,
-                    target_dict={},
-                    metadata=None,
-                    default_status=None,
-                    sensor_type=SensorType.AUTO_MATERIALIZE,
-                    run_tags=None,
-                )
-                sensor_datas[default_sensor_data.name] = RemoteSensor(
-                    default_sensor_data, self._handle
-                )
+        # if necessary, create a default automation condition sensor
+        # NOTE: if a user's code location is at a version >= 1.9, then this step should
+        # never be necessary, as this will be added in Definitions construction process
+        default_sensor_selection = get_default_automation_condition_sensor_selection(
+            sensors=[data for data in sensor_datas.values()], asset_graph=self.asset_graph
+        )
+        if default_sensor_selection is not None:
+            default_sensor_data = SensorSnap(
+                name=DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+                job_name=None,
+                op_selection=None,
+                asset_selection=default_sensor_selection,
+                mode=None,
+                min_interval=30,
+                description=None,
+                target_dict={},
+                metadata=None,
+                default_status=None,
+                sensor_type=SensorType.AUTO_MATERIALIZE,
+                run_tags=None,
+            )
+            sensor_datas[default_sensor_data.name] = RemoteSensor(default_sensor_data, self._handle)
 
         return sensor_datas
 
