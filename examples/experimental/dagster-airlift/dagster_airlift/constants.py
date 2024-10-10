@@ -1,4 +1,4 @@
-STANDALONE_DAG_ID_METADATA_KEY = "dagster-airlift/dag-id"
+DAG_MAPPING_METADATA_KEY = "dagster-airlift/dag-mapping"
 AIRFLOW_SOURCE_METADATA_KEY_PREFIX = "dagster-airlift/source"
 TASK_MAPPING_METADATA_KEY = "dagster-airlift/task-mapping"
 AUTOMAPPED_TASK_METADATA_KEY = "dagster-airlift/automapped-task"
