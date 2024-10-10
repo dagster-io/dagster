@@ -18,8 +18,9 @@ from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._utils.tags import normalize_tags
 
-EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
 MAX_ENTITIES = 500
+EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
+DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME = "default_automation_condition_sensor"
 
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
@@ -57,6 +58,7 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
             "or split this sensor into multiple AutomationConditionSensorDefinitions with AssetSelections that target fewer "
             "assets or checks."
         )
+
     run_requests, new_cursor, updated_evaluations = evaluation_context.evaluate()
 
     return SensorResult(
