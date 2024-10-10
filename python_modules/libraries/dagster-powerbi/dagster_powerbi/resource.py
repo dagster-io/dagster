@@ -4,10 +4,16 @@ import re
 import time
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, Mapping, Optional, Type, cast
+from typing import Any, Dict, Mapping, Optional, Sequence, Type, cast
 
 import requests
-from dagster import ConfigurableResource, Definitions, external_assets_from_specs, multi_asset
+from dagster import (
+    AssetSpec,
+    ConfigurableResource,
+    Definitions,
+    external_assets_from_specs,
+    multi_asset,
+)
 from dagster._annotations import public
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -260,11 +266,10 @@ class PowerBIWorkspace(ConfigurableResource):
             dashboards + reports + semantic_models + data_sources,
         )
 
-    @public
+    @cached_method
     def build_defs(
         self,
         dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
-        enable_refresh_semantic_models: bool = False,
     ) -> Definitions:
         """Returns a Definitions object which will load Power BI content from
         the workspace and translate it into assets, using the provided translator.
@@ -281,10 +286,41 @@ class PowerBIWorkspace(ConfigurableResource):
             Definitions: A Definitions object which will build and return the Power BI content.
         """
         return PowerBIWorkspaceDefsLoader(
-            workspace=self,
-            translator_cls=dagster_powerbi_translator,
-            enable_refresh_semantic_models=enable_refresh_semantic_models,
+            workspace=self, translator_cls=dagster_powerbi_translator
         ).build_defs()
+
+    @public
+    def build_dashboard_asset_specs(
+        self,
+        dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
+    ) -> Sequence[AssetSpec]:
+        defs = self.build_defs(dagster_powerbi_translator=dagster_powerbi_translator)
+        specs = defs.get_all_asset_specs()
+        return [
+            spec for spec in specs if spec.metadata["dagster-powerbi/asset_type"] == "dashboard"
+        ]
+
+    @public
+    def build_report_asset_specs(
+        self,
+        dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
+    ) -> Sequence[AssetSpec]:
+        defs = self.build_defs(dagster_powerbi_translator=dagster_powerbi_translator)
+        specs = defs.get_all_asset_specs()
+        return [spec for spec in specs if spec.metadata["dagster-powerbi/asset_type"] == "report"]
+
+    @public
+    def build_semantic_model_asset_specs(
+        self,
+        dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
+    ) -> Sequence[AssetSpec]:
+        defs = self.build_defs(dagster_powerbi_translator=dagster_powerbi_translator)
+        specs = defs.get_all_asset_specs()
+        return [
+            spec
+            for spec in specs
+            if spec.metadata["dagster-powerbi/asset_type"] == "semantic_model"
+        ]
 
 
 @dataclass
