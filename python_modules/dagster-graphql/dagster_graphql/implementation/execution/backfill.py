@@ -40,11 +40,11 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.backfill import (
         GrapheneAssetPartitions,
         GrapheneCancelBackfillSuccess,
-        GrapheneDeleteBackfillSuccess,
         GrapheneLaunchBackfillSuccess,
         GrapheneResumeBackfillSuccess,
     )
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
+    from dagster_graphql.schema.roots.mutation import GrapheneDeleteBackfillSuccess
     from dagster_graphql.schema.util import ResolveInfo
 
 
