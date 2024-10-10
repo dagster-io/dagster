@@ -4,6 +4,7 @@ from typing import AbstractSet, Mapping, Set, cast
 
 from dagster import (
     AssetKey,
+    AssetSpec,
     Definitions,
     _check as check,
 )
@@ -33,6 +34,10 @@ class AirflowDefinitionsData:
     @cached_property
     def mapping_info(self) -> AirliftMetadataMappingInfo:
         return AirliftMetadataMappingInfo(asset_specs=list(self.mapped_defs.get_all_asset_specs()))
+
+    @cached_property
+    def all_asset_specs_by_key(self) -> Mapping[AssetKey, AssetSpec]:
+        return {spec.key: spec for spec in self.mapped_defs.get_all_asset_specs()}
 
     def task_ids_in_dag(self, dag_id: str) -> Set[str]:
         return self.mapping_info.task_id_map[dag_id]
@@ -85,3 +90,6 @@ class AirflowDefinitionsData:
 
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
         return self.asset_keys_per_task_handle[TaskHandle(dag_id=dag_id, task_id=task_id)]
+
+    def get_asset_spec_for_key(self, asset_key: AssetKey) -> AssetSpec:
+        return self.all_asset_specs_by_key[asset_key]

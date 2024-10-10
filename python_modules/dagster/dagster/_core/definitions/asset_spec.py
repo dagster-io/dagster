@@ -249,6 +249,12 @@ class AssetSpec(
         )
 
     @cached_property
+    def is_time_window_partitioned(self) -> bool:
+        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+
+        return isinstance(self.partitions_def, TimeWindowPartitionsDefinition)
+
+    @cached_property
     def kinds(self) -> Set[str]:
         return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
 
