@@ -22,7 +22,11 @@ from pytest_mock import MockFixture
 from sqlglot import Dialect
 
 from dagster_dbt_tests.conftest import _create_dbt_invocation
-from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path, test_metadata_path
+from dagster_dbt_tests.dbt_projects import (
+    test_dependencies_path,
+    test_jaffle_shop_path,
+    test_metadata_path,
+)
 
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
 
@@ -679,4 +683,101 @@ def test_dbt_raw_cli_no_jinja_log_info(
 
     assert not any(
         json.loads(line)["info"]["name"] == "JinjaLogInfo" for line in result.splitlines()
+    )
+
+
+EXPECTED_COLUMN_LINEAGE_FOR_DEPENDENCIES_PROJECT = {
+    **{
+        key: value
+        for key, value in EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT.items()
+        if key
+        in (
+            AssetKey(["raw_customers"]),
+            AssetKey(["raw_payments"]),
+            AssetKey(["raw_orders"]),
+            AssetKey(["stg_payments"]),
+            AssetKey(["stg_customers"]),
+            AssetKey(["stg_orders"]),
+            AssetKey(["orders"]),
+            AssetKey(["customers"]),
+        )
+    },
+    AssetKey(["stg_customers"]): TableColumnLineage(
+        deps_by_column={
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="id")
+            ],
+            "first_name": [
+                TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="first_name")
+            ],
+            "last_name": [
+                TableColumnDep(asset_key=AssetKey(["raw_customers"]), column_name="last_name")
+            ],
+        }
+    ),
+    AssetKey(["customers_refined"]): TableColumnLineage(
+        deps_by_column={
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="customer_id")
+            ],
+            "first_name": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_name")
+            ],
+            "last_name": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="last_name")
+            ],
+            "first_order": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_order")
+            ],
+            "most_recent_order": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="most_recent_order")
+            ],
+            "number_of_orders": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="number_of_orders")
+            ],
+            "customer_lifetime_value": [
+                TableColumnDep(
+                    asset_key=AssetKey(["customers"]), column_name="customer_lifetime_value"
+                )
+            ],
+        }
+    ),
+}
+
+
+def test_column_lineage_dependencies(
+    test_dependencies_manifest: Dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockFixture,
+    capsys,
+) -> None:
+    # Patch get_relation_from_adapter so that we can track how often
+    # relations are queried from the adapter vs cached
+
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(False).lower())
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_dependencies_path))
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+
+    @dbt_assets(manifest=test_dependencies_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        cli_invocation = dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+        yield from cli_invocation
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": dbt},
+    )
+
+    column_lineage_by_asset_key = {
+        event.materialization.asset_key: TableMetadataSet.extract(
+            event.materialization.metadata
+        ).column_lineage
+        for event in result.get_asset_materialization_events()
+    }
+
+    expected_column_lineage_by_asset_key = EXPECTED_COLUMN_LINEAGE_FOR_DEPENDENCIES_PROJECT
+
+    assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
+        str(column_lineage_by_asset_key) + "\n\n" + str(expected_column_lineage_by_asset_key)
     )

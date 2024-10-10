@@ -16,6 +16,7 @@ from dagster_dbt_tests.dbt_projects import (
     test_dbt_semantic_models_path,
     test_dbt_source_freshness_path,
     test_dbt_unit_tests_path,
+    test_dependencies_path,
     test_duplicate_source_asset_key_path,
     test_jaffle_shop_path,
     test_last_update_freshness_multiple_assets_defs_path,
@@ -185,5 +186,13 @@ def test_metadata_manifest_fixture() -> Dict[str, Any]:
     # Prepopulate duckdb with jaffle shop data to support testing individual column metadata.
     return _create_dbt_invocation(
         test_metadata_path,
+        build_project=True,
+    ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dependencies_manifest", scope="session")
+def test_dependencies_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(
+        test_dependencies_path,
         build_project=True,
     ).get_artifact("manifest.json")
