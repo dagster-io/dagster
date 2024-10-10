@@ -344,7 +344,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._asset_graph_differ = check.opt_inst_param(
             asset_graph_differ, "asset_graph_differ", AssetGraphDiffer
         )
-        self._external_job = None  # lazily loaded
+        self._remote_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
 
         super().__init__(
@@ -389,8 +389,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def asset_graph_differ(self) -> Optional[AssetGraphDiffer]:
         return self._asset_graph_differ
 
-    def get_external_job(self, graphene_info: ResolveInfo) -> RemoteJob:
-        if self._external_job is None:
+    def get_remote_job(self, graphene_info: ResolveInfo) -> RemoteJob:
+        if self._remote_job is None:
             check.invariant(
                 len(self._asset_node_snap.job_names) >= 1,
                 "Asset must be part of at least one job",
@@ -400,8 +400,8 @@ class GrapheneAssetNode(graphene.ObjectType):
                 repository_name=self._repository_selector.repository_name,
                 job_name=self._asset_node_snap.job_names[0],
             )
-            self._external_job = graphene_info.context.get_full_external_job(selector)
-        return self._external_job
+            self._remote_job = graphene_info.context.get_full_job(selector)
+        return self._remote_job
 
     def get_node_definition_snap(
         self,
@@ -414,7 +414,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 or self._asset_node_snap.graph_name
                 or self._asset_node_snap.op_name
             )
-            self._node_definition_snap = self.get_external_job(graphene_info).get_node_def_snap(
+            self._node_definition_snap = self.get_remote_job(graphene_info).get_node_def_snap(
                 node_key
             )
         # weird mypy bug causes mistyped _node_definition_snap
@@ -491,7 +491,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 inv.node_def_name
                 for inv in node_def_snap.dep_structure_snapshot.node_invocation_snaps
             ]
-            external_pipeline = self.get_external_job(graphene_info)
+            external_pipeline = self.get_remote_job(graphene_info)
             constituent_resource_key_sets = [
                 self.get_required_resource_keys_rec(
                     graphene_info, external_pipeline.get_node_def_snap(name)
@@ -654,7 +654,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_configField(self, graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
         if not self.is_executable:
             return None
-        external_pipeline = self.get_external_job(graphene_info)
+        external_pipeline = self.get_remote_job(graphene_info)
         node_def_snap = self.get_node_definition_snap(graphene_info)
         return (
             GrapheneConfigTypeField(
@@ -1153,7 +1153,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
         if not self.is_executable:
             return None
-        external_pipeline = self.get_external_job(graphene_info)
+        external_pipeline = self.get_remote_job(graphene_info)
         node_def_snap = self.get_node_definition_snap(graphene_info)
         if isinstance(node_def_snap, OpDefSnap):
             return GrapheneSolidDefinition(external_pipeline, node_def_snap.name)
@@ -1243,7 +1243,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ]:
         if not self._asset_node_snap.is_materializable:
             return None
-        external_pipeline = self.get_external_job(graphene_info)
+        external_pipeline = self.get_remote_job(graphene_info)
         output_name = self._asset_node_snap.output_name
         if output_name:
             for output_def in self.get_node_definition_snap(graphene_info).output_def_snaps:

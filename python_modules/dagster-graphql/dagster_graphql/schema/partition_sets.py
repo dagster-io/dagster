@@ -195,22 +195,22 @@ class GrapheneJobSelectionPartition(graphene.ObjectType):
 
     def __init__(
         self,
-        external_job: RemoteJob,
+        remote_job: RemoteJob,
         partition_name: str,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ):
-        self._external_job = external_job
+        self._remote_job = remote_job
         self._partition_name = partition_name
         self._selected_asset_keys = selected_asset_keys
 
-        super().__init__(name=partition_name, job_name=external_job.name)
+        super().__init__(name=partition_name, job_name=remote_job.name)
 
     @capture_error
     def resolve_runConfigOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionRunConfig:
         return get_partition_config(
             graphene_info,
-            self._external_job.repository_handle,
-            self._external_job.name,
+            self._remote_job.repository_handle,
+            self._remote_job.name,
             self._partition_name,
             selected_asset_keys=self._selected_asset_keys,
         )
@@ -219,8 +219,8 @@ class GrapheneJobSelectionPartition(graphene.ObjectType):
     def resolve_tagsOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionTags:
         return get_partition_tags(
             graphene_info,
-            self._external_job.repository_handle,
-            self._external_job.name,
+            self._remote_job.repository_handle,
+            self._remote_job.name,
             self._partition_name,
             selected_asset_keys=self._selected_asset_keys,
         )

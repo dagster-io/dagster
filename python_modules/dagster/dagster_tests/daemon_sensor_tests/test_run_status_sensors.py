@@ -166,11 +166,11 @@ def test_run_status_sensor(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("failure_job")
+        remote_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -205,11 +205,11 @@ def test_run_status_sensor(
         )
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("foo_job")
+        remote_job = external_repo.get_full_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -277,11 +277,11 @@ def test_run_failure_sensor(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("failure_job")
+        remote_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -333,11 +333,11 @@ def test_run_failure_sensor_that_fails(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("failure_job")
+        remote_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -407,11 +407,11 @@ def test_run_failure_sensor_filtered(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("failure_job_2")
+        remote_job = external_repo.get_full_job("failure_job_2")
         run = instance.create_run_for_job(
             failure_job_2,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -438,11 +438,11 @@ def test_run_failure_sensor_filtered(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("failure_job")
+        remote_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -508,13 +508,13 @@ def test_run_failure_sensor_overfetch(
 
                 # interleave matching jobs and jobs that do not match
                 for _i in range(4):
-                    external_job = external_repo.get_full_job("failure_job")
-                    external_job_2 = external_repo.get_full_job("failure_job_2")
+                    remote_job = external_repo.get_full_job("failure_job")
+                    remote_job_2 = external_repo.get_full_job("failure_job_2")
 
                     run = instance.create_run_for_job(
                         failure_job_2,
-                        external_job_origin=external_job_2.get_remote_origin(),
-                        job_code_origin=external_job_2.get_python_origin(),
+                        remote_job_origin=remote_job_2.get_remote_origin(),
+                        job_code_origin=remote_job_2.get_python_origin(),
                     )
                     instance.report_run_failed(run)
 
@@ -522,8 +522,8 @@ def test_run_failure_sensor_overfetch(
 
                     run = instance.create_run_for_job(
                         failure_job,
-                        external_job_origin=external_job.get_remote_origin(),
-                        job_code_origin=external_job.get_python_origin(),
+                        remote_job_origin=remote_job.get_remote_origin(),
+                        job_code_origin=remote_job.get_python_origin(),
                     )
                     instance.report_run_failed(run)
 
@@ -672,20 +672,20 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 time.sleep(1)
 
             with freeze_time(freeze_datetime):
-                external_job = external_repo.get_full_job("hanging_job")
+                remote_job = external_repo.get_full_job("hanging_job")
                 # start run 1
                 run1 = instance.create_run_for_job(
                     hanging_job,
-                    external_job_origin=external_job.get_remote_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
                 instance.submit_run(run1.run_id, workspace_context.create_request_context())
                 freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 # start run 2
                 run2 = instance.create_run_for_job(
                     hanging_job,
-                    external_job_origin=external_job.get_remote_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
                 instance.submit_run(run2.run_id, workspace_context.create_request_context())
                 freeze_datetime = freeze_datetime + relativedelta(seconds=60)
@@ -874,7 +874,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_job_origin=external_another_job.get_remote_origin(),
+                remote_job_origin=external_another_job.get_remote_origin(),
                 job_code_origin=external_another_job.get_python_origin(),
             )
 
@@ -961,7 +961,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
             dagster_run = instance.create_run_for_job(
                 another_failure_job,
-                external_job_origin=external_another_job.get_remote_origin(),
+                remote_job_origin=external_another_job.get_remote_origin(),
                 job_code_origin=external_another_job.get_python_origin(),
             )
 
@@ -1054,7 +1054,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_remote_origin(),
+                remote_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1153,7 +1153,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_remote_origin(),
+                remote_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1202,7 +1202,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_job_origin=external_another_success_job.get_remote_origin(),
+                remote_job_origin=external_another_success_job.get_remote_origin(),
                 job_code_origin=external_another_success_job.get_python_origin(),
             )
 
@@ -1300,7 +1300,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_remote_origin(),
+                remote_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1338,7 +1338,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
             dagster_run = instance.create_run_for_job(
                 success_job,
-                external_job_origin=external_success_job.get_remote_origin(),
+                remote_job_origin=external_success_job.get_remote_origin(),
                 job_code_origin=external_success_job.get_python_origin(),
             )
 
@@ -1396,11 +1396,11 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_job = the_other_repo.get_full_job("the_job")
+            remote_job = the_other_repo.get_full_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -1458,11 +1458,11 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_job = the_other_repo.get_full_job("the_job")
+            remote_job = the_other_repo.get_full_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -1541,11 +1541,11 @@ def test_partitioned_job_run_status_sensor(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("daily_partitioned_job")
+        remote_job = external_repo.get_full_job("daily_partitioned_job")
         run = instance.create_run_for_job(
             daily_partitioned_job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
             tags={"dagster/partition": "2022-08-01"},
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
@@ -1610,11 +1610,11 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 time.sleep(1)
 
             with freeze_time(freeze_datetime):
-                external_job = the_other_repo.get_full_job("the_job")
+                remote_job = the_other_repo.get_full_job("the_job")
                 run = the_other_instance.create_run_for_job(
                     the_job,
-                    external_job_origin=external_job.get_remote_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
                 the_other_instance.submit_run(
                     run.run_id, the_other_workspace_context.create_request_context()
@@ -1671,11 +1671,11 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_job = the_other_repo.get_full_job("the_job")
+            remote_job = the_other_repo.get_full_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -1725,11 +1725,11 @@ def test_logging_run_status_sensor(
         freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_job("foo_job")
+        remote_job = external_repo.get_full_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)

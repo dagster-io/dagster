@@ -634,7 +634,7 @@ def test_start_time_end_time():
         assert True
 
 
-def test_external_job_origin_instigator_origin():
+def test_remote_job_origin_instigator_origin():
     def build_legacy_whitelist_map():
         legacy_env = WhitelistMap.create()
 

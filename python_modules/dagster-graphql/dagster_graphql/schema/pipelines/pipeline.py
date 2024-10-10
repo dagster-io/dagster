@@ -934,35 +934,35 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(self, external_job: RemoteJob):
+    def __init__(self, remote_job: RemoteJob):
         super().__init__()
-        self._external_job = check.inst_param(external_job, "external_job", RemoteJob)
+        self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_job.get_remote_origin_id()
+        return self._remote_job.get_remote_origin_id()
 
     def get_represented_job(self) -> RepresentedJob:
-        return self._external_job
+        return self._remote_job
 
     def resolve_presets(self, _graphene_info: ResolveInfo):
         return [
-            GraphenePipelinePreset(preset, self._external_job.name)
-            for preset in sorted(self._external_job.active_presets, key=lambda item: item.name)
+            GraphenePipelinePreset(preset, self._remote_job.name)
+            for preset in sorted(self._remote_job.active_presets, key=lambda item: item.name)
         ]
 
     def resolve_isJob(self, _graphene_info: ResolveInfo):
         return True
 
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
-        handle = self._external_job.repository_handle
+        handle = self._remote_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
-        return bool(repository.get_asset_node_snaps(self._external_job.name))
+        return bool(repository.get_asset_node_snaps(self._remote_job.name))
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.external import GrapheneRepository
 
-        return GrapheneRepository(self._external_job.repository_handle)
+        return GrapheneRepository(self._remote_job.repository_handle)
 
     @capture_error
     def resolve_partitionKeysOrError(
@@ -974,8 +974,8 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
     ) -> GraphenePartitionKeys:
         result = graphene_info.context.get_external_partition_names(
-            repository_handle=self._external_job.repository_handle,
-            job_name=self._external_job.name,
+            repository_handle=self._remote_job.repository_handle,
+            job_name=self._remote_job.name,
             selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
             instance=graphene_info.context.instance,
         )
@@ -1000,7 +1000,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
         return GrapheneJobSelectionPartition(
-            external_job=self._external_job,
+            remote_job=self._remote_job,
             partition_name=partition_name,
             selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
         )
@@ -1012,9 +1012,9 @@ class GrapheneJob(GraphenePipeline):
         name = "Job"
 
     # doesn't inherit from base class
-    def __init__(self, external_job):
+    def __init__(self, remote_job):
         super().__init__()
-        self._external_job = check.inst_param(external_job, "external_job", RemoteJob)
+        self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
 
 
 class GrapheneGraph(graphene.ObjectType):
@@ -1034,31 +1034,31 @@ class GrapheneGraph(graphene.ObjectType):
     )
     modes = non_null_list(GrapheneMode)
 
-    def __init__(self, external_job: RemoteJob, solid_handle_id=None):
-        self._external_job = check.inst_param(external_job, "external_job", RemoteJob)
+    def __init__(self, remote_job: RemoteJob, solid_handle_id=None):
+        self._remote_job = check.inst_param(remote_job, "remote_job", RemoteJob)
         self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
         super().__init__()
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         if self._solid_handle_id:
-            return f"{self._external_job.get_remote_origin_id()}:solid:{self._solid_handle_id}"
-        return f"graph:{self._external_job.get_remote_origin_id()}"
+            return f"{self._remote_job.get_remote_origin_id()}:solid:{self._solid_handle_id}"
+        return f"graph:{self._remote_job.get_remote_origin_id()}"
 
     def resolve_name(self, _graphene_info: ResolveInfo):
-        return self._external_job.get_graph_name()
+        return self._remote_job.get_graph_name()
 
     def resolve_description(self, _graphene_info: ResolveInfo):
-        return self._external_job.description
+        return self._remote_job.description
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
     ) -> Optional[GrapheneSolidHandle]:
-        return build_solid_handles(self._external_job).get(handleID)
+        return build_solid_handles(self._remote_job).get(handleID)
 
     def resolve_solid_handles(
         self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
     ) -> Sequence[GrapheneSolidHandle]:
-        handles = build_solid_handles(self._external_job)
+        handles = build_solid_handles(self._remote_job)
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}

@@ -28,7 +28,7 @@ from dagster._record import copy, record
 from dagster._time import datetime_from_timestamp
 from dagster._utils.warnings import disable_dagster_warnings
 
-from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
+from dagster_graphql.implementation.external import ensure_valid_config, get_remote_job_or_raise
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
@@ -327,7 +327,7 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
+    external_job = get_remote_job_or_raise(graphene_info, selector)
     ensure_valid_config(external_job, run_config)
     return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
 
@@ -341,11 +341,11 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
+    external_job = get_remote_job_or_raise(graphene_info, selector)
     ensure_valid_config(external_job, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
-            external_job=external_job,
+            remote_job=external_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,

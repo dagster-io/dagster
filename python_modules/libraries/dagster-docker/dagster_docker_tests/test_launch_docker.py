@@ -23,7 +23,7 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_recon_job,
-    get_test_project_workspace_and_external_job,
+    get_test_project_workspace_and_remote_job,
 )
 
 from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
@@ -59,18 +59,18 @@ def test_launch_docker_no_network(aws_env):
         },
     ) as instance:
         recon_job = get_test_project_recon_job("demo_job_s3", docker_image)
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_job_s3", container_image=docker_image
         ) as (workspace, orig_job):
-            external_job = ReOriginatedExternalJobForTest(
+            remote_job = ReOriginatedExternalJobForTest(
                 orig_job,
                 container_image=docker_image,
             )
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
             instance.launch_run(run.run_id, workspace)
 
@@ -144,18 +144,18 @@ def test_launch_docker_image_on_job_config(aws_env):
             }
         ) as instance:
             recon_job = get_test_project_recon_job("demo_job_s3", docker_image)
-            with get_test_project_workspace_and_external_job(
+            with get_test_project_workspace_and_remote_job(
                 instance, "demo_job_s3", container_image=docker_image
             ) as (workspace, orig_job):
-                external_job = ReOriginatedExternalJobForTest(
+                remote_job = ReOriginatedExternalJobForTest(
                     orig_job,
                     container_image=docker_image,
                 )
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_job_origin=external_job.get_remote_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
                 instance.launch_run(run.run_id, workspace)
 
@@ -215,10 +215,10 @@ def test_terminate_launched_docker_run(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("hanging_job", docker_image)
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "hanging_job", container_image=docker_image
         ) as (workspace, orig_job):
-            external_job = ReOriginatedExternalJobForTest(
+            remote_job = ReOriginatedExternalJobForTest(
                 orig_job,
                 container_image=docker_image,
             )
@@ -226,8 +226,8 @@ def test_terminate_launched_docker_run(aws_env):
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             run_id = run.run_id
@@ -284,17 +284,17 @@ def test_launch_docker_invalid_image(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_job_s3")
-        with get_test_project_workspace_and_external_job(instance, "demo_job_s3") as (
+        with get_test_project_workspace_and_remote_job(instance, "demo_job_s3") as (
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(orig_job)
+            remote_job = ReOriginatedExternalJobForTest(orig_job)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_remote_origin(),
-                job_code_origin=external_job.get_python_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
+                job_code_origin=remote_job.get_python_origin(),
             )
 
             with pytest.raises(
@@ -475,18 +475,18 @@ def _test_launch(
         recon_job = get_test_project_recon_job(
             "demo_job_s3", container_image=container_image, container_context=container_context
         )
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_job_s3", container_image=container_image
         ) as (
             workspace,
             orig_job,
         ):
-            external_job = ReOriginatedExternalJobForTest(orig_job)
+            remote_job = ReOriginatedExternalJobForTest(orig_job)
 
             run = instance.create_run_for_job(
                 job_def=recon_job.get_definition(),
                 run_config=run_config,
-                external_job_origin=external_job.get_remote_origin(),
+                remote_job_origin=remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
 

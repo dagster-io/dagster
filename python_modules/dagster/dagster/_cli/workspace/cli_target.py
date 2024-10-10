@@ -761,42 +761,42 @@ def get_external_repository_from_kwargs(
         yield get_external_repository_from_code_location(code_location, provided_repo_name)
 
 
-def get_external_job_from_external_repo(
+def get_remote_job_from_remote_repo(
     external_repo: RemoteRepository,
     provided_name: Optional[str],
 ) -> RemoteJob:
     check.inst_param(external_repo, "external_repo", RemoteRepository)
     check.opt_str_param(provided_name, "provided_name")
 
-    external_jobs = {ep.name: ep for ep in (external_repo.get_all_jobs())}
+    remote_jobs = {ep.name: ep for ep in (external_repo.get_all_jobs())}
 
-    check.invariant(external_jobs)
+    check.invariant(remote_jobs)
 
-    if provided_name is None and len(external_jobs) == 1:
-        return next(iter(external_jobs.values()))
+    if provided_name is None and len(remote_jobs) == 1:
+        return next(iter(remote_jobs.values()))
 
     if provided_name is None:
         raise click.UsageError(
             "Must provide --job as there is more than one job "
-            f"in {external_repo.name}. Options are: {_sorted_quoted(external_jobs.keys())}."
+            f"in {external_repo.name}. Options are: {_sorted_quoted(remote_jobs.keys())}."
         )
 
-    if provided_name not in external_jobs:
+    if provided_name not in remote_jobs:
         raise click.UsageError(
             f'Job "{provided_name}" not found in repository "{external_repo.name}". '
-            f"Found {_sorted_quoted(external_jobs.keys())} instead."
+            f"Found {_sorted_quoted(remote_jobs.keys())} instead."
         )
 
-    return external_jobs[provided_name]
+    return remote_jobs[provided_name]
 
 
 @contextmanager
-def get_external_job_from_kwargs(instance: DagsterInstance, version: str, kwargs: ClickArgMapping):
+def get_remote_job_from_kwargs(instance: DagsterInstance, version: str, kwargs: ClickArgMapping):
     # Instance isn't strictly required to load an ExternalJob, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_external_repository_from_kwargs(instance, version, kwargs) as external_repo:
         provided_name = check.opt_str_elem(kwargs, "job_name")
-        yield get_external_job_from_external_repo(external_repo, provided_name)
+        yield get_remote_job_from_remote_repo(external_repo, provided_name)
 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:

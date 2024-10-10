@@ -120,7 +120,7 @@ def test_launcher_fargate_spot(
     ecs,
     instance_fargate_spot,
     workspace,
-    external_job,
+    remote_job,
     job,
     subnet,
     image,
@@ -129,8 +129,8 @@ def test_launcher_fargate_spot(
     instance = instance_fargate_spot
     run = instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -156,8 +156,8 @@ def test_launcher_fargate_spot(
     # Override capacity provider strategy with tags
     run = instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
     instance.add_run_tags(
         run.run_id,
@@ -196,7 +196,7 @@ def test_launcher_dont_use_current_task(
     ecs,
     instance_dont_use_current_task,
     workspace,
-    external_job,
+    remote_job,
     job,
     subnet,
     image,
@@ -205,8 +205,8 @@ def test_launcher_dont_use_current_task(
     instance = instance_dont_use_current_task
     run = instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     cluster = instance.run_launcher.run_task_kwargs["cluster"]
@@ -584,7 +584,7 @@ def test_reuse_task_definition(instance, ecs):
     )
 
 
-def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job, external_job):
+def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job, remote_job):
     task_role_arn = "fake-task-role"
     execution_role_arn = "fake-execution-role"
     with instance_cm(
@@ -597,8 +597,8 @@ def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -631,8 +631,8 @@ def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -665,8 +665,8 @@ def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -688,7 +688,7 @@ def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job
         assert task_definition["ephemeralStorage"]["sizeInGiB"] == 36
 
 
-def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, job, external_job):
+def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, job, remote_job):
     container_name = "dagster"
 
     task_role_arn = "fake-task-role"
@@ -746,8 +746,8 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -803,8 +803,8 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
 
         second_run = run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
 
         instance.launch_run(second_run.run_id, workspace)
@@ -813,7 +813,7 @@ def test_launching_with_task_definition_dict(ecs, instance_cm, run, workspace, j
         assert ecs.list_task_definitions()["taskDefinitionArns"] == new_task_definitions
 
 
-def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job, external_job):
+def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job, remote_job):
     container_name = "override_container"
 
     task_definition = ecs.register_task_definition(
@@ -846,8 +846,8 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -934,14 +934,14 @@ def test_launcher_run_resources(
     ecs,
     instance_with_resources,
     workspace,
-    external_job,
+    remote_job,
     job,
 ):
     instance = instance_with_resources
     run = instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
     )
 
     existing_tasks = ecs.list_tasks()["taskArns"]
@@ -956,7 +956,7 @@ def test_launcher_run_resources(
     assert task.get("overrides").get("cpu") == "1024"
 
 
-def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job):
+def test_launch_cannot_use_system_tags(instance_cm, workspace, job, remote_job):
     with instance_cm(
         {
             "run_ecs_tags": [{"key": "dagster/run_id", "value": "NOPE"}],
@@ -964,8 +964,8 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         with pytest.raises(Exception, match="Cannot override system ECS tag: dagster/run_id"):
             instance.launch_run(run.run_id, workspace)
@@ -1097,7 +1097,7 @@ def test_status(
     ecs,
     instance_with_log_group,
     job,
-    external_job,
+    remote_job,
     cloudwatch_client,
     log_group,
 ):
@@ -1105,8 +1105,8 @@ def test_status(
 
     run = instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         tags={RUN_WORKER_ID_TAG: "abcdef"},
     )
 
@@ -1206,8 +1206,8 @@ def test_status(
     # STARTING runs with these errors are considered a transient failure that can be retried
     starting_run = instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         status=DagsterRunStatus.STARTING,
         tags={RUN_WORKER_ID_TAG: "efghi"},
     )
@@ -1227,7 +1227,7 @@ def test_overrides_too_long(
     instance,
     workspace,
     job,
-    external_job,
+    remote_job,
 ):
     large_container_context = {i: "boom" for i in range(10000)}
 
@@ -1246,7 +1246,7 @@ def test_overrides_too_long(
 
     run = instance.create_run_for_job(
         job,
-        external_job_origin=external_job.get_remote_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
         job_code_origin=mock_job_code_origin,
     )
 
@@ -1287,7 +1287,7 @@ def test_external_launch_type(
     ecs,
     instance_cm,
     workspace,
-    external_job,
+    remote_job,
     job,
 ):
     container_name = "external"
@@ -1316,8 +1316,8 @@ def test_external_launch_type(
     ) as instance:
         run = instance.create_run_for_job(
             job,
-            external_job_origin=external_job.get_remote_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
