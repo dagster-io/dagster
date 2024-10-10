@@ -31,7 +31,11 @@ PARTITION_SET_TAG = f"{SYSTEM_TAG_PREFIX}partition_set"
 
 PARENT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}parent_run_id"
 
+PARENT_BACKFILL_ID_TAG = f"{SYSTEM_TAG_PREFIX}parent_backfill_id"
+
 ROOT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}root_run_id"
+
+ROOT_BACKFILL_ID_TAG = f"{SYSTEM_TAG_PREFIX}root_backfill_id"
 
 RESUME_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}is_resume_retry"
 

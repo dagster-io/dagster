@@ -2621,6 +2621,7 @@ export type Mutation = {
   launchRun: LaunchRunResult;
   launchRunReexecution: LaunchRunReexecutionResult;
   logTelemetry: LogTelemetryMutationResult;
+  reexecutePartitionBackfill: LaunchBackfillResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
@@ -2708,6 +2709,10 @@ export type MutationLogTelemetryArgs = {
   clientId: Scalars['String']['input'];
   clientTime: Scalars['String']['input'];
   metadata: Scalars['String']['input'];
+};
+
+export type MutationReexecutePartitionBackfillArgs = {
+  reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
 
 export type MutationReloadRepositoryLocationArgs = {
@@ -10218,6 +10223,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('LogTelemetrySuccess')
         ? ({} as LogTelemetrySuccess)
         : buildLogTelemetrySuccess({}, relationshipsToOmit),
+    reexecutePartitionBackfill:
+      overrides && overrides.hasOwnProperty('reexecutePartitionBackfill')
+        ? overrides.reexecutePartitionBackfill!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     reloadRepositoryLocation:
       overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
         ? overrides.reloadRepositoryLocation!
