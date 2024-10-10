@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional, cast
+from typing import List, Optional, cast
 
 import kubernetes.config
 from dagster import (
@@ -242,7 +242,7 @@ class K8sStepHandler(StepHandler):
 
         return "dagster-step-%s" % (name_key)
 
-    def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+    def launch_step(self, step_handler_context: StepHandlerContext) -> None:
         step_key = self._get_step_key(step_handler_context)
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
@@ -294,7 +294,7 @@ class K8sStepHandler(StepHandler):
             ],
         )
 
-        yield DagsterEvent.step_worker_starting(
+        DagsterEvent.step_worker_starting(
             step_handler_context.get_step_context(step_key),
             message=f'Executing step "{step_key}" in Kubernetes job {job_name}.',
             metadata={
@@ -305,7 +305,11 @@ class K8sStepHandler(StepHandler):
         namespace = check.not_none(container_context.namespace)
         self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
 
-    def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
+        return None
+
+    def check_step_health(
+        self, step_handler_context: StepHandlerContext, step_identifier: Optional[str]
+    ) -> CheckStepHealthResult:
         step_key = self._get_step_key(step_handler_context)
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
@@ -327,13 +331,15 @@ class K8sStepHandler(StepHandler):
 
         return CheckStepHealthResult.healthy()
 
-    def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+    def terminate_step(
+        self, step_handler_context: StepHandlerContext, step_identifier: str
+    ) -> None:
         step_key = self._get_step_key(step_handler_context)
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
         container_context = self._get_container_context(step_handler_context)
 
-        yield DagsterEvent.engine_event(
+        DagsterEvent.engine_event(
             step_handler_context.get_step_context(step_key),
             message=f"Deleting Kubernetes job {job_name} for step",
             event_specific_data=EngineEventData(),
