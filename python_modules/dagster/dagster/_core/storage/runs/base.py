@@ -407,6 +407,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage."""
 
+    @abstractmethod
+    def delete_backfill(self, backfill_id: str) -> None:
+        """Delete a backfill from run storage."""
+
     def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
