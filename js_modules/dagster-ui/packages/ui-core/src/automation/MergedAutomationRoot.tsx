@@ -11,11 +11,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useContext, useMemo} from 'react';
-import {
-  doesFilterArrayMatchValueArray,
-  useDefinitionTagFilterWithManagedState,
-  useTagsForObjects,
-} from 'shared/ui/Filters/useDefinitionTagFilter';
 
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
 import {AutomationsTable} from './AutomationsTable';
@@ -31,6 +26,11 @@ import {useFilters} from '../ui/BaseFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {
+  doesFilterArrayMatchValueArray,
+  useDefinitionTagFilterWithManagedState,
+  useTagsForObjects,
+} from '../ui/Filters/useDefinitionTagFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
