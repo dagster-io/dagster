@@ -36,9 +36,9 @@ class RepositoryScopedBatchLoader:
     cache.
     """
 
-    def __init__(self, instance: DagsterInstance, external_repository: RemoteRepository):
+    def __init__(self, instance: DagsterInstance, remote_repository: RemoteRepository):
         self._instance = instance
-        self._repository = external_repository
+        self._repository = remote_repository
         self._data: Dict[RepositoryDataType, Dict[str, List[Any]]] = {}
         self._limits: Dict[RepositoryDataType, int] = {}
 

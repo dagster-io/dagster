@@ -66,21 +66,21 @@ def _create_sensor_tick(graphql_context):
 class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
     def test_schedule_next_tick(self, graphql_context) -> None:
         repository_selector = infer_repository_selector(graphql_context)
-        external_repository = graphql_context.get_code_location(
+        remote_repository = graphql_context.get_code_location(
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
 
         schedule_name = "no_config_job_hourly_schedule"
-        external_schedule = external_repository.get_schedule(schedule_name)
+        schedule = remote_repository.get_schedule(schedule_name)
         selector = infer_instigation_selector(graphql_context, schedule_name)
 
         # need to be running in order to generate a future tick
-        graphql_context.instance.start_schedule(external_schedule)
+        graphql_context.instance.start_schedule(schedule)
         result = execute_dagster_graphql(
             graphql_context,
             INSTIGATION_QUERY,
             variables={
-                "id": external_schedule.get_compound_id().to_string(),
+                "id": schedule.get_compound_id().to_string(),
                 "instigationSelector": selector,
             },
         )
@@ -104,19 +104,19 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
 
     def test_sensor_next_tick(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
-        external_repository = graphql_context.get_code_location(
+        remote_repository = graphql_context.get_code_location(
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
 
         sensor_name = "always_no_config_sensor_with_tags_and_metadata"
-        external_sensor = external_repository.get_sensor(sensor_name)
+        sensor = remote_repository.get_sensor(sensor_name)
         selector = infer_instigation_selector(graphql_context, sensor_name)
 
         result = execute_dagster_graphql(
             graphql_context,
             INSTIGATION_QUERY,
             variables={
-                "id": external_sensor.get_compound_id().to_string(),
+                "id": sensor.get_compound_id().to_string(),
                 "instigationSelector": selector,
             },
         )
@@ -128,14 +128,14 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
 
         # need to be running and create a sensor tick in the last 30 seconds in order to generate a
         # future tick
-        graphql_context.instance.start_sensor(external_sensor)
+        graphql_context.instance.start_sensor(sensor)
         _create_sensor_tick(graphql_context)
 
         result = execute_dagster_graphql(
             graphql_context,
             INSTIGATION_QUERY,
             variables={
-                "id": external_sensor.get_compound_id().to_string(),
+                "id": sensor.get_compound_id().to_string(),
                 "instigationSelector": selector,
             },
         )
@@ -162,18 +162,18 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
 
     def test_instigation_states(self, graphql_context) -> None:
         repository_selector = infer_repository_selector(graphql_context)
-        external_repository = graphql_context.get_code_location(
+        remote_repository = graphql_context.get_code_location(
             repository_selector["repositoryLocationName"]
         ).get_repository(repository_selector["repositoryName"])
 
         schedule_name = "no_config_job_hourly_schedule"
-        external_schedule = external_repository.get_schedule(schedule_name)
-        graphql_context.instance.start_schedule(external_schedule)
+        schedule = remote_repository.get_schedule(schedule_name)
+        graphql_context.instance.start_schedule(schedule)
 
         result = execute_dagster_graphql(
             graphql_context,
             INSTIGATION_STATES_QUERY,
-            variables={"id": external_repository.get_compound_id().to_string()},
+            variables={"id": remote_repository.get_compound_id().to_string()},
         )
 
         assert result.data

@@ -532,7 +532,7 @@ def create_test_daemon_workspace_context(
             yield workspace_process_context
 
 
-def load_external_repo(
+def load_remote_repo(
     workspace_context: WorkspaceProcessContext, repo_name: str
 ) -> RemoteRepository:
     code_location_entry = next(

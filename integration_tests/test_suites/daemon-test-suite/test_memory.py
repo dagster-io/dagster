@@ -77,11 +77,11 @@ def test_no_memory_leaks():
         },
     ) as instance:
         with get_example_repo(instance) as repo:
-            external_schedule = repo.get_schedule("always_run_schedule")
-            external_sensor = repo.get_sensor("always_on_sensor")
+            schedule = repo.get_schedule("always_run_schedule")
+            sensor = repo.get_sensor("always_on_sensor")
 
-            instance.start_schedule(external_schedule)
-            instance.start_sensor(external_sensor)
+            instance.start_schedule(schedule)
+            instance.start_sensor(sensor)
 
             with daemon_controller_from_instance(
                 instance,

@@ -219,7 +219,7 @@ class AutoMaterializeLaunchContext:
     def __init__(
         self,
         tick: InstigatorTick,
-        external_sensor: Optional[RemoteSensor],
+        remote_sensor: Optional[RemoteSensor],
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
@@ -227,7 +227,7 @@ class AutoMaterializeLaunchContext:
         self._tick = tick
         self._logger = logger
         self._instance = instance
-        self._external_sensor = external_sensor
+        self._remote_sensor = remote_sensor
 
         self._purge_settings = defaultdict(set)
         for status, day_offset in tick_retention_settings.items():
@@ -308,13 +308,13 @@ class AutoMaterializeLaunchContext:
                 continue
             self._instance.purge_ticks(
                 (
-                    self._external_sensor.get_remote_origin().get_id()
-                    if self._external_sensor
+                    self._remote_sensor.get_remote_origin().get_id()
+                    if self._remote_sensor
                     else _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
                 ),
                 (
-                    self._external_sensor.selector.get_id()
-                    if self._external_sensor
+                    self._remote_sensor.selector.get_id()
+                    if self._remote_sensor
                     else _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
                 ),
                 before=(get_current_datetime() - datetime.timedelta(days=day_offset)).timestamp(),

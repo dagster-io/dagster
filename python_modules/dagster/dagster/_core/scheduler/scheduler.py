@@ -64,7 +64,7 @@ class Scheduler(abc.ABC):
     """
 
     def start_schedule(
-        self, instance: DagsterInstance, external_schedule: RemoteSchedule
+        self, instance: DagsterInstance, remote_schedule: RemoteSchedule
     ) -> InstigatorState:
         """Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
 
@@ -72,27 +72,27 @@ class Scheduler(abc.ABC):
 
         Args:
             instance (DagsterInstance): The current instance.
-            external_schedule (ExternalSchedule): The schedule to start
+            remote_schedule (ExternalSchedule): The schedule to start
 
         """
         check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_schedule, "external_schedule", RemoteSchedule)
+        check.inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(
-            external_schedule.get_remote_origin_id(), external_schedule.selector_id
+            remote_schedule.get_remote_origin_id(), remote_schedule.selector_id
         )
-        computed_state = external_schedule.get_current_instigator_state(stored_state)
+        computed_state = remote_schedule.get_current_instigator_state(stored_state)
         if computed_state.is_running:
             return computed_state
 
         new_instigator_data = ScheduleInstigatorData(
-            external_schedule.cron_schedule,
+            remote_schedule.cron_schedule,
             get_current_timestamp(),
         )
 
         if not stored_state:
             started_state = InstigatorState(
-                external_schedule.get_remote_origin(),
+                remote_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
                 new_instigator_data,
@@ -110,7 +110,7 @@ class Scheduler(abc.ABC):
         instance: DagsterInstance,
         schedule_origin_id: str,
         schedule_selector_id: str,
-        external_schedule: Optional[RemoteSchedule],
+        remote_schedule: Optional[RemoteSchedule],
     ) -> InstigatorState:
         """Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
 
@@ -120,26 +120,26 @@ class Scheduler(abc.ABC):
             schedule_origin_id (string): The id of the schedule target to stop running.
         """
         check.str_param(schedule_origin_id, "schedule_origin_id")
-        check.opt_inst_param(external_schedule, "external_schedule", RemoteSchedule)
+        check.opt_inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(schedule_origin_id, schedule_selector_id)
 
-        if not external_schedule:
+        if not remote_schedule:
             computed_state = stored_state
         else:
-            computed_state = external_schedule.get_current_instigator_state(stored_state)
+            computed_state = remote_schedule.get_current_instigator_state(stored_state)
 
         if computed_state and not computed_state.is_running:
             return computed_state
 
         if not stored_state:
-            assert external_schedule
+            assert remote_schedule
             stopped_state = InstigatorState(
-                external_schedule.get_remote_origin(),
+                remote_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(
-                    external_schedule.cron_schedule,
+                    remote_schedule.cron_schedule,
                 ),
             )
             instance.add_instigator_state(stopped_state)
@@ -154,7 +154,7 @@ class Scheduler(abc.ABC):
         return stopped_state
 
     def reset_schedule(
-        self, instance: DagsterInstance, external_schedule: RemoteSchedule
+        self, instance: DagsterInstance, remote_schedule: RemoteSchedule
     ) -> InstigatorState:
         """If the given schedule has a default schedule status, then update the status to
         `InstigatorStatus.DECLARED_IN_CODE` in schedule storage.
@@ -163,25 +163,25 @@ class Scheduler(abc.ABC):
 
         Args:
             instance (DagsterInstance): The current instance.
-            external_schedule (ExternalSchedule): The schedule to reset.
+            remote_schedule (ExternalSchedule): The schedule to reset.
         """
         check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_schedule, "external_schedule", RemoteSchedule)
+        check.inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(
-            external_schedule.get_remote_origin_id(), external_schedule.selector_id
+            remote_schedule.get_remote_origin_id(), remote_schedule.selector_id
         )
 
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
             new_instigator_data = ScheduleInstigatorData(
-                external_schedule.cron_schedule,
+                remote_schedule.cron_schedule,
                 start_timestamp=None,
             )
             reset_state = instance.add_instigator_state(
                 state=InstigatorState(
-                    external_schedule.get_remote_origin(),
+                    remote_schedule.get_remote_origin(),
                     InstigatorType.SCHEDULE,
                     new_status,
                     new_instigator_data,

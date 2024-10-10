@@ -137,8 +137,8 @@ def workspace_fixture(instance_module_scoped):
         yield workspace
 
 
-@pytest.fixture(name="external_repo_struct_resources", scope="module")
-def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessContext):
+@pytest.fixture(name="remote_repo_struct_resources", scope="module")
+def remote_repo_fixture(workspace_context_struct_resources: WorkspaceProcessContext):
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
@@ -173,7 +173,7 @@ def test_resources(
     caplog,
     instance: DagsterInstance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     schedule_name,
 ) -> None:
     freeze_datetime = create_datetime(
@@ -186,13 +186,11 @@ def test_resources(
     ).astimezone(get_timezone("US/Central"))
 
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo_struct_resources.get_schedule(schedule_name)
-        instance.start_schedule(external_schedule)
+        schedule = remote_repo_struct_resources.get_schedule(schedule_name)
+        instance.start_schedule(schedule)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(
-            external_schedule.get_remote_origin_id(), external_schedule.selector_id
-        )
+        ticks = instance.get_ticks(schedule.get_remote_origin_id(), schedule.selector_id)
         assert len(ticks) == 0
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
 
@@ -201,7 +199,7 @@ def test_resources(
         wait_for_all_runs_to_start(instance)
 
         ticks: Sequence[InstigatorTick] = instance.get_ticks(
-            external_schedule.get_remote_origin_id(), external_schedule.selector_id
+            schedule.get_remote_origin_id(), schedule.selector_id
         )
 
         assert len(ticks) == 1
@@ -213,7 +211,7 @@ def test_resources(
         expected_datetime = create_datetime(year=2019, month=2, day=28)
         validate_tick(
             ticks[0],
-            external_schedule,
+            schedule,
             expected_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],

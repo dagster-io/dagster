@@ -1,6 +1,6 @@
 import glob
 import os
-from typing import Optional, Sequence, Union
+from typing import Callable, Optional, Sequence, Union
 
 import click
 
@@ -11,7 +11,7 @@ from dagster import (
 )
 from dagster._cli.utils import get_instance_for_cli
 from dagster._cli.workspace.cli_target import (
-    get_external_repository_from_kwargs,
+    get_remote_repository_from_kwargs,
     repository_target_argument,
 )
 from dagster._core.definitions.run_request import InstigatorType
@@ -26,38 +26,43 @@ def schedule_cli():
     """Commands for working with Dagster schedules."""
 
 
-def print_changes(external_repository, instance, print_fn=print, preview=False):
+def print_changes(
+    remote_repository: RemoteRepository,
+    instance: DagsterInstance,
+    print_fn: Callable[[object], None] = print,
+    preview: bool = False,
+):
     debug_info = instance.scheduler_debug_info()
     errors = debug_info.errors
-    external_schedules = external_repository.get_schedules()
+    schedules = remote_repository.get_schedules()
     schedule_states = instance.all_instigator_state(
-        external_repository.get_remote_origin_id(),
-        external_repository.selector_id,
+        remote_repository.get_remote_origin_id(),
+        remote_repository.selector_id,
         InstigatorType.SCHEDULE,
     )
-    external_schedules_dict = {s.get_remote_origin_id(): s for s in external_schedules}
+    schedules_dict = {s.get_remote_origin_id(): s for s in schedules}
     schedule_states_dict = {s.instigator_origin_id: s for s in schedule_states}
 
-    external_schedule_origin_ids = set(external_schedules_dict.keys())
+    schedule_origin_ids = set(schedules_dict.keys())
     schedule_state_ids = set(schedule_states_dict.keys())
 
-    added_schedules = external_schedule_origin_ids - schedule_state_ids
-    removed_schedules = schedule_state_ids - external_schedule_origin_ids
+    added_schedules = schedule_origin_ids - schedule_state_ids
+    removed_schedules = schedule_state_ids - schedule_origin_ids
 
     changed_schedules = []
-    for schedule_origin_id in external_schedule_origin_ids & schedule_state_ids:
+    for schedule_origin_id in schedule_origin_ids & schedule_state_ids:
         schedule_state = schedule_states_dict[schedule_origin_id]
-        external_schedule = external_schedules_dict[schedule_origin_id]
-        if schedule_state.instigator_data.cron_schedule != external_schedule.cron_schedule:
+        schedule = schedules_dict[schedule_origin_id]
+        if schedule_state.instigator_data.cron_schedule != schedule.cron_schedule:  # type: ignore
             changed_schedules.append(schedule_origin_id)
 
     if not errors and not added_schedules and not changed_schedules and not removed_schedules:
         if preview:
             print_fn(click.style("No planned changes to schedules.", fg="magenta", bold=True))
-            print_fn(f"{len(external_schedules)} schedules will remain unchanged")
+            print_fn(f"{len(schedules)} schedules will remain unchanged")
         else:
             print_fn(click.style("No changes to schedules.", fg="magenta", bold=True))
-            print_fn(f"{len(external_schedules)} schedules unchanged")
+            print_fn(f"{len(schedules)} schedules unchanged")
         return
 
     if errors:
@@ -78,26 +83,26 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for schedule_origin_id in added_schedules:
         print_fn(
             click.style(
-                f"  + {external_schedules_dict[schedule_origin_id].name} (add) [{schedule_origin_id}]",
+                f"  + {schedules_dict[schedule_origin_id].name} (add) [{schedule_origin_id}]",
                 fg="green",
             )
         )
 
     for schedule_origin_id in changed_schedules:
         schedule_state = schedule_states_dict[schedule_origin_id]
-        external_schedule = external_schedules_dict[schedule_origin_id]
+        schedule = schedules_dict[schedule_origin_id]
 
         print_fn(
             click.style(
-                f"  ~ {external_schedule.name} (update) [{schedule_origin_id}]",
+                f"  ~ {schedule.name} (update) [{schedule_origin_id}]",
                 fg="yellow",
             )
         )
         print_fn(
             click.style("\t cron_schedule: ", fg="yellow")
-            + click.style(schedule_state.instigator_data.cron_schedule, fg="red")
+            + click.style(schedule_state.instigator_data.cron_schedule, fg="red")  # type: ignore
             + " => "
-            + click.style(external_schedule.cron_schedule, fg="green")
+            + click.style(schedule.cron_schedule, fg="green")
         )
 
     for schedule_origin_id in removed_schedules:
@@ -141,12 +146,12 @@ def schedule_preview_command(**kwargs):
 
 def execute_preview_command(cli_args, print_fn):
     with get_instance_for_cli() as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
+        ) as repo:
+            check_repo_and_scheduler(repo, instance)
 
-            print_changes(external_repo, instance, print_fn, preview=True)
+            print_changes(repo, instance, print_fn, preview=True)
 
 
 @schedule_cli.command(
@@ -163,33 +168,33 @@ def schedule_list_command(running, stopped, name, **kwargs):
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
     with get_instance_for_cli() as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
+        ) as repo:
+            check_repo_and_scheduler(repo, instance)
 
-            repository_name = external_repo.name
+            repository_name = repo.name
 
             if not name_filter:
                 title = f"Repository {repository_name}"
                 print_fn(title)
                 print_fn("*" * len(title))
 
-            repo_schedules = external_repo.get_schedules()
+            repo_schedules = repo.get_schedules()
             stored_schedules_by_origin_id = {
                 stored_schedule_state.instigator_origin_id: stored_schedule_state
                 for stored_schedule_state in instance.all_instigator_state(
-                    external_repo.get_remote_origin_id(),
-                    external_repo.selector_id,
+                    repo.get_remote_origin_id(),
+                    repo.selector_id,
                     instigator_type=InstigatorType.SCHEDULE,
                 )
             }
 
             first = True
 
-            for external_schedule in repo_schedules:
-                schedule_state = external_schedule.get_current_instigator_state(
-                    stored_schedules_by_origin_id.get(external_schedule.get_remote_origin_id())
+            for schedule in repo_schedules:
+                schedule_state = schedule.get_current_instigator_state(
+                    stored_schedules_by_origin_id.get(schedule.get_remote_origin_id())
                 )
 
                 if running_filter and not schedule_state.is_running:
@@ -198,18 +203,18 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                     continue
 
                 if name_filter:
-                    print_fn(external_schedule.name)
+                    print_fn(schedule.name)
                     continue
 
                 status = "RUNNING" if schedule_state.is_running else "STOPPED"
-                schedule_title = f"Schedule: {external_schedule.name} [{status}]"
+                schedule_title = f"Schedule: {schedule.name} [{status}]"
                 if not first:
                     print_fn("*" * len(schedule_title))
 
                 first = False
 
                 print_fn(schedule_title)
-                print_fn(f"Cron Schedule: {external_schedule.cron_schedule}")
+                print_fn(f"Cron Schedule: {schedule.cron_schedule}")
 
 
 def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) -> Optional[str]:
@@ -238,24 +243,24 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
     with get_instance_for_cli() as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
+        ) as repo:
+            check_repo_and_scheduler(repo, instance)
 
-            repository_name = external_repo.name
+            repository_name = repo.name
 
             if all_flag:
-                for external_schedule in external_repo.get_schedules():
+                for remote_schedule in repo.get_schedules():
                     try:
-                        instance.start_schedule(external_schedule)
+                        instance.start_schedule(remote_schedule)
                     except DagsterInvariantViolationError as ex:
                         raise click.UsageError(ex)
 
                 print_fn(f"Started all schedules for repository {repository_name}")
             else:
                 try:
-                    instance.start_schedule(external_repo.get_schedule(schedule_name))
+                    instance.start_schedule(repo.get_schedule(schedule_name))
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -272,17 +277,17 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
     with get_instance_for_cli() as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
+        ) as repo:
+            check_repo_and_scheduler(repo, instance)
 
             try:
-                external_schedule = external_repo.get_schedule(schedule_name)
+                remote_schedule = repo.get_schedule(schedule_name)
                 instance.stop_schedule(
-                    external_schedule.get_remote_origin_id(),
-                    external_schedule.selector_id,
-                    external_schedule,
+                    remote_schedule.get_remote_origin_id(),
+                    remote_schedule.selector_id,
+                    remote_schedule,
                 )
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
@@ -306,10 +311,10 @@ def schedule_logs_command(schedule_name, **kwargs):
 
 def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
     with get_instance_for_cli() as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
+        ) as repo:
+            check_repo_and_scheduler(repo, instance)
 
             if isinstance(instance.scheduler, DagsterDaemonScheduler):
                 return print_fn(
@@ -321,7 +326,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
 
             logs_path = os.path.join(
                 instance.logs_path_for_schedule(
-                    external_repo.get_schedule(schedule_name).get_remote_origin_id()
+                    repo.get_schedule(schedule_name).get_remote_origin_id()
                 )
             )
 
@@ -372,39 +377,37 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
     with get_instance_for_cli() as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repo:
-            check_repo_and_scheduler(external_repo, instance)
+        ) as repo:
+            check_repo_and_scheduler(repo, instance)
 
-            repository_name = external_repo.name
+            repository_name = repo.name
 
             if all_running_flag:
                 for schedule_state in instance.all_instigator_state(
-                    external_repo.get_remote_origin_id(),
-                    external_repo.selector_id,
+                    repo.get_remote_origin_id(),
+                    repo.selector_id,
                     InstigatorType.SCHEDULE,
                 ):
                     if schedule_state.status == InstigatorStatus.RUNNING:
                         try:
-                            external_schedule = external_repo.get_schedule(
-                                schedule_state.instigator_name
-                            )
+                            remote_schedule = repo.get_schedule(schedule_state.instigator_name)
                             instance.stop_schedule(
                                 schedule_state.instigator_origin_id,
-                                external_schedule.selector_id,
-                                external_schedule,
+                                remote_schedule.selector_id,
+                                remote_schedule,
                             )
-                            instance.start_schedule(external_schedule)
+                            instance.start_schedule(remote_schedule)
                         except DagsterInvariantViolationError as ex:
                             raise click.UsageError(ex)
 
                 print_fn(f"Restarted all running schedules for repository {repository_name}")
             else:
-                external_schedule = external_repo.get_schedule(schedule_name)
+                remote_schedule = repo.get_schedule(schedule_name)
                 schedule_state = instance.get_instigator_state(
-                    external_schedule.get_remote_origin_id(),
-                    external_schedule.selector_id,
+                    remote_schedule.get_remote_origin_id(),
+                    remote_schedule.selector_id,
                 )
                 if schedule_state is not None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
@@ -414,10 +417,10 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 try:
                     instance.stop_schedule(
                         schedule_state.instigator_origin_id,
-                        external_schedule.selector_id,
-                        external_schedule,
+                        remote_schedule.selector_id,
+                        remote_schedule,
                     )
-                    instance.start_schedule(external_schedule)
+                    instance.start_schedule(remote_schedule)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
