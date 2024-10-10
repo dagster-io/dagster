@@ -2,8 +2,9 @@ from dagster._core.definitions.declarative_automation.operands.code_version_chan
     CodeVersionChangedCondition as CodeVersionChangedCondition,
 )
 from dagster._core.definitions.declarative_automation.operands.slice_conditions import (
+    CheckResultCondition as CheckResultCondition,
     CronTickPassedCondition as CronTickPassedCondition,
-    FailedAutomationCondition as FailedAutomationCondition,
+    ExecutionFailedAutomationCondition as ExecutionFailedAutomationCondition,
     InitialEvaluationCondition as InitialEvaluationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressAutomationCondition as InProgressAutomationCondition,

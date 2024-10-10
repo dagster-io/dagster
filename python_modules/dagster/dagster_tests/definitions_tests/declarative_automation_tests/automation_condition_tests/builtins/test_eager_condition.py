@@ -1,9 +1,12 @@
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     AutomationCondition,
+    DagsterInstance,
     Definitions,
     StaticPartitionsDefinition,
     asset,
+    asset_check,
     evaluate_automation_conditions,
 )
 from dagster._core.instance_for_test import instance_for_test
@@ -149,3 +152,37 @@ def test_eager_static_partitioned() -> None:
             defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
         )
         assert result.total_requested == 0
+
+
+def test_eager_on_asset_check() -> None:
+    @asset
+    def A() -> None: ...
+
+    @asset_check(asset=A, automation_condition=AutomationCondition.eager())
+    def foo_check() -> ...: ...
+
+    defs = Definitions(assets=[A], asset_checks=[foo_check])
+
+    instance = DagsterInstance.ephemeral()
+
+    # parent hasn't been updated yet
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # now A is updated, so request
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # don't keep requesting
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # A updated again, re-request
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # don't keep requesting
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
