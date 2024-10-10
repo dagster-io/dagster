@@ -66,15 +66,26 @@ class MissingAutomationCondition(SubsetAutomationCondition):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="InProgressAutomationCondition")
 @record
-class InProgressAutomationCondition(SubsetAutomationCondition):
+class RunInProgressAutomationCondition(SubsetAutomationCondition):
     @property
     def name(self) -> str:
-        return "in_progress"
+        return "execution_in_progress"
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.asset_graph_view.compute_in_progress_subset(key=context.key)
+        return context.asset_graph_view.compute_run_in_progress_subset(key=context.key)
+
+
+@whitelist_for_serdes
+@record
+class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
+    @property
+    def name(self) -> str:
+        return "backfill_in_progress"
+
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return context.asset_graph_view.compute_backfill_in_progress_subset(key=context.key)
 
 
 @whitelist_for_serdes(storage_name="FailedAutomationCondition")

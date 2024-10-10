@@ -49,6 +49,7 @@ from dagster._time import get_current_datetime
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.execution.asset_backfill import AssetBackfillData
     from dagster._core.storage.event_log import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -537,13 +538,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ####################
 
     @cached_method
-    def get_active_backfill_target_asset_graph_subset(self) -> AssetGraphSubset:
-        """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
-        an active asset backfill.
-        """
+    def get_active_backfill_datas(self) -> Sequence["AssetBackfillData"]:
         from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 
-        asset_backfills = [
+        active_backfills = [
             backfill
             for backfill in self.instance.get_backfills(
                 filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
@@ -551,19 +549,41 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if backfill.is_asset_backfill
         ]
 
-        result = AssetGraphSubset()
-        for asset_backfill in asset_backfills:
+        backfill_datas = []
+        for backfill in active_backfills:
             try:
-                asset_backfill_data = asset_backfill.get_asset_backfill_data(self.asset_graph)
+                backfill_datas.append(backfill.get_asset_backfill_data(self.asset_graph))
             except DagsterDefinitionChangedDeserializationError:
                 self._logger.warning(
-                    f"Not considering assets in backfill {asset_backfill.backfill_id} since its"
+                    f"Not considering assets in backfill {backfill.backfill_id} since its"
                     " data could not be deserialized"
                 )
                 # Backfill can't be loaded, so no risk of the assets interfering
                 continue
+        return backfill_datas
 
-            result |= asset_backfill_data.target_subset
+    @cached_method
+    def get_active_backfill_target_asset_graph_subset(self) -> AssetGraphSubset:
+        """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
+        an active asset backfill.
+        """
+        result = AssetGraphSubset()
+        for data in self.get_active_backfill_datas():
+            result |= data.target_subset
+
+        return result
+
+    @cached_method
+    def get_active_backfill_in_progress_asset_graph_subset(self) -> AssetGraphSubset:
+        """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
+        an active asset backfill and have not yet been materialized or failed.
+        """
+        result = AssetGraphSubset()
+        for data in self.get_active_backfill_datas():
+            in_progress_subset = (
+                data.target_subset - data.materialized_subset - data.failed_and_downstream_subset
+            )
+            result |= in_progress_subset
 
         return result
 

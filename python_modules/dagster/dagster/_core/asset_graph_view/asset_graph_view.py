@@ -373,7 +373,9 @@ class AssetGraphView(LoadingContext):
         else:
             return self.get_empty_subset(key=key)
 
-    def _compute_in_progress_check_subset(self, key: AssetCheckKey) -> EntitySubset[AssetCheckKey]:
+    def _compute_run_in_progress_check_subset(
+        self, key: AssetCheckKey
+    ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.storage.asset_check_execution_record import (
             AssetCheckExecutionResolvedStatus,
         )
@@ -394,8 +396,16 @@ class AssetGraphView(LoadingContext):
     def _compute_missing_check_subset(self, key: AssetCheckKey) -> EntitySubset[AssetCheckKey]:
         return self.compute_subset_with_status(key, None)
 
-    def _compute_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+    def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def _compute_backfill_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+        value = (
+            self._queryer.get_active_backfill_in_progress_asset_graph_subset()
+            .get_asset_subset(asset_key=key, asset_graph=self.asset_graph)
+            .value
+        )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
@@ -431,11 +441,20 @@ class AssetGraphView(LoadingContext):
             )
 
     @cached_method
-    def compute_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+    def compute_run_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
         return _dispatch(
             key=key,
-            check_method=self._compute_in_progress_check_subset,
-            asset_method=self._compute_in_progress_asset_subset,
+            check_method=self._compute_run_in_progress_check_subset,
+            asset_method=self._compute_run_in_progress_asset_subset,
+        )
+
+    @cached_method
+    def compute_backfill_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+        return _dispatch(
+            key=key,
+            # asset checks cannot currently be backfilled
+            check_method=lambda k: self.get_empty_subset(key=k),
+            asset_method=self._compute_backfill_in_progress_asset_subset,
         )
 
     @cached_method
