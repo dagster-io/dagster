@@ -452,9 +452,7 @@ def _execute_step_command_body(
         )
 
         location_name = (
-            dagster_run.external_job_origin.location_name
-            if dagster_run.external_job_origin
-            else None
+            dagster_run.remote_job_origin.location_name if dagster_run.remote_job_origin else None
         )
 
         instance.inject_env_vars(location_name)

@@ -102,8 +102,8 @@ def core_execute_run(
     if inject_env_vars:
         try:
             location_name = (
-                dagster_run.external_job_origin.location_name
-                if dagster_run.external_job_origin
+                dagster_run.remote_job_origin.location_name
+                if dagster_run.remote_job_origin
                 else None
             )
 

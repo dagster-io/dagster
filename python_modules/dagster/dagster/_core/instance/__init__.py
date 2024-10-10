@@ -1278,7 +1278,7 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_run_id=parent_run_id,
             job_snapshot_id=job_snapshot_id,
             execution_plan_snapshot_id=execution_plan_snapshot_id,
-            external_job_origin=remote_job_origin,
+            remote_job_origin=remote_job_origin,
             job_code_origin=job_code_origin,
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
@@ -2620,7 +2620,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
 
         check.not_none(
-            run.external_job_origin,
+            run.remote_job_origin,
             "External pipeline origin must be set for submitted runs",
         )
         check.not_none(

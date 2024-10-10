@@ -268,7 +268,7 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     storage_field_names={
         "job_name": "pipeline_name",
         "job_snapshot_id": "pipeline_snapshot_id",
-        "external_job_origin": "external_pipeline_origin",
+        "remote_job_origin": "external_pipeline_origin",
         "job_code_origin": "pipeline_code_origin",
         "op_selection": "solid_selection",
         "resolved_op_selection": "solids_to_execute",
@@ -292,7 +292,7 @@ class DagsterRun(
             ("parent_run_id", Optional[str]),
             ("job_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
-            ("external_job_origin", Optional["RemoteJobOrigin"]),
+            ("remote_job_origin", Optional["RemoteJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
             ("run_op_concurrency", Optional[RunOpConcurrency]),
@@ -326,7 +326,7 @@ class DagsterRun(
         parent_run_id: Optional[str] = None,
         job_snapshot_id: Optional[str] = None,
         execution_plan_snapshot_id: Optional[str] = None,
-        external_job_origin: Optional["RemoteJobOrigin"] = None,
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
@@ -359,10 +359,10 @@ class DagsterRun(
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
-                external_job_origin,
-                "external_job_origin",
+                remote_job_origin,
+                "remote_job_origin",
                 RemoteJobOrigin,
-                "external_job_origin is required for queued runs",
+                "remote_job_origin is required for queued runs",
             )
 
         if run_id is None:
@@ -388,8 +388,8 @@ class DagsterRun(
             execution_plan_snapshot_id=check.opt_str_param(
                 execution_plan_snapshot_id, "execution_plan_snapshot_id"
             ),
-            external_job_origin=check.opt_inst_param(
-                external_job_origin, "external_job_origin", RemoteJobOrigin
+            remote_job_origin=check.opt_inst_param(
+                remote_job_origin, "remote_job_origin", RemoteJobOrigin
             ),
             job_code_origin=check.opt_inst_param(
                 job_code_origin, "job_code_origin", JobPythonOrigin
@@ -408,7 +408,7 @@ class DagsterRun(
             # https://github.com/dagster-io/dagster/issues/3181
 
             check.not_none(
-                self.external_job_origin,
+                self.remote_job_origin,
                 "external_pipeline_origin is required for queued runs",
             )
 
@@ -418,7 +418,7 @@ class DagsterRun(
         from dagster._core.remote_representation.origin import RemoteJobOrigin
 
         check.inst_param(origin, "origin", RemoteJobOrigin)
-        return self._replace(external_job_origin=origin)
+        return self._replace(remote_job_origin=origin)
 
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
@@ -431,11 +431,11 @@ class DagsterRun(
 
     def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}
-        if self.external_job_origin:
+        if self.remote_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from the Dagster UI.
             repository_tags[REPOSITORY_LABEL_TAG] = (
-                self.external_job_origin.repository_origin.get_label()
+                self.remote_job_origin.repository_origin.get_label()
             )
 
         if not self.tags:

@@ -112,14 +112,14 @@ def retry_run(
     instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}
     workspace = workspace_context.create_request_context()
-    if not failed_run.external_job_origin:
+    if not failed_run.remote_job_origin:
         instance.report_engine_event(
             "Run does not have an external job origin, unable to retry the run.",
             failed_run,
         )
         return
 
-    origin = failed_run.external_job_origin.repository_origin
+    origin = failed_run.remote_job_origin.repository_origin
     code_location = workspace.get_code_location(origin.code_location_origin.location_name)
     repo_name = origin.repository_name
 
