@@ -342,6 +342,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange as P
 from dagster._core.definitions.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     DimensionPartitionMapping as DimensionPartitionMapping,
+    DynamicPartitionMapping as DynamicPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
     MultiPartitionMapping as MultiPartitionMapping,
