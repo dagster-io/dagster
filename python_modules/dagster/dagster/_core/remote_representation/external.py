@@ -83,7 +83,7 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import EntityKey
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 
@@ -392,11 +392,11 @@ class RemoteRepository:
         return self.handle.display_metadata
 
     @cached_property
-    def asset_graph(self) -> "RemoteAssetGraph":
+    def asset_graph(self) -> "RemoteRepositoryAssetGraph":
         """Returns a repository scoped RemoteAssetGraph."""
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+        from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
 
-        return RemoteAssetGraph.from_remote_repository(self)
+        return RemoteRepositoryAssetGraph.build(self)
 
     def get_partition_names_for_asset_job(
         self,
@@ -440,6 +440,12 @@ class RemoteRepository:
                 "There is no PartitionsDefinition shared by all the provided assets."
                 f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
             )
+
+    def get_sensors_targeting(self, asset_key: AssetKey):
+        return []
+
+    def get_schedules_targeting(self, asset_key: AssetKey):
+        return []
 
 
 class RemoteJob(RepresentedJob):
