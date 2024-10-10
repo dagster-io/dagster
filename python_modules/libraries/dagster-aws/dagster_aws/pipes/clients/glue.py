@@ -46,9 +46,9 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the Glue job, for example, :py:class:`PipesS3ContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
-            from the glue job run. Defaults to :py:class:`PipesCloudWatchsMessageReader`.
+            from the glue job run. Defaults to :py:class:`PipesCloudWatchMessageReader`.
             When provided with :py:class:`PipesCloudWatchMessageReader`,
-            it will be used to recieve logs and events from the ``.../output/<job-run-id>``
+            it will be used to receive logs and events from the ``.../output/<job-run-id>``
             CloudWatch log stream created by AWS Glue. Note that AWS Glue routes both
             ``stderr`` and ``stdout`` from the main job process into this LogStream.
         client (Optional[boto3.client]): The boto Glue client used to launch the Glue job

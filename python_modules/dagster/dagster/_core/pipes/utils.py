@@ -138,9 +138,6 @@ class PipesFileMessageReader(PipesMessageReader):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
-    def on_launched(self, params: PipesLaunchedData) -> None:
-        self.launched_payload = params
-
     @contextmanager
     def read_messages(
         self,
