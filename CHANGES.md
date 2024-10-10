@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.8.11 (core) / 0.24.11 (libraries)
+
+### New
+
+- [experimental] AutomationCondition.eager() will now only launch runs for missing partitions which become missing _after_ the condition has been added to the asset. This avoids situations in which the eager policy kicks off a large amount of work when added to an asset with many missing historical static/dynamic partitions.
+- [experimental] Added a new AutomationCondition.asset_matches() condition, which can apply a condition against an arbitrary asset in the graph.
+- [experimental] Added the ability to specify multiple kinds for an asset with the kinds parameter.
+- [dagster-github] Added `create_pull_request` method on `GithubClient` that enables creating a pull request.
+- [dagster-github] Added `create_ref` method on `GithubClient` that enables creating a new branch.
+- [dagster-embedded-elt] dlt assets now generate column metadata for child tables.
+- [dagster-embedded-elt] dlt assets can now fetch row count metadata with `dlt.run(...).fetch_row_count()` for both partitioned and non-partitioned assets. Thanks [@kristianandre](https://github.com/kristianandre)!
+- [dagster-airbyte] relation identifier metadata is now attached to Airbyte assets.
+- [dagster-embedded-elt] relation identifier metadata is now attached to sling assets.
+- [dagster-embedded-elt] relation identifier metadata is now attached to dlt assets.
+
+### Bugfixes
+
+- `PartitionedConfig` objects can now return a `RunConfig` without causing a crash.
+- Corrected the `AssetIn.__new__` typing for the dagster_type argument.
+- [dagster-embedded-elt] dlt assets now generate correct column metadata after the first materialization.
+- [dagster-embedded-elt] Sling's `fetch_row_count()` method now works for databases returning uppercase column names. Thanks [@kristianandre](https://github.com/kristianandre)!
+- [dagster-gcp] Ensure blob download is flushed to temporary file for `GCSFileManager.read` operations. Thanks [@ollie-bell](https://github.com/ollie-bell)!
+
+### Dagster Plus
+
+- Fixed a bug in the catalog UI where owners filters were not applied correctly.
+
 ## 1.8.10 (core) / 0.24.10 (libraries)
 
 ### New
