@@ -55,7 +55,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
         repository_handle=RepositoryHandle.for_test(location_name="fake", repository_name="repo"),
         instance=DagsterInstance.ephemeral(),
     )
-    return RemoteAssetGraph.from_remote_repository(remote_repo)
+    return remote_repo.asset_graph
 
 
 @pytest.fixture(
@@ -888,9 +888,7 @@ def test_cross_code_location_partition_mapping() -> None:
     def repo_b():
         return [b]
 
-    asset_graph = RemoteAssetGraph.from_workspace_snapshot(
-        mock_workspace_from_repos([repo_a, repo_b])
-    )
+    asset_graph = mock_workspace_from_repos([repo_a, repo_b]).asset_graph
 
     assert isinstance(
         asset_graph.get_partition_mapping(key=b.key, parent_asset_key=a.key),

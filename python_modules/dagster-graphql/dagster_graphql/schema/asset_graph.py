@@ -326,8 +326,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         self._remote_node = check.inst_param(remote_node, "remote_node", RemoteAssetNode)
 
-        self._asset_node_snap = remote_node.priority_node_snap
-        self._repository_handle = remote_node.priority_repository_handle
+        repo_scoped_node = remote_node.resolve_to_singular_repo_scoped_node()
+        self._asset_node_snap = repo_scoped_node.asset_node_snap
+        self._repository_handle = repo_scoped_node.repository_handle
         self._repository_selector = self._repository_handle.to_selector()
 
         self._stale_status_loader = check.opt_inst_param(
