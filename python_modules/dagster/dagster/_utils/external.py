@@ -31,4 +31,4 @@ def external_job_from_location(
         op_selection=op_selection,
     )
 
-    return code_location.get_external_job(pipeline_selector)
+    return code_location.get_job(pipeline_selector)

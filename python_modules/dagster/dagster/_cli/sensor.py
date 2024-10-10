@@ -283,7 +283,7 @@ def execute_preview_command(
                 check_repo_and_scheduler(repo, instance)
                 sensor = repo.get_sensor(sensor_name)
                 try:
-                    sensor_runtime_data = code_location.get_external_sensor_execution_data(
+                    sensor_runtime_data = code_location.get_sensor_execution_data(
                         instance,
                         repo.handle,
                         sensor.name,

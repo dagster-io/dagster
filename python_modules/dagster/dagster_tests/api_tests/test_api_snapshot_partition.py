@@ -60,7 +60,7 @@ def test_external_partition_names_grpc(instance: DagsterInstance):
 
 def test_external_partition_names(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_external_partition_names(
+        data = code_location.get_partition_names(
             repository_handle=code_location.get_repository("bar_repo").handle,
             job_name="baz",
             instance=instance,
@@ -77,7 +77,7 @@ def test_external_partition_names_asset_selection(instance: DagsterInstance):
         location_name="something",
         instance=instance,
     ) as code_location:
-        data = code_location.get_external_partition_names(
+        data = code_location.get_partition_names(
             repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
             job_name=IMPLICIT_ASSET_JOB_NAME,
             instance=instance,
@@ -118,7 +118,7 @@ def test_external_partitions_config_grpc(instance: DagsterInstance):
 
 def test_external_partition_config(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_external_partition_config(
+        data = code_location.get_partition_config(
             job_name="baz",
             repository_handle=code_location.get_repository("bar_repo").handle,
             partition_name="c",
@@ -137,7 +137,7 @@ def test_external_partition_config_different_partitions_defs(instance: DagsterIn
         location_name="something",
         instance=instance,
     ) as code_location:
-        data = code_location.get_external_partition_config(
+        data = code_location.get_partition_config(
             job_name=IMPLICIT_ASSET_JOB_NAME,
             repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
             partition_name="b",
@@ -195,7 +195,7 @@ def test_external_partitions_tags_grpc(instance: DagsterInstance):
 
 def test_external_partition_tags(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_external_partition_tags(
+        data = code_location.get_partition_tags(
             repository_handle=code_location.get_repository("bar_repo").handle,
             job_name="baz",
             partition_name="c",
@@ -215,7 +215,7 @@ def test_external_partition_tags_different_partitions_defs(instance: DagsterInst
         location_name="something",
         instance=instance,
     ) as code_location:
-        data = code_location.get_external_partition_tags(
+        data = code_location.get_partition_tags(
             repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
             job_name=IMPLICIT_ASSET_JOB_NAME,
             selected_asset_keys={AssetKey("asset2"), AssetKey("asset3")},

@@ -255,7 +255,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
     ) -> RemoteExecutionPlan:
-        return self.get_code_location(remote_job.handle.location_name).get_external_execution_plan(
+        return self.get_code_location(remote_job.handle.location_name).get_execution_plan(
             remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
@@ -270,9 +270,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         partition_name: str,
         instance: DagsterInstance,
     ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(
-            repository_handle.location_name
-        ).get_external_partition_config(
+        return self.get_code_location(repository_handle.location_name).get_partition_config(
             repository_handle=repository_handle,
             job_name=job_name,
             partition_name=partition_name,
@@ -287,7 +285,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(repository_handle.location_name).get_external_partition_tags(
+        return self.get_code_location(repository_handle.location_name).get_partition_tags(
             repository_handle=repository_handle,
             job_name=job_name,
             partition_name=partition_name,
@@ -302,7 +300,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["PartitionNamesSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(repository_handle.location_name).get_external_partition_names(
+        return self.get_code_location(repository_handle.location_name).get_partition_names(
             repository_handle=repository_handle,
             job_name=job_name,
             instance=instance,
@@ -318,7 +316,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
     ) -> Union["PartitionSetExecutionParamSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(
             repository_handle.location_name
-        ).get_external_partition_set_execution_param_data(
+        ).get_partition_set_execution_params(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
             partition_names=partition_names,
@@ -329,7 +327,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         check.str_param(code_location_name, "code_location_name")
         check.str_param(notebook_path, "notebook_path")
         code_location = self.get_code_location(code_location_name)
-        return code_location.get_external_notebook_data(notebook_path=notebook_path)
+        return code_location.get_notebook_data(notebook_path=notebook_path)
 
     def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
         return None

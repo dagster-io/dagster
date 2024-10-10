@@ -317,7 +317,7 @@ def submit_backfill_runs(
             op_selection=None,
             asset_selection=backfill_job.asset_selection,
         )
-        remote_job = code_location.get_external_job(pipeline_selector)
+        remote_job = code_location.get_job(pipeline_selector)
     else:
         remote_job = remote_repo.get_full_job(partition_set.job_name)
 
@@ -327,7 +327,7 @@ def submit_backfill_runs(
         else partition_names_or_ranges,
         of_type=str,
     )
-    partition_set_execution_data = code_location.get_external_partition_set_execution_param_data(
+    partition_set_execution_data = code_location.get_partition_set_execution_params(
         remote_repo.handle,
         partition_set_name,
         partition_data_target,
@@ -463,7 +463,7 @@ def create_backfill_run(
             resolved_op_selection = frozenset(remote_partition_set.op_selection)
             op_selection = remote_partition_set.op_selection
 
-    remote_execution_plan = code_location.get_external_execution_plan(
+    remote_execution_plan = code_location.get_execution_plan(
         remote_job,
         run_config,
         step_keys_to_execute=step_keys_to_execute,
