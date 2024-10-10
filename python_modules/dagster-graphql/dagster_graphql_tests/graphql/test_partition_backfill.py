@@ -2382,6 +2382,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         if result.data["deletePartitionBackfill"]["__typename"] == "PythonError":
             assert False, result.data["deletePartitionBackfill"]["message"]
         assert result.data["deletePartitionBackfill"]["__typename"] == "DeleteBackfillSuccess"
-        assert backfill_id == result.data["reexecutePartitionBackfill"]["backfillId"]
+        assert backfill_id == result.data["deletePartitionBackfill"]["backfillId"]
 
         assert graphql_context.instance.get_backfill(backfill_id) is None
