@@ -42,17 +42,17 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.remote_representation import external_job_data_from_def
 from dagster._core.remote_representation.external_data import (
-    ExternalJobSubsetResult,
     PartitionConfigSnap,
     PartitionExecutionErrorSnap,
     PartitionExecutionParamSnap,
     PartitionNamesSnap,
     PartitionSetExecutionParamSnap,
     PartitionTagsSnap,
+    RemoteJobSubsetResult,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
+    external_job_data_from_def,
     job_name_for_partition_set_snap_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
@@ -290,9 +290,9 @@ def get_external_pipeline_subset_result(
         job_data_snap = external_job_data_from_def(
             definition, include_parent_snapshot=include_parent_snapshot
         )
-        return ExternalJobSubsetResult(success=True, external_job_data=job_data_snap)
+        return RemoteJobSubsetResult(success=True, job_data_snap=job_data_snap)
     except Exception:
-        return ExternalJobSubsetResult(
+        return RemoteJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
