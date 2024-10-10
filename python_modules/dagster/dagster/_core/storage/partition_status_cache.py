@@ -7,6 +7,8 @@ from dagster import (
     DagsterRunStatus,
     _check as check,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -148,8 +150,7 @@ class AssetStatusCacheValue(
     def _blocking_batch_load(
         cls, keys: Iterable[Tuple[AssetKey, PartitionsDefinition]], instance: "DagsterInstance"
     ) -> Iterable[Optional["AssetStatusCacheValue"]]:
-        partition_defs_by_key = {key: partition_def for key, partition_def in keys}
-        return instance.event_log_storage.get_asset_status_cache_values(partition_defs_by_key)
+        return instance.event_log_storage.get_asset_status_cache_values(dict(keys))
 
     def deserialize_materialized_partition_subsets(
         self, partitions_def: PartitionsDefinition
@@ -174,6 +175,39 @@ class AssetStatusCacheValue(
             return partitions_def.empty_subset()
 
         return partitions_def.deserialize_subset(self.serialized_in_progress_partition_subset)
+
+    def get_materialized_subset(
+        self,
+        asset_graph_view: AssetGraphView,
+        asset_key: AssetKey,
+        partitions_def: PartitionsDefinition,
+    ) -> EntitySubset[AssetKey]:
+        value = self.deserialize_materialized_partition_subsets(partitions_def)
+        return EntitySubset(
+            asset_graph_view, key=asset_key, value=_ValidatedEntitySubsetValue(value)
+        )
+
+    def get_failed_subset(
+        self,
+        asset_graph_view: AssetGraphView,
+        asset_key: AssetKey,
+        partitions_def: PartitionsDefinition,
+    ) -> EntitySubset[AssetKey]:
+        value = self.deserialize_failed_partition_subsets(partitions_def)
+        return EntitySubset(
+            asset_graph_view, key=asset_key, value=_ValidatedEntitySubsetValue(value)
+        )
+
+    def get_in_progress_subset(
+        self,
+        asset_graph_view: AssetGraphView,
+        asset_key: AssetKey,
+        partitions_def: PartitionsDefinition,
+    ) -> EntitySubset[AssetKey]:
+        value = self.deserialize_in_progress_partition_subsets(partitions_def)
+        return EntitySubset(
+            asset_graph_view, key=asset_key, value=_ValidatedEntitySubsetValue(value)
+        )
 
 
 def get_materialized_multipartitions(
