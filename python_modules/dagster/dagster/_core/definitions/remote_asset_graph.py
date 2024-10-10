@@ -42,7 +42,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
-from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.workspace.workspace import WorkspaceSnapshot
 from dagster._record import ImportFrom, record
 from dagster._utils.cached_method import cached_method
@@ -199,6 +199,8 @@ class RepositoryScopedAssetInfo:
     """
 
     asset_node: RemoteRepositoryAssetNode
+    targeting_sensor_names: Sequence[str]
+    targeting_schedule_names: Sequence[str]
 
     @property
     def handle(self) -> RepositoryHandle:
@@ -331,6 +333,35 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
                 (info.asset_node for info in self.repo_scoped_asset_infos),
             )
         )
+
+    def get_targeting_schedule_handles(
+        self,
+    ) -> Sequence[InstigatorHandle]:
+        selectors = []
+        for node in self.repo_scoped_asset_infos:
+            for schedule_name in node.targeting_schedule_names:
+                selectors.append(
+                    InstigatorHandle(
+                        repository_handle=node.handle,
+                        instigator_name=schedule_name,
+                    )
+                )
+
+        return selectors
+
+    def get_targeting_sensor_handles(
+        self,
+    ) -> Sequence[InstigatorHandle]:
+        selectors = []
+        for node in self.repo_scoped_asset_infos:
+            for sensor_name in node.targeting_sensor_names:
+                selectors.append(
+                    InstigatorHandle(
+                        repository_handle=node.handle,
+                        instigator_name=sensor_name,
+                    )
+                )
+        return selectors
 
     ##### HELPERS
 
@@ -573,6 +604,12 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
                 asset_infos_by_key[key].append(
                     RepositoryScopedAssetInfo(
                         asset_node=asset_node,
+                        targeting_sensor_names=[
+                            s.name for s in repo.get_sensors_targeting(asset_node.key)
+                        ],
+                        targeting_schedule_names=[
+                            s.name for s in repo.get_schedules_targeting(asset_node.key)
+                        ],
                     )
                 )
             # NOTE: matches previous behavior of completely ignoring asset check collisions
