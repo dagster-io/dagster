@@ -4,8 +4,8 @@ from unittest import mock
 
 from dagster import daily_partitioned_config, job, op, repository
 from dagster._core.definitions.decorators.schedule_decorator import schedule
-from dagster._core.remote_representation import external_job_data_from_def
 from dagster._core.remote_representation.external_data import (
+    JobDataSnap,
     RepositorySnap,
     TimeWindowPartitionsSnap,
 )
@@ -45,16 +45,16 @@ def a_repo():
     return [foo_job]
 
 
-def test_external_repository_data(snapshot):
+def test_repository_snap(snapshot):
     @repository
     def repo():
         return [foo_job, foo_schedule]
 
-    external_repo_data = RepositorySnap.from_def(repo)
-    assert external_repo_data.get_job_data("foo_job")
-    assert external_repo_data.get_schedule("foo_schedule")
+    repo_snap = RepositorySnap.from_def(repo)
+    assert repo_snap.get_job_data("foo_job")
+    assert repo_snap.get_schedule("foo_schedule")
 
-    job_partition_set_data = external_repo_data.get_partition_set("foo_job_partition_set")
+    job_partition_set_data = repo_snap.get_partition_set("foo_job_partition_set")
     assert job_partition_set_data
     assert isinstance(job_partition_set_data.partitions, TimeWindowPartitionsSnap)
 
@@ -64,17 +64,17 @@ def test_external_repository_data(snapshot):
         now
     ) == my_partitioned_config.partitions_def.get_partition_keys(now)
 
-    snapshot.assert_match(serialize_pp(external_repo_data))
+    snapshot.assert_match(serialize_pp(repo_snap))
 
 
-def test_external_job_data(snapshot):
+def test_remote_job_data(snapshot):
     snapshot.assert_match(
-        serialize_pp(external_job_data_from_def(foo_job, include_parent_snapshot=True))
+        serialize_pp(JobDataSnap.from_job_def(foo_job, include_parent_snapshot=True))
     )
 
 
 @mock.patch("dagster._core.remote_representation.job_index.create_job_snapshot_id")
-def test_external_repo_shared_index(snapshot_mock):
+def test_remote_repo_shared_index(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly
 
     snapshot_mock.side_effect = create_job_snapshot_id
@@ -96,7 +96,7 @@ def test_external_repo_shared_index(snapshot_mock):
 
 
 @mock.patch("dagster._core.remote_representation.job_index.create_job_snapshot_id")
-def test_external_repo_shared_index_threaded(snapshot_mock):
+def test_remote_repo_shared_index_threaded(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
 
     snapshot_mock.side_effect = create_job_snapshot_id

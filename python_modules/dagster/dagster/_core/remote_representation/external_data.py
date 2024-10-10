@@ -183,14 +183,14 @@ class RepositorySnap(IHaveNew):
         if defer_snapshots:
             job_datas = None
             job_refs = sorted(
-                list(map(external_job_ref_from_def, jobs)),
+                [JobRefSnap.from_job_def(job) for job in jobs],
                 key=lambda pd: pd.name,
             )
         else:
             job_datas = sorted(
                 list(
                     map(
-                        lambda job: external_job_data_from_def(job, include_parent_snapshot=True),
+                        lambda job: JobDataSnap.from_job_def(job, include_parent_snapshot=True),
                         jobs,
                     )
                 ),
@@ -298,7 +298,7 @@ class RepositorySnap(IHaveNew):
 
     def get_job_refs(self) -> Sequence["JobRefSnap"]:
         if self.job_refs is None:
-            check.failed("Snapshots were not deferred, external_job_refs not loaded")
+            check.failed("Snapshots were not deferred, job_refs not loaded")
         return self.job_refs
 
     def get_job_snap(self, name):
@@ -306,9 +306,9 @@ class RepositorySnap(IHaveNew):
         if self.job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_job_data in self.job_datas:
-            if external_job_data.name == name:
-                return external_job_data.job
+        for job_data in self.job_datas:
+            if job_data.name == name:
+                return job_data.job
 
         check.failed("Could not find pipeline snapshot named " + name)
 
@@ -317,9 +317,9 @@ class RepositorySnap(IHaveNew):
         if self.job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_job_data in self.job_datas:
-            if external_job_data.name == name:
-                return external_job_data
+        for job_data in self.job_datas:
+            if job_data.name == name:
+                return job_data
 
         check.failed("Could not find external pipeline data named " + name)
 
@@ -406,6 +406,15 @@ class JobDataSnap:
     active_presets: Sequence["PresetSnap"]
     parent_job: Optional[JobSnap]
 
+    @classmethod
+    def from_job_def(cls, job_def: JobDefinition, include_parent_snapshot: bool) -> Self:
+        return cls(
+            name=job_def.name,
+            job=job_def.get_job_snapshot(),
+            parent_job=job_def.get_parent_job_snapshot() if include_parent_snapshot else None,
+            active_presets=active_presets_from_job_def(job_def),
+        )
+
 
 @whitelist_for_serdes(
     storage_name="ExternalPipelineSubsetResult",
@@ -448,6 +457,17 @@ class JobRefSnap:
     snapshot_id: str
     active_presets: Sequence["PresetSnap"]
     parent_snapshot_id: Optional[str]
+
+    @classmethod
+    def from_job_def(cls, job_def: JobDefinition) -> Self:
+        check.inst_param(job_def, "job_def", JobDefinition)
+
+        return cls(
+            name=job_def.name,
+            snapshot_id=job_def.get_job_snapshot_id(),
+            parent_snapshot_id=None,
+            active_presets=active_presets_from_job_def(job_def),
+        )
 
 
 @whitelist_for_serdes(
@@ -1711,29 +1731,6 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
         )
 
     return asset_node_snaps
-
-
-def external_job_data_from_def(
-    job_def: JobDefinition, include_parent_snapshot: bool
-) -> JobDataSnap:
-    check.inst_param(job_def, "job_def", JobDefinition)
-    return JobDataSnap(
-        name=job_def.name,
-        job=job_def.get_job_snapshot(),
-        parent_job=job_def.get_parent_job_snapshot() if include_parent_snapshot else None,
-        active_presets=active_presets_from_job_def(job_def),
-    )
-
-
-def external_job_ref_from_def(job_def: JobDefinition) -> JobRefSnap:
-    check.inst_param(job_def, "job_def", JobDefinition)
-
-    return JobRefSnap(
-        name=job_def.name,
-        snapshot_id=job_def.get_job_snapshot_id(),
-        parent_snapshot_id=None,
-        active_presets=active_presets_from_job_def(job_def),
-    )
 
 
 def resource_value_snap_from_raw(v: Any) -> ResourceValueSnap:

@@ -433,7 +433,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def get_implicit_job_name_for_assets(
         self,
         asset_keys: Iterable[AssetKey],
-        external_repo: Optional[RemoteRepository],
+        remote_repo: Optional[RemoteRepository],
     ) -> Optional[str]:
         """Returns the name of the asset base job that contains all the given assets, or None if there is no such
         job.

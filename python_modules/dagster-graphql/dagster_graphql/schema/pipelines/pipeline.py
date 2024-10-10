@@ -973,7 +973,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         reverse: Optional[bool] = None,
         selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
     ) -> GraphenePartitionKeys:
-        result = graphene_info.context.get_external_partition_names(
+        result = graphene_info.context.get_partition_names(
             repository_handle=self._remote_job.repository_handle,
             job_name=self._remote_job.name,
             selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),

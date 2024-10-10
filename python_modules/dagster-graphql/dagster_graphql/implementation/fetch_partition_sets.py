@@ -122,7 +122,7 @@ def get_partition_config(
     check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
-    result = graphene_info.context.get_external_partition_config(
+    result = graphene_info.context.get_partition_config(
         repository_handle, job_name, partition_name, graphene_info.context.instance
     )
 
@@ -146,7 +146,7 @@ def get_partition_tags(
     check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
-    result = graphene_info.context.get_external_partition_tags(
+    result = graphene_info.context.get_partition_tags(
         repository_handle,
         job_name,
         partition_name,
