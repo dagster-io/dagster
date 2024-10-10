@@ -21,7 +21,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     StructuredCursor,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
@@ -68,11 +67,6 @@ class AutomationContext(Generic[T_EntityKey]):
             evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition
         )
         condition_unqiue_id = condition.get_node_unique_id(parent_unique_id=None, index=None)
-
-        if condition.has_rule_condition and evaluator.emit_backfills:
-            raise DagsterInvalidDefinitionError(
-                "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
-            )
 
         return AutomationContext(
             condition=condition,
