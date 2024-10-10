@@ -71,12 +71,12 @@ class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
 
         code_location = graphql_context.get_code_location("test")
         repository = code_location.get_repository("test_repo")
-        external_job_origin = repository.get_full_job("eventually_successful").get_remote_origin()
+        remote_job_origin = repository.get_full_job("eventually_successful").get_remote_origin()
 
         run_id = create_run_for_test(
             graphql_context.instance,
             "eventually_successful",
-            remote_job_origin=external_job_origin,
+            remote_job_origin=remote_job_origin,
         ).run_id
 
         result = execute_dagster_graphql(

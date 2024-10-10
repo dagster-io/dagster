@@ -155,7 +155,7 @@ class TestRunStorage:
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             job_snapshot_id=job_snapshot_id,
-            external_job_origin=remote_job_origin,
+            remote_job_origin=remote_job_origin,
         )
 
     def test_basic_storage(self, storage):
