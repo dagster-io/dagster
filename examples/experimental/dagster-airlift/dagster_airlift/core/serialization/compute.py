@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Dict, List, Set
+from typing import AbstractSet, Dict, List, Sequence, Set, Union
 
 from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
@@ -8,17 +8,14 @@ from dagster._record import record
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
 from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
 from dagster_airlift.core.serialization.serialized_data import (
+    DagHandle,
     KeyScopedDataItem,
     SerializedAirflowDefinitionsData,
     SerializedDagData,
     TaskHandle,
     TaskInfo,
 )
-from dagster_airlift.core.utils import (
-    is_task_mapped_asset_spec,
-    spec_iterator,
-    task_handles_for_spec,
-)
+from dagster_airlift.core.utils import handles_for_spec, is_mapped_asset_spec, spec_iterator
 
 
 @record
@@ -27,48 +24,55 @@ class AirliftMetadataMappingInfo:
 
     @cached_property
     def mapped_asset_specs(self) -> List[AssetSpec]:
-        return [spec for spec in self.asset_specs if is_task_mapped_asset_spec(spec)]
+        return [spec for spec in self.asset_specs if is_mapped_asset_spec(spec)]
 
     @cached_property
     def dag_ids(self) -> Set[str]:
-        return set(self.task_id_map.keys())
+        return {handle.dag_id for handle in self.all_mapped_handles}
 
     @cached_property
     def task_id_map(self) -> Dict[str, Set[str]]:
         """Mapping of dag_id to set of task_ids in that dag. This only contains task ids mapped to assets in this object."""
-        task_id_map_data = {
-            dag_id: set(ta_map.keys()) for dag_id, ta_map in self.asset_key_map.items()
-        }
-        return defaultdict(set, task_id_map_data)
+        task_id_map = defaultdict(set)
+        for handle in self.task_handles:
+            task_id_map[handle.dag_id].add(handle.task_id)
+        return task_id_map
+
+    @cached_property
+    def task_handles(self) -> Set[TaskHandle]:
+        return {handle for handle in self.all_mapped_handles if isinstance(handle, TaskHandle)}
 
     @cached_property
     def asset_keys_per_dag_id(self) -> Dict[str, Set[AssetKey]]:
         """Mapping of dag_id to set of asset_keys in that dag. Does not include standlone dag assets."""
-        asset_keys_per_dag_data = {
-            dag_id: {
-                asset_key for asset_keys in task_to_asset_map.values() for asset_key in asset_keys
-            }
-            for dag_id, task_to_asset_map in self.asset_key_map.items()
-        }
-        return defaultdict(set, asset_keys_per_dag_data)
+        mapped_keys_per_dag_id = defaultdict(set)
+        for handle, asset_keys in self.handle_to_asset_keys.items():
+            if isinstance(handle, DagHandle):
+                mapped_keys_per_dag_id[handle.dag_id].update(asset_keys)
+            if isinstance(handle, TaskHandle):
+                mapped_keys_per_dag_id[handle.dag_id].update(asset_keys)
+        return mapped_keys_per_dag_id
 
     @cached_property
-    def asset_key_map(self) -> Dict[str, Dict[str, Set[AssetKey]]]:
+    def handle_to_asset_keys(self) -> Dict[Union[DagHandle, TaskHandle], Set[AssetKey]]:
         """Mapping of dag_id to task_id to set of asset_keys mapped from that task."""
-        asset_key_map: Dict[str, Dict[str, Set[AssetKey]]] = defaultdict(lambda: defaultdict(set))
+        asset_key_map: Dict[Union[DagHandle, TaskHandle], Set[AssetKey]] = defaultdict(set)
         for spec in self.asset_specs:
-            if is_task_mapped_asset_spec(spec):
-                for task_handle in task_handles_for_spec(spec):
-                    asset_key_map[task_handle.dag_id][task_handle.task_id].add(spec.key)
+            if is_mapped_asset_spec(spec):
+                for handle in handles_for_spec(spec):
+                    asset_key_map[handle].add(spec.key)
         return asset_key_map
 
     @cached_property
-    def task_handle_map(self) -> Dict[AssetKey, Set[TaskHandle]]:
+    def all_mapped_handles(self) -> Sequence[Union[DagHandle, TaskHandle]]:
+        return list(self.handle_to_asset_keys.keys())
+
+    @cached_property
+    def asset_key_to_handles(self) -> Dict[AssetKey, Set[TaskHandle]]:
         task_handle_map = defaultdict(set)
-        for dag_id, asset_key_by_task_id in self.asset_key_map.items():
-            for task_id, asset_keys in asset_key_by_task_id.items():
-                for asset_key in asset_keys:
-                    task_handle_map[asset_key].add(TaskHandle(dag_id=dag_id, task_id=task_id))
+        for handle, asset_keys in self.handle_to_asset_keys.items():
+            for asset_key in asset_keys:
+                task_handle_map[asset_key].add(handle)
         return task_handle_map
 
     @cached_property
@@ -92,10 +96,8 @@ class FetchedAirflowData:
     mapping_info: AirliftMetadataMappingInfo
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
-        return {
-            spec.key: task_handles_for_spec(spec) for spec in self.mapping_info.mapped_asset_specs
-        }
+    def all_mapped_handles(self) -> Dict[AssetKey, AbstractSet[Union[DagHandle, TaskHandle]]]:
+        return {spec.key: handles_for_spec(spec) for spec in self.mapping_info.mapped_asset_specs}
 
 
 def fetch_all_airflow_data(
@@ -124,8 +126,8 @@ def compute_serialized_data(
     return SerializedAirflowDefinitionsData(
         instance_name=airflow_instance.name,
         key_scoped_data_items=[
-            KeyScopedDataItem(asset_key=k, mapped_tasks=v)
-            for k, v in fetched_airflow_data.all_mapped_tasks.items()
+            KeyScopedDataItem(asset_key=k, mapped_handles=v)
+            for k, v in fetched_airflow_data.all_mapped_handles.items()
         ],
         dag_datas={
             dag_id: SerializedDagData(

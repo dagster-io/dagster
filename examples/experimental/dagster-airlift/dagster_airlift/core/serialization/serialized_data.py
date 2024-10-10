@@ -1,10 +1,11 @@
 from functools import cached_property
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Set
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Set, Union
 
 from dagster import (
     AssetKey,
     _check as check,
 )
+from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue, UrlMetadataValue
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
@@ -25,6 +26,15 @@ class TaskInfo:
     def downstream_task_ids(self) -> List[str]:
         return check.is_list(self.metadata["downstream_task_ids"], str)
 
+    @property
+    def dagster_metadata(self) -> Mapping[str, Any]:
+        return {
+            "Task Info (raw)": JsonMetadataValue(self.metadata),
+            "Dag ID": self.dag_id,
+            "Task ID": self.task_id,
+            "Link to DAG": UrlMetadataValue(self.dag_url),
+        }
+
 
 @whitelist_for_serdes
 @record
@@ -40,6 +50,20 @@ class DagInfo:
     @property
     def file_token(self) -> str:
         return self.metadata["file_token"]
+
+    @property
+    def dagster_description(self) -> str:
+        return f"""
+        A materialization corresponds to a successful run of airflow DAG {self.dag_id}.
+        """
+
+    @property
+    def dagster_metadata(self) -> Mapping[str, Any]:
+        return {
+            "Dag Info (raw)": JsonMetadataValue(self.metadata),
+            "Dag ID": self.dag_id,
+            "Link to DAG": UrlMetadataValue(self.url),
+        }
 
 
 @whitelist_for_serdes
@@ -74,7 +98,7 @@ class SerializedDagData:
 @record
 class KeyScopedDataItem:
     asset_key: AssetKey
-    mapped_tasks: AbstractSet[TaskHandle]
+    mapped_handles: AbstractSet[Union[DagHandle, TaskHandle]]
 
 
 ###################################################################################################
@@ -94,5 +118,16 @@ class SerializedAirflowDefinitionsData:
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
-        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
+    def all_mapped_handles(self) -> Dict[AssetKey, AbstractSet[Union[DagHandle, TaskHandle]]]:
+        return {item.asset_key: item.mapped_handles for item in self.key_scoped_data_items}
+
+    @cached_property
+    def info_objects_per_handle(
+        self,
+    ) -> Mapping[Union[DagHandle, TaskHandle], Union[DagInfo, TaskInfo]]:
+        ret = {}
+        for dag_id, dag_data in self.dag_datas.items():
+            ret[DagHandle(dag_id)] = dag_data.dag_info
+            for task_id, task_info in dag_data.task_infos.items():
+                ret[TaskHandle(dag_id, task_id)] = task_info
+        return ret
