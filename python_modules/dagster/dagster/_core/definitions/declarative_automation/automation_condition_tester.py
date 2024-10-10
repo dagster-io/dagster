@@ -46,7 +46,7 @@ class EvaluateAutomationConditionsResult:
     @property
     def total_requested(self) -> int:
         """Returns the total number of asset partitions requested during this evaluation."""
-        return len(self._requested_asset_partitions)
+        return sum(r.true_subset.size for r in self.results)
 
     def get_requested_partitions(self, asset_key: AssetKey) -> AbstractSet[Optional[str]]:
         """Returns the specific partition keys requested for the given asset during this evaluation."""
@@ -113,7 +113,9 @@ def evaluate_automation_conditions(
         defs = Definitions(assets=defs)
 
     if asset_selection is None:
-        asset_selection = AssetSelection.all(include_sources=True)
+        asset_selection = (
+            AssetSelection.all(include_sources=True) | AssetSelection.all_asset_checks()
+        )
 
     asset_graph = defs.get_asset_graph()
     evaluator = AutomationConditionEvaluator(
@@ -122,6 +124,7 @@ def evaluate_automation_conditions(
         entity_keys={
             key
             for key in asset_selection.resolve(asset_graph)
+            | asset_selection.resolve_checks(asset_graph)
             if asset_graph.get(key).automation_condition is not None
         },
         evaluation_time=evaluation_time,
