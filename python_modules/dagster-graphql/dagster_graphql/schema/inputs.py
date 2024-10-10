@@ -216,6 +216,7 @@ class GrapheneRunlessAssetEventType(graphene.Enum):
     """The event type of an asset event."""
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
 
     class Meta:
