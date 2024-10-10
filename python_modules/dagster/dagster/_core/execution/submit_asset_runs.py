@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
@@ -27,7 +27,7 @@ class RunRequestExecutionData(NamedTuple):
 
 
 def _get_implicit_job_name_for_assets(
-    asset_graph: RemoteAssetGraph, asset_keys: Sequence[AssetKey]
+    asset_graph: RemoteWorkspaceAssetGraph, asset_keys: Sequence[AssetKey]
 ) -> Optional[str]:
     job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
@@ -54,7 +54,7 @@ def _get_execution_plan_entity_keys(
 
 
 def _get_job_execution_data_from_run_request(
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,

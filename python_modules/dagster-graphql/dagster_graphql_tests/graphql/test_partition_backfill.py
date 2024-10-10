@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillIterationResult,
     execute_asset_backfill_iteration,
@@ -222,7 +222,7 @@ def _get_run_stats(partition_statuses):
 
 
 def _execute_asset_backfill_iteration_no_side_effects(
-    graphql_context, backfill_id: str, asset_graph: RemoteAssetGraph
+    graphql_context, backfill_id: str, asset_graph: RemoteWorkspaceAssetGraph
 ) -> None:
     """Executes an asset backfill iteration and updates the serialized asset backfill data.
     However, does not execute side effects i.e. launching runs.
@@ -277,7 +277,7 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
 def _mock_asset_backfill_runs(
     graphql_context,
     asset_key: AssetKey,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     backfill_id: str,
     status: DagsterRunStatus,
     partition_key: Optional[str],

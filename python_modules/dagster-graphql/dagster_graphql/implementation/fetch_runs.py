@@ -256,10 +256,11 @@ def get_assets_latest_info(
     for asset_key in step_keys_by_asset.keys():
         asset_node = asset_nodes[asset_key]
         if asset_node:
+            handle = asset_node.resolve_to_singular_repo_scoped_node().repository_handle
             node_id = get_unique_asset_id(
                 asset_key,
-                asset_node.priority_repository_handle.repository_name,
-                asset_node.priority_repository_handle.location_name,
+                handle.repository_name,
+                handle.location_name,
             )
         else:
             node_id = get_unique_asset_id(asset_key)
