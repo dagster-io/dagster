@@ -19,6 +19,9 @@ from dagster._core.definitions.asset_daemon_cursor import (
 )
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    EMIT_BACKFILLS_METADATA_KEY,
+)
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
@@ -940,6 +943,7 @@ class AssetDaemon(DagsterDaemon):
             ).without_checks() | AssetSelection.checks(
                 *{key for key in auto_materialize_entity_keys if isinstance(key, AssetCheckKey)}
             )
+
             run_requests, new_cursor, evaluations = AutomationTickEvaluationContext(
                 evaluation_id=evaluation_id,
                 asset_graph=asset_graph,
@@ -954,7 +958,12 @@ class AssetDaemon(DagsterDaemon):
                     **sensor_tags,
                 },
                 observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
-                allow_backfills=False,
+                emit_backfills=bool(
+                    sensor
+                    and sensor.metadata
+                    and sensor.metadata.standard_metadata
+                    and EMIT_BACKFILLS_METADATA_KEY in sensor.metadata.standard_metadata
+                ),
                 auto_observe_asset_keys=auto_observe_asset_keys,
                 logger=self._logger,
             ).evaluate()

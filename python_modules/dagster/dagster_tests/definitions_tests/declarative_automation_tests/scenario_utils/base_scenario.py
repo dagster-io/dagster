@@ -405,7 +405,7 @@ class AssetReconciliationScenario(
                     materialize_run_tags={},
                     observe_run_tags={},
                     cursor=cursor,
-                    allow_backfills=False,
+                    emit_backfills=False,
                     auto_observe_asset_keys={
                         key
                         for key in asset_graph.observable_asset_keys

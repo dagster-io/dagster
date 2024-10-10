@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import AbstractSet, Mapping, Sequence, cast
 
 import dagster._check as check
+import pytest
 from dagster import AssetMaterialization, RunsFilter, instance_for_test
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -418,9 +419,10 @@ def _get_subsets_by_key(
     return {s.key: s for s in target_subset.iterate_asset_subsets(asset_graph)}
 
 
-def test_backfill_creation_simple() -> None:
+@pytest.mark.parametrize("location", ["backfill_simple_user_code", "backfill_simple_non_user_code"])
+def test_backfill_creation_simple(location: str) -> None:
     with get_workspace_request_context(
-        ["backfill_simple"]
+        [location]
     ) as context, get_threadpool_executor() as executor:
         asset_graph = context.create_request_context().asset_graph
 
