@@ -29,6 +29,7 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
 from dagster._core.loader import LoadingContext
+from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
@@ -398,7 +399,15 @@ class AssetGraphView(LoadingContext):
         return self.compute_subset_with_status(key, None)
 
     def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
-        value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def:
+            cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
+            if cache_value is None:
+                value = partitions_def.empty_subset()
+            else:
+                value = cache_value.deserialize_in_progress_partition_subsets(partitions_def)
+        else:
+            value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     def _compute_backfill_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
@@ -410,7 +419,15 @@ class AssetGraphView(LoadingContext):
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
-        value = self._queryer.get_failed_asset_subset(asset_key=key).value
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def:
+            cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
+            if cache_value is None:
+                value = partitions_def.empty_subset()
+            else:
+                value = cache_value.deserialize_failed_partition_subsets(partitions_def)
+        else:
+            value = self._queryer.get_failed_asset_subset(asset_key=key).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     def _compute_missing_asset_subset(
@@ -425,9 +442,17 @@ class AssetGraphView(LoadingContext):
         # of the materializability of the asset
         if self.asset_graph.get(key).is_materializable:
             # cheap call which takes advantage of the partition status cache
-            materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=key)
+            partitions_def = self._get_partitions_def(key)
+            if partitions_def:
+                cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
+                if cache_value is None:
+                    value = partitions_def.empty_subset()
+                else:
+                    value = cache_value.deserialize_materialized_partition_subsets(partitions_def)
+            else:
+                value = self._queryer.get_materialized_asset_subset(asset_key=key).value
             materialized_subset = EntitySubset(
-                self, key=key, value=_ValidatedEntitySubsetValue(materialized_subset.value)
+                self, key=key, value=_ValidatedEntitySubsetValue(value)
             )
             return from_subset.compute_difference(materialized_subset)
         else:
