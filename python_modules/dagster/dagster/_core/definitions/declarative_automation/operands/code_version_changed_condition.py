@@ -12,10 +12,6 @@ from dagster._serdes.serdes import whitelist_for_serdes
 @record
 class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
     @property
-    def description(self) -> str:
-        return "Asset code version changed since previous tick"
-
-    @property
     def name(self) -> str:
         return "code_version_changed"
 
