@@ -28,5 +28,5 @@ dag = DAG(
 proxying_to_dagster(
     global_vars=globals(),
     proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
-    dagster_operator_klass=CustomProxyToDagsterOperator,
+    build_from_task_fn=CustomProxyToDagsterOperator.build_from_task,
 )

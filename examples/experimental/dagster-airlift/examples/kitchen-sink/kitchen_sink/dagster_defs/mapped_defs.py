@@ -1,4 +1,5 @@
 from dagster import Definitions, asset
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster_airlift.core import (
     assets_with_dag_mappings,
     build_defs_from_airflow_instance,
@@ -10,15 +11,13 @@ from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 from .airflow_instance import local_airflow_instance
 
 
-@asset
-def print_asset() -> None:
-    # ruff: noqa: T201
-    print("Hello, world!")
+def make_print_asset(key: str) -> AssetsDefinition:
+    @asset(key=key)
+    def print_asset() -> None:
+        # ruff: noqa: T201
+        print("Hello, world!")
 
-
-@asset
-def another_print_asset() -> None:
-    print("Hello, world!")
+    return print_asset
 
 
 @asset(description="Asset one is materialized by multiple airflow tasks")
@@ -38,8 +37,11 @@ def build_mapped_defs() -> Definitions:
         defs=Definitions.merge(
             dag_defs(
                 "print_dag",
-                task_defs("print_task", Definitions(assets=[print_asset])),
-                task_defs("downstream_print_task", Definitions(assets=[another_print_asset])),
+                task_defs("print_task", Definitions(assets=[make_print_asset("print_asset")])),
+                task_defs(
+                    "downstream_print_task",
+                    Definitions(assets=[make_print_asset("another_print_asset")]),
+                ),
             ),
             targeted_by_multiple_tasks(
                 Definitions([asset_one]),
@@ -49,6 +51,28 @@ def build_mapped_defs() -> Definitions:
                 ],
             ),
             Definitions(assets=assets_with_dag_mappings({"overridden_dag": [asset_two]})),
+            dag_defs(
+                "affected_dag",
+                task_defs(
+                    "print_task",
+                    Definitions(assets=[make_print_asset("affected_dag__print_asset")]),
+                ),
+                task_defs(
+                    "downstream_print_task",
+                    Definitions(assets=[make_print_asset("affected_dag__another_print_asset")]),
+                ),
+            ),
+            dag_defs(
+                "unaffected_dag",
+                task_defs(
+                    "print_task",
+                    Definitions(assets=[make_print_asset("unaffected_dag__print_asset")]),
+                ),
+                task_defs(
+                    "downstream_print_task",
+                    Definitions(assets=[make_print_asset("unaffected_dag__another_print_asset")]),
+                ),
+            ),
         ),
     )
 
