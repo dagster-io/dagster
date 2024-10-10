@@ -1,8 +1,8 @@
 import {BaseConfig as AssetGroupsFilterBaseConfig} from './useAssetGroupFilter';
 import {BaseConfig as AssetOwnerFilterBaseConfig} from './useAssetOwnerFilter';
-import {BaseConfig as AssetTagFilterBaseConfig} from './useAssetTagFilter';
 import {BaseConfig as ChangedFilterBaseConfig} from './useChangedFilter';
 import {BaseConfig as CodeLocationFilterBaseConfig} from './useCodeLocationFilter';
+import {BaseConfig as AssetTagFilterBaseConfig} from './useDefinitionTagFilter';
 import {BaseConfig as KindFilterBaseConfig} from './useKindFilter';
 import {AssetGroupSelector, AssetOwner, ChangeReason, DefinitionTag} from '../../graphql/types';
 import {RepoAddress} from '../../workspace/types';
