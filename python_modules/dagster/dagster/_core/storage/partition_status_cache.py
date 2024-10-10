@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, List, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Iterable, List, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import (
     AssetKey,
@@ -19,7 +19,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.loader import LoadingContext
+from dagster._core.loader import InstanceLoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
@@ -79,7 +79,8 @@ class AssetStatusCacheValue(
             ("serialized_in_progress_partition_subset", Optional[str]),
             ("earliest_in_progress_materialization_event_id", Optional[int]),
         ],
-    )
+    ),
+    InstanceLoadableBy[Tuple[AssetKey, PartitionsDefinition]],
 ):
     """Set of asset fields that reflect partition materialization status. This is used to display
     global partition status in the asset view.
@@ -142,6 +143,13 @@ class AssetStatusCacheValue(
             return None
 
         return cached_data
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[Tuple[AssetKey, PartitionsDefinition]], instance: "DagsterInstance"
+    ) -> Iterable[Optional["AssetStatusCacheValue"]]:
+        partition_defs_by_key = {key: partition_def for key, partition_def in keys}
+        return instance.event_log_storage.get_asset_status_cache_values(partition_defs_by_key)
 
     def deserialize_materialized_partition_subsets(
         self, partitions_def: PartitionsDefinition
