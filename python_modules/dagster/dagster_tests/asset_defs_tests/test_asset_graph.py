@@ -9,6 +9,7 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     AutomationCondition,
+    DagsterInstance,
     DailyPartitionsDefinition,
     GraphOut,
     HourlyPartitionsDefinition,
@@ -37,12 +38,10 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.external_data import (
-    asset_check_node_snaps_from_repo,
-    asset_node_snaps_from_repo,
-)
+from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.test_utils import freeze_time, instance_for_test
+from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
 from dagster._time import create_datetime, get_current_datetime
 
 
@@ -51,12 +50,12 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
     def repo():
         return assets + (asset_checks or [])
 
-    asset_node_snaps = asset_node_snaps_from_repo(repo)
-    handle = RepositoryHandle.for_test(location_name="fake", repository_name="repo")
-    return RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
-        [(handle, asset_node) for asset_node in asset_node_snaps],
-        [(handle, asset_check) for asset_check in asset_check_node_snaps_from_repo(repo)],
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(repo),
+        repository_handle=RepositoryHandle.for_test(location_name="fake", repository_name="repo"),
+        instance=DagsterInstance.ephemeral(),
     )
+    return RemoteAssetGraph.from_remote_repository(remote_repo)
 
 
 @pytest.fixture(
@@ -889,11 +888,8 @@ def test_cross_code_location_partition_mapping() -> None:
     def repo_b():
         return [b]
 
-    a_nodes = asset_node_snaps_from_repo(repo_a)
-    b_nodes = asset_node_snaps_from_repo(repo_b)
-    handle = RepositoryHandle.for_test(location_name="foo", repository_name="bar")
-    asset_graph = RemoteAssetGraph.from_repository_handles_and_asset_node_snaps(
-        [(handle, asset_node) for asset_node in [*a_nodes, *b_nodes]], []
+    asset_graph = RemoteAssetGraph.from_workspace_snapshot(
+        mock_workspace_from_repos([repo_a, repo_b])
     )
 
     assert isinstance(
