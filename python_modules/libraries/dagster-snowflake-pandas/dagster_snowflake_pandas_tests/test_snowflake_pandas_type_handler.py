@@ -87,6 +87,30 @@ def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
             conn.cursor().execute(f"drop table {schema_name}.{table_name}")
 
 
+def test_handle_empty():
+    handler = SnowflakePandasTypeHandler()
+    connection = MagicMock()
+    df = DataFrame([])
+    output_context = build_output_context(
+        resource_config={**resource_config, "time_data_to_string": False}
+    )
+
+    with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler.write_pandas", MagicMock()):
+        metadata = handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=[],
+            ),
+            df,
+            connection,
+        )
+    assert metadata["dagster/row_count"] == 0
+
+
 def test_handle_output():
     handler = SnowflakePandasTypeHandler()
     connection = MagicMock()
@@ -175,6 +199,70 @@ def test_build_snowflake_pandas_io_manager():
     )
     # test wrapping decorator to make sure that works as expected
     assert isinstance(snowflake_pandas_io_manager, IOManagerDefinition)
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_io_manager_with_snowflake_pandas_only_columns(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+        # Create a job with the temporary table name as an output, so that it will write to that table
+        # and not interfere with other runs of this test
+
+        @op(out={table_name: Out(io_manager_key="snowflake", metadata={"schema": SCHEMA})})
+        def emit_pandas_df(_):
+            return pandas.DataFrame({"apa": [], "bepa": []})
+
+        @op
+        def read_pandas_df(df: pandas.DataFrame):
+            assert set(df.columns) == {"apa", "bepa"}
+            assert len(df.index) == 0
+
+        @job(
+            resource_defs={"snowflake": io_manager},
+        )
+        def io_manager_test_job():
+            read_pandas_df(emit_pandas_df())
+
+        res = io_manager_test_job.execute_in_process()
+        assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_io_manager_with_snowflake_pandas_empty_df(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+        # Create a job with the temporary table name as an output, so that it will write to that table
+        # and not interfere with other runs of this test
+
+        @op(out={table_name: Out(io_manager_key="snowflake", metadata={"schema": SCHEMA})})
+        def emit_pandas_df(_):
+            return pandas.DataFrame()
+
+        @op
+        def read_pandas_df(df: pandas.DataFrame):
+            assert set(df.columns) == {}
+            assert df.empty
+
+        @job(
+            resource_defs={"snowflake": io_manager},
+        )
+        def io_manager_test_job():
+            read_pandas_df(emit_pandas_df())
+
+        res = io_manager_test_job.execute_in_process()
+        assert res.success
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -815,6 +903,90 @@ def test_quoted_identifiers_asset(io_manager):
         resource_defs = {"io_manager": io_manager}
         res = materialize(
             [illegal_column_name],
+            resources=resource_defs,
+        )
+
+        assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_empty_df_asset(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
+
+        # ensure that the table doesn't exist so we know that the I/O manager is properly able to load
+        # from an non-existant table
+        tables = (
+            snowflake_conn.cursor()
+            .execute(f"SHOW TABLES LIKE '{table_name}' IN SCHEMA" f" {DATABASE}.{SCHEMA}")
+            .fetchall()
+        )
+        assert len(tables) == 0
+
+        @asset(
+            key_prefix=SCHEMA,
+            name=table_name,
+        )
+        def empty(context: AssetExecutionContext) -> DataFrame:
+            return DataFrame()
+
+        @asset
+        def loads_empty(empty: pandas.DataFrame) -> None:
+            assert empty.empty
+
+        resource_defs = {"io_manager": io_manager}
+        res = materialize(
+            [empty, loads_empty],
+            resources=resource_defs,
+        )
+
+        assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_upstream_not_materialized(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
+
+        # ensure that the table doesn't exist so we know that the I/O manager is properly able to load
+        # from an non-existant table
+        tables = (
+            snowflake_conn.cursor()
+            .execute(f"SHOW TABLES LIKE '{table_name}' IN SCHEMA" f" {DATABASE}.{SCHEMA}")
+            .fetchall()
+        )
+        assert len(tables) == 0
+
+        @asset(
+            key_prefix=SCHEMA,
+            name=table_name,
+        )
+        def upstream(context: AssetExecutionContext) -> DataFrame:
+            return DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+
+        @asset
+        def loads_empty(upstream: pandas.DataFrame) -> None:
+            # in the test we materialize loads_empty without materailzing upstream. The I/O
+            # manager should handle this case and return an empty DataFrame
+            assert upstream.empty
+
+        resource_defs = {"io_manager": io_manager}
+        res = materialize(
+            [loads_empty],
             resources=resource_defs,
         )
 
