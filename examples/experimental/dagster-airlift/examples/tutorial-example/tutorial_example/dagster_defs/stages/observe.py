@@ -1,16 +1,14 @@
 import os
 from pathlib import Path
 
-from dagster import AssetSpec, Definitions
+from dagster import AssetExecutionContext, AssetSpec, Definitions
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
+    assets_with_task_mappings,
     build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
 )
-from dagster_airlift.dbt import dbt_defs
-from dagster_dbt import DbtProject
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 
 def dbt_project_path() -> Path:
@@ -19,35 +17,22 @@ def dbt_project_path() -> Path:
     return Path(env_val)
 
 
-def rebuild_customer_list_defs() -> Definitions:
-    return dag_defs(
-        "rebuild_customers_list",
-        task_defs(
-            "load_raw_customers",
-            Definitions(
-                assets=[
-                    AssetSpec(key=["raw_data", "raw_customers"]),
-                ]
-            ),
-        ),
-        task_defs(
-            "build_dbt_models",
-            # load rich set of assets from dbt project
-            dbt_defs(
-                manifest=dbt_project_path() / "target" / "manifest.json",
-                project=DbtProject(dbt_project_path()),
-            ),
-        ),
-        task_defs(
-            "export_customers",
-            # encode dependency on customers table
-            Definitions(
-                assets=[
-                    AssetSpec(key="customers_csv", deps=["customers"]),
-                ]
-            ),
-        ),
-    )
+@dbt_assets(
+    manifest=dbt_project_path() / "target" / "manifest.json",
+    project=DbtProject(dbt_project_path()),
+)
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+
+
+mapped_assets = assets_with_task_mappings(
+    dag_id="rebuild_customers_list",
+    task_mappings={
+        "load_raw_customers": [AssetSpec(key=["raw_data", "raw_customers"])],
+        "build_dbt_models": [dbt_project_assets],
+        "export_customers": [AssetSpec(key="customers_csv", deps=["customers"])],
+    },
+)
 
 
 defs = build_defs_from_airflow_instance(
@@ -59,5 +44,8 @@ defs = build_defs_from_airflow_instance(
         ),
         name="airflow_instance_one",
     ),
-    defs=rebuild_customer_list_defs(),
+    defs=Definitions(
+        assets=mapped_assets,
+        resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
+    ),
 )
