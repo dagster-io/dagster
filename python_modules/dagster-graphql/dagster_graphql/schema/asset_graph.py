@@ -7,7 +7,6 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
@@ -867,36 +866,64 @@ class GrapheneAssetNode(graphene.ObjectType):
         return any(target.job_name in job_names for target in sensor.get_targets())
 
     def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
-        repo = graphene_info.context.get_repository(self._repository_selector)
-        external_sensors = repo.get_sensors()
-        external_schedules = repo.get_schedules()
+        # repo = graphene_info.context.get_repository(self._repository_selector)
+        # external_sensors = repo.get_sensors()
+        # external_schedules = repo.get_schedules()
 
-        asset_graph = repo.asset_graph
+        # asset_graph = repo.asset_graph
 
-        job_names = {
-            job_name
-            for job_name in self._asset_node_snap.job_names
-            if not job_name == IMPLICIT_ASSET_JOB_NAME
-        }
-
+        # job_names = {
+        #     job_name
+        #     for job_name in self._asset_node_snap.job_names
+        #     if not job_name == IMPLICIT_ASSET_JOB_NAME
+        # }
         results = []
-        for external_sensor in external_sensors:
-            if not self._sensor_targets_asset(external_sensor, asset_graph, job_names):
-                continue
 
-            sensor_state = graphene_info.context.instance.get_instigator_state(
-                external_sensor.get_remote_origin_id(),
-                external_sensor.selector_id,
+        for schedule_handle in self._remote_node.get_targeting_schedule_handles():
+            remote_schedule = graphene_info.context.get_schedule(schedule_handle)
+            schedule_state = graphene_info.context.instance.get_instigator_state(
+                remote_schedule.get_remote_origin_id(),
+                remote_schedule.selector_id,
             )
-            results.append(GrapheneSensor(external_sensor, repo, sensor_state))
-
-        for external_schedule in external_schedules:
-            if external_schedule.job_name in job_names:
-                schedule_state = graphene_info.context.instance.get_instigator_state(
-                    external_schedule.get_remote_origin_id(),
-                    external_schedule.selector_id,
+            results.append(
+                GrapheneSchedule(
+                    remote_schedule,
+                    schedule_handle.repository_handle,
+                    schedule_state,
                 )
-                results.append(GrapheneSchedule(external_schedule, repo, schedule_state))
+            )
+
+        for sensor_handle in self._remote_node.get_targeting_sensor_handles():
+            remote_sensor = graphene_info.context.get_sensor(sensor_handle)
+            sensor_state = graphene_info.context.instance.get_instigator_state(
+                remote_schedule.get_remote_origin_id(),
+                remote_schedule.selector_id,
+            )
+            results.append(
+                GrapheneSensor(
+                    remote_sensor,
+                    sensor_handle.repository_handle,
+                    sensor_state,
+                )
+            )
+        return results
+        # for external_sensor in external_sensors:
+        #     if not self._sensor_targets_asset(external_sensor, asset_graph, job_names):
+        #         continue
+
+        #     sensor_state = graphene_info.context.instance.get_instigator_state(
+        #         external_sensor.get_remote_origin_id(),
+        #         external_sensor.selector_id,
+        #     )
+        #     results.append(GrapheneSensor(external_sensor, repo, sensor_state))
+
+        # for external_schedule in external_schedules:
+        #     if external_schedule.job_name in job_names:
+        #         schedule_state = graphene_info.context.instance.get_instigator_state(
+        #             external_schedule.get_remote_origin_id(),
+        #             external_schedule.selector_id,
+        #         )
+        #         results.append(GrapheneSchedule(external_schedule, repo, schedule_state))
 
         return results
 

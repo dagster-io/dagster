@@ -41,7 +41,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
-from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.workspace.workspace import WorkspaceSnapshot
 from dagster._record import ImportFrom, record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -59,6 +59,9 @@ class RepositoryScopedAssetNode:
         "AssetNodeSnap",
         ImportFrom("dagster._core.remote_representation.external_data"),
     ]
+    # hack: None on repository scoped
+    targeting_schedule_names: Optional[Sequence[str]]
+    targeting_sensor_names: Optional[Sequence[str]]
 
 
 @whitelist_for_serdes
@@ -218,6 +221,45 @@ class RemoteAssetNode(BaseAssetNode):
     def priority_node_snap(self) -> "AssetNodeSnap":
         return self._priority_scoped_node.asset
 
+    def get_targeting_schedule_handles(
+        self,
+    ) -> Sequence[InstigatorHandle]:
+        selectors = []
+        for node in self.scoped_asset_nodes:
+            for schedule_name in node.targeting_schedule_names:
+                selectors.append(
+                    InstigatorHandle(
+                        repository_handle=node.handle,
+                        instigator_name=schedule_name,
+                    )
+                    # ScheduleSelector(
+                    #     location_name=node.handle.location_name,
+                    #     repository_name=node.handle.repository_name,
+                    #     schedule_name=schedule_name,
+                    # )
+                )
+
+        return selectors
+
+    def get_targeting_sensor_handles(
+        self,
+    ) -> Sequence[InstigatorHandle]:
+        selectors = []
+        for node in self.scoped_asset_nodes:
+            for sensor_name in node.targeting_sensor_names:
+                selectors.append(
+                    InstigatorHandle(
+                        repository_handle=node.handle,
+                        instigator_name=sensor_name,
+                    )
+                    # SensorSelector(
+                    #     location_name=node.handle.location_name,
+                    #     repository_name=node.handle.repository_name,
+                    #     sensor_name=sensor_name,
+                    # )
+                )
+        return selectors
+
     ##### HELPERS
 
     @cached_property
@@ -265,13 +307,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     def from_remote_repository(cls, repo: RemoteRepository):
         return cls._build(
             scope=RemoteAssetGraphScope.REPOSITORY,
-            repo_handle_assets=[
-                (repo.handle, node_snap) for node_snap in repo.get_asset_node_snaps()
-            ],
-            repo_handle_asset_checks=[
-                (repo.handle, asset_check_node)
-                for asset_check_node in repo.get_asset_check_node_snaps()
-            ],
+            repos=[repo],
         )
 
     @classmethod
@@ -281,60 +317,85 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
             for location_entry in workspace.code_location_entries.values()
             if location_entry.code_location
         )
-        repos = (
-            repo
-            for code_location in code_locations
-            for repo in code_location.get_repositories().values()
-        )
-
-        repo_handle_assets: Sequence[Tuple["RepositoryHandle", "AssetNodeSnap"]] = []
-        repo_handle_asset_checks: Sequence[Tuple["RepositoryHandle", "AssetCheckNodeSnap"]] = []
-        for repo in repos:
-            for asset_node_snap in repo.get_asset_node_snaps():
-                repo_handle_assets.append((repo.handle, asset_node_snap))
-            for asset_check_node_snap in repo.get_asset_check_node_snaps():
-                repo_handle_asset_checks.append((repo.handle, asset_check_node_snap))
 
         return cls._build(
             scope=RemoteAssetGraphScope.WORKSPACE,
-            repo_handle_assets=repo_handle_assets,
-            repo_handle_asset_checks=repo_handle_asset_checks,
+            repos=[
+                repo
+                for code_location in code_locations
+                for repo in code_location.get_repositories().values()
+            ],
         )
 
     @classmethod
     def _build(
         cls,
         scope: RemoteAssetGraphScope,
-        repo_handle_assets: Sequence[Tuple[RepositoryHandle, "AssetNodeSnap"]],
-        repo_handle_asset_checks: Sequence[Tuple[RepositoryHandle, "AssetCheckNodeSnap"]],
+        repos: Sequence[RemoteRepository],
     ) -> "RemoteAssetGraph":
-        _warn_on_duplicate_nodes(repo_handle_assets)
+        scoped_asset_nodes: Sequence[RepositoryScopedAssetNode] = []
+        repo_handle_asset_checks: Sequence[Tuple["RepositoryHandle", "AssetCheckNodeSnap"]] = []
+        for repo in repos:
+            if scope is RemoteAssetGraphScope.WORKSPACE:
+                job_to_schedules = defaultdict(list)
+                job_to_sensors = defaultdict(list)
+                for remote_schedule in repo.get_external_schedules():
+                    job_to_schedules[remote_schedule.job_name].append(remote_schedule.name)
+                for remote_sensor in repo.get_external_sensors():
+                    job_to_sensors[remote_schedule.job_name].append(remote_sensor.name)
+
+            for asset_node_snap in repo.get_asset_node_snaps():
+                if scope is RemoteAssetGraphScope.WORKSPACE:
+                    sensors = []
+                    schedules = []
+
+                    for job_name in asset_node_snap.job_names:
+                        if job_name != IMPLICIT_ASSET_JOB_NAME:
+                            if job_name in job_to_schedules:
+                                schedules.extend(job_to_schedules[job_name])
+                            if job_name in job_to_sensors:
+                                sensors.extend(job_to_sensors[job_name])
+                else:
+                    sensors = None
+                    schedules = None
+
+                scoped_asset_nodes.append(
+                    RepositoryScopedAssetNode(
+                        handle=repo.handle,
+                        asset=asset_node_snap,
+                        targeting_schedule_names=schedules,
+                        targeting_sensor_names=sensors,
+                    )
+                )
+
+            for asset_check_node_snap in repo.get_asset_check_node_snaps():
+                repo_handle_asset_checks.append((repo.handle, asset_check_node_snap))
+
+        _warn_on_duplicate_nodes(scoped_asset_nodes)
 
         # Build an index of execution sets by key. An execution set is a set of assets and checks
         # that must be executed together. AssetNodeSnaps and AssetCheckNodeSnaps already have an
         # optional execution_set_identifier set. A null execution_set_identifier indicates that the
         # node or check can be executed independently.
-        assets = [asset for _, asset in repo_handle_assets]
+        assets = [node.asset for node in scoped_asset_nodes]
         asset_checks = [asset_check for _, asset_check in repo_handle_asset_checks]
         execution_sets_by_key = _build_execution_set_index(assets, asset_checks)
 
         # Index all (RepositoryHandle, AssetNodeSnap) pairs by their asset key, then use this to
         # build the set of RemoteAssetNodes (indexed by key). Each RemoteAssetNode wraps the set of
         # pairs for an asset key.
-        repo_node_pairs_by_key: Dict[AssetKey, List[Tuple[RepositoryHandle, "AssetNodeSnap"]]] = (
-            defaultdict(list)
-        )
+        remote_nodes_by_key: Dict[AssetKey, List[RepositoryScopedAssetNode]] = defaultdict(list)
 
         # Build the dependency graph of asset keys.
         all_keys = {asset.asset_key for asset in assets}
         upstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
         downstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
 
-        for repo_handle, node in repo_handle_assets:
-            repo_node_pairs_by_key[node.asset_key].append((repo_handle, node))
-            for dep in node.parent_edges:
-                upstream[node.asset_key].add(dep.parent_asset_key)
-                downstream[dep.parent_asset_key].add(node.asset_key)
+        for node in scoped_asset_nodes:
+            remote_nodes_by_key[node.asset.asset_key].append(node)
+            for dep in node.asset.parent_edges:
+                upstream[node.asset.asset_key].add(dep.parent_asset_key)
+                downstream[dep.parent_asset_key].add(node.asset.asset_key)
 
         dep_graph: DependencyGraph[AssetKey] = {"upstream": upstream, "downstream": downstream}
 
@@ -359,13 +420,10 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
                 parent_keys=dep_graph["upstream"][key],
                 child_keys=dep_graph["downstream"][key],
                 execution_set_entity_keys=execution_sets_by_key[key],
-                scoped_asset_nodes=[
-                    RepositoryScopedAssetNode(asset=asset, handle=handle)
-                    for handle, asset in repo_node_pairs
-                ],
+                scoped_asset_nodes=remote_nodes,
                 check_keys=check_keys_by_asset_key[key],
             )
-            for key, repo_node_pairs in repo_node_pairs_by_key.items()
+            for key, remote_nodes in remote_nodes_by_key.items()
         }
 
         return cls(
@@ -457,7 +515,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
 
 
 def _warn_on_duplicate_nodes(
-    repo_handle_asset_node_snaps: Sequence[Tuple[RepositoryHandle, "AssetNodeSnap"]],
+    scoped_nodes: Sequence[RepositoryScopedAssetNode],
 ) -> None:
     # Split the nodes into materializable, observable, and unexecutable nodes. Observable and
     # unexecutable `AssetNodeSnap` represent both source and external assets-- the
@@ -466,7 +524,9 @@ def _warn_on_duplicate_nodes(
     materializable_node_pairs: List[Tuple[RepositoryHandle, "AssetNodeSnap"]] = []
     observable_node_pairs: List[Tuple[RepositoryHandle, "AssetNodeSnap"]] = []
     unexecutable_node_pairs: List[Tuple[RepositoryHandle, "AssetNodeSnap"]] = []
-    for repo_handle, node in repo_handle_asset_node_snaps:
+    for scoped_node in scoped_nodes:
+        node = scoped_node.asset
+        repo_handle = scoped_node.handle
         if node.is_source and node.is_observable:
             observable_node_pairs.append((repo_handle, node))
         elif node.is_source:

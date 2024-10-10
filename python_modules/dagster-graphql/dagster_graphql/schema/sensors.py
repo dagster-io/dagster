@@ -7,7 +7,8 @@ from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import RemoteSensor, TargetSnap
-from dagster._core.remote_representation.external import CompoundID, RemoteRepository
+from dagster._core.remote_representation.external import CompoundID
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
@@ -94,12 +95,12 @@ class GrapheneSensor(graphene.ObjectType):
     def __init__(
         self,
         external_sensor: RemoteSensor,
-        external_repository: RemoteRepository,
+        repository_handle: RepositoryHandle,
         sensor_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", RemoteSensor)
-        self._external_repository = external_repository
+        self._repository_handle = repository_handle
 
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple sensors
@@ -122,7 +123,7 @@ class GrapheneSensor(graphene.ObjectType):
             sensorType=external_sensor.sensor_type.value,
             assetSelection=GrapheneAssetSelection(
                 asset_selection=external_sensor.asset_selection,
-                external_repository=self._external_repository,
+                repository_handle=self._repository_handle,
             )
             if external_sensor.asset_selection
             else None,

@@ -61,7 +61,12 @@ def get_sensors_or_error(
 
     return GrapheneSensors(
         results=[
-            GrapheneSensor(sensor, repository, sensor_states_by_name.get(sensor.name), batch_loader)
+            GrapheneSensor(
+                sensor,
+                repository.handle,
+                sensor_states_by_name.get(sensor.name),
+                batch_loader,
+            )
             for sensor in filtered
         ]
     )
