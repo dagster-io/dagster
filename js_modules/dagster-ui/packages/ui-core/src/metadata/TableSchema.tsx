@@ -63,9 +63,11 @@ export const isCanonicalUriEntry = (
 export const TableSchemaAssetContext = createContext<{
   assetKey: AssetKeyInput | undefined;
   materializationMetadataEntries: MetadataEntryLabelOnly[] | undefined;
+  definitionMetadataEntries: MetadataEntryLabelOnly[] | undefined;
 }>({
   assetKey: undefined,
   materializationMetadataEntries: undefined,
+  definitionMetadataEntries: undefined,
 });
 
 export const TableSchema = ({
