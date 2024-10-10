@@ -1065,7 +1065,7 @@ class GrapheneQuery(graphene.ObjectType):
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
                 # base_deployment_context will be None if we are not in a branch deployment
-                asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
                     code_location_name=remote_node.priority_repository_handle.location_name,
                     repository_name=remote_node.priority_repository_handle.repository_name,
                     branch_workspace=graphene_info.context,

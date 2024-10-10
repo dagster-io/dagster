@@ -42,19 +42,19 @@ def get_instigator_state_by_selector(
     repository = location.get_repository(selector.repository_name)
 
     if repository.has_sensor(selector.name):
-        external_sensor = repository.get_sensor(selector.name)
+        sensor = repository.get_sensor(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
-            external_sensor.get_remote_origin_id(),
-            external_sensor.selector_id,
+            sensor.get_remote_origin_id(),
+            sensor.selector_id,
         )
-        current_state = external_sensor.get_current_instigator_state(stored_state)
+        current_state = sensor.get_current_instigator_state(stored_state)
     elif repository.has_schedule(selector.name):
-        external_schedule = repository.get_schedule(selector.name)
+        schedule = repository.get_schedule(selector.name)
         stored_state = graphene_info.context.instance.get_instigator_state(
-            external_schedule.get_remote_origin_id(),
-            external_schedule.selector_id,
+            schedule.get_remote_origin_id(),
+            schedule.selector_id,
         )
-        current_state = external_schedule.get_current_instigator_state(stored_state)
+        current_state = schedule.get_current_instigator_state(stored_state)
     else:
         return GrapheneInstigationStateNotFoundError(selector.name)
 

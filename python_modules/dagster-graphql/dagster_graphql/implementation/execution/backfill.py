@@ -143,12 +143,12 @@ def create_and_launch_partition_backfill(
             raise DagsterInvariantViolationError(
                 f"Partition set names must be unique: found {len(matches)} matches for {partition_set_name}"
             )
-        external_partition_set = next(iter(matches))
+        remote_partition_set = next(iter(matches))
 
         if backfill_params.get("allPartitions"):
             result = graphene_info.context.get_external_partition_names(
                 repository_handle=repository.handle,
-                job_name=external_partition_set.job_name,
+                job_name=remote_partition_set.job_name,
                 instance=graphene_info.context.instance,
                 selected_asset_keys=None,
             )
@@ -169,7 +169,7 @@ def create_and_launch_partition_backfill(
 
         backfill = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=remote_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=bool(backfill_params.get("fromFailure")),
@@ -183,7 +183,7 @@ def create_and_launch_partition_backfill(
         assert_valid_job_partition_backfill(
             graphene_info,
             backfill,
-            external_partition_set.get_partitions_definition(),
+            remote_partition_set.get_partitions_definition(),
             dynamic_partitions_store,
             backfill_datetime,
         )

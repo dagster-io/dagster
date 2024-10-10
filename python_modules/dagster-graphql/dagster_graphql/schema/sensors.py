@@ -52,12 +52,12 @@ class GrapheneTarget(graphene.ObjectType):
     class Meta:
         name = "Target"
 
-    def __init__(self, external_target: TargetSnap):
-        self._external_target = check.inst_param(external_target, "external_target", TargetSnap)
+    def __init__(self, target_snap: TargetSnap):
+        self._target_snap = check.inst_param(target_snap, "target_snap", TargetSnap)
         super().__init__(
-            pipelineName=external_target.job_name,
-            mode=external_target.mode,
-            solidSelection=external_target.op_selection,
+            pipelineName=target_snap.job_name,
+            mode=target_snap.mode,
+            solidSelection=target_snap.op_selection,
         )
 
 
@@ -93,13 +93,13 @@ class GrapheneSensor(graphene.ObjectType):
 
     def __init__(
         self,
-        external_sensor: RemoteSensor,
-        external_repository: RemoteRepository,
+        remote_sensor: RemoteSensor,
+        remote_repo: RemoteRepository,
         sensor_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
-        self._external_sensor = check.inst_param(external_sensor, "external_sensor", RemoteSensor)
-        self._external_repository = external_repository
+        self._remote_sensor = check.inst_param(remote_sensor, "remote_sensor", RemoteSensor)
+        self._remote_repository = remote_repo
 
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple sensors
@@ -108,31 +108,31 @@ class GrapheneSensor(graphene.ObjectType):
         )
 
         self._stored_state = sensor_state
-        self._sensor_state = self._external_sensor.get_current_instigator_state(sensor_state)
+        self._sensor_state = self._remote_sensor.get_current_instigator_state(sensor_state)
 
         super().__init__(
-            name=external_sensor.name,
-            jobOriginId=external_sensor.get_remote_origin_id(),
-            minIntervalSeconds=external_sensor.min_interval_seconds,
-            description=external_sensor.description,
-            targets=[GrapheneTarget(target) for target in external_sensor.get_targets()],
+            name=remote_sensor.name,
+            jobOriginId=remote_sensor.get_remote_origin_id(),
+            minIntervalSeconds=remote_sensor.min_interval_seconds,
+            description=remote_sensor.description,
+            targets=[GrapheneTarget(target) for target in remote_sensor.get_targets()],
             metadata=GrapheneSensorMetadata(
-                assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
+                assetKeys=remote_sensor.metadata.asset_keys if remote_sensor.metadata else None
             ),
-            sensorType=external_sensor.sensor_type.value,
+            sensorType=remote_sensor.sensor_type.value,
             assetSelection=GrapheneAssetSelection(
-                asset_selection=external_sensor.asset_selection,
-                external_repository=self._external_repository,
+                asset_selection=remote_sensor.asset_selection,
+                remote_repository=self._remote_repository,
             )
-            if external_sensor.asset_selection
+            if remote_sensor.asset_selection
             else None,
         )
 
     def resolve_id(self, _) -> str:
-        return self._external_sensor.get_compound_id().to_string()
+        return self._remote_sensor.get_compound_id().to_string()
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
-        default_sensor_status = self._external_sensor.default_status
+        default_sensor_status = self._remote_sensor.default_status
 
         if default_sensor_status == DefaultSensorStatus.RUNNING:
             return GrapheneInstigationStatus.RUNNING
@@ -154,7 +154,7 @@ class GrapheneSensor(graphene.ObjectType):
     def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
         return [
             GrapheneDefinitionTag(key, value)
-            for key, value in (self._external_sensor.tags or {}).items()
+            for key, value in (self._remote_sensor.tags or {}).items()
         ]
 
     def resolve_metadataEntries(
@@ -162,7 +162,7 @@ class GrapheneSensor(graphene.ObjectType):
     ) -> Sequence[GrapheneMetadataEntry]:
         # Standard metadata is nested under the non-standard ExternalSensorMetadata object for
         # backcompat reasons.
-        sensor_metadata = self._external_sensor.metadata
+        sensor_metadata = self._remote_sensor.metadata
         if sensor_metadata and sensor_metadata.standard_metadata:
             return list(iterate_metadata_entries(sensor_metadata.standard_metadata))
         else:

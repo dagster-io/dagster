@@ -109,7 +109,7 @@ def get_asset_graph_differ(
         instance, {code_location: "base_asset_graph" for code_location in base_code_locations}
     )
 
-    return AssetGraphDiffer.from_external_repositories(
+    return AssetGraphDiffer.from_remote_repositories(
         code_location_name=code_location_to_diff,
         repository_name=SINGLETON_REPOSITORY_NAME,
         branch_workspace=branch_workspace_ctx,

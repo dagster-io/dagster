@@ -29,12 +29,12 @@ def assert_events_in_order(logs, expected_events):
 
 
 def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_example_repo):
-    external_schedule = foo_example_repo.get_schedule("always_run_schedule")
-    external_sensor = foo_example_repo.get_sensor("always_on_sensor")
+    remote_schedule = foo_example_repo.get_schedule("always_run_schedule")
+    remote_sensor = foo_example_repo.get_sensor("always_on_sensor")
     remote_job = foo_example_repo.get_full_job("foo_job")
 
-    instance.start_schedule(external_schedule)
-    instance.start_sensor(external_sensor)
+    instance.start_schedule(remote_schedule)
+    instance.start_sensor(remote_sensor)
 
     with start_daemon(timeout=180, workspace_file=file_relative_path(__file__, "repo.py")):
         run = create_run(instance, remote_job)
@@ -42,10 +42,10 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
         runs = [
             poll_for_finished_run(instance, run.run_id),
-            poll_for_finished_run(instance, run_tags=DagsterRun.tags_for_sensor(external_sensor)),
+            poll_for_finished_run(instance, run_tags=DagsterRun.tags_for_sensor(remote_sensor)),
             poll_for_finished_run(
                 instance,
-                run_tags=DagsterRun.tags_for_schedule(external_schedule),
+                run_tags=DagsterRun.tags_for_schedule(remote_schedule),
                 timeout=90,
             ),
         ]

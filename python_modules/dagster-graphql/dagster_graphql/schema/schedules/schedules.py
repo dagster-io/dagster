@@ -65,15 +65,13 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def __init__(
         self,
-        external_schedule: RemoteSchedule,
-        external_repository: RemoteRepository,
+        remote_schedule: RemoteSchedule,
+        remote_repository: RemoteRepository,
         schedule_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
-        self._external_schedule = check.inst_param(
-            external_schedule, "external_schedule", RemoteSchedule
-        )
-        self._external_repository = external_repository
+        self._remote_schedule = check.inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
+        self._remote_repository = remote_repository
 
         # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
         # that instantiates multiple schedules
@@ -82,35 +80,35 @@ class GrapheneSchedule(graphene.ObjectType):
         )
 
         self._stored_state = schedule_state
-        self._schedule_state = self._external_schedule.get_current_instigator_state(schedule_state)
+        self._schedule_state = self._remote_schedule.get_current_instigator_state(schedule_state)
 
         super().__init__(
-            name=external_schedule.name,
+            name=remote_schedule.name,
             cron_schedule=str(
-                external_schedule.cron_schedule
+                remote_schedule.cron_schedule
             ),  # can be sequence, coercing to str for now
-            pipeline_name=external_schedule.job_name,
-            solid_selection=external_schedule.op_selection,
-            mode=external_schedule.mode,
+            pipeline_name=remote_schedule.job_name,
+            solid_selection=remote_schedule.op_selection,
+            mode=remote_schedule.mode,
             execution_timezone=(
-                self._external_schedule.execution_timezone
-                if self._external_schedule.execution_timezone
+                self._remote_schedule.execution_timezone
+                if self._remote_schedule.execution_timezone
                 else "UTC"
             ),
-            description=external_schedule.description,
+            description=remote_schedule.description,
             assetSelection=GrapheneAssetSelection(
-                asset_selection=external_schedule.asset_selection,
-                external_repository=self._external_repository,
+                asset_selection=remote_schedule.asset_selection,
+                remote_repository=self._remote_repository,
             )
-            if external_schedule.asset_selection
+            if remote_schedule.asset_selection
             else None,
         )
 
     def resolve_id(self, _graphene_info: ResolveInfo) -> str:
-        return self._external_schedule.get_compound_id().to_string()
+        return self._remote_schedule.get_compound_id().to_string()
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
-        default_schedule_status = self._external_schedule.default_status
+        default_schedule_status = self._remote_schedule.default_status
 
         if default_schedule_status == DefaultScheduleStatus.RUNNING:
             return GrapheneInstigationStatus.RUNNING
@@ -129,19 +127,17 @@ class GrapheneSchedule(graphene.ObjectType):
     def resolve_partition_set(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.partition_sets import GraphenePartitionSet
 
-        if self._external_schedule.partition_set_name is None:
+        if self._remote_schedule.partition_set_name is None:
             return None
 
         repository = graphene_info.context.get_code_location(
-            self._external_schedule.handle.location_name
-        ).get_repository(self._external_schedule.handle.repository_name)
-        external_partition_set = repository.get_partition_set(
-            self._external_schedule.partition_set_name
-        )
+            self._remote_schedule.handle.location_name
+        ).get_repository(self._remote_schedule.handle.repository_name)
+        partition_set = repository.get_partition_set(self._remote_schedule.partition_set_name)
 
         return GraphenePartitionSet(
-            external_repository_handle=repository.handle,
-            external_partition_set=external_partition_set,
+            repository_handle=repository.handle,
+            remote_partition_set=partition_set,
         )
 
     def resolve_futureTicks(
@@ -154,7 +150,7 @@ class GrapheneSchedule(graphene.ObjectType):
         cursor = cursor or time.time()
 
         tick_times: List[float] = []
-        time_iter = self._external_schedule.execution_time_iterator(cursor)
+        time_iter = self._remote_schedule.execution_time_iterator(cursor)
 
         if until:
             currentTime = None
@@ -172,7 +168,7 @@ class GrapheneSchedule(graphene.ObjectType):
             for _ in range(limit):
                 tick_times.append(next(time_iter).timestamp())
 
-        schedule_selector = self._external_schedule.schedule_selector
+        schedule_selector = self._remote_schedule.schedule_selector
         future_ticks = [
             GrapheneDryRunInstigationTick(schedule_selector, tick_time) for tick_time in tick_times
         ]
@@ -182,7 +178,7 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def resolve_futureTick(self, _graphene_info: ResolveInfo, tick_timestamp: int):
         return GrapheneDryRunInstigationTick(
-            self._external_schedule.schedule_selector, float(tick_timestamp)
+            self._remote_schedule.schedule_selector, float(tick_timestamp)
         )
 
     def resolve_potentialTickTimestamps(
@@ -201,8 +197,8 @@ class GrapheneSchedule(graphene.ObjectType):
         lower_limit = lower_limit or 10
 
         tick_times: List[float] = []
-        ascending_tick_iterator = self._external_schedule.execution_time_iterator(start_timestamp)
-        descending_tick_iterator = self._external_schedule.execution_time_iterator(
+        ascending_tick_iterator = self._remote_schedule.execution_time_iterator(start_timestamp)
+        descending_tick_iterator = self._remote_schedule.execution_time_iterator(
             start_timestamp, ascending=False
         )
 
@@ -230,11 +226,11 @@ class GrapheneSchedule(graphene.ObjectType):
     def resolve_tags(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneDefinitionTag]:
         return [
             GrapheneDefinitionTag(key, value)
-            for key, value in (self._external_schedule.tags or {}).items()
+            for key, value in (self._remote_schedule.tags or {}).items()
         ]
 
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
-        return list(iterate_metadata_entries(self._external_schedule.metadata))
+        return list(iterate_metadata_entries(self._remote_schedule.metadata))
 
 
 class GrapheneScheduleOrError(graphene.Union):

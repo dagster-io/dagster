@@ -23,7 +23,7 @@ from dagster_tests.scheduler_tests.test_scheduler_run import (
 def test_non_utc_timezone_run(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that schedule runs at the expected time in a non-UTC timezone
@@ -32,20 +32,20 @@ def test_non_utc_timezone_run(
     ).astimezone(get_timezone("US/Pacific"))
 
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo.get_schedule("daily_central_time_schedule")
+        schedule = remote_repo.get_schedule("daily_central_time_schedule")
 
-        schedule_origin = external_schedule.get_remote_origin()
+        schedule_origin = schedule.get_remote_origin()
 
-        instance.start_schedule(external_schedule)
+        instance.start_schedule(schedule)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -53,7 +53,7 @@ def test_non_utc_timezone_run(
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
 
         expected_datetime = datetime.datetime(
@@ -62,7 +62,7 @@ def test_non_utc_timezone_run(
 
         validate_tick(
             ticks[0],
-            external_schedule,
+            schedule,
             expected_datetime,
             TickStatus.SUCCESS,
             [run.run_id for run in instance.get_runs()],
@@ -78,7 +78,7 @@ def test_non_utc_timezone_run(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -87,7 +87,7 @@ def test_non_utc_timezone_run(
 def test_differing_timezones(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Two schedules, one using US/Central, the other on US/Eastern
@@ -95,28 +95,28 @@ def test_differing_timezones(
         2019, 2, 27, 23, 59, 59, tzinfo=get_timezone("US/Eastern")
     ).astimezone(get_timezone("US/Pacific"))
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo.get_schedule("daily_central_time_schedule")
-        external_eastern_schedule = external_repo.get_schedule("daily_eastern_time_schedule")
+        schedule = remote_repo.get_schedule("daily_central_time_schedule")
+        eastern_schedule = remote_repo.get_schedule("daily_eastern_time_schedule")
 
-        schedule_origin = external_schedule.get_remote_origin()
-        eastern_origin = external_eastern_schedule.get_remote_origin()
+        schedule_origin = schedule.get_remote_origin()
+        eastern_origin = eastern_schedule.get_remote_origin()
 
-        instance.start_schedule(external_schedule)
-        instance.start_schedule(external_eastern_schedule)
+        instance.start_schedule(schedule)
+        instance.start_schedule(eastern_schedule)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
-        ticks = instance.get_ticks(eastern_origin.get_id(), external_eastern_schedule.selector_id)
+        ticks = instance.get_ticks(eastern_origin.get_id(), eastern_schedule.selector_id)
         assert len(ticks) == 0
 
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
-        ticks = instance.get_ticks(eastern_origin.get_id(), external_eastern_schedule.selector_id)
+        ticks = instance.get_ticks(eastern_origin.get_id(), eastern_schedule.selector_id)
         assert len(ticks) == 0
 
     # Past midnight eastern time, the eastern timezone schedule will run, but not the central timezone
@@ -125,7 +125,7 @@ def test_differing_timezones(
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(eastern_origin.get_id(), external_eastern_schedule.selector_id)
+        ticks = instance.get_ticks(eastern_origin.get_id(), eastern_schedule.selector_id)
         assert len(ticks) == 1
 
         expected_datetime = datetime.datetime(
@@ -134,13 +134,13 @@ def test_differing_timezones(
 
         validate_tick(
             ticks[0],
-            external_eastern_schedule,
+            eastern_schedule,
             expected_datetime,
             TickStatus.SUCCESS,
             [run.run_id for run in instance.get_runs()],
         )
 
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
         wait_for_all_runs_to_start(instance)
@@ -156,10 +156,10 @@ def test_differing_timezones(
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(eastern_origin.get_id(), external_eastern_schedule.selector_id)
+        ticks = instance.get_ticks(eastern_origin.get_id(), eastern_schedule.selector_id)
         assert len(ticks) == 1
 
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
 
         expected_datetime = datetime.datetime(
@@ -168,7 +168,7 @@ def test_differing_timezones(
 
         validate_tick(
             ticks[0],
-            external_schedule,
+            schedule,
             expected_datetime,
             TickStatus.SUCCESS,
             [next(iter(instance.get_runs())).run_id],
@@ -184,11 +184,11 @@ def test_differing_timezones(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 2
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
-        ticks = instance.get_ticks(eastern_origin.get_id(), external_eastern_schedule.selector_id)
+        ticks = instance.get_ticks(eastern_origin.get_id(), eastern_schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -199,7 +199,7 @@ def test_differing_timezones(
 def test_different_days_in_different_timezones(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     freeze_datetime = datetime.datetime(
@@ -207,17 +207,17 @@ def test_different_days_in_different_timezones(
     ).astimezone(get_timezone("US/Pacific"))
     with freeze_time(freeze_datetime):
         # Runs every day at 11PM (CST)
-        external_schedule = external_repo.get_schedule("daily_late_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
-        instance.start_schedule(external_schedule)
+        schedule = remote_repo.get_schedule("daily_late_schedule")
+        schedule_origin = schedule.get_remote_origin()
+        instance.start_schedule(schedule)
 
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 0
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -225,7 +225,7 @@ def test_different_days_in_different_timezones(
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
 
         expected_datetime = datetime.datetime(
@@ -234,7 +234,7 @@ def test_different_days_in_different_timezones(
 
         validate_tick(
             ticks[0],
-            external_schedule,
+            schedule,
             expected_datetime,
             TickStatus.SUCCESS,
             [next(iter(instance.get_runs())).run_id],
@@ -250,7 +250,7 @@ def test_different_days_in_different_timezones(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -259,7 +259,7 @@ def test_different_days_in_different_timezones(
 def test_hourly_dst_spring_forward(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that an hourly schedule still runs hourly during the spring DST transition
@@ -268,14 +268,14 @@ def test_hourly_dst_spring_forward(
         2019, 3, 10, 1, 0, 0, tzinfo=get_timezone("US/Central")
     ).astimezone(get_timezone("US/Pacific"))
 
-    external_schedule = external_repo.get_schedule("hourly_central_time_schedule")
-    schedule_origin = external_schedule.get_remote_origin()
+    schedule = remote_repo.get_schedule("hourly_central_time_schedule")
+    schedule_origin = schedule.get_remote_origin()
     with freeze_time(freeze_datetime):
-        instance.start_schedule(external_schedule)
+        instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
 
     freeze_datetime = add_absolute_time(freeze_datetime, hours=1)
@@ -291,7 +291,7 @@ def test_hourly_dst_spring_forward(
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
 
         expected_datetimes_utc = [
@@ -309,7 +309,7 @@ def test_hourly_dst_spring_forward(
         for i in range(3):
             validate_tick(
                 ticks[i],
-                external_schedule,
+                schedule,
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
@@ -324,7 +324,7 @@ def test_hourly_dst_spring_forward(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
 
 
@@ -332,7 +332,7 @@ def test_hourly_dst_spring_forward(
 def test_hourly_dst_fall_back(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that an hourly schedule still runs hourly during the fall DST transition
@@ -341,14 +341,14 @@ def test_hourly_dst_fall_back(
         2019, 11, 3, 0, 30, 0, tzinfo=get_timezone("US/Central")
     ).astimezone(get_timezone("US/Pacific"))
 
-    external_schedule = external_repo.get_schedule("hourly_central_time_schedule")
-    schedule_origin = external_schedule.get_remote_origin()
+    schedule = remote_repo.get_schedule("hourly_central_time_schedule")
+    schedule_origin = schedule.get_remote_origin()
     with freeze_time(freeze_datetime):
-        instance.start_schedule(external_schedule)
+        instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 0  # 0 because we're on the half-hour
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
     for _ in range(3):
@@ -366,7 +366,7 @@ def test_hourly_dst_fall_back(
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 4
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 4
 
         expected_datetimes_utc = [
@@ -391,7 +391,7 @@ def test_hourly_dst_fall_back(
 
             validate_tick(
                 ticks[i],
-                external_schedule,
+                schedule,
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
@@ -406,7 +406,7 @@ def test_hourly_dst_fall_back(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 4
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 4
 
 
@@ -414,7 +414,7 @@ def test_hourly_dst_fall_back(
 def test_daily_dst_spring_forward(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that a daily schedule still runs once per day during the spring DST transition
@@ -423,14 +423,14 @@ def test_daily_dst_spring_forward(
         2019, 3, 10, 0, 0, 0, tzinfo=get_timezone("US/Central")
     ).astimezone(get_timezone("US/Pacific"))
 
-    external_schedule = external_repo.get_schedule("daily_central_time_schedule")
-    schedule_origin = external_schedule.get_remote_origin()
+    schedule = remote_repo.get_schedule("daily_central_time_schedule")
+    schedule_origin = schedule.get_remote_origin()
     with freeze_time(freeze_datetime):
-        instance.start_schedule(external_schedule)
+        instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
 
     freeze_datetime = freeze_datetime + relativedelta(days=1)
@@ -444,7 +444,7 @@ def test_daily_dst_spring_forward(
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
 
         # UTC time changed by one hour after the transition, still running daily at the same
@@ -458,7 +458,7 @@ def test_daily_dst_spring_forward(
         for i in range(3):
             validate_tick(
                 ticks[i],
-                external_schedule,
+                schedule,
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
@@ -473,7 +473,7 @@ def test_daily_dst_spring_forward(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
 
 
@@ -481,7 +481,7 @@ def test_daily_dst_spring_forward(
 def test_daily_dst_fall_back(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that a daily schedule still runs once per day during the fall DST transition
@@ -491,13 +491,13 @@ def test_daily_dst_fall_back(
     ).astimezone(get_timezone("US/Pacific"))
 
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo.get_schedule("daily_central_time_schedule")
-        schedule_origin = external_schedule.get_remote_origin()
-        instance.start_schedule(external_schedule)
+        schedule = remote_repo.get_schedule("daily_central_time_schedule")
+        schedule_origin = schedule.get_remote_origin()
+        instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
 
     freeze_datetime = freeze_datetime + relativedelta(days=1)
@@ -511,7 +511,7 @@ def test_daily_dst_fall_back(
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
 
         # UTC time changed by one hour after the transition, still running daily at the same
@@ -525,7 +525,7 @@ def test_daily_dst_fall_back(
         for i in range(3):
             validate_tick(
                 ticks[i],
-                external_schedule,
+                schedule,
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
@@ -540,7 +540,7 @@ def test_daily_dst_fall_back(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
 
 
@@ -548,7 +548,7 @@ def test_daily_dst_fall_back(
 def test_execute_during_dst_transition_spring_forward(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # Verify that a daily schedule that is supposed to execute at a time that is skipped
@@ -559,13 +559,13 @@ def test_execute_during_dst_transition_spring_forward(
     ).astimezone(get_timezone("US/Pacific"))
 
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo.get_schedule("daily_dst_transition_schedule_skipped_time")
-        schedule_origin = external_schedule.get_remote_origin()
-        instance.start_schedule(external_schedule)
+        schedule = remote_repo.get_schedule("daily_dst_transition_schedule_skipped_time")
+        schedule_origin = schedule.get_remote_origin()
+        instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 0  # 0 because we're one the half hour
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
     for _ in range(4):
@@ -580,7 +580,7 @@ def test_execute_during_dst_transition_spring_forward(
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 5
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 5
 
         expected_datetimes_utc = [
@@ -604,7 +604,7 @@ def test_execute_during_dst_transition_spring_forward(
         for i in range(5):
             validate_tick(
                 ticks[i],
-                external_schedule,
+                schedule,
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
@@ -619,7 +619,7 @@ def test_execute_during_dst_transition_spring_forward(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 5
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 5
 
 
@@ -627,7 +627,7 @@ def test_execute_during_dst_transition_spring_forward(
 def test_execute_during_dst_transition_fall_back(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
     # A schedule that runs daily during a time that occurs twice during a fall DST transition
@@ -637,13 +637,13 @@ def test_execute_during_dst_transition_fall_back(
     ).astimezone(get_timezone("US/Pacific"))
 
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo.get_schedule("daily_dst_transition_schedule_doubled_time")
-        schedule_origin = external_schedule.get_remote_origin()
-        instance.start_schedule(external_schedule)
+        schedule = remote_repo.get_schedule("daily_dst_transition_schedule_doubled_time")
+        schedule_origin = schedule.get_remote_origin()
+        instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
         assert instance.get_runs_count() == 0  # 0 because we're one the half hour
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
     for _ in range(2):
@@ -658,7 +658,7 @@ def test_execute_during_dst_transition_fall_back(
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
 
         expected_datetimes_utc = [
@@ -670,7 +670,7 @@ def test_execute_during_dst_transition_fall_back(
         for i in range(3):
             validate_tick(
                 ticks[i],
-                external_schedule,
+                schedule,
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
@@ -685,5 +685,5 @@ def test_execute_during_dst_transition_fall_back(
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert instance.get_runs_count() == 3
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 3
