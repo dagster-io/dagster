@@ -22,11 +22,11 @@ def remote_job_from_location(
         code_location.has_repository(repo_name),
         f"Could not find repository {repo_name} in location {code_location.name}",
     )
-    external_repo = code_location.get_repository(repo_name)
+    repo = code_location.get_repository(repo_name)
 
     pipeline_selector = JobSubsetSelector(
         location_name=code_location.name,
-        repository_name=external_repo.name,
+        repository_name=repo.name,
         job_name=job_name,
         op_selection=op_selection,
     )

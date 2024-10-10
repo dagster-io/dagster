@@ -111,7 +111,7 @@ def test_run_from_pending_repository():
                 remote_job = code_location.get_repository("pending").get_full_job(
                     "my_cool_asset_job"
                 )
-                external_execution_plan = code_location.get_execution_plan(
+                remote_execution_plan = code_location.get_execution_plan(
                     remote_job=remote_job,
                     run_config={},
                     step_keys_to_execute=None,
@@ -144,7 +144,7 @@ def test_run_from_pending_repository():
                     root_run_id=None,
                     parent_run_id=None,
                     job_snapshot=remote_job.job_snapshot,
-                    execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+                    execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
                     parent_job_snapshot=remote_job.parent_job_snapshot,
                     remote_job_origin=remote_job.get_remote_origin(),
                     job_code_origin=remote_job.get_python_origin(),

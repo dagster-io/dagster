@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_external_job_data
+# name: test_remote_job_data
   '''
   {
     "__class__": "ExternalPipelineData",
@@ -1122,7 +1122,7 @@
   }
   '''
 # ---
-# name: test_external_repository_data
+# name: test_repository_snap
   '''
   {
     "__class__": "ExternalRepositoryData",

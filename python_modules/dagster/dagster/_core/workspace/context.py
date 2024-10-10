@@ -248,7 +248,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             .get_full_job(selector.job_name)
         )
 
-    def get_external_execution_plan(
+    def get_execution_plan(
         self,
         remote_job: RemoteJob,
         run_config: Mapping[str, object],
@@ -263,7 +263,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             instance=self.instance,
         )
 
-    def get_external_partition_config(
+    def get_partition_config(
         self,
         repository_handle: RepositoryHandle,
         job_name: str,
@@ -277,7 +277,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             instance=instance,
         )
 
-    def get_external_partition_tags(
+    def get_partition_tags(
         self,
         repository_handle: RepositoryHandle,
         job_name: str,
@@ -293,7 +293,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selected_asset_keys=selected_asset_keys,
         )
 
-    def get_external_partition_names(
+    def get_partition_names(
         self,
         repository_handle: RepositoryHandle,
         job_name: str,
@@ -307,7 +307,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             selected_asset_keys=selected_asset_keys,
         )
 
-    def get_external_partition_set_execution_param_data(
+    def get_partition_set_execution_param_data(
         self,
         repository_handle: RepositoryHandle,
         partition_set_name: str,
@@ -323,7 +323,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
             instance=instance,
         )
 
-    def get_external_notebook_data(self, code_location_name: str, notebook_path: str) -> bytes:
+    def get_notebook_data(self, code_location_name: str, notebook_path: str) -> bytes:
         check.str_param(code_location_name, "code_location_name")
         check.str_param(notebook_path, "notebook_path")
         code_location = self.get_code_location(code_location_name)
