@@ -315,7 +315,7 @@ class GrapheneRepository(graphene.ObjectType):
                     batch_loader.get_schedule_state(schedule.name),
                     batch_loader,
                 )
-                for schedule in repository.get_external_schedules()
+                for schedule in repository.get_schedules()
             ],
             key=lambda schedule: schedule.name,
         )
@@ -330,7 +330,7 @@ class GrapheneRepository(graphene.ObjectType):
                 batch_loader.get_sensor_state(sensor.name),
                 batch_loader,
             )
-            for sensor in sorted(repository.get_external_sensors(), key=lambda sensor: sensor.name)
+            for sensor in sorted(repository.get_sensors(), key=lambda sensor: sensor.name)
             if not sensorType or sensor.sensor_type == sensorType
         ]
 
@@ -338,7 +338,7 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GraphenePipeline(pipeline)
             for pipeline in sorted(
-                self.get_repository(graphene_info).get_all_external_jobs(),
+                self.get_repository(graphene_info).get_all_jobs(),
                 key=lambda pipeline: pipeline.name,
             )
         ]
@@ -347,7 +347,7 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneJob(pipeline)
             for pipeline in sorted(
-                self.get_repository(graphene_info).get_all_external_jobs(),
+                self.get_repository(graphene_info).get_all_jobs(),
                 key=lambda pipeline: pipeline.name,
             )
         ]
@@ -361,7 +361,7 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_partitionSets(self, graphene_info: ResolveInfo):
         return (
             GraphenePartitionSet(self._handle, partition_set)
-            for partition_set in self.get_repository(graphene_info).get_external_partition_sets()
+            for partition_set in self.get_repository(graphene_info).get_partition_sets()
         )
 
     def resolve_displayMetadata(self, graphene_info: ResolveInfo):
@@ -435,7 +435,7 @@ class GrapheneRepository(graphene.ObjectType):
                 external_resource=resource,
             )
             for resource in sorted(
-                self.get_repository(graphene_info).get_external_resources(),
+                self.get_repository(graphene_info).get_resources(),
                 key=lambda resource: resource.name,
             )
             if resource.is_top_level

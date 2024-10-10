@@ -86,7 +86,7 @@ def test_external_repo_shared_index(snapshot_mock):
             def _fetch_snap_id():
                 location = workspace.code_locations[0]
                 ex_repo = next(iter(location.get_repositories().values()))
-                return ex_repo.get_all_external_jobs()[0].identifying_job_snapshot_id
+                return ex_repo.get_all_jobs()[0].identifying_job_snapshot_id
 
             _fetch_snap_id()
             assert snapshot_mock.call_count == 1
@@ -108,7 +108,7 @@ def test_external_repo_shared_index_threaded(snapshot_mock):
             def _fetch_snap_id():
                 location = workspace.code_locations[0]
                 ex_repo = next(iter(location.get_repositories().values()))
-                return ex_repo.get_all_external_jobs()[0].identifying_job_snapshot_id
+                return ex_repo.get_all_jobs()[0].identifying_job_snapshot_id
 
             with ThreadPoolExecutor() as executor:
                 wait([executor.submit(_fetch_snap_id) for _ in range(100)])

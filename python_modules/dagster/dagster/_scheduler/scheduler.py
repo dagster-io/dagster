@@ -288,7 +288,7 @@ def launch_scheduled_runs(
         code_location = location_entry.code_location
         if code_location:
             for repo in code_location.get_repositories().values():
-                for schedule in repo.get_external_schedules():
+                for schedule in repo.get_schedules():
                     selector_id = schedule.selector_id
                     if schedule.get_current_instigator_state(
                         all_schedule_states.get(selector_id)

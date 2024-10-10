@@ -817,8 +817,8 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         external_repo = code_location.get_repository("the_status_in_code_repo")
 
         with freeze_time(freeze_datetime):
-            running_schedule = external_repo.get_external_schedule("always_running_schedule")
-            not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
+            running_schedule = external_repo.get_schedule("always_running_schedule")
+            not_running_schedule = external_repo.get_schedule("never_running_schedule")
 
             always_running_origin = running_schedule.get_remote_origin()
             never_running_origin = not_running_schedule.get_remote_origin()
@@ -889,8 +889,8 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
             running_to_not_running_schedule = RemoteSchedule(
-                external_schedule_data=copy(
-                    running_schedule._external_schedule_data,  # noqa: SLF001
+                schedule_snap=copy(
+                    running_schedule._schedule_snap,  # noqa: SLF001
                     default_status=DefaultScheduleStatus.STOPPED,
                 ),
                 handle=running_schedule.handle.repository_handle,
@@ -1000,7 +1000,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
         assert code_location
         external_repo = code_location.get_repository("the_status_in_code_repo")
 
-        not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
+        not_running_schedule = external_repo.get_schedule("never_running_schedule")
 
         never_running_origin = not_running_schedule.get_remote_origin()
 
@@ -1081,18 +1081,18 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
 
             # stop always on schedule
             status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
-            running_sched = status_in_code_repo.get_external_schedule("always_running_schedule")
+            running_sched = status_in_code_repo.get_schedule("always_running_schedule")
             instance.stop_schedule(
                 running_sched.get_remote_origin_id(),
                 running_sched.selector_id,
                 running_sched,
             )
 
-            external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
+            external_schedule = external_repo.get_schedule("multi_run_list_schedule")
             schedule_origin = external_schedule.get_remote_origin()
             instance.start_schedule(external_schedule)
 
-            other_schedule = other_repo.get_external_schedule("multi_run_list_schedule")
+            other_schedule = other_repo.get_schedule("multi_run_list_schedule")
             other_origin = external_schedule.get_remote_origin()
             instance.start_schedule(other_schedule)
 
@@ -1159,7 +1159,7 @@ def test_stale_request_context(
 ):
     freeze_datetime = feb_27_2019_start_of_day()
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+        external_schedule = external_repo.get_schedule("many_requests_schedule")
 
         schedule_origin = external_schedule.get_remote_origin()
 
@@ -1218,7 +1218,7 @@ def test_launch_failure(
             },
         },
     ) as scheduler_instance:
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        external_schedule = external_repo.get_schedule("simple_schedule")
 
         schedule_origin = external_schedule.get_remote_origin()
         freeze_datetime = feb_27_2019_start_of_day()
@@ -1269,10 +1269,10 @@ def test_schedule_mutation(
     ).code_location.get_repository(  # type: ignore
         "the_repo"
     )
-    schedule_one = repo_one.get_external_schedule("simple_schedule")
+    schedule_one = repo_one.get_schedule("simple_schedule")
     origin_one = schedule_one.get_remote_origin()
     assert schedule_one.cron_schedule == "0 2 * * *"
-    schedule_two = repo_two.get_external_schedule("simple_schedule")
+    schedule_two = repo_two.get_schedule("simple_schedule")
     origin_two = schedule_two.get_remote_origin()
     assert schedule_two.cron_schedule == "0 1 * * *"
 
@@ -1328,7 +1328,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            external_schedule = external_repo.get_schedule("simple_schedule")
 
             schedule_origin = external_schedule.get_remote_origin()
 
@@ -1494,7 +1494,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        external_schedule = external_repo.get_schedule("simple_schedule")
         existing_origin = external_schedule.get_remote_origin()
 
         code_location_origin = existing_origin.repository_origin.code_location_origin
@@ -1543,7 +1543,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            external_schedule = external_repo.get_schedule("simple_schedule")
 
             # Create an old tick from several days ago
             scheduler_instance.create_tick(
@@ -1578,7 +1578,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        external_schedule = external_repo.get_schedule("simple_schedule")
         schedule_origin = external_schedule.get_remote_origin()
 
         evaluate_schedules(workspace_context, executor, get_current_datetime())
@@ -1601,7 +1601,7 @@ class TestSchedulerRun:
         ).code_location
         assert code_location is not None
         external_repo = code_location.get_repository("the_repo")
-        external_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
+        external_schedule = external_repo.get_schedule("simple_schedule_no_timezone")
         schedule_origin = external_schedule.get_remote_origin()
         initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
 
@@ -1651,7 +1651,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
+        external_schedule = external_repo.get_schedule("wrong_config_schedule")
         schedule_origin = external_schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
@@ -1722,7 +1722,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
+        external_schedule = external_repo.get_schedule("wrong_config_schedule")
         schedule_origin = external_schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
@@ -1823,7 +1823,7 @@ class TestSchedulerRun:
             schedule_name = "passes_on_retry_schedule_sync"
         else:
             schedule_name = "passes_on_retry_schedule_async"
-        external_schedule = external_repo.get_external_schedule(schedule_name)
+        external_schedule = external_repo.get_schedule(schedule_name)
         schedule_origin = external_schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
@@ -1926,7 +1926,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
+        external_schedule = external_repo.get_schedule("bad_should_execute_schedule")
         schedule_origin = external_schedule.get_remote_origin()
         initial_datetime = create_datetime(
             year=2019,
@@ -1966,7 +1966,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("skip_schedule")
+        external_schedule = external_repo.get_schedule("skip_schedule")
         schedule_origin = external_schedule.get_remote_origin()
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
@@ -1996,7 +1996,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
+        external_schedule = external_repo.get_schedule("wrong_config_schedule")
         schedule_origin = external_schedule.get_remote_origin()
         freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
@@ -2028,7 +2028,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("default_config_schedule")
+        external_schedule = external_repo.get_schedule("default_config_schedule")
         schedule_origin = external_schedule.get_remote_origin()
         initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(initial_datetime):
@@ -2071,9 +2071,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule(
-            "static_partitioned_asset1_schedule"
-        )
+        external_schedule = external_repo.get_schedule("static_partitioned_asset1_schedule")
         initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(initial_datetime):
             scheduler_instance.start_schedule(external_schedule)
@@ -2098,10 +2096,8 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        good_schedule = external_repo.get_external_schedule("simple_schedule")
-        bad_schedule = external_repo.get_external_schedule(
-            "bad_should_execute_on_odd_days_schedule"
-        )
+        good_schedule = external_repo.get_schedule("simple_schedule")
+        bad_schedule = external_repo.get_schedule("bad_should_execute_on_odd_days_schedule")
 
         good_origin = good_schedule.get_remote_origin()
         bad_origin = bad_schedule.get_remote_origin()
@@ -2219,7 +2215,7 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        external_schedule = external_repo.get_schedule("simple_schedule")
 
         schedule_origin = external_schedule.get_remote_origin()
         freeze_datetime = feb_27_2019_start_of_day()  # 00:00:00
@@ -2246,7 +2242,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            external_schedule = external_repo.get_schedule("simple_schedule")
             valid_schedule_origin = external_schedule.get_remote_origin()
 
             # Swap out a new repository name
@@ -2288,7 +2284,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            external_schedule = external_repo.get_schedule("simple_schedule")
             valid_schedule_origin = external_schedule.get_remote_origin()
 
             # Swap out a new schedule name
@@ -2330,7 +2326,7 @@ class TestSchedulerRun:
         ).astimezone(get_timezone("US/Central"))
 
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            external_schedule = external_repo.get_schedule("simple_schedule")
             valid_schedule_origin = external_schedule.get_remote_origin()
 
             code_location_origin = valid_schedule_origin.repository_origin.code_location_origin
@@ -2373,8 +2369,8 @@ class TestSchedulerRun:
         external_repo: RemoteRepository,
         executor: ThreadPoolExecutor,
     ):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
-        external_hourly_schedule = external_repo.get_external_schedule("simple_hourly_schedule")
+        external_schedule = external_repo.get_schedule("simple_schedule")
+        external_hourly_schedule = external_repo.get_schedule("simple_hourly_schedule")
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
@@ -2428,7 +2424,7 @@ class TestSchedulerRun:
         # This is a Wednesday.
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("union_schedule")
+            external_schedule = external_repo.get_schedule("union_schedule")
             schedule_origin = external_schedule.get_remote_origin()
             scheduler_instance.start_schedule(external_schedule)
 
@@ -2543,7 +2539,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("multi_run_schedule")
+            external_schedule = external_repo.get_schedule("multi_run_schedule")
             schedule_origin = external_schedule.get_remote_origin()
             scheduler_instance.start_schedule(external_schedule)
 
@@ -2621,7 +2617,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
+            external_schedule = external_repo.get_schedule("multi_run_list_schedule")
             schedule_origin = external_schedule.get_remote_origin()
             scheduler_instance.start_schedule(external_schedule)
 
@@ -2699,7 +2695,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule(
+            external_schedule = external_repo.get_schedule(
                 "multi_run_schedule_with_missing_run_key"
             )
             schedule_origin = external_schedule.get_remote_origin()
@@ -2733,7 +2729,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("large_schedule")
+            external_schedule = external_repo.get_schedule("large_schedule")
             schedule_origin = external_schedule.get_remote_origin()
             scheduler_instance.start_schedule(external_schedule)
 
@@ -2758,7 +2754,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("empty_schedule")
+            external_schedule = external_repo.get_schedule("empty_schedule")
 
             schedule_origin = external_schedule.get_remote_origin()
 
@@ -2792,7 +2788,7 @@ class TestSchedulerRun:
     ):
         freeze_datetime = feb_27_2019_start_of_day()
         with freeze_time(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("many_requests_schedule")
+            external_schedule = external_repo.get_schedule("many_requests_schedule")
 
             schedule_origin = external_schedule.get_remote_origin()
 
@@ -2829,7 +2825,7 @@ class TestSchedulerRun:
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("asset_selection_schedule")
+        external_schedule = external_repo.get_schedule("asset_selection_schedule")
         schedule_origin = external_schedule.get_remote_origin()
 
         with freeze_time(freeze_datetime):
@@ -2880,7 +2876,7 @@ class TestSchedulerRun:
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+        external_schedule = external_repo.get_schedule("stale_asset_selection_schedule")
 
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
@@ -2908,7 +2904,7 @@ class TestSchedulerRun:
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+        external_schedule = external_repo.get_schedule("stale_asset_selection_schedule")
 
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
@@ -2934,7 +2930,7 @@ class TestSchedulerRun:
         executor: ThreadPoolExecutor,
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+        external_schedule = external_repo.get_schedule("stale_asset_selection_schedule")
 
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
@@ -2960,7 +2956,7 @@ class TestSchedulerRun:
         self, scheduler_instance: DagsterInstance, workspace_context, external_repo, executor
     ):
         freeze_datetime = feb_27_2019_one_second_to_midnight()
-        external_schedule = external_repo.get_external_schedule("source_asset_observation_schedule")
+        external_schedule = external_repo.get_schedule("source_asset_observation_schedule")
         schedule_origin = external_schedule.get_remote_origin()
 
         with freeze_time(freeze_datetime):
@@ -3013,17 +3009,17 @@ class TestSchedulerRun:
         freeze_datetime = feb_27_2019_one_second_to_midnight()
 
         with freeze_time(freeze_datetime):
-            job_with_tags_with_run_tags_schedule = external_repo.get_external_schedule(
+            job_with_tags_with_run_tags_schedule = external_repo.get_schedule(
                 "job_with_tags_with_run_tags_schedule"
             )
             scheduler_instance.start_schedule(job_with_tags_with_run_tags_schedule)
 
-            job_with_tags_no_run_tags_schedule = external_repo.get_external_schedule(
+            job_with_tags_no_run_tags_schedule = external_repo.get_schedule(
                 "job_with_tags_no_run_tags_schedule"
             )
             scheduler_instance.start_schedule(job_with_tags_no_run_tags_schedule)
 
-            job_no_tags_with_run_tags_schedule = external_repo.get_external_schedule(
+            job_no_tags_with_run_tags_schedule = external_repo.get_schedule(
                 "job_no_tags_with_run_tags_schedule"
             )
             scheduler_instance.start_schedule(job_no_tags_with_run_tags_schedule)

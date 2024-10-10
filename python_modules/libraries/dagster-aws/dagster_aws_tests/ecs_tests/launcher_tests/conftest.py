@@ -269,13 +269,13 @@ def job() -> JobDefinition:
 @pytest.fixture
 def external_job(workspace: WorkspaceRequestContext) -> RemoteJob:
     location = workspace.get_code_location(workspace.code_location_names[0])
-    return location.get_repository(repo.repository.name).get_full_external_job(repo.job.name)
+    return location.get_repository(repo.repository.name).get_full_job(repo.job.name)
 
 
 @pytest.fixture
 def other_external_job(other_workspace: WorkspaceRequestContext) -> RemoteJob:
     location = other_workspace.get_code_location(other_workspace.code_location_names[0])
-    return location.get_repository(repo.repository.name).get_full_external_job(repo.job.name)
+    return location.get_repository(repo.repository.name).get_full_job(repo.job.name)
 
 
 @pytest.fixture

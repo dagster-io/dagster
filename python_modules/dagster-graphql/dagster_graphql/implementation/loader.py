@@ -77,15 +77,15 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SCHEDULE_TICKS:
             if self._instance.supports_batch_tick_queries:
                 selector_ids = [
-                    schedule.selector_id for schedule in self._repository.get_external_schedules()
+                    schedule.selector_id for schedule in self._repository.get_schedules()
                 ]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
-                for schedule in self._repository.get_external_schedules():
+                for schedule in self._repository.get_schedules():
                     fetched[schedule.get_remote_origin_id()] = list(
                         ticks_by_selector.get(schedule.selector_id, [])
                     )
             else:
-                for schedule in self._repository.get_external_schedules():
+                for schedule in self._repository.get_schedules():
                     origin_id = schedule.get_remote_origin_id()
                     fetched[origin_id] = list(
                         self._instance.get_ticks(origin_id, schedule.selector_id, limit=limit)
@@ -93,16 +93,14 @@ class RepositoryScopedBatchLoader:
 
         elif data_type == RepositoryDataType.SENSOR_TICKS:
             if self._instance.supports_batch_tick_queries:
-                selector_ids = [
-                    schedule.selector_id for schedule in self._repository.get_external_sensors()
-                ]
+                selector_ids = [schedule.selector_id for schedule in self._repository.get_sensors()]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
-                for sensor in self._repository.get_external_sensors():
+                for sensor in self._repository.get_sensors():
                     fetched[sensor.get_remote_origin_id()] = list(
                         ticks_by_selector.get(sensor.selector_id, [])
                     )
             else:
-                for sensor in self._repository.get_external_sensors():
+                for sensor in self._repository.get_sensors():
                     origin_id = sensor.get_remote_origin_id()
                     fetched[origin_id] = list(
                         self._instance.get_ticks(origin_id, sensor.selector_id, limit=limit)
@@ -115,29 +113,25 @@ class RepositoryScopedBatchLoader:
         self._limits[data_type] = limit
 
     def get_schedule_state(self, schedule_name: str) -> Optional[InstigatorState]:
-        check.invariant(self._repository.has_external_schedule(schedule_name))
+        check.invariant(self._repository.has_schedule(schedule_name))
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
 
     def get_sensor_state(self, sensor_name: str) -> Optional[InstigatorState]:
-        check.invariant(self._repository.has_external_sensor(sensor_name))
+        check.invariant(self._repository.has_sensor(sensor_name))
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_name, 1)
         return states[0] if states else None
 
     def get_sensor_ticks(self, origin_id: str, selector_id: str, limit: int) -> Sequence[Any]:
         check.invariant(
-            any(
-                selector_id == sensor.selector_id
-                for sensor in self._repository.get_external_sensors()
-            )
+            any(selector_id == sensor.selector_id for sensor in self._repository.get_sensors())
         )
         return self._get(RepositoryDataType.SENSOR_TICKS, origin_id, limit)
 
     def get_schedule_ticks(self, origin_id: str, selector_id: str, limit: int) -> Sequence[Any]:
         check.invariant(
             any(
-                selector_id == schedule.selector_id
-                for schedule in self._repository.get_external_schedules()
+                selector_id == schedule.selector_id for schedule in self._repository.get_schedules()
             )
         )
         return self._get(RepositoryDataType.SCHEDULE_TICKS, origin_id, limit)

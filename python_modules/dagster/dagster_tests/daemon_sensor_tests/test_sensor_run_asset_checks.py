@@ -57,7 +57,7 @@ def test_asset_check_run_request_sensor(instance: DagsterInstance, executor):
         workspace_load_target=module_target, instance=instance
     ) as workspace_context:
         external_repo = load_external_repo(workspace_context, "__repository__")
-        external_sensor = external_repo.get_external_sensor(asset_check_run_request_sensor.name)
+        external_sensor = external_repo.get_sensor(asset_check_run_request_sensor.name)
 
         instance.add_instigator_state(
             InstigatorState(

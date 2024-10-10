@@ -71,7 +71,7 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         ).get_repository(repository_selector["repositoryName"])
 
         schedule_name = "no_config_job_hourly_schedule"
-        external_schedule = external_repository.get_external_schedule(schedule_name)
+        external_schedule = external_repository.get_schedule(schedule_name)
         selector = infer_instigation_selector(graphql_context, schedule_name)
 
         # need to be running in order to generate a future tick
@@ -109,7 +109,7 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         ).get_repository(repository_selector["repositoryName"])
 
         sensor_name = "always_no_config_sensor_with_tags_and_metadata"
-        external_sensor = external_repository.get_external_sensor(sensor_name)
+        external_sensor = external_repository.get_sensor(sensor_name)
         selector = infer_instigation_selector(graphql_context, sensor_name)
 
         result = execute_dagster_graphql(
@@ -167,7 +167,7 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         ).get_repository(repository_selector["repositoryName"])
 
         schedule_name = "no_config_job_hourly_schedule"
-        external_schedule = external_repository.get_external_schedule(schedule_name)
+        external_schedule = external_repository.get_schedule(schedule_name)
         graphql_context.instance.start_schedule(external_schedule)
 
         result = execute_dagster_graphql(

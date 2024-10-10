@@ -423,7 +423,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         repository = location.get_repository(repository_name)
         external_partition_sets = [
             partition_set
-            for partition_set in repository.get_external_partition_sets()
+            for partition_set in repository.get_partition_sets()
             if partition_set.name == origin.partition_set_name
         ]
         if not external_partition_sets:

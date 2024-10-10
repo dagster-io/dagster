@@ -54,7 +54,7 @@ class TestQueuedRunCoordinator:
     @pytest.fixture(name="external_pipeline")
     def external_job_fixture(self, workspace: WorkspaceRequestContext) -> RemoteJob:
         location = workspace.get_code_location("bar_code_location")
-        return location.get_repository("bar_repo").get_full_external_job("foo")
+        return location.get_repository("bar_repo").get_full_job("foo")
 
     def create_run_for_test(
         self, instance: DagsterInstance, external_pipeline: RemoteJob, **kwargs: object

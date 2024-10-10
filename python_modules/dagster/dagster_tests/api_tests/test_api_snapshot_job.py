@@ -63,7 +63,7 @@ def test_job_with_valid_subset_snapshot_api_grpc(instance):
         assert external_job_subset_result.external_job_data.name == "foo"
         assert (
             external_job_subset_result.external_job_data.parent_job
-            == code_location.get_repository("bar_repo").get_full_external_job("foo").job_snapshot
+            == code_location.get_repository("bar_repo").get_full_job("foo").job_snapshot
         )
 
 

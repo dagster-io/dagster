@@ -1177,7 +1177,7 @@ def test_sensor_next_ticks(graphql_context: WorkspaceRequestContext):
     ).get_repository(main_repo_name())
 
     sensor_name = "always_no_config_sensor_with_tags_and_metadata"
-    external_sensor = external_repository.get_external_sensor(sensor_name)
+    external_sensor = external_repository.get_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     result = execute_dagster_graphql(
@@ -1191,7 +1191,7 @@ def test_sensor_next_ticks(graphql_context: WorkspaceRequestContext):
     assert not next_tick
 
     error_sensor_name = "always_error_sensor"
-    external_error_sensor = external_repository.get_external_sensor(error_sensor_name)
+    external_error_sensor = external_repository.get_sensor(error_sensor_name)
     error_sensor_selector = infer_sensor_selector(graphql_context, error_sensor_name)
 
     # test default sensor with no tick
@@ -1262,7 +1262,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
     ).get_repository(main_repo_name())
 
     sensor_name = "always_no_config_sensor_with_tags_and_metadata"
-    external_sensor = external_repository.get_external_sensor(sensor_name)
+    external_sensor = external_repository.get_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     # test with no job state
@@ -1402,7 +1402,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         "repositoryName": main_repo_name(),
     }
     sensor_name = "always_no_config_sensor_with_tags_and_metadata"
-    external_sensor = external_repository.get_external_sensor(sensor_name)
+    external_sensor = external_repository.get_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     # turn the sensor on
@@ -1585,7 +1585,7 @@ def test_sensor_tick_logs(graphql_context: WorkspaceRequestContext):
     ).get_repository(main_repo_name())
 
     sensor_name = "logging_sensor"
-    external_sensor = external_repository.get_external_sensor(sensor_name)
+    external_sensor = external_repository.get_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     # turn the sensor on
@@ -1619,7 +1619,7 @@ def test_sensor_dynamic_partitions_request_results(graphql_context: WorkspaceReq
     ).get_repository(main_repo_name())
 
     sensor_name = "dynamic_partition_requesting_sensor"
-    external_sensor = external_repository.get_external_sensor(sensor_name)
+    external_sensor = external_repository.get_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
 
     instance.add_dynamic_partitions("foo", ["existent_key", "old_key"])

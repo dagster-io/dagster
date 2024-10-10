@@ -62,7 +62,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         year=2019, month=2, day=28, hour=0, minute=0, second=1
     ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
-        external_sensor = external_repo.get_external_sensor("simple_sensor")
+        external_sensor = external_repo.get_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),
@@ -140,7 +140,7 @@ def test_failure_after_run_created_before_run_launched(
         year=2019, month=2, day=28, hour=0, minute=0, second=0
     ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
-        external_sensor = external_repo.get_external_sensor("run_key_sensor")
+        external_sensor = external_repo.get_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),
@@ -223,7 +223,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         second=0,
     ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
-        external_sensor = external_repo.get_external_sensor("run_key_sensor")
+        external_sensor = external_repo.get_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),
@@ -309,7 +309,7 @@ def test_failure_after_run_ids_reserved(
     with freeze_time(frozen_datetime), patch.object(
         DagsterInstance, "get_ticks", wraps=instance.get_ticks
     ) as mock_get_ticks:
-        external_sensor = external_repo.get_external_sensor("only_once_cursor_sensor")
+        external_sensor = external_repo.get_sensor("only_once_cursor_sensor")
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),

@@ -135,10 +135,10 @@ def test_run_status_sensor(
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
-        success_sensor = external_repo.get_external_sensor("my_job_success_sensor")
+        success_sensor = external_repo.get_sensor("my_job_success_sensor")
         instance.start_sensor(success_sensor)
 
-        started_sensor = external_repo.get_external_sensor("my_job_started_sensor")
+        started_sensor = external_repo.get_sensor("my_job_started_sensor")
         instance.start_sensor(started_sensor)
 
         state = instance.get_instigator_state(
@@ -166,7 +166,7 @@ def test_run_status_sensor(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("failure_job")
+        external_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
             external_job_origin=external_job.get_remote_origin(),
@@ -205,7 +205,7 @@ def test_run_status_sensor(
         )
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("foo_job")
+        external_job = external_repo.get_full_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
             external_job_origin=external_job.get_remote_origin(),
@@ -257,7 +257,7 @@ def test_run_failure_sensor(
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
-        failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
+        failure_sensor = external_repo.get_sensor("my_run_failure_sensor")
         instance.start_sensor(failure_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -277,7 +277,7 @@ def test_run_failure_sensor(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("failure_job")
+        external_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
             external_job_origin=external_job.get_remote_origin(),
@@ -313,9 +313,7 @@ def test_run_failure_sensor_that_fails(
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
-        failure_sensor = external_repo.get_external_sensor(
-            "my_run_failure_sensor_that_itself_fails"
-        )
+        failure_sensor = external_repo.get_sensor("my_run_failure_sensor_that_itself_fails")
         instance.start_sensor(failure_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -335,7 +333,7 @@ def test_run_failure_sensor_that_fails(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("failure_job")
+        external_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
             external_job_origin=external_job.get_remote_origin(),
@@ -389,7 +387,7 @@ def test_run_failure_sensor_filtered(
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
-        failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
+        failure_sensor = external_repo.get_sensor("my_run_failure_sensor_filtered")
         instance.start_sensor(failure_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -409,7 +407,7 @@ def test_run_failure_sensor_filtered(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("failure_job_2")
+        external_job = external_repo.get_full_job("failure_job_2")
         run = instance.create_run_for_job(
             failure_job_2,
             external_job_origin=external_job.get_remote_origin(),
@@ -440,7 +438,7 @@ def test_run_failure_sensor_filtered(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("failure_job")
+        external_job = external_repo.get_full_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
             external_job_origin=external_job.get_remote_origin(),
@@ -485,7 +483,7 @@ def test_run_failure_sensor_overfetch(
         ) as workspace_context:
             freeze_datetime = get_current_datetime()
             with freeze_time(freeze_datetime):
-                failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
+                failure_sensor = external_repo.get_sensor("my_run_failure_sensor_filtered")
                 instance.start_sensor(failure_sensor)
 
                 evaluate_sensors(workspace_context, executor)
@@ -510,8 +508,8 @@ def test_run_failure_sensor_overfetch(
 
                 # interleave matching jobs and jobs that do not match
                 for _i in range(4):
-                    external_job = external_repo.get_full_external_job("failure_job")
-                    external_job_2 = external_repo.get_full_external_job("failure_job_2")
+                    external_job = external_repo.get_full_job("failure_job")
+                    external_job_2 = external_repo.get_full_job("failure_job_2")
 
                     run = instance.create_run_for_job(
                         failure_job_2,
@@ -654,7 +652,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
         ):
             # start sensor
             with freeze_time(freeze_datetime):
-                failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
+                failure_sensor = external_repo.get_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
                 evaluate_sensors(workspace_context, executor)
@@ -674,7 +672,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 time.sleep(1)
 
             with freeze_time(freeze_datetime):
-                external_job = external_repo.get_full_external_job("hanging_job")
+                external_job = external_repo.get_full_job("hanging_job")
                 # start run 1
                 run1 = instance.create_run_for_job(
                     hanging_job,
@@ -754,7 +752,7 @@ def test_run_failure_sensor_empty_run_records(
             external_repo,
         ):
             with freeze_time(freeze_datetime):
-                failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
+                failure_sensor = external_repo.get_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
                 evaluate_sensors(workspace_context, executor)
@@ -847,7 +845,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
         with freeze_time(freeze_datetime):
-            my_sensor = sensor_repo.get_external_sensor("all_code_locations_run_status_sensor")
+            my_sensor = sensor_repo.get_sensor("all_code_locations_run_status_sensor")
             instance.start_sensor(my_sensor)
 
             evaluate_sensors(workspace_context, executor)
@@ -865,7 +863,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_another_job = job_repo.get_full_external_job("another_success_job")
+            external_another_job = job_repo.get_full_job("another_success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
@@ -934,7 +932,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
         with freeze_time(freeze_datetime):
-            my_sensor = sensor_repo.get_external_sensor("all_code_locations_run_failure_sensor")
+            my_sensor = sensor_repo.get_sensor("all_code_locations_run_failure_sensor")
             instance.start_sensor(my_sensor)
 
             evaluate_sensors(workspace_context, executor)
@@ -952,7 +950,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_another_job = job_repo.get_full_external_job("another_failure_job")
+            external_another_job = job_repo.get_full_job("another_failure_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
@@ -1023,7 +1021,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
         with freeze_time(freeze_datetime):
-            success_sensor = sensor_repo.get_external_sensor("success_sensor")
+            success_sensor = sensor_repo.get_sensor("success_sensor")
             instance.start_sensor(success_sensor)
 
             evaluate_sensors(workspace_context, executor)
@@ -1045,7 +1043,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_success_job = job_repo.get_full_external_job("success_job")
+            external_success_job = job_repo.get_full_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
@@ -1122,7 +1120,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
         with freeze_time(freeze_datetime):
-            success_sensor = sensor_repo.get_external_sensor("success_of_another_job_sensor")
+            success_sensor = sensor_repo.get_sensor("success_of_another_job_sensor")
             instance.start_sensor(success_sensor)
 
             evaluate_sensors(workspace_context, executor)
@@ -1144,7 +1142,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_success_job = job_repo.get_full_external_job("success_job")
+            external_success_job = job_repo.get_full_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
@@ -1193,7 +1191,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
         # now launch the run that is actually being listened to
 
         with freeze_time(freeze_datetime):
-            external_another_success_job = job_repo.get_full_external_job("another_success_job")
+            external_another_success_job = job_repo.get_full_job("another_success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
@@ -1269,7 +1267,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
         with freeze_time(freeze_datetime):
-            success_sensor = sensor_repo.get_external_sensor("success_sensor")
+            success_sensor = sensor_repo.get_sensor("success_sensor")
             instance.start_sensor(success_sensor)
 
             evaluate_sensors(workspace_context, executor)
@@ -1291,7 +1289,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_success_job = sensor_repo.get_full_external_job("success_job")
+            external_success_job = sensor_repo.get_full_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
@@ -1329,7 +1327,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             )
 
         with freeze_time(freeze_datetime):
-            external_success_job = dupe_job_repo.get_full_external_job("success_job")
+            external_success_job = dupe_job_repo.get_full_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
@@ -1378,7 +1376,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
         the_other_repo = repos["the_other_repo"]
 
         with freeze_time(freeze_datetime):
-            cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
+            cross_repo_sensor = the_repo.get_sensor("cross_repo_sensor")
             instance.start_sensor(cross_repo_sensor)
 
             evaluate_sensors(workspace_context, executor)
@@ -1398,7 +1396,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_job = the_other_repo.get_full_external_job("the_job")
+            external_job = the_other_repo.get_full_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
                 external_job_origin=external_job.get_remote_origin(),
@@ -1436,7 +1434,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
         the_other_repo = repos["the_other_repo"]
 
         with freeze_time(freeze_datetime):
-            cross_repo_sensor = the_repo.get_external_sensor("cross_repo_job_sensor")
+            cross_repo_sensor = the_repo.get_sensor("cross_repo_job_sensor")
             instance.start_sensor(cross_repo_sensor)
 
             assert instance.get_runs_count() == 0
@@ -1460,7 +1458,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_job = the_other_repo.get_full_external_job("the_job")
+            external_job = the_other_repo.get_full_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
                 external_job_origin=external_job.get_remote_origin(),
@@ -1521,7 +1519,7 @@ def test_partitioned_job_run_status_sensor(
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
-        success_sensor = external_repo.get_external_sensor("partitioned_pipeline_success_sensor")
+        success_sensor = external_repo.get_sensor("partitioned_pipeline_success_sensor")
         instance.start_sensor(success_sensor)
 
         assert instance.get_runs_count() == 0
@@ -1543,7 +1541,7 @@ def test_partitioned_job_run_status_sensor(
         time.sleep(1)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("daily_partitioned_job")
+        external_job = external_repo.get_full_job("daily_partitioned_job")
         run = instance.create_run_for_job(
             daily_partitioned_job,
             external_job_origin=external_job.get_remote_origin(),
@@ -1592,7 +1590,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
             the_other_repo,
         ):
             with freeze_time(freeze_datetime):
-                cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
+                cross_repo_sensor = the_repo.get_sensor("cross_repo_sensor")
                 instance.start_sensor(cross_repo_sensor)
 
                 evaluate_sensors(workspace_context, executor)
@@ -1612,7 +1610,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 time.sleep(1)
 
             with freeze_time(freeze_datetime):
-                external_job = the_other_repo.get_full_external_job("the_job")
+                external_job = the_other_repo.get_full_job("the_job")
                 run = the_other_instance.create_run_for_job(
                     the_job,
                     external_job_origin=external_job.get_remote_origin(),
@@ -1653,7 +1651,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
         the_other_repo = repos["the_other_repo"]
 
         with freeze_time(freeze_datetime):
-            instance_sensor = the_repo.get_external_sensor("instance_sensor")
+            instance_sensor = the_repo.get_sensor("instance_sensor")
             instance.start_sensor(instance_sensor)
 
             evaluate_sensors(workspace_context, executor)
@@ -1673,7 +1671,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             time.sleep(1)
 
         with freeze_time(freeze_datetime):
-            external_job = the_other_repo.get_full_external_job("the_job")
+            external_job = the_other_repo.get_full_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
                 external_job_origin=external_job.get_remote_origin(),
@@ -1708,7 +1706,7 @@ def test_logging_run_status_sensor(
 ):
     freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
-        success_sensor = external_repo.get_external_sensor("logging_status_sensor")
+        success_sensor = external_repo.get_sensor("logging_status_sensor")
         instance.start_sensor(success_sensor)
 
         evaluate_sensors(workspace_context, executor)
@@ -1727,7 +1725,7 @@ def test_logging_run_status_sensor(
         freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
     with freeze_time(freeze_datetime):
-        external_job = external_repo.get_full_external_job("foo_job")
+        external_job = external_repo.get_full_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
             external_job_origin=external_job.get_remote_origin(),

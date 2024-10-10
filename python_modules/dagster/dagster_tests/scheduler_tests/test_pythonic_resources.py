@@ -186,7 +186,7 @@ def test_resources(
     ).astimezone(get_timezone("US/Central"))
 
     with freeze_time(freeze_datetime):
-        external_schedule = external_repo_struct_resources.get_external_schedule(schedule_name)
+        external_schedule = external_repo_struct_resources.get_schedule(schedule_name)
         instance.start_schedule(external_schedule)
 
         assert instance.get_runs_count() == 0

@@ -204,7 +204,7 @@ def test_successful_run(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test").get_repository("nope").get_full_external_job("noop_job")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("noop_job")
     )
 
     dagster_run = instance.create_run_for_job(
@@ -234,9 +234,7 @@ def test_successful_run_from_pending(
 ):
     run_id = make_new_run_id()
     code_location = pending_workspace.get_code_location("test2")
-    external_job = code_location.get_repository("pending").get_full_external_job(
-        "my_cool_asset_job"
-    )
+    external_job = code_location.get_repository("pending").get_full_job("my_cool_asset_job")
     external_execution_plan = code_location.get_external_execution_plan(
         external_job=external_job,
         run_config={},
@@ -343,7 +341,7 @@ def test_invalid_instance_run():
                         external_job = (
                             workspace.get_code_location("test")
                             .get_repository("nope")
-                            .get_full_external_job("noop_job")
+                            .get_full_job("noop_job")
                         )
 
                         run = instance.create_run_for_job(
@@ -377,9 +375,7 @@ def test_crashy_run(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test")
-        .get_repository("nope")
-        .get_full_external_job("crashy_job")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("crashy_job")
     )
 
     run = instance.create_run_for_job(
@@ -459,9 +455,7 @@ def test_exity_run(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test")
-        .get_repository("nope")
-        .get_full_external_job("exity_job")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("exity_job")
     )
 
     run = instance.create_run_for_job(
@@ -520,9 +514,7 @@ def test_terminated_run(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test")
-        .get_repository("nope")
-        .get_full_external_job("sleepy_job")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("sleepy_job")
     )
     run = instance.create_run_for_job(
         job_def=sleepy_job,
@@ -623,9 +615,7 @@ def test_cleanup_after_force_terminate(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test")
-        .get_repository("nope")
-        .get_full_external_job("sleepy_job")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("sleepy_job")
     )
     run = instance.create_run_for_job(
         job_def=sleepy_job,
@@ -723,9 +713,7 @@ def test_single_op_selection_execution(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test")
-        .get_repository("nope")
-        .get_full_external_job("math_diamond")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("math_diamond")
     )
     run = instance.create_run_for_job(
         job_def=math_diamond,
@@ -761,9 +749,7 @@ def test_multi_op_selection_execution(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test")
-        .get_repository("nope")
-        .get_full_external_job("math_diamond")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("math_diamond")
     )
 
     run = instance.create_run_for_job(
@@ -804,7 +790,7 @@ def test_job_that_fails_run_worker(
     external_job = (
         workspace.get_code_location("test")
         .get_repository("nope")
-        .get_full_external_job("job_that_fails_run_worker")
+        .get_full_job("job_that_fails_run_worker")
     )
     run = instance.create_run_for_job(
         job_def=job_that_fails_run_worker,
@@ -851,9 +837,7 @@ def test_engine_events(
     run_config: Mapping[str, Any],
 ):
     external_job = (
-        workspace.get_code_location("test")
-        .get_repository("nope")
-        .get_full_external_job("math_diamond")
+        workspace.get_code_location("test").get_repository("nope").get_full_job("math_diamond")
     )
     run = instance.create_run_for_job(
         job_def=math_diamond,

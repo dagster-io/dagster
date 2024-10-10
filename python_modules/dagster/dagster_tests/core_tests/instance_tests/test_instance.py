@@ -298,7 +298,7 @@ def test_submit_run():
             external_job = (
                 workspace.get_code_location("bar_code_location")
                 .get_repository("bar_repo")
-                .get_full_external_job("foo")
+                .get_full_job("foo")
             )
 
             run = create_run_for_test(

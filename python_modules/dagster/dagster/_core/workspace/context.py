@@ -239,13 +239,13 @@ class BaseWorkspaceRequestContext(LoadingContext):
         loc = self.get_code_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
-        ).has_external_job(selector.job_name)
+        ).has_job(selector.job_name)
 
     def get_full_external_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> RemoteJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
-            .get_full_external_job(selector.job_name)
+            .get_full_job(selector.job_name)
         )
 
     def get_external_execution_plan(

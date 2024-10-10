@@ -768,7 +768,7 @@ def get_external_job_from_external_repo(
     check.inst_param(external_repo, "external_repo", RemoteRepository)
     check.opt_str_param(provided_name, "provided_name")
 
-    external_jobs = {ep.name: ep for ep in (external_repo.get_all_external_jobs())}
+    external_jobs = {ep.name: ep for ep in (external_repo.get_all_jobs())}
 
     check.invariant(external_jobs)
 

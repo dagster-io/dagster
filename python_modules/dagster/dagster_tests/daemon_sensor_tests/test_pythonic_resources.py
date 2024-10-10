@@ -434,7 +434,7 @@ def test_resources(
             the_job.execute_in_process(instance=instance)
             base_run_count = 1
 
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        external_sensor = external_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),
@@ -494,7 +494,7 @@ def test_resources_freshness_policy_sensor(
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        external_sensor = external_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),
@@ -566,7 +566,7 @@ def test_resources_run_status_sensor(
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        external_sensor = external_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),
@@ -644,7 +644,7 @@ def test_resources_run_failure_sensor(
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        external_sensor = external_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
                 external_sensor.get_remote_origin(),

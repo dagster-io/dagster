@@ -74,7 +74,7 @@ def code_location_fixture(workspace):
 
 @pytest.fixture(name="external_job", scope="module")
 def external_job_fixture(code_location):
-    return code_location.get_repository("repo").get_full_external_job("conditional_fail_job")
+    return code_location.get_repository("repo").get_full_job("conditional_fail_job")
 
 
 @pytest.fixture(name="failed_run", scope="module")

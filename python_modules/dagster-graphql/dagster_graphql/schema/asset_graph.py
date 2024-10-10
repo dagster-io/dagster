@@ -868,8 +868,8 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
         repo = graphene_info.context.get_repository(self._repository_selector)
-        external_sensors = repo.get_external_sensors()
-        external_schedules = repo.get_external_schedules()
+        external_sensors = repo.get_sensors()
+        external_schedules = repo.get_schedules()
 
         asset_graph = repo.asset_graph
 
@@ -909,7 +909,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         asset_key = self._asset_node_snap.asset_key
         matching_sensors = [
             sensor
-            for sensor in repo.get_external_sensors()
+            for sensor in repo.get_sensors()
             if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
             and asset_key in check.not_none(sensor.asset_selection).resolve(asset_graph)
         ]
@@ -951,9 +951,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         job_names = self._asset_node_snap.job_names or []
         repo = graphene_info.context.get_repository(self._repository_selector)
         return [
-            GraphenePipeline(repo.get_full_external_job(job_name))
+            GraphenePipeline(repo.get_full_job(job_name))
             for job_name in job_names
-            if repo.has_external_job(job_name)
+            if repo.has_job(job_name)
         ]
 
     def resolve_isPartitioned(self, _graphene_info: ResolveInfo) -> bool:

@@ -152,9 +152,7 @@ class CodeLocation(AbstractContextManager):
             and not selector.asset_selection
             and not selector.asset_check_selection
         ):
-            return self.get_repository(selector.repository_name).get_full_external_job(
-                selector.job_name
-            )
+            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
 
         repo_handle = self.get_repository(selector.repository_name).handle
 
@@ -246,8 +244,8 @@ class CodeLocation(AbstractContextManager):
         external_repo = self.get_repository(repository_handle.repository_name)
         partition_set_name = partition_set_snap_name_for_job_name(job_name)
 
-        if external_repo.has_external_partition_set(partition_set_name):
-            external_partition_set = external_repo.get_external_partition_set(partition_set_name)
+        if external_repo.has_partition_set(partition_set_name):
+            external_partition_set = external_repo.get_partition_set(partition_set_name)
 
             # Prefer to return the names without calling out to user code if there's a corresponding
             # partition set that allows it
@@ -888,9 +886,7 @@ class GrpcServerCodeLocation(CodeLocation):
             asset_check_selection=selector.asset_check_selection,
         )
         if subset.external_job_data:
-            full_job = self.get_repository(selector.repository_name).get_full_external_job(
-                selector.job_name
-            )
+            full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
             subset = copy(
                 subset,
                 external_job_data=copy(subset.external_job_data, parent_job=full_job.job_snapshot),

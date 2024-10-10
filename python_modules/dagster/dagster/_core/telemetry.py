@@ -464,16 +464,16 @@ def get_stats_from_external_repo(external_repo: "RemoteRepository") -> Mapping[s
         MultiPartitionsSnap,
     )
 
-    num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
-    num_schedules_in_repo = len(external_repo.get_external_schedules())
-    num_sensors_in_repo = len(external_repo.get_external_sensors())
+    num_pipelines_in_repo = len(external_repo.get_all_jobs())
+    num_schedules_in_repo = len(external_repo.get_schedules())
+    num_sensors_in_repo = len(external_repo.get_sensors())
     asset_node_snaps = external_repo.get_asset_node_snaps()
     num_assets_in_repo = len(asset_node_snaps)
-    external_resources = external_repo.get_external_resources()
+    external_resources = external_repo.get_resources()
 
-    num_checks = len(external_repo.external_repository_data.asset_check_nodes or [])
+    num_checks = len(external_repo.repository_snap.asset_check_nodes or [])
     num_assets_with_checks = len(
-        {c.asset_key for c in external_repo.external_repository_data.asset_check_nodes or []}
+        {c.asset_key for c in external_repo.repository_snap.asset_check_nodes or []}
     )
 
     num_partitioned_assets_in_repo = 0
@@ -528,7 +528,7 @@ def get_stats_from_external_repo(external_repo: "RemoteRepository") -> Mapping[s
 
     num_asset_reconciliation_sensors_in_repo = sum(
         1
-        for external_sensor in external_repo.get_external_sensors()
+        for external_sensor in external_repo.get_sensors()
         if external_sensor.name == "asset_reconciliation_sensor"
     )
 

@@ -150,11 +150,11 @@ def _get_partition_set(
 
     partition_set_name = origin.partition_set_name
     external_repo = code_location.get_repository(repo_name)
-    if not external_repo.has_external_partition_set(partition_set_name):
+    if not external_repo.has_partition_set(partition_set_name):
         raise DagsterBackfillFailedError(
             f"Could not find partition set {partition_set_name} in repository {repo_name}. "
         )
-    return external_repo.get_external_partition_set(partition_set_name)
+    return external_repo.get_partition_set(partition_set_name)
 
 
 def _subdivide_partition_key_range(
@@ -305,7 +305,7 @@ def submit_backfill_runs(
     )
     external_repo = code_location.get_repository(repo_name)
     partition_set_name = origin.partition_set_name
-    external_partition_set = external_repo.get_external_partition_set(partition_set_name)
+    external_partition_set = external_repo.get_partition_set(partition_set_name)
 
     if backfill_job.asset_selection:
         # need to make another call to the user code location to properly subset
@@ -319,7 +319,7 @@ def submit_backfill_runs(
         )
         external_job = code_location.get_external_job(pipeline_selector)
     else:
-        external_job = external_repo.get_full_external_job(external_partition_set.job_name)
+        external_job = external_repo.get_full_job(external_partition_set.job_name)
 
     partition_data_target = check.is_list(
         [partition_names_or_ranges[0].start]

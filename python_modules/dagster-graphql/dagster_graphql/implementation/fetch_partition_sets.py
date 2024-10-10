@@ -46,7 +46,7 @@ def get_partition_sets_or_error(
     repository = location.get_repository(repository_selector.repository_name)
     partition_sets = [
         partition_set
-        for partition_set in repository.get_external_partition_sets()
+        for partition_set in repository.get_partition_sets()
         if partition_set.job_name == pipeline_name
     ]
 
@@ -80,7 +80,7 @@ def get_partition_set(
     check.str_param(partition_set_name, "partition_set_name")
     location = graphene_info.context.get_code_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
-    partition_sets = repository.get_external_partition_sets()
+    partition_sets = repository.get_partition_sets()
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:
             return GraphenePartitionSet(
