@@ -58,7 +58,9 @@ OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
 @deprecated_param(
-    param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead."
+    param="version",
+    breaking_version="2.0",
+    additional_warn_text="Use `code_version` instead.",
 )
 class OpDefinition(NodeDefinition, IHasInternalInit):
     """Defines an op, the functional unit of user-defined computation.
@@ -588,7 +590,7 @@ def _validate_context_type_hint(fn):
 def _normalize_op_tags(tags: Mapping[str, str]) -> Mapping[str, str]:
     if LEGACY_COMPUTE_KIND_TAG in tags:
         deprecation_warning(
-            "Legacy compute kind tag '{LEGACY_COMPUTE_KIND_TAG}'",
+            f"Legacy compute kind tag '{LEGACY_COMPUTE_KIND_TAG}'",
             breaking_version="1.9.0",
             additional_warn_text="Please set the compute kind using the `compute_kind` argument on asset/op definition APIs.",
         )
