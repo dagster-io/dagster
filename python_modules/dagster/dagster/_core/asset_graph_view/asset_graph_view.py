@@ -391,7 +391,7 @@ class AssetGraphView(LoadingContext):
             )
 
     @cached_method
-    def compute_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+    def compute_run_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
         from dagster._core.storage.asset_check_execution_record import (
             AssetCheckExecutionResolvedStatus,
         )
@@ -402,6 +402,19 @@ class AssetGraphView(LoadingContext):
             )
         else:
             value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
+            return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    @cached_method
+    def compute_backfill_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+        if isinstance(key, AssetCheckKey):
+            # asset checks cannot currently be backfilled
+            return self.get_empty_subset(key=key)
+        else:
+            value = (
+                self._queryer.get_active_backfill_in_progress_asset_graph_subset()
+                .get_asset_subset(asset_key=key, asset_graph=self.asset_graph)
+                .value
+            )
             return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     @cached_method
