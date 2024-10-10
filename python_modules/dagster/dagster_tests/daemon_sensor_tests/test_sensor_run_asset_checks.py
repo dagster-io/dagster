@@ -13,7 +13,7 @@ from dagster import (
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster._core.test_utils import create_test_daemon_workspace_context, load_external_repo
+from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo
 from dagster._core.workspace.load_target import ModuleTarget
 
 from dagster_tests.daemon_sensor_tests.test_sensor_run import evaluate_sensors, validate_tick
@@ -56,12 +56,12 @@ def test_asset_check_run_request_sensor(instance: DagsterInstance, executor):
     with create_test_daemon_workspace_context(
         workspace_load_target=module_target, instance=instance
     ) as workspace_context:
-        external_repo = load_external_repo(workspace_context, "__repository__")
-        external_sensor = external_repo.get_sensor(asset_check_run_request_sensor.name)
+        repo = load_remote_repo(workspace_context, "__repository__")
+        sensor = repo.get_sensor(asset_check_run_request_sensor.name)
 
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -69,15 +69,13 @@ def test_asset_check_run_request_sensor(instance: DagsterInstance, executor):
         evaluate_sensors(workspace_context, executor)
 
         assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
 
         run = instance.get_runs()[0]
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             None,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],

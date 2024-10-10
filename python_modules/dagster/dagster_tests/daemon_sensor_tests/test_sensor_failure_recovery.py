@@ -57,15 +57,15 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
 )
 @pytest.mark.parametrize("crash_location", ["TICK_CREATED", "TICK_HELD"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_before_run_created(crash_location, crash_signal, instance, external_repo):
+def test_failure_before_run_created(crash_location, crash_signal, instance, remote_repo):
     frozen_datetime = create_datetime(
         year=2019, month=2, day=28, hour=0, minute=0, second=1
     ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
-        external_sensor = external_repo.get_sensor("simple_sensor")
+        sensor = remote_repo.get_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
@@ -78,14 +78,12 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         )
         launch_process.start()
         launch_process.join(timeout=60)
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.SKIPPED
 
         # create a starting tick, but crash
-        debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
+        debug_crash_flags = {sensor.name: {crash_location: crash_signal}}
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
             args=[
@@ -99,9 +97,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
 
         assert launch_process.exitcode != 0
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
         assert ticks[0].status == TickStatus.STARTED
         assert not int(ticks[0].timestamp) % 2  # skip condition for simple_sensor
@@ -121,9 +117,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
 
         assert instance.get_runs_count() == 1
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 3
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -134,23 +128,23 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
 @pytest.mark.parametrize("crash_location", ["RUN_CREATED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_after_run_created_before_run_launched(
-    crash_location, crash_signal, instance, external_repo
+    crash_location, crash_signal, instance, remote_repo
 ):
     frozen_datetime = create_datetime(
         year=2019, month=2, day=28, hour=0, minute=0, second=0
     ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
-        external_sensor = external_repo.get_sensor("run_key_sensor")
+        sensor = remote_repo.get_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
 
         # create a starting tick, but crash
-        debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
+        debug_crash_flags = {sensor.name: {crash_location: crash_signal}}
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
@@ -160,9 +154,7 @@ def test_failure_after_run_created_before_run_launched(
 
         assert launch_process.exitcode != 0
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
@@ -187,9 +179,7 @@ def test_failure_after_run_created_before_run_launched(
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1  # we resumed the original tick, so still a single tick
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -201,9 +191,7 @@ def test_failure_after_run_created_before_run_launched(
         launch_process.join(timeout=60)
 
         assert launch_process.exitcode == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2  # did another tick, no new runs launched
         assert ticks[0].status == TickStatus.SKIPPED
 
@@ -213,7 +201,7 @@ def test_failure_after_run_created_before_run_launched(
 )
 @pytest.mark.parametrize("crash_location", ["RUN_LAUNCHED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_after_run_launched(crash_location, crash_signal, instance, external_repo):
+def test_failure_after_run_launched(crash_location, crash_signal, instance, remote_repo):
     frozen_datetime = create_datetime(
         year=2019,
         month=2,
@@ -223,17 +211,17 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         second=0,
     ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
-        external_sensor = external_repo.get_sensor("run_key_sensor")
+        sensor = remote_repo.get_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
 
         # create a run, launch but crash
-        debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
+        debug_crash_flags = {sensor.name: {crash_location: crash_signal}}
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
@@ -243,9 +231,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
 
         assert launch_process.exitcode != 0
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
@@ -269,9 +255,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1  # we resumed the original tick, so still a single tick
         assert ticks[0].status == TickStatus.SUCCESS
 
@@ -283,9 +267,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
         launch_process.join(timeout=60)
 
         assert launch_process.exitcode == 0
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2  # did another tick, no new runs launched
         assert ticks[0].status == TickStatus.SKIPPED
 
@@ -296,7 +278,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
 @pytest.mark.parametrize("crash_location", ["RUN_IDS_RESERVED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_after_run_ids_reserved(
-    crash_location, crash_signal, instance, external_repo
+    crash_location, crash_signal, instance, remote_repo
 ) -> None:
     frozen_datetime = create_datetime(
         year=2019,
@@ -309,17 +291,17 @@ def test_failure_after_run_ids_reserved(
     with freeze_time(frozen_datetime), patch.object(
         DagsterInstance, "get_ticks", wraps=instance.get_ticks
     ) as mock_get_ticks:
-        external_sensor = external_repo.get_sensor("only_once_cursor_sensor")
+        sensor = remote_repo.get_sensor("only_once_cursor_sensor")
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_remote_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
 
         # create a run, launch but crash before submitting reserved runs
-        debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
+        debug_crash_flags = {sensor.name: {crash_location: crash_signal}}
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
@@ -329,9 +311,7 @@ def test_failure_after_run_ids_reserved(
 
         assert launch_process.exitcode != 0
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
@@ -346,9 +326,7 @@ def test_failure_after_run_ids_reserved(
 
         assert launch_process.exitcode == 0
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
 
         assert len(ticks) == 1  # we resumed the original tick, so still a single tick
         assert ticks[0].status == TickStatus.SUCCESS
@@ -366,8 +344,6 @@ def test_failure_after_run_ids_reserved(
         # the previous tick completed successfully, so don't need to get ticks on the next tick
         assert mock_get_ticks.call_count == 0
 
-        ticks = instance.get_ticks(
-            external_sensor.get_remote_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2  # new tick, nothing happened
         assert ticks[0].status == TickStatus.SKIPPED

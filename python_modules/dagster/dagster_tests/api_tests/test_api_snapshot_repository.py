@@ -27,26 +27,26 @@ from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 def test_streaming_external_repositories_api_grpc(instance):
     with get_bar_repo_code_location(instance) as code_location:
-        external_repo_datas = sync_get_streaming_external_repositories_data_grpc(
+        repository_snaps = sync_get_streaming_external_repositories_data_grpc(
             code_location.client, code_location
         )
 
-        assert len(external_repo_datas) == 1
+        assert len(repository_snaps) == 1
 
-        external_repository_data = external_repo_datas["bar_repo"]
+        repository_snap = repository_snaps["bar_repo"]
 
-        assert isinstance(external_repository_data, RepositorySnap)
-        assert external_repository_data.name == "bar_repo"
-        assert external_repository_data.metadata == {
+        assert isinstance(repository_snap, RepositorySnap)
+        assert repository_snap.name == "bar_repo"
+        assert repository_snap.metadata == {
             "string": TextMetadataValue("foo"),
             "integer": IntMetadataValue(123),
         }
 
-        async_external_repo_datas = asyncio.run(
+        async_repository_snaps = asyncio.run(
             gen_streaming_external_repositories_data_grpc(code_location.client, code_location)
         )
 
-        assert async_external_repo_datas == external_repo_datas
+        assert async_repository_snaps == repository_snaps
 
 
 def test_streaming_external_repositories_error(instance):
@@ -109,16 +109,16 @@ def test_giant_external_repository_streaming_grpc():
     with instance_for_test() as instance:
         with get_giant_repo_grpc_code_location(instance) as code_location:
             # Using streaming allows the giant repo to load
-            external_repos_data = sync_get_streaming_external_repositories_data_grpc(
+            repository_snaps = sync_get_streaming_external_repositories_data_grpc(
                 code_location.client, code_location
             )
 
-            assert len(external_repos_data) == 1
+            assert len(repository_snaps) == 1
 
-            external_repository_data = external_repos_data["giant_repo"]
+            repository_snap = repository_snaps["giant_repo"]
 
-            assert isinstance(external_repository_data, RepositorySnap)
-            assert external_repository_data.name == "giant_repo"
+            assert isinstance(repository_snap, RepositorySnap)
+            assert repository_snap.name == "giant_repo"
 
 
 def test_defer_snapshots(instance: DagsterInstance):
@@ -143,12 +143,12 @@ def test_defer_snapshots(instance: DagsterInstance):
             )
             return deserialize_value(reply.serialized_job_data, JobDataSnap)
 
-        external_repository_data = deserialize_value(ser_repo_data, RepositorySnap)
-        assert external_repository_data.job_refs and len(external_repository_data.job_refs) == 6
-        assert external_repository_data.job_datas is None
+        repository_snap = deserialize_value(ser_repo_data, RepositorySnap)
+        assert repository_snap.job_refs and len(repository_snap.job_refs) == 6
+        assert repository_snap.job_datas is None
 
         repo = RemoteRepository(
-            external_repository_data,
+            repository_snap,
             RepositoryHandle.from_location(repository_name="bar_repo", code_location=code_location),
             instance=instance,
             ref_to_data_fn=_ref_to_data,

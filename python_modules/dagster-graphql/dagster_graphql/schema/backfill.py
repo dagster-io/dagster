@@ -421,15 +421,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return None
 
         repository = location.get_repository(repository_name)
-        external_partition_sets = [
+        partition_sets = [
             partition_set
             for partition_set in repository.get_partition_sets()
             if partition_set.name == origin.partition_set_name
         ]
-        if not external_partition_sets:
+        if not partition_sets:
             return None
 
-        return external_partition_sets[0]
+        return partition_sets[0]
 
     def _get_records(self, graphene_info: ResolveInfo) -> Sequence[RunRecord]:
         if self._records is None:
@@ -557,8 +557,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return None
 
         return GraphenePartitionSet(
-            external_repository_handle=partition_set.repository_handle,
-            external_partition_set=partition_set,
+            repository_handle=partition_set.repository_handle,
+            remote_partition_set=partition_set,
         )
 
     def resolve_partitionStatuses(self, graphene_info: ResolveInfo):

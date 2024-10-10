@@ -198,7 +198,7 @@ def _graphene_asset_node(
         stale_status_loader=stale_status_loader,
         dynamic_partitions_loader=dynamic_partitions_loader,
         # base_deployment_context will be None if we are not in a branch deployment
-        asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+        asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
             code_location_name=handle.location_name,
             repository_name=handle.repository_name,
             branch_workspace=graphene_info.context,
@@ -747,17 +747,17 @@ def get_freshness_info(
 
 
 def unique_repos(
-    external_repositories: Sequence[RemoteRepository],
+    remote_repositories: Sequence[RemoteRepository],
 ) -> Sequence[RemoteRepository]:
     repos = []
     used = set()
-    for external_repository in external_repositories:
+    for remote_repository in remote_repositories:
         repo_id = (
-            external_repository.handle.location_name,
-            external_repository.name,
+            remote_repository.handle.location_name,
+            remote_repository.name,
         )
         if repo_id not in used:
             used.add(repo_id)
-            repos.append(external_repository)
+            repos.append(remote_repository)
 
     return repos

@@ -9,7 +9,7 @@ from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
     instance_for_test,
-    load_external_repo,
+    load_remote_repo,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -69,9 +69,9 @@ def workspace_fixture(instance_module_scoped: DagsterInstance) -> Iterator[Works
         yield workspace
 
 
-@pytest.fixture(name="external_repo", scope="module")
+@pytest.fixture(name="remote_repo", scope="module")
 def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
-    return load_external_repo(workspace_context, "the_repo")
+    return load_remote_repo(workspace_context, "the_repo")
 
 
 def loadable_target_origin() -> LoadableTargetOrigin:
