@@ -71,9 +71,7 @@ def test_airflow_instance(airflow_instance: None) -> None:
     assert isinstance(run.logical_date, datetime.datetime)
 
     # Fetch task instance
-    task_instance = instance.get_task_instance(
-        dag_id="print_dag", task_id="print_task", run_id=run_id
-    )
+    task_instance = instance.get_task_instance(dag_run=run, task_id="print_task")
     assert_link_exists("Task instance", task_instance.details_url)
     assert_link_exists("Task logs", task_instance.log_url)
 

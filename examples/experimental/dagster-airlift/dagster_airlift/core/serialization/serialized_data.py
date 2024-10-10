@@ -48,6 +48,11 @@ class TaskHandle(NamedTuple):
     task_id: str
 
 
+@whitelist_for_serdes
+class DagHandle(NamedTuple):
+    dag_id: str
+
+
 ###################################################################################################
 # Serialized data that scopes to airflow DAGs and tasks.
 ###################################################################################################

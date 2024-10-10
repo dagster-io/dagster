@@ -84,17 +84,19 @@ class AirflowInstanceFake(AirflowInstance):
         return sorted_by_end_date[offset:]
 
     def get_task_instance_batch(
-        self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
+        self, dag_run: DagRun, task_ids: Sequence[str], states: Sequence[str]
     ) -> List[TaskInstance]:
         task_instances = []
         for task_id in set(task_ids):
-            if (dag_id, task_id) not in self._task_instances_by_dag_and_task_id:
+            if (dag_run.dag_id, task_id) not in self._task_instances_by_dag_and_task_id:
                 continue
             task_instances.extend(
                 [
                     task_instance
-                    for task_instance in self._task_instances_by_dag_and_task_id[(dag_id, task_id)]
-                    if task_instance.run_id == run_id and task_instance.state in states
+                    for task_instance in self._task_instances_by_dag_and_task_id[
+                        (dag_run.dag_id, task_id)
+                    ]
+                    if task_instance.run_id == dag_run.run_id and task_instance.state in states
                 ]
             )
         return task_instances
@@ -162,18 +164,16 @@ def make_task_info(
 
 
 def make_task_instance(
-    dag_id: str,
     task_id: str,
-    run_id: str,
+    dag_run: DagRun,
     start_date: datetime,
     end_date: datetime,
     logical_date: Optional[datetime] = None,
 ) -> TaskInstance:
     return TaskInstance(
-        webserver_url="http://dummy.domain",
-        dag_id=dag_id,
         task_id=task_id,
-        run_id=run_id,
+        webserver_url="http://dummy.domain",
+        dag_run=dag_run,
         metadata={
             "state": "success",
             "start_date": start_date.isoformat(),
@@ -237,9 +237,8 @@ def make_instance(
         task_instances.extend(
             [
                 make_task_instance(
-                    dag_id=dag_run.dag_id,
+                    dag_run=dag_run,
                     task_id=task_id,
-                    run_id=dag_run.run_id,
                     start_date=dag_run.start_date,
                     end_date=dag_run.end_date
                     - timedelta(

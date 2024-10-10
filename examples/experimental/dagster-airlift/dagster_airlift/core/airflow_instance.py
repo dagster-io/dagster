@@ -1,16 +1,27 @@
 import datetime
 import time
 from abc import ABC
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Mapping, Sequence
 
 import requests
 from dagster import _check as check
+from dagster._core.definitions.metadata.metadata_value import (
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    TimestampMetadataValue,
+)
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
-from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
+from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
+from dagster_airlift.core.serialization.serialized_data import (
+    DagHandle,
+    DagInfo,
+    TaskHandle,
+    TaskInfo,
+)
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
@@ -80,9 +91,9 @@ class AirflowInstance:
             )
 
     def get_task_instance_batch(
-        self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
+        self, dag_run: "DagRun", task_ids: Sequence[str], states: Sequence[str]
     ) -> List["TaskInstance"]:
-        """Get all task instances for a given dag_id, task_ids, and run_id."""
+        """Get all task instances for a given dag_run, task_ids, and run_id."""
         task_instances = []
         task_id_chunks = [
             task_ids[i : i + self.batch_task_instance_limit]
@@ -92,9 +103,9 @@ class AirflowInstance:
             response = self.auth_backend.get_session().post(
                 f"{self.get_api_url()}/dags/~/dagRuns/~/taskInstances/list",
                 json={
-                    "dag_ids": [dag_id],
+                    "dag_ids": [dag_run.dag_id],
                     "task_ids": task_id_chunk,
-                    "dag_run_ids": [run_id],
+                    "dag_run_ids": [dag_run.run_id],
                 },
             )
 
@@ -102,35 +113,33 @@ class AirflowInstance:
                 for task_instance_json in response.json()["task_instances"]:
                     task_id = task_instance_json["task_id"]
                     task_instance = TaskInstance(
+                        dag_run=dag_run,
                         webserver_url=self.auth_backend.get_webserver_url(),
-                        dag_id=dag_id,
                         task_id=task_id,
-                        run_id=run_id,
                         metadata=task_instance_json,
                     )
                     if task_instance.state in states:
                         task_instances.append(task_instance)
             else:
                 raise DagsterError(
-                    f"Failed to fetch task instances for {dag_id}/{task_id_chunk}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
+                    f"Failed to fetch task instances for {dag_run.dag_id}/{task_id_chunk}/{dag_run.run_id}. Status code: {response.status_code}, Message: {response.text}"
                 )
         return task_instances
 
-    def get_task_instance(self, dag_id: str, task_id: str, run_id: str) -> "TaskInstance":
+    def get_task_instance(self, dag_run: "DagRun", task_id: str) -> "TaskInstance":
         response = self.auth_backend.get_session().get(
-            f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}/taskInstances/{task_id}"
+            f"{self.get_api_url()}/dags/{dag_run.dag_id}/dagRuns/{dag_run.run_id}/taskInstances/{task_id}"
         )
         if response.status_code == 200:
             return TaskInstance(
+                dag_run=dag_run,
                 webserver_url=self.auth_backend.get_webserver_url(),
-                dag_id=dag_id,
                 task_id=task_id,
-                run_id=run_id,
                 metadata=response.json(),
             )
         else:
             raise DagsterError(
-                f"Failed to fetch task instance for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
+                f"Failed to fetch task instance for {dag_run.dag_id}/{task_id}/{dag_run.run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
     def get_task_infos(self, *, dag_id: str) -> List["TaskInfo"]:
@@ -296,11 +305,14 @@ class AirflowInstance:
 
 @record
 class TaskInstance:
+    dag_run: "DagRun"
     webserver_url: str
-    dag_id: str
     task_id: str
-    run_id: str
     metadata: Dict[str, Any]
+
+    @property
+    def run_id(self) -> str:
+        return self.dag_run.run_id
 
     @property
     def state(self) -> str:
@@ -309,6 +321,14 @@ class TaskInstance:
     @property
     def note(self) -> str:
         return self.metadata.get("note") or ""
+
+    @property
+    def dag_id(self) -> str:
+        return self.dag_run.dag_id
+
+    @property
+    def handle(self) -> TaskHandle:
+        return TaskHandle(dag_id=self.dag_id, task_id=self.task_id)
 
     @property
     def details_url(self) -> str:
@@ -340,6 +360,20 @@ class TaskInstance:
     def end_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["end_date"])
 
+    @property
+    def dagster_metadata(self) -> Mapping[str, Any]:
+        return {
+            "Airflow Run ID": self.run_id,
+            "Run Metadata (raw)": JsonMetadataValue(self.metadata),
+            "Run Type": self.dag_run.run_type,
+            "Airflow Config": JsonMetadataValue(self.dag_run.config),
+            "Run Details": MarkdownMetadataValue(f"[View Run]({self.details_url})"),
+            "Task Logs": MarkdownMetadataValue(f"[View Logs]({self.log_url})"),
+            "Start Date": TimestampMetadataValue(self.start_date.timestamp()),
+            "End Date": TimestampMetadataValue(self.end_date.timestamp()),
+            EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(self.end_date.timestamp()),
+        }
+
 
 @record
 class DagRun:
@@ -351,6 +385,10 @@ class DagRun:
     @property
     def note(self) -> str:
         return self.metadata.get("note") or ""
+
+    @property
+    def handle(self) -> DagHandle:
+        return DagHandle(dag_id=self.dag_id)
 
     @property
     def url(self) -> str:
@@ -397,3 +435,16 @@ class DagRun:
     @property
     def end_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["end_date"])
+
+    @property
+    def dagster_metadata(self) -> Mapping[str, Any]:
+        return {
+            "Airflow Run ID": self.run_id,
+            "Run Metadata (raw)": JsonMetadataValue(self.metadata),
+            "Run Type": self.run_type,
+            "Airflow Config": JsonMetadataValue(self.config),
+            "Run Details": MarkdownMetadataValue(f"[View Run]({self.url})"),
+            "Start Date": TimestampMetadataValue(self.start_date.timestamp()),
+            "End Date": TimestampMetadataValue(self.end_date.timestamp()),
+            EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(self.end_date.timestamp()),
+        }
