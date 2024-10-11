@@ -183,6 +183,34 @@ def test_s3_log_reader(s3_client, capsys):
     assert sys.stdout is not None
 
 
+def test_s3_message_reader(s3_client):
+    message_reader = PipesS3MessageReader(
+        client=s3_client, bucket=_S3_TEST_BUCKET, expect_s3_message_writer=False
+    )
+
+    key = str(uuid4())
+
+    @asset
+    def my_asset(context: AssetExecutionContext):
+        with open_pipes_session(
+            context=context,
+            message_reader=message_reader,
+            context_injector=PipesEnvContextInjector(),
+        ) as session:
+            assert not message_reader.messages_are_readable({})
+            params = {"key": key}
+            session.report_launched({"extras": params})
+            assert not message_reader.messages_are_readable(params)
+
+            s3_client.put_object(Bucket=_S3_TEST_BUCKET, Key=key, Body=b"hello world")
+
+            assert message_reader.messages_are_readable(params)
+
+            return session.get_results()
+
+    materialize([my_asset])
+
+
 def test_s3_pipes_components(
     capsys,
     tmpdir,
