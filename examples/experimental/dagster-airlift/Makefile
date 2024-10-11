@@ -33,3 +33,8 @@ adhoc_release:
 	echo "Airlift release branch created. Please create a PR and merge it to master."
 	@echo "Returning to master branch..."
 	@git checkout master
+
+find_airlift_commits:
+	@echo "Finding commits for dagster-airlift..."
+	@chmod +x scripts/find_airlift_commits.sh
+	@./scripts/find_airlift_commits.sh
