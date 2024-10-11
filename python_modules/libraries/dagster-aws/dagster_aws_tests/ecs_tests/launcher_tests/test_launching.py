@@ -55,7 +55,7 @@ def test_default_launcher(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
-    assert task_definition["family"] == get_task_definition_family("run", run.external_job_origin)
+    assert task_definition["family"] == get_task_definition_family("run", run.remote_job_origin)
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
@@ -229,7 +229,7 @@ def test_launcher_dont_use_current_task(
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
 
     # It has a new family, name, and image
-    assert task_definition["family"] == get_task_definition_family("run", run.external_job_origin)
+    assert task_definition["family"] == get_task_definition_family("run", run.remote_job_origin)
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"

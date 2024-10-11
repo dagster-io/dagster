@@ -903,12 +903,12 @@ def _get_existing_run_for_request(
     matching_runs = []
     for run in existing_runs:
         # if the run doesn't have an origin consider it a match
-        if run.external_job_origin is None:
+        if run.remote_job_origin is None:
             matching_runs.append(run)
         # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
         elif (
             remote_schedule.get_remote_origin().repository_origin.get_selector_id()
-            == run.external_job_origin.repository_origin.get_selector_id()
+            == run.remote_job_origin.repository_origin.get_selector_id()
         ):
             matching_runs.append(run)
 

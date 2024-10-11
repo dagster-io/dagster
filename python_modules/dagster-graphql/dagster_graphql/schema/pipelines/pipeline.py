@@ -411,8 +411,8 @@ class GrapheneRun(graphene.ObjectType):
 
     def _get_permission_value(self, permission: Permissions, graphene_info: ResolveInfo) -> bool:
         location_name = (
-            self.dagster_run.external_job_origin.location_name
-            if self.dagster_run.external_job_origin
+            self.dagster_run.remote_job_origin.location_name
+            if self.dagster_run.remote_job_origin
             else None
         )
 
@@ -440,8 +440,8 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_repositoryOrigin(self, _graphene_info: ResolveInfo):
         return (
-            GrapheneRepositoryOrigin(self.dagster_run.external_job_origin.repository_origin)
-            if self.dagster_run.external_job_origin
+            GrapheneRepositoryOrigin(self.dagster_run.remote_job_origin.repository_origin)
+            if self.dagster_run.remote_job_origin
             else None
         )
 

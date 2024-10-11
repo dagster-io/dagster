@@ -1232,12 +1232,12 @@ def _fetch_existing_runs(
     valid_runs: List[DagsterRun] = []
     for run in runs_with_run_keys:
         # if the run doesn't have a set origin, just match on sensor name
-        if run.external_job_origin is None and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name:
+        if run.remote_job_origin is None and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name:
             valid_runs.append(run)
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
-            run.external_job_origin is not None
-            and run.external_job_origin.repository_origin.get_selector_id()
+            run.remote_job_origin is not None
+            and run.remote_job_origin.repository_origin.get_selector_id()
             == remote_sensor.get_remote_origin().repository_origin.get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name
         ):
