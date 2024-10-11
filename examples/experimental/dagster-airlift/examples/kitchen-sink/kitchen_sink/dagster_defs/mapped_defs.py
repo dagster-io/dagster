@@ -31,6 +31,11 @@ def asset_two() -> None:
     print("Materialized asset two")
 
 
+@asset(description="Materialized by overridden_dag_custom_callback")
+def asset_overridden_dag_custom_callback() -> None:
+    print("Materialized by overridden_dag_custom_callback")
+
+
 def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
         airflow_instance=local_airflow_instance(),
@@ -72,6 +77,11 @@ def build_mapped_defs() -> Definitions:
                     "downstream_print_task",
                     Definitions(assets=[make_print_asset("unaffected_dag__another_print_asset")]),
                 ),
+            ),
+            Definitions(
+                assets_with_dag_mappings(
+                    {"overridden_dag_custom_callback": [asset_overridden_dag_custom_callback]}
+                )
             ),
         ),
     )
