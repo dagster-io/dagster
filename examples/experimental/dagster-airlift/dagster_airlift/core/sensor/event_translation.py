@@ -16,6 +16,7 @@ from dagster._time import get_current_timestamp
 from dagster_airlift.constants import EFFECTIVE_TIMESTAMP_METADATA_KEY
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
+from dagster_airlift.core.serialization.serialized_data import DagHandle
 
 AssetEvent = Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]
 DagsterEventTransformerFn = Callable[
@@ -38,7 +39,7 @@ def materializations_for_dag_run(
         AssetMaterialization(
             asset_key=asset_key, description=dag_run.note, metadata=get_dag_run_metadata(dag_run)
         )
-        for asset_key in airflow_data.asset_keys_per_dag[dag_run.dag_id]
+        for asset_key in airflow_data.asset_keys_per_dag_handle[DagHandle(dag_run.dag_id)]
     ]
 
 
