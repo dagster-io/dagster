@@ -360,36 +360,21 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-        ],
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/dbt-example",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-        ],
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/perf-harness",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-        ],
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/tutorial-example",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-        ],
         always_run_if=has_dagster_airlift_changes,
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/kitchen-sink",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_12,
-        ],
         always_run_if=has_dagster_airlift_changes,
     ),
 ]
