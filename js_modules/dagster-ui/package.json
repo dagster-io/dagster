@@ -23,7 +23,7 @@
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0"
   },
-  "packageManager": "yarn@4.1.1",
+  "packageManager": "yarn@4.5.0",
   "engines": {
     "node": ">=20.x"
   },
