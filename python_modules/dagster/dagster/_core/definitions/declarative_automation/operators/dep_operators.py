@@ -135,14 +135,11 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
         true_subset = context.get_empty_subset()
 
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
-            dep_condition = EntityMatchesCondition(key=dep_key, operand=self.operand)
-            dep_result = await dep_condition.evaluate(
-                context.for_child_condition(
-                    child_condition=dep_condition,
-                    child_index=i,
-                    candidate_subset=context.candidate_subset,
-                )
-            )
+            dep_result = await context.for_child_condition(
+                child_condition=EntityMatchesCondition(key=dep_key, operand=self.operand),
+                child_index=i,
+                candidate_subset=context.candidate_subset,
+            ).evaluate_async()
             dep_results.append(dep_result)
             true_subset = true_subset.compute_union(dep_result.true_subset)
 
@@ -163,14 +160,11 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
         true_subset = context.candidate_subset
 
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
-            dep_condition = EntityMatchesCondition(key=dep_key, operand=self.operand)
-            dep_result = await dep_condition.evaluate(
-                context.for_child_condition(
-                    child_condition=dep_condition,
-                    child_index=i,
-                    candidate_subset=context.candidate_subset,
-                )
-            )
+            dep_result = await context.for_child_condition(
+                child_condition=EntityMatchesCondition(key=dep_key, operand=self.operand),
+                child_index=i,
+                candidate_subset=context.candidate_subset,
+            ).evaluate_async()
             dep_results.append(dep_result)
             true_subset = true_subset.compute_intersection(dep_result.true_subset)
 
