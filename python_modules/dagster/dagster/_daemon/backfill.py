@@ -14,6 +14,7 @@ from dagster._core.errors import (
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._time import get_current_datetime
@@ -59,13 +60,16 @@ def execute_backfill_iteration(
     canceling_backfills = instance.get_backfills(
         filters=BulkActionsFilter(statuses=[BulkActionStatus.CANCELING])
     )
+    deleting_backfills = instance.get_backfills(
+        filters=BulkActionsFilter(statuses=[BulkActionStatus.DELETING])
+    )
 
-    if not in_progress_backfills and not canceling_backfills:
-        logger.debug("No backfill jobs in progress or canceling.")
+    if not in_progress_backfills and not canceling_backfills and not deleting_backfills:
+        logger.debug("No backfill jobs in progress, canceling, or deleting")
         yield None
         return
 
-    backfill_jobs = [*in_progress_backfills, *canceling_backfills]
+    backfill_jobs = [*in_progress_backfills, *canceling_backfills, *deleting_backfills]
 
     yield from execute_backfill_jobs(
         workspace_process_context, logger, backfill_jobs, debug_crash_flags
@@ -103,6 +107,15 @@ def execute_backfill_jobs(
             )
 
             try:
+                if backfill.status == BulkActionStatus.DELETING:
+                    runs_in_backfill = instance.get_run_ids(
+                        filters=RunsFilter.for_backfill(backfill.backfill_id)
+                    )
+                    for run_id in runs_in_backfill:
+                        instance.delete_run(run_id)
+                        yield None
+                    instance.delete_backfill(backfill.backfill_id)
+                    continue
                 if backfill.is_asset_backfill:
                     yield from execute_asset_backfill_iteration(
                         backfill, backfill_logger, workspace_process_context, instance
