@@ -1,8 +1,6 @@
 import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
-import {DeclarativeAutomationBanner} from 'shared/assets/auto-materialization/DeclarativeAutomationBanner';
-import {TickResultType} from 'shared/ticks/TickStatusTag';
 
 import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
@@ -19,12 +17,14 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {DeclarativeAutomationBanner} from '../assets/auto-materialization/DeclarativeAutomationBanner';
 import {AUTOMATION_ASSET_SELECTION_FRAGMENT} from '../automation/AutomationAssetSelectionFragment';
 import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
+import {TickResultType} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
