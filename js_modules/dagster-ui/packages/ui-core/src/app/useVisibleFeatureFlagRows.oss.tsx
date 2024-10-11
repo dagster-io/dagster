@@ -41,13 +41,12 @@ export const useVisibleFeatureFlagRows = () => [
     key: 'New code location page',
     flagType: FeatureFlag.flagCodeLocationPage,
   },
-  // Uncomment once we're ready for this to go live
   {
-    key: 'New Runs page',
-    flagType: FeatureFlag.flagRunsFeed,
+    key: 'Revert to legacy Runs page',
+    flagType: FeatureFlag.flagLegacyRunsPage,
     label: (
       <>
-        New Runs page (
+        Revert to legacy Runs page (
         <a
           href="https://github.com/dagster-io/dagster/discussions/24898"
           target="_blank"
