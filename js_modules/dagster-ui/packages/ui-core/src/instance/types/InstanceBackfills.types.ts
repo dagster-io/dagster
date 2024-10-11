@@ -51,6 +51,11 @@ export type InstanceBackfillsQuery = {
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          launchedBy: {
+            __typename: 'LaunchedBy';
+            kind: string;
+            tag: {__typename: 'PipelineTag'; key: string; value: string};
+          };
         }>;
       }
     | {
@@ -65,4 +70,4 @@ export type InstanceBackfillsQuery = {
       };
 };
 
-export const InstanceBackfillsQueryVersion = 'e9baee9c4eabc561ffe1ffcb06430969883c1d1cfb469438f98d821b90d3d06a';
+export const InstanceBackfillsQueryVersion = '37f370477c400a6596b991fa490f0bfa6400b37c91d2b666b4712f31e632c616';

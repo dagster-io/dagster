@@ -57,8 +57,13 @@ export type PipelineRunsRootQuery = {
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
           }> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          launchedBy: {
+            __typename: 'LaunchedBy';
+            kind: string;
+            tag: {__typename: 'PipelineTag'; key: string; value: string};
+          };
         }>;
       };
 };
 
-export const PipelineRunsRootQueryVersion = '3ed2a4c2669f29ed627eb12c6d95beb7d7c6d87a4914938ff83da8f174c61695';
+export const PipelineRunsRootQueryVersion = 'f91e8893973039d57fb3a7ef15e4722182264126c7d25439620a08f063875dd0';

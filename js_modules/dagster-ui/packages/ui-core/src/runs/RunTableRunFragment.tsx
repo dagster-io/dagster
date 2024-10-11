@@ -38,6 +38,13 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     tags {
       ...RunTagsFragment
     }
+    launchedBy {
+      kind
+      tag {
+        key
+        value
+      }
+    }
     ...RunTimeFragment
   }
 

@@ -44,6 +44,11 @@ export type JobBackfillsQuery = {
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          launchedBy: {
+            __typename: 'LaunchedBy';
+            kind: string;
+            tag: {__typename: 'PipelineTag'; key: string; value: string};
+          };
           error: {
             __typename: 'PythonError';
             message: string;
@@ -60,4 +65,4 @@ export type JobBackfillsQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const JobBackfillsQueryVersion = '520e31190a97fd72e51daf0e8f9a6f718afaa30ce223fb6f767f8d56c08716cd';
+export const JobBackfillsQueryVersion = '6f6e0b25be5a95bcbcbb649d63b9f93c08c963727746381dccc013b79144f177';

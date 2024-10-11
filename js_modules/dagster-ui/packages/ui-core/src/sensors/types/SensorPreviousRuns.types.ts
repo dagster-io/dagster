@@ -48,8 +48,13 @@ export type PreviousRunsForSensorQuery = {
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
           }> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          launchedBy: {
+            __typename: 'LaunchedBy';
+            kind: string;
+            tag: {__typename: 'PipelineTag'; key: string; value: string};
+          };
         }>;
       };
 };
 
-export const PreviousRunsForSensorQueryVersion = '11280246962f31faf7d5e8a479dd3e97bdfe074bb64a56a76ff436eda018d5b6';
+export const PreviousRunsForSensorQueryVersion = '6d391163c97ca698022fe54375b8738eccb53bde36e7b84b4f914a99477dd862';

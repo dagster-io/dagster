@@ -55,8 +55,13 @@ export type PartitionRunListQuery = {
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
           }> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          launchedBy: {
+            __typename: 'LaunchedBy';
+            kind: string;
+            tag: {__typename: 'PipelineTag'; key: string; value: string};
+          };
         }>;
       };
 };
 
-export const PartitionRunListQueryVersion = '259838c720999c3fe679ef5c302d5cfb62a970202ee03cdd6cd25ac3dea45046';
+export const PartitionRunListQueryVersion = '48615c162a57f0f1cdc462a9fbdac8ece7bf5ac17c20db0e93e6707afbb1897a';

@@ -4,85 +4,85 @@ import {Link} from 'react-router-dom';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
-import {DagsterTag} from './RunTag';
+// import {DagsterTag} from './RunTag';
 import {RunFilterToken} from './RunsFilterInput';
-import {RunTagsFragment} from './types/RunTagsFragment.types';
+import {LaunchedByFragment} from './types/launchedByFragment.types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
   repoAddress?: RepoAddress | null;
-  tags: RunTagsFragment[];
+  // tags: RunTagsFragment[];
+  launchedBy: LaunchedByFragment;
   onAddTag?: (token: RunFilterToken) => void;
 };
 
-export const CreatedByTagCell = memo(({repoAddress, tags, onAddTag}: Props) => {
+export const CreatedByTagCell = memo(({repoAddress, launchedBy, onAddTag}: Props) => {
   return (
     <CreatedByTagCellWrapper flex={{direction: 'column', alignItems: 'flex-start'}}>
-      <CreatedByTag repoAddress={repoAddress} tags={tags} onAddTag={onAddTag} />
+      <CreatedByTag repoAddress={repoAddress} launchedBy={launchedBy} onAddTag={onAddTag} />
     </CreatedByTagCellWrapper>
   );
 });
 
 export const CreatedByTagCellWrapper = styled(Box)``;
 
-type TagType =
-  | {
-      type: 'user' | 'schedule' | 'sensor' | 'auto-materialize' | 'auto-observe';
-      tag: RunTagsFragment;
-    }
-  | {type: 'manual'};
+// type TagType =
+//   | {
+//       type: 'user' | 'schedule' | 'sensor' | 'auto-materialize' | 'auto-observe';
+//       tag: RunTagsFragment;
+//     }
+//   | {type: 'manual'};
 
-const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
-  // Prefer user/schedule/sensor
-  for (const tag of tags) {
-    const {key} = tag;
-    switch (key) {
-      case DagsterTag.User:
-        return {type: 'user', tag};
-      case DagsterTag.ScheduleName:
-        return {type: 'schedule', tag};
-      case DagsterTag.SensorName:
-        return {type: 'sensor', tag};
-    }
-  }
+// const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
+//   // Prefer user/schedule/sensor
+//   for (const tag of tags) {
+//     const {key} = tag;
+//     switch (key) {
+//       case DagsterTag.User:
+//         return {type: 'user', tag};
+//       case DagsterTag.ScheduleName:
+//         return {type: 'schedule', tag};
+//       case DagsterTag.SensorName:
+//         return {type: 'sensor', tag};
+//     }
+//   }
 
-  // If none of those, check for AMP
-  for (const tag of tags) {
-    const {key} = tag;
-    switch (key) {
-      case DagsterTag.Automaterialize:
-        return {type: 'auto-materialize', tag};
-      case DagsterTag.CreatedBy: {
-        // Backwards compatibility
-        if (tag.value === 'auto_materialize') {
-          return {type: 'auto-materialize', tag};
-        } else {
-          continue;
-        }
-      }
-      case DagsterTag.AutoObserve:
-        return {type: 'auto-observe', tag};
-    }
-  }
+//   // If none of those, check for AMP
+//   for (const tag of tags) {
+//     const {key} = tag;
+//     switch (key) {
+//       case DagsterTag.Automaterialize:
+//         return {type: 'auto-materialize', tag};
+//       case DagsterTag.CreatedBy: {
+//         // Backwards compatibility
+//         if (tag.value === 'auto_materialize') {
+//           return {type: 'auto-materialize', tag};
+//         } else {
+//           continue;
+//         }
+//       }
+//       case DagsterTag.AutoObserve:
+//         return {type: 'auto-observe', tag};
+//     }
+//   }
 
-  return {type: 'manual'};
-};
+//   return {type: 'manual'};
+// };
 
-export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
-  const plucked = pluckTagFromList(tags);
+export const CreatedByTag = ({repoAddress, launchedBy, onAddTag}: Props) => {
+  const {kind, tag} = launchedBy;
+  const {key, value} = tag;
 
-  if (plucked.type === 'manual') {
+  if (kind === 'manual') {
     return <Tag icon="account_circle">Manually launched</Tag>;
   }
 
   const buildTagElement = () => {
-    const {type, tag} = plucked;
-    const {value} = tag;
-    switch (type) {
+    switch (kind) {
       case 'user':
-        return <UserDisplay email={tag.value} />;
+        return <UserDisplay email={value} />;
       case 'schedule': {
         return (
           <Tag icon="schedule">
@@ -110,6 +110,7 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
       case 'auto-observe':
         return <Tag icon="auto_observe">Auto-observation</Tag>;
     }
+    return <Tag icon="auto_observe">Auto-observation</Tag>; // TODO fix - unreachable but not sure what to put here
   };
 
   const tagElement = buildTagElement();
@@ -117,8 +118,6 @@ export const CreatedByTag = ({repoAddress, tags, onAddTag}: Props) => {
     return tagElement;
   }
 
-  const {tag} = plucked;
-  const {key, value} = tag;
   return (
     <TagActionsPopover
       data={tag}
