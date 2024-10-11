@@ -1,6 +1,16 @@
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence, Set
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Iterable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+)
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
@@ -68,6 +78,11 @@ class AssetExecutionType(Enum):
     OBSERVATION = "OBSERVATION"
     UNEXECUTABLE = "UNEXECUTABLE"
     MATERIALIZATION = "MATERIALIZATION"
+
+
+def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
+    if kinds is not None and len(kinds) > 3:
+        raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
 
 
 @experimental_param(param="owners")
@@ -167,8 +182,7 @@ class AssetSpec(
         kind_tags = {
             tag_key for tag_key in tags_with_kinds.keys() if tag_key.startswith(KIND_PREFIX)
         }
-        if kind_tags is not None and len(kind_tags) > 3:
-            raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
+        validate_kind_tags(kind_tags)
 
         return super().__new__(
             cls,
