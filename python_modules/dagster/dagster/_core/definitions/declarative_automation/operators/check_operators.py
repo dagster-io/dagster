@@ -54,7 +54,7 @@ class AnyChecksCondition(ChecksAutomationCondition):
     def base_name(self) -> str:
         return "ANY_CHECKS_MATCH"
 
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         check_results = []
         true_subset = context.get_empty_subset()
 
@@ -62,7 +62,7 @@ class AnyChecksCondition(ChecksAutomationCondition):
             sorted(self._get_check_keys(context.key, context.asset_graph))
         ):
             check_condition = EntityMatchesCondition(key=check_key, operand=self.operand)
-            check_result = check_condition.evaluate(
+            check_result = await check_condition.evaluate(
                 context.for_child_condition(
                     child_condition=check_condition,
                     child_index=i,
@@ -83,7 +83,7 @@ class AllChecksCondition(ChecksAutomationCondition):
     def base_name(self) -> str:
         return "ALL_CHECKS_MATCH"
 
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         check_results = []
         true_subset = context.candidate_subset
 
@@ -91,7 +91,7 @@ class AllChecksCondition(ChecksAutomationCondition):
             sorted(self._get_check_keys(context.key, context.asset_graph))
         ):
             check_condition = EntityMatchesCondition(key=check_key, operand=self.operand)
-            check_result = check_condition.evaluate(
+            check_result = await check_condition.evaluate(
                 context.for_child_condition(
                     child_condition=check_condition,
                     child_index=i,
