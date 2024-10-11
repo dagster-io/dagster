@@ -94,15 +94,13 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
         ):
             if downstream_condition in ignored_conditions:
                 continue
-            child_condition = DownstreamConditionWrapperCondition(
-                downstream_keys=list(sorted(asset_keys)), operand=downstream_condition
-            )
-            child_context = context.for_child_condition(
-                child_condition=child_condition,
+            child_result = await context.for_child_condition(
+                child_condition=DownstreamConditionWrapperCondition(
+                    downstream_keys=list(sorted(asset_keys)), operand=downstream_condition
+                ),
                 child_index=i,
                 candidate_subset=context.candidate_subset,
-            )
-            child_result = await child_condition.evaluate(child_context)
+            ).evaluate_async()
 
             child_results.append(child_result)
             true_subset = true_subset.compute_union(child_result.true_subset)

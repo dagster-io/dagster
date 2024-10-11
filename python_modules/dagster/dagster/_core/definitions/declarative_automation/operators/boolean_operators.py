@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Sequence
 
 import dagster._check as check
@@ -41,10 +42,9 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         child_results: List[AutomationResult] = []
         true_subset = context.candidate_subset
         for i, child in enumerate(self.children):
-            child_context = context.for_child_condition(
+            child_result = await context.for_child_condition(
                 child_condition=child, child_index=i, candidate_subset=true_subset
-            )
-            child_result = await child_context.evaluate_async()
+            ).evaluate_async()
             child_results.append(child_result)
             true_subset = true_subset.compute_intersection(child_result.true_subset)
         return AutomationResult(context, true_subset, child_results=child_results)
@@ -88,14 +88,17 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     async def evaluate(
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
-        child_results: List[AutomationResult] = []
         true_subset = context.get_empty_subset()
-        for i, child in enumerate(self.children):
-            child_context = context.for_child_condition(
+
+        coroutines = [
+            context.for_child_condition(
                 child_condition=child, child_index=i, candidate_subset=context.candidate_subset
-            )
-            child_result = await child_context.evaluate_async()
-            child_results.append(child_result)
+            ).evaluate_async()
+            for i, child in enumerate(self.children)
+        ]
+
+        child_results = await asyncio.gather(*coroutines)
+        for child_result in child_results:
             true_subset = true_subset.compute_union(child_result.true_subset)
 
         return AutomationResult(context, true_subset, child_results=child_results)
@@ -123,10 +126,9 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     async def evaluate(
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
-        child_context = context.for_child_condition(
+        child_result = await context.for_child_condition(
             child_condition=self.operand, child_index=0, candidate_subset=context.candidate_subset
-        )
-        child_result = await child_context.evaluate_async()
+        ).evaluate_async()
         true_subset = context.candidate_subset.compute_difference(child_result.true_subset)
 
         return AutomationResult(context, true_subset, child_results=[child_result])
