@@ -942,6 +942,7 @@ def test_graph_asset_with_args(automation_condition_arg):
         resource_defs={"foo": foo_resource},
         tags={"foo": "bar"},
         owners=["team:team1", "claire@dagsterlabs.com"],
+        code_version="v1",
         **automation_condition_arg,
     )
     def my_asset(x):
@@ -961,6 +962,7 @@ def test_graph_asset_with_args(automation_condition_arg):
         my_asset.automation_conditions_by_key[AssetKey("my_asset")] == AutomationCondition.eager()
     )
     assert my_asset.resource_defs["foo"] == foo_resource
+    assert my_asset.code_versions_by_key[AssetKey("my_asset")] == "v1"
 
 
 def test_graph_asset_partitioned():
