@@ -90,9 +90,9 @@ def _get_job_execution_data_from_run_request(
 
     if pipeline_selector not in run_request_execution_data_cache:
         code_location = workspace.get_code_location(handle.location_name)
-        remote_job = code_location.get_external_job(pipeline_selector)
+        remote_job = code_location.get_job(pipeline_selector)
 
-        external_execution_plan = code_location.get_external_execution_plan(
+        external_execution_plan = code_location.get_execution_plan(
             remote_job,
             {},
             step_keys_to_execute=None,

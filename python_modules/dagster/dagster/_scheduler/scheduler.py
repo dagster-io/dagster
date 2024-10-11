@@ -731,7 +731,7 @@ def _submit_run_request(
         # * threaded: if thread sits pending in pool too long
         code_location = _get_code_location_for_schedule(workspace_process_context, remote_schedule)
 
-        remote_job = code_location.get_external_job(job_subset_selector)
+        remote_job = code_location.get_job(job_subset_selector)
 
         run = _create_scheduler_run(
             instance,
@@ -789,7 +789,7 @@ def _schedule_runs_at_time(
 
     code_location = _get_code_location_for_schedule(workspace_process_context, remote_schedule)
 
-    schedule_execution_data = code_location.get_external_schedule_execution_data(
+    schedule_execution_data = code_location.get_schedule_execution_data(
         instance=instance,
         repository_handle=repository_handle,
         schedule_name=remote_schedule.name,
@@ -931,7 +931,7 @@ def _create_scheduler_run(
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
-    remote_execution_plan = code_location.get_external_execution_plan(
+    remote_execution_plan = code_location.get_execution_plan(
         remote_job,
         run_config,
         step_keys_to_execute=None,

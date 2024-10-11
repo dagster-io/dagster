@@ -702,7 +702,7 @@ def _submit_run_request(
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
     )
-    remote_job = code_location.get_external_job(job_subset_selector)
+    remote_job = code_location.get_job(job_subset_selector)
     run = _get_or_create_sensor_run(
         logger,
         instance,
@@ -796,7 +796,7 @@ def _evaluate_sensor(
     repository_handle = remote_sensor.handle.repository_handle
     instigator_data = _sensor_instigator_data(state)
 
-    sensor_runtime_data = code_location.get_external_sensor_execution_data(
+    sensor_runtime_data = code_location.get_sensor_execution_data(
         instance,
         repository_handle,
         remote_sensor.name,
@@ -1295,7 +1295,7 @@ def _create_sensor_run(
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
-    remote_execution_plan = code_location.get_external_execution_plan(
+    remote_execution_plan = code_location.get_execution_plan(
         remote_job,
         run_request.run_config,
         step_keys_to_execute=None,

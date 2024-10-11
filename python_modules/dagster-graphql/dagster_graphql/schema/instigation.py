@@ -364,7 +364,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 )
             sensor_data: Union[SensorExecutionData, SerializableErrorInfo]
             try:
-                sensor_data = code_location.get_external_sensor_execution_data(
+                sensor_data = code_location.get_sensor_execution_data(
                     name=self._selector.sensor_name,
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
@@ -395,7 +395,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
             next_tick_datetime = next(schedule.execution_time_iterator(self.timestamp))
             schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
             try:
-                schedule_data = code_location.get_external_schedule_execution_data(
+                schedule_data = code_location.get_schedule_execution_data(
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
                     schedule_name=schedule.name,
