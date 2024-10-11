@@ -25,7 +25,9 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.trigger_condition, self.reset_condition]
 
-    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
+    async def evaluate(
+        self, context: AutomationContext[T_EntityKey]
+    ) -> AutomationResult[T_EntityKey]:
         # must evaluate child condition over the entire subset to avoid missing state transitions
         child_candidate_subset = context.asset_graph_view.get_full_subset(key=context.key)
 
@@ -33,13 +35,13 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         trigger_context = context.for_child_condition(
             self.trigger_condition, child_index=0, candidate_subset=child_candidate_subset
         )
-        trigger_result = self.trigger_condition.evaluate(trigger_context)
+        trigger_result = await trigger_context.evaluate_async()
 
         # compute result for reset condition
         reset_context = context.for_child_condition(
             self.reset_condition, child_index=1, candidate_subset=child_candidate_subset
         )
-        reset_result = self.reset_condition.evaluate(reset_context)
+        reset_result = await reset_context.evaluate_async()
 
         # take the previous subset that this was true for
         true_subset = context.previous_true_subset or context.get_empty_subset()
