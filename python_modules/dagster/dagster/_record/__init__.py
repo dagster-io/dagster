@@ -130,14 +130,15 @@ def _namedtuple_record_transform(
     # the default namedtuple record cannot handle subclasses that have different fields from their
     # parents if both are records
     base.__repr__ = _repr
+    nt_iter = base.__iter__
+    base.__iter__ = _banned_iter
+    base.__getitem__ = _banned_idx
 
     # these will override an implementation on the class if it exists
     new_class_dict = {
         **{n: getattr(base, n) for n in field_set.keys()},
         "_fields": base._fields,
-        "__iter__": _banned_iter,
-        "__getitem__": _banned_idx,
-        "__hidden_iter__": base.__iter__,
+        "__hidden_iter__": nt_iter,
         "__hidden_replace__": base._replace,
         _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
         _RECORD_ANNOTATIONS_FIELD: field_set,
@@ -321,6 +322,9 @@ class IHaveNew:
     if TYPE_CHECKING:
 
         def __new__(cls, **kwargs) -> Self: ...
+
+        # let type checker know these objects are sortable (by way of being a namedtuple)
+        def __lt__(self, other) -> bool: ...
 
 
 def is_record(obj) -> bool:

@@ -2402,3 +2402,24 @@ def test_multiple_keys_per_output_name():
         AssetsDefinition(
             node_def=op1, keys_by_output_name={"out1": AssetKey("a"), "out2": AssetKey("a")}
         )
+
+
+def test_iterate_over_single_key():
+    key = AssetKey("ouch")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="You have attempted to iterate a single AssetKey object. "
+        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug.",
+    ):
+        [_ for _ in key]
+
+
+def test_index_in_to_key():
+    key = AssetKey("ouch")
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="You have attempted to index directly in to the AssetKey object. "
+        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
+        "Use asset_key.path instead to access the list of key components.",
+    ):
+        key[0][0]
