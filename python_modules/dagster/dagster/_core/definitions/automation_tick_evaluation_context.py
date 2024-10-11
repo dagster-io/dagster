@@ -72,6 +72,7 @@ class AutomationTickEvaluationContext:
             )
             if default_condition or asset_graph.get(entity_key).automation_condition is not None
         }
+        self._total_keys = len(resolved_entity_keys)
         self._evaluation_id = evaluation_id
         self._evaluator = AutomationConditionEvaluator(
             entity_keys=resolved_entity_keys,
@@ -94,6 +95,10 @@ class AutomationTickEvaluationContext:
     @property
     def asset_graph(self) -> BaseAssetGraph:
         return self._evaluator.asset_graph
+
+    @property
+    def total_keys(self) -> int:
+        return self._total_keys
 
     def _legacy_build_auto_observe_run_requests(self) -> Sequence[RunRequest]:
         current_timestamp = self._evaluator.evaluation_time.timestamp()
