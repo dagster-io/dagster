@@ -14,22 +14,22 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {tokenForAssetKey} from 'shared/asset-graph/Utils';
-import {AssetLink} from 'shared/assets/AssetLink';
-import {AssetKeysDialogEmptyState} from 'shared/assets/AutoMaterializePolicyPage/AssetKeysDialog';
-import {assetDetailsPathForKey} from 'shared/assets/assetDetailsPathForKey';
-import {AssetDaemonTickFragment} from 'shared/assets/auto-materialization/types/AssetDaemonTicksQuery.types';
-import {
-  AssetGroupAndLocationQuery,
-  AssetGroupAndLocationQueryVariables,
-} from 'shared/assets/auto-materialization/types/AutomaterializationTickDetailDialog.types';
-import {AssetKeyInput} from 'shared/graphql/types';
-import {HeaderRow} from 'shared/ui/VirtualizedTable';
-import {buildRepoAddress} from 'shared/workspace/buildRepoAddress';
-import {workspacePathFromAddress} from 'shared/workspace/workspacePath';
 import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
+import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetLink} from '../assets/AssetLink';
+import {AssetKeysDialogEmptyState} from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
+import {
+  AssetGroupAndLocationQuery,
+  AssetGroupAndLocationQueryVariables,
+} from '../assets/auto-materialization/types/AutomaterializationTickDetailDialog.types';
+import {AssetKeyInput} from '../graphql/types';
+import {HeaderRow} from '../ui/VirtualizedTable';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const TEMPLATE_COLUMNS = '30% 17% 53%';
 

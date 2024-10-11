@@ -1,11 +1,11 @@
 import {Box, DialogHeader} from '@dagster-io/ui-components';
 import {memo} from 'react';
-import {TickMaterializationsTable} from 'shared/instigation/TickMaterializationsTable';
 
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 import {Timestamp} from '../../app/time/Timestamp';
 import {InstigationTickStatus} from '../../graphql/types';
 import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
+import {TickMaterializationsTable} from '../../instigation/TickMaterializationsTable';
 import {AssetKeysDialog} from '../AutoMaterializePolicyPage/AssetKeysDialog';
 
 export const AutomaterializationTickDetailDialog = memo(
