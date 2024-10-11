@@ -3,9 +3,9 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import memoize from 'lodash/memoize';
 import {memo, useContext, useEffect, useMemo, useState} from 'react';
-import {TickResultType} from 'shared/ticks/TickStatusTag';
 import styled from 'styled-components';
 
+import {TickResultType} from '../ticks/TickStatusTag';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {isStuckStartedTick} from './util';
 import {TimeContext} from '../app/time/TimeContext';

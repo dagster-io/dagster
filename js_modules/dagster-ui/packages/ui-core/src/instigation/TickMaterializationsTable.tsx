@@ -16,11 +16,11 @@ import {useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
 } from './types/TickMaterializationsTable.types';
-import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLink} from '../assets/AssetLink';
 import {AssetKeysDialogEmptyState} from '../assets/AutoMaterializePolicyPage/AssetKeysDialog';
