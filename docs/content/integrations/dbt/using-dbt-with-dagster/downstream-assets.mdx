@@ -60,7 +60,7 @@ To add the `order_count_chart` asset:
    ```python file=integrations/dbt/tutorial/downstream_assets/assets.py startafter=start_downstream_asset endbefore=end_downstream_asset
    @asset(
        compute_kind="python",
-       deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers"),
+       deps=[get_asset_key_for_model([jaffle_shop_dbt_assets], "customers")],
    )
    def order_count_chart(context: AssetExecutionContext):
        # read the contents of the customers table into a Pandas DataFrame
