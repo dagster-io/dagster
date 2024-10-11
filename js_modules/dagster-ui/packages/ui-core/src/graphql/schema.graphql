@@ -1428,7 +1428,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   endTime: Float
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  launchedBy: GrapheneLaunchedBy!
+  launchedBy: LaunchedBy!
   parentPipelineSnapshotId: String
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -1453,7 +1453,7 @@ interface RunsFeedEntry {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  launchedBy: GrapheneLaunchedBy!
+  launchedBy: LaunchedBy!
 }
 
 type AssetCheckhandle {
@@ -1461,9 +1461,9 @@ type AssetCheckhandle {
   assetKey: AssetKey!
 }
 
-type GrapheneLaunchedBy {
+type LaunchedBy {
   kind: String!
-  value: String!
+  tag: PipelineTag!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -2849,7 +2849,7 @@ type PartitionBackfill implements RunsFeedEntry {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  launchedBy: GrapheneLaunchedBy!
+  launchedBy: LaunchedBy!
   status: BulkActionStatus!
   partitionNames: [String!]
   isValidSerialization: Boolean!

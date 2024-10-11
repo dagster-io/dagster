@@ -1697,12 +1697,6 @@ export type GraphSelector = {
   repositoryName: Scalars['String']['input'];
 };
 
-export type GrapheneLaunchedBy = {
-  __typename: 'GrapheneLaunchedBy';
-  kind: Scalars['String']['output'];
-  value: Scalars['String']['output'];
-};
-
 export type HandledOutputEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -2258,6 +2252,12 @@ export type LaunchRunResult =
 export type LaunchRunSuccess = LaunchPipelineRunSuccess & {
   __typename: 'LaunchRunSuccess';
   run: Run;
+};
+
+export type LaunchedBy = {
+  __typename: 'LaunchedBy';
+  kind: Scalars['String']['output'];
+  tag: PipelineTag;
 };
 
 export type ListDagsterType = DagsterType &
@@ -3093,7 +3093,7 @@ export type PartitionBackfill = RunsFeedEntry & {
   isAssetBackfill: Scalars['Boolean']['output'];
   isValidSerialization: Scalars['Boolean']['output'];
   jobName: Maybe<Scalars['String']['output']>;
-  launchedBy: GrapheneLaunchedBy;
+  launchedBy: LaunchedBy;
   logEvents: InstigationEventConnection;
   numCancelable: Scalars['Int']['output'];
   numPartitions: Maybe<Scalars['Int']['output']>;
@@ -4453,7 +4453,7 @@ export type Run = PipelineRun &
     hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
     jobName: Scalars['String']['output'];
-    launchedBy: GrapheneLaunchedBy;
+    launchedBy: LaunchedBy;
     mode: Scalars['String']['output'];
     parentPipelineSnapshotId: Maybe<Scalars['String']['output']>;
     parentRunId: Maybe<Scalars['String']['output']>;
@@ -4798,7 +4798,7 @@ export type RunsFeedEntry = {
   endTime: Maybe<Scalars['Float']['output']>;
   id: Scalars['ID']['output'];
   jobName: Maybe<Scalars['String']['output']>;
-  launchedBy: GrapheneLaunchedBy;
+  launchedBy: LaunchedBy;
   runStatus: Maybe<RunStatus>;
   startTime: Maybe<Scalars['Float']['output']>;
   tags: Array<PipelineTag>;
@@ -8586,19 +8586,6 @@ export const buildGraphSelector = (
   };
 };
 
-export const buildGrapheneLaunchedBy = (
-  overrides?: Partial<GrapheneLaunchedBy>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'GrapheneLaunchedBy'} & GrapheneLaunchedBy => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('GrapheneLaunchedBy');
-  return {
-    __typename: 'GrapheneLaunchedBy',
-    kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : 'molestiae',
-    value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'soluta',
-  };
-};
-
 export const buildHandledOutputEvent = (
   overrides?: Partial<HandledOutputEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9492,6 +9479,24 @@ export const buildLaunchRunSuccess = (
         : relationshipsToOmit.has('Run')
         ? ({} as Run)
         : buildRun({}, relationshipsToOmit),
+  };
+};
+
+export const buildLaunchedBy = (
+  overrides?: Partial<LaunchedBy>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchedBy'} & LaunchedBy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchedBy');
+  return {
+    __typename: 'LaunchedBy',
+    kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : 'labore',
+    tag:
+      overrides && overrides.hasOwnProperty('tag')
+        ? overrides.tag!
+        : relationshipsToOmit.has('PipelineTag')
+        ? ({} as PipelineTag)
+        : buildPipelineTag({}, relationshipsToOmit),
   };
 };
 
@@ -10863,9 +10868,9 @@ export const buildPartitionBackfill = (
     launchedBy:
       overrides && overrides.hasOwnProperty('launchedBy')
         ? overrides.launchedBy!
-        : relationshipsToOmit.has('GrapheneLaunchedBy')
-        ? ({} as GrapheneLaunchedBy)
-        : buildGrapheneLaunchedBy({}, relationshipsToOmit),
+        : relationshipsToOmit.has('LaunchedBy')
+        ? ({} as LaunchedBy)
+        : buildLaunchedBy({}, relationshipsToOmit),
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!
@@ -13049,9 +13054,9 @@ export const buildRun = (
     launchedBy:
       overrides && overrides.hasOwnProperty('launchedBy')
         ? overrides.launchedBy!
-        : relationshipsToOmit.has('GrapheneLaunchedBy')
-        ? ({} as GrapheneLaunchedBy)
-        : buildGrapheneLaunchedBy({}, relationshipsToOmit),
+        : relationshipsToOmit.has('LaunchedBy')
+        ? ({} as LaunchedBy)
+        : buildLaunchedBy({}, relationshipsToOmit),
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'laboriosam',
     parentPipelineSnapshotId:
       overrides && overrides.hasOwnProperty('parentPipelineSnapshotId')
@@ -13690,9 +13695,9 @@ export const buildRunsFeedEntry = (
     launchedBy:
       overrides && overrides.hasOwnProperty('launchedBy')
         ? overrides.launchedBy!
-        : relationshipsToOmit.has('GrapheneLaunchedBy')
-        ? ({} as GrapheneLaunchedBy)
-        : buildGrapheneLaunchedBy({}, relationshipsToOmit),
+        : relationshipsToOmit.has('LaunchedBy')
+        ? ({} as LaunchedBy)
+        : buildLaunchedBy({}, relationshipsToOmit),
     runStatus:
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
