@@ -30,7 +30,6 @@ import {
   DaemonNotRunningAlert,
   useIsBackfillDaemonHealthy,
 } from '../../partitions/BackfillMessaging';
-import {getRunFeedPath} from '../../runs/RunsFeedUtils';
 import {testId} from '../../testing/testId';
 
 export const RunsFeedBackfillPage = () => {
@@ -125,7 +124,7 @@ export const RunsFeedBackfillPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to={getRunFeedPath()} style={{color: Colors.textLight()}}>
+            <Link to="/runs/" style={{color: Colors.textLight()}}>
               Runs
             </Link>
             {' / '}
