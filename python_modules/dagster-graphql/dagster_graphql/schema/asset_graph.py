@@ -12,6 +12,9 @@ from dagster._core.definitions.data_version import (
     StaleCauseCategory,
     StaleStatus,
 )
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionSnapshot,
+)
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
@@ -841,8 +844,17 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
     ) -> Optional[GrapheneAutoMaterializePolicy]:
-        if self._asset_node_snap.automation_condition:
-            return GrapheneAutomationCondition(self._asset_node_snap.automation_condition)
+        automation_condition = (
+            self._asset_node_snap.automation_condition_snapshot
+            or self._asset_node_snap.automation_condition
+        )
+        if automation_condition:
+            return GrapheneAutomationCondition(
+                # we only store one of automation_condition or automation_condition_snapshot
+                automation_condition
+                if isinstance(automation_condition, AutomationConditionSnapshot)
+                else automation_condition.get_snapshot()
+            )
         return None
 
     def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
