@@ -505,13 +505,13 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
 def test_simple_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_partition_set("the_job_partition_set")
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -538,13 +538,13 @@ def test_simple_backfill(
 def test_canceled_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_partition_set("the_job_partition_set")
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -573,16 +573,14 @@ def test_canceled_backfill(
 def test_failure_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     output_file = _failure_flag_file()
-    external_partition_set = external_repo.get_partition_set(
-        "conditional_failure_job_partition_set"
-    )
+    partition_set = remote_repo.get_partition_set("conditional_failure_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="shouldfail",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -631,7 +629,7 @@ def test_failure_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="fromfailure",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=True,
@@ -677,13 +675,13 @@ def test_failure_backfill(
 def test_job_backfill_status(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_partition_set("the_job_partition_set")
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -735,15 +733,15 @@ def test_job_backfill_status(
 def test_partial_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_partition_set("partial_job_partition_set")
+    partition_set = remote_repo.get_partition_set("partial_job_partition_set")
 
     # create full runs, where every step is executed
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="full",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -790,7 +788,7 @@ def test_partial_backfill(
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="partial",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -827,13 +825,13 @@ def test_partial_backfill(
 def test_large_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    external_partition_set = external_repo.get_partition_set("config_job_partition_set")
+    partition_set = remote_repo.get_partition_set("config_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -1063,14 +1061,14 @@ def test_unloadable_backfill_retry(
 def test_backfill_from_partitioned_job(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     partition_keys = my_config.partitions_def.get_partition_keys()
-    external_partition_set = external_repo.get_partition_set("comp_always_succeed_partition_set")
+    partition_set = remote_repo.get_partition_set("comp_always_succeed_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="partition_schedule_from_job",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_keys[:3],
             from_failure=False,
@@ -1093,7 +1091,7 @@ def test_backfill_from_partitioned_job(
 def test_backfill_with_asset_selection(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
@@ -1101,11 +1099,11 @@ def test_backfill_with_asset_selection(
     assert job_def
     asset_job_name = job_def.name
     partition_set_name = f"{asset_job_name}_partition_set"
-    external_partition_set = external_repo.get_partition_set(partition_set_name)
+    partition_set = remote_repo.get_partition_set(partition_set_name)
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="backfill_with_asset_selection",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_keys,
             from_failure=False,
@@ -1135,7 +1133,7 @@ def test_backfill_with_asset_selection(
 def test_pure_asset_backfill_with_multiple_assets_selected(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     asset_selection = [
         AssetKey("asset_a"),
@@ -1205,9 +1203,9 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
 def test_pure_asset_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    del external_repo
+    del remote_repo
 
     partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
@@ -1254,7 +1252,7 @@ def test_pure_asset_backfill(
 def test_backfill_from_failure_for_subselection(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     parallel_failure_job.execute_in_process(
         partition_key="one",
@@ -1268,12 +1266,12 @@ def test_backfill_from_failure_for_subselection(
     run = next(iter(instance.get_runs()))
     assert run.status == DagsterRunStatus.FAILURE
 
-    external_partition_set = external_repo.get_partition_set("parallel_failure_job_partition_set")
+    partition_set = remote_repo.get_partition_set("parallel_failure_job_partition_set")
 
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="fromfailure",
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one"],
             from_failure=True,
@@ -1950,11 +1948,11 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
 
 
 # Job must have a partitions definition with a-b-c-d partitions
-def _get_abcd_job_backfill(external_repo: RemoteRepository, job_name: str) -> PartitionBackfill:
-    external_partition_set = external_repo.get_partition_set(f"{job_name}_partition_set")
+def _get_abcd_job_backfill(remote_repo: RemoteRepository, job_name: str) -> PartitionBackfill:
+    partition_set = remote_repo.get_partition_set(f"{job_name}_partition_set")
     return PartitionBackfill(
         backfill_id="simple",
-        partition_set_origin=external_partition_set.get_remote_origin(),
+        partition_set_origin=partition_set.get_remote_origin(),
         status=BulkActionStatus.REQUESTED,
         partition_names=["a", "b", "c", "d"],
         from_failure=False,
@@ -1967,9 +1965,9 @@ def _get_abcd_job_backfill(external_repo: RemoteRepository, job_name: str) -> Pa
 def test_asset_job_backfill_single_run(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    backfill = _get_abcd_job_backfill(external_repo, "bp_single_run_asset_job")
+    backfill = _get_abcd_job_backfill(remote_repo, "bp_single_run_asset_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -1985,14 +1983,14 @@ def test_asset_job_backfill_single_run(
 def test_asset_job_backfill_single_run_multiple_iterations(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     """Tests that job backfills correctly find existing runs for partitions in the backfill and don't
     relaunch those partitions. This is a regression test for a bug where the backfill would relaunch
     runs for BackfillPolicy.single_run asset jobs since we were incorrectly determining which partitions
     had already been launched.
     """
-    backfill = _get_abcd_job_backfill(external_repo, "bp_single_run_asset_job")
+    backfill = _get_abcd_job_backfill(remote_repo, "bp_single_run_asset_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
 
@@ -2046,9 +2044,9 @@ def test_asset_job_backfill_single_run_multiple_iterations(
 def test_asset_job_backfill_multi_run(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    backfill = _get_abcd_job_backfill(external_repo, "bp_multi_run_asset_job")
+    backfill = _get_abcd_job_backfill(remote_repo, "bp_multi_run_asset_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -2068,9 +2066,9 @@ def test_asset_job_backfill_multi_run(
 def test_asset_job_backfill_default(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    backfill = _get_abcd_job_backfill(external_repo, "bp_none_asset_job")
+    backfill = _get_abcd_job_backfill(remote_repo, "bp_none_asset_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -2516,7 +2514,7 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
 def test_backfill_with_title_and_description(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     asset_selection = [
         AssetKey("asset_a"),
@@ -2582,9 +2580,9 @@ def test_backfill_with_title_and_description(
 def test_old_dynamic_partitions_job_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    backfill = _get_abcd_job_backfill(external_repo, "old_dynamic_partitions_job")
+    backfill = _get_abcd_job_backfill(remote_repo, "old_dynamic_partitions_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -2595,7 +2593,7 @@ def test_old_dynamic_partitions_job_backfill(
 def test_asset_backfill_logs(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
     # need to override this method on the instance since it defaults ot False in OSS. When we enable this
     # feature in OSS we can remove this override
@@ -2677,9 +2675,9 @@ def test_asset_backfill_logs(
 def test_asset_backfill_from_asset_graph_subset(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    del external_repo
+    del remote_repo
 
     partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
@@ -2730,9 +2728,9 @@ def test_asset_backfill_from_asset_graph_subset(
 def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
 ):
-    del external_repo
+    del remote_repo
 
     static_partition_keys = static_partitions.get_partition_keys()
     static_asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]

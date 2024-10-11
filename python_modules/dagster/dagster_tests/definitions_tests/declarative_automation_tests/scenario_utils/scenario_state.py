@@ -418,17 +418,17 @@ class ScenarioState:
         return self
 
     def start_sensor(self, sensor_name: str) -> Self:
-        with self._get_external_sensor(sensor_name) as sensor:
+        with self._get_remote_sensor(sensor_name) as sensor:
             self.instance.start_sensor(sensor)
         return self
 
     def stop_sensor(self, sensor_name: str) -> Self:
-        with self._get_external_sensor(sensor_name) as sensor:
+        with self._get_remote_sensor(sensor_name) as sensor:
             self.instance.stop_sensor(sensor.get_remote_origin_id(), sensor.selector_id, sensor)
         return self
 
     @contextmanager
-    def _get_external_sensor(self, sensor_name):
+    def _get_remote_sensor(self, sensor_name):
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
             sensor = next(

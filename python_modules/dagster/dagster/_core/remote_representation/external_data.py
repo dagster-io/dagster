@@ -1213,7 +1213,7 @@ class ResourceSnap(IHaveNew):
         # we parse the JSON and break it out into defaults for each individual nested Field
         # for display in the UI
         configured_values = {
-            k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
+            k: resource_value_snap_from_raw(v) for k, v in config_schema_default.items()
         }
 
         resource_type_def = resource_def
@@ -1736,7 +1736,7 @@ def external_job_ref_from_def(job_def: JobDefinition) -> JobRefSnap:
     )
 
 
-def external_resource_value_from_raw(v: Any) -> ResourceValueSnap:
+def resource_value_snap_from_raw(v: Any) -> ResourceValueSnap:
     if isinstance(v, dict) and set(v.keys()) == {"env"}:
         return ResourceConfigEnvVarSnap(name=v["env"])
     return json.dumps(v)

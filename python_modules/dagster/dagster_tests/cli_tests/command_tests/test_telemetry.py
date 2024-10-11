@@ -41,7 +41,7 @@ from dagster._core.telemetry import (
     cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
     get_or_set_instance_id,
-    get_stats_from_external_repo,
+    get_stats_from_remote_repo,
     hash_name,
     log_workspace_stats,
     write_telemetry_log_line,
@@ -223,7 +223,7 @@ def test_get_stats_from_external_repo_partitions(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_partitioned_assets_in_repo"] == "2"
 
 
@@ -243,7 +243,7 @@ def test_get_stats_from_external_repo_multi_partitions(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_multi_partitioned_assets_in_repo"] == "1"
     assert stats["num_partitioned_assets_in_repo"] == "1"
 
@@ -259,7 +259,7 @@ def test_get_stats_from_external_repo_source_assets(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_source_assets_in_repo"] == "1"
 
 
@@ -279,7 +279,7 @@ def test_get_stats_from_external_repo_observable_source_assets(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_source_assets_in_repo"] == "2"
     assert stats["num_observable_source_assets_in_repo"] == "1"
 
@@ -296,7 +296,7 @@ def test_get_stats_from_external_repo_freshness_policies(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_assets_with_freshness_policies_in_repo"] == "1"
 
 
@@ -317,7 +317,7 @@ def test_get_status_from_external_repo_auto_materialize_policy(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_assets_with_eager_auto_materialize_policies_in_repo"] == "1"
     assert stats["num_assets_with_lazy_auto_materialize_policies_in_repo"] == "1"
 
@@ -334,7 +334,7 @@ def test_get_stats_from_external_repo_code_versions(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_assets_with_code_versions_in_repo"] == "1"
 
 
@@ -360,7 +360,7 @@ def test_get_stats_from_external_repo_code_checks(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_asset_checks"] == "2"
     assert stats["num_assets_with_checks"] == "1"
 
@@ -377,7 +377,7 @@ def test_get_stats_from_external_repo_dbt(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["num_dbt_assets_in_repo"] == "1"
 
 
@@ -408,7 +408,7 @@ def test_get_stats_from_external_repo_resources(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "MyResource"}
     ]
@@ -454,7 +454,7 @@ def test_get_stats_from_external_repo_io_managers(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "MyIOManager"}
     ]
@@ -487,7 +487,7 @@ def test_get_stats_from_external_repo_functional_resources(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "my_resource"}
     ]
@@ -520,7 +520,7 @@ def test_get_stats_from_external_repo_functional_io_managers(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "my_io_manager"}
     ]
@@ -539,7 +539,7 @@ def test_get_stats_from_external_repo_pipes_client(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster", "class_name": "PipesSubprocessClient"}
     ]
@@ -598,7 +598,7 @@ def test_get_stats_from_external_repo_delayed_resource_configuration(instance):
         repository_handle=RepositoryHandle.for_test(),
         instance=instance,
     )
-    stats = get_stats_from_external_repo(external_repo)
+    stats = get_stats_from_remote_repo(external_repo)
     assert stats["dagster_resources"] == [
         {"module_name": "dagster_tests", "class_name": "MyIOManager"},
         {"module_name": "dagster_tests", "class_name": "my_io_manager"},

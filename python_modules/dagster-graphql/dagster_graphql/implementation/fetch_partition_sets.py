@@ -53,8 +53,8 @@ def get_partition_sets_or_error(
     return GraphenePartitionSets(
         results=[
             GraphenePartitionSet(
-                external_repository_handle=repository.handle,
-                external_partition_set=partition_set,
+                repository_handle=repository.handle,
+                remote_partition_set=partition_set,
             )
             for partition_set in sorted(
                 partition_sets,
@@ -84,8 +84,8 @@ def get_partition_set(
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:
             return GraphenePartitionSet(
-                external_repository_handle=repository.handle,
-                external_partition_set=partition_set,
+                repository_handle=repository.handle,
+                remote_partition_set=partition_set,
             )
 
     return GraphenePartitionSetNotFoundError(partition_set_name)
@@ -103,8 +103,8 @@ def get_partition_by_name(
     check.inst_param(partition_set, "partition_set", RemotePartitionSet)
     check.str_param(partition_name, "partition_name")
     return GraphenePartition(
-        external_repository_handle=repository_handle,
-        external_partition_set=partition_set,
+        repository_handle=repository_handle,
+        remote_partition_set=partition_set,
         partition_name=partition_name,
     )
 
@@ -184,8 +184,8 @@ def get_partitions(
     return GraphenePartitions(
         results=[
             GraphenePartition(
-                external_partition_set=partition_set,
-                external_repository_handle=repository_handle,
+                remote_partition_set=partition_set,
+                repository_handle=repository_handle,
                 partition_name=partition_name,
             )
             for partition_name in partition_names
@@ -195,13 +195,13 @@ def get_partitions(
 
 def get_partition_set_partition_statuses(
     graphene_info: ResolveInfo,
-    external_partition_set: RemotePartitionSet,
+    remote_partition_set: RemotePartitionSet,
     partition_names: Sequence[str],
 ) -> Sequence["GraphenePartitionStatus"]:
-    check.inst_param(external_partition_set, "external_partition_set", RemotePartitionSet)
+    check.inst_param(remote_partition_set, "remote_partition_set", RemotePartitionSet)
 
-    repository_handle = external_partition_set.repository_handle
-    partition_set_name = external_partition_set.name
+    repository_handle = remote_partition_set.repository_handle
+    partition_set_name = remote_partition_set.name
 
     run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
         runs_filter=RunsFilter(

@@ -51,12 +51,12 @@ def get_code_location_origin(filename: str) -> InProcessCodeLocationOrigin:
 
 
 def _get_all_sensors(context: WorkspaceRequestContext) -> Sequence[RemoteSensor]:
-    external_sensors = []
+    sensors = []
     for cl_name in context.get_code_location_entries():
-        external_sensors.extend(
+        sensors.extend(
             next(iter(context.get_code_location(cl_name).get_repositories().values())).get_sensors()
         )
-    return external_sensors
+    return sensors
 
 
 def _get_automation_sensors(context: WorkspaceRequestContext) -> Sequence[RemoteSensor]:

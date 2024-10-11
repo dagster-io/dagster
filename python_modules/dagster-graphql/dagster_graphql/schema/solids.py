@@ -461,7 +461,7 @@ class ISolidDefinitionMixin:
                     remote_node=remote_node,
                     asset_checks_loader=asset_checks_loader,
                     # base_deployment_context will be None if we are not in a branch deployment
-                    asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                    asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
                         code_location_name=location.name,
                         repository_name=ext_repo.name,
                         branch_workspace=graphene_info.context,

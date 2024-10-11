@@ -383,7 +383,7 @@ class GrapheneRepository(graphene.ObjectType):
         base_deployment_context = graphene_info.context.get_base_deployment_context()
         if base_deployment_context is not None:
             # then we are in a branch deployment
-            asset_graph_differ = AssetGraphDiffer.from_external_repositories(
+            asset_graph_differ = AssetGraphDiffer.from_remote_repositories(
                 code_location_name=self._handle.location_name,
                 repository_name=self._handle.repository_name,
                 branch_workspace=graphene_info.context,
@@ -415,16 +415,16 @@ class GrapheneRepository(graphene.ObjectType):
         for asset_node_snap in self.get_repository(graphene_info).get_asset_node_snaps():
             if not asset_node_snap.group_name:
                 continue
-            external_assets = groups.setdefault(asset_node_snap.group_name, [])
-            external_assets.append(asset_node_snap)
+            asset_node_snaps = groups.setdefault(asset_node_snap.group_name, [])
+            asset_node_snaps.append(asset_node_snap)
 
         return [
             GrapheneAssetGroup(
                 f"{self._handle.location_name}-{self._handle.repository_name}-{group_name}",
                 group_name,
-                [external_node.asset_key for external_node in external_nodes],
+                [external_node.asset_key for external_node in asset_node_snaps],
             )
-            for group_name, external_nodes in groups.items()
+            for group_name, asset_node_snaps in groups.items()
         ]
 
     def resolve_allTopLevelResourceDetails(self, graphene_info) -> List[GrapheneResourceDetails]:
@@ -432,7 +432,7 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneResourceDetails(
                 location_name=self._handle.location_name,
                 repository_name=self._handle.repository_name,
-                external_resource=resource,
+                remote_resource=resource,
             )
             for resource in sorted(
                 self.get_repository(graphene_info).get_resources(),

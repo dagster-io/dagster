@@ -16,11 +16,11 @@ from dagster._cli.workspace.cli_target import (
     ClickArgValue,
     ClickOption,
     get_code_location_from_workspace,
-    get_external_repository_from_code_location,
-    get_external_repository_from_kwargs,
     get_job_python_origin_from_kwargs,
     get_remote_job_from_kwargs,
     get_remote_job_from_remote_repo,
+    get_remote_repository_from_code_location,
+    get_remote_repository_from_kwargs,
     get_workspace_from_kwargs,
     job_repository_target_argument,
     job_target_argument,
@@ -48,7 +48,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
+from dagster._core.telemetry import log_remote_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
@@ -88,14 +88,14 @@ def job_list_command(**kwargs):
 
 def execute_list_command(cli_args, print_fn):
     with get_possibly_temporary_instance_for_cli("``dagster job list``") as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repository:
-            title = f"Repository {external_repository.name}"
+        ) as repo:
+            title = f"Repository {repo.name}"
             print_fn(title)
             print_fn("*" * len(title))
             first = True
-            for job in external_repository.get_all_jobs():
+            for job in repo.get_all_jobs():
                 job_title = f"Job: {job.name}"
 
                 if not first:
@@ -396,18 +396,18 @@ def execute_launch_command(
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
         code_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
-        external_repo = get_external_repository_from_code_location(
+        repo = get_remote_repository_from_code_location(
             code_location, cast(Optional[str], kwargs.get("repository"))
         )
         remote_job = get_remote_job_from_remote_repo(
-            external_repo,
+            repo,
             cast(Optional[str], kwargs.get("job_name")),
         )
 
-        log_external_repo_stats(
+        log_remote_repo_stats(
             instance=instance,
             remote_job=remote_job,
-            remote_repo=external_repo,
+            remote_repo=repo,
             source="pipeline_launch_command",
         )
 
@@ -418,10 +418,10 @@ def execute_launch_command(
 
         op_selection = get_op_selection_from_args(kwargs)
 
-        dagster_run = _create_external_run(
+        dagster_run = _create_run(
             instance=instance,
             code_location=code_location,
-            external_repo=external_repo,
+            remote_repo=repo,
             remote_job=remote_job,
             run_config=config,
             tags=run_tags,
@@ -432,10 +432,10 @@ def execute_launch_command(
         return instance.submit_run(dagster_run.run_id, workspace)
 
 
-def _create_external_run(
+def _create_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     remote_job: RemoteJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
@@ -444,7 +444,7 @@ def _create_external_run(
 ) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(code_location, "code_location", CodeLocation)
-    check.inst_param(external_repo, "external_repo", RemoteRepository)
+    check.inst_param(remote_repo, "remote_repo", RemoteRepository)
     check.inst_param(remote_job, "remote_job", RemoteJob)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
@@ -462,21 +462,21 @@ def _create_external_run(
     job_name = remote_job.name
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
-        repository_name=external_repo.name,
+        repository_name=remote_repo.name,
         job_name=job_name,
         op_selection=op_selection,
     )
 
     remote_job = code_location.get_external_job(job_subset_selector)
 
-    external_execution_plan = code_location.get_external_execution_plan(
+    execution_plan = code_location.get_external_execution_plan(
         remote_job,
         run_config,
         step_keys_to_execute=None,
         known_state=None,
         instance=instance,
     )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+    execution_plan_snapshot = execution_plan.execution_plan_snapshot
 
     return instance.create_run(
         job_name=job_name,
@@ -496,7 +496,7 @@ def _create_external_run(
         job_code_origin=remote_job.get_python_origin(),
         asset_selection=None,
         asset_check_selection=None,
-        asset_graph=external_repo.asset_graph,
+        asset_graph=remote_repo.asset_graph,
     )
 
 
@@ -618,21 +618,19 @@ def _execute_backfill_command_at_location(
     workspace: BaseWorkspaceRequestContext,
     code_location: CodeLocation,
 ) -> None:
-    external_repo = get_external_repository_from_code_location(
+    repo = get_remote_repository_from_code_location(
         code_location, check.opt_str_elem(cli_args, "repository")
     )
 
-    remote_job = get_remote_job_from_remote_repo(
-        external_repo, check.opt_str_elem(cli_args, "job_name")
-    )
+    remote_job = get_remote_job_from_remote_repo(repo, check.opt_str_elem(cli_args, "job_name"))
 
     noprompt = cli_args.get("noprompt")
 
     job_partition_set = next(
         (
-            external_partition_set
-            for external_partition_set in external_repo.get_partition_sets()
-            if external_partition_set.job_name == remote_job.name
+            partition_set
+            for partition_set in repo.get_partition_sets()
+            if partition_set.job_name == remote_job.name
         ),
         None,
     )
@@ -643,7 +641,7 @@ def _execute_backfill_command_at_location(
     run_tags = get_tags_from_args(cli_args)
 
     repo_handle = RepositoryHandle.from_location(
-        repository_name=external_repo.name,
+        repository_name=repo.name,
         code_location=code_location,
     )
 

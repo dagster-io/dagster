@@ -467,11 +467,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         return []
 
     def is_multipartitioned(self) -> bool:
-        external_multipartitions_def = self._asset_node_snap.partitions
+        partitions_snap = self._asset_node_snap.partitions
 
-        return external_multipartitions_def is not None and isinstance(
-            external_multipartitions_def, MultiPartitionsSnap
-        )
+        return partitions_snap is not None and isinstance(partitions_snap, MultiPartitionsSnap)
 
     def get_required_resource_keys(
         self,
@@ -491,11 +489,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 inv.node_def_name
                 for inv in node_def_snap.dep_structure_snapshot.node_invocation_snaps
             ]
-            external_pipeline = self.get_remote_job(graphene_info)
+            job = self.get_remote_job(graphene_info)
             constituent_resource_key_sets = [
-                self.get_required_resource_keys_rec(
-                    graphene_info, external_pipeline.get_node_def_snap(name)
-                )
+                self.get_required_resource_keys_rec(graphene_info, job.get_node_def_snap(name))
                 for name in constituent_node_names
             ]
             return [key for res_key_set in constituent_resource_key_sets for key in res_key_set]
@@ -654,11 +650,11 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_configField(self, graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
         if not self.is_executable:
             return None
-        external_pipeline = self.get_remote_job(graphene_info)
+        job = self.get_remote_job(graphene_info)
         node_def_snap = self.get_node_definition_snap(graphene_info)
         return (
             GrapheneConfigTypeField(
-                config_schema_snapshot=external_pipeline.config_schema_snapshot,
+                config_schema_snapshot=job.config_schema_snapshot,
                 field_snap=node_def_snap.config_field_snap,
             )
             if node_def_snap.config_field_snap
@@ -868,8 +864,8 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
         repo = graphene_info.context.get_repository(self._repository_selector)
-        external_sensors = repo.get_sensors()
-        external_schedules = repo.get_schedules()
+        sensors = repo.get_sensors()
+        schedules = repo.get_schedules()
 
         asset_graph = repo.asset_graph
 
@@ -880,27 +876,27 @@ class GrapheneAssetNode(graphene.ObjectType):
         }
 
         results = []
-        for external_sensor in external_sensors:
-            if not self._sensor_targets_asset(external_sensor, asset_graph, job_names):
+        for sensor in sensors:
+            if not self._sensor_targets_asset(sensor, asset_graph, job_names):
                 continue
 
             sensor_state = graphene_info.context.instance.get_instigator_state(
-                external_sensor.get_remote_origin_id(),
-                external_sensor.selector_id,
+                sensor.get_remote_origin_id(),
+                sensor.selector_id,
             )
-            results.append(GrapheneSensor(external_sensor, repo, sensor_state))
+            results.append(GrapheneSensor(sensor, repo, sensor_state))
 
-        for external_schedule in external_schedules:
-            if external_schedule.job_name in job_names:
+        for schedule in schedules:
+            if schedule.job_name in job_names:
                 schedule_state = graphene_info.context.instance.get_instigator_state(
-                    external_schedule.get_remote_origin_id(),
-                    external_schedule.selector_id,
+                    schedule.get_remote_origin_id(),
+                    schedule.selector_id,
                 )
-                results.append(GrapheneSchedule(external_schedule, repo, schedule_state))
+                results.append(GrapheneSchedule(schedule, repo, schedule_state))
 
         return results
 
-    def _get_auto_materialize_external_sensor(
+    def _get_auto_materialize_remote_sensor(
         self, graphene_info: ResolveInfo
     ) -> Optional[RemoteSensor]:
         repo = graphene_info.context.get_repository(self._repository_selector)
@@ -927,12 +923,12 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         instance = graphene_info.context.instance
         if instance.auto_materialize_use_sensors:
-            external_sensor = self._get_auto_materialize_external_sensor(graphene_info)
-            if not external_sensor:
+            sensor = self._get_auto_materialize_remote_sensor(graphene_info)
+            if not sensor:
                 return None
 
             return get_current_evaluation_id(
-                graphene_info.context.instance, external_sensor.get_remote_origin()
+                graphene_info.context.instance, sensor.get_remote_origin()
             )
         else:
             return get_current_evaluation_id(graphene_info.context.instance, None)
@@ -1153,13 +1149,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
         if not self.is_executable:
             return None
-        external_pipeline = self.get_remote_job(graphene_info)
+        job = self.get_remote_job(graphene_info)
         node_def_snap = self.get_node_definition_snap(graphene_info)
         if isinstance(node_def_snap, OpDefSnap):
-            return GrapheneSolidDefinition(external_pipeline, node_def_snap.name)
+            return GrapheneSolidDefinition(job, node_def_snap.name)
 
         if isinstance(node_def_snap, GraphDefSnap):
-            return GrapheneCompositeSolidDefinition(external_pipeline, node_def_snap.name)
+            return GrapheneCompositeSolidDefinition(job, node_def_snap.name)
 
         check.failed(f"Unknown solid definition type {type(node_def_snap)}")
 
@@ -1243,13 +1239,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     ]:
         if not self._asset_node_snap.is_materializable:
             return None
-        external_pipeline = self.get_remote_job(graphene_info)
+        job = self.get_remote_job(graphene_info)
         output_name = self._asset_node_snap.output_name
         if output_name:
             for output_def in self.get_node_definition_snap(graphene_info).output_def_snaps:
                 if output_def.name == output_name:
                     return to_dagster_type(
-                        external_pipeline.job_snapshot,
+                        job.job_snapshot,
                         output_def.dagster_type_key,
                     )
         return None

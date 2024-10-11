@@ -722,7 +722,7 @@ def get_code_location_from_workspace(
     return workspace.get_code_location(provided_location_name)
 
 
-def get_external_repository_from_code_location(
+def get_remote_repository_from_code_location(
     code_location: CodeLocation, provided_repo_name: Optional[str]
 ) -> RemoteRepository:
     check.inst_param(code_location, "code_location", CodeLocation)
@@ -751,24 +751,24 @@ def get_external_repository_from_code_location(
 
 
 @contextmanager
-def get_external_repository_from_kwargs(
+def get_remote_repository_from_kwargs(
     instance: DagsterInstance, version: str, kwargs: ClickArgMapping
 ) -> Iterator[RemoteRepository]:
     # Instance isn't strictly required to load an ExternalRepository, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_code_location_from_kwargs(instance, version, kwargs) as code_location:
         provided_repo_name = check.opt_str_elem(kwargs, "repository")
-        yield get_external_repository_from_code_location(code_location, provided_repo_name)
+        yield get_remote_repository_from_code_location(code_location, provided_repo_name)
 
 
 def get_remote_job_from_remote_repo(
-    external_repo: RemoteRepository,
+    remote_repo: RemoteRepository,
     provided_name: Optional[str],
 ) -> RemoteJob:
-    check.inst_param(external_repo, "external_repo", RemoteRepository)
+    check.inst_param(remote_repo, "remote_repo", RemoteRepository)
     check.opt_str_param(provided_name, "provided_name")
 
-    remote_jobs = {ep.name: ep for ep in (external_repo.get_all_jobs())}
+    remote_jobs = {ep.name: ep for ep in (remote_repo.get_all_jobs())}
 
     check.invariant(remote_jobs)
 
@@ -778,12 +778,12 @@ def get_remote_job_from_remote_repo(
     if provided_name is None:
         raise click.UsageError(
             "Must provide --job as there is more than one job "
-            f"in {external_repo.name}. Options are: {_sorted_quoted(remote_jobs.keys())}."
+            f"in {remote_repo.name}. Options are: {_sorted_quoted(remote_jobs.keys())}."
         )
 
     if provided_name not in remote_jobs:
         raise click.UsageError(
-            f'Job "{provided_name}" not found in repository "{external_repo.name}". '
+            f'Job "{provided_name}" not found in repository "{remote_repo.name}". '
             f"Found {_sorted_quoted(remote_jobs.keys())} instead."
         )
 
@@ -794,9 +794,9 @@ def get_remote_job_from_remote_repo(
 def get_remote_job_from_kwargs(instance: DagsterInstance, version: str, kwargs: ClickArgMapping):
     # Instance isn't strictly required to load an ExternalJob, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
-    with get_external_repository_from_kwargs(instance, version, kwargs) as external_repo:
+    with get_remote_repository_from_kwargs(instance, version, kwargs) as repo:
         provided_name = check.opt_str_elem(kwargs, "job_name")
-        yield get_remote_job_from_remote_repo(external_repo, provided_name)
+        yield get_remote_job_from_remote_repo(repo, provided_name)
 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:

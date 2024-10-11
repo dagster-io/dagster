@@ -387,18 +387,18 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                     "No tick timestamp provided when attempting to dry-run schedule"
                     f" {self._selector.schedule_name}."
                 )
-            external_schedule = repository.get_schedule(self._selector.schedule_name)
-            timezone_str = external_schedule.execution_timezone
+            schedule = repository.get_schedule(self._selector.schedule_name)
+            timezone_str = schedule.execution_timezone
             if not timezone_str:
                 timezone_str = "UTC"
 
-            next_tick_datetime = next(external_schedule.execution_time_iterator(self.timestamp))
+            next_tick_datetime = next(schedule.execution_time_iterator(self.timestamp))
             schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
             try:
                 schedule_data = code_location.get_external_schedule_execution_data(
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
-                    schedule_name=external_schedule.name,
+                    schedule_name=schedule.name,
                     scheduled_execution_time=TimestampWithTimezone(
                         next_tick_datetime.timestamp(),
                         timezone_str,
