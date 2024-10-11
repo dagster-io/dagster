@@ -53,18 +53,10 @@ export const ContentRoot = memo(() => {
               />
             </AssetFeatureProvider>
           </Route>
-          {featureEnabled(FeatureFlag.flagRunsFeed)
+          {featureEnabled(FeatureFlag.flagLegacyRunsPage)
             ? // This is somewhat hacky but the Routes can't be wrapped by a fragment otherwise the Switch statement
               // stops working
               [
-                <Route path="/runs/b/:backfillId" key="1">
-                  <RunsFeedBackfillPage />
-                </Route>,
-                <Route path={['/runs', '/runs/scheduled']} exact key="2">
-                  <RunsFeedRoot />
-                </Route>,
-              ]
-            : [
                 <Route path="/runs-feed/b/:backfillId" key="3">
                   <RunsFeedBackfillPage />
                 </Route>,
@@ -76,6 +68,14 @@ export const ContentRoot = memo(() => {
                 </Route>,
                 <Route path="/runs/scheduled" exact key="6">
                   <ScheduledRunListRoot />
+                </Route>,
+              ]
+            : [
+                <Route path="/runs/b/:backfillId" key="1">
+                  <RunsFeedBackfillPage />
+                </Route>,
+                <Route path={['/runs', '/runs/scheduled']} exact key="2">
+                  <RunsFeedRoot />
                 </Route>,
               ]}
           <Route path="/runs/:runId" exact>
