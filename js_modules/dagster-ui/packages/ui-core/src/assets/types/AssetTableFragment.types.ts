@@ -28,9 +28,10 @@ export type AssetTableDefinitionFragment = {
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
-  autoMaterializePolicy: {
-    __typename: 'AutoMaterializePolicy';
-    policyType: Types.AutoMaterializePolicyType;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -74,9 +75,10 @@ export type AssetTableFragment = {
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    autoMaterializePolicy: {
-      __typename: 'AutoMaterializePolicy';
-      policyType: Types.AutoMaterializePolicyType;
+    automationCondition: {
+      __typename: 'AutomationCondition';
+      label: string | null;
+      expandedLabel: Array<string>;
     } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}

@@ -143,7 +143,7 @@ export const ASSET_GROUP_METADATA_QUERY = gql`
   query AssetGroupMetadataQuery($selector: AssetGroupSelector!) {
     assetNodes(group: $selector) {
       id
-      autoMaterializePolicy {
+      automationCondition {
         __typename
       }
     }
@@ -172,7 +172,7 @@ export const AssetGroupTags = ({
 
     if (
       automaterializeSensorsFlagState === 'has-global-amp' &&
-      assetNodes.some((a) => !!a.autoMaterializePolicy)
+      assetNodes.some((a) => !!a.automationCondition)
     ) {
       return <AutomaterializeDaemonStatusTag />;
     }

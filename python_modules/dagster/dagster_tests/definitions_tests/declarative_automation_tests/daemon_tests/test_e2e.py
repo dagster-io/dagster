@@ -574,3 +574,29 @@ def test_toggle_user_code() -> None:
                     _execute_ticks(context, executor)
                     runs = _get_runs_for_latest_ticks(context)
                     assert len(runs) == 0
+
+
+def test_custom_condition() -> None:
+    with get_workspace_request_context(
+        ["custom_condition"]
+    ) as context, get_threadpool_executor() as executor:
+        time = datetime.datetime(2024, 8, 16, 1, 35)
+
+        # custom condition only materializes on the 5th tick
+        for _ in range(4):
+            with freeze_time(time):
+                _execute_ticks(context, executor)
+                runs = _get_runs_for_latest_ticks(context)
+                assert len(runs) == 0
+            time += datetime.timedelta(minutes=1)
+
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+
+        time += datetime.timedelta(minutes=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0

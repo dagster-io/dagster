@@ -4,11 +4,9 @@ from typing import Optional, Sequence, Union
 
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
+    AutomationConditionSnapshot,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
@@ -329,13 +327,14 @@ def _flatten_evaluation(
 
 
 def get_expanded_label(
-    item: Union[AutomationConditionEvaluation, AutomationCondition], use_label=False
+    item: Union[AutomationConditionEvaluation, AutomationConditionSnapshot],
+    use_label=False,
 ) -> Sequence[str]:
-    if isinstance(item, AutomationCondition):
+    if isinstance(item, AutomationConditionSnapshot):
         label, name, description, children = (
-            item.get_label(),
-            item.name,
-            item.description,
+            item.node_snapshot.label,
+            item.node_snapshot.name,
+            item.node_snapshot.description,
             item.children,
         )
     else:

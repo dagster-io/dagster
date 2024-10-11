@@ -106,11 +106,11 @@ const AssetSelectionTag = ({
   }, [assetSelection.assetsOrError]);
 
   const assetsWithAMP = useMemo(
-    () => sortedAssets.filter((asset) => !!asset.definition?.autoMaterializePolicy),
+    () => sortedAssets.filter((asset) => !!asset.definition?.automationCondition),
     [sortedAssets],
   );
   const assetsWithoutAMP = useMemo(
-    () => sortedAssets.filter((asset) => !asset.definition?.autoMaterializePolicy),
+    () => sortedAssets.filter((asset) => !asset.definition?.automationCondition),
     [sortedAssets],
   );
 
