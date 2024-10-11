@@ -37,7 +37,7 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
             return None
         return context.asset_graph_view.get_subset_from_serializable_subset(true_subset)
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    async def evaluate(self, context: AutomationContext) -> AutomationResult:
         # evaluate child condition
         child_context = context.for_child_condition(
             self.operand,
@@ -45,7 +45,7 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
             # must evaluate child condition over the entire subset to avoid missing state transitions
             candidate_subset=context.asset_graph_view.get_full_subset(key=context.key),
         )
-        child_result = self.operand.evaluate(child_context)
+        child_result = await child_context.evaluate_async()
 
         # get the set of asset partitions of the child which newly became true
         newly_true_child_subset = child_result.true_subset.compute_difference(
