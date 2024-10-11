@@ -12,6 +12,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 class AssetLayerConfig(NamedTuple):
@@ -23,36 +24,38 @@ class AssetLayerConfig(NamedTuple):
 def build_assets(
     id: str,
     layer_configs: Sequence[AssetLayerConfig],
-    automation_condition: AutomationCondition,
+    automation_condition: Optional[AutomationCondition],
 ) -> List[AssetsDefinition]:
     layers = []
 
-    for layer_config in layer_configs:
-        parent_index = 0
-        layer = []
-        for i in range(layer_config.n_assets):
-            if layer_config.n_upstreams_per_asset > 0:
-                # each asset connects to n_upstreams_per_asset assets from the above layer, chosen
-                # in a round-robin manner
-                non_argument_deps = {
-                    layers[-1][(parent_index + j) % len(layers[-1])].key
-                    for j in range(layer_config.n_upstreams_per_asset)
-                }
-                parent_index += layer_config.n_upstreams_per_asset
-            else:
-                non_argument_deps = set()
+    with disable_dagster_warnings():
+        for layer_num, layer_config in enumerate(layer_configs):
+            parent_index = 0
+            layer = []
+            for i in range(layer_config.n_assets):
+                if layer_config.n_upstreams_per_asset > 0:
+                    # each asset connects to n_upstreams_per_asset assets from the above layer, chosen
+                    # in a round-robin manner
+                    non_argument_deps = {
+                        layers[-1][(parent_index + j) % len(layers[-1])].key
+                        for j in range(layer_config.n_upstreams_per_asset)
+                    }
+                    parent_index += layer_config.n_upstreams_per_asset
+                else:
+                    non_argument_deps = set()
 
-            @asset(
-                partitions_def=layer_config.partitions_def,
-                name=f"{id}_{len(layers)}_{i}",
-                automation_condition=automation_condition,
-                non_argument_deps=non_argument_deps,
-            )
-            def _asset():
-                pass
+                @asset(
+                    partitions_def=layer_config.partitions_def,
+                    name=f"{id}_{len(layers)}_{i}",
+                    automation_condition=automation_condition,
+                    non_argument_deps=non_argument_deps,
+                    group_name=f"g{layer_num}",
+                )
+                def _asset():
+                    pass
 
-            layer.append(_asset)
-        layers.append(layer)
+                layer.append(_asset)
+            layers.append(layer)
 
     return list(itertools.chain(*layers))
 
