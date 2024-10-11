@@ -4,7 +4,7 @@ import {runsPathWithFilters} from './RunsFilterInput';
 import {featureEnabled} from '../app/Flags';
 
 export function getBackfillPath(id: string, isAssetBackfill: boolean) {
-  if (featureEnabled(FeatureFlag.flagLegacyRunsFeed)) {
+  if (featureEnabled(FeatureFlag.flagLegacyRunsPage)) {
     if (isAssetBackfill) {
       return `/overview/backfills/${id}`;
     }
