@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import memoize from 'lodash/memoize';
 import {memo, useContext, useEffect, useMemo, useState} from 'react';
+import {TickResultType} from 'shared/ticks/TickStatusTag';
 import styled from 'styled-components';
 
 import {HistoryTickFragment} from './types/InstigationUtils.types';
@@ -46,6 +47,7 @@ const timestampFormat = memoize((timezone: string) => {
 });
 export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTickFragment>({
   ticks,
+  tickResultType,
   onHoverTick,
   onSelectTick,
   exactRange,
@@ -54,6 +56,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   timeAfter = MINUTE, // 1 minute
 }: {
   ticks: T[];
+  tickResultType: TickResultType;
   onHoverTick: (InstigationTick?: T) => void;
   onSelectTick: (InstigationTick: T) => void;
   exactRange?: [number, number];
@@ -143,10 +146,10 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
             </GridTick>
           ))}
           {ticksToDisplay.map((tick) => {
-            const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
             const count =
-              (isAssetDaemonTick ? tick.requestedAssetMaterializationCount : tick.runIds?.length) ??
-              0;
+              (tickResultType === 'materializations' || !('runIds' in tick)
+                ? tick.requestedAssetMaterializationCount
+                : tick.runIds?.length) ?? 0;
             return (
               <Tick
                 key={tick.id}
@@ -167,7 +170,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
                   onSelectTick(tick);
                 }}
               >
-                <Tooltip content={<TickTooltip tick={tick} />}>
+                <Tooltip content={<TickTooltip tick={tick} tickResultType={tickResultType} />}>
                   <div style={{width: tick.width + 'px', height: '80px'}}>
                     {count > 0 ? count : null}
                   </div>
@@ -187,39 +190,46 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
   );
 };
 
-const TickTooltip = memo(({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) => {
-  const status = useMemo(() => {
-    if (tick.status === InstigationTickStatus.FAILURE) {
-      return 'Evaluation failed';
-    }
-    if (tick.status === InstigationTickStatus.STARTED) {
-      return 'Evaluating…';
-    }
-    const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
-    if (isAssetDaemonTick) {
-      return `${tick.requestedAssetMaterializationCount} materialization${ifPlural(
-        tick.requestedAssetMaterializationCount,
-        '',
-        's',
-      )} requested`;
-    } else {
-      return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, '', 's')} requested`;
-    }
-  }, [tick]);
-  const startTime = dayjs(1000 * tick.timestamp!);
-  const endTime = dayjs(tick.endTimestamp ? 1000 * tick.endTimestamp : Date.now());
-  const elapsedTime = startTime.to(endTime, true);
-  return (
-    <div>
-      <Caption as="div">
-        {status} ({elapsedTime})
-      </Caption>
-      {tick.status === InstigationTickStatus.STARTED ? null : (
-        <Caption color={Colors.textLight()}>Click for details</Caption>
-      )}
-    </div>
-  );
-});
+const TickTooltip = memo(
+  ({
+    tick,
+    tickResultType,
+  }: {
+    tick: HistoryTickFragment | AssetDaemonTickFragment;
+    tickResultType: TickResultType;
+  }) => {
+    const status = useMemo(() => {
+      if (tick.status === InstigationTickStatus.FAILURE) {
+        return 'Evaluation failed';
+      }
+      if (tick.status === InstigationTickStatus.STARTED) {
+        return 'Evaluating…';
+      }
+      if (tickResultType === 'materializations' || !('runs' in tick)) {
+        return `${tick.requestedAssetMaterializationCount} materialization${ifPlural(
+          tick.requestedAssetMaterializationCount,
+          '',
+          's',
+        )} requested`;
+      } else {
+        return `${tick.runs?.length || 0} run${ifPlural(tick.runs?.length, '', 's')} requested`;
+      }
+    }, [tick, tickResultType]);
+    const startTime = dayjs(1000 * tick.timestamp!);
+    const endTime = dayjs(tick.endTimestamp ? 1000 * tick.endTimestamp : Date.now());
+    const elapsedTime = startTime.to(endTime, true);
+    return (
+      <div>
+        <Caption as="div">
+          {status} ({elapsedTime})
+        </Caption>
+        {tick.status === InstigationTickStatus.STARTED ? null : (
+          <Caption color={Colors.textLight()}>Click for details</Caption>
+        )}
+      </div>
+    );
+  },
+);
 
 const TicksWrapper = styled.div`
   position: relative;
