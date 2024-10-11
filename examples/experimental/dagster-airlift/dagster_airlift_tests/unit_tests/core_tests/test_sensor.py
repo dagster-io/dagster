@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Sequence
+from typing import Optional, Sequence
 
 import mock
 import pytest
@@ -27,11 +27,12 @@ from dagster._serdes import deserialize_value
 from dagster._time import get_current_datetime
 from dagster_airlift.constants import (
     DAG_ID_TAG_KEY,
+    DAG_MAPPING_METADATA_KEY,
     DAG_RUN_ID_TAG_KEY,
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
     TASK_ID_TAG_KEY,
 )
-from dagster_airlift.core import dag_defs, task_defs
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 from dagster_airlift.core.sensor.sensor_builder import (
@@ -586,14 +587,15 @@ def simulate_materialize_from_proxy_operator(
     assets_def: AssetsDefinition,
     dag_run_id: str,
     dag_id: str,
-    task_id: str,
+    task_id: Optional[str],
 ) -> ExecuteInProcessResult:
     # TODO consolidate with code in proxy operator
     tags = {
         DAG_ID_TAG_KEY: dag_id,
         DAG_RUN_ID_TAG_KEY: dag_run_id,
-        TASK_ID_TAG_KEY: task_id,
     }
+    if task_id:
+        tags[TASK_ID_TAG_KEY] = task_id
     return materialize(assets=[assets_def], instance=instance, tags=tags)
 
 
@@ -705,3 +707,85 @@ def test_nonsense_result_pluggable_impl(init_load_context: None, instance: Dagst
             instance=instance,
             event_transformer_fn=nonsense_result,
         )
+
+
+def test_dag_level_override_materializations(
+    init_load_context: None, instance: DagsterInstance
+) -> None:
+    """Test that when a dag level override is provided, the sensor adds the expected asset materializations, in the correct order."""
+    freeze_datetime = datetime(2021, 1, 1)
+
+    with freeze_time(freeze_datetime):
+        result, context = build_and_invoke_sensor(
+            assets_per_task={},
+            dag_level_asset_overrides={"dag": ["a", "b"]},
+            instance=instance,
+        )
+        assert len(result.asset_events) == 3  # 2 for the dag level overrides, 1 for the dag itself
+        assert set([event.asset_key.to_user_string() for event in result.asset_events]) == {
+            "a",
+            "b",
+            make_dag_key_str("dag"),
+        }
+        key_order = [event.asset_key.to_user_string() for event in result.asset_events]
+        assert key_order.index("a") < key_order.index(make_dag_key_str("dag"))
+        assert key_order.index("b") < key_order.index(make_dag_key_str("dag"))
+
+
+def test_dag_level_override_existing_runs(
+    init_load_context: None, instance: DagsterInstance
+) -> None:
+    """Test that when there is a run mapping to the same dag, the sensor doesn't add synthetic materializations to mapped assets (only the dag-level peered asset)."""
+    freeze_datetime = datetime(2021, 1, 1)
+
+    with freeze_time(freeze_datetime):
+        dag_id = "dag"
+        dag_run_id = f"run-{dag_id}"
+        dag_runs = [
+            make_dag_run(
+                dag_id=dag_id,
+                run_id=f"run-{dag_id}",
+                start_date=get_current_datetime() - timedelta(minutes=10),
+                end_date=get_current_datetime(),
+            )
+        ]
+
+        airflow_instance = make_instance(
+            dag_and_task_structure={dag_id: ["task"]},
+            dag_runs=dag_runs,
+            instance_name="test_instance",
+        )
+
+        @asset(metadata={DAG_MAPPING_METADATA_KEY: [{"dag_id": dag_id}]})
+        def explicit_asset1() -> None:
+            pass
+
+        @asset(metadata={DAG_MAPPING_METADATA_KEY: [{"dag_id": dag_id}]})
+        def explicit_asset2() -> None:
+            pass
+
+        # Simulate a proxied execution for the assets, meaning we don't need to synthesize materializations
+        for assets_def in [explicit_asset1, explicit_asset2]:
+            assert simulate_materialize_from_proxy_operator(
+                instance=instance,
+                assets_def=assets_def,
+                dag_id=dag_id,
+                task_id=None,
+                dag_run_id=dag_run_id,
+            ).success
+
+        defs = build_defs_from_airflow_instance(
+            airflow_instance=airflow_instance,
+            defs=Definitions(
+                assets=[explicit_asset1, explicit_asset2],
+            ),
+        )
+        assert defs.sensors
+        sensor = next(iter(defs.sensors))
+        sensor_context = build_sensor_context(
+            instance=instance, repository_def=defs.get_repository_def()
+        )
+        result = sensor(sensor_context)
+        assert isinstance(result, SensorResult)
+        assert len(result.asset_events) == 1
+        assert result.asset_events[0].asset_key.to_user_string() == make_dag_key_str(dag_id)
