@@ -1,9 +1,23 @@
 import base64
+import os
 import random
 import string
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Iterator, List, Optional, Sequence, TextIO, TypedDict
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    TextIO,
+    TypedDict,
+)
 
 import boto3
 import dagster._check as check
@@ -13,11 +27,75 @@ from dagster._core.pipes.client import PipesMessageReader, PipesParams
 from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
+    PipesChunkedLogReader,
     PipesLogReader,
     extract_message_or_forward_to_file,
     extract_message_or_forward_to_stdout,
 )
 from dagster_pipes import PipesDefaultMessageWriter
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
+
+
+def _can_read_from_s3(client: "S3Client", bucket: Optional[str], key: Optional[str]):
+    if not bucket or not key:
+        return False
+    else:
+        try:
+            client.head_object(Bucket=bucket, Key=key)
+            return True
+        except ClientError:
+            return False
+
+
+def default_log_decode_fn(contents: bytes) -> str:
+    return contents.decode("utf-8")
+
+
+class PipesS3LogReader(PipesChunkedLogReader):
+    def __init__(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        client: Optional["S3Client"] = None,
+        interval: float = 10,
+        target_stream: Optional[IO[str]] = None,
+        # TODO: maybe move this parameter to a different scope
+        decode_fn: Optional[Callable[[bytes], str]] = None,
+        debug_info: Optional[str] = None,
+    ):
+        self.bucket = bucket
+        self.key = key
+        self.client: "S3Client" = client or boto3.client("s3")
+        self.decode_fn = decode_fn or default_log_decode_fn
+
+        self.log_position = 0
+
+        super().__init__(
+            interval=interval, target_stream=target_stream or sys.stdout, debug_info=debug_info
+        )
+
+    @property
+    def name(self) -> str:
+        return f"PipesS3LogReader(s3://{os.path.join(self.bucket, self.key)})"
+
+    def target_is_readable(self, params: PipesParams) -> bool:
+        return _can_read_from_s3(
+            client=self.client,
+            bucket=self.bucket,
+            key=self.key,
+        )
+
+    def download_log_chunk(self, params: PipesParams) -> Optional[str]:
+        text = self.decode_fn(
+            self.client.get_object(Bucket=self.bucket, Key=self.key)["Body"].read()
+        )
+        current_position = self.log_position
+        self.log_position += len(text)
+
+        return text[current_position:]
 
 
 class PipesS3MessageReader(PipesBlobStoreMessageReader):

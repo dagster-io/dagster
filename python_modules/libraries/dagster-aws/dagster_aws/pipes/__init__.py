@@ -11,6 +11,7 @@ from dagster_aws.pipes.context_injectors import (
 from dagster_aws.pipes.message_readers import (
     PipesCloudWatchMessageReader,
     PipesLambdaLogsMessageReader,
+    PipesS3LogReader,
     PipesS3MessageReader,
 )
 
@@ -21,6 +22,7 @@ __all__ = [
     "PipesS3ContextInjector",
     "PipesLambdaEventContextInjector",
     "PipesS3MessageReader",
+    "PipesS3LogReader",
     "PipesLambdaLogsMessageReader",
     "PipesCloudWatchMessageReader",
     "PipesEMRServerlessClient",

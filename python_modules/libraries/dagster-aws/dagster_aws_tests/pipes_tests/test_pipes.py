@@ -10,6 +10,7 @@ import textwrap
 import time
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
+from threading import Event
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, Tuple
 from uuid import uuid4
 
@@ -38,6 +39,7 @@ from dagster_aws.pipes import (
     PipesLambdaClient,
     PipesLambdaLogsMessageReader,
     PipesS3ContextInjector,
+    PipesS3LogReader,
     PipesS3MessageReader,
 )
 from dagster_aws_tests.pipes_tests.fake_ecs import LocalECSMockClient
@@ -150,6 +152,35 @@ def s3_client(moto_server):
     client = boto3.client("s3", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
     client.create_bucket(Bucket=_S3_TEST_BUCKET)
     return client
+
+
+def test_s3_log_reader(s3_client, capsys):
+    key = str(uuid4())
+    log_reader = PipesS3LogReader(client=s3_client, bucket=_S3_TEST_BUCKET, key=key)
+    is_session_closed = Event()
+
+    assert not log_reader.target_is_readable({})
+
+    s3_client.put_object(Bucket=_S3_TEST_BUCKET, Key=key, Body=b"Line 0\nLine 1")
+
+    assert log_reader.target_is_readable({})
+
+    log_reader.start({}, is_session_closed)
+    assert log_reader.is_running()
+
+    s3_client.put_object(Bucket=_S3_TEST_BUCKET, Key=key, Body=b"Line 0\nLine 1\nLine 2")
+
+    is_session_closed.set()
+
+    log_reader.stop()
+
+    assert not log_reader.is_running()
+
+    captured = capsys.readouterr()
+
+    assert captured.out == "Line 0\nLine 1\nLine 2"
+
+    assert sys.stdout is not None
 
 
 def test_s3_pipes_components(
