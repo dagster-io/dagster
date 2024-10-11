@@ -1,4 +1,5 @@
 import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
+import qs from 'qs';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import {atom, useRecoilValue} from 'recoil';
@@ -35,7 +36,11 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
   const [showSpinner, setShowSpinner] = useState(false);
 
   const onClickViewButton = useCallback((statuses: CodeLocationRowStatusType[]) => {
-    historyRef.current.push(`/locations?status=${JSON.stringify(statuses)}`);
+    const params =
+      statuses.length > 0
+        ? qs.stringify({status: statuses}, {arrayFormat: 'brackets', addQueryPrefix: true})
+        : '';
+    historyRef.current.push(`/locations${params}`);
   }, []);
 
   // Reload the workspace, but don't toast about it.
