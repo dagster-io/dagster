@@ -220,7 +220,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
         <RowCell>
           {tick ? (
             <div>
-              <TickStatusTag tick={tick} />
+              <TickStatusTag tick={tick} tickResultType="runs" />
             </div>
           ) : (
             <LoadingOrNone queryResult={sensorQueryResult} />

@@ -48,7 +48,7 @@ import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickLogDialog} from '../ticks/TickLogDialog';
-import {TickStatusTag} from '../ticks/TickStatusTag';
+import {TickResultType, TickStatusTag} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -79,11 +79,13 @@ export const TicksTable = ({
   name,
   repoAddress,
   tabs,
+  tickResultType,
   setTimerange,
   setParentStatuses,
 }: {
   name: string;
   repoAddress: RepoAddress;
+  tickResultType: TickResultType;
   tabs?: React.ReactElement;
   setTimerange?: (range?: [number, number]) => void;
   setParentStatuses?: (statuses?: InstigationTickStatus[]) => void;
@@ -119,7 +121,7 @@ export const TicksTable = ({
       instigationSelector,
       statuses,
     },
-    query: JOB_TICK_HISTORY_QUERY,
+    query: TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
 
@@ -225,6 +227,7 @@ export const TicksTable = ({
               <TickRow
                 key={tick.id}
                 tick={tick}
+                tickResultType={tickResultType}
                 instigationSelector={instigationSelector}
                 index={index}
               />
@@ -294,6 +297,7 @@ const StatusFilter = ({
 export const TickHistoryTimeline = ({
   name,
   repoAddress,
+  tickResultType,
   onHighlightRunIds,
   beforeTimestamp,
   afterTimestamp,
@@ -305,6 +309,7 @@ export const TickHistoryTimeline = ({
   beforeTimestamp?: number;
   afterTimestamp?: number;
   statuses?: InstigationTickStatus[];
+  tickResultType: TickResultType;
 }) => {
   const [selectedTickId, setSelectedTickId] = useQueryPersistedState<string | undefined>({
     encode: (tickId) => ({tickId}),
@@ -314,19 +319,16 @@ export const TickHistoryTimeline = ({
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-  const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(
-    JOB_TICK_HISTORY_QUERY,
-    {
-      variables: {
-        instigationSelector,
-        beforeTimestamp,
-        afterTimestamp,
-        statuses,
-        limit: beforeTimestamp ? undefined : 15,
-      },
-      notifyOnNetworkStatusChange: true,
+  const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(TICK_HISTORY_QUERY, {
+    variables: {
+      instigationSelector,
+      beforeTimestamp,
+      afterTimestamp,
+      statuses,
+      limit: beforeTimestamp ? undefined : 15,
     },
-  );
+    notifyOnNetworkStatusChange: true,
+  });
 
   useQueryRefreshAtInterval(
     queryResult,
@@ -378,6 +380,7 @@ export const TickHistoryTimeline = ({
       <TickDetailsDialog
         isOpen={!!selectedTickId}
         tickId={selectedTickId}
+        tickResultType={tickResultType}
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
       />
@@ -387,6 +390,7 @@ export const TickHistoryTimeline = ({
       <Box border="top">
         <LiveTickTimeline
           ticks={ticks}
+          tickResultType={tickResultType}
           onHoverTick={onTickHover}
           onSelectTick={onTickClick}
           exactRange={
@@ -400,10 +404,12 @@ export const TickHistoryTimeline = ({
 
 function TickRow({
   tick,
+  tickResultType,
   instigationSelector,
   index,
 }: {
   tick: HistoryTickFragment;
+  tickResultType: TickResultType;
   instigationSelector: InstigationSelector;
   index: number;
 }) {
@@ -434,7 +440,11 @@ function TickRow({
         />
       </td>
       <td>
-        <TickStatusTag tick={tick} isStuckStarted={isStuckStarted} />
+        <TickStatusTag
+          tick={tick}
+          tickResultType={tickResultType}
+          isStuckStarted={isStuckStarted}
+        />
       </td>
       <td>
         {isStuckStarted ? (
@@ -472,24 +482,30 @@ function TickRow({
       ) : null}
       <td>
         <Box flex={{direction: 'column', gap: 6}}>
-          <Box flex={{alignItems: 'center', gap: 8}}>
-            <ButtonLink
-              onClick={() => {
-                setShowResults(true);
-              }}
-            >
-              {tick.runIds.length === 1
-                ? '1 run requested'
-                : `${tick.runIds.length} runs requested`}
-            </ButtonLink>
-            {tick.runs.length === 1
-              ? tick.runs.map((run) => (
-                  <React.Fragment key={run.id}>
-                    <RunStatusLink run={run} />
-                  </React.Fragment>
-                ))
-              : null}
-          </Box>
+          {tickResultType === 'runs' ? (
+            <Box flex={{alignItems: 'center', gap: 8}}>
+              <ButtonLink onClick={() => setShowResults(true)}>
+                {tick.runIds.length === 1
+                  ? '1 run requested'
+                  : `${tick.runIds.length} runs requested`}
+              </ButtonLink>
+              {tick.runs.length === 1
+                ? tick.runs.map((run) => (
+                    <React.Fragment key={run.id}>
+                      <RunStatusLink run={run} />
+                    </React.Fragment>
+                  ))
+                : null}
+            </Box>
+          ) : (
+            <Box flex={{alignItems: 'center', gap: 8}}>
+              <ButtonLink onClick={() => setShowResults(true)}>
+                {tick.requestedAssetMaterializationCount === 1
+                  ? '1 materialization requested'
+                  : `${tick.requestedAssetMaterializationCount} materializations requested`}
+              </ButtonLink>
+            </Box>
+          )}
           {addedPartitions || deletedPartitions ? (
             <Caption>
               (
@@ -510,6 +526,7 @@ function TickRow({
           <TickDetailsDialog
             isOpen={showResults}
             tickId={tick.tickId}
+            tickResultType={tickResultType}
             instigationSelector={instigationSelector}
             onClose={() => {
               setShowResults(false);
@@ -521,7 +538,7 @@ function TickRow({
   );
 }
 
-const JOB_TICK_HISTORY_QUERY = gql`
+const TICK_HISTORY_QUERY = gql`
   query TickHistoryQuery(
     $instigationSelector: InstigationSelector!
     $dayRange: Int
