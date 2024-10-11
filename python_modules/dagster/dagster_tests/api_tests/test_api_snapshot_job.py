@@ -3,7 +3,7 @@ import sys
 import pytest
 from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation.external_data import ExternalJobSubsetResult
+from dagster._core.remote_representation.external_data import RemoteJobSubsetResult
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
@@ -27,9 +27,9 @@ def test_job_snapshot_api_grpc(instance):
         api_client = code_location.client
 
         external_job_subset_result = _test_job_subset_grpc(job_handle, api_client)
-        assert isinstance(external_job_subset_result, ExternalJobSubsetResult)
+        assert isinstance(external_job_subset_result, RemoteJobSubsetResult)
         assert external_job_subset_result.success is True
-        assert external_job_subset_result.external_job_data.name == "foo"
+        assert external_job_subset_result.job_data_snap.name == "foo"
 
 
 def test_job_snapshot_deserialize_error(instance):
@@ -47,7 +47,7 @@ def test_job_snapshot_deserialize_error(instance):
                 )._replace(job_origin="INVALID"),
             )
         )
-        assert isinstance(external_pipeline_subset_result, ExternalJobSubsetResult)
+        assert isinstance(external_pipeline_subset_result, RemoteJobSubsetResult)
         assert external_pipeline_subset_result.success is False
         assert external_pipeline_subset_result.error
 
@@ -58,11 +58,11 @@ def test_job_with_valid_subset_snapshot_api_grpc(instance):
         api_client = code_location.client
 
         external_job_subset_result = _test_job_subset_grpc(job_handle, api_client, ["do_something"])
-        assert isinstance(external_job_subset_result, ExternalJobSubsetResult)
+        assert isinstance(external_job_subset_result, RemoteJobSubsetResult)
         assert external_job_subset_result.success is True
-        assert external_job_subset_result.external_job_data.name == "foo"
+        assert external_job_subset_result.job_data_snap.name == "foo"
         assert (
-            external_job_subset_result.external_job_data.parent_job
+            external_job_subset_result.job_data_snap.parent_job
             == code_location.get_repository("bar_repo").get_full_job("foo").job_snapshot
         )
 
@@ -75,10 +75,10 @@ def test_job_with_valid_subset_snapshot_without_parent_snapshot(instance):
         external_job_subset_result = _test_job_subset_grpc(
             job_handle, api_client, ["do_something"], include_parent_snapshot=False
         )
-        assert isinstance(external_job_subset_result, ExternalJobSubsetResult)
+        assert isinstance(external_job_subset_result, RemoteJobSubsetResult)
         assert external_job_subset_result.success is True
-        assert external_job_subset_result.external_job_data.name == "foo"
-        assert not external_job_subset_result.external_job_data.parent_job
+        assert external_job_subset_result.job_data_snap.name == "foo"
+        assert not external_job_subset_result.job_data_snap.parent_job
 
 
 def test_job_with_invalid_subset_snapshot_api_grpc(instance):
