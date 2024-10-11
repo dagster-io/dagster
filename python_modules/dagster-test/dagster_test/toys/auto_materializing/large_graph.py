@@ -3,7 +3,7 @@ from typing import List, NamedTuple, Optional, Sequence
 
 from dagster import (
     AssetsDefinition,
-    AutoMaterializePolicy,
+    AutomationCondition,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     PartitionsDefinition,
@@ -11,6 +11,7 @@ from dagster import (
     asset,
     repository,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 
 class AssetLayerConfig(NamedTuple):
@@ -22,7 +23,7 @@ class AssetLayerConfig(NamedTuple):
 def build_assets(
     id: str,
     layer_configs: Sequence[AssetLayerConfig],
-    auto_materialize_policy: AutoMaterializePolicy = AutoMaterializePolicy.eager(),
+    automation_condition: AutomationCondition,
 ) -> List[AssetsDefinition]:
     layers = []
 
@@ -44,7 +45,7 @@ def build_assets(
             @asset(
                 partitions_def=layer_config.partitions_def,
                 name=f"{id}_{len(layers)}_{i}",
-                auto_materialize_policy=auto_materialize_policy,
+                automation_condition=automation_condition,
                 non_argument_deps=non_argument_deps,
             )
             def _asset():
@@ -74,6 +75,7 @@ def auto_materialize_large_time_graph():
             AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=daily),
             AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=daily),
         ],
+        automation_condition=AutoMaterializePolicy.eager().to_automation_condition(),
     )
 
 
@@ -88,4 +90,5 @@ def auto_materialize_large_static_graph():
             AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=static),
             AssetLayerConfig(n_assets=100, n_upstreams_per_asset=4, partitions_def=None),
         ],
+        automation_condition=AutoMaterializePolicy.eager().to_automation_condition(),
     )
