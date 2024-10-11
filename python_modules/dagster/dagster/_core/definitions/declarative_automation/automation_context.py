@@ -1,4 +1,5 @@
 import datetime
+import inspect
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
@@ -114,6 +115,11 @@ class AutomationContext(Generic[T_EntityKey]):
             else None,
             _root_log=self._root_log,
         )
+
+    async def evaluate_async(self) -> AutomationResult[T_EntityKey]:
+        if inspect.iscoroutinefunction(self.condition.evaluate):
+            return await self.condition.evaluate(self)
+        return self.condition.evaluate(self)
 
     @property
     def log(self) -> logging.Logger:
