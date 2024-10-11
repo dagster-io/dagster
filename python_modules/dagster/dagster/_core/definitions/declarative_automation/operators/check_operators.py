@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod
 from typing import AbstractSet
 
@@ -55,21 +56,21 @@ class AnyChecksCondition(ChecksAutomationCondition):
         return "ANY_CHECKS_MATCH"
 
     async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
-        check_results = []
         true_subset = context.get_empty_subset()
 
-        for i, check_key in enumerate(
-            sorted(self._get_check_keys(context.key, context.asset_graph))
-        ):
-            check_condition = EntityMatchesCondition(key=check_key, operand=self.operand)
-            check_result = await check_condition.evaluate(
-                context.for_child_condition(
-                    child_condition=check_condition,
-                    child_index=i,
-                    candidate_subset=context.candidate_subset,
-                )
+        coroutines = [
+            context.for_child_condition(
+                child_condition=EntityMatchesCondition(key=check_key, operand=self.operand),
+                child_index=i,
+                candidate_subset=context.candidate_subset,
+            ).evaluate_async()
+            for i, check_key in enumerate(
+                sorted(self._get_check_keys(context.key, context.asset_graph))
             )
-            check_results.append(check_result)
+        ]
+
+        check_results = await asyncio.gather(*coroutines)
+        for check_result in check_results:
             true_subset = true_subset.compute_union(check_result.true_subset)
 
         true_subset = context.candidate_subset.compute_intersection(true_subset)
@@ -90,14 +91,11 @@ class AllChecksCondition(ChecksAutomationCondition):
         for i, check_key in enumerate(
             sorted(self._get_check_keys(context.key, context.asset_graph))
         ):
-            check_condition = EntityMatchesCondition(key=check_key, operand=self.operand)
-            check_result = await check_condition.evaluate(
-                context.for_child_condition(
-                    child_condition=check_condition,
-                    child_index=i,
-                    candidate_subset=context.candidate_subset,
-                )
-            )
+            check_result = await context.for_child_condition(
+                child_condition=EntityMatchesCondition(key=check_key, operand=self.operand),
+                child_index=i,
+                candidate_subset=context.candidate_subset,
+            ).evaluate_async()
             check_results.append(check_result)
             true_subset = true_subset.compute_intersection(check_result.true_subset)
 

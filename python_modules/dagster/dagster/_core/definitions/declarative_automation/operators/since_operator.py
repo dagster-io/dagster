@@ -32,16 +32,14 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         child_candidate_subset = context.asset_graph_view.get_full_subset(key=context.key)
 
         # compute result for trigger condition
-        trigger_context = context.for_child_condition(
+        trigger_result = await context.for_child_condition(
             self.trigger_condition, child_index=0, candidate_subset=child_candidate_subset
-        )
-        trigger_result = await trigger_context.evaluate_async()
+        ).evaluate_async()
 
         # compute result for reset condition
-        reset_context = context.for_child_condition(
+        reset_result = await context.for_child_condition(
             self.reset_condition, child_index=1, candidate_subset=child_candidate_subset
-        )
-        reset_result = await reset_context.evaluate_async()
+        ).evaluate_async()
 
         # take the previous subset that this was true for
         true_subset = context.previous_true_subset or context.get_empty_subset()
