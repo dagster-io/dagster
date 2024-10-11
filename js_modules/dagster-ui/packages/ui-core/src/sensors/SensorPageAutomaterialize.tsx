@@ -187,6 +187,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
         <>
           <LiveTickTimeline
             ticks={ticks}
+            tickResultType="materializations"
             onHoverTick={onHoverTick}
             onSelectTick={setSelectedTick}
             exactRange={timeRange}
