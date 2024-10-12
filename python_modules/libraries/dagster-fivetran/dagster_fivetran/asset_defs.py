@@ -362,7 +362,7 @@ class FivetranConnectionMetadata(
             extra_metadata={
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
-                "storage_kind": self.service,
+                "service": self.service,
             },
         )
 
@@ -373,11 +373,12 @@ def _build_fivetran_assets_from_metadata(
     poll_interval: float,
     poll_timeout: Optional[float],
     fetch_column_metadata: bool,
+    set_kind_tag_for_service: bool,
 ) -> AssetsDefinition:
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
-    storage_kind = cast(Optional[str], metadata.get("storage_kind"))
+    service = cast(Optional[str], metadata.get("service"))
 
     return _build_fivetran_assets(
         connector_id=connector_id,
@@ -396,7 +397,7 @@ def _build_fivetran_assets_from_metadata(
         group_name=assets_defn_meta.group_name,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
-        asset_tags=build_kind_tag(storage_kind) if storage_kind else None,
+        asset_tags=build_kind_tag(service) if set_kind_tag_for_service and service else None,
         fetch_column_metadata=fetch_column_metadata,
         infer_missing_tables=False,
         op_tags=None,
@@ -416,6 +417,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         poll_interval: float,
         poll_timeout: Optional[float],
         fetch_column_metadata: bool,
+        set_kind_tag_for_service: bool,
     ):
         self._fivetran_resource_def = fivetran_resource_def
         if isinstance(fivetran_resource_def, FivetranResource):
@@ -445,6 +447,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._poll_interval = poll_interval
         self._poll_timeout = poll_timeout
         self._fetch_column_metadata = fetch_column_metadata
+        self._set_kind_tag_for_service = set_kind_tag_for_service
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -535,6 +538,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 poll_interval=self._poll_interval,
                 poll_timeout=self._poll_timeout,
                 fetch_column_metadata=self._fetch_column_metadata,
+                set_kind_tag_for_service=self._set_kind_tag_for_service,
             )
             for meta in data
         ]
@@ -559,6 +563,7 @@ def load_assets_from_fivetran_instance(
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     fetch_column_metadata: bool = True,
+    set_kind_tag_for_service: bool = True,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -588,6 +593,7 @@ def load_assets_from_fivetran_instance(
             timed out. By default, this will never time out.
         fetch_column_metadata (bool): If True, will fetch column schema information for each table in the connector.
             This will induce additional API calls.
+        set_kind_tag_for_service (bool): If True, will set a kind tag on the asset for the destination service.
 
     **Examples:**
 
@@ -644,4 +650,5 @@ def load_assets_from_fivetran_instance(
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
         fetch_column_metadata=fetch_column_metadata,
+        set_kind_tag_for_service=set_kind_tag_for_service,
     )
