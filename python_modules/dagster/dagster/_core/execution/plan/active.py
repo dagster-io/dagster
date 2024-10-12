@@ -55,6 +55,7 @@ class ActiveExecution:
         self,
         execution_plan: ExecutionPlan,
         retry_mode: RetryMode,
+        plan_context: Union[PlanExecutionContext, PlanOrchestrationContext],
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
@@ -65,6 +66,8 @@ class ActiveExecution:
         )
         self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
         self._retry_state = self._plan.known_state.get_retry_state()
+
+        self._plan_context = check.inst_param(plan_context, "plan_context", IPlanContext)
         self._instance_concurrency_context = instance_concurrency_context
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
@@ -473,6 +476,15 @@ class ActiveExecution:
             f"Attempted to mark {step_key} as up for retry but retries are disabled",
         )
         check.opt_float_param(at_time, "at_time")
+
+        if step_key not in self._in_flight:
+            # This can happen if a health check on a step with retries fails simultaneously as the
+            # step itself emits a retry event
+            step_context = self._plan_context.for_step(self.get_step_by_key(step_key))
+            step_context.log.warn(
+                f"Ignoring duplicate MARK_UP_FOR_RETRY event for {step_key} since it is no longer marked as in flight"
+            )
+            return
 
         # if retries are enabled - queue this back up
         if self._retry_mode.enabled:
