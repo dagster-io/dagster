@@ -51,6 +51,21 @@ def test_project_scaffold_command_succeeds():
         assert origins[0].loadable_target_origin.module_name == "my_dagster_project.definitions"
 
 
+def test_project_scaffold_command_excludes_succeeds():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            scaffold_command,
+            ["--name", "diet_dagster", "--excludes", "setup", "--excludes", "tests"],
+        )
+        assert result.exit_code == 0
+        assert os.path.exists("diet_dagster/pyproject.toml")
+        assert os.path.exists("diet_dagster/README.md")
+        assert not os.path.exists("diet_dagster/diet_dagster_tests/")
+        assert not os.path.exists("diet_dagster/setup.cfg")
+        assert not os.path.exists("diet_dagster/setup.py")
+
+
 def test_scaffold_code_location_scaffold_command_fails_when_dir_path_exists():
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -74,6 +89,16 @@ def test_scaffold_code_location_command_succeeds():
         origins = get_origins_from_toml("my_dagster_code/pyproject.toml")
         assert len(origins) == 1
         assert origins[0].loadable_target_origin.module_name == "my_dagster_code.definitions"
+
+
+def test_scaffold_code_location_deprecation():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(scaffold_repository_command, ["--name", "my_dagster_project"])
+        assert re.match(
+            "WARNING: This command is deprecated. Use `dagster project scaffold` instead.",
+            result.output,
+        )
 
 
 def test_from_example_command_fails_when_example_not_available():

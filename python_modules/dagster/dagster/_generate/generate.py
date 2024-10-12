@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import posixpath
 
@@ -6,7 +8,13 @@ import jinja2
 
 from dagster.version import __version__ as dagster_version
 
-IGNORE_PATTERN_LIST = ["__pycache__", ".pytest_cache", "*.egg-info", ".DS_Store", "tox.ini"]
+IGNORE_PATTERN_LIST : list[str] = [
+    "__pycache__",
+    ".pytest_cache",
+    "*.egg-info",
+    ".DS_Store",
+    "tox.ini",
+]
 
 
 def generate_repository(path: str):
@@ -14,8 +22,8 @@ def generate_repository(path: str):
 
     click.echo(f"Creating a Dagster repository at {path}.")
 
-    # Step 1: Generate files for Dagster repository
-    _generate_files_from_template(
+    # Render templates for Dagster repository
+    _render_templates(
         path=path,
         name_placeholder=REPO_NAME_PLACEHOLDER,
         project_template_path=os.path.join(
@@ -26,33 +34,13 @@ def generate_repository(path: str):
     click.echo(f"Generated files for Dagster repository in {path}.")
 
 
-def generate_code_location(path: str):
-    CODE_LOCATION_NAME_PLACEHOLDER = "CODE_LOCATION_NAME_PLACEHOLDER"
-
-    click.echo(f"Creating a Dagster code location at {path}.")
-
-    # Step 1: Generate files for Dagster code location including pyproject.toml, setup.py
-    _generate_files_from_template(
-        path=path,
-        name_placeholder=CODE_LOCATION_NAME_PLACEHOLDER,
-        project_template_path=os.path.join(
-            os.path.dirname(__file__), "templates", CODE_LOCATION_NAME_PLACEHOLDER
-        ),
-    )
-
-    click.echo(f"Generated files for Dagster code location in {path}.")
-
-
 def generate_project(path: str):
     PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
     click.echo(f"Creating a Dagster project at {path}.")
 
-    # Step 1: Generate files for Dagster code location
-    generate_code_location(path)
-
-    # Step 2: Generate project-level files, e.g. README
-    _generate_files_from_template(
+    # Step 1: Render templates for Dagster project
+    _render_templates(
         path=path,
         name_placeholder=PROJECT_NAME_PLACEHOLDER,
         project_template_path=os.path.join(
@@ -64,8 +52,12 @@ def generate_project(path: str):
     click.echo(f"Generated files for Dagster project in {path}.")
 
 
-def _generate_files_from_template(
-    path: str, name_placeholder: str, project_template_path: str, skip_mkdir: bool = False
+def _render_templates(
+    path: str,
+    name_placeholder: str,
+    project_template_path: str,
+    skip_mkdir: bool = False,
+    excludes: list[str] = [],
 ):
     normalized_path = os.path.normpath(path)
     code_location_name = os.path.basename(normalized_path).replace("-", "_")
@@ -76,11 +68,13 @@ def _generate_files_from_template(
     loader = jinja2.FileSystemLoader(searchpath=project_template_path)
     env = jinja2.Environment(loader=loader)
 
+    # merge custom skip_files with the default list
+    excludes = IGNORE_PATTERN_LIST + excludes
     for root, dirs, files in os.walk(project_template_path):
         # For each subdirectory in the source template, create a subdirectory in the destination.
         for dirname in dirs:
             src_dir_path = os.path.join(root, dirname)
-            if _should_skip_file(src_dir_path):
+            if _should_skip_file(src_dir_path, excludes):
                 continue
 
             src_relative_dir_path = os.path.relpath(src_dir_path, project_template_path)
@@ -96,7 +90,7 @@ def _generate_files_from_template(
         # For each file in the source template, render a file in the destination.
         for filename in files:
             src_file_path = os.path.join(root, filename)
-            if _should_skip_file(src_file_path):
+            if _should_skip_file(src_file_path, excludes):
                 continue
 
             src_relative_file_path = os.path.relpath(src_file_path, project_template_path)
@@ -124,13 +118,13 @@ def _generate_files_from_template(
                 f.write("\n")
 
 
-def _should_skip_file(path):
+def _should_skip_file(path: str, excludes: list[str] = IGNORE_PATTERN_LIST):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 
     Technically, `path` could also be a directory path that should be skipped.
     """
-    for pattern in IGNORE_PATTERN_LIST:
+    for pattern in excludes:
         if pattern in path:
             return True
 
