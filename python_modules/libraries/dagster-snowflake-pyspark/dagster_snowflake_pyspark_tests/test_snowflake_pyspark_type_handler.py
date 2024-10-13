@@ -6,9 +6,11 @@ from unittest.mock import patch
 
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
+    Definitions,
     DynamicPartitionsDefinition,
     EnvVar,
     IOManagerDefinition,
@@ -184,6 +186,37 @@ def test_io_manager_with_snowflake_pyspark(spark, io_manager):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.integration
+def test_io_manager_asset_metadata(spark) -> None:
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+
+        @asset(key_prefix=SCHEMA, name=table_name)
+        def my_spark_df():
+            columns = ["foo", "quux"]
+            data = [("bar", 1), ("baz", 2)]
+            df = spark.createDataFrame(data).toDF(*columns)
+            return df
+
+        defs = Definitions(
+            assets=[my_spark_df], resources={"io_manager": pythonic_snowflake_io_manager}
+        )
+
+        res = defs.get_implicit_global_asset_job_def().execute_in_process()
+        assert res.success
+
+        mats = res.get_asset_materialization_events()
+        assert len(mats) == 1
+        mat = mats[0]
+
+        assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+            f"{DATABASE}.{SCHEMA}.{table_name}"
+        )
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.parametrize(
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
@@ -202,9 +235,9 @@ def test_time_window_partitioned_asset(spark, io_manager):
             key_prefix=SCHEMA,
             name=table_name,
         )
-        def daily_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
-            value = context.op_config["value"]
+        def daily_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -311,9 +344,9 @@ def test_static_partitioned_asset(spark, io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
-            value = context.op_config["value"]
+        def static_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -420,7 +453,7 @@ def test_multi_partitioned_asset(spark, io_manager):
         )
         def multi_partitioned(context) -> DataFrame:
             partition = context.partition_key.keys_by_dimension
-            value = context.op_config["value"]
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -544,9 +577,9 @@ def test_dynamic_partitions(spark, io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def dynamic_partitioned(context) -> DataFrame:
-            partition = context.asset_partition_key_for_output()
-            value = context.op_config["value"]
+        def dynamic_partitioned(context: AssetExecutionContext) -> DataFrame:
+            partition = context.partition_key
+            value = context.op_execution_context.op_config["value"]
 
             schema = StructType(
                 [
@@ -666,16 +699,20 @@ def test_self_dependent_asset(spark, io_manager):
             config_schema={"value": str, "last_partition_key": str},
             name=table_name,
         )
-        def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
-            key = context.asset_partition_key_for_output()
+        def self_dependent_asset(
+            context: AssetExecutionContext, self_dependent_asset: DataFrame
+        ) -> DataFrame:
+            key = context.partition_key
 
             if not self_dependent_asset.isEmpty():
                 pd_df = self_dependent_asset.toPandas()
                 assert len(pd_df.index) == 3
-                assert (pd_df["key"] == context.op_config["last_partition_key"]).all()
+                assert (
+                    pd_df["key"] == context.op_execution_context.op_config["last_partition_key"]
+                ).all()
             else:
-                assert context.op_config["last_partition_key"] == "NA"
-            value = context.op_config["value"]
+                assert context.op_execution_context.op_config["last_partition_key"] == "NA"
+            value = context.op_execution_context.op_config["value"]
             schema = StructType(
                 [
                     StructField("KEY", StringType()),

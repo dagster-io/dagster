@@ -1,29 +1,29 @@
-from collections import defaultdict
+import warnings
 from datetime import datetime
+from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, deprecated_param
 from dagster._core.definitions import AssetKey
+from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.backfill_policy import resolve_backfill_policy
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
-
-from .asset_layer import build_asset_selection_job
-from .config import ConfigMapping
-from .metadata import RawMetadataValue
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import (
-        AssetSelection,
-        ExecutorDefinition,
-        HookDefinition,
-        JobDefinition,
-        PartitionedConfig,
-        PartitionsDefinition,
-        ResourceDefinition,
-    )
-    from dagster._core.definitions.asset_graph import InternalAssetGraph
+    from dagster._core.definitions import JobDefinition
+    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
     from dagster._core.definitions.run_config import RunConfig
 
@@ -33,55 +33,61 @@ class UnresolvedAssetJobDefinition(
         "_UnresolvedAssetJobDefinition",
         [
             ("name", str),
-            ("selection", "AssetSelection"),
+            ("selection", AssetSelection),
             (
                 "config",
                 Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
             ),
             ("description", Optional[str]),
-            ("tags", Optional[Mapping[str, Any]]),
+            ("tags", Optional[Mapping[str, str]]),
+            ("run_tags", Optional[Mapping[str, str]]),
             ("metadata", Optional[Mapping[str, RawMetadataValue]]),
-            ("partitions_def", Optional["PartitionsDefinition"]),
-            ("executor_def", Optional["ExecutorDefinition"]),
-            ("hooks", Optional[AbstractSet["HookDefinition"]]),
+            ("partitions_def", Optional[PartitionsDefinition]),
+            ("executor_def", Optional[ExecutorDefinition]),
+            ("hooks", Optional[AbstractSet[HookDefinition]]),
+            ("op_retry_policy", Optional["RetryPolicy"]),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        selection: "AssetSelection",
+        selection: AssetSelection,
         config: Optional[
             Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
         ] = None,
         description: Optional[str] = None,
-        tags: Optional[Mapping[str, Any]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        run_tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        partitions_def: Optional["PartitionsDefinition"] = None,
-        executor_def: Optional["ExecutorDefinition"] = None,
-        hooks: Optional[AbstractSet["HookDefinition"]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+        hooks: Optional[AbstractSet[HookDefinition]] = None,
+        op_retry_policy: Optional["RetryPolicy"] = None,
     ):
-        from dagster._core.definitions import (
-            AssetSelection,
-            ExecutorDefinition,
-            HookDefinition,
-            PartitionsDefinition,
-        )
+        from dagster._core.definitions import ExecutorDefinition
         from dagster._core.definitions.run_config import convert_config_input
 
+        tags = check.opt_mapping_param(tags, "tags")
+        # If `run_tags` is set, then we use it, otherwise `tags` acts as both definition tags and
+        # run tags. This is for backcompat with old behavior prior to the introduction of
+        # `run_tags`.
+        run_tags = check.mapping_param(run_tags, "run_tags") if run_tags else tags
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             selection=check.inst_param(selection, "selection", AssetSelection),
             config=convert_config_input(config),
             description=check.opt_str_param(description, "description"),
-            tags=check.opt_mapping_param(tags, "tags"),
+            tags=tags,
+            run_tags=run_tags,
             metadata=check.opt_mapping_param(metadata, "metadata"),
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
-            executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
+            executor_def=check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition),
             hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
+            op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy),
         )
 
     @deprecated(
@@ -172,65 +178,71 @@ class UnresolvedAssetJobDefinition(
 
     def resolve(
         self,
-        asset_graph: "InternalAssetGraph",
-        default_executor_def: Optional["ExecutorDefinition"] = None,
-        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        asset_graph: "AssetGraph",
+        default_executor_def: Optional[ExecutorDefinition] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
-        assets = asset_graph.assets
-        source_assets = asset_graph.source_assets
-        selected_asset_keys = self.selection.resolve(asset_graph)
-
-        asset_keys_by_partitions_def = defaultdict(set)
-        for asset_key in selected_asset_keys:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
-            if partitions_def is not None:
-                asset_keys_by_partitions_def[partitions_def].add(asset_key)
-
-        if len(asset_keys_by_partitions_def) > 1:
-            keys_by_partitions_def_str = "\n".join(
-                f"{partitions_def}: {asset_keys}"
-                for partitions_def, asset_keys in asset_keys_by_partitions_def.items()
-            )
+        try:
+            job_asset_graph = get_asset_graph_for_job(asset_graph, self.selection)
+        except DagsterInvalidDefinitionError as e:
             raise DagsterInvalidDefinitionError(
-                f"Multiple partitioned assets exist in assets job '{self.name}'. Selected assets"
-                " must have the same partitions definitions, but the selected assets have"
-                f" different partitions definitions: \n{keys_by_partitions_def_str}"
+                f'Error resolving selection for asset job "{self.name}": {e}'
+            ) from e
+
+        # Require that all assets in the job have the same backfill policy
+        executable_nodes = {job_asset_graph.get(k) for k in job_asset_graph.executable_asset_keys}
+        nodes_by_backfill_policy = dict(
+            groupby((n for n in executable_nodes if n.is_partitioned), lambda n: n.backfill_policy)
+        )
+        backfill_policy = resolve_backfill_policy(nodes_by_backfill_policy.keys())
+
+        if len(nodes_by_backfill_policy) > 1:
+            keys_by_backfill_policy = {
+                bp: [n.key.to_user_string() for n in nodes]
+                for bp, nodes in nodes_by_backfill_policy.items()
+            }
+            warnings.warn(
+                f"Asset job {self.name} materializes assets with varying BackfillPolicies."
+                f" Using backfill policy with minimum `max_partitions_per_run`: {backfill_policy}."
+                f"\n\nFound multiple backfill policies:\n\n{keys_by_backfill_policy}"
             )
 
-        inferred_partitions_def = (
-            next(iter(asset_keys_by_partitions_def.keys()))
-            if asset_keys_by_partitions_def
-            else None
-        )
-        if (
-            inferred_partitions_def
-            and self.partitions_def != inferred_partitions_def
-            and self.partitions_def is not None
+        # Error if a PartitionedConfig is defined and any target asset has a backfill policy that
+        # materializes anything other than a single partition per run. This is because
+        # PartitionedConfig is a function that maps single partition keys to run config, so it's
+        # behavior is undefined for multiple-partition runs.
+        if backfill_policy.max_partitions_per_run != 1 and isinstance(
+            self.config, PartitionedConfig
         ):
             raise DagsterInvalidDefinitionError(
-                f"Job '{self.name}' received a partitions_def of {self.partitions_def}, but the"
-                f" selected assets {next(iter(asset_keys_by_partitions_def.values()))} have a"
-                f" non-matching partitions_def of {inferred_partitions_def}"
+                f"Asset job {self.name} materializes an asset with a BackfillPolicy targeting multiple partitions per run,"
+                "but a PartitionedConfig was provided. PartitionedConfigs are not supported for "
+                "jobs with multi-partition-per-run backfill policies."
             )
 
-        return build_asset_selection_job(
-            name=self.name,
-            assets=assets,
-            asset_checks=asset_graph.asset_checks,
+        return build_asset_job(
+            self.name,
+            asset_graph=job_asset_graph,
             config=self.config,
-            source_assets=source_assets,
             description=self.description,
             tags=self.tags,
+            run_tags=self.run_tags,
             metadata=self.metadata,
-            asset_selection=selected_asset_keys,
-            partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
+            partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
             hooks=self.hooks,
+            op_retry_policy=self.op_retry_policy,
             resource_defs=resource_defs,
+            allow_different_partitions_defs=False,
         )
 
 
+@deprecated_param(
+    param="partitions_def",
+    breaking_version="2.0.0",
+    additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",
+)
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
@@ -238,11 +250,13 @@ def define_asset_job(
         Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
     ] = None,
     description: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, object]] = None,
+    run_tags: Optional[Mapping[str, object]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    partitions_def: Optional["PartitionsDefinition"] = None,
-    executor_def: Optional["ExecutorDefinition"] = None,
-    hooks: Optional[AbstractSet["HookDefinition"]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    executor_def: Optional[ExecutorDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
+    op_retry_policy: Optional["RetryPolicy"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
@@ -281,25 +295,30 @@ def define_asset_job(
             If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
             determined by the config mapping, and the ConfigMapping, which should return
             configuration in the standard format to configure the job.
-        tags (Optional[Mapping[str, Any]]):
-            Arbitrary information that will be attached to the execution of the Job.
-            Values that are not strings will be json encoded and must meet the criteria that
-            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
-            values provided at invocation time.
+        tags (Optional[Mapping[str, object]]): A set of key-value tags that annotate the job and can
+            be used for searching and filtering in the UI. Values that are not already strings will
+            be serialized as JSON. If `run_tags` is not set, then the content of `tags` will also be
+            automatically appended to the tags of any runs of this job.
+        run_tags (Optional[Mapping[str, object]]):
+            A set of key-value tags that will be automatically attached to runs launched by this
+            job. Values that are not already strings will be serialized as JSON. These tag values
+            may be overwritten by tag values provided at invocation time. If `run_tags` is set, then
+            `tags` are not automatically appended to the tags of any runs of this job.
         metadata (Optional[Mapping[str, RawMetadataValue]]): Arbitrary metadata about the job.
             Keys are displayed string labels, and values are one of the following: string, float,
             int, JSON-serializable dict, JSON-serializable list, and one of the data classes
             returned by a MetadataValue static method.
         description (Optional[str]):
             A description for the Job.
-        partitions_def (Optional[PartitionsDefinition]):
-            Defines the set of partitions for this job. All AssetDefinitions selected for this job
-            must have a matching PartitionsDefinition. If no PartitionsDefinition is provided, the
-            PartitionsDefinition will be inferred from the selected AssetDefinitions.
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
+            Only used if retry policy is not defined on the asset definition.
+        partitions_def (Optional[PartitionsDefinition]): (Deprecated)
+            Defines the set of partitions for this job. Deprecated because partitioning is inferred
+            from the selected assets, so setting this is redundant.
 
 
     Returns:
@@ -369,9 +388,12 @@ def define_asset_job(
         selection=resolved_selection,
         config=config,
         description=description,
-        tags=tags,
+        tags=normalize_tags(tags),
+        # Need to preserve None value
+        run_tags=normalize_tags(run_tags) if run_tags is not None else None,
         metadata=metadata,
         partitions_def=partitions_def,
         executor_def=executor_def,
         hooks=hooks,
+        op_retry_policy=op_retry_policy,
     )

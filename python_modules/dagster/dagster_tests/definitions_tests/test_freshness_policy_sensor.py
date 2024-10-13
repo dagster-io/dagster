@@ -50,7 +50,7 @@ def my_repo():
 def test_repeated_evaluation():
     _minutes_late_by_key = defaultdict(list)
 
-    @freshness_policy_sensor(asset_selection=AssetSelection.all() - AssetSelection.keys("a"))
+    @freshness_policy_sensor(asset_selection=AssetSelection.all() - AssetSelection.assets("a"))
     def all_sensor(context):
         if len(_minutes_late_by_key[context.asset_key]) == 0:
             assert context.previous_minutes_overdue is None

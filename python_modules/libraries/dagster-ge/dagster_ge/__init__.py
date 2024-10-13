@@ -1,7 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .factory import ge_validation_op_factory
-from .version import __version__
+from dagster_ge.factory import ge_validation_op_factory
+from dagster_ge.version import __version__
 
 DagsterLibraryRegistry.register("dagster-ge", __version__)
 

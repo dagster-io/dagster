@@ -3,55 +3,57 @@ import {Tag as BlueprintTag} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {BaseTag} from './BaseTag';
-import {Colors} from './Colors';
-import {IconName, Icon} from './Icon';
+import {Colors} from './Color';
+import {Icon, IconName} from './Icon';
 import {Spinner} from './Spinner';
 
-const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+export type TagIntent = React.ComponentProps<typeof BlueprintTag>['intent'];
+
+const intentToFillColor = (intent: TagIntent) => {
   switch (intent) {
     case 'primary':
-      return Colors.Blue50;
+      return Colors.backgroundBlue();
     case 'danger':
-      return Colors.Red50;
+      return Colors.backgroundRed();
     case 'success':
-      return Colors.Green50;
+      return Colors.backgroundGreen();
     case 'warning':
-      return Colors.Yellow50;
+      return Colors.backgroundYellow();
     case 'none':
     default:
-      return Colors.Gray100;
+      return Colors.backgroundGray();
   }
 };
 
-const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+const intentToTextColor = (intent: TagIntent) => {
   switch (intent) {
     case 'primary':
-      return Colors.Blue700;
+      return Colors.textBlue();
     case 'danger':
-      return Colors.Red700;
+      return Colors.textRed();
     case 'success':
-      return Colors.Green700;
+      return Colors.textGreen();
     case 'warning':
-      return Colors.Yellow700;
+      return Colors.textYellow();
     case 'none':
     default:
-      return Colors.Gray900;
+      return Colors.textDefault();
   }
 };
 
-const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+const intentToIconColor = (intent: TagIntent) => {
   switch (intent) {
     case 'primary':
-      return Colors.Blue500;
+      return Colors.accentBlue();
     case 'danger':
-      return Colors.Red500;
+      return Colors.accentRed();
     case 'success':
-      return Colors.Green500;
+      return Colors.accentGreen();
     case 'warning':
-      return Colors.Yellow500;
+      return Colors.accentYellow();
     case 'none':
     default:
-      return Colors.Gray900;
+      return Colors.accentGray();
   }
 };
 
@@ -62,16 +64,19 @@ interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' |
   tooltipText?: string;
 }
 
-const IconOrSpinner: React.FC<{icon: IconName | 'spinner' | null; color: string}> = React.memo(
-  ({icon, color}) => {
-    if (icon === 'spinner') {
-      return <Spinner fillColor={color} purpose="body-text" />;
-    }
-    return icon ? <Icon name={icon} color={color} /> : null;
-  },
-);
+interface IconOrSpinnerProps {
+  icon: IconName | 'spinner' | null;
+  color: string;
+}
 
-export const Tag: React.FC<Props> = (props) => {
+const IconOrSpinner = React.memo(({icon, color}: IconOrSpinnerProps) => {
+  if (icon === 'spinner') {
+    return <Spinner fillColor={color} purpose="body-text" />;
+  }
+  return icon ? <Icon name={icon} color={color} /> : null;
+});
+
+export const Tag = (props: Props) => {
   const {children, icon = null, rightIcon = null, intent, ...rest} = props;
 
   const fillColor = intentToFillColor(intent);

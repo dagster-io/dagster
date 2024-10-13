@@ -1,17 +1,17 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {AssetLineageElements} from '../AssetLineageElements';
 import {AssetLineageFragment} from '../types/AssetLineageElements.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'AssetLineageElements',
+  title: 'Assets/Asset Lineage',
   component: AssetLineageElements,
 } as Meta;
 
 export const FewParents = () => {
-  const timestamp = React.useMemo(() => Date.now(), []);
+  const timestamp = useMemo(() => Date.now(), []);
   const elements: AssetLineageFragment[] = [
     {
       __typename: 'AssetLineageInfo',
@@ -43,7 +43,7 @@ export const FewParents = () => {
 };
 
 export const ManyParents = () => {
-  const timestamp = React.useMemo(() => Date.now(), []);
+  const timestamp = useMemo(() => Date.now(), []);
   const elements: AssetLineageFragment[] = [];
   for (let ii = 0; ii < 20; ii++) {
     elements.push({

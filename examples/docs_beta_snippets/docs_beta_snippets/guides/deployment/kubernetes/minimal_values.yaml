@@ -1,0 +1,20 @@
+... # Preceding configuration omitted for brevity
+dagster-user-deployments:
+... # omitted for brevity
+  deployments:
+    - name: "iris-analysis" # set to the name of your deployment
+      image:
+        repository: "iris_analysis" # set to the name of your Docker image
+        # When a tag is not supplied, it will default as the Helm chart version.
+        tag: 1 # set to the tag of your Docker image
+
+        # Only change this value if you are following the guide on your
+        # local machine. If you are pushing images to a registry,
+        # leave the value as Always
+        pullPolicy: IfNotPresent
+
+      dagsterApiGrpcArgs:
+        - "--python-file"
+        - "/iris_analysis/definitions.py"
+
+... # Following configuration omitted for brevity

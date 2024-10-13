@@ -16,7 +16,7 @@ def _compute_fn(
     seen = set()
     for row in inputs.values():
         for item in row:
-            key = list(item.keys())[0]
+            key = next(iter(item.keys()))
             if key not in seen:
                 seen.add(key)
                 passed_rows.append(item)

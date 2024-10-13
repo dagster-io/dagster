@@ -15,9 +15,10 @@ import sys
 import tempfile
 import threading
 import time
-from collections import OrderedDict
+import uuid
 from datetime import timezone
 from enum import Enum
+from pathlib import Path
 from signal import Signals
 from typing import (
     TYPE_CHECKING,
@@ -29,6 +30,7 @@ from typing import (
     Generator,
     Generic,
     Hashable,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -45,12 +47,13 @@ from typing import (
 )
 
 import packaging.version
+from filelock import FileLock
+from pydantic import BaseModel
 from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
 import dagster._seven as seven
-
-from .internal_init import IHasInternalInit as IHasInternalInit
+from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if sys.version_info > (3,):
     from pathlib import Path
@@ -69,7 +72,7 @@ T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 
-EPOCH = datetime.datetime.utcfromtimestamp(0)
+EPOCH = datetime.datetime.fromtimestamp(0, timezone.utc).replace(tzinfo=None)
 
 PICKLE_PROTOCOL = 4
 
@@ -78,8 +81,27 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 
-SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int]
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, Union[int, Exception]]
 DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
+
+
+def check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
+    if not debug_crash_flags:
+        return
+
+    kill_signal_or_exception = debug_crash_flags.get(key)
+
+    if not kill_signal_or_exception:
+        return
+
+    if isinstance(kill_signal_or_exception, Exception):
+        raise kill_signal_or_exception
+
+    os.kill(os.getpid(), kill_signal_or_exception)
+    time.sleep(10)
+    raise Exception("Process didn't terminate after sending crash signal")
 
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
@@ -145,7 +167,7 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
-    return os.path.join(os.path.dirname(dunderfile), relative_path)
+    return os.fspath(Path(dunderfile, "..", relative_path).resolve())
 
 
 def script_relative_path(file_path: str) -> str:
@@ -182,7 +204,7 @@ def camelcase(string: str) -> str:
 def ensure_single_item(ddict: Mapping[T, U]) -> Tuple[T, U]:
     check.mapping_param(ddict, "ddict")
     check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
-    return list(ddict.items())[0]
+    return next(iter(ddict.items()))
 
 
 @contextlib.contextmanager
@@ -224,7 +246,7 @@ def mkdir_p(path: str) -> str:
 def hash_collection(
     collection: Union[
         Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], Tuple[Any, ...], NamedTuple
-    ]
+    ],
 ) -> int:
     """Hash a mutable collection or immutable collection containing mutable elements.
 
@@ -251,48 +273,51 @@ def hash_collection(
 
 
 @overload
-def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]:
-    ...
+def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]: ...
 
 
 @overload
-def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]:
-    ...
+def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]: ...
 
 
 @overload
-def make_hashable(value: Any) -> Any:
-    ...
+def make_hashable(value: Any) -> Any: ...
 
 
 def make_hashable(value: Any) -> Any:
+    from dagster._record import as_dict, is_record
+
     if isinstance(value, dict):
         return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
+    elif is_record(value):
+        return tuple(make_hashable(value) for value in as_dict(value).values())
     elif isinstance(value, (list, tuple, set)):
         return tuple([make_hashable(x) for x in value])
+    elif isinstance(value, BaseModel):
+        return make_hashable(value.dict())
     else:
         return value
 
 
-def get_prop_or_key(elem, key):
+def get_prop_or_key(elem: object, key: str) -> object:
     if isinstance(elem, Mapping):
         return elem.get(key)
     else:
         return getattr(elem, key)
 
 
-def list_pull(alist, key):
+def list_pull(alist: Iterable[object], key: str) -> Sequence[object]:
     return list(map(lambda elem: get_prop_or_key(elem, key), alist))
 
 
-def all_none(kwargs):
+def all_none(kwargs: Mapping[object, object]) -> bool:
     for value in kwargs.values():
         if value is not None:
             return False
     return True
 
 
-def check_script(path, return_code=0):
+def check_script(path: str, return_code: int = 0) -> None:
     try:
         subprocess.check_output([sys.executable, path])
     except subprocess.CalledProcessError as exc:
@@ -302,7 +327,9 @@ def check_script(path, return_code=0):
         raise
 
 
-def check_cli_execute_file_job(path, pipeline_fn_name, env_file=None):
+def check_cli_execute_file_job(
+    path: str, pipeline_fn_name: str, env_file: Optional[str] = None
+) -> None:
     from dagster._core.test_utils import instance_for_test
 
     with instance_for_test():
@@ -366,7 +393,7 @@ def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
 
 
 def ensure_gen(
-    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]]
+    thing_or_gen: Union[T, Iterator[T], Generator[T, Any, Any]],
 ) -> Generator[T, Any, Any]:
     if not inspect.isgenerator(thing_or_gen):
         thing_or_gen = cast(T, thing_or_gen)
@@ -395,18 +422,23 @@ def ensure_file(path: str) -> str:
     return path
 
 
-def touch_file(path):
+def touch_file(path: str) -> None:
     ensure_dir(os.path.dirname(path))
     with open(path, "a", encoding="utf8"):
         os.utime(path, None)
 
 
-def _kill_on_event(termination_event):
-    termination_event.wait()
-    send_interrupt()
+def _termination_handler(
+    should_stop_event: threading.Event,
+    is_done_event: threading.Event,
+) -> None:
+    should_stop_event.wait()
+    if not is_done_event.is_set():
+        # if we should stop but are not yet done, interrupt the MainThread
+        send_interrupt()
 
 
-def send_interrupt():
+def send_interrupt() -> None:
     if seven.IS_WINDOWS:
         # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
         # interrupt things like sleep()
@@ -424,13 +456,17 @@ def send_interrupt():
 # Reading for the curious:
 #  * https://stackoverflow.com/questions/35772001/how-to-handle-the-signal-in-python-on-windows-machine
 #  * https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
-def start_termination_thread(termination_event):
-    check.inst_param(termination_event, "termination_event", ttype=type(multiprocessing.Event()))
+def start_termination_thread(
+    should_stop_event: threading.Event, is_done_event: threading.Event
+) -> None:
+    check.inst_param(should_stop_event, "should_stop_event", ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
-        target=_kill_on_event, args=(termination_event,), name="kill-on-event"
+        target=_termination_handler,
+        args=(should_stop_event, is_done_event),
+        name="termination-handler",
+        daemon=True,
     )
-    int_thread.daemon = True
     int_thread.start()
 
 
@@ -448,11 +484,6 @@ def iterate_with_context(
                 return
 
         yield next_output
-
-
-def datetime_as_float(dt: datetime.datetime) -> float:
-    check.inst_param(dt, "dt", datetime.datetime)
-    return float((dt - EPOCH).total_seconds())
 
 
 T_GeneratedContext = TypeVar("T_GeneratedContext")
@@ -512,16 +543,6 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
         self.did_teardown = True
         if self.object:
             yield from self.generator
-
-
-def utc_datetime_from_timestamp(timestamp: float) -> datetime.datetime:
-    tz = timezone.utc
-    return datetime.datetime.fromtimestamp(timestamp, tz=tz)
-
-
-def utc_datetime_from_naive(dt: datetime.datetime) -> datetime.datetime:
-    tz = timezone.utc
-    return dt.replace(tzinfo=tz)
 
 
 def is_enum_value(value: object) -> bool:
@@ -598,33 +619,51 @@ def process_is_alive(pid: int) -> bool:
         import psutil
 
         return psutil.pid_exists(pid=pid)
-    else:
-        try:
-            subprocess.check_output(["ps", str(pid)])
-        except subprocess.CalledProcessError as exc:
-            assert exc.returncode == 1
+
+    # https://stackoverflow.com/questions/568271/how-to-check-if-there-exists-a-process-with-a-given-pid-in-python
+    if pid < 0:
+        return False
+    if pid == 0:
+        # According to "man 2 kill" PID 0 refers to every process
+        # in the process group of the calling process.
+        # On certain systems 0 is a valid PID but we have no way
+        # to know that in a portable fashion.
+        raise ValueError("invalid PID 0")
+    try:
+        os.kill(pid, 0)
+    except OSError as err:
+        if err.errno == errno.ESRCH:
+            # ESRCH == No such process
             return False
+        elif err.errno == errno.EPERM:
+            # EPERM clearly means there's a process to deny access to
+            return True
+        else:
+            # According to "man 2 kill" possible error values are
+            # (EINVAL, EPERM, ESRCH)
+            raise
+    else:
         return True
 
 
-def compose(*args):
+def compose(*args: Callable[[object], object]) -> Callable[[object], object]:
     """Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x))."""  # noqa: D402
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
 
 
-def dict_without_keys(ddict, *keys):
+def dict_without_keys(ddict: Mapping[K, V], *keys: K) -> Dict[K, V]:
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
 class Counter:
     def __init__(self):
         self._lock = threading.Lock()
-        self._counts = OrderedDict()
+        self._counts = {}
         super(Counter, self).__init__()
 
-    def increment(self, key: str):
+    def increment(self, key: str) -> None:
         with self._lock:
             self._counts[key] = self._counts.get(key, 0) + 1
 
@@ -634,7 +673,10 @@ class Counter:
         return copy
 
 
-traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
+traced_counter: contextvars.ContextVar[Optional[Counter]] = contextvars.ContextVar(
+    "traced_counts",
+    default=None,
+)
 
 T_Callable = TypeVar("T_Callable", bound=Callable)
 
@@ -653,13 +695,13 @@ def traced(func: T_Callable) -> T_Callable:
     return cast(T_Callable, inner)
 
 
-def get_terminate_signal():
+def get_terminate_signal() -> signal.Signals:
     if sys.platform == "win32":
         return signal.SIGTERM
     return signal.SIGKILL
 
 
-def get_run_crash_explanation(prefix: str, exit_code: int):
+def get_run_crash_explanation(prefix: str, exit_code: int) -> str:
     # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
     # negative exit code means a posix signal
     if exit_code < 0 and -exit_code in [signal.value for signal in Signals]:
@@ -668,8 +710,7 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
         if posix_signal == get_terminate_signal():
             exit_clause = (
-                exit_clause
-                + " This usually indicates that the process was"
+                exit_clause + " This usually indicates that the process was"
                 " killed by the operating system due to running out of"
                 " memory. Possible solutions include increasing the"
                 " amount of memory available to the run, reducing"
@@ -699,8 +740,7 @@ def normalize_to_repository(
     definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[True] = ...,
-) -> "RepositoryDefinition":
-    ...
+) -> "RepositoryDefinition": ...
 
 
 @overload
@@ -708,8 +748,7 @@ def normalize_to_repository(
     definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
     repository: Optional["RepositoryDefinition"] = ...,
     error_on_none: Literal[False] = ...,
-) -> Optional["RepositoryDefinition"]:
-    ...
+) -> Optional["RepositoryDefinition"]: ...
 
 
 def normalize_to_repository(
@@ -740,7 +779,7 @@ def normalize_to_repository(
         return None
 
 
-def xor(a, b):
+def xor(a: object, b: object) -> bool:
     return bool(a) != bool(b)
 
 
@@ -754,3 +793,46 @@ def tail_file(path_or_fd: Union[str, int], should_stop: Callable[[], bool]) -> I
                 break
             else:
                 time.sleep(0.01)
+
+
+def is_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+        return True
+    except ValueError:
+        return False
+
+
+def run_with_concurrent_update_guard(
+    target_file_path: Path,
+    update_fn: Callable[..., None],
+    *,
+    guard_timeout_seconds: float = 60,
+    **kwargs,
+) -> None:
+    """This function prevents multiple processes attempting to update the same target artifacts
+    from running concurrently. It uses a lock file to ensure that only one process can update the
+    target file at a time.
+
+    If the target file has been updated by another process while waiting for the lock, we skip
+    running the update_fn, assuming we are about to do redundant work.
+
+    Args:
+        target_file_path (Path): The path to the target file that needs to be updated.
+        update_fn (Callable[[Any], None]): The function that will update the target file.
+        guard_timeout_seconds (float): The maximum time to wait for the lock to be released.
+            Default: 60 seconds.
+        **kwargs: The keyword arguments to pass to the function.
+    """
+    start_mtime = 0
+    if target_file_path.exists():
+        start_mtime = target_file_path.lstat().st_mtime
+
+    with FileLock(target_file_path.with_suffix(".concurrent-update-lock")).acquire(
+        timeout=guard_timeout_seconds
+    ):
+        # double check if the target file has been updated by another process while waiting for lock
+        if target_file_path.exists() and target_file_path.lstat().st_mtime > start_mtime:
+            return
+        update_fn(**kwargs)
+        return

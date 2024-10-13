@@ -9,23 +9,18 @@ function getAbsolutePath(value) {
 }
 
 const config = {
-  stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  stories: ['../src/**/*.stories.tsx'],
   addons: [
+    getAbsolutePath('@storybook/addon-themes'),
     getAbsolutePath('@storybook/addon-links'),
     getAbsolutePath('@storybook/addon-essentials'),
-    getAbsolutePath('@storybook/addon-mdx-gfm'),
+    getAbsolutePath('@chromatic-com/storybook'),
   ],
-  framework: {
-    name: getAbsolutePath('@storybook/react-webpack5'),
-    options: {},
-  },
-  // https://storybook.js.org/docs/react/configure/webpack#bundle-splitting
-  features: {
-    storyStoreV7: true,
-  },
-  // https://github.com/hipstersmoothie/react-docgen-typescript-plugin/issues/78#issuecomment-1409224863
   typescript: {
-    reactDocgen: 'react-docgen-typescript-plugin',
+    reactDocgen: false,
+  },
+  framework: {
+    name: getAbsolutePath('@storybook/nextjs'),
   },
   // https://github.com/storybookjs/storybook/issues/16690#issuecomment-971579785
   webpackFinal: async (config) => {
@@ -49,13 +44,20 @@ const config = {
             include: /node_modules/,
             type: 'javascript/auto',
           },
+          {
+            test: /\.(graphql|gql)$/,
+            exclude: /node_modules/,
+            loader: 'graphql-tag/loader',
+          },
         ],
       },
     };
   },
-  docs: {
-    autodocs: true,
-  },
+  docs: {},
+  env: (config) => ({
+    ...config,
+    STORYBOOK: true,
+  }),
 };
 
 export default config;

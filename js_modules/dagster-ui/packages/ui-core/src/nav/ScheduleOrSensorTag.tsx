@@ -2,14 +2,15 @@ import {
   Box,
   ButtonLink,
   Colors,
-  Tag,
-  Tooltip,
   FontFamily,
   MiddleTruncate,
+  Tag,
+  Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
+import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
 import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
@@ -18,15 +19,18 @@ import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
-
-export const ScheduleOrSensorTag: React.FC<{
-  schedules: ScheduleSwitchFragment[];
-  sensors: SensorSwitchFragment[];
+export const ScheduleOrSensorTag = ({
+  repoAddress,
+  schedules = [],
+  sensors = [],
+  showSwitch = true,
+}: {
   repoAddress: RepoAddress;
+  schedules?: ScheduleSwitchFragment[];
+  sensors?: SensorSwitchFragment[];
   showSwitch?: boolean;
-}> = ({schedules, sensors, repoAddress, showSwitch = true}) => {
-  const [open, setOpen] = React.useState(false);
+}) => {
+  const [open, setOpen] = useState(false);
 
   const scheduleCount = schedules.length;
   const sensorCount = sensors.length;
@@ -44,7 +48,7 @@ export const ScheduleOrSensorTag: React.FC<{
     return (
       <>
         <Tag icon={icon}>
-          <ButtonLink onClick={() => setOpen(true)} color={Colors.Link}>
+          <ButtonLink onClick={() => setOpen(true)} color={Colors.linkDefault()}>
             {buttonText}
           </ButtonLink>
         </Tag>
@@ -76,14 +80,18 @@ export const ScheduleOrSensorTag: React.FC<{
     );
   }
 
-  return null;
+  return <div style={{display: 'none'}}>No schedules or sensors</div>;
 };
 
-const MatchingSchedule: React.FC<{
+const MatchingSchedule = ({
+  schedule,
+  repoAddress,
+  showSwitch,
+}: {
   schedule: ScheduleSwitchFragment;
   repoAddress: RepoAddress;
   showSwitch: boolean;
-}> = ({schedule, repoAddress, showSwitch}) => {
+}) => {
   const {cronSchedule, executionTimezone, scheduleState} = schedule;
   const running = scheduleState.status === 'RUNNING';
   const tag = (
@@ -129,11 +137,15 @@ const MatchingSchedule: React.FC<{
   );
 };
 
-const MatchingSensor: React.FC<{
+const MatchingSensor = ({
+  sensor,
+  repoAddress,
+  showSwitch,
+}: {
   sensor: SensorSwitchFragment;
   repoAddress: RepoAddress;
   showSwitch: boolean;
-}> = ({sensor, repoAddress, showSwitch}) => {
+}) => {
   const running = sensor.sensorState.status === 'RUNNING';
   return (
     <Tag intent={running ? 'primary' : 'none'} icon="sensors">

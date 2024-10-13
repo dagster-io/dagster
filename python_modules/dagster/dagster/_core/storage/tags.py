@@ -1,15 +1,17 @@
 from enum import Enum
 
-import dagster._check as check
-
 SYSTEM_TAG_PREFIX = "dagster/"
 HIDDEN_TAG_PREFIX = ".dagster/"
+
+KIND_PREFIX = f"{SYSTEM_TAG_PREFIX}kind/"
 
 REPOSITORY_LABEL_TAG = f"{HIDDEN_TAG_PREFIX}repository"
 
 SCHEDULE_NAME_TAG = f"{SYSTEM_TAG_PREFIX}schedule_name"
 
 SENSOR_NAME_TAG = f"{SYSTEM_TAG_PREFIX}sensor_name"
+
+TICK_ID_TAG = f"{SYSTEM_TAG_PREFIX}tick"
 
 BACKFILL_ID_TAG = f"{SYSTEM_TAG_PREFIX}backfill"
 
@@ -21,9 +23,7 @@ get_multidimensional_partition_tag = (
 )
 get_dimension_from_partition_tag = lambda tag: tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
 
-ASSET_PARTITION_RANGE_START_TAG = "{prefix}asset_partition_range_start".format(
-    prefix=SYSTEM_TAG_PREFIX
-)
+ASSET_PARTITION_RANGE_START_TAG = f"{SYSTEM_TAG_PREFIX}asset_partition_range_start"
 
 ASSET_PARTITION_RANGE_END_TAG = f"{SYSTEM_TAG_PREFIX}asset_partition_range_end"
 
@@ -34,8 +34,6 @@ PARENT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}parent_run_id"
 ROOT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}root_run_id"
 
 RESUME_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}is_resume_retry"
-
-MEMOIZED_RUN_TAG = f"{SYSTEM_TAG_PREFIX}is_memoized_run"
 
 STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
@@ -54,10 +52,12 @@ DOCKER_IMAGE_TAG = f"{SYSTEM_TAG_PREFIX}image"
 MAX_RETRIES_TAG = f"{SYSTEM_TAG_PREFIX}max_retries"
 RETRY_NUMBER_TAG = f"{SYSTEM_TAG_PREFIX}retry_number"
 RETRY_STRATEGY_TAG = f"{SYSTEM_TAG_PREFIX}retry_strategy"
+RETRY_ON_ASSET_OR_OP_FAILURE_TAG = f"{SYSTEM_TAG_PREFIX}retry_on_asset_or_op_failure"
 
 MAX_RUNTIME_SECONDS_TAG = f"{SYSTEM_TAG_PREFIX}max_runtime"
 
 AUTO_MATERIALIZE_TAG = f"{SYSTEM_TAG_PREFIX}auto_materialize"
+AUTOMATION_CONDITION_TAG = f"{SYSTEM_TAG_PREFIX}from_automation_condition"
 ASSET_EVALUATION_ID_TAG = f"{SYSTEM_TAG_PREFIX}asset_evaluation_id"
 AUTO_OBSERVE_TAG = f"{SYSTEM_TAG_PREFIX}auto_observe"
 
@@ -65,12 +65,19 @@ AUTO_OBSERVE_TAG = f"{SYSTEM_TAG_PREFIX}auto_observe"
 RUN_WORKER_ID_TAG = f"{HIDDEN_TAG_PREFIX}run_worker"
 GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}concurrency_key"
 
-# In cloud, we tag runs with the email of the user who triggered the run
-# This is used to display the user in the UI
+# This tag is used to tag runs and backfills with the email of the creator.
 USER_TAG = "user"
+
+# This tag is used to tag runless asset events reported via the UI with the email of the reporting user.
+REPORTING_USER_TAG = f"{SYSTEM_TAG_PREFIX}reporting_user"
 
 RUN_ISOLATION_TAG = f"{SYSTEM_TAG_PREFIX}isolation"
 
+RUN_FAILURE_REASON_TAG = f"{SYSTEM_TAG_PREFIX}failure_reason"
+
+# Support for the legacy compute kind tag will be removed in 1.9.0
+LEGACY_COMPUTE_KIND_TAG = "kind"
+COMPUTE_KIND_TAG = f"{SYSTEM_TAG_PREFIX}compute_kind"
 
 USER_EDITABLE_SYSTEM_TAGS = [
     PRIORITY_TAG,
@@ -78,7 +85,17 @@ USER_EDITABLE_SYSTEM_TAGS = [
     RETRY_STRATEGY_TAG,
     MAX_RUNTIME_SECONDS_TAG,
     RUN_ISOLATION_TAG,
+    RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
 ]
+
+# Supports for the public tag is deprecated
+RUN_METRIC_TAGS = [
+    f"{HIDDEN_TAG_PREFIX}run_metrics",
+    f"{SYSTEM_TAG_PREFIX}run_metrics",
+]
+
+RUN_METRICS_POLLING_INTERVAL_TAG = f"{HIDDEN_TAG_PREFIX}run_metrics_polling_interval"
+RUN_METRICS_PYTHON_RUNTIME_TAG = f"{HIDDEN_TAG_PREFIX}python_runtime_metrics"
 
 
 class TagType(Enum):
@@ -100,14 +117,3 @@ def get_tag_type(tag):
         return TagType.HIDDEN
     else:
         return TagType.USER_PROVIDED
-
-
-def check_reserved_tags(tags):
-    check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
-
-    for tag in tags.keys():
-        if tag not in USER_EDITABLE_SYSTEM_TAGS:
-            check.invariant(
-                not tag.startswith(SYSTEM_TAG_PREFIX),
-                desc=f"Attempted to set tag with reserved system prefix: {tag}",
-            )

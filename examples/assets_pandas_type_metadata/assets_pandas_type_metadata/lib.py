@@ -13,7 +13,7 @@ from pandera.typing import Series
 # ***** TYPES ****************************************************************
 
 
-class StockPrices(pa.SchemaModel):
+class StockPrices(pa.DataFrameModel):
     """Open/high/low/close prices for a set of stocks by day."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -28,7 +28,7 @@ class StockPrices(pa.SchemaModel):
 StockPricesDgType = pandera_schema_to_dagster_type(StockPrices)
 
 
-class BollingerBands(pa.SchemaModel):
+class BollingerBands(pa.DataFrameModel):
     """Bollinger bands for a set of stock prices."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")
@@ -40,7 +40,7 @@ class BollingerBands(pa.SchemaModel):
 BollingerBandsDgType = pandera_schema_to_dagster_type(BollingerBands)
 
 
-class AnomalousEvents(pa.SchemaModel):
+class AnomalousEvents(pa.DataFrameModel):
     """Anomalous price events, defined by a day on which a stock's closing price strayed above or
     below its Bollinger bands.
     """
@@ -128,7 +128,7 @@ EVENT_TYPE = pd.CategoricalDtype(["high", "low"], ordered=False)
 def compute_anomalous_events(df_prices: pd.DataFrame, df_bollinger: pd.DataFrame):
     """Compute anomalous (high or low) price events for a set of stocks over time."""
     df = pd.concat([df_prices, df_bollinger.add_prefix("bol_")], axis=1)
-    df["event"] = pd.Series(pd.NA, index=df.index, dtype=EVENT_TYPE)
+    df["event"] = pd.Series(None, index=df.index, dtype=EVENT_TYPE)
     df["event"][df["close"] > df["bol_upper"]] = "high"
     df["event"][df["close"] < df["bol_lower"]] = "low"
     return df[df["event"].notna()][["name", "date", "event"]].reset_index()

@@ -7,12 +7,7 @@ from dagster._utils.warnings import normalize_renamed_param
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
-    return "Op {op_name} on job {job_name} {status}!\nRun ID: {run_id}".format(
-        op_name=context.op.name,
-        job_name=context.job_name,
-        run_id=context.run_id,
-        status=status,
-    )
+    return f"Op {context.op.name} on job {context.job_name} {status}!\nRun ID: {context.run_id}"
 
 
 def _default_failure_message(context: HookContext) -> str:
@@ -75,9 +70,7 @@ def slack_on_failure(
     def _hook(context: HookContext):
         text = message_fn(context)
         if webserver_base_url:
-            text += "\n<{base_url}/runs/{run_id}|View in Dagster UI>".format(
-                base_url=webserver_base_url, run_id=context.run_id
-            )
+            text += f"\n<{webserver_base_url}/runs/{context.run_id}|View in Dagster UI>"
 
         context.resources.slack.chat_postMessage(channel=channel, text=text)
 
@@ -136,9 +129,7 @@ def slack_on_success(
     def _hook(context: HookContext):
         text = message_fn(context)
         if webserver_base_url:
-            text += "\n<{base_url}/runs/{run_id}|View in Dagster UI>".format(
-                base_url=webserver_base_url, run_id=context.run_id
-            )
+            text += f"\n<{webserver_base_url}/runs/{context.run_id}|View in Dagster UI>"
 
         context.resources.slack.chat_postMessage(channel=channel, text=text)
 

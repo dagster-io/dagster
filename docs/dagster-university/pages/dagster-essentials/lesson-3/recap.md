@@ -1,7 +1,7 @@
 ---
-title: "Lesson 3: Recap"
-module: "dagster_essentials"
-lesson: "3"
+title: 'Lesson 3: Recap'
+module: 'dagster_essentials'
+lesson: '3'
 ---
 
 ## Recap

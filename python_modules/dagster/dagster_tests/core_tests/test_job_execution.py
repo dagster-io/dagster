@@ -22,28 +22,15 @@ from dagster import (
     op,
     reconstructable,
 )
-from dagster._core.definitions.dependency import (
-    DependencyMapping,
-    DependencyStructure,
-    OpNode,
-)
-from dagster._core.definitions.graph_definition import (
-    create_adjacency_lists,
-)
+from dagster._core.definitions.dependency import DependencyMapping, DependencyStructure, OpNode
+from dagster._core.definitions.graph_definition import create_adjacency_lists
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import (
-    instance_for_test,
-)
-from dagster._core.utility_ops import (
-    create_op_with_deps,
-    create_root_op,
-    create_stub_op,
-    input_set,
-)
+from dagster._core.test_utils import instance_for_test
+from dagster._core.utility_ops import create_op_with_deps, create_root_op, create_stub_op, input_set
 from dagster._core.workspace.load import location_origin_from_python_file
 
 # protected members
@@ -52,7 +39,7 @@ from dagster._core.workspace.load import location_origin_from_python_file
 
 def _default_passthrough_compute_fn(*args, **kwargs):
     check.invariant(not args, "There should be no positional args")
-    return list(kwargs.values())[0]
+    return next(iter(kwargs.values()))
 
 
 def create_dep_input_fn(name):
@@ -65,7 +52,7 @@ def make_compute_fn():
         seen = set()
         for row in inputs.values():
             for item in row:
-                key = list(item.keys())[0]
+                key = next(iter(item.keys()))
                 if key not in seen:
                     seen.add(key)
                     passed_rows.append(item)
@@ -192,8 +179,8 @@ def test_external_diamond_toposort():
             working_directory=None,
         ).create_single_location(instance) as repo_location:
             external_repo = next(iter(repo_location.get_repositories().values()))
-            external_job = next(iter(external_repo.get_all_external_jobs()))
-            assert external_job.node_names_in_topological_order == [
+            remote_job = next(iter(external_repo.get_all_jobs()))
+            assert remote_job.node_names_in_topological_order == [
                 "A_source",
                 "A",
                 "B",

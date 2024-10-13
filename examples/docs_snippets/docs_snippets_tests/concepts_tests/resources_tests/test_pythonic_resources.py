@@ -3,15 +3,12 @@ from typing import Any
 import mock
 import pytest
 
-from dagster import build_init_resource_context, build_op_context
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import DagsterInvalidConfigError
 
 
 def test_new_resource_testing() -> None:
-    from docs_snippets.concepts.resources.pythonic_resources import (
-        new_resource_testing,
-    )
+    from docs_snippets.concepts.resources.pythonic_resources import new_resource_testing
 
     new_resource_testing()
 
@@ -63,9 +60,7 @@ def test_new_resources_configurable_defs() -> None:
 
 
 def test_new_resource_runtime() -> None:
-    from docs_snippets.concepts.resources.pythonic_resources import (
-        new_resource_runtime,
-    )
+    from docs_snippets.concepts.resources.pythonic_resources import new_resource_runtime
 
     defs = new_resource_runtime()
 

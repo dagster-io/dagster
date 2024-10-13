@@ -4,7 +4,10 @@ from dagster._cli.job import execute_print_command, job_print_command
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
-from .test_cli_commands import launch_command_contexts, valid_external_job_target_cli_args
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
+    launch_command_contexts,
+    valid_remote_job_target_cli_args,
+)
 
 
 def no_print(_):
@@ -33,7 +36,7 @@ def test_print_command(gen_job_args):
         )
 
 
-@pytest.mark.parametrize("job_cli_args", valid_external_job_target_cli_args())
+@pytest.mark.parametrize("job_cli_args", valid_remote_job_target_cli_args())
 def test_job_print_command_cli(job_cli_args):
     with instance_for_test():
         runner = CliRunner()

@@ -4,14 +4,13 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
+from dagster._config.config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
+from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._serdes import serialize_value
 from dagster._seven import is_subclass
 from dagster._utils import is_enum_value
 from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
-
-from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
-from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
 
 def _is_config_type_class(obj) -> bool:
@@ -48,7 +47,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
 
 def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
-    from .field_utils import convert_fields_to_dict_type
+    from dagster._config.field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type
     if isinstance(obj, ConfigType):
@@ -58,30 +57,24 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
         # Dicts of the special form {type: value} are treated as Maps
         # mapping from the type to value type, otherwise treat as dict type
         if len(obj) == 1:
-            key = list(obj.keys())[0]
+            key = next(iter(obj.keys()))
             key_type = resolve_to_config_type(key)
             if not isinstance(key, str):
                 if not key_type:
                     raise DagsterInvalidDefinitionError(
-                        "Invalid key in map specification: {key} in map {collection}".format(
-                            key=repr(key), collection=obj
-                        )
+                        f"Invalid key in map specification: {key!r} in map {obj}"
                     )
 
                 if not key_type.kind == ConfigTypeKind.SCALAR:  # type: ignore
                     raise DagsterInvalidDefinitionError(
-                        "Non-scalar key in map specification: {key} in map {collection}".format(
-                            key=repr(key), collection=obj
-                        )
+                        f"Non-scalar key in map specification: {key!r} in map {obj}"
                     )
 
                 inner_type = resolve_to_config_type(obj[key])
 
                 if not inner_type:
                     raise DagsterInvalidDefinitionError(
-                        "Invalid value in map specification: {value} in map {collection}".format(
-                            value=repr(obj[str]), collection=obj
-                        )
+                        f"Invalid value in map specification: {obj[str]!r} in map {obj}"
                     )
                 return Map(key_type, inner_type)
         return convert_fields_to_dict_type(obj)
@@ -94,16 +87,14 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
         if not inner_type:
             raise DagsterInvalidDefinitionError(
-                "Invalid member of array specification: {value} in list {the_list}".format(
-                    value=repr(obj[0]), the_list=obj
-                )
+                f"Invalid member of array specification: {obj[0]!r} in list {obj}"
             )
         return Array(inner_type)
 
     if BuiltinEnum.contains(obj):
         return ConfigType.from_builtin_enum(obj)
 
-    from .primitive_mapping import (
+    from dagster._config.primitive_mapping import (
         is_supported_config_python_builtin,
         remap_python_builtin_for_config,
     )
@@ -131,12 +122,9 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
     if isinstance(obj, type) and is_subclass(obj, DagsterType):
         raise DagsterInvalidDefinitionError(
-            "You have passed a DagsterType class {dagster_type} to the config system. "
+            f"You have passed a DagsterType class {obj!r} to the config system. "
             "The DagsterType and config schema systems are separate. "
-            "Valid config values are:\n{desc}".format(
-                dagster_type=repr(obj),
-                desc=VALID_CONFIG_DESC,
-            )
+            f"Valid config values are:\n{VALID_CONFIG_DESC}"
         )
 
     if is_closed_python_optional_type(obj):
@@ -148,12 +136,10 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
     if is_typing_type(obj):
         raise DagsterInvalidDefinitionError(
-            (
-                "You have passed in {dagster_type} to the config system. Types from "
-                "the typing module in python are not allowed in the config system. "
-                "You must use types that are imported from dagster or primitive types "
-                "such as bool, int, etc."
-            ).format(dagster_type=obj)
+            f"You have passed in {obj} to the config system. Types from "
+            "the typing module in python are not allowed in the config system. "
+            "You must use types that are imported from dagster or primitive types "
+            "such as bool, int, etc."
         )
 
     if obj is List or isinstance(obj, ListType):
@@ -173,16 +159,10 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
 
     if isinstance(obj, DagsterType):
         raise DagsterInvalidDefinitionError(
-            (
-                "You have passed an instance of DagsterType {type_name} to the config "
-                "system (Repr of type: {dagster_type}). "
-                "The DagsterType and config schema systems are separate. "
-                "Valid config values are:\n{desc}"
-            ).format(
-                type_name=obj.display_name,
-                dagster_type=repr(obj),
-                desc=VALID_CONFIG_DESC,
-            ),
+            f"You have passed an instance of DagsterType {obj.display_name} to the config "
+            f"system (Repr of type: {obj!r}). "
+            "The DagsterType and config schema systems are separate. "
+            f"Valid config values are:\n{VALID_CONFIG_DESC}",
         )
 
     # This means that this is an error and we are return False to a callsite
@@ -275,10 +255,8 @@ class Field:
         config_type = resolve_to_config_type(config)
         if not config_type:
             raise DagsterInvalidDefinitionError(
-                (
-                    "Attempted to pass {value_repr} to a Field that expects a valid "
-                    "dagster type usable in config (e.g. Dict, Int, String et al)."
-                ).format(value_repr=repr(config))
+                f"Attempted to pass {config!r} to a Field that expects a valid "
+                "dagster type usable in config (e.g. Dict, Int, String et al)."
             )
         return config_type
 
@@ -289,8 +267,8 @@ class Field:
         is_required: Optional[bool] = None,
         description: Optional[str] = None,
     ):
-        from .post_process import resolve_defaults
-        from .validate import validate_config
+        from dagster._config.post_process import resolve_defaults
+        from dagster._config.validate import validate_config
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
@@ -310,6 +288,11 @@ class Field:
                 "required arguments should not specify default values",
             )
 
+        from dagster._config.field_utils import env_var_to_config_dict, is_dagster_env_var
+
+        if is_dagster_env_var(default_value):
+            default_value = env_var_to_config_dict(default_value)
+
         self._default_value = default_value
 
         # check explicit default value
@@ -318,11 +301,9 @@ class Field:
                 raise DagsterInvalidDefinitionError(
                     (
                         "You have passed into a python enum value as the default value "
-                        "into of a config enum type {name}. You must pass in the underlying "
-                        "string represention as the default value. One of {value_set}."
-                    ).format(
-                        value_set=[ev.config_value for ev in self.config_type.enum_values],
-                        name=self.config_type.given_name,
+                        f"into of a config enum type {self.config_type.given_name}. You must pass in the underlying "
+                        "string represention as the default value. "
+                        f"One of {[ev.config_value for ev in self.config_type.enum_values]}."  # type: ignore
                     )
                 )
 

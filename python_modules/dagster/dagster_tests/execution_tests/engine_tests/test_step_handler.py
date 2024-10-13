@@ -9,7 +9,9 @@ from dagster._core.executor.step_delegating import StepHandlerContext
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._grpc.types import ExecuteStepArgs
 
-from .test_step_delegating_executor import test_step_delegating_executor
+from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
+    test_step_delegating_executor,
+)
 
 
 @job
@@ -57,6 +59,7 @@ def test_step_handler_context():
             run_id=run.run_id,
             step_keys_to_execute=run.step_keys_to_execute,
             instance_ref=None,
+            print_serialized_events=False,
         )
         ctx = StepHandlerContext(
             instance=instance,

@@ -8,8 +8,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context_creation_job import scoped_job_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import resolve_dagster_type
-
-from .typing_api import is_typing_type
+from dagster._utils.typing_api import is_typing_type
 
 
 def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
@@ -33,10 +32,8 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     """
     if is_typing_type(dagster_type):
         raise DagsterInvariantViolationError(
-            (
-                "Must pass in a type from dagster module. You passed {dagster_type} "
-                "which is part of python's typing module."
-            ).format(dagster_type=dagster_type)
+            f"Must pass in a type from dagster module. You passed {dagster_type} "
+            "which is part of python's typing module."
         )
 
     dagster_type = resolve_dagster_type(dagster_type)
@@ -56,8 +53,6 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
 
         if not isinstance(type_check, TypeCheck):
             raise DagsterInvariantViolationError(
-                "Type checks can only return TypeCheck. Type {type_name} returned {value}.".format(
-                    type_name=dagster_type.display_name, value=repr(type_check)
-                )
+                f"Type checks can only return TypeCheck. Type {dagster_type.display_name} returned {type_check!r}."
             )
         return type_check

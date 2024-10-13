@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type OpCardSolidDefinitionFragment_CompositeSolidDefinition_ = {
+export type OpCardSolidDefinitionFragment_CompositeSolidDefinition = {
   __typename: 'CompositeSolidDefinition';
   name: string;
   description: string | null;
@@ -50,7 +50,7 @@ export type OpCardSolidDefinitionFragment_CompositeSolidDefinition_ = {
   }>;
 };
 
-export type OpCardSolidDefinitionFragment_SolidDefinition_ = {
+export type OpCardSolidDefinitionFragment_SolidDefinition = {
   __typename: 'SolidDefinition';
   name: string;
   description: string | null;
@@ -91,5 +91,5 @@ export type OpCardSolidDefinitionFragment_SolidDefinition_ = {
 };
 
 export type OpCardSolidDefinitionFragment =
-  | OpCardSolidDefinitionFragment_CompositeSolidDefinition_
-  | OpCardSolidDefinitionFragment_SolidDefinition_;
+  | OpCardSolidDefinitionFragment_CompositeSolidDefinition
+  | OpCardSolidDefinitionFragment_SolidDefinition;

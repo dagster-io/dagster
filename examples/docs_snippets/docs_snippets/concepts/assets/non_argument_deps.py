@@ -1,3 +1,6 @@
+# NOTE: these assets are also used in docs_snippets/concepts/assets/build_job.py
+
+
 def execute_query(query):
     del query
 
@@ -9,7 +12,9 @@ from dagster import asset
 
 @asset
 def sugary_cereals() -> None:
-    execute_query("CREATE TABLE sugary_cereals AS SELECT * FROM cereals")
+    execute_query(
+        "CREATE TABLE sugary_cereals AS SELECT * FROM cereals WHERE sugar_grams > 10"
+    )
 
 
 @asset(deps=[sugary_cereals])

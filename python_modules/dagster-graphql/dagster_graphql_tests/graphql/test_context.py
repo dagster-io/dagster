@@ -5,12 +5,9 @@ from unittest import mock
 
 import pytest
 from dagster import job, op, repository
-from dagster._core.host_representation.code_location import GrpcServerCodeLocation
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.test_utils import instance_for_test
-from dagster_graphql.test.utils import (
-    define_out_of_process_workspace,
-    main_repo_location_name,
-)
+from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 
 def get_repo():
@@ -34,18 +31,18 @@ def get_repo():
     return my_repo
 
 
-def test_can_reload_on_external_repository_error():
+def test_can_reload_on_remote_repository_error():
     with instance_for_test() as instance:
         with ExitStack() as exit_stack:
             with mock.patch(
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster._core.host_representation.code_location.sync_get_streaming_external_repositories_data_grpc"
-            ) as external_repository_mock:
-                external_repository_mock.side_effect = Exception("get_external_repo_failure")
+                "dagster._core.remote_representation.code_location.sync_get_streaming_external_repositories_data_grpc"
+            ) as remote_repository_mock:
+                remote_repository_mock.side_effect = Exception("get_remote_repo_failure")
 
-                with pytest.warns(UserWarning, match=re.escape("get_external_repo_failure")):
+                with pytest.warns(UserWarning, match=re.escape("get_remote_repo_failure")):
                     workspace = exit_stack.enter_context(
                         define_out_of_process_workspace(__file__, "get_repo", instance)
                     )
@@ -64,7 +61,7 @@ def test_reload_on_process_context():
 
             # Save the repository name
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             repo_name = repo.name
 
             # Reload the location and save the new repository name
@@ -73,7 +70,7 @@ def test_reload_on_process_context():
             new_request_context = process_context.create_request_context()
 
             code_location = new_request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             new_repo_name = repo.name
 
             # Check that the repository has changed
@@ -90,7 +87,7 @@ def test_reload_on_request_context():
 
             # Save the repository name
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             repo_name = repo.name
 
             # Reload the location and save the new repository name
@@ -98,7 +95,7 @@ def test_reload_on_request_context():
 
             new_request_context = process_context.create_request_context()
             code_location = new_request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             new_repo_name = repo.name
 
             # Check that the repository has changed
@@ -107,7 +104,7 @@ def test_reload_on_request_context():
             # Check that the repository name is still the same on the old request context,
             # confirming that the old repository location is still running
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             assert repo_name == repo.name
 
 
@@ -123,14 +120,14 @@ def test_reload_on_request_context_2():
 
             # Save the repository name
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             repo_name = repo.name
 
             # Reload the location from the request context
             new_request_context = request_context.reload_code_location(code_location.name)
 
             code_location = new_request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             new_repo_name = repo.name
 
             # Check that the repository has changed
@@ -139,7 +136,7 @@ def test_reload_on_request_context_2():
             # Check that the repository name is still the same on the old request context,
             # confirming that the old repository location is still running
             code_location = request_context.code_locations[0]
-            repo = list(code_location.get_repositories().values())[0]
+            repo = next(iter(code_location.get_repositories().values()))
             assert repo_name == repo.name
 
 

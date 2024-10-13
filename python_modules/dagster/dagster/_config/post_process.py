@@ -2,14 +2,17 @@ import sys
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import dagster._check as check
+from dagster._config.config_type import ConfigType, ConfigTypeKind
+from dagster._config.errors import (
+    EvaluationError,
+    PostProcessingError,
+    create_failed_post_processing_error,
+)
+from dagster._config.evaluate_value_result import EvaluateValueResult
+from dagster._config.stack import EvaluationStack
+from dagster._config.traversal_context import TraversalContext, TraversalType
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .config_type import ConfigType, ConfigTypeKind
-from .errors import EvaluationError, PostProcessingError, create_failed_post_processing_error
-from .evaluate_value_result import EvaluateValueResult
-from .stack import EvaluationStack
-from .traversal_context import TraversalContext, TraversalType
 
 
 def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
@@ -90,11 +93,13 @@ def _recurse_in_to_scalar_union(
 ) -> EvaluateValueResult[Any]:
     if isinstance(config_value, (dict, list)):
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.non_scalar_type),  # type: ignore
+            config_value,
         )
     else:
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.scalar_type),  # type: ignore
+            config_value,
         )
 
 

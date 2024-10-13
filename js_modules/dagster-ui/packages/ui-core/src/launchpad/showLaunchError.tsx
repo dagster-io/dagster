@@ -1,5 +1,4 @@
 import {FontFamily} from '@dagster-io/ui-components';
-import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 

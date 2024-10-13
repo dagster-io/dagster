@@ -5,19 +5,16 @@ from dagster import (
     StaticPartitionsDefinition,
     asset,
     build_input_context,
-    io_manager,
     job,
     materialize,
     op,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetLineageInfo
-from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.io_manager import IOManager
-from dagster._legacy import build_assets_job
 
 
 def n_asset_keys(path, n):
@@ -47,8 +44,7 @@ def test_io_manager_add_input_metadata():
             return 1
 
     @asset
-    def before():
-        ...
+    def before(): ...
 
     @asset
     def after(before):
@@ -73,9 +69,9 @@ def test_io_manager_add_input_metadata():
     )
 
     # confirm loaded_input event contains metadata
-    loaded_input_event = [
+    loaded_input_event = next(
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
-    ][0]
+    )
     assert loaded_input_event
     loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata
     assert len(loaded_input_event_metadata) == 2
@@ -99,9 +95,9 @@ def test_input_manager_add_input_metadata():
         my_op()
 
     result = my_job.execute_in_process()
-    loaded_input_event = [
+    loaded_input_event = next(
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
-    ][0]
+    )
     metadata = loaded_input_event.event_specific_data.metadata
     assert len(metadata) == 2
     assert "foo" in metadata
@@ -127,14 +123,9 @@ def test_io_manager_single_partition_add_input_metadata():
             context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
             return 1
 
-    @io_manager
-    def my_io_manager(_):
-        return MyIOManager()
-
-    assets_job = build_assets_job(
-        "assets_job", [asset_1, asset_2], resource_defs={"io_manager": my_io_manager}
+    result = materialize(
+        [asset_1, asset_2], resources={"io_manager": MyIOManager()}, partition_key="a"
     )
-    result = assets_job.execute_in_process(partition_key="a")
 
     get_observation = lambda event: event.event_specific_data.asset_observation
 
@@ -176,9 +167,8 @@ def test_asset_materialization_accessors():
 
         # test when it is not a materilization event
         records = [
-            *instance.get_event_records(EventRecordsFilter(event_type=DagsterEventType.STEP_OUTPUT))
+            *instance.fetch_run_status_changes(DagsterEventType.RUN_SUCCESS, limit=1).records
         ]
-
         assert len(records) == 1
         assert records[0].event_log_entry
         assert records[0].event_log_entry.asset_materialization is None

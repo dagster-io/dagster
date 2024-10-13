@@ -1,0 +1,753 @@
+---
+title: "Schedule examples | Dagster Docs"
+description: "Examples focused on Dagster schedules."
+---
+
+# Schedule examples
+
+This reference contains a variety of examples using Dagster [schedules](/concepts/automation/schedules). Each example contains:
+
+- A summary
+- Additional notes
+- Links to relevant documentation
+- A list of the APIs used in the example
+
+---
+
+## Defining basic schedules
+
+The following examples demonstrate how to define some basic schedules.
+
+<TabGroup>
+  <TabItem name="Using ScheduleDefinition">
+
+This example demonstrates how to define a schedule using <PyObject object="ScheduleDefinition" /> that will run a job every day at midnight. While this example uses [op jobs](/concepts/ops-jobs-graphs/jobs) (<PyObject object="job" decorator />), the same approach will work with [asset jobs](/concepts/assets/asset-jobs) (<PyObject object="define_asset_job" />).
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
+@job
+def my_job(): ...
+
+
+basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        The <code>cron_schedule</code> argument accepts standard{" "}
+        <a href="https://en.wikipedia.org/wiki/Cron">cron expressions</a>. If
+        your <code>croniter</code> dependency's version is{" "}
+        <code>>= 1.0.12</code>, the argument will also accept the following:
+        <ul>
+          <li>
+            <code>@daily</code>
+          </li>
+          <li>
+            <code>@hourly</code>
+          </li>
+          <li>
+            <code>@monthly</code>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/assets/asset-jobs">Asset jobs</a>
+          </li>
+          <li>
+            <a href="/concepts/automation/schedules/automating-assets-schedules-jobs">
+              Automating assets using jobs and schedules
+            </a>
+          </li>
+          <li>
+            <a href="/concepts/ops-jobs-graphs/jobs">Op jobs</a>
+          </li>
+          <li>
+            <a href="/concepts/automation/schedules/automating-ops-schedules-jobs">
+              Automating ops using jobs and schedules
+            </a>
+          </li>
+          <li>
+            <a href="https://en.wikipedia.org/wiki/Cron" target="_blank">
+              Cron expressions
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="job" decorator />,{" "}
+        <PyObject object="ScheduleDefinition" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</TabItem>
+<TabItem name="Using @schedule">
+
+This example demonstrates how to define a schedule using <PyObject object="schedule" decorator />, which provides more flexibility than <PyObject object="ScheduleDefinition" />. For example, you can [configure job behavior based on its scheduled run time](#configuring-job-behavior-based-on-scheduled-run-time) or [emit log messages](#emitting-log-messages-from-schedule-evaluations).
+
+```python
+@schedule(job=my_job, cron_schedule="0 0 * * *")
+def basic_schedule(): ...
+  # things the schedule does, like returning a RunRequest or SkipReason
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        The decorator's <code>cron_schedule</code> argument accepts standard{" "}
+        <a href="https://en.wikipedia.org/wiki/Cron">cron expressions</a>. If
+        your <code>croniter</code> dependency's version is{" "}
+        <code>>= 1.0.12</code>, the argument will also accept the following:
+        <ul>
+          <li>
+            <code>@daily</code>
+          </li>
+          <li>
+            <code>@hourly</code>
+          </li>
+          <li>
+            <code>@monthly</code>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/assets/asset-jobs">Asset jobs</a>
+          </li>
+          <li>
+            <a href="/concepts/automation/schedules/automating-assets-schedules-jobs">
+              Automating assets using jobs and schedules
+            </a>
+          </li>
+          <li>
+            <a href="/concepts/ops-jobs-graphs/jobs">Op jobs</a>
+          </li>
+          <li>
+            <a href="/concepts/automation/schedules/automating-ops-schedules-jobs">
+              Automating ops using jobs and schedules
+            </a>
+          </li>
+          <li>
+            <a href="https://en.wikipedia.org/wiki/Cron" target="_blank">
+              Cron expressions
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="schedule" decorator />,{" "}
+        <PyObject object="ScheduleDefinition" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Emitting log messages from schedule evaluations
+
+This example demonstrates how to emit log messages from a schedule during its evaluation function. These logs will be visible in the UI when you inspect a tick in the schedule's tick history.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
+@schedule(job=my_job, cron_schedule="* * * * *")
+def logs_then_skips(context):
+    context.log.info("Logging from a schedule!")
+    return SkipReason("Nothing to do")
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        Schedule logs are stored in your{" "}
+        <a href="/deployment/dagster-instance#compute-log-storage">
+          Dagster instance's compute log storage
+        </a>
+        . You should ensure that your compute log storage is configured to view your
+        schedule logs.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/logging">Logging</a>
+          </li>
+          <li>
+            <a href="/deployment/dagster-instance#compute-log-storage">
+              Dagster instance - Compute log storage
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="schedule" decorator />,{" "}
+        <PyObject object="ScheduleDefinition" />,{" "}
+        <PyObject object="SkipReason" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Using resources in schedules
+
+This example demonstrates how to use resources in schedules. To specify a resource dependency, annotate the resource as a parameter to the schedule's function.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
+from dagster import (
+    schedule,
+    ScheduleEvaluationContext,
+    ConfigurableResource,
+    job,
+    RunRequest,
+    RunConfig,
+    Definitions,
+)
+from datetime import datetime
+from typing import List
+
+class DateFormatter(ConfigurableResource):
+    format: str
+
+    def strftime(self, dt: datetime) -> str:
+        return dt.strftime(self.format)
+
+@job
+def process_data(): ...
+
+@schedule(job=process_data, cron_schedule="* * * * *")
+def process_data_schedule(
+    context: ScheduleEvaluationContext,
+    date_formatter: DateFormatter,
+):
+    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
+
+    return RunRequest(
+        run_key=None,
+        tags={"date": formatted_date},
+    )
+
+defs = Definitions(
+    jobs=[process_data],
+    schedules=[process_data_schedule],
+    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        All Dagster definitions, including schedules and resources, must be
+        attached to a <PyObject object="Definitions" /> call.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/resources">Resources</a>
+          </li>
+          <li>
+            <a href="/concepts/code-locations">Code locations (Definitions)</a>
+          </li>
+          <li>
+            <a href="/concepts/automation/testing">Testing schedules</a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <PyObject object="schedule" decorator />
+          </li>
+          <li>
+            <PyObject object="ScheduleEvaluationContext" />
+          </li>
+          <li>
+            <PyObject object="ConfigurableResource" />
+          </li>
+          <li>
+            <PyObject object="job" decorator />
+          </li>
+          <li>
+            <PyObject object="RunRequest" />
+          </li>
+          <li>
+            <PyObject object="RunConfig" />
+          </li>
+          <li>
+            <PyObject object="Definitions" />
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Configuring job behavior based on scheduled run time
+
+This example demonstrates how to use run config to vary the behavior of a job based on its scheduled run time.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
+@op(config_schema={"scheduled_date": str})
+def configurable_op(context: OpExecutionContext):
+    context.log.info(context.op_config["scheduled_date"])
+
+
+@job
+def configurable_job():
+    configurable_op()
+
+
+@schedule(job=configurable_job, cron_schedule="0 0 * * *")
+def configurable_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return RunRequest(
+        run_key=None,
+        run_config={
+            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+        },
+        tags={"date": scheduled_date},
+    )
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <a href="/concepts/ops-jobs-graphs/jobs">Op jobs</a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="op" decorator />, <PyObject object="job" decorator />,{" "}
+        <PyObject object="OpExecutionContext" />,{" "}
+        <PyObject object="ScheduleEvaluationContext" />,{" "}
+        <PyObject object="RunRequest" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Customizing execution timezones
+
+This example demonstrates how to customize the timezone a schedule executes in. The schedule in this example will execute every day at 9AM in US/Pacific time.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
+my_timezone_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
+)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            The <PyObject object="schedule" decorator /> decorator also accepts
+            the <code>execution_timezone</code> argument
+          </li>
+          <li>Schedules without a set timezone will run in UTC.</li>
+          <li>
+            Schedules from partitioned jobs execute in the timezone defined on
+            the partitioned config
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="ScheduleDefinition" decorator />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- TODO: Add link to timezone guide when it's done -->
+
+---
+
+## Constructing schedules for partitioned assets and jobs
+
+This section demonstrates how to use schedules with partitions. We'll cover:
+
+- Using a helper function to automatically construct schedules based on the partition's config
+- Using <PyObject object="schedule" decorator /> to manually construct schedules
+
+### Automatically constructing schedules
+
+The follow examples demonstrate how to automatically construct schedules for partitioned assets and jobs using a helper function. These examples use <PyObject object="build_schedule_from_partitioned_job"/>, which will build a schedule with a cadence that matches the spacing of the partitions in the asset or job.
+
+This approach can be used with time or static-based partitions.
+
+<TabGroup>
+<TabItem name="Assets">
+
+#### Partitioned assets
+
+This example demonstrates how to automatically construct a schedule for a time-partitioned asset using <PyObject object="build_schedule_from_partitioned_job"/>.
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
+from dagster import (
+    asset,
+    build_schedule_from_partitioned_job,
+    define_asset_job,
+    DailyPartitionsDefinition,
+)
+
+daily_partition = DailyPartitionsDefinition(start_date="2024-05-20")
+
+
+@asset(partitions_def=daily_partition)
+def daily_asset(): ...
+
+
+partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
+
+
+asset_partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_asset_job,
+)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        If the partition has a timezone defined, the schedule will execute in
+        the timezone specified on the partitioned config.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/partitions-schedules-sensors/partitioning-assets">
+              Partitioning assets
+            </a>
+          </li>
+          <li>
+            <a href="/concepts/assets/asset-jobs">Asset jobs</a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <PyObject object="asset" decorator />
+          </li>
+          <li>
+            <PyObject object="build_schedule_from_partitioned_job" />
+          </li>
+          <li>
+            <PyObject object="define_asset_job" />
+          </li>
+          <li>
+            <PyObject object="DailyPartitionsDefinition" />
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</TabItem>
+<TabItem name="Jobs">
+
+#### Partitioned op jobs
+
+This example demonstrates how to construct a schedule for a time-partitioned op job using <PyObject object="build_schedule_from_partitioned_job"/>.
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
+from dagster import build_schedule_from_partitioned_job, job
+
+
+@job(config=partitioned_config)
+def partitioned_op_job(): ...
+
+
+partitioned_op_schedule = build_schedule_from_partitioned_job(
+    partitioned_op_job,
+)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Notes</strong>
+      </td>
+      <td>
+        If the partition has a timezone defined, the schedule will execute in
+        the timezone specified on the partitioned config.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/ops-jobs-graphs/jobs">Op jobs</a>
+          </li>
+          <li>
+            <a href="/concepts/partitions-schedules-sensors/partitioning-ops">
+              Partitioning ops
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="job" decorator />,{" "}
+        <PyObject object="build_schedule_from_partitioned_job" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+  </TabItem>
+</TabGroup>
+
+### Manually constructing schedules
+
+This example demonstrates how to manually construct a schedule for a job with a static partition from scratch using the <PyObject object="schedule" decorator /> decorator.
+
+Using <PyObject object="schedule" decorator /> allows for more flexibility in determining which partitions should be run by the schedule, rather than using <PyObject object="build_schedule_from_partitioned_job"/> which automatically creates the schedule based on the partitioned config.
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
+from dagster import schedule, RunRequest
+
+
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def continent_schedule():
+    for c in CONTINENTS:
+        yield RunRequest(run_key=c, partition_key=c)
+```
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "20%",
+        }}
+      >
+        <strong>Related docs</strong>
+      </td>
+      <td>
+        <ul>
+          <li>
+            <a href="/concepts/ops-jobs-graphs/jobs">Op jobs</a>
+          </li>
+          <li>
+            <a href="/concepts/partitions-schedules-sensors/partitioning-ops">
+              Partitioning ops
+            </a>
+          </li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>APIs in this example</strong>
+      </td>
+      <td>
+        <PyObject object="schedule" decorator />,{" "}
+        <PyObject object="RunRequest" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Testing schedules
+
+Refer to the [Testing schedules guide](/concepts/automation/schedules/testing) to view examples of tests alongside the schedules they target.
+
+---
+
+## Want more inspiration?
+
+If you're looking for additional inspiration, we recommend:
+
+- [**Dagster Open Platform**](https://github.com/dagster-io/dagster-open-platform), which is Dagster Lab's open-source data platform. This full-sized project contains real assets and other Dagster features used by the Dagster Labs team.
+- [**GitHub Discussions**](https://github.com/dagster-io/dagster/discussions), where you can ask questions and get inspired by the Dagster community
+- The [**Awesome Dagster** repository](https://github.com/dagster-io/awesome-dagster), which is a collection of all awesome things related to Dagster, including other users' projects, talks, articles, and more

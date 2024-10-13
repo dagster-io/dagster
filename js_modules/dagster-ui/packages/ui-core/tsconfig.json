@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
     "paths": {
-      "@dagster-io/ui-components": ["../ui-components/src"]
+      "@dagster-io/ui-components": ["../ui-components/src"],
+      "shared/*": ["./src/*"]
     },
     "module": "es2022",
     "target": "es2022",
     "strict": true,
     "sourceMap": true,
     "allowJs": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,

@@ -13,11 +13,14 @@ from dagster._cli.schedule import (
     schedule_stop_command,
     schedule_wipe_command,
 )
-from dagster._core.host_representation import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import environ
 
-from .test_cli_commands import schedule_command_contexts, scheduler_instance
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
+    schedule_command_contexts,
+    scheduler_instance,
+)
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
@@ -33,8 +36,7 @@ def test_schedules_list(gen_schedule_args):
 
             assert result.exit_code == 0
             assert (
-                result.output
-                == "Repository bar\n"
+                result.output == "Repository bar\n"
                 "**************\n"
                 "Schedule: foo_schedule [STOPPED]\n"
                 "Cron Schedule: * * * * *\n"
@@ -188,8 +190,8 @@ def test_schedules_logs(gen_schedule_args):
 
 
 def test_check_repo_and_scheduler_no_external_schedules():
-    repository = mock.MagicMock(spec=ExternalRepository)
-    repository.get_external_schedules.return_value = []
+    repository = mock.MagicMock(spec=RemoteRepository)
+    repository.get_schedules.return_value = []
     instance = mock.MagicMock(spec=DagsterInstance)
     with pytest.raises(click.UsageError, match="There are no schedules defined for repository"):
         check_repo_and_scheduler(repository, instance)
@@ -197,8 +199,8 @@ def test_check_repo_and_scheduler_no_external_schedules():
 
 def test_check_repo_and_scheduler_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
-        repository = mock.MagicMock(spec=ExternalRepository)
-        repository.get_external_schedules.return_value = [mock.MagicMock()]
+        repository = mock.MagicMock(spec=RemoteRepository)
+        repository.get_schedules.return_value = [mock.MagicMock()]
         instance = mock.MagicMock(spec=DagsterInstance)
 
         with pytest.raises(

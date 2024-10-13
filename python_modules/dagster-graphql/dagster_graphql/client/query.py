@@ -60,6 +60,11 @@ fragment metadataEntryFragment on MetadataEntry {
       path
     }
   }
+  ... on JobMetadataEntry {
+    jobName
+    repositoryName
+    locationName
+  }
   ... on TableMetadataEntry  {
     table {
       records
@@ -69,6 +74,7 @@ fragment metadataEntryFragment on MetadataEntry {
           name
           type
           constraints { nullable unique other }
+          tags { key value }
         }
       }
     }
@@ -80,13 +86,17 @@ fragment metadataEntryFragment on MetadataEntry {
         name
         type
         constraints { nullable unique other }
+        tags { key value }
       }
     }
   }
 }
 """
 
-STEP_EVENT_FRAGMENTS = ERROR_FRAGMENT + METADATA_ENTRY_FRAGMENT + """
+STEP_EVENT_FRAGMENTS = (
+    ERROR_FRAGMENT
+    + METADATA_ENTRY_FRAGMENT
+    + """
 fragment stepEventFragment on StepEvent {
   stepKey
   solidHandleID
@@ -187,8 +197,10 @@ fragment stepEventFragment on StepEvent {
 
 }
 """
+)
 
-MESSAGE_EVENT_FRAGMENTS = """
+MESSAGE_EVENT_FRAGMENTS = (
+    """
 fragment messageEventFragment on MessageEvent {
   __typename
   runId
@@ -212,10 +224,14 @@ fragment messageEventFragment on MessageEvent {
     }
   }
 }
-""" + STEP_EVENT_FRAGMENTS
+"""
+    + STEP_EVENT_FRAGMENTS
+)
 
 
-SUBSCRIPTION_QUERY = MESSAGE_EVENT_FRAGMENTS + """
+SUBSCRIPTION_QUERY = (
+    MESSAGE_EVENT_FRAGMENTS
+    + """
 subscription subscribeTest($runId: ID!) {
   pipelineRunLogs(runId: $runId) {
     __typename
@@ -236,8 +252,11 @@ subscription subscribeTest($runId: ID!) {
 }
 
 """
+)
 
-RUN_EVENTS_QUERY = MESSAGE_EVENT_FRAGMENTS + """
+RUN_EVENTS_QUERY = (
+    MESSAGE_EVENT_FRAGMENTS
+    + """
 query pipelineRunEvents($runId: ID!, $cursor: String) {
   logsForRun(runId: $runId, afterCursor: $cursor) {
     __typename
@@ -250,8 +269,11 @@ query pipelineRunEvents($runId: ID!, $cursor: String) {
   }
 }
   """
+)
 
-LAUNCH_PIPELINE_EXECUTION_MUTATION = ERROR_FRAGMENT + """
+LAUNCH_PIPELINE_EXECUTION_MUTATION = (
+    ERROR_FRAGMENT
+    + """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
@@ -305,9 +327,12 @@ mutation($executionParams: ExecutionParams!) {
   }
 }
 """
+)
 
 
-LAUNCH_PIPELINE_REEXECUTION_MUTATION = ERROR_FRAGMENT + """
+LAUNCH_PIPELINE_REEXECUTION_MUTATION = (
+    ERROR_FRAGMENT
+    + """
 mutation($executionParams: ExecutionParams, $reexecutionParams: ReexecutionParams) {
   launchPipelineReexecution(executionParams: $executionParams, reexecutionParams: $reexecutionParams) {
     __typename
@@ -362,6 +387,7 @@ mutation($executionParams: ExecutionParams, $reexecutionParams: ReexecutionParam
   }
 }
 """
+)
 
 PIPELINE_REEXECUTION_INFO_QUERY = """
 query ReexecutionInfoQuery($runId: ID!) {
@@ -374,7 +400,9 @@ query ReexecutionInfoQuery($runId: ID!) {
   }
 """
 
-LAUNCH_PARTITION_BACKFILL_MUTATION = ERROR_FRAGMENT + """
+LAUNCH_PARTITION_BACKFILL_MUTATION = (
+    ERROR_FRAGMENT
+    + """
 mutation($backfillParams: LaunchBackfillParams!) {
   launchPartitionBackfill(backfillParams: $backfillParams) {
     __typename
@@ -384,6 +412,9 @@ mutation($backfillParams: LaunchBackfillParams!) {
     ... on PartitionSetNotFoundError {
       message
     }
+    ... on PartitionKeysNotFoundError {
+      message
+    }
     ... on LaunchBackfillSuccess {
       backfillId
       launchedRunIds
@@ -391,3 +422,4 @@ mutation($backfillParams: LaunchBackfillParams!) {
   }
 }
 """
+)

@@ -1,13 +1,22 @@
-import {Box, Button, Colors, Subheading, useViewport} from '@dagster-io/ui-components';
-import React from 'react';
+import {Box, Button, Subheading, useViewport} from '@dagster-io/ui-components';
+import {useEffect, useMemo, useState} from 'react';
 
+import {JobBackfillsTable} from './JobBackfillsTable';
+import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
+import {PartitionGraph} from './PartitionGraph';
+import {PartitionStatus} from './PartitionStatus';
+import {PartitionPerAssetStatus, getVisibleItemCount} from './PartitionStepStatus';
+import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
+import {allPartitionsRange} from './SpanRepresentation';
+import {usePartitionStepQuery} from './usePartitionStepQuery';
+import {toGraphId} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
-  mergedAssetHealth,
   explodePartitionKeysInSelectionMatching,
   isTimeseriesDimension,
+  mergedAssetHealth,
 } from '../assets/MultipartitioningSupport';
 import {keyCountInSelections, usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {RepositorySelector} from '../graphql/types';
@@ -15,24 +24,19 @@ import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {JobBackfillsTable} from './JobBackfillsTable';
-import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
-import {PartitionGraph} from './PartitionGraph';
-import {PartitionStatus} from './PartitionStatus';
-import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
-import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
-import {allPartitionsRange} from './SpanRepresentation';
-import {usePartitionStepQuery} from './usePartitionStepQuery';
-
-export const AssetJobPartitionsView: React.FC<{
+export const AssetJobPartitionsView = ({
+  partitionSetName,
+  repoAddress,
+  pipelineName,
+}: {
   pipelineName: string;
   partitionSetName: string;
   repoAddress: RepoAddress;
-}> = ({partitionSetName, repoAddress, pipelineName}) => {
+}) => {
   const {viewport, containerProps} = useViewport();
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const assetGraph = useAssetGraphData('', {
+  const assetGraph = useAssetGraphData('*', {
     pipelineSelector: {
       pipelineName,
       repositoryName: repoAddress.name,
@@ -40,9 +44,21 @@ export const AssetJobPartitionsView: React.FC<{
     },
   });
 
-  const assetHealth = usePartitionHealthData(assetGraph.graphAssetKeys);
+  const assetKeysWithPartitions = useMemo(() => {
+    return assetGraph.graphAssetKeys.filter((key) => {
+      return assetGraph.assetGraphData?.nodes[toGraphId(key)]?.definition.isPartitioned;
+    });
+  }, [assetGraph]);
 
-  const {total, missing, merged} = React.useMemo(() => {
+  const assetHealth = usePartitionHealthData(
+    assetKeysWithPartitions.length
+      ? assetKeysWithPartitions
+      : assetGraph.graphAssetKeys[0]
+      ? [assetGraph.graphAssetKeys[0]]
+      : [],
+  );
+
+  const {total, missing, merged} = useMemo(() => {
     const merged = mergedAssetHealth(assetHealth.filter((h) => h.dimensions.length > 0));
     const selection = merged.dimensions.map((d) => ({
       selectedKeys: d.partitionKeys,
@@ -60,11 +76,11 @@ export const AssetJobPartitionsView: React.FC<{
     };
   }, [assetHealth]);
 
-  const [pageSize, setPageSize] = React.useState(60);
-  const [offset, setOffset] = React.useState<number>(0);
-  const [showAssets, setShowAssets] = React.useState(false);
+  const [pageSize, setPageSize] = useState(60);
+  const [offset, setOffset] = useState<number>(0);
+  const [showAssets, setShowAssets] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (viewport.width) {
       // magical numbers to approximate the size of the window, which is calculated in the step
       // status component.  This approximation is to make sure that the window does not jump as
@@ -90,7 +106,7 @@ export const AssetJobPartitionsView: React.FC<{
     <div>
       <Box
         flex={{justifyContent: 'space-between', direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
+        border="bottom"
         padding={{vertical: 16, horizontal: 24}}
       >
         <Subheading>Status</Subheading>
@@ -104,11 +120,7 @@ export const AssetJobPartitionsView: React.FC<{
           />
         </Box>
       </Box>
-      <Box
-        flex={{direction: 'row', alignItems: 'center'}}
-        border={{width: 1, side: 'bottom', color: Colors.KeylineGray}}
-        padding={{left: 8}}
-      >
+      <Box flex={{direction: 'row', alignItems: 'center'}} border="bottom" padding={{left: 8}}>
         <CountBox count={total} label="Total partitions" />
         <CountBox count={missing} label="Missing partitions" />
       </Box>
@@ -162,7 +174,7 @@ export const AssetJobPartitionsView: React.FC<{
       )}
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', color: Colors.KeylineGray, width: 1}}
+        border="top-and-bottom"
         style={{marginBottom: -1}}
       >
         <Subheading>Backfill history</Subheading>
@@ -179,17 +191,7 @@ export const AssetJobPartitionsView: React.FC<{
   );
 };
 
-const AssetJobPartitionGraphs: React.FC<{
-  repositorySelector: RepositorySelector;
-  pipelineName: string;
-  partitionSetName: string;
-  multidimensional: boolean;
-  dimensionName: string | null;
-  dimensionKeys: string[];
-  selected: string[];
-  pageSize: number;
-  offset: number;
-}> = ({
+const AssetJobPartitionGraphs = ({
   repositorySelector,
   dimensionKeys,
   dimensionName,
@@ -199,6 +201,16 @@ const AssetJobPartitionGraphs: React.FC<{
   multidimensional,
   pipelineName,
   offset,
+}: {
+  repositorySelector: RepositorySelector;
+  pipelineName: string;
+  partitionSetName: string;
+  multidimensional: boolean;
+  dimensionName: string | null;
+  dimensionKeys: string[];
+  selected: string[];
+  pageSize: number;
+  offset: number;
 }) => {
   const partitions = usePartitionStepQuery({
     partitionSetName,
@@ -218,10 +230,7 @@ const AssetJobPartitionGraphs: React.FC<{
 
   return (
     <>
-      <Box
-        padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
         <Subheading>Run duration</Subheading>
       </Box>
 
@@ -234,10 +243,7 @@ const AssetJobPartitionGraphs: React.FC<{
           jobDataByPartition={runDurationData}
         />
       </Box>
-      <Box
-        padding={{horizontal: 24, vertical: 16}}
-        border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
         <Subheading>Step durations</Subheading>
       </Box>
       <Box margin={24}>

@@ -1,7 +1,9 @@
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 REPOSITORY_QUERY = """
 query {

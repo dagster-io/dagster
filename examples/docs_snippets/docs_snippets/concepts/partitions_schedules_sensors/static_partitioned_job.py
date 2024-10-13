@@ -1,4 +1,4 @@
-from dagster import Config, job, op, static_partitioned_config
+from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
 
 CONTINENTS = [
     "Africa",
@@ -21,7 +21,7 @@ class ContinentOpConfig(Config):
 
 
 @op
-def continent_op(context, config: ContinentOpConfig):
+def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
     context.log.info(config.continent_name)
 
 

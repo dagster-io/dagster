@@ -12,12 +12,11 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_type import Noneable
-from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
 )
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -142,7 +141,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return S3ComputeLogManager(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     @property
     def local_manager(self) -> LocalComputeLogManager:
@@ -156,6 +155,9 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         parts = prefix.split("/")
         return "/".join([part for part in parts if part])
 
+    def _resolve_path_for_namespace(self, namespace):
+        return [self._s3_prefix, "storage", *namespace]
+
     def _s3_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
@@ -163,7 +165,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         filename = f"{filebase}.{extension}"
         if partial:
             filename = f"{filename}.partial"
-        paths = [self._s3_prefix, "storage", *namespace, filename]
+        paths = [*self._resolve_path_for_namespace(namespace), filename]
         return "/".join(paths)  # s3 path delimiter
 
     @contextmanager
@@ -258,6 +260,28 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         s3_key = self._s3_key(log_key, io_type, partial=partial)
         with open(path, "wb") as fileobj:
             self._s3_session.download_fileobj(self._s3_bucket, s3_key, fileobj)
+
+    def get_log_keys_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
+    ) -> Sequence[Sequence[str]]:
+        directory = self._resolve_path_for_namespace(log_key_prefix)
+        objects = self._s3_session.list_objects_v2(
+            Bucket=self._s3_bucket, Prefix="/".join(directory)
+        )
+        results = []
+        list_key_prefix = list(log_key_prefix)
+
+        if objects["KeyCount"] == 0:
+            return []
+
+        for obj in objects["Contents"]:
+            full_key = obj["Key"]
+            filename, obj_io_type = full_key.split("/")[-1].split(".")
+            if obj_io_type != IO_TYPE_EXTENSION[io_type]:
+                continue
+            results.append(list_key_prefix + [filename])
+
+        return results
 
     def on_subscribe(self, subscription):
         self._subscription_manager.add_subscription(subscription)

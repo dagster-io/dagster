@@ -1,12 +1,12 @@
 import styled, {css} from 'styled-components';
 
+import {Colors} from './Color';
+import {BorderSetting, BorderSide, DirectionalSpacing, FlexProperties} from './types';
 import {assertUnreachable} from '../util/assertUnreachable';
 
-import {BorderSetting, DirectionalSpacing, FlexProperties} from './types';
-
-interface Props {
+export interface Props {
   background?: string | null;
-  border?: BorderSetting | null;
+  border?: BorderSide | BorderSetting | null;
   flex?: FlexProperties | null;
   margin?: DirectionalSpacing | null;
   padding?: DirectionalSpacing | null;
@@ -47,20 +47,27 @@ const directionalSpacingToCSS = (property: string, spacing: DirectionalSpacing) 
   `;
 };
 
-const borderSettingToCSS = (border: BorderSetting) => {
-  const {side, width, color} = border;
+const borderSettingToCSS = (border: BorderSide | BorderSetting) => {
+  const borderValue =
+    typeof border === 'string' ? {side: border, width: 1, color: Colors.keylineDefault()} : border;
+  const {side, width = 1, color = Colors.keylineDefault()} = borderValue;
+
   switch (side) {
     case 'all':
       return css`
         box-shadow: inset 0 0 0 ${width}px ${color};
       `;
-    case 'horizontal':
+    case 'top-and-bottom':
       return css`
-        box-shadow: inset 0 ${width}px ${color}, inset 0 -${width}px ${color};
+        box-shadow:
+          inset 0 ${width}px ${color},
+          inset 0 -${width}px ${color};
       `;
-    case 'vertical':
+    case 'left-and-right':
       return css`
-        box-shadow: inset ${width}px 0 ${color}, inset -${width}px 0 ${color};
+        box-shadow:
+          inset ${width}px 0 ${color},
+          inset -${width}px 0 ${color};
       `;
     case 'top':
       return css`

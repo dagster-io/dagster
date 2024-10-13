@@ -34,16 +34,20 @@ from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
 from typing_extensions import Self
 
-from ..secretsmanager import get_secrets_from_arns
-from .container_context import SHARED_ECS_SCHEMA, SHARED_TASK_DEFINITION_FIELDS, EcsContainerContext
-from .tasks import (
+from dagster_aws.ecs.container_context import (
+    SHARED_ECS_SCHEMA,
+    SHARED_TASK_DEFINITION_FIELDS,
+    EcsContainerContext,
+)
+from dagster_aws.ecs.tasks import (
     DagsterEcsTaskDefinitionConfig,
     get_current_ecs_task,
     get_current_ecs_task_metadata,
     get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
 )
-from .utils import get_task_definition_family, get_task_logs, task_definitions_match
+from dagster_aws.ecs.utils import get_task_definition_family, get_task_logs, task_definitions_match
+from dagster_aws.secretsmanager import get_secrets_from_arns
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
@@ -61,6 +65,12 @@ STOPPED_STATUSES = ["STOPPED"]
 DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
+
+DEFAULT_REGISTER_TASK_DEFINITION_RETRIES = 5
+DEFAULT_RUN_TASK_RETRIES = 5
+
+
+class RetryableEcsException(Exception): ...
 
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
@@ -219,6 +229,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return None
         return self.task_definition_dict.get("sidecar_containers")
 
+    @property
+    def linux_parameters(self) -> Optional[Mapping[str, Any]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("linux_parameters")
+
     @classmethod
     def config_type(cls):
         return {
@@ -238,6 +254,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                                 " from an environment variable."
                             ),
                         ),
+                        "linux_parameters": Field(Permissive(), is_required=False),
                         **SHARED_TASK_DEFINITION_FIELDS,
                     },
                 ),
@@ -325,7 +342,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return EcsRunLauncher(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
         tags = {
@@ -339,7 +356,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
             raise Exception("Cannot override system ECS tag: dagster/run_id")
 
-        return [{"key": "dagster/run_id", "value": run.run_id}, *container_context.run_ecs_tags]
+        return [
+            {"key": "dagster/run_id", "value": run.run_id},
+            {"key": "dagster/job_name", "value": run.job_name},
+            *container_context.run_ecs_tags,
+        ]
 
     def _get_run_tags(self, run_id):
         run = self._instance.get_run_by_id(run_id)
@@ -357,6 +378,36 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_image_for_run(self, context: LaunchRunContext) -> Optional[str]:
         job_origin = check.not_none(context.job_code_origin)
         return job_origin.repository_origin.container_image
+
+    def _run_task(self, **run_task_kwargs):
+        response = self.ecs.run_task(**run_task_kwargs)
+
+        tasks = response["tasks"]
+
+        if not tasks:
+            failures = response["failures"]
+            failure_messages = []
+            for failure in failures:
+                arn = failure.get("arn")
+                reason = failure.get("reason")
+                detail = failure.get("detail")
+
+                failure_message = (
+                    "Task"
+                    + (f" {arn}" if arn else "")
+                    + " failed."
+                    + (f" Failure reason: {reason}" if reason else "")
+                    + (f" Failure details: {detail}" if detail else "")
+                )
+                failure_messages.append(failure_message)
+
+            failure_message = "\n".join(failure_messages) if failure_messages else "Task failed."
+
+            if "Capacity is unavailable at this time" in failure_message:
+                raise RetryableEcsException(failure_message)
+
+            raise Exception(failure_message)
+        return tasks[0]
 
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
@@ -420,31 +471,17 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             del run_task_kwargs["launchType"]
 
         # Run a task using the same network configuration as this processes's task.
-        response = self.ecs.run_task(**run_task_kwargs)
+        task = backoff(
+            self._run_task,
+            retry_on=(RetryableEcsException,),
+            kwargs=run_task_kwargs,
+            max_retries=int(
+                os.getenv("RUN_TASK_RETRIES", DEFAULT_RUN_TASK_RETRIES),
+            ),
+        )
 
-        tasks = response["tasks"]
-
-        if not tasks:
-            failures = response["failures"]
-            failure_messages = []
-            for failure in failures:
-                arn = failure.get("arn")
-                reason = failure.get("reason")
-                detail = failure.get("detail")
-
-                failure_message = (
-                    "Task"
-                    + (f" {arn}" if arn else "")
-                    + " failed."
-                    + (f" Failure reason: {reason}" if reason else "")
-                    + (f" Failure details: {detail}" if detail else "")
-                )
-                failure_messages.append(failure_message)
-
-            raise Exception("\n".join(failure_messages) if failure_messages else "Task failed.")
-
-        arn = tasks[0]["taskArn"]
-        cluster_arn = tasks[0]["clusterArn"]
+        arn = task["taskArn"]
+        cluster_arn = task["clusterArn"]
         self._set_run_tags(run.run_id, cluster=cluster_arn, task_arn=arn)
         self.report_launch_events(run, arn, cluster_arn)
 
@@ -510,7 +547,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         tags = self._get_run_tags(run_id)
 
         run = self._instance.get_run_by_id(run_id)
-        if not run:
+        if not run or run.is_finished:
             return False
 
         self._instance.report_run_canceling(run)
@@ -544,7 +581,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self._current_task
 
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
-        return get_task_definition_family("run", check.not_none(run.external_job_origin))
+        return get_task_definition_family("run", check.not_none(run.remote_job_origin))
 
     def _get_container_name(self, container_context) -> str:
         return container_context.container_name or self.container_name
@@ -606,6 +643,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
                     repository_credentials=container_context.repository_credentials,
+                    linux_parameters=self.linux_parameters,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -645,7 +683,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     "container_name": container_name,
                     "task_definition_dict": task_definition_dict,
                 },
-                max_retries=5,
+                max_retries=int(
+                    os.getenv(
+                        "REGISTER_TASK_DEFINITION_RETRIES", DEFAULT_REGISTER_TASK_DEFINITION_RETRIES
+                    ),
+                ),
             )
 
             task_definition = family
@@ -713,13 +755,28 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def include_cluster_info_in_failure_messages(self):
         return True
 
+    def _is_transient_stop_reason(self, stopped_reason: str):
+        if "Timeout waiting for network interface provisioning to complete" in stopped_reason:
+            return True
+
+        if "Timeout waiting for EphemeralStorage provisioning to complete" in stopped_reason:
+            return True
+
+        if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
+            return True
+
+        if "CannotPullContainerError" in stopped_reason and (
+            "invalid argument" in stopped_reason or "EOF" in stopped_reason
+        ):
+            return True
+
+        return False
+
     def _is_transient_startup_failure(self, run, task):
         if not task.get("stoppedReason"):
             return False
-        return (
-            run.status == DagsterRunStatus.STARTING
-            and "Timeout waiting for network interface provisioning to complete"
-            in task.get("stoppedReason")
+        return run.status == DagsterRunStatus.STARTING and self._is_transient_stop_reason(
+            task.get("stoppedReason")
         )
 
     def check_run_worker_health(self, run: DagsterRun):
@@ -745,19 +802,24 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 if c.get("exitCode") != 0:
                     failed_containers.append(c)
             if len(failed_containers) > 0:
-                if len(failed_containers) > 1:
-                    container_str = "Containers"
-                else:
-                    container_str = "Container"
+                failure_text = ""
 
-                failure_text = []
+                cluster_failure_info = (
+                    f"Task {t.get('taskArn')} failed.\n"
+                    f"Stop code: {t.get('stopCode')}.\n"
+                    f"Stop reason: {t.get('stoppedReason')}.\n"
+                )
+                for c in failed_containers:
+                    exit_code = c.get("exitCode")
+                    exit_code_msg = f" - exit code {exit_code}" if exit_code is not None else ""
+                    cluster_failure_info += f"Container '{c.get('name')}' failed{exit_code_msg}.\n"
+
+                logging.warning(
+                    "Run monitoring detected run worker failure: " + cluster_failure_info
+                )
 
                 if self.include_cluster_info_in_failure_messages:
-                    failure_text.append(
-                        f"Task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
-                        f" reason: {t.get('stoppedReason')}."
-                        + f" {container_str} {[c.get('name') for c in failed_containers]} failed."
-                    )
+                    failure_text += cluster_failure_info
 
                 logs = []
 
@@ -770,18 +832,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         container_name=self._get_container_name(container_context),
                     )
                 except:
-                    logging.exception(
-                        "Error trying to get logs for failed task {task_arn}".format(
-                            task_arn=tags.arn,
-                        )
-                    )
+                    logging.exception(f"Error trying to get logs for failed task {tags.arn}")
 
                 if logs:
-                    failure_text.append("Run worker logs:\n" + "\n".join(logs))
+                    failure_text += "Run worker logs:\n" + "\n".join(logs)
 
                 return CheckRunHealthResult(
                     WorkerStatus.FAILED,
-                    "\n\n".join(failure_text),
+                    failure_text,
                     transient=self._is_transient_startup_failure(run, t),
                     run_worker_id=run_worker_id,
                 )

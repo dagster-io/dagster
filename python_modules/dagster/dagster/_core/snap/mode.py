@@ -9,7 +9,7 @@ from dagster._serdes import whitelist_for_serdes
 
 
 def build_mode_def_snap(job_def: JobDefinition) -> "ModeDefSnap":
-    from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
+    from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 
     check.inst_param(job_def, "job_def", JobDefinition)
 

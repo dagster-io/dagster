@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-
+import {gql} from '../../apollo-client';
 import {RUN_FRAGMENT} from '../RunFragments';
 
 export const RUN_ACTION_BUTTONS_TEST_QUERY = gql`

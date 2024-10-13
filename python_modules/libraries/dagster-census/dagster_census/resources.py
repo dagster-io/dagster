@@ -10,12 +10,14 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
-from .types import CensusOutput
+from dagster_census.types import CensusOutput
 
 CENSUS_API_BASE = "app.getcensus.com/api"
 CENSUS_VERSION = "v1"
 
 DEFAULT_POLL_INTERVAL = 10
+
+SYNC_RUN_STATUSES = {"completed", "failed", "queued", "skipped", "working"}
 
 
 class CensusResource:
@@ -158,9 +160,18 @@ class CensusResource:
                     " more."
                 )
 
+            sync_status = response_dict["data"]["status"]
             sync_id = response_dict["data"]["sync_id"]
 
-            if response_dict["data"]["status"] in {"preparing", "working"}:
+            if sync_status not in SYNC_RUN_STATUSES:
+                raise ValueError(
+                    f"Unexpected response status '{sync_status}'; "
+                    f"must be one of {','.join(sorted(SYNC_RUN_STATUSES))}. "
+                    "See Management API docs for more information: "
+                    "https://docs.getcensus.com/basics/developers/api/sync-runs"
+                )
+
+            if sync_status in {"queued", "working"}:
                 self._log.debug(
                     f"Sync {sync_id} still running after {datetime.datetime.now() - poll_start}."
                 )

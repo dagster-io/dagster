@@ -18,7 +18,7 @@ storage:
 # start_marker_storage_postgres
 
 # Postgres storage can be set using either credentials or a connection string.  This requires that
-# the `dagster-postgres` library be installed.
+# the `dagster-postgres` library be installed and a database configured with UTC timezone.
 
 # this config manually sets the Postgres credentials
 storage:
@@ -339,7 +339,7 @@ local_artifact_storage:
 # Opt in to run monitoring
 run_monitoring:
   enabled: true
-  # values below are the defaults, and don't need to be specified execpt to override them
+  # values below are the defaults, and don't need to be specified except to override them
   start_timeout_seconds: 180
   cancel_timeout_seconds: 180
   max_resume_run_attempts: 3 # experimental if above 0
@@ -367,7 +367,7 @@ telemetry:
 # Configures how long Dagster waits for code locations
 # to load before timing out.
 code_servers:
-  local_startup_timeout: 120
+  local_startup_timeout: 360
 
 # end_marker_code_servers
 
@@ -401,10 +401,6 @@ schedules:
 
 # end_marker_schedules
 
-# start_marker_auto_materialize
-
 auto_materialize:
   run_tags:
     key: value
-
-# end_marker_auto_materialize

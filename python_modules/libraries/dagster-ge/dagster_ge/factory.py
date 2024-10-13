@@ -16,6 +16,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster_pandas import DataFrame
 from great_expectations.render.renderer import ValidationResultsPageRenderer
 from great_expectations.render.view import DefaultMarkdownPageView
@@ -96,7 +97,7 @@ def ge_validation_op_factory(
         """,
         ),
         required_resource_keys={"ge_data_context"},
-        tags={"kind": "ge"},
+        tags={COMPUTE_KIND_TAG: "ge"},
     )
     def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
@@ -120,7 +121,7 @@ def ge_validation_op_factory(
         batch = data_context.get_batch(final_batch_kwargs, suite)
         run_id = {
             "run_name": datasource_name + " run",
-            "run_time": datetime.datetime.utcnow(),
+            "run_time": datetime.datetime.now(datetime.timezone.utc),
         }
         results = data_context.run_validation_operator(
             validation_operator, assets_to_validate=[batch], run_id=run_id
@@ -207,7 +208,7 @@ def ge_validation_op_factory_v3(
         """,
         ),
         required_resource_keys={"ge_data_context"},
-        tags={"kind": "ge"},
+        tags={COMPUTE_KIND_TAG: "ge"},
     )
     def _ge_validation_fn(context: OpExecutionContext, dataset):
         data_context = context.resources.ge_data_context
@@ -225,7 +226,7 @@ def ge_validation_op_factory_v3(
 
         run_id = {
             "run_name": datasource_name + " run",
-            "run_time": datetime.datetime.utcnow(),
+            "run_time": datetime.datetime.now(datetime.timezone.utc),
         }
         results = validator.validate(run_id=run_id)
 

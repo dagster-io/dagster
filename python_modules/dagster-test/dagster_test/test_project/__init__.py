@@ -3,32 +3,27 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
-from typing import Any, Mapping, Optional
+from typing import Mapping, Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.selector import InstigatorSelector
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.build_resources import build_resources
-from dagster._core.execution.context.output import build_output_context
-from dagster._core.host_representation import (
-    ExternalJob,
-    ExternalSchedule,
-    GrpcServerCodeLocationOrigin,
-    InProcessCodeLocationOrigin,
-)
-from dagster._core.host_representation.origin import (
-    ExternalInstigatorOrigin,
-    ExternalJobOrigin,
-    ExternalRepositoryOrigin,
-)
-from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
+)
+from dagster._core.remote_representation import (
+    GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
+    RemoteJob,
+    RemoteSchedule,
+)
+from dagster._core.remote_representation.origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -36,34 +31,6 @@ from dagster._serdes import create_snapshot_id
 from dagster._utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-
-def cleanup_memoized_results(
-    job_def: JobDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
-) -> None:
-    # Clean up any memoized outputs from the s3 bucket
-    from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-    execution_plan = create_execution_plan(
-        job_def,
-        run_config=run_config,
-        instance_ref=instance.get_ref(),
-    )
-
-    with build_resources(
-        {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        resource_config=run_config["resources"],
-    ) as resources:
-        io_manager = resources.io_manager
-        for step_output_handle, version in execution_plan.step_output_versions.items():
-            output_context = build_output_context(
-                step_key=step_output_handle.step_key,
-                name=step_output_handle.output_name,
-                version=version,
-            )
-
-            key = io_manager._get_path(output_context)  # noqa: SLF001
-            io_manager.unlink(key)
 
 
 def get_test_repo_path():
@@ -102,8 +69,8 @@ def find_local_test_image(docker_image):
         client = docker.from_env()
         client.images.get(docker_image)
         print(  # noqa: T201
-            "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-            "docker rmi {image}".format(image=docker_image)
+            f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
+            f"docker rmi {docker_image}"
         )
     except docker.errors.ImageNotFound:
         build_and_tag_test_image(docker_image)
@@ -112,7 +79,7 @@ def find_local_test_image(docker_image):
 def build_and_tag_test_image(tag):
     check.str_param(tag, "tag")
 
-    base_python = "3.8.8"
+    base_python = "3.11"
 
     # Build and tag local dagster test image
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
@@ -125,7 +92,7 @@ def get_test_project_recon_job(
     filename: Optional[str] = None,
 ) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructableJobForTest(
+    return ReOriginatedReconstructableJobForTest(  # type: ignore # ignored for update, fix me!
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",
@@ -168,16 +135,16 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         )
 
 
-class ReOriginatedExternalJobForTest(ExternalJob):
+class ReOriginatedExternalJobForTest(RemoteJob):
     def __init__(
-        self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
+        self, remote_job: RemoteJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
         super(ReOriginatedExternalJobForTest, self).__init__(
-            external_job.external_job_data,
-            external_job.repository_handle,
+            remote_job.job_data_snap,
+            remote_job.repository_handle,
         )
 
     def get_python_origin(self):
@@ -200,14 +167,14 @@ class ReOriginatedExternalJobForTest(ExternalJob):
             ),
         )
 
-    def get_external_origin(self) -> ExternalJobOrigin:
+    def get_remote_origin(self) -> RemoteJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return ExternalJobOrigin(
-            external_repository_origin=ExternalRepositoryOrigin(
+        return RemoteJobOrigin(
+            repository_origin=RemoteRepositoryOrigin(
                 code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
@@ -223,25 +190,25 @@ class ReOriginatedExternalJobForTest(ExternalJob):
         )
 
 
-class ReOriginatedExternalScheduleForTest(ExternalSchedule):
+class ReOriginatedExternalScheduleForTest(RemoteSchedule):
     def __init__(
         self,
-        external_schedule: ExternalSchedule,
+        remote_schedule: RemoteSchedule,
         container_image=None,
     ):
         self._container_image = container_image
         super(ReOriginatedExternalScheduleForTest, self).__init__(
-            external_schedule._external_schedule_data,  # noqa: SLF001
-            external_schedule.handle.repository_handle,
+            remote_schedule._schedule_snap,  # noqa: SLF001
+            remote_schedule.handle.repository_handle,
         )
 
-    def get_external_origin(self):
+    def get_remote_origin(self):
         """Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.
         """
-        return ExternalInstigatorOrigin(
-            external_repository_origin=ExternalRepositoryOrigin(
+        return RemoteInstigatorOrigin(
+            repository_origin=RemoteRepositoryOrigin(
                 code_location_origin=GrpcServerCodeLocationOrigin(
                     host="user-code-deployment-1",
                     port=3030,
@@ -280,28 +247,26 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
 
 
 @contextmanager
-def get_test_project_external_job_hierarchy(
-    instance, job_name, container_image=None, filename=None
-):
+def get_test_project_remote_job_hierarchy(instance, job_name, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         repo = location.get_repository("demo_execution_repo")
-        job = repo.get_full_external_job(job_name)
+        job = repo.get_full_job(job_name)
         yield workspace, location, repo, job
 
 
 @contextmanager
-def get_test_project_external_repo(instance, container_image=None, filename=None):
+def get_test_project_remote_repo(instance, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         yield location, location.get_repository("demo_execution_repo")
 
 
 @contextmanager
-def get_test_project_workspace_and_external_job(
+def get_test_project_workspace_and_remote_job(
     instance, job_name, container_image=None, filename=None
 ):
-    with get_test_project_external_job_hierarchy(instance, job_name, container_image, filename) as (
+    with get_test_project_remote_job_hierarchy(instance, job_name, container_image, filename) as (
         workspace,
         _location,
         _repo,
@@ -311,13 +276,11 @@ def get_test_project_workspace_and_external_job(
 
 
 @contextmanager
-def get_test_project_external_schedule(
-    instance, schedule_name, container_image=None, filename=None
-):
-    with get_test_project_external_repo(
+def get_test_project_remote_schedule(instance, schedule_name, container_image=None, filename=None):
+    with get_test_project_remote_repo(
         instance, container_image=container_image, filename=filename
     ) as (_, repo):
-        yield repo.get_external_schedule(schedule_name)
+        yield repo.get_schedule(schedule_name)
 
 
 def get_test_project_docker_image():
@@ -348,8 +311,6 @@ def get_test_project_docker_image():
             majmin=majmin, image_version="latest"
         )
 
-    final_docker_image = "{repository}/{image_name}:{tag}".format(
-        repository=docker_repository, image_name=image_name, tag=docker_image_tag
-    )
+    final_docker_image = f"{docker_repository}/{image_name}:{docker_image_tag}"
     print("Using Docker image: %s" % final_docker_image)  # noqa: T201
     return final_docker_image

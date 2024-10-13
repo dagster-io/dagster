@@ -1,54 +1,53 @@
-import {useMutation} from '@apollo/client';
-import * as React from 'react';
-import {useHistory} from 'react-router';
+import {useCallback} from 'react';
+import {useHistory} from 'react-router-dom';
 
-import {showLaunchError} from '../launchpad/showLaunchError';
-import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
-
-import {
-  getReexecutionVariables,
-  handleLaunchResult,
-  LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-  ReExecutionStyle,
-} from './RunUtils';
-import {RunPageFragment} from './types/RunFragments.types';
+import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
+import {useMutation} from '../apollo-client';
+import {ExecutionParams, ReexecutionStrategy} from '../graphql/types';
+import {showLaunchError} from '../launchpad/showLaunchError';
 
-export const useJobReExecution = (run: RunPageFragment | undefined | null) => {
+/**
+ * This hook gives you a mutation method that you can use to re-execute runs.
+ *
+ * The preferred way to re-execute runs is to pass a ReexecutionStrategy.
+ * If you need to re-execute with more complex parameters, (eg: a custom subset
+ * of the previous run), build the variables using `getReexecutionVariables` and
+ * pass them to this hook.
+ */
+export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
   const history = useHistory();
+  const {onCompleted} = opts || {};
+
   const [launchPipelineReexecution] = useMutation<
     LaunchPipelineReexecutionMutation,
     LaunchPipelineReexecutionMutationVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
 
-  const repoMatch = useRepositoryForRunWithParentSnapshot(run);
-
-  return React.useCallback(
-    async (style: ReExecutionStyle) => {
-      if (!run || !run.pipelineSnapshotId || !repoMatch) {
-        return;
-      }
-
-      const variables = getReexecutionVariables({
-        run,
-        style,
-        repositoryLocationName: repoMatch.match.repositoryLocation.name,
-        repositoryName: repoMatch.match.repository.name,
-      });
-
+  return useCallback(
+    async (
+      run: {id: string; pipelineName: string},
+      param: ReexecutionStrategy | ExecutionParams,
+    ) => {
       try {
-        const result = await launchPipelineReexecution({variables});
+        const result = await launchPipelineReexecution({
+          variables:
+            typeof param === 'string'
+              ? {reexecutionParams: {parentRunId: run.id, strategy: param}}
+              : {executionParams: param},
+        });
         handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
           preserveQuerystring: true,
           behavior: 'open',
         });
+        onCompleted?.();
       } catch (error) {
         showLaunchError(error as Error);
       }
     },
-    [history, launchPipelineReexecution, repoMatch, run],
+    [history, launchPipelineReexecution, onCompleted],
   );
 };

@@ -1,7 +1,9 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
-import {Colors} from '../Colors';
+import {Box} from '../Box';
+import {Button} from '../Button';
+import {Colors} from '../Color';
 import {Icon} from '../Icon';
 import {TextInput} from '../TextInput';
 
@@ -12,7 +14,7 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       placeholder="Type anything…"
@@ -23,7 +25,7 @@ export const Default = () => {
 };
 
 export const WithIcon = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
@@ -35,27 +37,43 @@ export const WithIcon = () => {
 };
 
 export const StrokeColor = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      strokeColor={Colors.Red500}
+      strokeColor={Colors.accentRed()}
     />
   );
 };
 
 export const RightElement = () => {
-  const [value, setValue] = React.useState('');
+  const [value, setValue] = useState('');
   return (
     <TextInput
       icon="layers"
       placeholder="Type anything…"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      rightElement={<Icon name="info" color={Colors.Gray500} />}
+      rightElement={<Icon name="info" color={Colors.accentPrimary()} />}
     />
+  );
+};
+
+export const NextToButton = () => {
+  const [value, setValue] = useState('');
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <TextInput
+        icon="layers"
+        placeholder="Type anything…"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rightElement={<Icon name="info" color={Colors.accentPrimary()} />}
+      />
+      <Button>Hello</Button>
+    </Box>
   );
 };

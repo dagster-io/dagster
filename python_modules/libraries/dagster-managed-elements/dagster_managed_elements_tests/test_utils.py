@@ -7,17 +7,15 @@ def test_diff_dicts():
     dst_dict = {"baz": "qux", "nested": {"qwerty": "hjkl", "old": "field"}, "same": "as"}
 
     assert (diff_dicts(config_dict, dst_dict)) == (
-        (
+        ManagedElementDiff()
+        .add("foo", "bar")
+        .delete("baz", "qux")
+        .with_nested(
+            "nested",
             ManagedElementDiff()
-            .add("foo", "bar")
-            .delete("baz", "qux")
-            .with_nested(
-                "nested",
-                ManagedElementDiff()
-                .modify("qwerty", "hjkl", "uiop")
-                .add("new", "field")
-                .delete("old", "field"),
-            )
+            .modify("qwerty", "hjkl", "uiop")
+            .add("new", "field")
+            .delete("old", "field"),
         )
     )
 
@@ -67,13 +65,11 @@ def test_diff_dicts_custom_comparison_fn():
             config_dict, dst_dict, custom_compare_fn=lambda k, sv, dv: k == "qwerty" or sv == dv
         )
     ) == (
-        (
-            ManagedElementDiff()
-            .add("foo", "bar")
-            .delete("baz", "qux")
-            .with_nested(
-                "nested",
-                ManagedElementDiff().add("new", "field").delete("old", "field"),
-            )
+        ManagedElementDiff()
+        .add("foo", "bar")
+        .delete("baz", "qux")
+        .with_nested(
+            "nested",
+            ManagedElementDiff().add("new", "field").delete("old", "field"),
         )
     )

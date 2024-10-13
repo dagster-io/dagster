@@ -1,0 +1,15 @@
+# alert_policies.yaml
+
+alert_policies:
+  - name: "email-alert-policy"
+    description: "An alert policy to email company executives during job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "JOB_FAILURE"
+    notification_service:
+      email:
+        email_addresses:
+          - "richard.hendricks@hooli.com"
+          - "nelson.bighetti@hooli.com"

@@ -12,6 +12,8 @@ export type ScheduleFragment = {
   solidSelection: Array<string | null> | null;
   mode: string;
   description: string | null;
+  defaultStatus: Types.InstigationStatus;
+  canReset: boolean;
   partitionSet: {__typename: 'PartitionSet'; id: string; name: string} | null;
   scheduleState: {
     __typename: 'InstigationState';
@@ -33,6 +35,7 @@ export type ScheduleFragment = {
       __typename: 'Run';
       id: string;
       status: Types.RunStatus;
+      creationTime: number;
       startTime: number | null;
       endTime: number | null;
       updateTime: number | null;

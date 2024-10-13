@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type RunRootQueryVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
+  runId: Types.Scalars['ID']['input'];
 }>;
 
 export type RunRootQuery = {
@@ -19,6 +19,7 @@ export type RunRootQuery = {
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
+        hasRunMetricsEnabled: boolean;
         status: Types.RunStatus;
         mode: string;
         rootRunId: string | null;
@@ -38,12 +39,12 @@ export type RunRootQuery = {
           repositoryLocationName: string;
         } | null;
         tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-        assets: Array<{
-          __typename: 'Asset';
-          id: string;
-          key: {__typename: 'AssetKey'; path: Array<string>};
-        }>;
         assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+        assetCheckSelection: Array<{
+          __typename: 'AssetCheckhandle';
+          name: string;
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+        }> | null;
         executionPlan: {
           __typename: 'ExecutionPlan';
           artifactsPersisted: boolean;
@@ -77,3 +78,5 @@ export type RunRootQuery = {
       }
     | {__typename: 'RunNotFoundError'};
 };
+
+export const RunRootQueryVersion = '1aa4561b33c2cfb079d7a3ff284096fc3208a46dee748a24c7af827a2cb22919';

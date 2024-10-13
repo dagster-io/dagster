@@ -8,7 +8,7 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, ContextManager, Iterable, Iterator, Optional, Sequence
+from typing import TYPE_CHECKING, Any, ContextManager, Iterator, Optional, Sequence, Union
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -24,11 +24,21 @@ from dagster._config import StringSource
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS
+from dagster._core.event_api import EventHandlerFn, EventRecordsResult, RunStatusChangeRecordsFilter
+from dagster._core.events import (
+    ASSET_CHECK_EVENTS,
+    ASSET_EVENTS,
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    DagsterEventType,
+)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
+from dagster._core.storage.event_log.schema import (
+    SqlEventLogStorageMetadata,
+    SqlEventLogStorageTable,
+)
+from dagster._core.storage.event_log.sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -39,16 +49,10 @@ from dagster._core.storage.sql import (
 )
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite import create_db_conn_string
-from dagster._serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-)
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p
-
-from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
-from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
 
 if TYPE_CHECKING:
     from dagster._core.storage.sqlite_storage import SqliteStorageConfig
@@ -258,17 +262,22 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags(event, event_id)
+            self.store_asset_event_tags([event], [event_id])
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, None)
+
+        if event.is_dagster_event and event.dagster_event_type in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            # should mirror run status change events in the index shard
+            with self.index_connection() as conn:
+                conn.execute(insert_event_statement)
 
     def get_event_records(
         self,
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
-    ) -> Iterable[EventLogRecord]:
+    ) -> Sequence[EventLogRecord]:
         """Overridden method to enable cross-run event queries in sqlite.
 
         The record id in sqlite does not auto increment cross runs, so instead of fetching events
@@ -286,6 +295,16 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
+        return self._get_run_sharded_event_records(
+            event_records_filter=event_records_filter, limit=limit, ascending=ascending
+        )
+
+    def _get_run_sharded_event_records(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ) -> Sequence[EventLogRecord]:
         query = db_select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
@@ -295,12 +314,14 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event_records_filter.after_cursor is not None and not isinstance(
             event_records_filter.after_cursor, RunShardedEventsCursor
         ):
-            raise Exception("""
+            raise Exception(
+                """
                 Called `get_event_records` on a run-sharded event log storage with a cursor that
                 is not run-aware. Add a RunShardedEventsCursor to your query filter
                 or switch your instance configuration to use a non-run-sharded event log storage
                 (e.g. PostgresEventLogStorage, ConsolidatedSqliteEventLogStorage)
-            """)
+            """
+            )
 
         query = self._apply_filter_to_query(
             query=query,
@@ -354,6 +375,50 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return event_records[:limit]
 
+    def fetch_run_status_changes(
+        self,
+        records_filter: Union[DagsterEventType, RunStatusChangeRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        # custom implementation of the run status change event query to only read from the index
+        # shard instead of from the run shards.  This bypasses the default Sqlite implementation of
+        # the deprecated _get_event_records method, which reads from the run shards, opting for the
+        # super implementation instead, which reads from the index shard
+        event_type = (
+            records_filter
+            if isinstance(records_filter, DagsterEventType)
+            else records_filter.event_type
+        )
+        if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
+            expected = ", ".join(EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys())
+            check.failed(f"Expected one of {expected}, received {event_type.value}")
+
+        before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
+        event_records_filter = (
+            records_filter.to_event_records_filter(cursor, ascending)
+            if isinstance(records_filter, RunStatusChangeRecordsFilter)
+            else EventRecordsFilter(
+                event_type, before_cursor=before_cursor, after_cursor=after_cursor
+            )
+        )
+
+        # bypass the run-sharded cursor logic... any caller of this run status change specific
+        # method should be reading from the index shard, which as of 1.5.0 contains mirrored run
+        # status change events
+        records = super(SqliteEventLogStorage, self).get_event_records(
+            event_records_filter=event_records_filter, limit=limit, ascending=ascending
+        )
+        if records:
+            new_cursor = EventLogCursor.from_storage_id(records[-1].storage_id).to_string()
+        elif cursor:
+            new_cursor = cursor
+        else:
+            new_cursor = EventLogCursor.from_storage_id(-1).to_string()
+        has_more = len(records) == limit
+        return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
+
     def supports_event_consumer_queries(self) -> bool:
         return False
 
@@ -406,7 +471,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, cursor)
         self._watchers[run_id][callback] = (
             watchdog,
-            self._obs.schedule(watchdog, self._base_dir, True),
+            self._obs.schedule(watchdog, self._base_dir, recursive=True),
         )
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:

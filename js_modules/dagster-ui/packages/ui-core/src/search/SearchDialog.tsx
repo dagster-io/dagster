@@ -1,18 +1,19 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Box, Colors, Icon, Spinner, FontFamily} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
-import {useHistory, useLocation} from 'react-router-dom';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {useTrackEvent} from '../app/analytics';
 
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
+import {__updateSearchVisibility} from './useSearchVisibility';
+import {ShortcutHandler} from '../app/ShortcutHandler';
+import {TooltipShortcutInfo, TopNavButton} from '../app/TopNavButton';
+import {useTrackEvent} from '../app/analytics';
 
 const MAX_DISPLAYED_RESULTS = 50;
 
@@ -71,10 +72,11 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
-export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlaceholder}) => {
-  const location = useLocation();
+export const SearchDialog = () => {
   const history = useHistory();
-  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch();
+  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
+    searchContext: 'global',
+  });
   const trackEvent = useTrackEvent();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -85,10 +87,15 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   const numRenderedResults = renderedResults.length;
 
   const openSearch = React.useCallback(() => {
+    trackEvent('open-global-search');
     trackEvent('searchOpen');
     initialize();
     dispatch({type: 'show-dialog'});
   }, [initialize, trackEvent]);
+
+  React.useEffect(() => {
+    __updateSearchVisibility(shown);
+  }, [shown]);
 
   const searchAndHandlePrimary = React.useCallback(
     async (queryString: string) => {
@@ -118,10 +125,6 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
     dispatch({type: 'change-query', queryString: newValue});
     debouncedSearch(newValue);
   };
-
-  React.useEffect(() => {
-    dispatch({type: 'hide-dialog'});
-  }, [location.pathname]);
 
   const onClickResult = React.useCallback(
     (result: Fuse.FuseResult<SearchResult>) => {
@@ -185,38 +188,26 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   return (
     <>
       <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <SearchTrigger onClick={openSearch}>
-          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <Box flex={{alignItems: 'center', gap: 8}}>
-              <div
-                style={{
-                  background: Colors.Gray900,
-                  borderRadius: '12px',
-                  height: '24px',
-                  width: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name="search" color={Colors.Gray50} />
-              </div>
-              <Placeholder>{searchPlaceholder}</Placeholder>
-            </Box>
-            <SlashShortcut>/</SlashShortcut>
-          </Box>
-        </SearchTrigger>
+        <Tooltip
+          content={<TooltipShortcutInfo label="Search" shortcutKey="/" />}
+          placement="bottom"
+        >
+          <TopNavButton onClick={openSearch}>
+            <Icon name="search" size={20} />
+          </TopNavButton>
+        </Tooltip>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: Colors.WashGray}}}
+        backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
       >
         <Container>
-          <SearchBox hasQueryString={!!queryString.length}>
-            <Icon name="search" color={Colors.Gray200} size={20} />
+          <SearchBox $hasQueryString={!!queryString.length}>
+            <Icon name="search" color={Colors.accentGray()} size={20} />
             <SearchInput
+              data-search-input="1"
               autoFocus
               spellCheck={false}
               onChange={onChange}
@@ -232,6 +223,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
             queryString={queryString}
             results={renderedResults}
             onClickResult={onClickResult}
+            searching={loading || state.searching}
           />
         </Container>
       </Overlay>
@@ -239,33 +231,12 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   );
 };
 
-const SearchTrigger = styled.button`
-  background-color: ${Colors.Gray800};
-  border-radius: 24px;
-  border: none;
-  color: ${Colors.Gray50};
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px 16px 4px 4px;
-  outline: none;
-  user-select: none;
-  width: 188px;
-  height: 32px;
-
-  :focus {
-    border-color: ${Colors.Gray100};
-  }
-`;
-
-const Placeholder = styled.div`
-  position: relative;
-  top: -1px;
-`;
-
 const Container = styled.div`
-  background-color: ${Colors.White};
-  border-radius: 4px;
-  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: ${Colors.backgroundDefault()};
+  border-radius: 8px;
+  box-shadow:
+    2px 2px 8px ${Colors.shadowDefault()},
+    ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
   max-height: 60vh;
   left: calc(50% - 300px);
   overflow: hidden;
@@ -273,20 +244,33 @@ const Container = styled.div`
   top: 20vh;
 `;
 
-interface SearchBoxProps {
-  readonly hasQueryString: boolean;
+export interface SearchBoxProps {
+  readonly $hasQueryString: boolean;
 }
 
-const SearchBox = styled.div<SearchBoxProps>`
+export const SearchBox = styled.div<SearchBoxProps>`
+  background: ${Colors.backgroundDefault()};
+  border-radius: ${({$hasQueryString}) => ($hasQueryString ? '8px 8px 0 0' : '8px')};
+  border: none;
   align-items: center;
-  border-bottom: ${({hasQueryString}) => (hasQueryString ? `1px solid ${Colors.Gray100}` : 'none')};
+  box-shadow: ${({$hasQueryString}) =>
+      $hasQueryString ? Colors.keylineDefault() : Colors.borderDefault()}
+    inset 0px 0px 0px 1px;
   display: flex;
   padding: 12px 20px 12px 12px;
+  transition: all 100ms linear;
+
+  :hover {
+    box-shadow: ${({$hasQueryString}) =>
+        $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
+      0 0 0 1px inset;
+  }
 `;
 
-const SearchInput = styled.input`
+export const SearchInput = styled.input`
+  background-color: transparent;
   border: none;
-  color: ${Colors.Gray600};
+  color: ${Colors.textDefault()};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
@@ -294,15 +278,10 @@ const SearchInput = styled.input`
   width: 100%;
 
   &::placeholder {
-    color: ${Colors.Gray200};
+    color: ${Colors.textDisabled()};
   }
-`;
 
-const SlashShortcut = styled.div`
-  background-color: ${Colors.Gray700};
-  border-radius: 3px;
-  color: ${Colors.Gray100};
-  font-size: 14px;
-  font-family: ${FontFamily.monospace};
-  padding: 2px 6px;
+  ::focus {
+    outline: none;
+  }
 `;

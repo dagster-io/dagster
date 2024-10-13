@@ -1,8 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Story, Meta} from '@storybook/react';
-import React from 'react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {Meta, StoryFn} from '@storybook/react';
+import {MemoryRouter} from 'react-router-dom';
 
+import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
@@ -17,11 +17,11 @@ import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'BackfillPage',
+  title: 'Instance/Backfills',
   component: BackfillPage,
 } as Meta;
 
-const Template: Story = ({mocks}) => (
+const Template: StoryFn = ({mocks}) => (
   <AnalyticsContext.Provider value={{page: () => {}} as any}>
     <MemoryRouter initialEntries={['/backfill/1']}>
       <MockedProvider mocks={mocks}>

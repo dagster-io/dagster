@@ -5,10 +5,11 @@ Revises: d3a4c9e87af3
 Create Date: 2023-04-10 19:26:23.232433
 
 """
+
 import sqlalchemy as db
 from alembic import op
 from dagster._core.storage.migration.utils import has_index, has_table
-from dagster._core.storage.sql import get_current_timestamp
+from dagster._core.storage.sql import get_sql_current_timestamp
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
@@ -32,7 +33,7 @@ def upgrade():
             db.Column("run_id", db.Text),
             db.Column("step_key", db.Text),
             db.Column("deleted", db.Boolean, nullable=False, default=False),
-            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
         )
 
     if not has_table("pending_steps"):
@@ -49,7 +50,7 @@ def upgrade():
             db.Column("step_key", db.Text),
             db.Column("priority", db.Integer),
             db.Column("assigned_timestamp", db.DateTime),
-            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
         )
         op.create_index(
             "idx_pending_steps",

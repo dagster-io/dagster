@@ -15,7 +15,14 @@ def generate_big_honkin_assets() -> List[AssetsDefinition]:
             AssetKey(f"asset_{j}") for j in random.sample(range(i), min(i, random.randint(0, 3)))
         ]
 
-        @asset(name=f"asset_{i}", deps=non_argument_deps)
+        @asset(
+            name=f"asset_{i}",
+            deps=non_argument_deps,
+            tags={
+                "test": "hi",
+                "a-super-super-duper-super-longkey": "A-SUPER-DUPER-DUPER-DUPER-DUPER-LONG-VALUE",
+            },
+        )
         def some_asset():
             pass
 

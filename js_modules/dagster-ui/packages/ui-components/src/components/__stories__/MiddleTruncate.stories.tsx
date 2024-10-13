@@ -1,9 +1,9 @@
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+import {useMemo, useRef, useState} from 'react';
 
 import {Box} from '../Box';
-import {Colors} from '../Colors';
+import {Colors} from '../Color';
 import {Icon} from '../Icon';
 import {MiddleTruncate} from '../MiddleTruncate';
 import {Slider} from '../Slider';
@@ -16,10 +16,10 @@ export default {
 } as Meta;
 
 export const Simple = () => {
-  const sizer = React.useRef<HTMLDivElement>(null);
-  const [controlledWidth, setControlledWidth] = React.useState(400);
+  const sizer = useRef<HTMLDivElement>(null);
+  const [controlledWidth, setControlledWidth] = useState(400);
 
-  const sentences = React.useMemo(() => {
+  const sentences = useMemo(() => {
     return new Array(30).fill(null).map(() => faker.random.words(20));
   }, []);
 
@@ -69,6 +69,9 @@ export const FlexboxContainerUsage = () => {
         'yoyo_multidim_other_order',
         'activity_daily_stats',
         'asset_that_supports_partition_ranges',
+        'asset_downstream',
+        'asset_weekly_root',
+        'asset_weekly',
       ].map((text) => (
         <Box key={text} style={{maxWidth: '100%'}} flex={{direction: 'row', gap: 8}}>
           <Box>
@@ -99,8 +102,8 @@ export const TagUsage = () => {
 };
 
 export const Containers = () => {
-  const sizer = React.useRef<HTMLDivElement>(null);
-  const [controlledWidth, setControlledWidth] = React.useState(400);
+  const sizer = useRef<HTMLDivElement>(null);
+  const [controlledWidth, setControlledWidth] = useState(400);
 
   const LONG_TEXT =
     'Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.';
@@ -119,7 +122,7 @@ export const Containers = () => {
         <Box flex={{direction: 'row', gap: 24, alignItems: 'center'}} margin={{vertical: 12}}>
           <Box
             flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}
-            background={Colors.Gray100}
+            background={Colors.backgroundLight()}
             padding={12}
             style={{overflow: 'hidden'}}
           >
@@ -128,7 +131,7 @@ export const Containers = () => {
             </div>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={Colors.backgroundBlue()}
               padding={4}
               style={{maxWidth: '100px'}}
             >
@@ -137,7 +140,7 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={Colors.backgroundBlue()}
               padding={4}
               style={{maxWidth: '300px'}}
             >
@@ -146,7 +149,7 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={Colors.backgroundBlue()}
               padding={4}
               style={{width: '100%'}}
             >
@@ -155,7 +158,7 @@ export const Containers = () => {
                 <MiddleTruncate text={LONG_TEXT} />
               </div>
             </Box>
-            <Box flex={{direction: 'row', gap: 4}} background={Colors.Blue100} padding={4}>
+            <Box flex={{direction: 'row', gap: 4}} background={Colors.backgroundBlue()} padding={4}>
               <Icon name="account_circle" />
               <MiddleTruncate text={LONG_TEXT} />
             </Box>
@@ -164,14 +167,14 @@ export const Containers = () => {
         <Box margin={{bottom: 12}}>
           <Box
             flex={{direction: 'column', gap: 8, alignItems: 'flex-start'}}
-            background={Colors.Gray100}
+            background={Colors.backgroundLight()}
             padding={12}
             style={{overflow: 'hidden'}}
           >
             <MiddleTruncate text={SHORT_TEXT} />
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={Colors.backgroundBlue()}
               padding={4}
               style={{maxWidth: '100px'}}
             >
@@ -180,7 +183,7 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={Colors.backgroundBlue()}
               padding={4}
               style={{maxWidth: '60px'}}
             >
@@ -189,14 +192,14 @@ export const Containers = () => {
             </Box>
             <Box
               flex={{direction: 'row', gap: 4}}
-              background={Colors.Blue100}
+              background={Colors.backgroundBlue()}
               padding={4}
               style={{maxWidth: '100%'}}
             >
               <Icon name="account_circle" />
               <MiddleTruncate text={SHORT_TEXT} />
             </Box>
-            <Box flex={{direction: 'row', gap: 4}} background={Colors.Blue100} padding={4}>
+            <Box flex={{direction: 'row', gap: 4}} background={Colors.backgroundBlue()} padding={4}>
               <Icon name="account_circle" />
               <MiddleTruncate text={SHORT_TEXT} />
             </Box>

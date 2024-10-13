@@ -1,22 +1,23 @@
 import sys
-from typing import Mapping, Union
+from typing import Mapping, Optional, Union
 
 import dagster._check as check
 import graphene
 import yaml
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import load_run_config_yaml
 from graphene.types.generic import GenericScalar
 
-from ..implementation.fetch_runs import get_runs, get_runs_count
-from ..implementation.utils import UserFacingGraphQLError
-from .errors import (
+from dagster_graphql.implementation.fetch_runs import get_run_ids, get_runs, get_runs_count
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.errors import (
     GrapheneInvalidPipelineRunsFilterError,
     GraphenePythonError,
     GrapheneRunGroupNotFoundError,
 )
-from .tags import GraphenePipelineTagAndValues
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.tags import GraphenePipelineTagAndValues
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneStepEventStatus(graphene.Enum):
@@ -52,7 +53,7 @@ class GrapheneRunGroup(graphene.ObjectType):
         name = "RunGroup"
 
     def __init__(self, root_run_id, runs):
-        from .pipelines.pipeline import GrapheneRun
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         check.str_param(root_run_id, "root_run_id")
         check.list_param(runs, "runs", GrapheneRun)
@@ -72,7 +73,7 @@ launch_pipeline_run_result_types = (GrapheneLaunchRunSuccess,)
 
 class GrapheneLaunchRunResult(graphene.Union):
     class Meta:
-        from .backfill import pipeline_execution_error_types
+        from dagster_graphql.schema.backfill import pipeline_execution_error_types
 
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
@@ -81,7 +82,7 @@ class GrapheneLaunchRunResult(graphene.Union):
 
 class GrapheneLaunchRunReexecutionResult(graphene.Union):
     class Meta:
-        from .backfill import pipeline_execution_error_types
+        from dagster_graphql.schema.backfill import pipeline_execution_error_types
 
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
@@ -122,6 +123,34 @@ class GrapheneRunsOrError(graphene.Union):
     class Meta:
         types = (GrapheneRuns, GrapheneInvalidPipelineRunsFilterError, GraphenePythonError)
         name = "RunsOrError"
+
+
+class GrapheneRunIds(graphene.ObjectType):
+    results = non_null_list(graphene.String)
+
+    class Meta:
+        name = "RunIds"
+
+    def __init__(
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ):
+        super().__init__()
+
+        self._filters = filters
+        self._cursor = cursor
+        self._limit = limit
+
+    def resolve_results(self, graphene_info: ResolveInfo):
+        return get_run_ids(graphene_info, self._filters, self._cursor, self._limit)
+
+
+class GrapheneRunIdsOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneRunIds, GrapheneInvalidPipelineRunsFilterError, GraphenePythonError)
+        name = "RunIdsOrError"
 
 
 class GrapheneRunGroupOrError(graphene.Union):

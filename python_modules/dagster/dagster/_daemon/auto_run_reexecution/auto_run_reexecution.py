@@ -3,13 +3,20 @@ from typing import Iterator, Optional, Sequence, Tuple, cast
 
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.events import EngineEventData
+from dagster._core.events import EngineEventData, RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
-from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
+from dagster._core.storage.tags import (
+    MAX_RETRIES_TAG,
+    RETRY_NUMBER_TAG,
+    RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
+    RETRY_STRATEGY_TAG,
+    RUN_FAILURE_REASON_TAG,
+)
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._daemon.utils import DaemonErrorCapture
+from dagster._utils.tags import get_boolean_tag_value
 
 DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 
@@ -56,10 +63,28 @@ def filter_runs_to_should_retry(
         else:
             return 1
 
+    default_retry_on_asset_or_op_failure: bool = instance.get_settings("run_retries").get(
+        "retry_on_asset_or_op_failure", True
+    )
+
     for run in runs:
         retry_number = get_retry_number(run)
+        retry_on_asset_or_op_failure = get_boolean_tag_value(
+            run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
+            default_value=default_retry_on_asset_or_op_failure,
+        )
         if retry_number is not None:
-            yield (run, retry_number)
+            if (
+                run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
+                and not retry_on_asset_or_op_failure
+            ):
+                instance.report_engine_event(
+                    "Not retrying run since it failed due to an asset or op failure and run retries "
+                    "are configured with retry_on_asset_or_op_failure set to false.",
+                    run,
+                )
+            else:
+                yield (run, retry_number)
 
 
 def get_reexecution_strategy(
@@ -87,14 +112,14 @@ def retry_run(
     instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}
     workspace = workspace_context.create_request_context()
-    if not failed_run.external_job_origin:
+    if not failed_run.remote_job_origin:
         instance.report_engine_event(
             "Run does not have an external job origin, unable to retry the run.",
             failed_run,
         )
         return
 
-    origin = failed_run.external_job_origin.external_repository_origin
+    origin = failed_run.remote_job_origin.repository_origin
     code_location = workspace.get_code_location(origin.code_location_origin.location_name)
     repo_name = origin.repository_name
 
@@ -108,7 +133,7 @@ def retry_run(
 
     external_repo = code_location.get_repository(repo_name)
 
-    if not external_repo.has_external_job(failed_run.job_name):
+    if not external_repo.has_job(failed_run.job_name):
         instance.report_engine_event(
             f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
             " to retry the run. It was likely renamed or deleted.",
@@ -116,7 +141,7 @@ def retry_run(
         )
         return
 
-    external_job = code_location.get_external_job(
+    remote_job = code_location.get_job(
         JobSubsetSelector(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,
@@ -133,7 +158,7 @@ def retry_run(
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
         code_location=code_location,
-        external_job=external_job,
+        remote_job=remote_job,
         strategy=strategy,
         extra_tags=tags,
         use_parent_run_tags=True,
@@ -175,7 +200,7 @@ def consume_new_runs_for_automatic_reexecution(
         try:
             retry_run(run, retry_number, workspace_process_context)
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            error_info = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
             workspace_process_context.instance.report_engine_event(
                 "Failed to retry run",
                 run,

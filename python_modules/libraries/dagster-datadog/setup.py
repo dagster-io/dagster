@@ -18,8 +18,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-datadog",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for datadog Dagster framework components.",
     url=(
@@ -30,10 +30,13 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_datadog_tests*"]),
+    include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[f"dagster{pin}", "datadog"],
     zip_safe=False,
 )

@@ -1,11 +1,7 @@
-import {Group, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Colors, Group, Spinner} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
-export const LoadingOverlay: React.FC<{
-  isLoading: boolean;
-  message: string;
-}> = ({isLoading, message}) => (
+export const LoadingOverlay = ({isLoading, message}: {isLoading: boolean; message: string}) => (
   <LoadingOverlayContainer isLoading={isLoading}>
     <Group direction="row" spacing={8} alignItems="center">
       <Spinner purpose="body-text" />
@@ -20,7 +16,7 @@ const LoadingOverlayContainer = styled.div<{isLoading: boolean}>`
   right: 0;
   top: 0;
   bottom: 0;
-  background-color: #fff;
+  background-color: ${Colors.backgroundDefault()};
   z-index: 20;
   display: ${({isLoading}) => (!isLoading ? 'none' : 'flex')};
   align-items: center;

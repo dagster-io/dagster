@@ -1,8 +1,5 @@
 import prometheus_client
-from dagster import (
-    ConfigurableResource,
-    resource,
-)
+from dagster import ConfigurableResource, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from prometheus_client.exposition import default_handler

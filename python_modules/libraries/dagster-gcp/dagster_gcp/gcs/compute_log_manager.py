@@ -1,7 +1,8 @@
 import datetime
 import json
 import os
-from typing import Any, Mapping, Optional, Sequence
+from contextlib import contextmanager
+from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import dagster._seven as seven
 from dagster import (
@@ -14,7 +15,7 @@ from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
 )
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -53,6 +54,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             and other credentials information. If this is set, ``GOOGLE_APPLICATION_CREDENTIALS`` will be ignored.
             Can be used when the private key cannot be used as a file.
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files to GCS. By default, will only upload when the capture is complete.
+        show_url_only: (Optional[bool]): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when instantiated from config.
     """
@@ -65,20 +67,20 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         prefix="dagster",
         json_credentials_envvar=None,
         upload_interval=None,
+        show_url_only=False,
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
         self._prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
+        self._client = storage.Client()
 
         if json_credentials_envvar:
             json_info_str = os.environ.get(json_credentials_envvar)
             credentials_info = json.loads(json_info_str)  # type: ignore  # (possible none)
-            self._bucket = (
-                storage.Client()
-                .from_service_account_info(credentials_info)
-                .bucket(self._bucket_name)
+            self._bucket = self._client.from_service_account_info(credentials_info).bucket(
+                self._bucket_name
             )
         else:
-            self._bucket = storage.Client().bucket(self._bucket_name)
+            self._bucket = self._client.bucket(self._bucket_name)
 
         # Check if the bucket exists
         check.invariant(self._bucket.exists())
@@ -90,6 +92,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         self._local_manager = LocalComputeLogManager(local_dir)
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
+        self._show_url_only = show_url_only
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
@@ -104,13 +107,14 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "json_credentials_envvar": Field(StringSource, is_required=False),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
+            "show_url_only": Field(bool, is_required=False, default_value=False),
         }
 
     @classmethod
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return GCSComputeLogManager(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     @property
     def local_manager(self) -> LocalComputeLogManager:
@@ -124,6 +128,9 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         parts = prefix.split("/")
         return "/".join([part for part in parts if part])
 
+    def _resolve_path_for_namespace(self, namespace):
+        return [self._prefix, "storage", *namespace]
+
     def _gcs_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
@@ -131,8 +138,25 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         filename = f"{filebase}.{extension}"
         if partial:
             filename = f"{filename}.partial"
-        paths = [self._prefix, "storage", *namespace, filename]
+        paths = [*self._resolve_path_for_namespace(namespace), filename]
         return "/".join(paths)
+
+    @contextmanager
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        with super().capture_logs(log_key) as local_context:
+            if not self._show_url_only:
+                yield local_context
+            else:
+                out_key = self._gcs_key(log_key, ComputeIOType.STDOUT)
+                err_key = self._gcs_key(log_key, ComputeIOType.STDERR)
+                gcs_base = (
+                    f"https://console.cloud.google.com/storage/browser/_details/{self._bucket_name}"
+                )
+                yield CapturedLogContext(
+                    local_context.log_key,
+                    external_stdout_url=f"{gcs_base}/{out_key}",
+                    external_stderr_url=f"{gcs_base}/{err_key}",
+                )
 
     def delete_logs(
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
@@ -205,6 +229,23 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         gcs_key = self._gcs_key(log_key, io_type, partial=partial)
         with open(path, "wb") as fileobj:
             self._bucket.blob(gcs_key).download_to_file(fileobj)
+
+    def get_log_keys_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
+    ) -> Sequence[Sequence[str]]:
+        directory = self._resolve_path_for_namespace(log_key_prefix)
+        blobs = self._client.list_blobs(self._bucket, prefix="/".join(directory))
+        results = []
+        list_key_prefix = list(log_key_prefix)
+
+        for blob in blobs:
+            full_key = blob.name
+            filename, blob_io_type = full_key.split("/")[-1].split(".")
+            if blob_io_type != IO_TYPE_EXTENSION[io_type]:
+                continue
+            results.append(list_key_prefix + [filename])
+
+        return results
 
     def on_subscribe(self, subscription):
         self._subscription_manager.add_subscription(subscription)

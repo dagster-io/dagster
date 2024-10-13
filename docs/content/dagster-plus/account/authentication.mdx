@@ -1,0 +1,85 @@
+---
+title: "Dagster+ authentication and users | Dagster Docs"
+---
+
+# Dagster+ authentication and user management
+
+In this guide, we'll cover Dagster+'s supported authentication methods and some resources for managing users in your organization.
+
+---
+
+## Authentication methods
+
+### Single Sign-on
+
+Dagster+ supports Single Sign-on (SSO) with the following providers:
+
+- **Google**. Users must be [added in Dagster+](/dagster-plus/account/managing-users#adding-users) before they'll be able to log in using their Google accounts.
+- GitHub
+
+### SAML
+
+To provide administrators with more control, Dagster+ also supports SAML authentication with the following Identity Providers (IdP):
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-azure-ad-saml-sso"
+    title="Azure Active Directory"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-google-workspace-saml-sso"
+    title="Google Workspace"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/okta/saml-sso"
+    title="Okta"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-onelogin-saml-sso"
+    title="OneLogin"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/setting-up-pingone-saml-sso"
+    title="PingOne"
+  ></ArticleListItem>
+</ArticleList>
+
+**Note**: Users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the setup guide for your IdP for more info.
+
+### SCIM provisioning
+
+The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. When enabled in Dagster+ alongside SSO, SCIM allows you to efficiently and easily manage users in your IdP and sync their information to Dagster+.
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/utilizing-scim-provisioning"
+    title="Utilizing SCIM provisioning"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/authentication/okta/scim-provisioning"
+    title="Setting up SCIM for Okta"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## User management and role-based access control
+
+Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
+
+<ArticleList>
+  <ArticleListItem
+    href="/dagster-plus/account/managing-users/managing-user-roles-permissions"
+    title="Managing user roles and permissions"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/managing-users/managing-teams"
+    title="Managing teams (Pro only)"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/dagster-plus/account/managing-users"
+    title="Managing users"
+  ></ArticleListItem>
+</ArticleList>
+
+See [Dagster+ deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference#sso-default-role) for how to configure the default role which is granted to new users that log in with SSO.

@@ -1,13 +1,12 @@
-import {gql} from '@apollo/client';
 import * as React from 'react';
-
-import {StepEventStatus} from '../graphql/types';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
 import {RunFragment} from './types/RunFragments.types';
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProvider.types';
+import {gql} from '../apollo-client';
+import {StepEventStatus} from '../graphql/types';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 export enum IStepState {
   PREPARING = 'preparing',
@@ -144,7 +143,7 @@ function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
               idx === stepStat.attempts.length - 1
                 ? stepStatusToStepState(stepStat.status)
                 : IStepState.RETRY_REQUESTED,
-          } as IStepAttempt),
+          }) as IStepAttempt,
       ),
 
       // accumulated metadata
@@ -368,7 +367,7 @@ interface IRunMetadataProviderProps {
   children: (metadata: IRunMetadataDict) => React.ReactElement<any>;
 }
 
-export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, children}) => {
+export const RunMetadataProvider = ({logs, children}: IRunMetadataProviderProps) => {
   const run = React.useContext(RunContext);
   const runMetadata = React.useMemo(() => extractMetadataFromRun(run), [run]);
   const metadata = React.useMemo(

@@ -39,7 +39,6 @@ from dagster import multi_asset, AssetOut
 
 @multi_asset(outs={"training_data": AssetOut(), "test_data": AssetOut()})
 def training_test_data(hackernews_stories):
-    hackernews_stories = hackernews_stories
     X = hackernews_stories.title
     y = hackernews_stories.descendants
     # Split the dataset to reserve 20% of records as the test set
@@ -74,7 +73,6 @@ def transformed_test_data(test_data, tfidf_vectorizer):
     X_test, y_test = test_data
     # Use the fitted tokenizer to transform the test dataset
     transformed_X_test = tfidf_vectorizer.transform(X_test)
-    transformed_y_test = np.array(y_test)
     y_test = y_test.fillna(0)
     transformed_y_test = np.array(y_test)
     return transformed_X_test, transformed_y_test

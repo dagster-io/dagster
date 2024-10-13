@@ -1,11 +1,11 @@
 from dagster_aws.cloudwatch.loggers import cloudwatch_logger
 
-from dagster import colored_console_logger, graph, op, repository
+from dagster import OpExecutionContext, colored_console_logger, graph, op, repository
 
 
 # start_logging_mode_marker_0
 @op
-def log_op(context):
+def log_op(context: OpExecutionContext):
     context.log.info("Hello, world!")
 
 

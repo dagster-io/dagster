@@ -4,25 +4,30 @@ from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
-from dagster._core.host_representation import RepresentedJob
-from dagster._core.host_representation.external import ExternalJob
-from dagster._core.host_representation.historical import HistoricalJob
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
+from dagster._core.remote_representation import RepresentedJob
+from dagster._core.remote_representation.external import RemoteJob
+from dagster._core.remote_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.dagster_types import (
+    GrapheneDagsterType,
+    GrapheneDagsterTypeUnion,
+    to_dagster_type,
+)
+from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-
-from .config_types import GrapheneConfigTypeField
-from .dagster_types import GrapheneDagsterType, GrapheneDagsterTypeUnion, to_dagster_type
-from .errors import GrapheneError
-from .metadata import GrapheneMetadataItemDefinition
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry, GrapheneMetadataItemDefinition
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from .asset_graph import GrapheneAssetNode
+    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
 
 class _ArgNotPresentSentinel:
@@ -30,7 +35,6 @@ class _ArgNotPresentSentinel:
 
 
 class GrapheneInputDefinition(graphene.ObjectType):
-    solid_definition = graphene.NonNull(lambda: GrapheneSolidDefinition)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(GrapheneDagsterType)
@@ -45,8 +49,8 @@ class GrapheneInputDefinition(graphene.ObjectType):
         )
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(input_def_name, "input_def_name")
-        solid_def_snap = self._represented_job.get_node_def_snap(solid_def_name)
-        self._input_def_snap = solid_def_snap.get_input_snap(input_def_name)
+        node_def_snap = self._represented_job.get_node_def_snap(solid_def_name)
+        self._input_def_snap = node_def_snap.get_input_snap(input_def_name)
         super().__init__(
             name=self._input_def_snap.name,
             description=self._input_def_snap.description,
@@ -57,17 +61,11 @@ class GrapheneInputDefinition(graphene.ObjectType):
             self._represented_job.job_snapshot, self._input_def_snap.dagster_type_key
         )
 
-    def resolve_solid_definition(
-        self, _graphene_info: ResolveInfo
-    ) -> Union["GrapheneSolidDefinition", "GrapheneCompositeSolidDefinition"]:
-        return build_solid_definition(self._represented_job, self._solid_def_snap.name)
-
     def resolve_metadata_entries(self, _graphene_info):
         return list(iterate_metadata_entries(self._input_def_snap.metadata))
 
 
 class GrapheneOutputDefinition(graphene.ObjectType):
-    solid_definition = graphene.NonNull(lambda: GrapheneSolidDefinition)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     is_dynamic = graphene.Boolean()
@@ -90,8 +88,8 @@ class GrapheneOutputDefinition(graphene.ObjectType):
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(output_def_name, "output_def_name")
 
-        self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        self._output_def_snap = self._solid_def_snap.get_output_snap(output_def_name)
+        node_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
+        self._output_def_snap = node_def_snap.get_output_snap(output_def_name)
 
         super().__init__(
             name=self._output_def_snap.name,
@@ -104,11 +102,6 @@ class GrapheneOutputDefinition(graphene.ObjectType):
             self._represented_pipeline.job_snapshot,
             self._output_def_snap.dagster_type_key,
         )
-
-    def resolve_solid_definition(
-        self, _graphene_info
-    ) -> Union["GrapheneSolidDefinition", "GrapheneCompositeSolidDefinition"]:
-        return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
         return list(iterate_metadata_entries(self._output_def_snap.metadata))
@@ -395,10 +388,18 @@ class ISolidDefinitionMixin:
         self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
 
     def resolve_metadata(self, _graphene_info):
-        return [
-            GrapheneMetadataItemDefinition(key=item[0], value=item[1])
-            for item in self._solid_def_snap.tags.items()
-        ]
+        metadata_items = []
+        for key, val in self._solid_def_snap.tags.items():
+            metadata_items.append(GrapheneMetadataItemDefinition(key=key, value=val))
+            # Backcompat for legacy system tags. Older code servers may report the compute kind under
+            # the legacy tag. Code servers running versions after deprecation of the legacy tag may
+            # have both the legacy and current tag set. We can't patch this at the Snap level
+            # because the host process will complain about mismatched snap IDs
+            if key == LEGACY_COMPUTE_KIND_TAG and COMPUTE_KIND_TAG not in self._solid_def_snap.tags:
+                metadata_items.append(
+                    GrapheneMetadataItemDefinition(key=COMPUTE_KIND_TAG, value=val)
+                )
+        return metadata_items
 
     @property
     def solid_def_name(self) -> str:
@@ -427,23 +428,50 @@ class ISolidDefinitionMixin:
         # NOTE: This is a temporary hack. We really should prob be resolving solids against the repo
         # rather than pipeline, that way we would not have to refetch the repo here here in order to
         # access the asset nodes.
-        from .asset_graph import GrapheneAssetNode
+        from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
         # This is a workaround for the fact that asset info is not persisted in pipeline snapshots.
         if isinstance(self._represented_pipeline, HistoricalJob):
             return []
         else:
-            assert isinstance(self._represented_pipeline, ExternalJob)
+            assert isinstance(self._represented_pipeline, RemoteJob)
             repo_handle = self._represented_pipeline.repository_handle
             origin = repo_handle.code_location_origin
             location = graphene_info.context.get_code_location(origin.location_name)
             ext_repo = location.get_repository(repo_handle.repository_name)
-            nodes = [
-                node
-                for node in ext_repo.get_external_asset_nodes()
-                if node.op_name == self.solid_def_name
+            remote_nodes = [
+                remote_node
+                for remote_node in ext_repo.asset_graph.asset_nodes
+                if (
+                    (remote_node.priority_node_snap.node_definition_name == self.solid_def_name)
+                    or (
+                        remote_node.priority_node_snap.graph_name
+                        and remote_node.priority_node_snap.graph_name == self.solid_def_name
+                    )
+                )
             ]
-            return [GrapheneAssetNode(location, ext_repo, node) for node in nodes]
+            asset_checks_loader = AssetChecksLoader(
+                context=graphene_info.context, asset_keys=[node.key for node in remote_nodes]
+            )
+
+            base_deployment_context = graphene_info.context.get_base_deployment_context()
+
+            return [
+                GrapheneAssetNode(
+                    remote_node=remote_node,
+                    asset_checks_loader=asset_checks_loader,
+                    # base_deployment_context will be None if we are not in a branch deployment
+                    asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
+                        code_location_name=location.name,
+                        repository_name=ext_repo.name,
+                        branch_workspace=graphene_info.context,
+                        base_workspace=base_deployment_context,
+                    )
+                    if base_deployment_context is not None
+                    else None,
+                )
+                for remote_node in remote_nodes
+            ]
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
@@ -722,7 +750,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
             handles = {
                 key: handle
                 for key, handle in handles.items()
-                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+                if handle.parent and str(handle.parent.handleID) == parentHandleID
             }
 
         return [handles[key] for key in sorted(handles)]

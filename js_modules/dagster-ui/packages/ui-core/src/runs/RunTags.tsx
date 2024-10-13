@@ -1,12 +1,12 @@
 import {Box} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo, useMemo} from 'react';
 
+import {DagsterTag, RunTag, TagType} from './RunTag';
+import {RunFilterToken} from './RunsFilterInput';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
-
-import {DagsterTag, RunTag, TagAction, TagType} from './RunTag';
-import {RunFilterToken} from './RunsFilterInput';
+import {TagAction} from '../ui/TagActions';
 
 // Sort these tags to the start of the list.
 const priorityTags = ['mode', DagsterTag.Backfill as string, DagsterTag.Partition as string];
@@ -20,15 +20,17 @@ const canAddTagToFilter = (key: string) => {
   return key !== DagsterTag.SolidSelection && key !== DagsterTag.OpSelection && key !== 'mode';
 };
 
-export const RunTags: React.FC<{
+interface Props {
   tags: TagType[];
   mode?: string | null;
   onAddTag?: (token: RunFilterToken) => void;
   onToggleTagPin?: (key: string) => void;
-}> = React.memo(({tags, onAddTag, onToggleTagPin, mode}) => {
+}
+
+export const useCopyAction = () => {
   const copy = useCopyToClipboard();
 
-  const copyAction = React.useMemo(
+  return useMemo(
     () => ({
       label: 'Copy tag',
       onClick: async (tag: TagType) => {
@@ -38,8 +40,13 @@ export const RunTags: React.FC<{
     }),
     [copy],
   );
+};
 
-  const addToFilterAction = React.useMemo(
+export const RunTags = memo((props: Props) => {
+  const {tags, onAddTag, onToggleTagPin, mode} = props;
+  const copyAction = useCopyAction();
+
+  const addToFilterAction = useMemo(
     () =>
       onAddTag
         ? {
@@ -68,7 +75,7 @@ export const RunTags: React.FC<{
     return list.filter((item) => !!item);
   };
 
-  const displayedTags = React.useMemo(() => {
+  const displayedTags = useMemo(() => {
     const priority = [];
     const others = [];
     const copiedTags: TagType[] = tags.map(({key, value, pinned, link}) => ({

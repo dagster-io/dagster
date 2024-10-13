@@ -16,13 +16,19 @@ from typing import (
 from typing_extensions import TypeGuard
 
 import dagster._check as check
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.execution.plan.handle import (
+    ResolvedFromDynamicStepHandle,
+    StepHandle,
+    UnresolvedStepHandle,
+)
+from dagster._core.execution.plan.inputs import (
+    StepInput,
+    UnresolvedCollectStepInput,
+    UnresolvedMappedStepInput,
+)
+from dagster._core.execution.plan.outputs import StepOutput
 from dagster._serdes.serdes import EnumSerializer, whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
-
-from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
-from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
-from .outputs import StepOutput
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import NodeHandle
@@ -45,7 +51,7 @@ class StepKind(Enum):
 
 
 def is_executable_step(
-    step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"]
+    step: Union["ExecutionStep", "UnresolvedMappedExecutionStep"],
 ) -> TypeGuard["ExecutionStep"]:
     # This function is set up defensively to ensure new step types handled properly
     if isinstance(step, ExecutionStep):
@@ -154,7 +160,7 @@ class ExecutionStep(
                 so.name: so
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
-            tags=validate_tags(check.opt_mapping_param(tags, "tags", key_type=str)),
+            tags=tags or {},
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
@@ -308,7 +314,7 @@ class UnresolvedMappedExecutionStep(
         # this function will be removed in moving to supporting being downstream of multiple dynamic outputs
         keys = self.resolved_by_step_keys
         check.invariant(len(keys) == 1, "Unresolved step expects one and only one dynamic step key")
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_output_name(self) -> str:
@@ -322,7 +328,7 @@ class UnresolvedMappedExecutionStep(
             len(keys) == 1, "Unresolved step expects one and only one dynamic output name"
         )
 
-        return list(keys)[0]
+        return next(iter(keys))
 
     @property
     def resolved_by_step_keys(self) -> FrozenSet[str]:

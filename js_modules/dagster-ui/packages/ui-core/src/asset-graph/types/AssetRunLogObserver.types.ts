@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type AssetLiveRunLogsSubscriptionVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
+  runId: Types.Scalars['ID']['input'];
 }>;
 
 export type AssetLiveRunLogsSubscription = {
@@ -16,7 +16,13 @@ export type AssetLiveRunLogsSubscription = {
           | {__typename: 'AlertFailureEvent'}
           | {__typename: 'AlertStartEvent'}
           | {__typename: 'AlertSuccessEvent'}
-          | {__typename: 'AssetCheckEvaluationEvent'}
+          | {
+              __typename: 'AssetCheckEvaluationEvent';
+              evaluation: {
+                __typename: 'AssetCheckEvaluation';
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+              };
+            }
           | {__typename: 'AssetCheckEvaluationPlannedEvent'}
           | {
               __typename: 'AssetMaterializationPlannedEvent';
@@ -64,3 +70,5 @@ export type AssetLiveRunLogsSubscription = {
         >;
       };
 };
+
+export const AssetLiveRunLogsSubscriptionVersion = '4b78f566975bdd949f6d1fde8de10b6db89a2db3fe678cc5033fedfc16f0ba12';

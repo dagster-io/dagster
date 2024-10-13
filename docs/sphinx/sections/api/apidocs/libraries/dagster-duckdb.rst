@@ -1,12 +1,12 @@
 DuckDB (dagster-duckdb)
 -----------------------------
 
-This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ database.
+This library provides an integration with the `DuckDB <https://duckdb.org/>`_ database.
 
 Related Guides:
 
-* `Using Dagster with DuckDB guide </integrations/duckdb>`_
-* `DuckDB I/O manager reference </integrations/duckdb/reference>`_
+* `Using Dagster with DuckDB guide <https://docs.dagster.io/integrations/duckdb>`_
+* `DuckDB I/O manager reference <https://docs.dagster.io/integrations/duckdb/reference>`_
 
 
 .. currentmodule:: dagster_duckdb

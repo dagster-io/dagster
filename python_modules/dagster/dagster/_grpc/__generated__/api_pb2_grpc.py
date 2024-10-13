@@ -100,10 +100,20 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.StreamingChunkEvent.FromString,
         )
+        self.SyncExternalScheduleExecution = channel.unary_unary(
+            "/api.DagsterApi/SyncExternalScheduleExecution",
+            request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalScheduleExecutionReply.FromString,
+        )
         self.ExternalSensorExecution = channel.unary_stream(
             "/api.DagsterApi/ExternalSensorExecution",
             request_serializer=api__pb2.ExternalSensorExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.StreamingChunkEvent.FromString,
+        )
+        self.SyncExternalSensorExecution = channel.unary_unary(
+            "/api.DagsterApi/SyncExternalSensorExecution",
+            request_serializer=api__pb2.ExternalSensorExecutionRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalSensorExecutionReply.FromString,
         )
         self.ShutdownServer = channel.unary_unary(
             "/api.DagsterApi/ShutdownServer",
@@ -241,7 +251,19 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def SyncExternalScheduleExecution(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
     def ExternalSensorExecution(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def SyncExternalSensorExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
@@ -372,10 +394,20 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
             response_serializer=api__pb2.StreamingChunkEvent.SerializeToString,
         ),
+        "SyncExternalScheduleExecution": grpc.unary_unary_rpc_method_handler(
+            servicer.SyncExternalScheduleExecution,
+            request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
+            response_serializer=api__pb2.ExternalScheduleExecutionReply.SerializeToString,
+        ),
         "ExternalSensorExecution": grpc.unary_stream_rpc_method_handler(
             servicer.ExternalSensorExecution,
             request_deserializer=api__pb2.ExternalSensorExecutionRequest.FromString,
             response_serializer=api__pb2.StreamingChunkEvent.SerializeToString,
+        ),
+        "SyncExternalSensorExecution": grpc.unary_unary_rpc_method_handler(
+            servicer.SyncExternalSensorExecution,
+            request_deserializer=api__pb2.ExternalSensorExecutionRequest.FromString,
+            response_serializer=api__pb2.ExternalSensorExecutionReply.SerializeToString,
         ),
         "ShutdownServer": grpc.unary_unary_rpc_method_handler(
             servicer.ShutdownServer,
@@ -886,6 +918,35 @@ class DagsterApi(object):
         )
 
     @staticmethod
+    def SyncExternalScheduleExecution(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/SyncExternalScheduleExecution",
+            api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
+            api__pb2.ExternalScheduleExecutionReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
     def ExternalSensorExecution(
         request,
         target,
@@ -904,6 +965,35 @@ class DagsterApi(object):
             "/api.DagsterApi/ExternalSensorExecution",
             api__pb2.ExternalSensorExecutionRequest.SerializeToString,
             api__pb2.StreamingChunkEvent.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def SyncExternalSensorExecution(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/SyncExternalSensorExecution",
+            api__pb2.ExternalSensorExecutionRequest.SerializeToString,
+            api__pb2.ExternalSensorExecutionReply.FromString,
             options,
             channel_credentials,
             insecure,

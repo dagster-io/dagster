@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import pytest
 from dagster import (
@@ -11,7 +12,8 @@ from dagster import (
     static_partitioned_config,
 )
 from dagster._core.definitions.partition import partitioned_config
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._core.definitions.run_config import RunConfig
+from dagster._time import create_datetime
 
 
 @op
@@ -22,12 +24,18 @@ def my_op(context):
 RUN_CONFIG = {"ops": {"my_op": {"config": "hello"}}}
 
 
-def test_static_partitioned_job():
+@pytest.mark.parametrize(
+    "config_val", [RUN_CONFIG, RunConfig(**RUN_CONFIG)], ids=["dict", "RunConfig"]
+)
+def test_static_partitioned_job(config_val: Any):
     @static_partitioned_config(["blah"], tags_for_partition_key_fn=lambda key: {"foo": key})
     def my_static_partitioned_config(_partition_key: str):
-        return RUN_CONFIG
+        return config_val
 
-    assert my_static_partitioned_config("") == RUN_CONFIG
+    assert (
+        my_static_partitioned_config.get_run_config_for_partition_key("")["ops"]
+        == RUN_CONFIG["ops"]
+    )
 
     @job(config=my_static_partitioned_config)
     def my_job():
@@ -58,7 +66,7 @@ def test_time_based_partitioned_job():
     def my_job():
         my_op()
 
-    freeze_datetime = create_pendulum_time(
+    freeze_datetime = create_datetime(
         year=2021, month=5, day=6, hour=23, minute=59, second=59, tz="UTC"
     )
     partition_keys = my_daily_partitioned_config.get_partition_keys(freeze_datetime)

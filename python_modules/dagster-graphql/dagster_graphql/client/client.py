@@ -4,22 +4,24 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import requests.exceptions
 from dagster import DagsterRunStatus
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
-from dagster._core.definitions.utils import validate_tags
+from dagster._utils.tags import normalize_tags
 from gql import Client, gql
 from gql.transport import Transport
+from gql.transport.exceptions import TransportServerError
 from gql.transport.requests import RequestsHTTPTransport
 
-from .client_queries import (
+from dagster_graphql.client.client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
     CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
     GET_PIPELINE_RUN_STATUS_QUERY,
     RELOAD_REPOSITORY_LOCATION_MUTATION,
     SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
     TERMINATE_RUN_JOB_MUTATION,
+    TERMINATE_RUNS_JOB_MUTATION,
 )
-from .utils import (
+from dagster_graphql.client.utils import (
     DagsterGraphQLClientError,
     InvalidOutputErrorInfo,
     JobInfo,
@@ -30,7 +32,6 @@ from .utils import (
 )
 
 
-@experimental
 class DagsterGraphQLClient:
     """Official Dagster Python Client for GraphQL.
 
@@ -103,6 +104,12 @@ class DagsterGraphQLClient:
     def _execute(self, query: str, variables: Optional[Dict[str, Any]] = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
+        except TransportServerError as exc:
+            raise DagsterGraphQLClientError(
+                f"Server error with code {exc.code}\nand message {exc}\n"
+                f"occured during execution of query \n{query}\n with variables"
+                f" \n{variables}\n"
+            ) from exc
         except Exception as exc:  # catch generic Exception from the gql client
             raise DagsterGraphQLClientError(
                 f"Exception occured during execution of query \n{query}\n with variables"
@@ -144,7 +151,7 @@ class DagsterGraphQLClient:
             "Either a mode and run_config or a preset must be specified in order to "
             f"submit the pipeline {pipeline_name} for execution",
         )
-        tags = validate_tags(tags)
+        tags = normalize_tags(tags)
 
         pipeline_or_job = "Job" if is_using_job_op_graph_apis else "Pipeline"
 
@@ -212,7 +219,7 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
-            # a PipelineNotFoundError, a RunConflict, or a PythonError
+            # a PipelineNotFoundError, a RunConflict, an UnauthorizedError or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
     @public
@@ -221,7 +228,7 @@ class DagsterGraphQLClient:
         job_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = None,
         tags: Optional[Dict[str, Any]] = None,
         op_selection: Optional[Sequence[str]] = None,
     ) -> str:
@@ -235,7 +242,7 @@ class DagsterGraphQLClient:
             repository_name (Optional[str]): The name of the repository where the job is located.
                 If omitted, the client will try to infer the repository from the available options
                 on the Dagster deployment. Defaults to None.
-            run_config (Optional[Dict[str, Any]]): This is the run config to execute the job with.
+            run_config (Optional[Union[RunConfig, Mapping[str, Any]]]): This is the run config to execute the job with.
                 Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
                 an arbitrary object for run config. However, it must conform to the constraints of the config
                 schema for this job. If it does not, the client will throw a DagsterGraphQLClientError with a message of
@@ -336,6 +343,7 @@ class DagsterGraphQLClient:
                 message=query_result["message"],
             )
 
+    @deprecated(breaking_version="2.0")
     @public
     def shutdown_repository_location(
         self, repository_location_name: str
@@ -396,3 +404,39 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError("RunNotFoundError", f"Run Id {run_id} not found")
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
+
+    def terminate_runs(self, run_ids: List[str]):
+        """Terminates a list of pipeline runs. This method it is useful when you would like to stop a list of pipeline runs
+        based on a external event.
+
+        Args:
+            run_ids (List[str]): The list run ids of the pipeline runs to terminate
+        """
+        check.list_param(run_ids, "run_ids", of_type=str)
+
+        res_data: Dict[str, Dict[str, Any]] = self._execute(
+            TERMINATE_RUNS_JOB_MUTATION,
+            {"runIds": run_ids},
+        )
+
+        query_result: Dict[str, Any] = res_data["terminateRuns"]
+        run_query_result: List[Dict[str, Any]] = query_result["terminateRunResults"]
+
+        errors = []
+        for run_result in run_query_result:
+            if run_result["__typename"] == "TerminateRunSuccess":
+                continue
+            elif run_result["__typename"] == "RunNotFoundError":
+                errors.append(("RunNotFoundError", run_result["message"]))
+            else:
+                errors.append((run_result["__typename"], run_result["message"]))
+
+        if errors:
+            if len(errors) < len(run_ids):
+                raise DagsterGraphQLClientError(
+                    "TerminateRunsError", f"Some runs could not be terminated: {errors}"
+                )
+            elif len(errors) == len(run_ids):
+                raise DagsterGraphQLClientError(
+                    "TerminateRunsError", f"All run terminations failed: {errors}"
+                )

@@ -31,6 +31,20 @@ export type AssetGraphSidebarQuery = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -40,6 +54,14 @@ export type AssetGraphSidebarQuery = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -82,6 +104,20 @@ export type AssetGraphSidebarQuery = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -101,6 +137,7 @@ export type AssetGraphSidebarQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -123,6 +160,7 @@ export type AssetGraphSidebarQuery = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -130,6 +168,12 @@ export type AssetGraphSidebarQuery = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -1272,3 +1316,5 @@ export type AssetGraphSidebarQuery = {
         }>;
       };
 };
+
+export const AssetGraphSidebarQueryVersion = 'db12802c12e34ed859e599ec42b780d87f9749397e933ec6ce5d609bf8f310d6';

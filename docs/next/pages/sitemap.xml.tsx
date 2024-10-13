@@ -1,6 +1,6 @@
 import {latestAllPaths} from 'util/navigation';
 
-const toUrl = (host, route) => `<url><loc>http://${host}${route}</loc></url>`;
+const toUrl = (host, route) => `<url><loc>https://${host}${route}</loc></url>`;
 
 const createSitemap = (host, routes) =>
   `<?xml version="1.0" encoding="UTF-8"?>

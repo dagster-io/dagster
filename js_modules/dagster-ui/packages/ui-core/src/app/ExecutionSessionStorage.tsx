@@ -1,7 +1,9 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 
-import {AssetKeyInput} from '../graphql/types';
+import {AppContext} from './AppContext';
+import {AssetCheck, AssetKeyInput} from '../graphql/types';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
   LaunchpadSessionPartitionSetsFragment,
@@ -9,8 +11,6 @@ import {
 } from '../launchpad/types/LaunchpadAllowedRoot.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-
-import {AppContext} from './AppContext';
 
 // Internal LocalStorage data format and mutation helpers
 
@@ -31,8 +31,22 @@ export interface PipelineRunTag {
 }
 
 export type SessionBase =
-  | {presetName: string; tags: PipelineRunTag[] | null}
-  | {partitionsSetName: string; partitionName: string | null; tags: PipelineRunTag[] | null};
+  | {
+      type: 'preset';
+      presetName: string;
+      tags: PipelineRunTag[] | null;
+    }
+  | {
+      type: 'asset-job-partition';
+      partitionName: string | null;
+      tags: PipelineRunTag[] | null;
+    }
+  | {
+      type: 'op-job-partition-set';
+      partitionsSetName: string;
+      partitionName: string | null;
+      tags: PipelineRunTag[] | null;
+    };
 
 export interface IExecutionSession {
   key: string;
@@ -42,6 +56,9 @@ export interface IExecutionSession {
   mode: string | null;
   needsRefresh: boolean;
   assetSelection: {assetKey: AssetKeyInput; opNames: string[]}[] | null;
+  // Nullable for backwards compatibility
+  assetChecksAvailable?: Pick<AssetCheck, 'name' | 'canExecuteIndividually' | 'assetKey'>[];
+  includeSeparatelyExecutableChecks: boolean;
   solidSelection: string[] | null;
   solidSelectionQuery: string | null;
   flattenGraphs: boolean;
@@ -94,12 +111,18 @@ export const createSingleSession = (initial: IExecutionSessionChanges = {}, key?
     base: null,
     needsRefresh: false,
     assetSelection: null,
+    assetChecksAvailable: [],
+    includeSeparatelyExecutableChecks: true,
     solidSelection: null,
     solidSelectionQuery: '*',
     flattenGraphs: false,
     tags: null,
     runId: undefined,
+
+    // This isn't really safe, since it could spread in `undefined` values that
+    // override the default values above.
     ...initial,
+
     configChangedSinceRun: false,
     key: key || `s${Date.now()}`,
   };
@@ -121,21 +144,23 @@ export function applyCreateSession(
   };
 }
 
-type StorageHook = [IStorageData, (data: IStorageData) => void];
+type StorageHook = [IStorageData, (data: React.SetStateAction<IStorageData>) => void];
 
-const buildValidator = (initial: Partial<IExecutionSession> = {}) => (json: any): IStorageData => {
-  let data: IStorageData = Object.assign({sessions: {}, current: ''}, json);
+const buildValidator =
+  (initial: Partial<IExecutionSession> = {}) =>
+  (json: any): IStorageData => {
+    let data: IStorageData = Object.assign({sessions: {}, current: ''}, json);
 
-  if (Object.keys(data.sessions).length === 0) {
-    data = applyCreateSession(data, initial);
-  }
+    if (Object.keys(data.sessions).length === 0) {
+      data = applyCreateSession(data, initial);
+    }
 
-  if (!data.sessions[data.current]) {
-    data.current = Object.keys(data.sessions)[0]!;
-  }
+    if (!data.sessions[data.current]) {
+      data.current = Object.keys(data.sessions)[0]!;
+    }
 
-  return data;
-};
+    return data;
+  };
 
 const makeKey = (basePath: string, repoAddress: RepoAddress, pipelineOrJobName: string) =>
   `dagster.v2.${basePath}-${repoAddress.location}-${repoAddress.name}-${pipelineOrJobName}`;
@@ -158,7 +183,10 @@ export function useExecutionSessionStorage(
   );
 
   const [state, setState] = useStateWithStorage(key, validator);
-  const wrappedSetState = writeLaunchpadSessionToStorage(setState);
+  const wrappedSetState = useSetStateUpdateCallback(
+    state,
+    writeLaunchpadSessionToStorage(setState),
+  );
 
   return [state, wrappedSetState];
 }
@@ -216,7 +244,7 @@ export const useInitialDataForMode = (
   partitionSets: LaunchpadSessionPartitionSetsFragment,
   rootDefaultYaml: string | undefined,
   shouldPopulateWithDefaults: boolean,
-) => {
+): {base?: SessionBase; runConfigYaml?: string} => {
   const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;
 
@@ -228,14 +256,23 @@ export const useInitialDataForMode = (
     // `default` preset
     if (presetsForMode.length === 1 && (isAssetJob || partitionSetsForMode.length === 0)) {
       return {
-        base: {presetName: presetsForMode[0]!.name, tags: null},
+        base: {
+          type: 'preset',
+          presetName: presetsForMode[0]!.name,
+          tags: null,
+        },
         runConfigYaml: presetsForMode[0]!.runConfigYaml,
       };
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
       return {
-        base: {partitionsSetName: partitionSetsForMode[0]!.name, partitionName: null, tags: null},
+        base: {
+          type: 'op-job-partition-set',
+          partitionsSetName: partitionSetsForMode[0]!.name,
+          partitionName: null,
+          tags: null,
+        },
         runConfigYaml: rootDefaultYaml,
       };
     }
@@ -308,37 +345,36 @@ export const MAX_SESSION_WRITE_ATTEMPTS = 10;
  * user has too much data already in localStorage, clear out old sessions until the
  * write is successful or we run out of retries.
  */
-export const writeLaunchpadSessionToStorage = (
-  setState: React.Dispatch<React.SetStateAction<IStorageData | undefined>>,
-) => (data: IStorageData) => {
-  const tryWrite = (data: IStorageData) => {
-    try {
-      setState(data);
-      return true;
-    } catch (e) {
-      // The data could not be written to localStorage. This is probably due to
-      // a QuotaExceededError, but since different browsers use slightly different
-      // objects for this, we don't try to get clever detecting it.
-      return false;
+export const writeLaunchpadSessionToStorage =
+  (setState: React.Dispatch<React.SetStateAction<IStorageData>>) => (data: IStorageData) => {
+    const tryWrite = (data: IStorageData) => {
+      try {
+        setState(data);
+        return true;
+      } catch (e) {
+        // The data could not be written to localStorage. This is probably due to
+        // a QuotaExceededError, but since different browsers use slightly different
+        // objects for this, we don't try to get clever detecting it.
+        return false;
+      }
+    };
+
+    const getInitiallyStoredSessions = memoize(() => allStoredSessions());
+
+    // Track the number of attempts at writing this session to localStorage so that
+    // we eventually give up and don't loop endlessly.
+    let attempts = 1;
+
+    // Attempt to write the session to storage. If an error occurs, delete the oldest
+    // session and try again.
+    while (!tryWrite(data) && attempts < MAX_SESSION_WRITE_ATTEMPTS) {
+      attempts++;
+
+      // Remove the oldest session and try again.
+      const toRemove = getInitiallyStoredSessions().shift();
+      if (toRemove) {
+        const [jobKey, sessionID] = toRemove;
+        removeSession(jobKey, sessionID);
+      }
     }
   };
-
-  const getInitiallyStoredSessions = memoize(() => allStoredSessions());
-
-  // Track the number of attempts at writing this session to localStorage so that
-  // we eventually give up and don't loop endlessly.
-  let attempts = 1;
-
-  // Attempt to write the session to storage. If an error occurs, delete the oldest
-  // session and try again.
-  while (!tryWrite(data) && attempts < MAX_SESSION_WRITE_ATTEMPTS) {
-    attempts++;
-
-    // Remove the oldest session and try again.
-    const toRemove = getInitiallyStoredSessions().shift();
-    if (toRemove) {
-      const [jobKey, sessionID] = toRemove;
-      removeSession(jobKey, sessionID);
-    }
-  }
-};

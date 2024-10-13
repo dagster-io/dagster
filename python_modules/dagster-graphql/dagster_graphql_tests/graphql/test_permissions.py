@@ -1,3 +1,4 @@
+import functools
 from unittest.mock import Mock
 
 import dagster._check as check
@@ -12,13 +13,16 @@ from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     assert_permission,
     assert_permission_for_location,
+    capture_error,
     check_permission,
     require_permission_check,
 )
 from dagster_graphql.schema.util import ResolveInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 PERMISSIONS_QUERY = """
     query PermissionsQuery {
@@ -31,19 +35,32 @@ PERMISSIONS_QUERY = """
 """
 
 WORKSPACE_PERMISSIONS_QUERY = """
-    query WorkspacePermissionsQuery {
-      workspaceOrError {
-        ... on Workspace {
-          locationEntries {
-            permissions {
-              permission
-              value
-              disabledReason
-            }
-          }
+query WorkspacePermissionsQuery {
+  # faster loading option due to avoiding full workspace load
+  locationStatusesOrError {
+    __typename
+    ... on WorkspaceLocationStatusEntries {
+      entries {
+        permissions {
+          permission
+          value
+          disabledReason
         }
       }
     }
+  }
+  workspaceOrError {
+    ... on Workspace {
+      locationEntries {
+        permissions {
+          permission
+          value
+          disabledReason
+        }
+      }
+    }
+  }
+}
 """
 
 
@@ -87,6 +104,27 @@ class EndpointWithRequiredPermissionCheck:
     @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
     def mutate(self, graphene_info, **_kwargs):
         assert_permission(graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION)
+
+
+def decorator_with_attribute(fn):
+    @functools.wraps(fn)
+    def _fn(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    fn.my_attribute = True
+
+    return _fn
+
+
+def test_decorators_wrap_attributes():
+    class EndpointWithAttributeSet:
+        @capture_error
+        @check_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
+        @decorator_with_attribute
+        def mutate(self, graphene_info, **_kwargs):
+            pass
+
+    assert EndpointWithAttributeSet.mutate.__wrapped__.__wrapped__.__wrapped__.my_attribute is True
 
 
 class EndpointMissingRequiredPermissionCheck:
@@ -251,8 +289,15 @@ class TestWorkspacePermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
 
         assert result.data["workspaceOrError"]["locationEntries"]
+        assert result.data["locationStatusesOrError"]["entries"]
 
-        for location in result.data["workspaceOrError"]["locationEntries"]:
+        # ensure both old and new ways to fetch work and return same data
+        assert (
+            result.data["locationStatusesOrError"]["entries"]
+            == result.data["workspaceOrError"]["locationEntries"]
+        )
+
+        for location in result.data["locationStatusesOrError"]["entries"]:
             permissions_map = {
                 permission["permission"]: permission["value"]
                 for permission in location["permissions"]

@@ -112,12 +112,10 @@ def test_compute_logical_data_version_unknown_dep_version():
 
 def test_get_latest_materialization_code_versions():
     @asset(code_version="abc")
-    def has_code_version():
-        ...
+    def has_code_version(): ...
 
     @asset
-    def has_no_code_version():
-        ...
+    def has_no_code_version(): ...
 
     instance = DagsterInstance.ephemeral()
     materialize([has_code_version, has_no_code_version], instance=instance)

@@ -1,8 +1,9 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {COMMON_COLLATOR} from '../../app/Util';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props<A> {
@@ -32,7 +33,11 @@ export function VirtualizedAssetPartitionListForDialog<A>({
 
   const allRows = React.useMemo(() => {
     const rows = [] as Row<A>[];
-    Object.entries(assetKeysByPartition).forEach(([partitionName, assetKeys]) => {
+    const partitionNames = Object.keys(assetKeysByPartition).sort((a, b) =>
+      COMMON_COLLATOR.compare(a, b),
+    );
+    partitionNames.forEach((partitionName) => {
+      const assetKeys = assetKeysByPartition[partitionName]!;
       const expanded = expandedPartitions.has(partitionName);
       rows.push({type: 'partition-name', partitionName, expanded, assetCount: assetKeys.length});
       if (expanded) {
@@ -75,11 +80,7 @@ export function VirtualizedAssetPartitionListForDialog<A>({
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center'}}
-                border={
-                  index < allRows.length - 1
-                    ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                    : null
-                }
+                border={index < allRows.length - 1 ? 'bottom' : null}
               >
                 {row.type === 'partition-name' ? (
                   <ExpandablePartitionName

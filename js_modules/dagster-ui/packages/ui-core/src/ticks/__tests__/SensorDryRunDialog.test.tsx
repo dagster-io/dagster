@@ -1,9 +1,8 @@
-import {Resolvers} from '@apollo/client';
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as React from 'react';
 
+import {Resolvers} from '../../apollo-client';
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
 import * as Mocks from '../__fixtures__/SensorDryRunDialog.fixtures';
 

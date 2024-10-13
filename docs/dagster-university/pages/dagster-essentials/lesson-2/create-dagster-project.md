@@ -1,8 +1,10 @@
 ---
-title: "Lesson 2: Create the Dagster project"
-module: "dagster_essentials"
-lesson: "2"
+title: 'Lesson 2: Create the Dagster project'
+module: 'dagster_essentials'
+lesson: '2'
 ---
+
+# Create the Dagster project
 
 Let’s create your first Dagster project! To do this, use the `dagster project from-example` command to clone the official Dagster University project to your local machine.
 
@@ -32,7 +34,7 @@ To verify that the installation was successful and that you can run Dagster loca
 dagster dev
 ```
 
-Navigate to localhost:3000, where you should see the Dagster UI:
+Navigate to `localhost:3000`, where you should see the Dagster UI:
 
 ![The Overview tab in the Dagster UI](/images/dagster-essentials/demo/lesson-2-dagster-ui.png)
 

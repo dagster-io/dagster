@@ -15,6 +15,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
@@ -61,6 +62,7 @@ def code_server_cli():
     required=False,
     default=None,
     help="Maximum number of (threaded) workers to use in the code server",
+    envvar="DAGSTER_CODE_SERVER_MAX_WORKERS",
 )
 @python_origin_target_argument
 @click.option(
@@ -93,6 +95,14 @@ def code_server_cli():
     required=False,
     default="info",
     help="Level at which to log output from the code server process",
+)
+@click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from the code server process",
 )
 @click.option(
     "--container-image",
@@ -148,6 +158,7 @@ def start_command(
     max_workers: Optional[int] = None,
     fixed_server_id: Optional[str] = None,
     log_level: str = "INFO",
+    log_format: str = "colored",
     use_python_environment_entry_point: bool = False,
     container_image: Optional[str] = None,
     container_context: Optional[str] = None,
@@ -169,7 +180,7 @@ def start_command(
 
     setup_interrupt_handlers()
 
-    configure_loggers(log_level=log_level.upper())
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
@@ -186,8 +197,26 @@ def start_command(
         python_file=python_file,
         package_name=kwargs["package_name"],
     )
+
+    code_desc = " "
+    if loadable_target_origin.python_file:
+        code_desc = f" for file {loadable_target_origin.python_file} "
+    elif loadable_target_origin.package_name:
+        code_desc = f" for package {loadable_target_origin.package_name} "
+    elif loadable_target_origin.module_name:
+        code_desc = f" for module {loadable_target_origin.module_name} "
+
+    server_desc = (
+        f"Dagster code proxy server{code_desc}on port {port} in process {os.getpid()}"
+        if port
+        else f"Dagster code proxy server{code_desc}in process {os.getpid()}"
+    )
+
+    logger.info("Starting %s", server_desc)
+
     server_termination_event = threading.Event()
 
+    threadpool_executor = FuturesAwareThreadPoolExecutor(max_workers=max_workers)
     api_servicer = DagsterProxyApiServicer(
         loadable_target_origin=loadable_target_origin,
         fixed_server_id=fixed_server_id,
@@ -209,22 +238,8 @@ def start_command(
         port=port,
         socket=socket,
         host=host,
-        max_workers=max_workers,
+        threadpool_executor=threadpool_executor,
         logger=logger,
-    )
-
-    code_desc = " "
-    if loadable_target_origin.python_file:
-        code_desc = f" for file {loadable_target_origin.python_file} "
-    elif loadable_target_origin.package_name:
-        code_desc = f" for package {loadable_target_origin.package_name} "
-    elif loadable_target_origin.module_name:
-        code_desc = f" for module {loadable_target_origin.module_name} "
-
-    server_desc = (
-        f"Dagster code proxy server{code_desc}on port {port} in process {os.getpid()}"
-        if port
-        else f"Dagster code proxy server{code_desc}in process {os.getpid()}"
     )
 
     logger.info("Started %s", server_desc)

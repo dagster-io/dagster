@@ -29,9 +29,9 @@ import ssl
 from datetime import datetime, timedelta
 
 import botocore
-from dateutil.tz import tzutc
+from dagster._vendored.dateutil.tz import tzutc
 
-from .retry import RetryWrapper
+from dagster_aws.utils.mrjob.retry import RetryWrapper
 
 ### Utilities ###
 

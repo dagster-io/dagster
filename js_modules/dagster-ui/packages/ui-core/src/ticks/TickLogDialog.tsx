@@ -1,32 +1,33 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {InstigationSelector} from '../graphql/types';
-import {HistoryTickFragment} from '../instigation/types/TickHistory.types';
-import {EventTypeColumn, TimestampColumn, Row} from '../runs/LogsRowComponents';
 import {
-  ColumnWidthsProvider,
-  ColumnWidthsContext,
-  HeadersContainer,
-  HeaderContainer,
-  Header,
-} from '../runs/LogsScrollingTableHeader';
+  Box,
+  Button,
+  Colors,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  ExternalAnchorButton,
+  Icon,
+  NonIdealState,
+} from '@dagster-io/ui-components';
+
+import {INSTIGATION_EVENT_LOG_FRAGMENT, InstigationEventLogTable} from './InstigationEventLogTable';
+import {TickLogEventsQuery, TickLogEventsQueryVariables} from './types/TickLogDialog.types';
+import {gql, useQuery} from '../apollo-client';
+import {InstigationSelector} from '../graphql/types';
+import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
-import {
-  TickLogEventsQuery,
-  TickLogEventsQueryVariables,
-  TickLogEventFragment,
-} from './types/TickLogDialog.types';
-
-export const TickLogDialog: React.FC<{
+export const TickLogDialog = ({
+  tick,
+  instigationSelector,
+  onClose,
+}: {
   tick: HistoryTickFragment;
   instigationSelector: InstigationSelector;
   onClose: () => void;
-}> = ({tick, instigationSelector, onClose}) => {
+}) => {
   const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
-    variables: {instigationSelector, timestamp: tick.timestamp},
+    variables: {instigationSelector, tickId: Number(tick.tickId)},
     notifyOnNetworkStatusChange: true,
   });
 
@@ -45,11 +46,11 @@ export const TickLogDialog: React.FC<{
     >
       <DialogBody>
         {events && events.length ? (
-          <TickLogsTable events={events} />
+          <InstigationEventLogTable events={events} />
         ) : (
           <Box
             flex={{justifyContent: 'center', alignItems: 'center'}}
-            style={{flex: 1, color: Colors.Gray600}}
+            style={{flex: 1, color: Colors.textLight()}}
           >
             No logs available
           </Box>
@@ -64,77 +65,111 @@ export const TickLogDialog: React.FC<{
   );
 };
 
-const TickLogsTable: React.FC<{events: TickLogEventFragment[]}> = ({events}) => {
-  return (
-    <div style={{overflow: 'hidden', borderBottom: '0.5px solid #ececec', flex: 1}}>
-      <ColumnWidthsProvider onWidthsChanged={() => {}}>
-        <Headers />
-        {events.map((event, idx) => (
-          <TickLogRow event={event} key={idx} />
-        ))}
-      </ColumnWidthsProvider>
-    </div>
-  );
-};
+interface TickLogTableProps {
+  tick: HistoryTickFragment;
+  instigationSelector: InstigationSelector;
+}
 
-const Headers = () => {
-  const widths = React.useContext(ColumnWidthsContext);
-  return (
-    <HeadersContainer>
-      <Header
-        width={widths.eventType}
-        onResize={(width) => widths.onChange({...widths, eventType: width})}
-      >
-        Event Type
-      </Header>
-      <HeaderContainer style={{flex: 1}}>Info</HeaderContainer>
-      <Header
-        handleSide="left"
-        width={widths.timestamp}
-        onResize={(width) => widths.onChange({...widths, timestamp: width})}
-      >
-        Timestamp
-      </Header>
-    </HeadersContainer>
+export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableProps) => {
+  const {data, loading} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(
+    TICK_LOG_EVENTS_QUERY,
+    {
+      variables: {instigationSelector, tickId: Number(tick.tickId)},
+    },
   );
-};
 
-const TickLogRow: React.FC<{event: TickLogEventFragment}> = ({event}) => {
-  return (
-    <Row level={event.level} highlighted={false}>
-      <EventTypeColumn>
-        <span style={{marginLeft: 8}}>{event.level}</span>
-      </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
-        {event.message}
+  const events =
+    data?.instigationStateOrError.__typename === 'InstigationState' &&
+    data?.instigationStateOrError.tick
+      ? data?.instigationStateOrError.tick.logEvents.events
+      : undefined;
+
+  if (events && events.length) {
+    return (
+      <Box style={{height: 500}} flex={{direction: 'column'}}>
+        <InstigationEventLogTable events={events} />
       </Box>
-      <TimestampColumn time={event.timestamp} />
-    </Row>
+    );
+  }
+
+  const tickStatus =
+    data?.instigationStateOrError.__typename === 'InstigationState'
+      ? data?.instigationStateOrError.tick.status
+      : undefined;
+  const instigationType =
+    data?.instigationStateOrError.__typename === 'InstigationState'
+      ? data?.instigationStateOrError.instigationType
+      : undefined;
+  const instigationLoggingDocsUrl =
+    instigationType === 'SENSOR'
+      ? 'https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#logging-in-sensors'
+      : instigationType === 'SCHEDULE'
+      ? 'https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#logging-in-schedules'
+      : undefined;
+
+  return (
+    <Box
+      style={{height: 500}}
+      flex={{justifyContent: 'center', alignItems: 'center'}}
+      padding={{vertical: 48}}
+    >
+      {loading ? (
+        'Loading logs…'
+      ) : (
+        <NonIdealState
+          icon="no-results"
+          title="No logs to display"
+          description={
+            <Box flex={{direction: 'column', gap: 12}}>
+              <div>
+                Your evaluation did not emit any logs. To learn how to emit logs in your evaluation,
+                visit the documentation for more information.
+              </div>
+              {tickStatus === 'FAILURE' && (
+                <>
+                  <div>
+                    For failed evaluations, logs will only be displayed if your Dagster and Dagster
+                    Cloud agent versions 1.5.14 or higher.
+                  </div>
+                  <div>Upgrade your Dagster versions to view logs for failed evaluations.</div>
+                </>
+              )}
+            </Box>
+          }
+          action={
+            instigationLoggingDocsUrl && (
+              <ExternalAnchorButton
+                href={instigationLoggingDocsUrl}
+                rightIcon={<Icon name="open_in_new" />}
+              >
+                View documentation
+              </ExternalAnchorButton>
+            )
+          }
+        />
+      )}
+    </Box>
   );
 };
 
 const TICK_LOG_EVENTS_QUERY = gql`
-  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $timestamp: Float!) {
+  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id
-        tick(timestamp: $timestamp) {
+        instigationType
+        tick(tickId: $tickId) {
           id
           status
           timestamp
           logEvents {
             events {
-              ...TickLogEvent
+              ...InstigationEventLog
             }
           }
         }
       }
     }
   }
-
-  fragment TickLogEvent on InstigationEvent {
-    message
-    timestamp
-    level
-  }
+  ${INSTIGATION_EVENT_LOG_FRAGMENT}
 `;

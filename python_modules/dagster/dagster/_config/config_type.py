@@ -9,7 +9,7 @@ from dagster._config import UserConfigSchema
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
+    from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
 
 
 @whitelist_for_serdes
@@ -98,7 +98,7 @@ class ConfigType:
         return value
 
     def get_snapshot(self) -> "ConfigTypeSnap":
-        from .snap import snap_from_config_type
+        from dagster._config.snap import snap_from_config_type
 
         if self._snap is None:
             self._snap = snap_from_config_type(self)
@@ -109,9 +109,11 @@ class ConfigType:
         yield self
 
     def get_schema_snapshot(self) -> "ConfigSchemaSnapshot":
-        from .snap import ConfigSchemaSnapshot
+        from dagster._config.snap import ConfigSchemaSnapshot
 
-        return ConfigSchemaSnapshot({ct.key: ct.get_snapshot() for ct in self.type_iterator()})
+        return ConfigSchemaSnapshot(
+            all_config_snaps_by_key={ct.key: ct.get_snapshot() for ct in self.type_iterator()}
+        )
 
 
 @whitelist_for_serdes
@@ -200,7 +202,7 @@ class Noneable(ConfigType):
     """
 
     def __init__(self, inner_type: object):
-        from .field import resolve_to_config_type
+        from dagster._config.field import resolve_to_config_type
 
         self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
         super(Noneable, self).__init__(
@@ -223,7 +225,7 @@ class Array(ConfigType):
     """
 
     def __init__(self, inner_type: object):
-        from .field import resolve_to_config_type
+        from dagster._config.field import resolve_to_config_type
 
         self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
         super(Array, self).__init__(
@@ -320,11 +322,7 @@ class Enum(ConfigType):
             if ev.config_value == value:
                 return ev.python_value
 
-        check.failed(
-            (
-                "Should never reach this. config_value should be pre-validated. Got {config_value}"
-            ).format(config_value=value)
-        )
+        check.failed(f"Should never reach this. config_value should be pre-validated. Got {value}")
 
     @classmethod
     def from_python_enum(cls, enum, name=None):
@@ -433,11 +431,9 @@ class ScalarUnion(ConfigType):
         non_scalar_schema: UserConfigSchema,
         _key: Optional[str] = None,
     ):
-        from .field import resolve_to_config_type
+        from dagster._config.field import resolve_to_config_type
 
-        self.scalar_type = check.inst(
-            cast(ConfigType, resolve_to_config_type(scalar_type)), ConfigType
-        )
+        self.scalar_type = check.inst(resolve_to_config_type(scalar_type), ConfigType)
         self.non_scalar_type = resolve_to_config_type(non_scalar_schema)
 
         check.param_invariant(self.scalar_type.kind == ConfigTypeKind.SCALAR, "scalar_type")
@@ -470,7 +466,7 @@ ConfigFloatInstance: Float = Float()
 ConfigIntInstance: Int = Int()
 ConfigStringInstance: String = String()
 
-_CONFIG_MAP: Dict[check.TypeOrTupleOfTypes, ConfigType] = {
+_CONFIG_MAP: Dict[typing.Any, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,

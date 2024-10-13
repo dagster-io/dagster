@@ -1,8 +1,8 @@
-import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+
+import {gql} from '../apollo-client';
 
 interface ITypeWithTooltipProps {
   type: {
@@ -42,16 +42,14 @@ const TypeLink = styled(Link)`
 `;
 
 const TypeName = styled.code`
-  background: ${Colors.Blue50};
+  background: ${Colors.backgroundBlue()};
   border: none;
-  padding: 1px 4px;
-  border-bottom: 1px solid ${Colors.Blue500};
+  padding: 2px 4px;
+  border-bottom: 1px solid ${Colors.accentBlue()};
   border-radius: 0.25em;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
-  display: inline-block;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: middle;
 `;

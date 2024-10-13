@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type SidebarOpFragment_CompositeSolidDefinition_ = {
+export type SidebarOpFragment_CompositeSolidDefinition = {
   __typename: 'CompositeSolidDefinition';
   id: string;
   name: string;
@@ -776,7 +776,7 @@ export type SidebarOpFragment_CompositeSolidDefinition_ = {
   } | null;
 };
 
-export type SidebarOpFragment_Graph_ = {
+export type SidebarOpFragment_Graph = {
   __typename: 'Graph';
   id: string;
   name: string;
@@ -1550,7 +1550,7 @@ export type SidebarOpFragment_Graph_ = {
   } | null;
 };
 
-export type SidebarOpFragment_Job_ = {
+export type SidebarOpFragment_Job = {
   __typename: 'Job';
   id: string;
   name: string;
@@ -2324,7 +2324,7 @@ export type SidebarOpFragment_Job_ = {
   } | null;
 };
 
-export type SidebarOpFragment_Pipeline_ = {
+export type SidebarOpFragment_Pipeline = {
   __typename: 'Pipeline';
   id: string;
   name: string;
@@ -3098,7 +3098,7 @@ export type SidebarOpFragment_Pipeline_ = {
   } | null;
 };
 
-export type SidebarOpFragment_PipelineSnapshot_ = {
+export type SidebarOpFragment_PipelineSnapshot = {
   __typename: 'PipelineSnapshot';
   id: string;
   name: string;
@@ -3873,15 +3873,15 @@ export type SidebarOpFragment_PipelineSnapshot_ = {
 };
 
 export type SidebarOpFragment =
-  | SidebarOpFragment_CompositeSolidDefinition_
-  | SidebarOpFragment_Graph_
-  | SidebarOpFragment_Job_
-  | SidebarOpFragment_Pipeline_
-  | SidebarOpFragment_PipelineSnapshot_;
+  | SidebarOpFragment_CompositeSolidDefinition
+  | SidebarOpFragment_Graph
+  | SidebarOpFragment_Job
+  | SidebarOpFragment_Pipeline
+  | SidebarOpFragment_PipelineSnapshot;
 
 export type SidebarPipelineOpQueryVariables = Types.Exact<{
   selector: Types.PipelineSelector;
-  handleID: Types.Scalars['String'];
+  handleID: Types.Scalars['String']['input'];
 }>;
 
 export type SidebarPipelineOpQuery = {
@@ -4678,7 +4678,7 @@ export type SidebarPipelineOpQuery = {
 
 export type SidebarGraphOpQueryVariables = Types.Exact<{
   selector: Types.GraphSelector;
-  handleID: Types.Scalars['String'];
+  handleID: Types.Scalars['String']['input'];
 }>;
 
 export type SidebarGraphOpQuery = {
@@ -5471,3 +5471,7 @@ export type SidebarGraphOpQuery = {
     | {__typename: 'GraphNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SidebarPipelineOpQueryVersion = 'e7c81b4abaefc0eeea9128b4e39c74a1c68d7b28f154ac5ad9cd2d5182d48d5f';
+
+export const SidebarGraphOpQueryVersion = 'c53856856bea89e1eb944ab02f6e175a8dbccc99ee4c8600f0df96e05535be89';

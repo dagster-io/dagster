@@ -29,14 +29,9 @@ from dagster._cli.run import (
 )
 from dagster._cli.workspace.cli_target import ClickArgMapping
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
@@ -172,8 +167,8 @@ def define_bar_sensors():
     @sensor(job_name="baz")
     def foo_sensor(context):
         run_config = {"foo": "FOO"}
-        if context.last_completion_time:
-            run_config["since"] = context.last_completion_time
+        if context.last_tick_completion_time:
+            run_config["since"] = context.last_tick_completion_time
         return RunRequest(run_key=None, run_config=run_config)
 
     return {"foo_sensor": foo_sensor}
@@ -184,15 +179,6 @@ def my_op():
     return 5
 
 
-@job(
-    name="memoizable",
-    resource_defs={"io_manager": versioned_filesystem_io_manager},
-    tags={MEMOIZED_RUN_TAG: "true"},
-)
-def memoizable_job():
-    my_op()
-
-
 @repository
 def bar():
     return {
@@ -200,7 +186,6 @@ def bar():
             "foo": foo_job,
             "qux": qux_job,
             "quux": quux_job,
-            "memoizable": memoizable_job,
             "partitioned_job": partitioned_job,
             "baz": baz_job,
             "baz_error_config": baz_error_config_job,
@@ -688,7 +673,7 @@ def valid_job_python_origin_target_cli_args():
             "-a",
             "bar",
             "-d",
-            os.path.dirname(__file__),
+            os.path.join(os.path.dirname(__file__), "..", "..", ".."),
             "-j",
             "qux",
         ],
@@ -726,7 +711,7 @@ def valid_external_pipeline_target_cli_args_no_preset():
     ] + [args for args in valid_pipeline_python_origin_target_cli_args()]
 
 
-def valid_external_job_target_cli_args():
+def valid_remote_job_target_cli_args():
     return [
         ["-w", file_relative_path(__file__, "repository_file.yaml"), "-j", "qux"],
         ["-w", file_relative_path(__file__, "repository_module.yaml"), "-j", "qux"],
@@ -892,16 +877,9 @@ def runner_job_execute(runner, cli_args):
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
-            (
-                "dagster job execute commands with cli_args {cli_args} "
-                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
-                '\nresult as string: "{result}"'
-            ).format(
-                cli_args=cli_args,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                result=result,
-            )
+            f"dagster job execute commands with cli_args {cli_args} "
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}" and '
+            f'\nresult as string: "{result}"'
         )
     return result
 
@@ -932,12 +910,12 @@ def create_repo_run(instance):
     ) as workspace_process_context:
         context = workspace_process_context.create_request_context()
         repo = context.code_locations[0].get_repository("my_repo")
-        external_job = repo.get_full_external_job("my_job")
+        remote_job = repo.get_full_job("my_job")
         run = create_run_for_test(
             instance,
             job_name="my_job",
-            external_job_origin=external_job.get_external_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, context)
     return run

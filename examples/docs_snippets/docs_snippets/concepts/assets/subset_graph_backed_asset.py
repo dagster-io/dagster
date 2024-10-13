@@ -1,6 +1,7 @@
 from dagster import (
     AssetOut,
     Definitions,
+    OpExecutionContext,
     Out,
     Output,
     define_asset_job,
@@ -11,7 +12,7 @@ from dagster import (
 
 # start_graph_backed_asset_foo
 @op(out={"foo_1": Out(is_required=False), "foo_2": Out(is_required=False)})
-def foo(context, bar_1):
+def foo(context: OpExecutionContext, bar_1):
     # Selectively returns outputs based on selected assets
     if "foo_1" in context.selected_output_names:
         yield Output(bar_1 + 1, output_name="foo_1")

@@ -3,8 +3,8 @@ import sys
 from typing import Iterator, Optional
 
 import pytest
-from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -56,7 +56,7 @@ def workspace_load_target(
     return ModuleTarget(
         module_name=f"dagster_tests.scheduler_tests.{module}",
         attribute=attribute,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 
@@ -71,10 +71,10 @@ def workspace_fixture(
         yield workspace
 
 
-@pytest.fixture(name="external_repo", scope="session")
-def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> ExternalRepository:
+@pytest.fixture(name="remote_repo", scope="session")
+def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
     return next(
-        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+        iter(workspace_context.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore  # (possible none)
         "the_repo"
     )

@@ -5,6 +5,7 @@ Revises: b37316bf5584
 Create Date: 2022-02-01 15:21:22.257972
 
 """
+
 from alembic import op
 from dagster._core.storage.migration.utils import (
     add_run_record_start_end_timestamps,

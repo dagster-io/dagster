@@ -7,6 +7,8 @@ description: Dagster enables you to unit-test individual assets and graphs of as
 
 Creating testable and verifiable data pipelines is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll cover how to write unit tests for individual assets, as well as for graphs of assets together.
 
+**Note**: This guide describes approaches to unit testing assets, but **asset checks** can be used to test assets at runtime! Using asset checks, you can verify the quality of data produced by your pipelines, communicate what the data is expected to do, and more. Refer to the [Asset checks](/concepts/assets/asset-checks) documentation for more information and examples.
+
 ---
 
 ## Prerequisites
@@ -17,7 +19,7 @@ It also assumes that you have installed a test runner like [pytest](https://docs
 
 ---
 
-## Testing an individual asset
+## Testing individual assets
 
 We'll start by writing a test for the `topstories_word_cloud` asset definition, which is an image of a word cloud of the titles of top stories on Hacker News. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function.
 
@@ -61,6 +63,8 @@ def test_hackernews_assets():
     df = result.output_for_node("topstories")
     assert len(df) == 100
 ```
+
+---
 
 ## Running the tests
 

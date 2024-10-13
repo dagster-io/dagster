@@ -2,7 +2,7 @@ from typing import Sequence
 
 from dagster import AssetMaterialization
 
-from .types import CensusOutput
+from dagster_census.types import CensusOutput
 
 
 def generate_materialization(

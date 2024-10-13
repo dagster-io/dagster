@@ -11,8 +11,8 @@ from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 from pydantic import Field
 
-from .configs import define_dataproc_create_cluster_config
-from .types import DataprocError
+from dagster_gcp.dataproc.configs import define_dataproc_create_cluster_config
+from dagster_gcp.dataproc.types import DataprocError
 
 TWENTY_MINUTES = 20 * 60
 DEFAULT_ITER_TIME_SEC = 5
@@ -41,18 +41,14 @@ class DataprocClient:
     def dataproc_clusters(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            self.dataproc.projects()
-            .regions()
-            .clusters()
+            self.dataproc.projects().regions().clusters()
         )
 
     @property
     def dataproc_jobs(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            self.dataproc.projects()
-            .regions()
-            .jobs()
+            self.dataproc.projects().regions().jobs()
         )
 
     def create_cluster(self):
@@ -74,7 +70,7 @@ class DataprocClient:
             cluster = self.get_cluster()
             return cluster["status"]["state"] in {"RUNNING", "UPDATING"}
 
-        done = DataprocClient._iter_and_sleep_until_ready(iter_fn)  # noqa: SLF001
+        done = DataprocClient._iter_and_sleep_until_ready(iter_fn)
         if not done:
             cluster = self.get_cluster()
             raise DataprocError(
@@ -118,9 +114,7 @@ class DataprocClient:
 
             return False
 
-        done = DataprocClient._iter_and_sleep_until_ready(  # noqa: SLF001
-            iter_fn, max_wait_time_sec=wait_timeout
-        )
+        done = DataprocClient._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
         if not done:
             job = self.get_job(job_id)
             raise DataprocError("Job run timed out: %s" % str(job["status"]))

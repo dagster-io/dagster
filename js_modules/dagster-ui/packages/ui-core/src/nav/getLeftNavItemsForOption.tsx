@@ -2,13 +2,12 @@ import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {LeftNavItemType} from './LeftNavItemType';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
-import {LeftNavItemType} from './LeftNavItemType';
 
 export const getAssetGroupItemsForOption = (option: DagsterRepoOption) => {
   const items: LeftNavItemType[] = [];
@@ -82,8 +81,8 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
 
     const {isJob, name} = pipeline;
     const schedulesForJob = schedules.filter((schedule) => schedule.pipelineName === name);
-    const sensorsForJob = sensors.filter((sensor) =>
-      sensor.targets?.map((target) => target.pipelineName).includes(name),
+    const sensorsForJob = sensors.filter(
+      (sensor) => sensor.targets?.map((target) => target.pipelineName).includes(name),
     );
 
     items.push({
@@ -119,10 +118,10 @@ const Label = styled.div<{$hasIcon: boolean}>`
   white-space: nowrap;
 `;
 
-const LabelTooltipStyles = JSON.stringify({
-  background: Colors.Gray100,
+export const LabelTooltipStyles = JSON.stringify({
+  background: Colors.backgroundLight(),
   filter: `brightness(97%)`,
-  color: Colors.Gray900,
+  color: Colors.textDefault(),
   border: 'none',
   borderRadius: 7,
   overflow: 'hidden',
@@ -140,11 +139,18 @@ const TruncatingName = styled.div`
 
 export const TruncatedTextWithFullTextOnHover = React.forwardRef(
   (
-    {text, tooltipStyle, ...rest}: {text: string; tooltipStyle?: string},
+    {
+      text,
+      tooltipStyle,
+      tooltipText,
+      ...rest
+    }:
+      | {text: string; tooltipStyle?: string; tooltipText?: null}
+      | {text: React.ReactNode; tooltipStyle?: string; tooltipText: string},
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => (
     <TruncatingName
-      data-tooltip={text}
+      data-tooltip={tooltipText ?? text}
       data-tooltip-style={tooltipStyle ?? LabelTooltipStyles}
       ref={ref}
       {...rest}

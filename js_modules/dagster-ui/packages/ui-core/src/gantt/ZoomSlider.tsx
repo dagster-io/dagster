@@ -7,19 +7,16 @@ import styled from 'styled-components';
  * It uses Blueprint CSS but not the Slider component, because that renders twice and
  * forces a DOM layout to determine it's size (I think for tick marks, which we aren't using)
  */
-export const ZoomSlider: React.FC<{
-  value: number;
-  onChange: (v: number) => void;
-}> = React.memo((props) => {
+export const ZoomSlider = React.memo((props: {value: number; onChange: (v: number) => void}) => {
   return (
     <ZoomSliderContainer
-      $fillColor={Colors.Gray600}
-      className="bp4-slider bp4-slider-unlabeled"
+      $fillColor={Colors.accentGray()}
+      className="bp5-slider bp5-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
-        const rect = e.currentTarget.closest('.bp4-slider')!.getBoundingClientRect();
+        const rect = e.currentTarget.closest('.bp5-slider')!.getBoundingClientRect();
 
         let initialX: number;
-        if (e.target instanceof HTMLElement && e.target.classList.contains('bp4-slider-handle')) {
+        if (e.target instanceof HTMLElement && e.target.classList.contains('bp5-slider-handle')) {
           initialX = e.pageX;
         } else {
           initialX = rect.left + (props.value / 100) * rect.width;
@@ -38,16 +35,16 @@ export const ZoomSlider: React.FC<{
         document.addEventListener('mouseup', onRelease);
       }}
     >
-      <div className="bp4-slider-track">
-        <div className="bp4-slider-progress" style={{left: 0, right: 0, top: 0}} />
+      <div className="bp5-slider-track">
+        <div className="bp5-slider-progress" style={{left: 0, right: 0, top: 0}} />
         <div
-          className="bp4-slider-progress bp4-intent-primary"
+          className="bp5-slider-progress bp5-intent-primary"
           style={{left: 0, right: `${100 - props.value}%`, top: 0}}
         />
       </div>
-      <div className="bp4-slider-axis" />
+      <div className="bp5-slider-axis" />
       <span
-        className="bp4-slider-handle"
+        className="bp5-slider-handle"
         style={{left: `calc(${props.value}% - 8px)`}}
         tabIndex={0}
       />

@@ -1,0 +1,45 @@
+extends: script
+message: "This paragraph has a stdev less than 2"
+link: https://tengolang.com/
+scope: paragraph
+script: |
+  text := import("text")
+  math := import("math")
+
+  matches := []
+
+  each := func(seq, fn) {
+    for x in seq {
+        fn(x)
+    }
+  }
+
+  sum := func(seq) {
+    s := 0
+    each(seq, func(x) {
+      s += x
+    })
+    return s
+  }
+
+  stdev := func(seq) {
+    size := len(seq)
+    mean := sum(seq) / size
+
+    sd := 0.0
+    each(seq, func(x) {
+      sd += math.pow(x - mean, 2)
+    })
+
+    return math.sqrt(sd / size)
+  }
+
+  lengths := []
+  for sent in text.re_split(`[.!?] `, scope, -1) {
+    lengths = append(lengths, len(text.fields(sent)))
+  }
+
+  computed := stdev(lengths)
+  if computed < 2 && len(lengths) >= 3 {
+    matches = append(matches, {begin: 0, end: len(scope)})
+  }

@@ -42,6 +42,20 @@ export type AssetMaterializationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -51,6 +65,14 @@ export type AssetMaterializationFragment = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -83,6 +105,20 @@ export type AssetMaterializationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -102,6 +138,7 @@ export type AssetMaterializationFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -124,11 +161,18 @@ export type AssetMaterializationFragment = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetLineage: Array<{
@@ -178,6 +222,20 @@ export type AssetObservationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -187,6 +245,14 @@ export type AssetObservationFragment = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -219,6 +285,20 @@ export type AssetObservationFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -238,6 +318,7 @@ export type AssetObservationFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -260,20 +341,27 @@ export type AssetObservationFragment = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
 export type AssetEventsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  before?: Types.InputMaybe<Types.Scalars['String']>;
-  partitionInLast?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  before?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  partitionInLast?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type AssetEventsQuery = {
@@ -323,6 +411,20 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -332,6 +434,14 @@ export type AssetEventsQuery = {
                 __typename: 'IntMetadataEntry';
                 intValue: number | null;
                 intRepr: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
                 label: string;
                 description: string | null;
               }
@@ -374,6 +484,20 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -393,6 +517,7 @@ export type AssetEventsQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -415,6 +540,7 @@ export type AssetEventsQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -422,6 +548,12 @@ export type AssetEventsQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -473,6 +605,20 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'CodeReferencesMetadataEntry';
+                label: string;
+                description: string | null;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
+              }
+            | {
                 __typename: 'FloatMetadataEntry';
                 floatValue: number | null;
                 label: string;
@@ -482,6 +628,14 @@ export type AssetEventsQuery = {
                 __typename: 'IntMetadataEntry';
                 intValue: number | null;
                 intRepr: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'JobMetadataEntry';
+                jobName: string;
+                repositoryName: string | null;
+                locationName: string;
                 label: string;
                 description: string | null;
               }
@@ -524,6 +678,20 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'TableColumnLineageMetadataEntry';
+                label: string;
+                description: string | null;
+                lineage: Array<{
+                  __typename: 'TableColumnLineageEntry';
+                  columnName: string;
+                  columnDeps: Array<{
+                    __typename: 'TableColumnDep';
+                    columnName: string;
+                    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  }>;
+                }>;
+              }
+            | {
                 __typename: 'TableMetadataEntry';
                 label: string;
                 description: string | null;
@@ -543,6 +711,7 @@ export type AssetEventsQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -565,6 +734,7 @@ export type AssetEventsQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -572,6 +742,12 @@ export type AssetEventsQuery = {
             | {
                 __typename: 'TextMetadataEntry';
                 text: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'TimestampMetadataEntry';
+                timestamp: number;
                 label: string;
                 description: string | null;
               }
@@ -592,3 +768,5 @@ export type AssetEventsQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const AssetEventsQueryVersion = '3bc04ab95edadabdeba60c3b7298bfc9674c817910432c126f8a59736d908b86';

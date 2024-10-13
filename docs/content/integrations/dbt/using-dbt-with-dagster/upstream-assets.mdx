@@ -8,7 +8,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 <Note>
   This is part three of the{" "}
   <a href="/integrations/dbt/using-dbt-with-dagster">
-    Using dbt with Dagster software-defined assets
+    Using dbt with Dagster assets
   </a>{" "}
   tutorial.
 </Note>
@@ -17,7 +17,7 @@ By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-da
 
 However, the tables at the root of the pipeline are static: they're [dbt seeds](https://docs.getdbt.com/docs/build/seeds), CSVs that are hardcoded into the dbt project. In a more realistic data pipeline, these tables would typically be ingested from some external data source, for example by using a tool like Airbyte or Fivetran, or by Python code.
 
-These ingestion steps in the pipeline often don't make sense to define inside dbt, but they often still do make sense to define as Dagster software-defined assets. You can think of a Dagster software-defined asset as a more general version of a dbt model. A dbt model is one kind of asset, but another kind is one that's defined in Python, using Dagster's Python API. The dbt integration reference page includes a [section](/integrations/dbt/reference#dbt-models-and-dagster-software-defined-assets) that outlines the parallels between dbt models and Dagster Software-defined Assets.
+These ingestion steps in the pipeline often don't make sense to define inside dbt, but they often still do make sense to define as Dagster assets. You can think of a Dagster asset definition as a more general version of a dbt model. A dbt model is one kind of asset, but another kind is one that's defined in Python, using Dagster's Python API. The dbt integration reference page includes a [section](/integrations/dbt/reference#dbt-models-and-dagster-asset-definitions) that outlines the parallels between dbt models and Dagster asset definitions.
 
 In this section, you'll replace the `raw_customers` dbt seed with a Dagster asset that represents it. You'll write Python code that populates this table by fetching data from the web. This will allow you to launch runs that first execute Python code to populate the `raw_customers` table and then invoke dbt to populate the downstream tables.
 
@@ -35,7 +35,7 @@ You'll:
 The Dagster asset that you write will fetch data using [Pandas](https://pandas.pydata.org/) and write it out to your DuckDB warehouse using [DuckDB's Python API](https://duckdb.org/docs/api/python/overview.html). To use these, you'll need to install them:
 
 ```shell
-pip install pandas duckdb
+pip install pandas duckdb pyarrow
 ```
 
 ---
@@ -49,16 +49,16 @@ import os
 
 import duckdb
 import pandas as pd
-from dagster import OpExecutionContext, asset
+from dagster import AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets
 
-from .constants import dbt_manifest_path, dbt_project_dir
+from .project import dbt_project
 
-duckdb_database_path = dbt_project_dir.joinpath("tutorial.duckdb")
+duckdb_database_path = dbt_project.project_dir.joinpath("tutorial.duckdb")
 
 
 @asset(compute_kind="python")
-def raw_customers(context) -> None:
+def raw_customers(context: AssetExecutionContext) -> None:
     data = pd.read_csv("https://docs.dagster.io/assets/customers.csv")
     connection = duckdb.connect(os.fspath(duckdb_database_path))
     connection.execute("create schema if not exists jaffle_shop")
@@ -70,8 +70,8 @@ def raw_customers(context) -> None:
     context.add_output_metadata({"num_rows": data.shape[0]})
 
 
-@dbt_assets(manifest=dbt_manifest_path)
-def jaffle_shop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+@dbt_assets(manifest=dbt_project.manifest_path)
+def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
@@ -92,14 +92,14 @@ from dagster import Definitions
 from dagster_dbt import DbtCliResource
 
 from .assets import jaffle_shop_dbt_assets, raw_customers
-from .constants import dbt_project_dir
+from .project import dbt_project
 from .schedules import schedules
 
 defs = Definitions(
     assets=[raw_customers, jaffle_shop_dbt_assets],
     schedules=schedules,
     resources={
-        "dbt": DbtCliResource(project_dir=os.fspath(dbt_project_dir)),
+        "dbt": DbtCliResource(project_dir=dbt_project),
     },
 )
 ```
@@ -166,7 +166,7 @@ This is a standard dbt source definition, with one addition: it includes metadat
 If the Dagster UI is still running from the previous section, click the "Reload Definitions" button in the upper right corner. If you shut it down, then you can launch it again with the same command from the previous section:
 
 ```shell
-DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
+dagster dev
 ```
 
 Our `raw_customers` model is now defined as a Python asset. We can also see that assets downstream of this new Python asset, such as `stg_customers` and `customers`, are now marked stale because the code definition of `raw_customers` has changed.

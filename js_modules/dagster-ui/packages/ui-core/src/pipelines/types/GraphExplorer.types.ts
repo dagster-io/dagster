@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type GraphExplorerFragment_CompositeSolidDefinition_ = {
+export type GraphExplorerFragment_CompositeSolidDefinition = {
   __typename: 'CompositeSolidDefinition';
   id: string;
   name: string;
@@ -1133,7 +1133,7 @@ export type GraphExplorerFragment_CompositeSolidDefinition_ = {
   }>;
 };
 
-export type GraphExplorerFragment_Graph_ = {
+export type GraphExplorerFragment_Graph = {
   __typename: 'Graph';
   id: string;
   name: string;
@@ -2264,7 +2264,7 @@ export type GraphExplorerFragment_Graph_ = {
   }>;
 };
 
-export type GraphExplorerFragment_Job_ = {
+export type GraphExplorerFragment_Job = {
   __typename: 'Job';
   id: string;
   name: string;
@@ -3395,7 +3395,7 @@ export type GraphExplorerFragment_Job_ = {
   }>;
 };
 
-export type GraphExplorerFragment_Pipeline_ = {
+export type GraphExplorerFragment_Pipeline = {
   __typename: 'Pipeline';
   id: string;
   name: string;
@@ -4526,7 +4526,7 @@ export type GraphExplorerFragment_Pipeline_ = {
   }>;
 };
 
-export type GraphExplorerFragment_PipelineSnapshot_ = {
+export type GraphExplorerFragment_PipelineSnapshot = {
   __typename: 'PipelineSnapshot';
   id: string;
   name: string;
@@ -4547,6 +4547,20 @@ export type GraphExplorerFragment_PipelineSnapshot_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -4556,6 +4570,14 @@ export type GraphExplorerFragment_PipelineSnapshot_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -4588,6 +4610,20 @@ export type GraphExplorerFragment_PipelineSnapshot_ = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -4607,6 +4643,7 @@ export type GraphExplorerFragment_PipelineSnapshot_ = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -4629,11 +4666,18 @@ export type GraphExplorerFragment_PipelineSnapshot_ = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   modes: Array<{
@@ -5763,11 +5807,11 @@ export type GraphExplorerFragment_PipelineSnapshot_ = {
 };
 
 export type GraphExplorerFragment =
-  | GraphExplorerFragment_CompositeSolidDefinition_
-  | GraphExplorerFragment_Graph_
-  | GraphExplorerFragment_Job_
-  | GraphExplorerFragment_Pipeline_
-  | GraphExplorerFragment_PipelineSnapshot_;
+  | GraphExplorerFragment_CompositeSolidDefinition
+  | GraphExplorerFragment_Graph
+  | GraphExplorerFragment_Job
+  | GraphExplorerFragment_Pipeline
+  | GraphExplorerFragment_PipelineSnapshot;
 
 export type GraphExplorerAssetNodeFragment = {
   __typename: 'AssetNode';

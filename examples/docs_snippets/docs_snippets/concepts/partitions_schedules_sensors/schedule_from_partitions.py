@@ -1,18 +1,17 @@
 # ruff: isort: skip_file
 
-from .partitioned_job import my_partitioned_config
+from .partitioned_job import partitioned_config
 
 # start_marker
 from dagster import build_schedule_from_partitioned_job, job
 
 
-@job(config=my_partitioned_config)
-def do_stuff_partitioned():
-    ...
+@job(config=partitioned_config)
+def partitioned_op_job(): ...
 
 
-do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
-    do_stuff_partitioned,
+partitioned_op_schedule = build_schedule_from_partitioned_job(
+    partitioned_op_job,
 )
 
 # end_marker
@@ -23,16 +22,17 @@ from dagster import (
     asset,
     build_schedule_from_partitioned_job,
     define_asset_job,
-    HourlyPartitionsDefinition,
+    DailyPartitionsDefinition,
 )
 
-
-@asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-def hourly_asset():
-    ...
+daily_partition = DailyPartitionsDefinition(start_date="2024-05-20")
 
 
-partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
+@asset(partitions_def=daily_partition)
+def daily_asset(): ...
+
+
+partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
 
 
 asset_partitioned_schedule = build_schedule_from_partitioned_job(
@@ -65,3 +65,22 @@ def antarctica_schedule():
 
 
 # end_single_partition
+
+# start_offset_partition
+from dagster import DailyPartitionsDefinition
+
+daily_partition_with_offset = DailyPartitionsDefinition(
+    start_date="2024-05-20", end_offset=-1
+)
+
+
+# end_offset_partition
+
+# start_partitioned_schedule_with_offset
+from dagster import build_schedule_from_partitioned_job
+
+asset_partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_asset_job, hour_of_day=1, minute_of_hour=30
+)
+
+# end_partitioned_schedule_with_offset

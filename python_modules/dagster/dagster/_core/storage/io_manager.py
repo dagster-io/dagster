@@ -7,6 +7,7 @@ from typing_extensions import TypeAlias, TypeGuard
 import dagster._check as check
 from dagster._annotations import public
 from dagster._config import UserConfigSchema
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
@@ -16,8 +17,6 @@ from dagster._core.definitions.definition_config_schema import (
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.storage.input_manager import IInputManagerDefinition, InputManager
 from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
-
-from ..decorator_utils import get_function_params
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.init import InitResourceContext
@@ -156,8 +155,7 @@ class IOManager(InputManager, OutputManager):
 
 
 @overload
-def io_manager(config_schema: IOManagerFunction) -> IOManagerDefinition:
-    ...
+def io_manager(config_schema: IOManagerFunction) -> IOManagerDefinition: ...
 
 
 @overload
@@ -168,8 +166,7 @@ def io_manager(
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-) -> Callable[[IOManagerFunction], IOManagerDefinition]:
-    ...
+) -> Callable[[IOManagerFunction], IOManagerDefinition]: ...
 
 
 def io_manager(
@@ -179,7 +176,10 @@ def io_manager(
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
-) -> Union[IOManagerDefinition, Callable[[IOManagerFunction], IOManagerDefinition],]:
+) -> Union[
+    IOManagerDefinition,
+    Callable[[IOManagerFunction], IOManagerDefinition],
+]:
     """Define an IO manager.
 
     IOManagers are used to store op outputs and load them as inputs to downstream ops.

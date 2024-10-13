@@ -42,9 +42,9 @@ from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager
 
-from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
-from .errors import DagstermillError
-from .serialize import PICKLE_PROTOCOL
+from dagstermill.context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
+from dagstermill.errors import DagstermillError
+from dagstermill.serialize import PICKLE_PROTOCOL
 
 if TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition
@@ -322,7 +322,7 @@ class Manager:
         # Note: yield_result currently does not support DynamicOutput
 
         # dagstermill assets do not support yielding additional results within the notebook:
-        if len(step_context.job_def.asset_layer.asset_keys) > 0:
+        if len(step_context.job_def.asset_layer.executable_asset_keys) > 0:
             raise DagstermillError(
                 "dagstermill assets do not currently support dagstermill.yield_result"
             )

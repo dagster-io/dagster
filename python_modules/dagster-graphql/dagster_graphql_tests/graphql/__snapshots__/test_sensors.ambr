@@ -1,8 +1,16 @@
+# serializer version: 1
 # name: TestSensors.test_get_sensor[0]
   dict({
     '__typename': 'Sensor',
+    'assetSelection': None,
+    'metadataEntries': list([
+      dict({
+        'label': 'foo',
+        'text': 'bar',
+      }),
+    ]),
     'minIntervalSeconds': 30,
-    'name': 'always_no_config_sensor',
+    'name': 'always_no_config_sensor_with_tags_and_metadata',
     'nextTick': None,
     'sensorState': dict({
       'runs': list([
@@ -13,6 +21,12 @@
       ]),
     }),
     'sensorType': 'STANDARD',
+    'tags': list([
+      dict({
+        'key': 'foo',
+        'value': 'bar',
+      }),
+    ]),
     'targets': list([
       dict({
         'mode': 'default',
@@ -47,7 +61,7 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
-      'name': 'always_no_config_sensor',
+      'name': 'always_no_config_sensor_with_tags_and_metadata',
       'sensorState': dict({
         'runs': list([
         ]),
@@ -107,6 +121,26 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
+      'name': 'every_asset_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
       'name': 'fresh_sensor',
       'sensorState': dict({
         'runs': list([
@@ -117,6 +151,46 @@
         ]),
       }),
       'targets': list([
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
+      'name': 'invalid_asset_selection_error',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
+      'name': 'jobless_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': '__anonymous_asset_job_jobless_sensor',
+          'solidSelection': None,
+        }),
       ]),
     }),
     dict({
@@ -175,6 +249,26 @@
         dict({
           'mode': 'default',
           'pipelineName': 'no_config_job',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
+      'name': 'my_auto_materialize_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': '__ASSET_JOB',
           'solidSelection': None,
         }),
       ]),
@@ -275,6 +369,26 @@
         dict({
           'mode': 'default',
           'pipelineName': 'single_asset_job',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
+      'name': 'stopped_in_code_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': 'no_config_job',
           'solidSelection': None,
         }),
       ]),

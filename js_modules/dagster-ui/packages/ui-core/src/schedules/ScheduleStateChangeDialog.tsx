@@ -1,24 +1,15 @@
-import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
   Button,
   Colors,
+  Dialog,
   DialogBody,
   DialogFooter,
-  Dialog,
   Group,
   Icon,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {
-  OpenWithIntent,
-  useInstigationStateReducer,
-} from '../instigation/useInstigationStateReducer';
-import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {NavigationBlock} from '../runs/NavigationBlock';
-import {RepoAddress} from '../workspace/types';
+import {useEffect} from 'react';
 
 import {START_SCHEDULE_MUTATION, STOP_SCHEDULE_MUTATION} from './ScheduleMutations';
 import {
@@ -27,6 +18,14 @@ import {
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
+import {useMutation} from '../apollo-client';
+import {
+  OpenWithIntent,
+  useInstigationStateReducer,
+} from '../instigation/useInstigationStateReducer';
+import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
+import {NavigationBlock} from '../runs/NavigationBlock';
+import {RepoAddress} from '../workspace/types';
 
 export type ScheduleInfo = {
   repoAddress: RepoAddress;
@@ -48,7 +47,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   const [state, dispatch] = useInstigationStateReducer();
 
   // If the dialog is newly closed, reset state.
-  React.useEffect(() => {
+  useEffect(() => {
     if (openWithIntent === 'not-open') {
       dispatch({type: 'reset'});
     }
@@ -92,8 +91,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   const stop = async (schedule: ScheduleInfo) => {
     const {scheduleName, scheduleState} = schedule;
     const variables = {
-      scheduleOriginId: scheduleState.id,
-      scheduleSelectorId: scheduleState.selectorId,
+      id: scheduleState.id,
     };
 
     const {data} = await stopSchedule({variables});
@@ -232,7 +230,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon name="check_circle" color={Colors.Green500} />
+            <Icon name="check_circle" color={Colors.accentGreen()} />
             <div>
               {openWithIntent === 'start'
                 ? `Successfully started ${
@@ -247,7 +245,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon name="warning" color={Colors.Yellow500} />
+              <Icon name="warning" color={Colors.accentYellow()} />
               <div>
                 {openWithIntent === 'start'
                   ? `Could not start ${

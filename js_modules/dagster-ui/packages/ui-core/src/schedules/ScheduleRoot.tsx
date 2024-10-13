@@ -1,23 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
-import {Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui-components';
+import {NonIdealState, Page, Tab, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TicksTable} from '../instigation/TickHistory';
-import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {DagsterTag} from '../runs/RunTag';
-import {Loading} from '../ui/Loading';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
-
+import {SCHEDULE_ASSET_SELECTIONS_QUERY} from './ScheduleAssetSelectionsQuery';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
+import {
+  ScheduleAssetSelectionQuery,
+  ScheduleAssetSelectionQueryVariables,
+} from './types/ScheduleAssetSelectionsQuery.types';
 import {
   PreviousRunsForScheduleQuery,
   PreviousRunsForScheduleQueryVariables,
@@ -25,12 +17,26 @@ import {
   ScheduleRootQueryVariables,
 } from './types/ScheduleRoot.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
+import {gql, useQuery} from '../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {TicksTable} from '../instigation/TickHistory';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
+import {DagsterTag} from '../runs/RunTag';
+import {Loading} from '../ui/Loading';
+import {repoAddressAsTag} from '../workspace/repoAddressAsString';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   repoAddress: RepoAddress;
 }
 
-export const ScheduleRoot: React.FC<Props> = (props) => {
+export const ScheduleRoot = (props: Props) => {
   useTrackPageView();
 
   const {repoAddress} = props;
@@ -52,7 +58,17 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const selectionQueryResult = useQuery<
+    ScheduleAssetSelectionQuery,
+    ScheduleAssetSelectionQueryVariables
+  >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
+    variables: {scheduleSelector},
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);
+  const refreshState = useMergedRefresh(refreshState1, refreshState2);
 
   const tabs = (
     <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
@@ -60,6 +76,11 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
       <Tab id="runs" title="Run history" />
     </Tabs>
   );
+
+  const assetSelection =
+    selectionQueryResult.data?.scheduleOrError.__typename === 'Schedule'
+      ? selectionQueryResult.data.scheduleOrError.assetSelection
+      : null;
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
@@ -76,6 +97,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
               repoAddress={repoAddress}
               schedule={scheduleOrError}
               refreshState={refreshState}
+              assetSelection={assetSelection}
             />
             {showDaemonWarning ? (
               <SchedulerInfo
@@ -99,20 +121,27 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
   );
 };
 
-const SchedulePreviousRuns: React.FC<{
+const SchedulePreviousRuns = ({
+  repoAddress,
+  schedule,
+  highlightedIds,
+  tabs,
+}: {
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
   tabs?: React.ReactElement;
   highlightedIds?: string[];
-}> = ({schedule, highlightedIds, tabs}) => {
+}) => {
   const queryResult = useQuery<PreviousRunsForScheduleQuery, PreviousRunsForScheduleQueryVariables>(
     PREVIOUS_RUNS_FOR_SCHEDULE_QUERY,
     {
       variables: {
         limit: 20,
         filter: {
-          pipelineName: schedule.pipelineName,
-          tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+          tags: [
+            {key: DagsterTag.ScheduleName, value: schedule.name},
+            {key: DagsterTag.RepositoryLabelTag, value: repoAddressAsTag(repoAddress)},
+          ],
         },
       },
       notifyOnNetworkStatusChange: true,

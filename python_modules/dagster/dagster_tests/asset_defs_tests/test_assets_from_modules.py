@@ -18,7 +18,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 get_unique_asset_identifier = lambda asset: (
-    asset.op.name if isinstance(asset, AssetsDefinition) else asset.key
+    asset.node_def.name if isinstance(asset, AssetsDefinition) else asset.key
 )
 
 
@@ -79,21 +79,23 @@ def get_source_asset_with_key(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]], key: AssetKey
 ) -> SourceAsset:
     source_assets_by_key = {
-        key: source_asset for source_asset in assets if isinstance(source_asset, SourceAsset)
+        source_asset.key: source_asset
+        for source_asset in assets
+        if isinstance(source_asset, SourceAsset)
     }
     return source_assets_by_key[key]
 
 
 def test_load_assets_from_package_name():
-    from . import asset_package
+    from dagster_tests.asset_defs_tests import asset_package
 
     assets_defs = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs) == 10
+    assert len(assets_defs) == 11
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
     assets_defs_2 = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs_2) == 10
+    assert len(assets_defs_2) == 11
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
@@ -101,15 +103,15 @@ def test_load_assets_from_package_name():
 
 
 def test_load_assets_from_package_module():
-    from . import asset_package
+    from dagster_tests.asset_defs_tests import asset_package
 
     assets_1 = load_assets_from_package_module(asset_package)
-    assert len(assets_1) == 10
+    assert len(assets_1) == 11
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_1]
 
     assets_2 = load_assets_from_package_module(asset_package)
-    assert len(assets_2) == 10
+    assert len(assets_2) == 11
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_2]
 
@@ -117,8 +119,8 @@ def test_load_assets_from_package_module():
 
 
 def test_load_assets_from_modules(monkeypatch):
-    from . import asset_package
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests import asset_package
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     collection_1 = load_assets_from_modules([asset_package, module_with_assets])
 
@@ -163,8 +165,8 @@ def test_load_assets_from_current_module():
 
 
 def test_load_assets_from_modules_with_group_name():
-    from . import asset_package
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests import asset_package
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets], group_name="my_cool_group"
@@ -184,8 +186,8 @@ def test_respect_existing_groups():
 
 
 def test_load_assets_with_freshness_policy():
-    from . import asset_package
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests import asset_package
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets],
@@ -200,8 +202,8 @@ def test_load_assets_with_freshness_policy():
 
 
 def test_load_assets_with_auto_materialize_policy():
-    from . import asset_package
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests import asset_package
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets], auto_materialize_policy=AutoMaterializePolicy.eager()
@@ -223,8 +225,8 @@ def test_load_assets_with_auto_materialize_policy():
     ],
 )
 def test_prefix(prefix):
-    from . import asset_package
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests import asset_package
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     assets = load_assets_from_modules([asset_package, module_with_assets], key_prefix=prefix)
     assert_assets_have_prefix(prefix, assets)
@@ -233,13 +235,24 @@ def test_prefix(prefix):
     assert_assets_have_prefix(prefix, assets)
 
 
-def test_source_key_prefix():
-    from .asset_package import module_with_assets
+def _load_assets_from_module_with_assets(**kwargs):
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
+    return load_assets_from_modules([module_with_assets], **kwargs)
+
+
+@pytest.mark.parametrize(
+    "load_fn",
+    [
+        _load_assets_from_module_with_assets,
+        lambda **kwargs: load_assets_from_package_name(
+            "dagster_tests.asset_defs_tests.asset_package", **kwargs
+        ),
+    ],
+)
+def test_source_key_prefix(load_fn):
     prefix = ["foo", "my_cool_prefix"]
-    assets_without_prefix_sources = load_assets_from_modules(
-        [module_with_assets], key_prefix=prefix
-    )
+    assets_without_prefix_sources = load_fn(key_prefix=prefix)
     assert get_source_asset_with_key(assets_without_prefix_sources, AssetKey(["elvis_presley"]))
     assert get_assets_def_with_key(
         assets_without_prefix_sources, AssetKey(["foo", "my_cool_prefix", "chuck_berry"])
@@ -248,8 +261,8 @@ def test_source_key_prefix():
         AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
     }
 
-    assets_with_prefix_sources = load_assets_from_modules(
-        [module_with_assets], key_prefix=prefix, source_key_prefix=["bar", "cooler_prefix"]
+    assets_with_prefix_sources = load_fn(
+        key_prefix=prefix, source_key_prefix=["bar", "cooler_prefix"]
     )
     assert get_source_asset_with_key(
         assets_with_prefix_sources, AssetKey(["bar", "cooler_prefix", "elvis_presley"])
@@ -260,6 +273,11 @@ def test_source_key_prefix():
         AssetKey(["bar", "cooler_prefix", "elvis_presley"]),
         AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
     }
+
+    assets_with_str_prefix_sources = load_fn(key_prefix=prefix, source_key_prefix="string_prefix")
+    assert get_source_asset_with_key(
+        assets_with_str_prefix_sources, AssetKey(["string_prefix", "elvis_presley"])
+    )
 
 
 @pytest.mark.parametrize(
@@ -279,7 +297,7 @@ def test_source_key_prefix():
 )
 def test_load_assets_cacheable(load_fn, prefix):
     """Tests the load-from-module and load-from-package-name functinos with cacheable assets."""
-    from . import asset_package_with_cacheable
+    from dagster_tests.asset_defs_tests import asset_package_with_cacheable
 
     assets_defs = load_fn(asset_package_with_cacheable)
     assert len(assets_defs) == 3

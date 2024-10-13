@@ -3,7 +3,7 @@ import time
 
 from dagster._core.test_utils import instance_for_test
 
-from .utils import execute_on_thread, start_celery_worker
+from dagster_celery_tests.utils import execute_on_thread, start_celery_worker
 
 
 def test_multiqueue(rabbitmq):
@@ -13,8 +13,8 @@ def test_multiqueue(rabbitmq):
             execute_thread = threading.Thread(
                 target=execute_on_thread,
                 args=("multiqueue_job", done, instance.get_ref()),
+                daemon=True,
             )
-            execute_thread.daemon = True
             execute_thread.start()
             time.sleep(1)
             assert not done.is_set()

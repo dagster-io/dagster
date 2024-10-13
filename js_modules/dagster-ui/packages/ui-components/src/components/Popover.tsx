@@ -5,27 +5,32 @@ import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
+import {Colors} from './Color';
+import {FontFamily} from './styles';
 import searchSVG from '../icon-svgs/search.svg';
 
-import {Colors} from './Colors';
-import {FontFamily} from './styles';
-
 export const GlobalPopoverStyle = createGlobalStyle`
-  .dagster-popover.bp4-popover2,
-  .dagster-popover.bp4-popover {
-    box-shadow: rgba(0, 0, 0, 0.18) 0px 2px 12px;
+  .dagster-popover.bp5-popover,
+  .dagster-popover.bp5-popover {
+    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
   }
 
-  .dagster-popover .bp4-popover2-content,
-  .dagster-popover .bp4-popover-content {
+  .dagster-popover .bp5-popover-content,
+  .dagster-popover .bp5-popover-content {
+    background-color: ${Colors.popoverBackground()};
     border-radius: 4px;
 
-    .bp4-input-group {
-      .bp4-icon.bp4-icon-search {
+    .bp5-menu {
+      background-color: ${Colors.popoverBackground()};
+      color: ${Colors.textDefault()};
+    }
+
+    .bp5-input-group {
+      .bp5-icon.bp5-icon-search {
         width: 16px;
         height: 16px;
-        background: ${Colors.Gray900};
-        mask-image: url(${searchSVG});
+        background: ${Colors.accentGray()};
+        mask-image: url(${searchSVG.src});
         mask-size: cover;
         &::before { 
           content: '';
@@ -35,34 +40,57 @@ export const GlobalPopoverStyle = createGlobalStyle`
         }
       }
         
-      .bp4-input {
+      .bp5-input {
+        background-color: ${Colors.popoverBackground()};
         border: none;
         border-radius: 8px;
-        box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
+        box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px, ${Colors.keylineDefault()} inset 2px 2px 1.5px;
+        color: ${Colors.textDefault()};
         font-family: ${FontFamily.default};
         ::placeholder {
-          color: ${Colors.Gray500};
+          color: ${Colors.textDisabled()};
         }
       }
     }
   }
 
-  .dagster-popover .bp4-popover2-content > :first-child {
+  .dagster-popover .bp5-popover-content > :first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
   }
 
-  .dagster-popover .bp4-popover2-content > :last-child {
+  .dagster-popover .bp5-popover-content > :last-child {
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
   }
 
-  .dagster-popover .bp4-popover2-arrow-fill {
-    fill: ${Colors.Gray900};
+  .dagster-popover .bp5-popover-arrow-fill {
+    fill: ${Colors.popoverBackground()};
   }
-  .dagster-popover .bp4-popover2.bp4-dark .bp4-popover2-content,
-  .bp4-dark .dagster-popover .bp4-popover2 .bp4-popover2-content {
-    background-color: ${Colors.Gray900};
+
+  .dagster-popover.bp5-dark .bp5-popover-arrow-fill {
+    fill: ${Colors.tooltipBackground()};
+  }
+
+  .dagster-popover.bp5-dark .bp5-popover-arrow-border {
+    fill: ${Colors.shadowDefault()};
+    fill-opacity: 0.7;
+  }
+
+  .dagster-popover.bp5-dark .bp5-popover-arrow {
+    z-index: 9;
+    &:before {
+      display: none;
+    }
+  }
+
+  .dagster-popover.bp5-dark a {
+    color: inherit;
+  }
+
+  .dagster-popover .bp5-popover.bp5-dark .bp5-popover-content,
+  .bp5-dark .dagster-popover .bp5-popover .bp5-popover-content {
+    background-color: ${Colors.tooltipBackground()};
   }
 `;
 
@@ -78,6 +106,7 @@ export const Popover = (props: Props) => {
     <Popover2
       minimal
       autoFocus={false}
+      enforceFocus={false}
       {...props}
       popoverClassName={`dagster-popover ${props.popoverClassName}`}
       modifiers={deepmerge(

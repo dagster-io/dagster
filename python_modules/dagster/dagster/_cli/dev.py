@@ -10,13 +10,9 @@ import click
 
 import dagster._check as check
 from dagster._annotations import deprecated
-from dagster._serdes import serialize_value
-from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster._utils.log import configure_loggers
-
-from .job import apply_click_params
-from .utils import get_possibly_temporary_instance_for_cli
-from .workspace.cli_target import (
+from dagster._cli.job import apply_click_params
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import (
     ClickArgValue,
     get_workspace_load_target,
     grpc_server_target_click_options,
@@ -25,6 +21,9 @@ from .workspace.cli_target import (
     working_directory_option,
     workspace_option,
 )
+from dagster._serdes import serialize_value
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._utils.log import configure_loggers
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
 _CHECK_SUBPROCESS_INTERVAL = 5
@@ -68,6 +67,14 @@ def dev_command_options(f):
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the logs for dagster services",
+)
+@click.option(
     "--port",
     "--dagit-port",
     "-p",
@@ -81,14 +88,23 @@ def dev_command_options(f):
     help="Host to use for the Dagster webserver.",
     required=False,
 )
+@click.option(
+    "--live-data-poll-rate",
+    help="Rate at which the dagster UI polls for updated asset data (in milliseconds)",
+    default="2000",
+    show_default=True,
+    required=False,
+)
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
 )
 def dev_command(
     code_server_log_level: str,
     log_level: str,
+    log_format: str,
     port: Optional[str],
     host: Optional[str],
+    live_data_poll_rate: Optional[str],
     **kwargs: ClickArgValue,
 ) -> None:
     # check if dagster-webserver installed, crash if not
@@ -101,7 +117,9 @@ def dev_command(
             ' running "pip install dagster-webserver" in your Python environment.'
         )
 
-    configure_loggers(log_level=log_level.upper())
+    os.environ["DAGSTER_IS_DEV_CLI"] = "1"
+
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
 
     # Sanity check workspace args
@@ -162,11 +180,23 @@ def dev_command(
             [sys.executable, "-m", "dagster_webserver"]
             + (["--port", port] if port else [])
             + (["--host", host] if host else [])
-            + (["--log-level", log_level])
+            + (["--dagster-log-level", log_level])
+            + (["--log-format", log_format])
+            + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
             + args
         )
         daemon_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagster._daemon", "run", "--log-level", log_level] + args
+            [
+                sys.executable,
+                "-m",
+                "dagster._daemon",
+                "run",
+                "--log-level",
+                log_level,
+                "--log-format",
+                log_format,
+            ]
+            + args
         )
         try:
             while True:
@@ -184,7 +214,11 @@ def dev_command(
                         f" {daemon_process.returncode}"
                     )
 
+        except KeyboardInterrupt:
+            logger.info("KeyboardInterrupt received")
         except:
+            logger.exception("An unexpected exception has occurred")
+        finally:
             logger.info("Shutting down Dagster services...")
             interrupt_ipc_subprocess(daemon_process)
             interrupt_ipc_subprocess(webserver_process)

@@ -9,7 +9,7 @@ Create Date: 2023-05-09 11:50:38.931820
 import sqlalchemy as db
 from alembic import op
 from dagster._core.storage.migration.utils import has_index, has_table
-from dagster._core.storage.sql import get_current_timestamp
+from dagster._core.storage.sql import get_sql_current_timestamp
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
@@ -39,7 +39,7 @@ def upgrade():
             db.Column("num_requested", db.Integer),
             db.Column("num_skipped", db.Integer),
             db.Column("num_discarded", db.Integer),
-            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
         )
         op.create_index(
             "idx_asset_daemon_asset_evaluations_asset_key_evaluation_id",

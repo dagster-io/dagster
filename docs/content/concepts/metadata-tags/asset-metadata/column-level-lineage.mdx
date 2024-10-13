@@ -1,0 +1,149 @@
+---
+title: "Column-level lineage | Dagster Docs"
+description: "Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform."
+---
+
+# Column-level lineage
+
+For assets that produce database tables, column-level lineage can be a powerful tool for improving collaboration and debugging issues. Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform.
+
+---
+
+## How it works
+
+Emitted as materialization metadata, column lineage can be:
+
+- Specified on assets defined in Dagster
+- Enabled for assets loaded from integrations like dbt
+
+Dagster uses this metadata to display the column's upstream and downstream dependencies, accessible via the asset's details page in the Dagster UI. **Note**: Viewing column-level lineage in the UI is a Dagster+ feature.
+
+---
+
+## Enabling column-level lineage
+
+### For assets defined in Dagster
+
+To enable column-level lineage on Dagster assets that produce database tables, you'll need to:
+
+1. Return a <PyObject object="MaterializeResult" /> object containing a `metadata` parameter
+2. In `metadata`, use the `dagster/column_lineage` key to create a <PyObject object="TableColumnLineage" /> object
+3. In this object, use <PyObject object="TableColumnLineage" displayText="TableColumnLineage.deps_by_column" /> to define a list of columns
+4. For each column, use <PyObject object="TableColumnDep" /> to define its dependencies. This object accepts `asset_key` and `column_name` arguments, allow you to specify the name of the asset and column that make up the dependency.
+
+Let's take a look at an example:
+
+```python file=/concepts/metadata-tags/asset_column_lineage.py
+from dagster import (
+    AssetKey,
+    MaterializeResult,
+    TableColumnDep,
+    TableColumnLineage,
+    asset,
+)
+
+
+@asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
+def my_asset():
+    yield MaterializeResult(
+        metadata={
+            "dagster/column_lineage": TableColumnLineage(
+                deps_by_column={
+                    "new_column_foo": [
+                        TableColumnDep(
+                            asset_key=AssetKey("source_bar"),
+                            column_name="column_bar",
+                        ),
+                        TableColumnDep(
+                            asset_key=AssetKey("source_baz"),
+                            column_name="column_baz",
+                        ),
+                    ],
+                    "new_column_qux": [
+                        TableColumnDep(
+                            asset_key=AssetKey("source_bar"),
+                            column_name="column_quuz",
+                        ),
+                    ],
+                }
+            )
+        }
+    )
+```
+
+When materialized, the `my_asset` asset will create two columns: `new_column_foo` and `new_column_qux`.
+
+The `new_column_foo` column is dependent on two other columns:
+
+1. `column_bar` from the `source_bar` asset
+2. `column_baz` from the `source_baz` asset
+
+And the second column, `new_column_qux` has is dependent on `column_quuz` from the `source_bar` asset.
+
+If using Dagster+, you can view the column-level lineage in the Dagster UI.
+
+### For assets loaded from integrations
+
+Column-level lineage is currently supported for the dbt integration. Refer to the [dbt documentation](/integrations/dbt/reference) for more information.
+
+---
+
+## Viewing column-level lineage in the Dagster UI
+
+<Note>Viewing column lineage in the UI is a Dagster+ feature.</Note>
+
+1. In the Dagster UI, open the **Asset details** page for an asset with column-level lineage enabled.
+2. Navigate to the **Overview** tab if it isn't already open.
+3. In the **Columns** section, click the **branch** icon in the row of the column you want to view. The icon is on the far right side of the row:
+
+   <!-- ![Highlighted column lineage icon in the Asset details page of the Dagster UI](/images/concepts/metadata-tags/column-lineage-icon.png) -->
+
+   <Image
+   alt="Highlighted column lineage icon in the Asset details page of the Dagster UI"
+   src="/images/concepts/metadata-tags/column-lineage-icon.png"
+   width={905}
+   height={193}
+   />
+
+The graph will display the column's column dependencies, grouped by asset:
+
+<!-- ![Column lineage for a credit_utilization column in the Dagster UI](/images/concepts/metadata-tags/column-level-lineage.png) -->
+
+<Image
+alt="Column lineage for a credit_utilization column in the Dagster UI"
+src="/images/concepts/metadata-tags/column-level-lineage.png"
+width={2640}
+height={1276}
+/>
+
+To view another column's lineage, click the **Column** dropdown and select another column.
+
+---
+
+## APIs in this guide
+
+| Name                                     | Description                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------- |
+| <PyObject object="asset" decorator />    | A decorator used to define assets.                                      |
+| <PyObject object="MaterializeResult" />  | An object representing a successful materialization of an asset.        |
+| <PyObject object="TableColumnLineage" /> | Class that defines column outputs to column inputs for a tabular asset. |
+| <PyObject object="TableColumnDep" />     | Object that represents a column in an asset.                            |
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Asset metadata"
+    href="/concepts/metadata-tags/asset-metadata"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Metadata & tags"
+    href="/concepts/metadata-tags"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset definitions"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+</ArticleList>

@@ -9,7 +9,11 @@ from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.test_utils import instance_for_test
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 
-from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
+from dagster_celery_tests.utils import (
+    execute_eagerly_on_celery,
+    execute_on_thread,
+    start_celery_worker,
+)
 
 
 def test_eager_priority_job():
@@ -45,8 +49,8 @@ def test_run_priority_job(rabbitmq):
                     "tempdir": tempdir,
                     "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "-3"},
                 },
+                daemon=True,
             )
-            low_thread.daemon = True
             low_thread.start()
 
             time.sleep(1)  # sleep so that we don't hit any sqlite concurrency issues
@@ -59,8 +63,8 @@ def test_run_priority_job(rabbitmq):
                     "tempdir": tempdir,
                     "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "3"},
                 },
+                daemon=True,
             )
-            hi_thread.daemon = True
             hi_thread.start()
 
             time.sleep(5)  # sleep to give queue time to prioritize tasks
@@ -79,4 +83,3 @@ def test_run_priority_job(rabbitmq):
                 histats = instance.get_run_stats(hi_run.run_id)
 
                 assert lowstats.start_time < histats.start_time
-                assert lowstats.end_time > histats.end_time

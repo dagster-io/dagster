@@ -1,18 +1,7 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {breakOnUnderscores} from '../app/Util';
-import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
-import {pluginForMetadata} from '../plugins';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
-import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {Description} from './Description';
 import {
@@ -24,15 +13,25 @@ import {
 } from './SidebarComponents';
 import {
   Invocation,
+  OpEdges,
+  OpMappingTable,
   ResourceContainer,
   ResourceHeader,
   ShowAllButton,
   SidebarOpInvocationInfo,
-  OpEdges,
-  OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
 import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
+import {gql} from '../apollo-client';
+import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {OP_TYPE_SIGNATURE_FRAGMENT, OpTypeSignature} from '../ops/OpTypeSignature';
+import {pluginForMetadata} from '../plugins';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface SidebarOpDefinitionProps {
   definition: SidebarOpDefinitionFragment;
@@ -44,7 +43,7 @@ interface SidebarOpDefinitionProps {
 
 const DEFAULT_INVOCATIONS_SHOWN = 20;
 
-export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) => {
+export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
   const {definition, getInvocations, showingSubgraph, onClickInvocation, repoAddress} = props;
 
   const Plugin = pluginForMetadata(definition.metadata);
@@ -110,25 +109,27 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
         </SidebarSection>
       )}
       {requiredResources && (
-        <SidebarSection title="Required Resources">
+        <SidebarSection title="Required resources">
           <Box padding={{vertical: 16, horizontal: 24}}>
-            {[...requiredResources].sort().map((requirement) => (
-              <ResourceContainer key={requirement.resourceKey}>
-                <Icon name="resource" color={Colors.Gray700} />
-                {repoAddress ? (
-                  <Link
-                    to={workspacePathFromAddress(
-                      repoAddress,
-                      `/resources/${requirement.resourceKey}`,
-                    )}
-                  >
+            {[...requiredResources]
+              .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+              .map((requirement) => (
+                <ResourceContainer key={requirement.resourceKey}>
+                  <Icon name="resource" color={Colors.accentGray()} />
+                  {repoAddress ? (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/resources/${requirement.resourceKey}`,
+                      )}
+                    >
+                      <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+                    </Link>
+                  ) : (
                     <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
-                  </Link>
-                ) : (
-                  <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
-                )}
-              </ResourceContainer>
-            ))}
+                  )}
+                </ResourceContainer>
+              ))}
           </Box>
         </SidebarSection>
       )}
@@ -263,11 +264,14 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
   ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 
-const InvocationList: React.FC<{
+const InvocationList = ({
+  invocations,
+  onClickInvocation,
+}: {
   invocations: SidebarOpInvocationInfo[];
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
-}> = ({invocations, onClickInvocation}) => {
-  const [showAll, setShowAll] = React.useState<boolean>(false);
+}) => {
+  const [showAll, setShowAll] = useState<boolean>(false);
   const visible = invocations.filter((i) => !isHiddenAssetGroupJob(i.pipelineName || ''));
   const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 
@@ -293,7 +297,7 @@ const AssetNodeListItem = styled(Link)`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
-  border-bottom: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
   display: flex;
   gap: 6px;
 
@@ -302,7 +306,7 @@ const AssetNodeListItem = styled(Link)`
   }
 
   &:hover {
-    background: ${Colors.Gray50};
+    background: ${Colors.backgroundLight()};
   }
 
   font-family: ${FontFamily.monospace};

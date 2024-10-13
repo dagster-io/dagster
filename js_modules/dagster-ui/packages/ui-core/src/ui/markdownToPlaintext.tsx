@@ -1,11 +1,10 @@
 import LRUCache from 'lru-cache';
 import {remark} from 'remark';
 import gfm from 'remark-gfm';
-import toPlainText from 'remark-plain-text';
+import strip from 'strip-markdown';
 
-const Remark = remark()
-  .use(gfm)
-  .use(toPlainText as any);
+const Remark = remark().use(gfm).use(strip);
+
 const markdownCache = new LRUCache<string, string>({max: 500});
 export const markdownToPlaintext = (md: string) => {
   // Compile the Markdown file to plain text:

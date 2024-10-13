@@ -5,7 +5,7 @@ from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUB
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_subscription,
-    infer_pipeline_selector,
+    infer_job_selector,
 )
 
 
@@ -21,7 +21,7 @@ def test_execute_hammer_through_webserver():
             },
         ) as workspace_process_context:
             context = workspace_process_context.create_request_context()
-            selector = infer_pipeline_selector(context, "hammer_job")
+            selector = infer_job_selector(context, "hammer_job")
 
             variables = {
                 "executionParams": {

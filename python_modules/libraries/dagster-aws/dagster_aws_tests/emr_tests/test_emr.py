@@ -7,9 +7,10 @@ from unittest import mock
 
 import pytest
 from dagster._utils.test import create_test_pipeline_execution_context
+from moto import mock_emr
+
 from dagster_aws.emr import EmrClusterState, EmrError, EmrJobRunner
 from dagster_aws.utils.mrjob.utils import _boto3_now
-from moto import mock_emr
 
 REGION = "us-west-1"
 
@@ -115,8 +116,7 @@ def test_emr_retrieve_logs(emr_cluster_config, mock_s3_bucket):
         for name in ["stdout.gz", "stderr.gz"]:
             mock_s3_bucket.Object(prefix + "/" + name).put(Body=out.getvalue())
 
-    thread = threading.Thread(target=create_log, args=())
-    thread.daemon = True
+    thread = threading.Thread(target=create_log, args=(), daemon=True)
     thread.start()
 
     stdout_log, stderr_log = emr.retrieve_logs_for_step_id(
@@ -135,8 +135,7 @@ def test_wait_for_log(mock_s3_bucket):
 
         mock_s3_bucket.Object("some_log_file").put(Body=out.getvalue())
 
-    thread = threading.Thread(target=create_log, args=())
-    thread.daemon = True
+    thread = threading.Thread(target=create_log, args=(), daemon=True)
     thread.start()
 
     context = create_test_pipeline_execution_context()

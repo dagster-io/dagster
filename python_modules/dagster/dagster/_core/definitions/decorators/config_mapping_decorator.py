@@ -3,8 +3,7 @@ from typing import Any, Callable, Optional, Type, Union, cast, overload
 import dagster._check as check
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
-
-from ..config import ConfigMapping, ConfigMappingFn
+from dagster._core.definitions.config import ConfigMapping, ConfigMappingFn
 
 
 class _ConfigMapping:
@@ -74,8 +73,7 @@ class _ConfigMapping:
 @overload
 def config_mapping(
     config_fn: ConfigMappingFn,
-) -> ConfigMapping:
-    ...
+) -> ConfigMapping: ...
 
 
 @overload
@@ -83,8 +81,7 @@ def config_mapping(
     *,
     config_schema: UserConfigSchema = ...,
     receive_processed_config_values: Optional[bool] = ...,
-) -> Callable[[ConfigMappingFn], ConfigMapping]:
-    ...
+) -> Callable[[ConfigMappingFn], ConfigMapping]: ...
 
 
 def config_mapping(

@@ -1,7 +1,7 @@
 {{- $_ := include "dagster.backcompat" . | mustFromJson -}}
 Launched. You can access the Dagster webserver/UI by running the following commands:
 
-export DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "dagster.name" . }},app.kubernetes.io/instance={{ .Release.Name }},component=webserver" -o jsonpath="{.items[0].metadata.name}")
+export DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "dagster.name" . }},app.kubernetes.io/instance={{ .Release.Name }},component={{ include "dagster.webserver.componentName" . }}" -o jsonpath="{.items[0].metadata.name}")
 echo "Visit http://127.0.0.1:8080 to open the Dagster UI"
 kubectl --namespace {{ .Release.Namespace }} port-forward $DAGSTER_WEBSERVER_POD_NAME 8080:{{ $_.Values.dagsterWebserver.service.port }}
 

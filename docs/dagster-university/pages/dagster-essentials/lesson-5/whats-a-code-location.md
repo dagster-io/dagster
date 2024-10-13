@@ -1,21 +1,21 @@
 ---
 title: "Lesson 5: What's a code location?"
-module: "dagster_essentials"
-lesson: "5"
+module: 'dagster_essentials'
+lesson: '5'
 ---
 
 # What's a code location?
 
 We’ve talked a lot about definitions, but what about code locations? How do these two things work together?
 
-A *code location* is a collection of Dagster definitions, such as assets. In Dagster, a code location is made up of two components:
+A _code location_ is a collection of Dagster definitions, such as assets. In Dagster, a code location is made up of two components:
 
 - A Python module that contains a `Definitions` object
 - A Python environment that can load the module above
 
 Let’s go back to our cookie example for a moment. Cookies are typically baked in a kitchen, containing everything you need to make cookies. In the previous section, we talked about how your cookie assets (ex: dry ingredients, chocolate chip cookies) can be thought of as **definitions.**
 
-To simplify baking, you would group everything you need in a single location. In this example, a kitchen functions much in the same way a *code location* does - it collects all of your Dagster definitions into a single location:
+To simplify baking, you would group everything you need in a single location. In this example, a kitchen functions much in the same way a _code location_ does - it collects all of your Dagster definitions into a single location:
 
 ![Diagram showing everything needed to bake cookies, such as dry ingredients and chocolate chips, contained in a kitchen.](/images/dagster-essentials/lesson-5/kitchen-code-location.png)
 

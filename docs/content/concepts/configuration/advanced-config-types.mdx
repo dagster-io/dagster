@@ -124,8 +124,7 @@ class MyDataStructuresConfig(Config):
     user_scores: Dict[str, int]
 
 @asset
-def scoreboard(config: MyDataStructuresConfig):
-    ...
+def scoreboard(config: MyDataStructuresConfig): ...
 
 result = materialize(
     [scoreboard],
@@ -161,8 +160,7 @@ class MyNestedConfig(Config):
     user_data: Dict[str, UserData]
 
 @asset
-def average_age(config: MyNestedConfig):
-    ...
+def average_age(config: MyNestedConfig): ...
 
 result = materialize(
     [average_age],
@@ -170,8 +168,16 @@ result = materialize(
         {
             "average_age": MyNestedConfig(
                 user_data={
-                    "Alice": UserData(age=10, email="alice@gmail.com", profile_picture_url=...),
-                    "Bob": UserData(age=20, email="bob@gmail.com", profile_picture_url=...),
+                    "Alice": UserData(
+                        age=10,
+                        email="alice@gmail.com",
+                        profile_picture_url=...,
+                    ),
+                    "Bob": UserData(
+                        age=20,
+                        email="bob@gmail.com",
+                        profile_picture_url=...,
+                    ),
                 }
             )
         }
@@ -292,7 +298,7 @@ class ProcessUsersConfig(Config):
 def process_users(config: ProcessUsersConfig):
     for user, permission in config.users_list.items():
         if permission == UserPermissions.ADMIN:
-            print(f"{user} is an admin")  # noqa: T201
+            print(f"{user} is an admin")
 
 @job
 def process_users_job():
@@ -364,7 +370,7 @@ executed = {}
 
 @op
 def greet_user(config: UserConfig) -> None:
-    print(f"Hello {config.name}!")  # noqa: T201
+    print(f"Hello {config.name}!")
     executed["greet_user"] = True
 
 @job

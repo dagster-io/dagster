@@ -1,7 +1,7 @@
 // We've observed that Firefox's DOM APIs and Canvas APIs do not return
 // identical values given the same rendered text, in particular when the DOM
-// element is inside a flexbox. They're floating point numbers off by ~0.05.
-const FIREFOX_WIDTH_VARIANCE = 0.33;
+// element is inside a flexbox. They're floating point numbers off by ~0.5.
+const FIREFOX_WIDTH_VARIANCE = 0.5;
 
 /**
  * Binary search to find the maximum middle-truncated text that will fit within the specified target width.
@@ -32,6 +32,5 @@ export const calculateMiddleTruncation = (
       end = mid - 1;
     }
   }
-
   return `${text.slice(0, end)}…${text.slice(-end)}`;
 };

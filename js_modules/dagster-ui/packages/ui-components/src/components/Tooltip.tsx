@@ -1,27 +1,27 @@
 // eslint-disable-next-line no-restricted-imports
 import {Tooltip2, Tooltip2Props} from '@blueprintjs/popover2';
 import deepmerge from 'deepmerge';
-import React from 'react';
+import * as React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
-  .dagster-tooltip .bp4-popover2-content {
+  .dagster-tooltip .bp5-popover-content {
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
-      background: ${Colors.Gray900};
-      color: ${Colors.Gray50};
+      background: ${Colors.tooltipBackground()};
+      color: ${Colors.tooltipText()};
       padding: 8px 16px;
   }
 
-  .block-tooltip.bp4-popover2-target {
+  .block-tooltip.bp5-popover-target {
     display: block;
   }
 
-  .dagster-tooltip-bare .bp4-popover2-content {
+  .dagster-tooltip-bare .bp5-popover-content {
     padding: 0;
   }
 `;

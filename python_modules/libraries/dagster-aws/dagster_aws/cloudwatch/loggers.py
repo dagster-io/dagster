@@ -1,5 +1,6 @@
 import datetime
 import logging
+from typing import Optional
 
 import boto3
 from dagster import (
@@ -34,14 +35,22 @@ class CloudwatchLogsHandler(logging.Handler):
         log_group_name,
         log_stream_name,
         aws_region=None,
-        aws_secret_access_key=None,
-        aws_access_key_id=None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
+        endpoint_url: Optional[str] = None,
+        use_ssl: bool = True,
+        aws_session_token: Optional[str] = None,
+        verify: Optional[bool] = None,
     ):
         self.client = boto3.client(
             "logs",
             region_name=aws_region,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
+            endpoint_url=endpoint_url,
+            use_ssl=use_ssl,
+            aws_session_token=aws_session_token,
+            verify=verify,
         )
         self.log_group_name = check.str_param(log_group_name, "log_group_name")
         # Maybe we should make this optional, and default to the run_id
@@ -76,7 +85,7 @@ class CloudwatchLogsHandler(logging.Handler):
         if not log_group_exists:
             raise Exception(
                 "Failed to initialize Cloudwatch logger: Could not find log group with name "
-                "{log_group_name}".format(log_group_name=self.log_group_name)
+                f"{self.log_group_name}"
             )
 
     def check_log_stream(self):
@@ -105,7 +114,7 @@ class CloudwatchLogsHandler(logging.Handler):
         if not log_stream_exists:
             raise Exception(
                 "Failed to initialize Cloudwatch logger: Could not find log stream with name "
-                "{log_stream_name}".format(log_stream_name=self.log_stream_name)
+                f"{self.log_stream_name}"
             )
 
     def log_error(self, record, exc):
@@ -151,15 +160,11 @@ class CloudwatchLogsHandler(logging.Handler):
         except self.client.exceptions.DataAlreadyAcceptedException:
             logging.error(f"Cloudwatch logger: log events already accepted: {res}")
         except self.client.exceptions.InvalidParameterException:
-            logging.error(
-                "Cloudwatch logger: Invalid parameter exception while logging: {res}".format(
-                    res=res
-                )
-            )
+            logging.error(f"Cloudwatch logger: Invalid parameter exception while logging: {res}")
         except self.client.exceptions.ResourceNotFoundException:
             logging.error(
                 "Cloudwatch logger: Resource not found. Check that the log stream or log group "
-                "was not deleted: {res}".format(res=res)
+                f"was not deleted: {res}"
             )
         except self.client.exceptions.ServiceUnavailableException:
             if not retry:
@@ -172,7 +177,7 @@ class CloudwatchLogsHandler(logging.Handler):
             else:
                 logging.error(
                     "Cloudwatch logger: Unrecognized client. Check your AWS access key id and "
-                    "secret key: {res}".format(res=res)
+                    f"secret key: {res}"
                 )
 
 

@@ -1,8 +1,10 @@
 import abc
 from typing import Mapping, Optional, Sequence, Set
 
-from dagster import AssetKey
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluationWithRunIds,
+)
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
@@ -88,6 +90,17 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def get_tick(self, tick_id: int) -> InstigatorTick:
+        """Get the tick for a given evaluation tick id.
+
+        Args:
+            tick_id (str): The id of the tick to query.
+
+        Returns:
+            InstigatorTick: The tick for the given id.
+        """
+
+    @abc.abstractmethod
     def get_ticks(
         self,
         origin_id: str,
@@ -145,20 +158,30 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds[EntityKey]],
     ) -> None:
         """Add asset policy evaluations to storage."""
 
     @abc.abstractmethod
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
-    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        self, key: T_EntityKey, limit: int, cursor: Optional[int] = None
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord[T_EntityKey]]:
         """Get the policy evaluations for a given asset.
 
         Args:
             asset_key (AssetKey): The asset key to query
             limit (Optional[int]): The maximum number of evaluations to return
             cursor (Optional[int]): The cursor to paginate from
+        """
+
+    @abc.abstractmethod
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        """Get all policy evaluations for a given evaluation ID.
+
+        Args:
+            evaluation_id (int): The evaluation ID to query.
         """
 
     @abc.abstractmethod

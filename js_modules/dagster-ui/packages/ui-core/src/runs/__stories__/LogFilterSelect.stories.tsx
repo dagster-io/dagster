@@ -1,6 +1,6 @@
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+import {useState} from 'react';
 
 import {FilterOption, LogFilterSelect} from '../LogFilterSelect';
 import {LogLevel} from '../LogLevel';
@@ -12,7 +12,7 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const [options, setOptions] = React.useState(() => {
+  const [options, setOptions] = useState(() => {
     return Object.fromEntries(
       Object.keys(LogLevel).map((level) => {
         return [

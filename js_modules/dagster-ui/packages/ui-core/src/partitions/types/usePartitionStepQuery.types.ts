@@ -4,8 +4,8 @@ import * as Types from '../../graphql/types';
 
 export type PartitionStepLoaderQueryVariables = Types.Exact<{
   filter: Types.RunsFilter;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type PartitionStepLoaderQuery = {
@@ -41,3 +41,5 @@ export type PartitionStepLoaderQuery = {
         }>;
       };
 };
+
+export const PartitionStepLoaderQueryVersion = 'c81bb54e0d99fe562bdeab9ae126f737c827cb034601c62cd7a6962ac93a9e48';

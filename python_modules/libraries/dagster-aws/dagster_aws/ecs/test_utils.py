@@ -5,8 +5,8 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
 
-from .container_context import EcsContainerContext
-from .launcher import EcsRunLauncher
+from dagster_aws.ecs.container_context import EcsContainerContext
+from dagster_aws.ecs.launcher import EcsRunLauncher
 
 
 class CustomECSRunLauncher(EcsRunLauncher):
@@ -42,7 +42,7 @@ class CustomECSRunLauncher(EcsRunLauncher):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return CustomECSRunLauncher(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def get_cpu_and_memory_overrides(
         self, container_context: EcsContainerContext, run: DagsterRun

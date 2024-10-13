@@ -1,14 +1,20 @@
 ---
-title: "Lesson 1: Orchestration approaches"
-module: "dagster_essentials"
-lesson: "1"
+title: 'Lesson 1: Orchestration approaches'
+module: 'dagster_essentials'
+lesson: '1'
 ---
+
+# Orchestration approaches
 
 Data engineers see orchestration as key to solidifying a data pipeline for business and real-world use. In this section, we’ll go through two different approaches to workflow orchestration and the pros and cons of each.
 
 But first, what’s a workflow?
 
-> *A workflow is a system for managing repetitive processes and tasks which occur in a particular order. They are the mechanism by which people and enterprises accomplish their work […].* - [IBM](https://www.ibm.com/topics/workflow)
+{% callout %}
+
+> A workflow is a system for managing repetitive processes and tasks which occur in a particular order. They are the mechanism by which people and enterprises accomplish their work \[…].\_ - [IBM](https://www.ibm.com/topics/workflow) >
+
+{% /callout %}
 
 A workflow can be visualized using a **directed acyclic graph,** or **DAG**, which depicts the steps required to complete the workflow. For example, sending a CSV of a report by email every Friday might have a DAG that looks like this:
 
@@ -36,7 +42,7 @@ It’s time to bring in the cookies! If you were to set up a task-centric workfl
 
 ![Baking chocolate cookies as a task-centric workflow](/images/dagster-essentials/demo/lesson-1-cookie-etl.png)
 
-This workflow is sequential and focused on the **tasks** required to create the cookies. Notice how at the end, after all steps have been completed, there’s only one obvious output: the freshly baked cookies. 
+This workflow is sequential and focused on the **tasks** required to create the cookies. Notice how at the end, after all steps have been completed, there’s only one obvious output: the freshly baked cookies.
 
 We’ve added the other outputs that are created along the way to the DAG - **cookie dough** and **chocolate chip cookie dough** - but as this approach focuses on tasks, it’s not immediately obvious where or how outputs are created.
 
@@ -44,7 +50,7 @@ We’ve added the other outputs that are created along the way to the DAG - **co
 
 ## Asset-centric workflow orchestration
 
-Workflows that make things (whether they might be chocolate chip cookies or data) have different needs than task-centric workflows when building, troubleshooting, or scaling them. *Assets* are what we call the outputs made by workflows. Asset-centric workflows make it easy to, at a glance, focus on the **whats** and less on the **hows.**
+Workflows that make things (whether they might be chocolate chip cookies or data) have different needs than task-centric workflows when building, troubleshooting, or scaling them. _Assets_ are what we call the outputs made by workflows. Asset-centric workflows make it easy to, at a glance, focus on the **whats** and less on the **hows.**
 
 ### Example of asset-centric workflow
 
@@ -66,12 +72,12 @@ An asset-centric approach also makes adding additional assets straightforward. F
 - To create the **peanut cookie dough**, mix the **peanuts** into the **cookie dough**
 - Lastly, bake the **peanut cookie dough** and wind up with **freshly baked peanut cookies!**
 
-*Voila*! By adding only one additional asset - **peanuts** - we were able to use some of our existing assets to create something brand new - **peanut cookies** - with minimal alterations. Check out the new additions to the DAG (highlighted in light purple) to the right.
+_Voila_! By adding only one additional asset - **peanuts** - we were able to use some of our existing assets to create something brand new - **peanut cookies** - with minimal alterations. Check out the new additions to the DAG (highlighted in light purple) to the right.
 
 ![Adding peanut cookies to the asset-centric cookie workflow](/images/dagster-essentials/demo/lesson-1-cookie-assets-two-cookies.png)
 
 So, how might this be beneficial to a real data pipeline? **Reusability.**
 
-In a task-centric workflow, assets are closely coupled with the tasks that create them. This can make re-using assets difficult, as they are more of a by-product than the focus. 
+In a task-centric workflow, assets are closely coupled with the tasks that create them. This can make re-using assets difficult, as they are more of a by-product than the focus.
 
 An asset could be added to an existing workflow even if it’s not fully relevant to it, resulting in tech debt. Or, it could be added to a new workflow, which would require running an existing workflow, thereby reducing observability, understanding, and data lineage.

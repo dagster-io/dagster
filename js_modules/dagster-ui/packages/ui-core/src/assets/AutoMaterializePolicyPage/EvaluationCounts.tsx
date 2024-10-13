@@ -18,7 +18,9 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numRequested || isPartitionedAsset ? (
       <Caption
         key="requested"
-        color={selected ? Colors.Blue700 : numRequested ? Colors.Green700 : Colors.Gray700}
+        color={
+          selected ? Colors.textBlue() : numRequested ? Colors.textGreen() : Colors.textLight()
+        }
       >
         {isPartitionedAsset ? `${compactNumber(numRequested)} launched` : 'Launched'}
       </Caption>
@@ -28,7 +30,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numSkipped || isPartitionedAsset ? (
       <Caption
         key="skipped"
-        color={selected ? Colors.Blue700 : numSkipped ? Colors.Yellow700 : Colors.Gray700}
+        color={selected ? Colors.textBlue() : numSkipped ? Colors.textYellow() : Colors.textLight()}
       >
         {isPartitionedAsset ? `${compactNumber(numSkipped)} skipped` : 'Skipped'}
       </Caption>
@@ -38,7 +40,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
     numDiscarded || isPartitionedAsset ? (
       <Caption
         key="discarded"
-        color={selected ? Colors.Blue700 : numDiscarded ? Colors.Red700 : Colors.Gray700}
+        color={selected ? Colors.textBlue() : numDiscarded ? Colors.textRed() : Colors.textLight()}
       >
         {isPartitionedAsset ? `${compactNumber(numDiscarded)} discarded` : 'Discarded'}
       </Caption>
@@ -53,7 +55,7 @@ export const EvaluationCounts = React.memo((props: Props) => {
       {filtered
         .map((element, ii) => [
           element,
-          <Caption key={`spacer-${ii}`} color={selected ? Colors.Blue200 : Colors.Gray200}>
+          <Caption key={`spacer-${ii}`} color={selected ? Colors.textBlue() : Colors.textLighter()}>
             /
           </Caption>,
         ])

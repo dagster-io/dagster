@@ -5,24 +5,23 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, Optional
 
 import dagster._check as check
-from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.origin import (
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-)
 from dagster._core.instance import InstanceRef
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .__generated__ import api_pb2
-from .__generated__.api_pb2_grpc import DagsterApiServicer
-from .types import (
+from dagster._grpc.__generated__ import api_pb2
+from dagster._grpc.__generated__.api_pb2_grpc import DagsterApiServicer
+from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
+from dagster._grpc.types import (
     CancelExecutionRequest,
     CancelExecutionResult,
     ExecuteExternalJobArgs,
+    SensorExecutionArgs,
     ShutdownServerResult,
     StartRunResult,
 )
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient
@@ -74,7 +73,6 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         self._grpc_server_registry = self._exit_stack.enter_context(
             GrpcServerRegistry(
                 instance_ref=self._instance_ref,
-                reload_interval=0,
                 heartbeat_ttl=30,
                 startup_timeout=startup_timeout,
                 log_level=self._log_level,
@@ -95,9 +93,11 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         # termination event once all current executions have finished, which will stop the server)
         self._shutdown_once_executions_finish_event = threading.Event()
         self.__cleanup_thread = threading.Thread(
-            target=self._cleanup_thread, args=(), name="code-server-cleanup"
+            target=self._cleanup_thread,
+            args=(),
+            name="code-server-cleanup",
+            daemon=True,
         )
-        self.__cleanup_thread.daemon = True
 
         self.__cleanup_thread.start()
 
@@ -128,8 +128,8 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                     self._heartbeat_shutdown_event,
                 ),
                 name="grpc-client-heartbeat",
+                daemon=True,
             )
-            self._heartbeat_thread.daemon = True
             self._heartbeat_thread.start()
 
     def ReloadCode(self, request, context):
@@ -180,15 +180,17 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def _get_grpc_client(self):
         return self._client
 
-    def _query(self, api_name: str, request, _context):
+    def _query(self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT):
         if not self._client:
             raise Exception("No available client to code serer")
-        return check.not_none(self._client)._get_response(api_name, request)  # noqa
+        return check.not_none(self._client)._get_response(api_name, request, timeout)  # noqa
 
-    def _streaming_query(self, api_name: str, request, _context):
+    def _streaming_query(
+        self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT
+    ):
         if not self._client:
             raise Exception("No available client to code serer")
-        return check.not_none(self._client)._get_streaming_response(api_name, request)  # noqa
+        return check.not_none(self._client)._get_streaming_response(api_name, request, timeout)  # noqa
 
     def ExecutionPlanSnapshot(self, request, context):
         return self._query("ExecutionPlanSnapshot", request, context)
@@ -201,8 +203,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         return self._query("ListRepositories", request, context)
 
     def Ping(self, request, context):
-        echo = request.echo
-        return api_pb2.PingReply(echo=echo)
+        return self._query("Ping", request, context)
 
     def GetServerId(self, request, context):
         return self._fixed_server_id or self._query("GetServerId", request, context)
@@ -246,8 +247,32 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def ExternalScheduleExecution(self, request, context):
         return self._streaming_query("ExternalScheduleExecution", request, context)
 
+    def SyncExternalScheduleExecution(self, request, context):
+        return self._query("SyncExternalScheduleExecution", request, context)
+
     def ExternalSensorExecution(self, request, context):
-        return self._streaming_query("ExternalSensorExecution", request, context)
+        sensor_execution_args = deserialize_value(
+            request.serialized_external_sensor_execution_args,
+            SensorExecutionArgs,
+        )
+        return self._streaming_query(
+            "ExternalSensorExecution",
+            request,
+            context,
+            sensor_execution_args.timeout or DEFAULT_GRPC_TIMEOUT,
+        )
+
+    def SyncExternalSensorExecution(self, request, context):
+        sensor_execution_args = deserialize_value(
+            request.serialized_external_sensor_execution_args,
+            SensorExecutionArgs,
+        )
+        return self._query(
+            "SyncExternalSensorExecution",
+            request,
+            context,
+            sensor_execution_args.timeout or DEFAULT_GRPC_TIMEOUT,
+        )
 
     def ShutdownServer(self, request, context):
         try:

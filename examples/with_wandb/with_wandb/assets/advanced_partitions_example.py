@@ -1,5 +1,5 @@
 import wandb
-from dagster import AssetIn, StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, AssetIn, StaticPartitionsDefinition, asset
 
 partitions_def = StaticPartitionsDefinition(["red", "orange", "yellow", "blue", "green"])
 
@@ -17,10 +17,10 @@ ARTIFACT_NAME = "my_advanced_configuration_partitioned_asset"
         }
     },
 )
-def write_advanced_artifact(context):
+def write_advanced_artifact(context: AssetExecutionContext):
     """Example writing an Artifact with partitions and custom metadata."""
     artifact = wandb.Artifact(ARTIFACT_NAME, "dataset")
-    partition_key = context.asset_partition_key_for_output()
+    partition_key = context.partition_key
 
     if partition_key == "red":
         return "red"

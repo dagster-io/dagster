@@ -1,0 +1,298 @@
+---
+title: "Code locations in Dagster+ | Dagster Docs"
+---
+
+# Managing code locations in Dagster+
+
+<Note>This guide is applicable to Dagster+.</Note>
+
+A code location specifies a single Python package or file that defines your Dagster code. When you add a code location in Dagster+, you're instructing your deployment's agent where to find your code. This applies to both Hybrid and Serverless deployments.
+
+Dagster+ agents use this location configuration to load your code and upload metadata about your jobs. Each full deployment - for example, `prod` - can include code from one or more code locations.
+
+By the end of this guide, you'll understand:
+
+- The requirements for Dagster code to work with Dagster+
+- How to interact with code locations using the Dagster UI
+- How to interact with code locations using the dagster-cloud CLI
+
+---
+
+## Dagster+ code requirements
+
+<Note>
+  <strong>Learn by example?</strong> Check out the{" "}
+  <a href="https://github.com/dagster-io/hooli-data-eng-pipelines">
+    example repo
+  </a>
+  , which is set up to run in Dagster+.
+</Note>
+
+To work with Dagster+, your Dagster code:
+
+- **Must be loaded from a single entry point, either a Python file or package.** This entry point can load repositories from other files or packages.
+
+- **Must run in an environment where the `dagster` and [`dagster-cloud`](/dagster-plus/managing-deployments/dagster-plus-cli) 0.13.2 or later Python packages are installed.**
+
+- **If using [Hybrid Deployment](/dagster-plus/deployment/hybrid)**:
+
+  - **And you're using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent**, your code must be packaged into a Docker image and pushed to a registry your agent can access. Dagster+ doesn't need access to your image - your agent only needs to be able to pull it.
+
+    Additionally, the Dockerfile for your image doesn't need to specify an entry point or command. These will be supplied by the agent when it runs your code using your supplied image.
+
+  - **And you're using a local agent**, your code must be in a Python environment that can be accessed on the same machine as your agent.
+
+Additionally, note that:
+
+- Your code doesn't need to use the same version of Dagster as your agent
+- Different code locations can use different versions of Dagster
+- Dagster+ doesn't require a [`workspace.yaml` file](/concepts/code-locations/workspace-files). You can still create a `workspace.yaml` file to load your code in an open source Dagster webserver instance, but doing so won't affect how your code is loaded in Dagster+.
+
+---
+
+## Interacting with code locations
+
+<Note>
+  <strong>Editor</strong>, <strong>Admin</strong>, or{" "}
+  <strong>Organization Admin</strong> permissions are required to manage code
+  locations in Dagster+.
+  <br />
+  <br />
+  If you're an <strong>Editor</strong> or <strong>Admin</strong>, you can only manage
+  code locations in deployments where you're an <strong>Editor</strong> or <strong>
+    Admin
+  </strong>.
+</Note>
+
+Interacting with code locations can be done using the Dagster+ UI or the [dagster-cloud CLI](/dagster-plus/managing-deployments/dagster-plus-cli). The CLI commands perform the same underlying operations as those in the **Deployment** tab of the UI.
+
+### Adding code locations
+
+<TabGroup>
+<TabItem name="Serverless Dagster+ UI">
+
+For **Serverless deployments**, there are two ways to deploy your code to Dagster+:
+
+- **Start from a template**- Use one of our quickstart templates to get up and running. All templates come with CI/CD already configured and will be cloned to a new git repository.
+
+- **Import an existing project** - Import an existing git repository using our GitHub or GitLab integrations or the [dagster-cloud CLI](/dagster-plus/managing-deployments/dagster-plus-cli). **Note**: If using the GitHub or GitLab integrations, Dagster+ will:
+
+  - Add a [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) to the repository if one doesn't already exist, and
+  - Set up [CI/CD](/dagster-plus/references/ci-cd-file-reference)
+
+Select an option in the UI and follow the prompts.
+
+</TabItem>
+<TabItem name="Hybrid Dagster+ UI">
+
+1. Sign in to your Dagster+ account.
+
+2. Click **Deployment**.
+
+3. Click **+ Add code location**. This will open a YAML editor with a schema describing the acceptable fields:
+
+   <Image
+   alt="Add Code Location Config Editor"
+   src="/images/dagster-cloud/developing-testing/code-locations/add_location_ui_config.png"
+   width={1118}
+   height={511}
+   />
+
+4. In the editor, define the code location's configuration. Refer to the [`dagster_cloud.yaml` reference](/dagster-plus/managing-deployments/dagster-cloud-yaml) for information about the properties in the configuration.
+
+   For example, the following config specifies that a code location should include a secret named `my_secret` and run in a k8s namespace (`my_namespace`) whenever the Kubernetes agent creates a pod for the location:
+
+   ```yaml
+   location_name: cloud-examples
+   image: dagster/dagster-cloud-examples:latest
+   code_source:
+     package_name: dagster_cloud_examples
+   container_context:
+     k8s:
+       namespace: my_namespace
+       env_secrets:
+         - my_secret
+   ```
+
+5. When finished, click **Add code location**.
+
+The agent will attempt to load your code and send its metadata to Dagster+. **Note**: This may take some time.
+
+Once your code has loaded, the location will show a green **Loaded** status and jobs will appear in Dagster+. If the agent is unable to load your code, the location will show an error with more information.
+
+</TabItem>
+<TabItem name="dagster-cloud CLI">
+
+Code locations can be added using the `deployment add-location` command. For example, to add Dagster+'s public example image, run:
+
+```shell
+# Set up YAML file for example location
+cat > example_location.yaml <<EOL
+location_name: cloud-examples
+image: dagster/dagster-cloud-examples:latest
+code_source:
+  package_name: dagster_cloud_examples
+EOL
+
+dagster-cloud deployment add-location --from example_location.yaml
+```
+
+Values can also be provided using options:
+
+```shell
+dagster-cloud deployment add-location test_location \
+    --image dagster/dagster-cloud-examples:latest \
+    --package-name dagster_cloud_examples
+```
+
+To see all available options, run:
+
+```shell
+dagster-cloud deployment add-location --help
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+### Modifying code locations
+
+<TabGroup>
+<TabItem name="Dagster+ UI">
+
+To modify a code location, click the **dropdown menu** to the right of the location. In the menu, click **Modify**:
+
+<Image
+alt="Highlighted Modify option in the dropdown menu next to a code location in Dagster+"
+src="/images/dagster-cloud/developing-testing/code-locations/modify-code-location.png"
+width={1940}
+height={480}
+/>
+
+After a code location is updated, the agent will perform a rolling update of your code and jobs will update in Dagster+. **Note**: Updating code won't interrupt any currently launched runs.
+
+</TabItem>
+<TabItem name="dagster-cloud CLI">
+
+<Note>
+  <strong>Heads up!</strong> When using this command, the full set of
+  information about the location must be specified even if only one piece of
+  configuration is modified.
+</Note>
+
+```shell
+dagster-cloud deployment update-location [LOCATION_NAME]
+```
+
+To see all available options, run:
+
+```shell
+dagster-cloud deployment update-location -h
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+### Redeploying code locations
+
+To reload your code and upload job metadata to Dagster+ without modifying the code location, click the **Redeploy** button:
+
+<Image
+alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
+src="/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png"
+width={1920}
+height={284}
+/>
+
+For example, if the agent was unable to pull your image due to a permissions issue that's since been addressed, clicking **Redeploy** will tell the agent to try again.
+
+---
+
+### Deleting code locations
+
+<TabGroup>
+<TabItem name="Dagster+ UI">
+
+To delete a code location, click the **dropdown menu** to the right of the location. In the menu, click **Remove**:
+
+<Image
+alt="Highlighted Remove option in the dropdown menu next to a code location in Dagster+"
+src="/images/dagster-cloud/developing-testing/code-locations/delete-code-location.png"
+width={1940}
+height={480}
+/>
+
+When prompted, confirm the deletion.
+
+</TabItem>
+<TabItem name="dagster-cloud CLI">
+
+```shell
+dagster-cloud deployment delete-location [LOCATION_NAME]
+```
+
+To see all available options, run:
+
+```shell
+dagster-cloud deployment delete-location -h
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+### Syncing the workspace with the CLI
+
+The YAML configuration for all code locations in a workspace can be kept in a [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file and reconciled with the workspace config in Dagster+ using the `deployment sync-locations` command.
+
+For example, if you have the following `dagster_cloud.yaml` file:
+
+```yaml caption=dagster_cloud.yaml
+locations:
+  - location_name: machine-learning
+    image: myregistry/dagster-machine-learning:mytag
+    code_source:
+      package_name: dagster_cloud_machine_learning
+    executable_path: /my/folder/python_executable
+    attribute: my_repo
+  - location_name: data-eng
+    image: myregistry/dagster-data-eng:myothertag
+    code_source:
+      python_file: repo.py
+    working_directory: /my/folder/working_dir/
+```
+
+Run the following to reconcile the file with Dagster+'s remote workspace:
+
+```shell
+dagster-cloud deployment sync-locations -w dagster_cloud.yaml
+```
+
+To see all available options, run:
+
+```shell
+dagster-cloud deployment sync-locations -h
+```
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster UI"
+    href="/concepts/webserver/ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/dagster-plus-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster+ Branch Deployments"
+    href="/dagster-plus/managing-deployments/branch-deployments"
+  ></ArticleListItem>
+</ArticleList>

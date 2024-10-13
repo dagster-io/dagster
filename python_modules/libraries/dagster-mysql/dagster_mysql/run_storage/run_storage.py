@@ -22,21 +22,19 @@ from dagster._core.storage.sql import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp
 from sqlalchemy.engine import Connection
 
-from ..utils import (
+from dagster_mysql.utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_isolation_level,
     mysql_url_from_config,
-    parse_mysql_version,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
 
 MINIMUM_MYSQL_BUCKET_VERSION = "8.0.0"
-MINIMUM_MYSQL_INTERSECT_VERSION = "8.0.31"
 
 
 class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
@@ -158,24 +156,18 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
 
-    @property
-    def supports_intersect(self) -> bool:
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(  # type: ignore
-            MINIMUM_MYSQL_INTERSECT_VERSION
-        )
-
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
         with self.connect() as conn:
             conn.execute(
                 db_dialects.mysql.insert(DaemonHeartbeatsTable)
                 .values(
-                    timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                    timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_value(daemon_heartbeat),
                 )
                 .on_duplicate_key_update(
-                    timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                    timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_value(daemon_heartbeat),
                 )

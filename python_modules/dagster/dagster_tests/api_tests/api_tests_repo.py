@@ -17,10 +17,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
 
@@ -127,6 +124,18 @@ def partitioned_run_request_schedule():
     return RunRequest(partition_key="a")
 
 
+@schedule(job_name="baz", cron_schedule="* * * * *")
+def schedule_times_out():
+    import time
+
+    time.sleep(2)
+
+
+@schedule(job_name="baz", cron_schedule="* * * * *")
+def schedule_error():
+    raise Exception("womp womp")
+
+
 def define_bar_schedules():
     return {
         "foo_schedule": ScheduleDefinition(
@@ -155,6 +164,8 @@ def define_bar_schedules():
             },
         ),
         "partitioned_run_request_schedule": partitioned_run_request_schedule,
+        "schedule_times_out": schedule_times_out,
+        "schedule_error": schedule_error,
     }
 
 
@@ -162,6 +173,13 @@ def define_bar_schedules():
 def sensor_foo(_):
     yield RunRequest(run_key=None, run_config={"foo": "FOO"}, tags={"foo": "foo_tag"})
     yield RunRequest(run_key=None, run_config={"foo": "FOO"})
+
+
+@sensor(job_name="foo")
+def sensor_times_out(_):
+    import time
+
+    time.sleep(2)
 
 
 @sensor(job_name="foo")
@@ -190,6 +208,7 @@ def bar_repo():
         "schedules": define_bar_schedules(),
         "sensors": {
             "sensor_foo": sensor_foo,
+            "sensor_times_out": sensor_times_out,
             "sensor_error": lambda: sensor_error,
             "sensor_raises_dagster_error": lambda: sensor_raises_dagster_error,
         },

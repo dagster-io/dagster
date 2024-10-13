@@ -7,16 +7,15 @@ from typing_extensions import Self, TypedDict
 from dagster import _check as check
 from dagster._config import StringSource
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.base_storage import DagsterStorage
+from dagster._core.storage.event_log.base import EventLogStorage
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.runs.sqlite.sqlite_run_storage import SqliteRunStorage
+from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
-
-from .base_storage import DagsterStorage
-from .event_log.base import EventLogStorage
-from .event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
-from .runs.base import RunStorage
-from .runs.sqlite.sqlite_run_storage import SqliteRunStorage
-from .schedules.base import ScheduleStorage
-from .schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -87,6 +86,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
         return cls(base_dir, inst_data=inst_data)
 
     def register_instance(self, instance: "DagsterInstance") -> None:
+        super().register_instance(instance)
         if not self._run_storage.has_instance:
             self._run_storage.register_instance(instance)
         if not self._event_log_storage.has_instance:

@@ -12,7 +12,9 @@ export type AssetGraphQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    groupName: string | null;
+    groupName: string;
+    isExecutable: boolean;
+    changedReasons: Array<Types.ChangeReason>;
     hasMaterializePermission: boolean;
     graphName: string | null;
     jobNames: Array<string>;
@@ -22,7 +24,12 @@ export type AssetGraphQuery = {
     computeKind: string | null;
     isPartitioned: boolean;
     isObservable: boolean;
-    isSource: boolean;
+    isMaterializable: boolean;
+    kinds: Array<string>;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -38,7 +45,9 @@ export type AssetGraphQuery = {
 export type AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
+  groupName: string;
+  isExecutable: boolean;
+  changedReasons: Array<Types.ChangeReason>;
   hasMaterializePermission: boolean;
   graphName: string | null;
   jobNames: Array<string>;
@@ -48,7 +57,12 @@ export type AssetNodeForGraphQueryFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  isSource: boolean;
+  isMaterializable: boolean;
+  kinds: Array<string>;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -59,3 +73,5 @@ export type AssetNodeForGraphQueryFragment = {
   dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
+
+export const AssetGraphQueryVersion = '26030b5c565bdc4d84b54b2c9a7e8172562cf7434912511768bde20875d47b44';

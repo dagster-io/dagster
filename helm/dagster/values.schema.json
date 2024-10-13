@@ -516,6 +516,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -568,6 +579,12 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
+        "Container": {
+            "title": "Container",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+        },
         "UserDeployment": {
             "title": "UserDeployment",
             "type": "object",
@@ -595,6 +612,10 @@
                 },
                 "includeConfigInLaunchedRuns": {
                     "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
+                },
+                "deploymentNamespace": {
+                    "title": "Deploymentnamespace",
+                    "type": "string"
                 },
                 "port": {
                     "title": "Port",
@@ -685,6 +706,20 @@
                 "schedulerName": {
                     "title": "Schedulername",
                     "type": "string"
+                },
+                "initContainers": {
+                    "title": "Initcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
+                },
+                "sidecarContainers": {
+                    "title": "Sidecarcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
                 }
             },
             "required": [
@@ -1382,6 +1417,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "showUrlOnly": {
+                    "title": "Showurlonly",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1719,10 +1765,49 @@
             ],
             "type": "string"
         },
+        "DaemonSchedulerConfig": {
+            "title": "DaemonSchedulerConfig",
+            "type": "object",
+            "properties": {
+                "maxCatchupRuns": {
+                    "title": "Maxcatchupruns",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "maxTickRetries": {
+                    "title": "Maxtickretries",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
         "SchedulerConfig": {
             "title": "SchedulerConfig",
             "type": "object",
             "properties": {
+                "daemonScheduler": {
+                    "title": "DaemonSchedulerConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/DaemonSchedulerConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "customScheduler": {
                     "title": "ConfigurableClass",
                     "anyOf": [
@@ -2444,6 +2529,24 @@
             ],
             "additionalProperties": false
         },
+        "BlockOpConcurrencyLimitedRuns": {
+            "title": "BlockOpConcurrencyLimitedRuns",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "opConcurrencySlotBuffer": {
+                    "title": "Opconcurrencyslotbuffer",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "enabled",
+                "opConcurrencySlotBuffer"
+            ]
+        },
         "QueuedRunCoordinatorConfig": {
             "title": "QueuedRunCoordinatorConfig",
             "type": "object",
@@ -2509,6 +2612,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "blockOpConcurrencyLimitedRuns": {
+                    "title": "BlockOpConcurrencyLimitedRuns",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/BlockOpConcurrencyLimitedRuns"
                         },
                         {
                             "type": "null"
@@ -2604,6 +2718,41 @@
                         }
                     }
                 }
+            ]
+        },
+        "RunRetries": {
+            "title": "RunRetries",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "maxRetries": {
+                    "title": "Maxretries",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "retryOnAssetOrOpFailure": {
+                    "title": "Retryonassetoropfailure",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "enabled"
             ]
         },
         "Sensors": {
@@ -2774,8 +2923,7 @@
                     "type": "object"
                 },
                 "runRetries": {
-                    "title": "Runretries",
-                    "type": "object"
+                    "$ref": "#/definitions/RunRetries"
                 },
                 "sensors": {
                     "$ref": "#/definitions/Sensors"
@@ -2816,6 +2964,17 @@
                     "anyOf": [
                         {
                             "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "initContainerResources": {
+                    "title": "Resources",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Resources"
                         },
                         {
                             "type": "null"
@@ -3000,6 +3159,9 @@
                     "$ref": "#/definitions/TickRetention"
                 },
                 "schedule": {
+                    "$ref": "#/definitions/TickRetention"
+                },
+                "autoMaterialize": {
                     "$ref": "#/definitions/TickRetention"
                 }
             },

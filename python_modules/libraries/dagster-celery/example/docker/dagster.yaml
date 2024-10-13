@@ -1,0 +1,44 @@
+storage:
+  postgres:
+    postgres_db:
+      hostname:
+        env: POSTGRES_HOST
+      username:
+        env: POSTGRES_USER
+      password:
+        env: POSTGRES_PASSWORD
+      db_name:
+        env: POSTGRES_DB
+      port:
+        env: POSTGRES_PORT
+
+compute_logs:
+  module: dagster.core.storage.noop_compute_log_manager
+  class: NoOpComputeLogManager
+
+scheduler:
+  module: dagster.core.scheduler
+  class: DagsterDaemonScheduler
+
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+
+run_launcher:
+  module: dagster_celery.launcher
+  class: CeleryRunLauncher
+  config:
+    broker:
+      env: CELERY_BROKER_URL
+    backend:
+      env: CELERY_RESULT_BACKEND
+    default_queue: long-queue
+
+run_monitoring:
+  enabled: true
+  start_timeout_seconds: 60
+  cancel_timeout_seconds: 60
+  poll_interval_seconds: 30
+
+telemetry:
+  enabled: false

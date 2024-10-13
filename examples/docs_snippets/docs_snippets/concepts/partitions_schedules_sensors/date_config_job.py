@@ -1,4 +1,4 @@
-from dagster import Config, job, op
+from dagster import Config, OpExecutionContext, job, op
 
 
 class ProcessDateConfig(Config):
@@ -6,7 +6,7 @@ class ProcessDateConfig(Config):
 
 
 @op
-def process_data_for_date(context, config: ProcessDateConfig):
+def process_data_for_date(context: OpExecutionContext, config: ProcessDateConfig):
     date = config.date
     context.log.info(f"processing data for {date}")
 

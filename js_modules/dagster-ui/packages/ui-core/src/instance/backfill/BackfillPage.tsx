@@ -1,554 +1,138 @@
-import {gql, useQuery} from '@apollo/client';
 import {
-  Page,
-  PageHeader,
-  Colors,
+  Alert,
   Box,
-  Tag,
-  Table,
-  Spinner,
-  Dialog,
-  Button,
-  DialogFooter,
-  ButtonLink,
-  DialogBody,
+  Colors,
+  Heading,
   NonIdealState,
+  PageHeader,
+  Spinner,
+  Tab,
+  Tabs,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import React from 'react';
+import {useContext} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import styled from 'styled-components';
 
-import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
+import {BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillAssetPartitionsTable} from './BackfillAssetPartitionsTable';
+import {BackfillLogsTab} from './BackfillLogsTab';
+import {BackfillOverviewDetails} from './BackfillOverviewDetails';
+import {BackfillRunsTab} from './BackfillRunsTab';
+import {useBackfillDetailsQuery} from './useBackfillDetailsQuery';
+import {CloudOSSContext} from '../../app/CloudOSSContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
-import {Timestamp} from '../../app/time/Timestamp';
-import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {BulkActionStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
-import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
-import {testId} from '../../testing/testId';
-import {numberFormatter} from '../../ui/formatters';
-
+import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {
-  BackfillStatusesByAssetQuery,
-  BackfillStatusesByAssetQueryVariables,
-  PartitionBackfillFragment,
-} from './types/BackfillPage.types';
-
-dayjs.extend(duration);
-dayjs.extend(relativeTime);
+  DaemonNotRunningAlert,
+  useIsBackfillDaemonHealthy,
+} from '../../partitions/BackfillMessaging';
+import {testId} from '../../testing/testId';
 
 export const BackfillPage = () => {
+  const {featureContext} = useContext(CloudOSSContext);
   const {backfillId} = useParams<{backfillId: string}>();
   useTrackPageView();
   useDocumentTitle(`Backfill | ${backfillId}`);
 
-  const queryResult = useQuery<BackfillStatusesByAssetQuery, BackfillStatusesByAssetQueryVariables>(
-    BACKFILL_DETAILS_QUERY,
-    {
-      variables: {backfillId},
-    },
-  );
-  const {data} = queryResult;
+  const [selectedTab, setSelectedTab] = useQueryPersistedState<'partitions' | 'logs' | 'runs'>({
+    queryKey: 'tab',
+    defaults: {tab: 'partitions'},
+  });
 
-  const backfill = data?.partitionBackfillOrError;
+  const queryResult = useBackfillDetailsQuery(backfillId);
+  const isDaemonHealthy = useIsBackfillDaemonHealthy();
+  const {data, error} = queryResult;
 
-  let isInProgress = true;
-  if (backfill && backfill.__typename === 'PartitionBackfill') {
-    // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
-    isInProgress = [BulkActionStatus.REQUESTED, BulkActionStatus.CANCELING].includes(
-      backfill.status,
-    );
-  }
+  const backfill =
+    data?.partitionBackfillOrError.__typename === 'PartitionBackfill'
+      ? data.partitionBackfillOrError
+      : null;
+
+  // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
+  const isInProgress = backfill
+    ? [BulkActionStatus.REQUESTED, BulkActionStatus.CANCELING].includes(backfill.status)
+    : true;
+
   const refreshState = useQueryRefreshAtInterval(queryResult, 10000, isInProgress);
 
   function content() {
-    if (!backfill || !data) {
+    if (!data || !data.partitionBackfillOrError) {
       return (
         <Box padding={64} data-testid={testId('page-loading-indicator')}>
           <Spinner purpose="page" />
         </Box>
       );
     }
-    if (backfill.__typename === 'PythonError') {
-      return <PythonErrorInfo error={backfill} />;
+    if (data.partitionBackfillOrError.__typename === 'PythonError') {
+      return <PythonErrorInfo error={data.partitionBackfillOrError} />;
     }
-    if (backfill.__typename === 'BackfillNotFoundError') {
-      return <NonIdealState icon="no-results" title={backfill.message} />;
+    if (data.partitionBackfillOrError.__typename === 'BackfillNotFoundError') {
+      return <NonIdealState icon="no-results" title={data.partitionBackfillOrError.message} />;
     }
 
-    function getRunsUrl(status: 'inProgress' | 'complete' | 'failed' | 'targeted') {
-      const filters: RunFilterToken[] = [
-        {
-          token: 'tag',
-          value: `dagster/backfill=${backfillId}`,
-        },
-      ];
-      switch (status) {
-        case 'inProgress':
-          filters.push(
-            {
-              token: 'status',
-              value: RunStatus.STARTED,
-            },
-            {
-              token: 'status',
-              value: RunStatus.QUEUED,
-            },
-            {
-              token: 'status',
-              value: RunStatus.STARTING,
-            },
-            {
-              token: 'status',
-              value: RunStatus.CANCELING,
-            },
-            {
-              token: 'status',
-              value: RunStatus.NOT_STARTED,
-            },
-          );
-          break;
-        case 'complete':
-          filters.push({
-            token: 'status',
-            value: RunStatus.SUCCESS,
-          });
-          break;
-        case 'failed':
-          filters.push({
-            token: 'status',
-            value: RunStatus.FAILURE,
-          });
-          filters.push({
-            token: 'status',
-            value: RunStatus.CANCELED,
-          });
-          break;
-      }
-      return runsPathWithFilters(filters);
-    }
+    const backfill = data.partitionBackfillOrError;
 
     return (
       <>
-        <Box
-          padding={24}
-          flex={{
-            direction: 'row',
-            justifyContent: 'space-between',
-            wrap: 'nowrap',
-            alignItems: 'center',
-          }}
-          data-testid={testId('backfill-page-details')}
-        >
-          <Detail
-            label="Created"
-            detail={
-              <Timestamp
-                timestamp={{ms: Number(backfill.timestamp * 1000)}}
-                timeFormat={{showSeconds: true, showTimezone: false}}
-              />
-            }
-          />
-          <Detail
-            label="Duration"
-            detail={
-              <Duration
-                start={backfill.timestamp * 1000}
-                end={backfill.endTimestamp ? backfill.endTimestamp * 1000 : null}
-              />
-            }
-          />
-          <Detail
-            label="Partition Selection"
-            detail={
-              <PartitionSelection
-                numPartitions={backfill.numPartitions || 0}
-                rootAssetTargetedPartitions={
-                  backfill.assetBackfillData?.rootAssetTargetedPartitions
-                }
-                rootAssetTargetedRanges={backfill.assetBackfillData?.rootAssetTargetedRanges}
-              />
-            }
-          />
-          <Detail label="Status" detail={<StatusLabel backfill={backfill} />} />
+        <BackfillOverviewDetails backfill={backfill} />
+
+        {isDaemonHealthy ? null : (
+          <Box padding={{horizontal: 24, bottom: 16}}>
+            <DaemonNotRunningAlert />
+          </Box>
+        )}
+
+        <Box padding={{left: 24}} border="bottom">
+          <Tabs size="large" selectedTabId={selectedTab}>
+            <Tab id="partitions" title="Partitions" onClick={() => setSelectedTab('partitions')} />
+            <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
+            {featureContext.canSeeBackfillCoordinatorLogs ? (
+              <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
+            ) : null}
+          </Tabs>
         </Box>
-        <Table>
-          <thead>
-            <tr>
-              <th style={{width: '50%'}}>Asset name</th>
-              <th>
-                <Link to={getRunsUrl('targeted')}>Partitions targeted</Link>
-              </th>
-              <th>
-                <Link to={getRunsUrl('inProgress')}>In progress</Link>
-              </th>
-              <th>
-                <Link to={getRunsUrl('complete')}>Completed</Link>
-              </th>
-              <th>
-                <Link to={getRunsUrl('failed')}>Failed</Link>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {backfill.assetBackfillData?.assetBackfillStatuses.map((asset) => {
-              let targeted;
-              let inProgress;
-              let completed;
-              let failed;
-              if (asset.__typename === 'AssetPartitionsStatusCounts') {
-                targeted = asset.numPartitionsTargeted;
-                inProgress = asset.numPartitionsInProgress;
-                completed = asset.numPartitionsMaterialized;
-                failed = asset.numPartitionsFailed;
-              } else {
-                targeted = 1;
-                failed = asset.failed ? 1 : 0;
-                inProgress = asset.inProgress ? 1 : 0;
-                completed = asset.materialized ? 1 : 0;
-              }
-              return (
-                <tr
-                  key={tokenForAssetKey(asset.assetKey)}
-                  data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
-                >
-                  <td>
-                    <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                      <div>
-                        <Link to={assetDetailsPathForKey(asset.assetKey)}>
-                          {asset.assetKey.path.join('/')}
-                        </Link>
-                      </div>
-                      <div>
-                        <StatusBar
-                          targeted={targeted}
-                          inProgress={inProgress}
-                          completed={completed}
-                          failed={failed}
-                        />
-                      </div>
-                    </Box>
-                  </td>
-                  {asset.__typename === 'AssetPartitionsStatusCounts' ? (
-                    <>
-                      <td>{targeted}</td>
-                      <td>{inProgress}</td>
-                      <td>{completed}</td>
-                      <td>{failed}</td>
-                    </>
-                  ) : (
-                    <>
-                      <td>-</td>
-                      <td>
-                        {inProgress ? (
-                          <Tag icon="spinner" intent="primary">
-                            In progress
-                          </Tag>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td>{completed ? <Tag intent="success">Completed</Tag> : '-'}</td>
-                      <td>{failed ? <Tag intent="danger">Failed</Tag> : '-'}</td>
-                    </>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
+
+        {error?.graphQLErrors && (
+          <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
+        )}
+        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
+          {selectedTab === 'partitions' && <BackfillAssetPartitionsTable backfill={backfill} />}
+          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="both" />}
+          {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+        </Box>
       </>
     );
   }
 
   return (
-    <Page>
+    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={
-          <div style={{fontSize: '18px'}}>
-            <Link to="/overview/backfills" style={{color: Colors.Gray700}}>
+          <Heading>
+            <Link to="/overview/backfills" style={{color: Colors.textLight()}}>
               Backfills
             </Link>
             {' / '}
             {backfillId}
-          </div>
+          </Heading>
         }
-        right={isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
+        right={
+          <Box flex={{gap: 12, alignItems: 'center'}}>
+            {isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
+            {backfill ? (
+              <BackfillActionsMenu
+                backfill={backfill}
+                refetch={queryResult.refetch}
+                canCancelRuns={backfill.status === BulkActionStatus.REQUESTED}
+              />
+            ) : null}
+          </Box>
+        }
       />
       {content()}
-    </Page>
+    </Box>
   );
 };
-
-const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Element | string}) => (
-  <Box flex={{direction: 'column', gap: 4}} style={{minWidth: '280px'}}>
-    <Label>{label}</Label>
-    <div>{detail}</div>
-  </Box>
-);
-
-const StatusLabel = ({backfill}: {backfill: PartitionBackfillFragment}) => {
-  function errorState(status: string) {
-    return (
-      <Box margin={{bottom: 12}}>
-        <TagButton
-          onClick={() =>
-            backfill.error &&
-            showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-          }
-        >
-          <Tag intent="danger">{status}</Tag>
-        </TagButton>
-      </Box>
-    );
-  }
-  switch (backfill.status) {
-    case BulkActionStatus.REQUESTED:
-      return <Tag>In Progress</Tag>;
-
-    case BulkActionStatus.CANCELING:
-      return errorState('Canceling');
-    case BulkActionStatus.CANCELED:
-      return errorState('Canceled');
-    case BulkActionStatus.FAILED:
-      return errorState('Failed');
-    case BulkActionStatus.COMPLETED:
-      return <Tag intent="success">Completed</Tag>;
-    default:
-      return <Tag>{backfill.status}</Tag>;
-  }
-};
-
-function StatusBar({
-  targeted,
-  inProgress,
-  completed,
-  failed,
-}: {
-  targeted: number;
-  inProgress: number;
-  completed: number;
-  failed: number;
-}) {
-  return (
-    <div
-      style={{
-        borderRadius: '8px',
-        backgroundColor: Colors.Gray100,
-        display: 'grid',
-        gridTemplateColumns: `${(100 * completed) / targeted}% ${(100 * failed) / targeted}% ${
-          (100 * inProgress) / targeted
-        }%`,
-        gridTemplateRows: '100%',
-        height: '12px',
-        width: '200px',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{background: Colors.Green500}} />
-      <div style={{background: Colors.Red500}} />
-      <div style={{background: Colors.Blue200}} />
-    </div>
-  );
-}
-
-const Label = styled.div`
-  color: ${Colors.Gray700};
-  font-size: 12px;
-  line-height: 16px;
-`;
-
-const Duration = ({start, end}: {start: number; end?: number | null}) => {
-  const [_, rerender] = React.useReducer((s: number, _: any) => s + 1, 0);
-  React.useEffect(() => {
-    if (end) {
-      return;
-    }
-    // re-render once a minute to update the "time ago"
-    const intervalId = setInterval(rerender, 60000);
-    return () => clearInterval(intervalId);
-  }, [start, end]);
-  const duration = end ? end - start : Date.now() - start;
-
-  return <span>{formatDuration(duration)}</span>;
-};
-
-export const BACKFILL_DETAILS_QUERY = gql`
-  query BackfillStatusesByAsset($backfillId: String!) {
-    partitionBackfillOrError(backfillId: $backfillId) {
-      ...PartitionBackfillFragment
-      ...PythonErrorFragment
-      ... on BackfillNotFoundError {
-        message
-      }
-    }
-  }
-
-  fragment PartitionBackfillFragment on PartitionBackfill {
-    id
-    status
-    timestamp
-    endTimestamp
-    numPartitions
-    error {
-      ...PythonErrorFragment
-    }
-    assetBackfillData {
-      rootAssetTargetedRanges {
-        start
-        end
-      }
-      rootAssetTargetedPartitions
-      assetBackfillStatuses {
-        ... on AssetPartitionsStatusCounts {
-          assetKey {
-            path
-          }
-          numPartitionsTargeted
-          numPartitionsInProgress
-          numPartitionsMaterialized
-          numPartitionsFailed
-        }
-        ... on UnpartitionedAssetStatus {
-          assetKey {
-            path
-          }
-          inProgress
-          materialized
-          failed
-        }
-      }
-    }
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
-type AssetBackfillData = Extract<
-  PartitionBackfillFragment['assetBackfillData'],
-  {__typename: 'AssetBackfillData'}
->;
-
-export const PartitionSelection = ({
-  numPartitions,
-  rootAssetTargetedRanges,
-  rootAssetTargetedPartitions,
-}: {
-  numPartitions: number;
-  rootAssetTargetedRanges?: AssetBackfillData['rootAssetTargetedRanges'];
-  rootAssetTargetedPartitions?: AssetBackfillData['rootAssetTargetedPartitions'];
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-
-  let dialogContent: JSX.Element | undefined;
-  let content: JSX.Element | undefined;
-  if (rootAssetTargetedPartitions) {
-    if (rootAssetTargetedPartitions.length > 3) {
-      dialogContent = (
-        <div>
-          {rootAssetTargetedPartitions.map((p) => (
-            <div key={p} style={{maxWidth: '100px'}}>
-              <TruncatedTextWithFullTextOnHover text={p} />
-            </div>
-          ))}
-        </div>
-      );
-      content = (
-        <ButtonLink
-          onClick={() => {
-            setIsDialogOpen(true);
-          }}
-        >
-          {numberFormatter.format(numPartitions)} partitions
-        </ButtonLink>
-      );
-    } else {
-      content = (
-        <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
-          {rootAssetTargetedPartitions.map((p) => (
-            <div key={p}>{p}</div>
-          ))}
-        </Box>
-      );
-    }
-  } else {
-    if (rootAssetTargetedRanges?.length === 1) {
-      const {start, end} = rootAssetTargetedRanges[0]!;
-      content = (
-        <div>
-          {start}...{end}
-        </div>
-      );
-    } else {
-      content = (
-        <ButtonLink
-          onClick={() => {
-            setIsDialogOpen(true);
-          }}
-        >
-          {numberFormatter.format(numPartitions)} partitions
-        </ButtonLink>
-      );
-      dialogContent = (
-        <Box flex={{direction: 'column', gap: 8}}>
-          {rootAssetTargetedRanges?.map((r) => (
-            <div key={`${r.start}:${r.end}`}>
-              {r.start}...{r.end}
-            </div>
-          ))}
-        </Box>
-      );
-    }
-  }
-
-  return (
-    <>
-      <div>{content}</div>
-      <Dialog isOpen={!!dialogContent && isDialogOpen} title="Partition selection">
-        <DialogBody>{dialogContent}</DialogBody>
-        <DialogFooter topBorder>
-          <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-        </DialogFooter>
-      </Dialog>
-    </>
-  );
-};
-
-const formatDuration = (duration: number) => {
-  const seconds = Math.floor((duration / 1000) % 60);
-  const minutes = Math.floor((duration / (1000 * 60)) % 60);
-  const hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-  const days = Math.floor(duration / (1000 * 60 * 60 * 24));
-
-  let result = '';
-  if (days > 0) {
-    result += `${days}d `;
-    result += `${hours}h`;
-  } else if (hours > 0) {
-    result += `${hours}h `;
-    result += `${minutes}m`;
-  } else if (minutes > 0) {
-    result += `${minutes}m `;
-    result += `${seconds}s`;
-  }
-  return result.trim();
-};
-
-const TagButton = styled.button`
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-
-  :focus {
-    outline: none;
-  }
-`;

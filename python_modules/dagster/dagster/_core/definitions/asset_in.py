@@ -9,9 +9,8 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
-
-from .partition_mapping import PartitionMapping
 
 
 class AssetIn(
@@ -54,7 +53,7 @@ class AssetIn(
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
-        dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
+        dagster_type: Union[DagsterType, Type] = NoValueSentinel,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]

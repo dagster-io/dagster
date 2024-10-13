@@ -31,12 +31,14 @@ export type PartitionRunListQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -47,7 +49,14 @@ export type PartitionRunListQuery = {
             repositoryLocationName: string;
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          assetCheckSelection: Array<{
+            __typename: 'AssetCheckhandle';
+            name: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         }>;
       };
 };
+
+export const PartitionRunListQueryVersion = '259838c720999c3fe679ef5c302d5cfb62a970202ee03cdd6cd25ac3dea45046';

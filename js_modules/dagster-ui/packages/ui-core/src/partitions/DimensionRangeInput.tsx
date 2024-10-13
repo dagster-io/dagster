@@ -1,25 +1,35 @@
 import {Icon, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {partitionsToText, spanTextToSelectionsOrError} from './SpanRepresentation';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {testId} from '../testing/testId';
 import {ClearButton} from '../ui/ClearButton';
 
-import {partitionsToText, spanTextToSelectionsOrError} from './SpanRepresentation';
-
-export const DimensionRangeInput: React.FC<{
+export const DimensionRangeInput = ({
+  value,
+  onChange,
+  partitionKeys,
+  isTimeseries,
+}: {
   value: string[];
   onChange: (partitionNames: string[]) => void;
   partitionKeys: string[];
   isTimeseries: boolean;
-}> = ({value, onChange, partitionKeys, isTimeseries}) => {
+}) => {
   const [valueString, setValueString] = React.useState('');
+
+  const valueJSON = React.useMemo(() => JSON.stringify(value), [value]);
   const partitionNameJSON = React.useMemo(() => JSON.stringify(partitionKeys), [partitionKeys]);
 
   React.useEffect(() => {
+    // Only reset the valueString if the valueJSON meaningfully changes
     const partitionNameArr = JSON.parse(partitionNameJSON);
-    setValueString(isTimeseries ? partitionsToText(value, partitionNameArr) : value.join(', '));
-  }, [value, partitionNameJSON, isTimeseries]);
+    const valueArr = JSON.parse(valueJSON);
+    setValueString(
+      isTimeseries ? partitionsToText(valueArr, partitionNameArr) : valueArr.join(', '),
+    );
+  }, [valueJSON, partitionNameJSON, isTimeseries]);
 
   const placeholder = React.useMemo(() => {
     return partitionKeys.length === 0
@@ -49,7 +59,9 @@ export const DimensionRangeInput: React.FC<{
       placeholder={placeholder}
       value={valueString}
       style={{display: 'flex', width: '100%', flex: 1, flexGrow: 1}}
-      onChange={(e) => setValueString(e.currentTarget.value)}
+      onChange={(e) => {
+        setValueString(e.currentTarget.value);
+      }}
       onKeyDown={onKeyDown}
       onBlur={tryCommit}
       rightElement={

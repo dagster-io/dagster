@@ -2,36 +2,40 @@ import os
 from glob import glob
 from typing import List
 
+from dagster_buildkite.defines import GIT_REPO_ROOT
 from dagster_buildkite.python_packages import PythonPackages
-
-from ..defines import GIT_REPO_ROOT
-from ..python_version import AvailablePythonVersion
-from ..step_builder import CommandStepBuilder
-from ..utils import (
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import CommandStepBuilder
+from dagster_buildkite.steps.helm import build_helm_steps
+from dagster_buildkite.steps.integration import build_integration_steps
+from dagster_buildkite.steps.packages import build_library_packages_steps
+from dagster_buildkite.steps.test_project import build_test_project_steps
+from dagster_buildkite.utils import (
+    UV_PIN,
     BuildkiteStep,
     CommandStep,
+    GroupStep,
     is_feature_branch,
     is_release_branch,
     safe_getenv,
+    skip_if_no_non_docs_markdown_changes,
+    skip_if_no_pyright_requirements_txt_changes,
     skip_if_no_python_changes,
+    skip_if_no_yaml_changes,
 )
-from .helm import build_helm_steps
-from .integration import build_integration_steps
-from .packages import build_library_packages_steps
-from .test_project import build_test_project_steps
 
 branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 
 def build_repo_wide_steps() -> List[BuildkiteStep]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
-    # the target. `black`, `check-manifest`, and `ruff` are run for the whole repo at once.
+    # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
     return [
         *build_check_changelog_steps(),
-        *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
+        *build_repo_wide_prettier_steps(),
     ]
 
 
@@ -58,22 +62,28 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     return steps
 
 
-def build_repo_wide_black_steps() -> List[CommandStep]:
+def build_repo_wide_ruff_steps() -> List[CommandStep]:
     return [
-        CommandStepBuilder(":python-black: black")
-        .run("pip install -e python_modules/dagster[black]", "make check_black")
-        .with_skip(skip_if_no_python_changes())
+        CommandStepBuilder(":zap: ruff")
+        .run(
+            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes",
+            "make check_ruff",
+        )
         .on_test_image(AvailablePythonVersion.get_default())
+        .with_skip(skip_if_no_python_changes())
         .build(),
     ]
 
 
-def build_repo_wide_ruff_steps() -> List[CommandStep]:
+def build_repo_wide_prettier_steps() -> List[CommandStep]:
     return [
-        CommandStepBuilder(":zap: ruff")
-        .run("pip install -e python_modules/dagster[ruff]", "make check_ruff")
+        CommandStepBuilder(":prettier: prettier")
+        .run(
+            "make install_prettier",
+            "make check_prettier",
+        )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_python_changes())
+        .with_skip(skip_if_no_yaml_changes() and skip_if_no_non_docs_markdown_changes())
         .build(),
     ]
 
@@ -92,17 +102,34 @@ def build_check_changelog_steps() -> List[CommandStep]:
     ]
 
 
-def build_repo_wide_pyright_steps() -> List[CommandStep]:
+def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
     return [
-        CommandStepBuilder(":pyright: pyright")
-        .run(
-            "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
-            "pip install -e python_modules/dagster[pyright]",
-            "make pyright",
+        GroupStep(
+            group=":pyright: pyright",
+            key="pyright",
+            steps=[
+                CommandStepBuilder(":pyright: make pyright")
+                .run(
+                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
+                    f'pip install -U "{UV_PIN}"',
+                    "make install_pyright",
+                    "make pyright",
+                )
+                .on_test_image(AvailablePythonVersion.get_default())
+                .with_skip(skip_if_no_python_changes(overrides=["pyright"]))
+                .build(),
+                CommandStepBuilder(":pyright: make rebuild_pyright_pins")
+                .run(
+                    "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
+                    f'pip install -U "{UV_PIN}"',
+                    "make install_pyright",
+                    "make rebuild_pyright_pins",
+                )
+                .on_test_image(AvailablePythonVersion.get_default())
+                .with_skip(skip_if_no_pyright_requirements_txt_changes())
+                .build(),
+            ],
         )
-        .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_python_changes())
-        .build(),
     ]
 
 
@@ -140,7 +167,10 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":mysql: mysql-schema")
         .on_test_image(AvailablePythonVersion.get_default())
-        .run("pip install -e python_modules/dagster", "python scripts/check_schemas.py")
+        .run(
+            "pip install -e python_modules/dagster -e python_modules/dagster-pipes",
+            "python scripts/check_schemas.py",
+        )
         .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
         .build()
     ]
@@ -151,8 +181,8 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
         CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
-            "pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e"
-            " python_modules/automation",
+            "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes -e"
+            " python_modules/dagster-graphql -e python_modules/automation",
             "dagster-graphql-client query check",
         )
         .with_skip(

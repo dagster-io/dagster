@@ -1,8 +1,10 @@
 ---
 title: "Lesson 1: What's an orchestrator?"
-module: "dagster_essentials"
-lesson: "1"
+module: 'dagster_essentials'
+lesson: '1'
 ---
+
+# What's an orchestrator?
 
 An orchestrator is a tool that can manage and coordinate complex workflows and data pipelines. The field of orchestrators has continued to evolve with data engineering. For example, an orchestrator may be adopted when:
 
@@ -10,7 +12,7 @@ An orchestrator is a tool that can manage and coordinate complex workflows and d
 - A video streaming platform wants to retrain its recommendation algorithm every time new content is added to the platform and does not want to retrain the algorithm every time the content is added manually
 - A financial platform wants to update stock prices every five minutes, and it would be difficult to have someone trigger the pipeline refresh at that frequency manually
 
-The first orchestrators were made to solve a simple problem: *I need to run some scripts as a sequence of steps at specific times*. Each step must wait for the step before it to finish before it starts. As time passed and the ceiling of what was possible in data engineering increased, people needed more out of their orchestrators.
+The first orchestrators were made to solve a simple problem: _I need to run some scripts as a sequence of steps at specific times_. Each step must wait for the step before it to finish before it starts. As time passed and the ceiling of what was possible in data engineering increased, people needed more out of their orchestrators.
 
 Nowadays, modern orchestrators are used to create robustness and resiliency. When something breaks, orchestrators enable practitioners to understand where, when, and why it broke. Users expect orchestrators to let them monitor their workflows to understand individual steps and entire sequences of steps. At a glance, users can see what succeeded or had an error, how long each step took to run, and how a step connects to other steps. By empowering users with this information, data engineering becomes easier as people are able to develop data pipelines faster and troubleshoot issues more efficiently.
 

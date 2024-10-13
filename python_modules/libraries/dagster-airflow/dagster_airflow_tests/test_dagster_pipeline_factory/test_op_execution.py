@@ -8,9 +8,7 @@ from unittest import mock
 from airflow import __version__ as airflow_version
 
 if airflow_version >= "2.0.0":
-    from airflow.providers.apache.spark.operators.spark_submit import (
-        SparkSubmitOperator,
-    )
+    from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 else:
     from airflow.contrib.operators.spark_submit_operator import (  # type: ignore (airflow 1 compat)
         SparkSubmitOperator,
@@ -23,7 +21,7 @@ from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.test_utils import instance_for_test
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dagster_airflow import make_dagster_job_from_airflow_dag
 
 from dagster_airflow_tests.marks import requires_no_db
@@ -58,7 +56,7 @@ def test_normalize_name():
 
     job_def = make_dagster_job_from_airflow_dag(
         dag=dag,
-        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat()},
+        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime().isoformat()},
     )
     result = job_def.execute_in_process()
 
@@ -92,7 +90,7 @@ def test_long_name():
 
     job_def = make_dagster_job_from_airflow_dag(
         dag=dag,
-        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat()},
+        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime().isoformat()},
     )
     result = job_def.execute_in_process()
 
@@ -130,7 +128,7 @@ def test_one_task_dag():
 
     job_def = make_dagster_job_from_airflow_dag(
         dag=dag,
-        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat()},
+        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime().isoformat()},
     )
     result = job_def.execute_in_process()
     assert result.success
@@ -188,7 +186,7 @@ def test_template_task_dag(tmpdir):
     t1 >> [t2, t3]
 
     with instance_for_test() as instance:
-        execution_date = get_current_datetime_in_utc()
+        execution_date = get_current_datetime()
         execution_date_add_one_week = execution_date + datetime.timedelta(days=7)
         execution_date_iso = execution_date.isoformat()
 
@@ -262,7 +260,7 @@ def test_spark_dag(mock_subproc_popen):
     )
     job_def = make_dagster_job_from_airflow_dag(
         dag=dag,
-        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat()},
+        tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime().isoformat()},
     )
     job_def.execute_in_process()
 

@@ -127,7 +127,6 @@ def load_python_module(
         list(remove_from_path_fn()) if remove_from_path_fn else []
     )  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
-
     with alter_sys_path(
         to_add=([working_directory] if working_directory else []), to_remove=remove_paths
     ):
@@ -179,17 +178,13 @@ class FileCodePointer(
 
     def describe(self) -> str:
         if self.working_directory:
-            return "{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]".format(
-                self=self
-            )
+            return f"{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]"
         else:
-            return "{self.python_file}::{self.fn_name}".format(self=self)
+            return f"{self.python_file}::{self.fn_name}"
 
 
 def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
-    from dagster._core.definitions.load_assets_from_modules import (
-        assets_from_modules,
-    )
+    from dagster._core.definitions.load_assets_from_modules import assets_from_modules
     from dagster._core.workspace.autodiscovery import LOAD_ALL_ASSETS
 
     if fn_name == LOAD_ALL_ASSETS:
@@ -227,7 +222,7 @@ class ModuleCodePointer(
         )
 
     def describe(self) -> str:
-        return "from {self.module} import {self.fn_name}".format(self=self)
+        return f"from {self.module} import {self.fn_name}"
 
 
 @whitelist_for_serdes
@@ -253,7 +248,7 @@ class PackageCodePointer(
         )
 
     def describe(self) -> str:
-        return "from {self.module} import {self.attribute}".format(self=self)
+        return f"from {self.module} import {self.attribute}"
 
 
 def get_python_file_from_target(target: object) -> Optional[str]:
@@ -294,9 +289,7 @@ class CustomPointer(
             check.invariant(isinstance(reconstructable_kwarg[0], str), "Bad kwarg key")
             check.invariant(
                 len(reconstructable_kwarg) == 2,
-                "Bad kwarg of length {length}, should be 2".format(
-                    length=len(reconstructable_kwarg)
-                ),
+                f"Bad kwarg of length {len(reconstructable_kwarg)}, should be 2",
             )
 
         return super(CustomPointer, cls).__new__(
@@ -314,9 +307,7 @@ class CustomPointer(
         )
 
     def describe(self) -> str:
-        return "reconstructable using {module}.{fn_name}".format(
-            module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
-        )
+        return f"reconstructable using {self.reconstructor_pointer.module}.{self.reconstructor_pointer.fn_name}"
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
     # - `ReconstructableJob` uses `lru_cache`

@@ -1,6 +1,5 @@
-import {ApolloLink} from '@apollo/client';
-
-import {formatElapsedTime, debugLog} from './Util';
+import {debugLog, formatElapsedTimeWithMsec} from './Util';
+import {ApolloLink} from '../apollo-client';
 
 const getCalls = (response: any) => {
   try {
@@ -16,7 +15,7 @@ export const logLink = new ApolloLink((operation, forward) =>
     const elapsedTime = performance.now() - context.start;
     const calls = getCalls(context.response);
     operation.setContext({elapsedTime, calls});
-    debugLog(`${operation.operationName} took ${formatElapsedTime(elapsedTime)}`, {
+    debugLog(`${operation.operationName} took ${formatElapsedTimeWithMsec(elapsedTime)}`, {
       operation,
       data,
       calls,

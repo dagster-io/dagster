@@ -89,7 +89,7 @@ def test_failing_type_eval_column():
         return create_dataframe()
 
     result = basic_graph.execute_in_process(raise_on_error=False)
-    output = [item for item in result.all_node_events if item.is_successful_output][0]
+    output = next(item for item in result.all_node_events if item.is_successful_output)
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata
     assert len(output_metadata) == 1
@@ -131,7 +131,7 @@ def test_failing_type_eval_aggregate():
         return create_dataframe()
 
     result = basic_graph.execute_in_process(raise_on_error=False)
-    output = [item for item in result.all_node_events if item.is_successful_output][0]
+    output = next(item for item in result.all_node_events if item.is_successful_output)
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata
     assert len(output_metadata) == 1
@@ -164,7 +164,7 @@ def test_failing_type_eval_dataframe():
         return create_dataframe()
 
     result = basic_graph.execute_in_process(raise_on_error=False)
-    output = [item for item in result.all_node_events if item.is_successful_output][0]
+    output = next(item for item in result.all_node_events if item.is_successful_output)
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata
     assert len(output_metadata) == 1
@@ -193,7 +193,7 @@ def test_failing_type_eval_multi_error():
         return create_dataframe()
 
     result = basic_graph.execute_in_process(raise_on_error=False)
-    output = [item for item in result.all_node_events if item.is_successful_output][0]
+    output = next(item for item in result.all_node_events if item.is_successful_output)
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata
     assert len(output_metadata) == 3

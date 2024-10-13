@@ -2,10 +2,13 @@ import typing
 
 import dagster._check as check
 from dagster._config import Array, ConfigAnyInstance
-from dagster._core.types.dagster_type import DagsterTypeKind
-
-from .config_schema import DagsterTypeLoader
-from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
+from dagster._core.types.config_schema import DagsterTypeLoader
+from dagster._core.types.dagster_type import (
+    DagsterType,
+    DagsterTypeKind,
+    PythonObjectDagsterType,
+    resolve_dagster_type,
+)
 
 PythonTuple = PythonObjectDagsterType(tuple, "PythonTuple", description="Represents a python tuple")
 
@@ -46,17 +49,15 @@ class _TypedPythonTuple(DagsterType):
         if not isinstance(value, tuple):
             return TypeCheck(
                 success=False,
-                description="Value should be a tuple, got a {value_type}".format(
-                    value_type=type(value)
-                ),
+                description=f"Value should be a tuple, got a {type(value)}",
             )
 
         if len(value) != len(self.dagster_types):
             return TypeCheck(
                 success=False,
                 description=(
-                    "Tuple with key {key} requires {n} entries, received {m} values"
-                ).format(key=self.key, n=len(self.dagster_types), m=len(value)),
+                    f"Tuple with key {self.key} requires {len(self.dagster_types)} entries, received {len(value)} values"
+                ),
             )
 
         for item, dagster_type in zip(value, self.dagster_types):

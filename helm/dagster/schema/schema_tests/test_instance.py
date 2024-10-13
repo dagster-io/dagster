@@ -33,11 +33,7 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
-from schema.charts.dagster.subschema.retention import (
-    Retention,
-    TickRetention,
-    TickRetentionByType,
-)
+from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
@@ -234,6 +230,33 @@ def test_k8s_run_launcher_resources(template: HelmTemplate):
     run_launcher_config = instance["run_launcher"]
 
     assert run_launcher_config["config"]["resources"] == resources
+
+
+def test_k8s_run_launcher_job_image(template: HelmTemplate):
+    image = {"repository": "test_repo", "tag": "test_tag", "pullPolicy": "Always"}
+
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    image=image,
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["job_image"] == "test_repo:test_tag"
 
 
 def _check_valid_run_launcher_yaml(dagster_config, instance_class=K8sRunLauncher):
@@ -705,6 +728,8 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
     prefix = "prefix"
     json_credentials_envvar = "ENV_VAR"
     upload_interval = 30
+    show_url_only = True
+
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.GCS,
@@ -715,6 +740,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
                     prefix=prefix,
                     jsonCredentialsEnvvar=json_credentials_envvar,
                     uploadInterval=upload_interval,
+                    showUrlOnly=show_url_only,
                 )
             ),
         )
@@ -732,6 +758,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
         "prefix": prefix,
         "json_credentials_envvar": json_credentials_envvar,
         "upload_interval": upload_interval,
+        "show_url_only": True,
     }
 
     # Test all config fields in configurable class
@@ -972,6 +999,14 @@ def test_retention(template: HelmTemplate):
                     started=30,
                 ),
             ),
+            autoMaterialize=TickRetention.construct(
+                purgeAfterDays=TickRetentionByType(
+                    skipped=1,
+                    success=2,
+                    failure=3,
+                    started=4,
+                ),
+            ),
         )
     )
 
@@ -984,6 +1019,12 @@ def test_retention(template: HelmTemplate):
     assert instance["retention"]["sensor"]["purge_after_days"]["skipped"] == 7
     assert instance["retention"]["sensor"]["purge_after_days"]["success"] == 30
     assert instance["retention"]["sensor"]["purge_after_days"]["failure"] == 30
+    assert instance["retention"]["auto_materialize"]["purge_after_days"] == {
+        "skipped": 1,
+        "success": 2,
+        "failure": 3,
+        "started": 4,
+    }
 
 
 def _check_valid_instance_yaml(dagster_config, instance_class=K8sRunLauncher):

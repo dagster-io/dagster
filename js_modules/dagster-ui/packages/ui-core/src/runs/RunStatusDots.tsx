@@ -1,15 +1,19 @@
 import {Popover, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {memo} from 'react';
 import styled, {css, keyframes} from 'styled-components';
-
-import {RunStatus} from '../graphql/types';
 
 import {RunStats} from './RunStats';
 import {RUN_STATUS_COLORS} from './RunStatusTag';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
+import {RunStatus} from '../graphql/types';
 
-export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(
-  ({runId, ...rest}) => (
+export const RunStatusWithStats = memo(
+  ({
+    runId,
+    ...rest
+  }: RunStatusProps & {
+    runId: string;
+  }) => (
     <Popover
       position="bottom"
       interactionKind="hover"
@@ -26,7 +30,7 @@ interface RunStatusProps {
   size?: number;
 }
 
-export const RunStatusIndicator: React.FC<RunStatusProps> = React.memo(({status, size}) => {
+export const RunStatusIndicator = memo(({status, size}: RunStatusProps) => {
   if (status === 'STARTED' || status === 'CANCELING') {
     return <Spinner purpose="caption-text" />;
   }
@@ -48,7 +52,7 @@ const pulseAnimation = keyframes`
   }
 
   50% {
-    filter: brightness(0.7);
+    filter: brightness(0.6);
   }
 
   100% {
@@ -75,6 +79,6 @@ export const RunStatusDot = styled.div<{
   background: ${({status}) => RUN_STATUS_COLORS[status]};
   &:hover {
     animation: none;
-    filter: brightness(0.7);
+    filter: brightness(0.6);
   }
 `;

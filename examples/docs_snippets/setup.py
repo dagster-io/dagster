@@ -2,8 +2,8 @@ from setuptools import find_packages, setup
 
 setup(
     name="docs_snippets",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets",
     classifiers=[
@@ -24,8 +24,13 @@ setup(
         "dagster-celery",
         "dagster-dbt",
         "dagster-dask",
+        "dagster-databricks",
+        "dagster-deltalake",
+        "dagster-deltalake-pandas",
+        "dagster-deltalake-polars",
         "dagster-duckdb",
         "dagster-duckdb-pandas",
+        "dagster-embedded-elt",
         "dagster-fivetran",
         "dagster-gcp",
         "dagster-graphql",
@@ -45,7 +50,7 @@ setup(
             # "'NoneType' object has no attribute 'canvas'" errors in the tests that involve
             # Jupyter notebooks
             "matplotlib-inline<=0.1.3",
-            "moto",
+            "moto<5.0",
             "numpy",
             "pandas",
             "pandera",
@@ -55,7 +60,7 @@ setup(
             "seaborn",
             "scikit-learn",
             "slack_sdk",
-            "syrupy<4",  # 3.7 compatible,
+            "syrupy",
             "dbt-duckdb",
             "xgboost",
             "dagster-webserver[test]",

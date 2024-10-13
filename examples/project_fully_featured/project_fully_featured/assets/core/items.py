@@ -1,14 +1,7 @@
-from dagster import Output, asset
+from dagster import AssetExecutionContext, Output, asset
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql.types import (
-    ArrayType,
-    DoubleType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
 from project_fully_featured.partitions import hourly_partitions
 from project_fully_featured.resources.hn_resource import HNClient
@@ -39,7 +32,7 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
     partitions_def=hourly_partitions,
     key_prefix=["s3", "core"],
 )
-def items(context, hn_client: HNClient) -> Output[DataFrame]:
+def items(context: AssetExecutionContext, hn_client: HNClient) -> Output[DataFrame]:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     (start_id, end_id), item_range_metadata = id_range_for_time(context, hn_client)
 

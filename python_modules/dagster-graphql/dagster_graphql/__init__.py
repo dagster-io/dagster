@@ -1,6 +1,6 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .client import (
+from dagster_graphql.client import (
     DagsterGraphQLClient as DagsterGraphQLClient,
     DagsterGraphQLClientError as DagsterGraphQLClientError,
     InvalidOutputErrorInfo as InvalidOutputErrorInfo,
@@ -9,6 +9,6 @@ from .client import (
     ShutdownRepositoryLocationInfo as ShutdownRepositoryLocationInfo,
     ShutdownRepositoryLocationStatus as ShutdownRepositoryLocationStatus,
 )
-from .version import __version__ as __version__
+from dagster_graphql.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster-graphql", __version__)

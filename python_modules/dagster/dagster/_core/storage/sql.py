@@ -166,19 +166,19 @@ def compile_datetime_and_add_precision_mysql(_element, _compiler, **_kw) -> str:
     return f"DATETIME({MYSQL_DATE_PRECISION})"
 
 
-class get_current_timestamp(db.sql.expression.FunctionElement):
+class get_sql_current_timestamp(db.sql.expression.FunctionElement):
     """Like CURRENT_TIMESTAMP, but has the same semantics on MySQL, Postgres, and Sqlite."""
 
     type = db.types.DateTime()  # type: ignore
 
 
-@compiles(get_current_timestamp, "mysql")
-def compiles_get_current_timestamp_mysql(_element, _compiler, **_kw) -> str:
+@compiles(get_sql_current_timestamp, "mysql")
+def compiles_get_sql_current_timestamp_mysql(_element, _compiler, **_kw) -> str:
     return f"CURRENT_TIMESTAMP({MYSQL_DATE_PRECISION})"
 
 
-@compiles(get_current_timestamp)
-def compiles_get_current_timestamp_default(_element, _compiler, **_kw) -> str:
+@compiles(get_sql_current_timestamp)
+def compiles_get_sql_current_timestamp_default(_element, _compiler, **_kw) -> str:
     return "CURRENT_TIMESTAMP"
 
 
@@ -205,5 +205,20 @@ def add_precision_to_mysql_FLOAT(_element, _compiler, **_kw) -> str:
     return f"FLOAT({MYSQL_FLOAT_PRECISION})"
 
 
+class LongText(db.Text):
+    """Allows customization of certain fields to map to LONGTEXT in MySQL.  For Postgres, all text
+    fields are mapped to TEXT, which is unbounded in length, so the distinction is not neccessary.
+    In MySQL, however, TEXT is limited to 64KB, so LONGTEXT (4GB) is required for certain fields.
+    """
+
+    pass
+
+
+@compiles(LongText, "mysql")
+def compile_longtext_mysql(_element, _compiler, **_kw) -> str:
+    return "LONGTEXT"
+
+
 class MySQLCompatabilityTypes:
     UniqueText = db.String(512)
+    LongText = LongText

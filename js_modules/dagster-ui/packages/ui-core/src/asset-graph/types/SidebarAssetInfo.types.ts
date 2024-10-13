@@ -7,6 +7,8 @@ export type SidebarAssetFragment = {
   id: string;
   description: string | null;
   opVersion: string | null;
+  jobNames: Array<string>;
+  changedReasons: Array<Types.ChangeReason>;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -21,6 +23,20 @@ export type SidebarAssetFragment = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -30,6 +46,14 @@ export type SidebarAssetFragment = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -62,6 +86,20 @@ export type SidebarAssetFragment = {
         description: string | null;
       }
     | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
         __typename: 'TableMetadataEntry';
         label: string;
         description: string | null;
@@ -81,6 +119,7 @@ export type SidebarAssetFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -103,11 +142,18 @@ export type SidebarAssetFragment = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   freshnessPolicy: {
@@ -116,11 +162,7 @@ export type SidebarAssetFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
-  autoMaterializePolicy: {
-    __typename: 'AutoMaterializePolicy';
-    policyType: Types.AutoMaterializePolicyType;
-    rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
-  } | null;
+  backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   op: {
@@ -136,6 +178,18 @@ export type SidebarAssetFragment = {
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+  assetChecksOrError:
+    | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+    | {__typename: 'AssetCheckNeedsMigrationError'}
+    | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+    | {
+        __typename: 'AssetChecks';
+        checks: Array<{
+          __typename: 'AssetCheck';
+          name: string;
+          canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+        }>;
+      };
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -724,6 +778,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -733,6 +801,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -775,6 +851,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -794,6 +884,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -816,6 +907,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -823,6 +915,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -1962,6 +2060,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -1971,6 +2083,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -2013,6 +2133,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -2032,6 +2166,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -2054,6 +2189,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -2061,6 +2197,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -3200,6 +3342,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -3209,6 +3365,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -3251,6 +3415,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -3270,6 +3448,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -3292,6 +3471,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -3299,6 +3479,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -4429,6 +4615,20 @@ export type SidebarAssetFragment = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -4438,6 +4638,14 @@ export type SidebarAssetFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -4480,6 +4688,20 @@ export type SidebarAssetFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -4499,6 +4721,7 @@ export type SidebarAssetFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4521,6 +4744,7 @@ export type SidebarAssetFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -4528,6 +4752,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -5673,6 +5903,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -5682,6 +5926,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -5724,6 +5976,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -5743,6 +6009,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -5765,6 +6032,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -5772,6 +6040,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -6911,6 +7185,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -6920,6 +7208,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -6962,6 +7258,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -6981,6 +7291,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7003,6 +7314,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -7010,6 +7322,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -8149,6 +8467,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -8158,6 +8490,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -8200,6 +8540,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -8219,6 +8573,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8241,6 +8596,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -8248,6 +8604,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -9378,6 +9740,20 @@ export type SidebarAssetFragment = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -9387,6 +9763,14 @@ export type SidebarAssetFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -9429,6 +9813,20 @@ export type SidebarAssetFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -9448,6 +9846,7 @@ export type SidebarAssetFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -9470,6 +9869,7 @@ export type SidebarAssetFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -9477,6 +9877,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -10622,6 +11028,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -10631,6 +11051,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -10673,6 +11101,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -10692,6 +11134,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -10714,6 +11157,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -10721,6 +11165,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -11860,6 +12310,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -11869,6 +12333,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -11911,6 +12383,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -11930,6 +12416,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -11952,6 +12439,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -11959,6 +12447,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -13098,6 +13592,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -13107,6 +13615,14 @@ export type SidebarAssetFragment = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -13149,6 +13665,20 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -13168,6 +13698,7 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -13190,6 +13721,7 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -13197,6 +13729,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -14327,6 +14865,20 @@ export type SidebarAssetFragment = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -14336,6 +14888,14 @@ export type SidebarAssetFragment = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -14378,6 +14938,20 @@ export type SidebarAssetFragment = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -14397,6 +14971,7 @@ export type SidebarAssetFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -14419,6 +14994,7 @@ export type SidebarAssetFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -14426,6 +15002,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -15551,6 +16133,8 @@ export type SidebarAssetQuery = {
         id: string;
         description: string | null;
         opVersion: string | null;
+        jobNames: Array<string>;
+        changedReasons: Array<Types.ChangeReason>;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -15565,6 +16149,20 @@ export type SidebarAssetQuery = {
               description: string | null;
             }
           | {
+              __typename: 'CodeReferencesMetadataEntry';
+              label: string;
+              description: string | null;
+              codeReferences: Array<
+                | {
+                    __typename: 'LocalFileCodeReference';
+                    filePath: string;
+                    lineNumber: number | null;
+                    label: string | null;
+                  }
+                | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+              >;
+            }
+          | {
               __typename: 'FloatMetadataEntry';
               floatValue: number | null;
               label: string;
@@ -15574,6 +16172,14 @@ export type SidebarAssetQuery = {
               __typename: 'IntMetadataEntry';
               intValue: number | null;
               intRepr: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'JobMetadataEntry';
+              jobName: string;
+              repositoryName: string | null;
+              locationName: string;
               label: string;
               description: string | null;
             }
@@ -15616,6 +16222,20 @@ export type SidebarAssetQuery = {
               description: string | null;
             }
           | {
+              __typename: 'TableColumnLineageMetadataEntry';
+              label: string;
+              description: string | null;
+              lineage: Array<{
+                __typename: 'TableColumnLineageEntry';
+                columnName: string;
+                columnDeps: Array<{
+                  __typename: 'TableColumnDep';
+                  columnName: string;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                }>;
+              }>;
+            }
+          | {
               __typename: 'TableMetadataEntry';
               label: string;
               description: string | null;
@@ -15635,6 +16255,7 @@ export type SidebarAssetQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -15657,6 +16278,7 @@ export type SidebarAssetQuery = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -15664,6 +16286,12 @@ export type SidebarAssetQuery = {
           | {
               __typename: 'TextMetadataEntry';
               text: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'TimestampMetadataEntry';
+              timestamp: number;
               label: string;
               description: string | null;
             }
@@ -15675,11 +16303,7 @@ export type SidebarAssetQuery = {
           cronSchedule: string | null;
           cronScheduleTimezone: string | null;
         } | null;
-        autoMaterializePolicy: {
-          __typename: 'AutoMaterializePolicy';
-          policyType: Types.AutoMaterializePolicyType;
-          rules: Array<{__typename: 'AutoMaterializeRule'; description: string}>;
-        } | null;
+        backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
         op: {
@@ -15695,6 +16319,18 @@ export type SidebarAssetQuery = {
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
         };
         requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+        assetChecksOrError:
+          | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
+          | {__typename: 'AssetCheckNeedsMigrationError'}
+          | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
+          | {
+              __typename: 'AssetChecks';
+              checks: Array<{
+                __typename: 'AssetCheck';
+                name: string;
+                canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+              }>;
+            };
         configField: {
           __typename: 'ConfigTypeField';
           name: string;
@@ -16287,6 +16923,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -16296,6 +16946,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -16338,6 +16996,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -16357,6 +17029,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -16382,6 +17059,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -16392,6 +17074,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -17531,6 +18219,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -17540,6 +18242,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -17582,6 +18292,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -17601,6 +18325,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -17626,6 +18355,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -17636,6 +18370,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -18775,6 +19515,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -18784,6 +19538,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -18826,6 +19588,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -18845,6 +19621,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -18870,6 +19651,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -18880,6 +19666,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -20010,6 +20802,20 @@ export type SidebarAssetQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -20019,6 +20825,14 @@ export type SidebarAssetQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -20061,6 +20875,20 @@ export type SidebarAssetQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -20080,6 +20908,7 @@ export type SidebarAssetQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -20102,6 +20931,7 @@ export type SidebarAssetQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -20109,6 +20939,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -21259,6 +22095,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -21268,6 +22118,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -21310,6 +22168,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -21329,6 +22201,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -21354,6 +22231,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -21364,6 +22246,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -22503,6 +23391,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -22512,6 +23414,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -22554,6 +23464,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -22573,6 +23497,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -22598,6 +23527,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -22608,6 +23542,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -23747,6 +24687,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -23756,6 +24710,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -23798,6 +24760,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -23817,6 +24793,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -23842,6 +24823,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -23852,6 +24838,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -24982,6 +25974,20 @@ export type SidebarAssetQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -24991,6 +25997,14 @@ export type SidebarAssetQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -25033,6 +26047,20 @@ export type SidebarAssetQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -25052,6 +26080,7 @@ export type SidebarAssetQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -25074,6 +26103,7 @@ export type SidebarAssetQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -25081,6 +26111,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -26231,6 +27267,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -26240,6 +27290,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -26282,6 +27340,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -26301,6 +27373,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -26326,6 +27403,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -26336,6 +27418,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -27475,6 +28563,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -27484,6 +28586,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -27526,6 +28636,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -27545,6 +28669,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -27570,6 +28699,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -27580,6 +28714,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -28719,6 +29859,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'CodeReferencesMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          codeReferences: Array<
+                            | {
+                                __typename: 'LocalFileCodeReference';
+                                filePath: string;
+                                lineNumber: number | null;
+                                label: string | null;
+                              }
+                            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                          >;
+                        }
+                      | {
                           __typename: 'FloatMetadataEntry';
                           floatValue: number | null;
                           label: string;
@@ -28728,6 +29882,14 @@ export type SidebarAssetQuery = {
                           __typename: 'IntMetadataEntry';
                           intValue: number | null;
                           intRepr: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'JobMetadataEntry';
+                          jobName: string;
+                          repositoryName: string | null;
+                          locationName: string;
                           label: string;
                           description: string | null;
                         }
@@ -28770,6 +29932,20 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'TableColumnLineageMetadataEntry';
+                          label: string;
+                          description: string | null;
+                          lineage: Array<{
+                            __typename: 'TableColumnLineageEntry';
+                            columnName: string;
+                            columnDeps: Array<{
+                              __typename: 'TableColumnDep';
+                              columnName: string;
+                              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                            }>;
+                          }>;
+                        }
+                      | {
                           __typename: 'TableMetadataEntry';
                           label: string;
                           description: string | null;
@@ -28789,6 +29965,11 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -28814,6 +29995,11 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
+                              tags: Array<{
+                                __typename: 'DefinitionTag';
+                                key: string;
+                                value: string;
+                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -28824,6 +30010,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'TextMetadataEntry';
                           text: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'TimestampMetadataEntry';
+                          timestamp: number;
                           label: string;
                           description: string | null;
                         }
@@ -29954,6 +31146,20 @@ export type SidebarAssetQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'CodeReferencesMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    codeReferences: Array<
+                      | {
+                          __typename: 'LocalFileCodeReference';
+                          filePath: string;
+                          lineNumber: number | null;
+                          label: string | null;
+                        }
+                      | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                    >;
+                  }
+                | {
                     __typename: 'FloatMetadataEntry';
                     floatValue: number | null;
                     label: string;
@@ -29963,6 +31169,14 @@ export type SidebarAssetQuery = {
                     __typename: 'IntMetadataEntry';
                     intValue: number | null;
                     intRepr: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'JobMetadataEntry';
+                    jobName: string;
+                    repositoryName: string | null;
+                    locationName: string;
                     label: string;
                     description: string | null;
                   }
@@ -30005,6 +31219,20 @@ export type SidebarAssetQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'TableColumnLineageMetadataEntry';
+                    label: string;
+                    description: string | null;
+                    lineage: Array<{
+                      __typename: 'TableColumnLineageEntry';
+                      columnName: string;
+                      columnDeps: Array<{
+                        __typename: 'TableColumnDep';
+                        columnName: string;
+                        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                      }>;
+                    }>;
+                  }
+                | {
                     __typename: 'TableMetadataEntry';
                     label: string;
                     description: string | null;
@@ -30024,6 +31252,7 @@ export type SidebarAssetQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -30046,6 +31275,7 @@ export type SidebarAssetQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -30053,6 +31283,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'TextMetadataEntry';
                     text: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'TimestampMetadataEntry';
+                    timestamp: number;
                     label: string;
                     description: string | null;
                   }
@@ -31172,3 +32408,5 @@ export type SidebarAssetQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const SidebarAssetQueryVersion = '40a932d4e71620a3876ba1c373529a7a6be89002516c327479e539716947fded';

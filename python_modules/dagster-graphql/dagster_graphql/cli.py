@@ -1,3 +1,4 @@
+import asyncio
 from typing import Mapping, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -15,9 +16,9 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.log import get_stack_trace_array
 
-from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from .schema import create_schema
-from .version import __version__
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
+from dagster_graphql.schema import create_schema
+from dagster_graphql.version import __version__
 
 
 def create_dagster_graphql_cli():
@@ -39,10 +40,12 @@ def execute_query(
 
     context = workspace_process_context.create_request_context()
 
-    result = create_schema().execute(
-        query,
-        context_value=context,
-        variable_values=variables,
+    result = asyncio.run(
+        create_schema().execute_async(
+            query,
+            context_value=context,
+            variable_values=variables,
+        )
     )
 
     result_dict = result.formatted
@@ -57,10 +60,11 @@ def execute_query(
     if "errors" in result_dict:
         result_dict_errors = check.list_elem(result_dict, "errors", of_type=Exception)
         result_errors = check.is_list(result.errors, of_type=Exception)
-        check.invariant(len(result_dict_errors) == len(result_errors))  #
+        check.invariant(len(result_dict_errors) == len(result_errors))
         for python_error, error_dict in zip(result_errors, result_dict_errors):
-            if hasattr(python_error, "original_error") and python_error.original_error:
-                error_dict["stack_trace"] = get_stack_trace_array(python_error.original_error)
+            # Typing errors caught by making is_list typed -- schrockn 2024-06-09
+            if hasattr(python_error, "original_error") and python_error.original_error:  # type: ignore
+                error_dict["stack_trace"] = get_stack_trace_array(python_error.original_error)  # type: ignore
 
     return result_dict
 
@@ -127,17 +131,15 @@ PREDEFINED_QUERIES = {
     name="ui",
     help=(
         "Run a GraphQL query against the dagster interface to a specified repository or"
-        " pipeline/job.\n\n{warning}".format(warning=WORKSPACE_TARGET_WARNING)
+        f" pipeline/job.\n\n{WORKSPACE_TARGET_WARNING}"
     )
-    + (
-        "\n\nExamples:"
-        "\n\n1. dagster-graphql"
-        "\n\n2. dagster-graphql -y path/to/{default_filename}"
-        "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"
-        "\n\n4. dagster-graphql -m some_module -a define_repo"
-        "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
-        "\n\n6. dagster-graphql -m some_module -a define_pipeline"
-    ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME),
+    + "\n\nExamples:"
+    "\n\n1. dagster-graphql"
+    f"\n\n2. dagster-graphql -y path/to/{DEFAULT_WORKSPACE_YAML_FILENAME}"
+    "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"
+    "\n\n4. dagster-graphql -m some_module -a define_repo"
+    "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
+    "\n\n6. dagster-graphql -m some_module -a define_pipeline",
 )
 @click.version_option(version=__version__)
 @click.option(

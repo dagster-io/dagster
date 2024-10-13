@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 from dagster import ConfigurableResource, EnvVar
-from dagster_dbt import DbtCliClientResource
+from dagster_dbt import DbtCliResource
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 from dagster_gcp_pandas import BigQueryPandasIOManager
 from dagster_hex.resources import hex_resource
@@ -12,10 +12,10 @@ from pydantic import Field
 
 FILE_PATH = os.path.dirname(__file__)
 DBT_PROJECT_DIR = os.path.join(FILE_PATH, "./dbt_project")
-DBT_PROFILE_DIR = os.path.join(DBT_PROJECT_DIR, "./profiles")
 STEAMPIPE_CONN = os.getenv("STEAMPIPE_CONN")
 HEX_API_KEY = os.getenv("HEX_API_KEY")
 HEX_PROJECT_ID = os.getenv("HEX_PROJECT_ID")
+ENV = os.getenv("DAGSTER_ENV", "LOCAL")
 
 
 duckdb_io_manager = DuckDBPandasIOManager(database=os.path.join(DBT_PROJECT_DIR, "dbt_duckdb.db"))
@@ -105,21 +105,13 @@ resource_def = {
         ),
         "pypi": PyPiLocalResource(input_file=os.path.join(FILE_PATH, "../data/pypi_downloads.csv")),
         "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
-        "dbt": DbtCliClientResource(
-            project_dir=DBT_PROJECT_DIR,
-            profiles_dir=DBT_PROFILE_DIR,
-            target="local",
-        ),
+        "dbt": DbtCliResource(project_dir=DBT_PROJECT_DIR, target="local"),
     },
     "PROD": {
         "io_manager": bigquery_pandas_io_manager,
         "github": GithubSteampipeResource(streampipe_conn=EnvVar("STEAMPIPE_CONN")),
         "pypi": PyPiBigQueryResource(table="bigquery-public-data.pypi.file_downloads"),
         "hex": hex_resource.configured({"api_key": HEX_API_KEY}),
-        "dbt": DbtCliClientResource(
-            project_dir=DBT_PROJECT_DIR,
-            profiles_dir=DBT_PROFILE_DIR,
-            target="prod",
-        ),
+        "dbt": DbtCliResource(project_dir=DBT_PROJECT_DIR, target="prod"),
     },
 }

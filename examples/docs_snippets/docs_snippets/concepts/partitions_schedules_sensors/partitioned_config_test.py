@@ -2,7 +2,7 @@
 
 
 from docs_snippets.concepts.partitions_schedules_sensors.partitioned_job import (
-    do_stuff_partitioned,
+    partitioned_op_job,
 )
 from dagster import job, op
 
@@ -29,14 +29,14 @@ def test_my_partitioned_config():
     }
 
     # assert that the output of the decorated function is valid configuration for the
-    # do_stuff_partitioned job
-    assert validate_run_config(do_stuff_partitioned, run_config)
+    # partitioned_op_job job
+    assert validate_run_config(partitioned_op_job, run_config)
 
 
 # end_partition_config
 
 # start_partition_keys
-from dagster import Config
+from dagster import Config, OpExecutionContext
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
@@ -59,7 +59,7 @@ class ProcessDataConfig(Config):
 
 
 @op
-def process_data(context, config: ProcessDataConfig):
+def process_data(context: OpExecutionContext, config: ProcessDataConfig):
     s = config.start
     e = config.end
     context.log.info(f"processing data for {s} - {e}")
@@ -76,7 +76,7 @@ def test_my_offset_partitioned_config():
     assert keys[0] == "2020-01-01"
     assert keys[1] == "2020-01-02"
 
-    # test that the run_config for a partition is valid for do_stuff_partitioned
+    # test that the run_config for a partition is valid for partitioned_op_job
     run_config = my_offset_partitioned_config.get_run_config_for_partition_key(keys[0])
     assert validate_run_config(do_more_stuff_partitioned, run_config)
 

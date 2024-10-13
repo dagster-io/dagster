@@ -3,8 +3,8 @@ from setuptools import find_packages, setup
 setup(
     name="automation",
     version="0.0.1",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Tools for infrastructure automation",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/automation",
@@ -24,7 +24,7 @@ setup(
         "pytablereader",
         "requests",
         "twine==1.15.0",
-        "virtualenv==20.13.2",
+        "virtualenv==20.25.0",
         "urllib3",
     ],
     extras_require={

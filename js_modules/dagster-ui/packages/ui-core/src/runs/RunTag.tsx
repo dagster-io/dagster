@@ -1,7 +1,8 @@
-import {Box, Caption, Colors, IconName, Popover, Tag} from '@dagster-io/ui-components';
+import {IconName, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+
+import {TagAction, TagActionsPopover} from '../ui/TagActions';
 
 export enum DagsterTag {
   Automaterialize = 'dagster/auto_materialize',
@@ -9,6 +10,7 @@ export enum DagsterTag {
   Namespace = 'dagster/',
   Backfill = 'dagster/backfill',
   CreatedBy = 'dagster/created_by',
+  ComputeKind = 'dagster/compute_kind',
   SolidSelection = 'dagster/solid_selection',
   OpSelection = 'dagster/op_selection',
   StepSelection = 'dagster/step_selection',
@@ -20,6 +22,8 @@ export enum DagsterTag {
   RootRunId = 'dagster/root_run_id',
   ScheduleName = 'dagster/schedule_name',
   SensorName = 'dagster/sensor_name',
+  StorageKind = 'dagster/storage_kind',
+  TickId = 'dagster/tick',
   AssetPartitionRangeStart = 'dagster/asset_partition_range_start',
   AssetPartitionRangeEnd = 'dagster/asset_partition_range_end',
   AssetEventDataVersion = 'dagster/data_version',
@@ -27,6 +31,7 @@ export enum DagsterTag {
   AssetEventCodeVersion = 'dagster/code_version',
   AssetEvaluationID = 'dagster/asset_evaluation_id',
   SnapshotID = 'dagster/snapshot_id', // This only exists on the client, not the server.
+  ReportingUser = 'dagster/reporting_user',
   User = 'user',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
@@ -39,11 +44,6 @@ export type TagType = {
   link?: string;
   pinned?: boolean;
   originalKey?: string;
-};
-
-export type TagAction = {
-  label: React.ReactNode;
-  onClick: (tag: TagType) => any;
 };
 
 interface IRunTagProps {
@@ -97,7 +97,7 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
   }, [key, value]);
 
   const ValueWrapper = ({children}: {children: React.ReactNode}) =>
-    tag.link ? <Link to={tag.link}>{children}</Link> : <>{children}</>;
+    tag.link ? <Link to={tag.link}>{children}</Link> : <span>{children}</span>;
 
   const tooltipValue = displayedKey ? `${displayedKey}: ${displayValue}` : displayValue;
 
@@ -120,54 +120,11 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
 
   if (actions?.length) {
     return (
-      <Popover
-        content={<TagActions actions={actions} tag={tag} />}
-        hoverOpenDelay={100}
-        hoverCloseDelay={100}
-        placement="top"
-        interactionKind="hover"
-      >
+      <TagActionsPopover actions={actions} data={tag}>
         {tagElement}
-      </Popover>
+      </TagActionsPopover>
     );
   }
 
   return tagElement;
 };
-
-const TagActions = ({tag, actions}: {tag: TagType; actions: TagAction[]}) => (
-  <ActionContainer background={Colors.Gray900} flex={{direction: 'row'}}>
-    {actions.map(({label, onClick}, ii) => (
-      <TagButton key={ii} onClick={() => onClick(tag)}>
-        <Caption>{label}</Caption>
-      </TagButton>
-    ))}
-  </ActionContainer>
-);
-
-const ActionContainer = styled(Box)`
-  border-radius: 8px;
-  overflow: hidden;
-`;
-
-const TagButton = styled.button`
-  border: none;
-  background: ${Colors.Dark};
-  color: ${Colors.Gray100};
-  cursor: pointer;
-  padding: 8px 12px;
-  text-align: left;
-
-  :not(:last-child) {
-    box-shadow: -1px 0 0 inset ${Colors.Gray600};
-  }
-
-  :focus {
-    outline: none;
-  }
-
-  :hover {
-    background-color: ${Colors.Gray800};
-    color: ${Colors.White};
-  }
-`;

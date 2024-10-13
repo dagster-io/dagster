@@ -1,6 +1,14 @@
-import graphene
+from typing import TYPE_CHECKING, Sequence
 
-from .util import non_null_list
+import graphene
+from dagster._core.definitions.metadata.table import TableColumn
+
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
+from dagster_graphql.schema.util import non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.metadata.table import TableColumnDep
 
 
 class GrapheneTableConstraints(graphene.ObjectType):
@@ -24,9 +32,14 @@ class GrapheneTableColumn(graphene.ObjectType):
     type = graphene.NonNull(graphene.String)
     description = graphene.String()
     constraints = graphene.NonNull(GrapheneTableColumnConstraints)
+    tags = non_null_list(GrapheneDefinitionTag)
 
     class Meta:
         name = "TableColumn"
+
+    @staticmethod
+    def resolve_tags(parent: TableColumn, _info) -> Sequence[GrapheneDefinitionTag]:
+        return [GrapheneDefinitionTag(key=key, value=value) for key, value in parent.tags.items()]
 
 
 class GrapheneTableSchema(graphene.ObjectType):
@@ -45,10 +58,37 @@ class GrapheneTable(graphene.ObjectType):
         name = "Table"
 
 
+class GrapheneTableColumnDep(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    columnName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "TableColumnDep"
+
+    def __init__(self, column_dep: "TableColumnDep"):
+        super().__init__(assetKey=column_dep.asset_key, columnName=column_dep.column_name)
+
+
+class GrapheneTableColumnLineageEntry(graphene.ObjectType):
+    columnName = graphene.NonNull(graphene.String)
+    columnDeps = non_null_list(GrapheneTableColumnDep)
+
+    class Meta:
+        name = "TableColumnLineageEntry"
+
+    def __init__(self, column_name: str, column_deps: Sequence["TableColumnDep"]):
+        super().__init__(
+            columnName=column_name,
+            columnDeps=[GrapheneTableColumnDep(column_dep) for column_dep in column_deps],
+        )
+
+
 types = [
     GrapheneTable,
     GrapheneTableSchema,
     GrapheneTableColumn,
     GrapheneTableColumnConstraints,
     GrapheneTableConstraints,
+    GrapheneTableColumnDep,
+    GrapheneTableColumnLineageEntry,
 ]

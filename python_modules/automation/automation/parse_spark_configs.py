@@ -3,6 +3,7 @@
 This script parses the Spark configuration parameters downloaded from the Spark Github repository,
 and codegens a file that contains dagster configurations for these parameters.
 """
+
 import re
 import sys
 from enum import Enum
@@ -227,7 +228,7 @@ def extract(spark_docs_markdown_text: str) -> SparkConfigNode:
 
     spark_configs = []
     for name, table in tables:
-        parsed_table = list(ptr.HtmlTableTextLoader(table).load())[0]
+        parsed_table = next(iter(ptr.HtmlTableTextLoader(table).load()))
         df = parsed_table.as_dataframe()
         for _, row in df.iterrows():
             s = SparkConfig(row["Property Name"], row["Default"], name + ": " + row["Meaning"])
@@ -271,9 +272,7 @@ def serialize(result: SparkConfigNode) -> bytes:
 @click.command()
 def run() -> None:
     r = requests.get(
-        "https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md".format(
-            SPARK_VERSION
-        )
+        f"https://raw.githubusercontent.com/apache/spark/{SPARK_VERSION}/docs/configuration.md"
     )
 
     result = extract(r.text)

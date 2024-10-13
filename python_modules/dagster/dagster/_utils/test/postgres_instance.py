@@ -106,9 +106,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.event_log import (
-            PostgresEventLogStorage,
-        )
+        from dagster_postgres.event_log import PostgresEventLogStorage
 
         storage = PostgresEventLogStorage.create_clean_storage(
             conn_string, should_autocreate_tables=should_autocreate_tables
@@ -122,9 +120,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.schedule_storage.schedule_storage import (
-            PostgresScheduleStorage,
-        )
+        from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleStorage
 
         storage = PostgresScheduleStorage.create_clean_storage(
             conn_string, should_autocreate_tables=should_autocreate_tables
@@ -157,15 +153,10 @@ class TestPostgresInstance:
             )  # buildkite docker is handled in pipeline setup
             return
 
-        try:
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
-            )
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
-            )
-        except subprocess.CalledProcessError:
-            pass
+        subprocess.run(
+            ["docker-compose", "-f", docker_compose_file, "down", service_name],
+            check=False,
+        )
 
         try:
             subprocess.check_output(
@@ -181,17 +172,13 @@ class TestPostgresInstance:
 
         conn_str = TestPostgresInstance.conn_string(**conn_args)
         wait_for_connection(conn_str, retry_limit=10, retry_wait=3)
-        yield conn_str
-
         try:
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+            yield conn_str
+        finally:
+            subprocess.run(
+                ["docker-compose", "-f", docker_compose_file, "down", service_name],
+                check=False,
             )
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
-            )
-        except subprocess.CalledProcessError:
-            pass
 
     @staticmethod
     @contextmanager

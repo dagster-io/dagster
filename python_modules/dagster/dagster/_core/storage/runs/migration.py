@@ -8,14 +8,13 @@ from tqdm import tqdm
 from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
+from dagster._core.execution.job_backfill import PartitionBackfill
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.runs.schema import BulkActionsTable, RunsTable, RunTagsTable
 from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 from dagster._serdes import deserialize_value
-
-from ...execution.job_backfill import PartitionBackfill
-from ..dagster_run import DagsterRun, DagsterRunStatus, RunRecord
-from ..runs.base import RunStorage
-from ..runs.schema import BulkActionsTable, RunsTable, RunTagsTable
-from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, REPOSITORY_LABEL_TAG
 
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps written
@@ -200,11 +199,11 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] =
 
 
 def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
-    if not run.external_job_origin:
+    if not run.remote_job_origin:
         # nothing to do
         return
 
-    repository_label = run.external_job_origin.external_repository_origin.get_label()
+    repository_label = run.remote_job_origin.repository_origin.get_label()
     try:
         conn.execute(
             RunTagsTable.insert().values(
@@ -249,7 +248,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                backfill = deserialize_value(row[0], PartitionBackfill)
+                backfill = deserialize_value(row[0], PartitionBackfill)  # type: ignore  # (pyright bug)
                 storage_id = row[1]
                 conn.execute(
                     BulkActionsTable.update()

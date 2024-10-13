@@ -40,7 +40,7 @@ export type RepositoryForNextTicksFragment = {
 
 export type ScheduleTickConfigQueryVariables = Types.Exact<{
   scheduleSelector: Types.ScheduleSelector;
-  tickTimestamp: Types.Scalars['Int'];
+  tickTimestamp: Types.Scalars['Int']['input'];
 }>;
 
 export type ScheduleTickConfigQuery = {
@@ -104,3 +104,5 @@ export type ScheduleFutureTickRunRequestFragment = {
   runConfigYaml: string;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
+
+export const ScheduleTickConfigQueryVersion = 'acdec3206ff12d652fe6657c8c51202a65b652b9575625d1f024014bbb828788';

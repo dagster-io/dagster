@@ -1,3 +1,5 @@
+import {Button} from '@dagster-io/ui-components';
+import useResizeObserver from '@react-hook/resize-observer';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -6,11 +8,7 @@ import {Markdown} from '../ui/Markdown';
 interface IDescriptionProps {
   description: string | null;
   maxHeight?: number;
-}
-
-interface IDescriptionState {
-  hasMore: boolean;
-  expanded: boolean;
+  fontSize?: string | number;
 }
 
 const DEFAULT_MAX_HEIGHT = 320;
@@ -33,102 +31,90 @@ function removeLeadingSpaces(input: string) {
   return lines.map((l) => l.substr(leadingSpaces[1]!.length)).join('\n');
 }
 
-export class Description extends React.Component<IDescriptionProps, IDescriptionState> {
-  private _container: React.RefObject<HTMLDivElement> = React.createRef();
+export const Description = ({maxHeight, description, fontSize}: IDescriptionProps) => {
+  const container = React.createRef<HTMLDivElement>();
+  const [hasMore, setHasMore] = React.useState(false);
+  const [expanded, setExpanded] = React.useState(false);
 
-  public state: IDescriptionState = {
-    hasMore: false,
-    expanded: false,
-  };
-
-  componentDidMount() {
-    this.updateHandleState();
-  }
-
-  componentDidUpdate() {
-    this.updateHandleState();
-  }
-
-  updateHandleState() {
-    if (!this._container.current) {
+  const updateHasMore = React.useCallback(() => {
+    if (!container.current) {
       return;
     }
-    const hasMore =
-      this._container.current.clientHeight > (this.props.maxHeight || DEFAULT_MAX_HEIGHT);
-    if (hasMore !== this.state.hasMore) {
-      this.setState({hasMore});
+    setHasMore(container.current.clientHeight > (maxHeight || DEFAULT_MAX_HEIGHT));
+  }, [container, maxHeight]);
+
+  // On mount, recalculate whether to show "show more"
+  React.useLayoutEffect(updateHasMore, [updateHasMore]);
+
+  // If the container has been resized, recalculate.
+  useResizeObserver(container.current, updateHasMore);
+
+  // If the content has changed, recalculate. This is necessary because our Markdown
+  // support is lazy-loaded and seems to take one React render to populate after it loads,
+  // and also means you can change the `description` prop.
+  React.useLayoutEffect(() => {
+    if (!container.current || !('MutationObserver' in window)) {
+      return;
     }
+    const mutationObserver = new MutationObserver(updateHasMore);
+    mutationObserver.observe(container.current, {subtree: true, childList: true});
+    return () => mutationObserver.disconnect();
+  }, [container, updateHasMore]);
+
+  if (!description || description.length === 0) {
+    return null;
   }
 
-  render() {
-    if (!this.props.description || this.props.description.length === 0) {
-      return null;
-    }
+  return (
+    <Container
+      onDoubleClick={() => {
+        const sel = document.getSelection();
+        if (!sel || !container.current) {
+          return;
+        }
+        const range = document.createRange();
+        range.selectNodeContents(container.current);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }}
+      $fontSize={fontSize || '0.8rem'}
+      style={{
+        maxHeight: expanded ? undefined : maxHeight || DEFAULT_MAX_HEIGHT,
+      }}
+    >
+      {hasMore && (
+        <ShowMoreHandle>
+          <Button intent="primary" onClick={() => setExpanded(!expanded)}>
+            {expanded ? 'Show less' : 'Show more'}
+          </Button>
+        </ShowMoreHandle>
+      )}
 
-    const {expanded, hasMore} = this.state;
-    return (
-      <Container
-        onDoubleClick={() => {
-          const sel = document.getSelection();
-          if (!sel || !this._container.current) {
-            return;
-          }
-          const range = document.createRange();
-          range.selectNodeContents(this._container.current);
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }}
-        style={{
-          maxHeight: expanded ? undefined : this.props.maxHeight || DEFAULT_MAX_HEIGHT,
-        }}
-      >
-        {!expanded && hasMore && <Mask />}
-        {hasMore && (
-          <ShowMoreHandle onClick={() => this.setState({expanded: !expanded})}>
-            {expanded ? 'Show Less' : 'Show More'}
-          </ShowMoreHandle>
-        )}
+      <div ref={container} style={{overflowX: 'auto'}}>
+        <Markdown>{removeLeadingSpaces(description)}</Markdown>
+      </div>
+    </Container>
+  );
+};
 
-        <div ref={this._container} style={{overflowX: 'auto'}}>
-          <Markdown>{removeLeadingSpaces(this.props.description)}</Markdown>
-        </div>
-      </Container>
-    );
-  }
-}
-
-const Container = styled.div`
+const Container = styled.div<{$fontSize: string | number}>`
   overflow: hidden;
-  font-size: 0.8rem;
   position: relative;
+  font-size: ${({$fontSize}) => (typeof $fontSize === 'number' ? `${$fontSize}px` : $fontSize)};
   p:last-child {
     margin-bottom: 0;
   }
+
+  & code,
+  & pre {
+    font-size: ${({$fontSize}) => (typeof $fontSize === 'number' ? `${$fontSize}px` : $fontSize)};
+  }
 `;
 
-const Mask = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0) 70%,
-    rgba(255, 255, 255, 1)
-  );
-  pointer-events: none;
-  border-bottom: 1px solid #eee;
-`;
-
-const ShowMoreHandle = styled.a`
-  line-height: 20px;
+const ShowMoreHandle = styled.div`
   position: absolute;
   padding: 0 14px;
   bottom: 0;
   left: 50%;
-  height: 20px;
   transform: translate(-50%);
-  background: #eee;
 `;

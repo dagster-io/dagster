@@ -1,6 +1,8 @@
+import functools
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
+from datetime import datetime
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -22,9 +24,14 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
 
@@ -51,6 +58,7 @@ def assert_permission_for_location(
 
 def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
+        @functools.wraps(fn)
         def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             result = fn(self, graphene_info, *args, **kwargs)
 
@@ -66,6 +74,7 @@ def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], 
 
 def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
+        @functools.wraps(fn)
         def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             assert_permission(graphene_info, permission)
 
@@ -84,6 +93,102 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
+def has_permission_for_asset_graph(
+    graphene_info: "ResolveInfo",
+    asset_graph: RemoteAssetGraph,
+    asset_selection: Optional[Sequence[AssetKey]],
+    permission: str,
+) -> bool:
+    asset_keys = set(asset_selection or [])
+    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+
+    # If any of the asset keys don't map to a location (e.g. because they are no longer in the
+    # graph) need deployment-wide permissions - no valid code location to check
+    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
+        return context.has_permission(permission)
+
+    if asset_keys:
+        selectors = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
+    else:
+        selectors = asset_graph.repository_handles_by_key.values()
+
+    location_names = set(s.location_name for s in selectors)
+
+    if not location_names:
+        return context.has_permission(permission)
+    else:
+        return all(
+            context.has_permission_for_location(permission, location_name)
+            for location_name in location_names
+        )
+
+
+def assert_permission_for_asset_graph(
+    graphene_info: "ResolveInfo",
+    asset_graph: RemoteAssetGraph,
+    asset_selection: Optional[Sequence[AssetKey]],
+    permission: str,
+) -> None:
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not has_permission_for_asset_graph(graphene_info, asset_graph, asset_selection, permission):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def assert_valid_job_partition_backfill(
+    graphene_info: "ResolveInfo",
+    backfill: PartitionBackfill,
+    partitions_def: PartitionsDefinition,
+    dynamic_partitions_store: CachingInstanceQueryer,
+    backfill_datetime: datetime,
+) -> None:
+    from dagster_graphql.schema.errors import GraphenePartitionKeysNotFoundError
+
+    partition_names = backfill.get_partition_names(graphene_info.context)
+
+    if not partition_names:
+        return
+
+    invalid_keys = set(partition_names) - set(
+        partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+    )
+
+    if invalid_keys:
+        raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
+
+
+def assert_valid_asset_partition_backfill(
+    graphene_info: "ResolveInfo",
+    backfill: PartitionBackfill,
+    dynamic_partitions_store: CachingInstanceQueryer,
+    backfill_datetime: datetime,
+) -> None:
+    from dagster_graphql.schema.errors import GraphenePartitionKeysNotFoundError
+
+    asset_graph = graphene_info.context.asset_graph
+    asset_backfill_data = backfill.asset_backfill_data
+
+    if not asset_backfill_data:
+        return
+
+    partition_subset_by_asset_key = (
+        asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+    )
+
+    for asset_key, partition_subset in partition_subset_by_asset_key.items():
+        partitions_def = asset_graph.get(asset_key).partitions_def
+
+        if not partitions_def:
+            continue
+
+        invalid_keys = set(partition_subset.get_partition_keys()) - set(
+            partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+        )
+
+        if invalid_keys:
+            raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
+
+
 def _noop(_) -> None:
     pass
 
@@ -91,11 +196,11 @@ def _noop(_) -> None:
 class ErrorCapture:
     @staticmethod
     def default_on_exception(
-        exc_info: Tuple[Type[BaseException], BaseException, TracebackType]
+        exc_info: Tuple[Type[BaseException], BaseException, TracebackType],
     ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
-        # Transform exception in to PythonErron to present to user
+        # Transform exception in to PythonError to present to user
         return GraphenePythonError(serializable_error_info_from_exc_info(exc_info))
 
     # global behavior for how to handle unexpected exceptions
@@ -117,8 +222,9 @@ class ErrorCapture:
 
 
 def capture_error(
-    fn: Callable[P, T]
+    fn: Callable[P, T],
 ) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
+    @functools.wraps(fn)
     def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return fn(*args, **kwargs)
@@ -145,6 +251,9 @@ class UserFacingGraphQLError(Exception):
 
 def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector:
     asset_selection = cast(Optional[Iterable[Dict[str, List[str]]]], data.get("assetSelection"))
+    asset_check_selection = cast(
+        Optional[Iterable[Dict[str, Any]]], data.get("assetCheckSelection")
+    )
     return JobSubsetSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
@@ -153,6 +262,11 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector
         asset_selection=(
             [AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
             if asset_selection
+            else None
+        ),
+        asset_check_selection=(
+            [AssetCheckKey.from_graphql_input(asset_check) for asset_check in asset_check_selection]
+            if asset_check_selection is not None
             else None
         ),
     )
@@ -244,4 +358,29 @@ class ExecutionMetadata(
         }
 
 
+def apply_cursor_limit_reverse(
+    items: Sequence[str], cursor: Optional[str], limit: Optional[int], reverse: Optional[bool]
+) -> Sequence[str]:
+    start = 0
+    end = len(items)
+    index = 0
+
+    if cursor:
+        index = next((idx for (idx, item) in enumerate(items) if item == cursor))
+
+        if reverse:
+            end = index
+        else:
+            start = index + 1
+
+    if limit:
+        if reverse:
+            start = end - limit
+        else:
+            end = start + limit
+
+    return items[max(start, 0) : end]
+
+
 BackfillParams: TypeAlias = Mapping[str, Any]
+AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]

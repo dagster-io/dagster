@@ -8,19 +8,18 @@ from dagster._core.events import MARKER_EVENTS, DagsterEventType, StepExpectatio
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import datetime_as_float
 
 
 def build_run_stats_from_events(
-    run_id: str, records: Iterable[EventLogEntry]
+    run_id: str, entries: Iterable[EventLogEntry]
 ) -> DagsterRunStatsSnapshot:
     try:
-        iter(records)
+        iter(entries)
     except TypeError as exc:
         raise check.ParameterCheckError(
             "Invariant violation for parameter 'records'. Description: Expected iterable."
         ) from exc
-    for i, record in enumerate(records):
+    for i, record in enumerate(entries):
         check.inst_param(record, f"records[{i}]", EventLogEntry)
 
     steps_succeeded = 0
@@ -32,22 +31,17 @@ def build_run_stats_from_events(
     start_time = None
     end_time = None
 
-    for event in records:
+    for event in entries:
         if not event.is_dagster_event:
             continue
         dagster_event = event.get_dagster_event()
 
-        event_timestamp_float = (
-            event.timestamp
-            if isinstance(event.timestamp, float)
-            else datetime_as_float(event.timestamp)
-        )
         if dagster_event.event_type == DagsterEventType.PIPELINE_START:
-            start_time = event_timestamp_float
+            start_time = event.timestamp
         if dagster_event.event_type == DagsterEventType.PIPELINE_STARTING:
-            launch_time = event_timestamp_float
+            launch_time = event.timestamp
         if dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
-            enqueued_time = event_timestamp_float
+            enqueued_time = event.timestamp
         if dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             steps_failed += 1
         if dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
@@ -61,11 +55,7 @@ def build_run_stats_from_events(
             or dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE
             or dagster_event.event_type == DagsterEventType.PIPELINE_CANCELED
         ):
-            end_time = (
-                event.timestamp
-                if isinstance(event.timestamp, float)
-                else datetime_as_float(event.timestamp)
-            )
+            end_time = event.timestamp
 
     return DagsterRunStatsSnapshot(
         run_id,

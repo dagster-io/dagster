@@ -25,7 +25,6 @@ from dagster._core.execution.plan.objects import (
     step_failure_event_from_exc_info,
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
@@ -43,23 +42,22 @@ def inner_plan_execution_iterator(
         instance_concurrency_context=instance_concurrency_context,
     ) as active_execution:
         with ExitStack() as capture_stack:
-            # begin capturing logs for the whole process if this is a captured log manager
-            if isinstance(compute_log_manager, CapturedLogManager):
-                file_key = create_compute_log_file_key()
-                log_key = compute_log_manager.build_log_key_for_run(job_context.run_id, file_key)
-                try:
-                    log_context = capture_stack.enter_context(
-                        compute_log_manager.capture_logs(log_key)
-                    )
-                    yield DagsterEvent.capture_logs(job_context, step_keys, log_key, log_context)
-                except Exception:
-                    yield from _handle_compute_log_setup_error(job_context, sys.exc_info())
+            # begin capturing logs for the whole process
+            file_key = create_compute_log_file_key()
+            log_key = compute_log_manager.build_log_key_for_run(job_context.run_id, file_key)
+            try:
+                log_context = capture_stack.enter_context(compute_log_manager.capture_logs(log_key))
+                yield DagsterEvent.capture_logs(job_context, step_keys, log_key, log_context)
+            except Exception:
+                yield from _handle_compute_log_setup_error(job_context, sys.exc_info())
 
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps
             # https://github.com/dagster-io/dagster/issues/811
             while not active_execution.is_complete:
                 step = active_execution.get_next_step()
+
+                yield from active_execution.concurrency_event_iterator(job_context)
 
                 if not step:
                     active_execution.sleep_til_ready()
@@ -79,52 +77,19 @@ def inner_plan_execution_iterator(
                 check.invariant(
                     len(missing_resources) == 0,
                     (
-                        "Expected step context for solid {solid_name} to have all required"
-                        " resources, but missing {missing_resources}."
-                    ).format(solid_name=step_context.op.name, missing_resources=missing_resources),
+                        f"Expected step context for solid {step_context.op.name} to have all required"
+                        f" resources, but missing {missing_resources}."
+                    ),
                 )
 
-                with ExitStack() as step_stack:
-                    if not isinstance(compute_log_manager, CapturedLogManager):
-                        # capture all of the logs for individual steps
-                        try:
-                            step_stack.enter_context(
-                                job_context.instance.compute_log_manager.watch(
-                                    step_context.dagster_run, step_context.step.key
-                                )
-                            )
-                            yield DagsterEvent.legacy_compute_log_step_event(step_context)
-                        except Exception:
-                            yield from _handle_compute_log_setup_error(step_context, sys.exc_info())
+                # we have already set up the log capture at the process level, just handle the step events
+                for step_event in check.generator(dagster_event_sequence_for_step(step_context)):
+                    dagster_event = check.inst(step_event, DagsterEvent)
+                    step_event_list.append(dagster_event)
+                    yield dagster_event
+                    active_execution.handle_event(dagster_event)
 
-                        for step_event in check.generator(
-                            dagster_event_sequence_for_step(step_context)
-                        ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
-
-                        active_execution.verify_complete(job_context, step.key)
-
-                        try:
-                            step_stack.close()
-                        except Exception:
-                            yield from _handle_compute_log_teardown_error(
-                                step_context, sys.exc_info()
-                            )
-                    else:
-                        # we have already set up the log capture at the process level, just handle the
-                        # step events
-                        for step_event in check.generator(
-                            dagster_event_sequence_for_step(step_context)
-                        ):
-                            check.inst(step_event, DagsterEvent)
-                            step_event_list.append(step_event)
-                            yield step_event
-                            active_execution.handle_event(step_event)
-
-                        active_execution.verify_complete(job_context, step.key)
+                active_execution.verify_complete(job_context, step.key)
 
                 # process skips from failures or uncovered inputs
                 for event in active_execution.plan_events_iterator(job_context):
@@ -193,12 +158,8 @@ def _trigger_hook(
         check.invariant(
             isinstance(hook_execution_result, HookExecutionResult),
             (
-                "Error in hook {hook_name}: hook unexpectedly returned result {result} of "
-                "type {type_}. Should be a HookExecutionResult"
-            ).format(
-                hook_name=hook_def.name,
-                result=hook_execution_result,
-                type_=type(hook_execution_result),
+                f"Error in hook {hook_def.name}: hook unexpectedly returned result {hook_execution_result} of "
+                f"type {type(hook_execution_result)}. Should be a HookExecutionResult"
             ),
         )
         if hook_execution_result and hook_execution_result.is_skipped:
@@ -209,6 +170,17 @@ def _trigger_hook(
         else:
             # hook_fn finishes successfully
             yield DagsterEvent.hook_completed(step_context, hook_def)
+
+
+def _user_failure_data_for_exc(exc: Optional[BaseException]) -> Optional[UserFailureData]:
+    if isinstance(exc, Failure):
+        return UserFailureData(
+            label="intentional-failure",
+            description=exc.description,
+            metadata=exc.metadata,
+        )
+
+    return None
 
 
 def dagster_event_sequence_for_step(
@@ -287,7 +259,10 @@ def dagster_event_sequence_for_step(
             step_context.capture_step_exception(retry_request)
             yield DagsterEvent.step_failure_event(
                 step_context=step_context,
-                step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
+                step_failure_data=StepFailureData(
+                    error=fail_err,
+                    user_failure_data=_user_failure_data_for_exc(retry_request.__cause__),
+                ),
             )
         else:  # retries.enabled or retries.deferred
             prev_attempts = step_context.previous_attempt_count
@@ -303,7 +278,7 @@ def dagster_event_sequence_for_step(
                     step_context=step_context,
                     step_failure_data=StepFailureData(
                         error=fail_err,
-                        user_failure_data=None,
+                        user_failure_data=_user_failure_data_for_exc(retry_request.__cause__),
                         # set the flag to omit the outer stack if we have a cause to show
                         error_source=ErrorSource.USER_CODE_ERROR if fail_err.cause else None,
                     ),
@@ -325,11 +300,7 @@ def dagster_event_sequence_for_step(
         yield step_failure_event_from_exc_info(
             step_context,
             sys.exc_info(),
-            UserFailureData(
-                label="intentional-failure",
-                description=failure.description,
-                metadata=failure.metadata,
-            ),
+            _user_failure_data_for_exc(failure),
         )
         if step_context.raise_on_error:
             raise failure

@@ -1,0 +1,56 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Dagster Backend",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "dagster",
+      "args": ["dev"],
+      "env": {},
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "preLaunchTask": "Open Dagster",
+      "presentation": {
+        "group": "1_dagster"
+      }
+    },
+    {
+      "name": "Dagster Frontend",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["start"],
+      "cwd": "${workspaceFolder}/js_modules/dagster-ui",
+      "console": "integratedTerminal",
+      "env": {
+        "NEXT_PUBLIC_BACKEND_ORIGIN": "http://127.0.0.1:3000"
+      },
+      "preLaunchTask": "Generate Dagster GraphQL Schema",
+      "presentation": {
+        "group": "1_dagster"
+      }
+    },
+    {
+      "name": "Pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}::${selectedText}"],
+      "presentation": {
+        "group": "0_development_mode"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Dagster (Launch All)",
+      "configurations": ["Dagster Frontend", "Dagster Backend"],
+      "stopAll": true,
+      "presentation": {
+        "group": "0_development_mode"
+      }
+    }
+  ]
+}

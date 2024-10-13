@@ -3,8 +3,8 @@ from setuptools import find_packages, setup
 setup(
     name="project_fully_featured",
     version="1!0+dev",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -36,7 +36,7 @@ setup(
         "scipy",
         "scikit-learn",
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
-        "snowflake-sqlalchemy",
+        "snowflake-sqlalchemy<1.5.2",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"], "tests": ["mypy", "pylint", "pytest"]},
 )

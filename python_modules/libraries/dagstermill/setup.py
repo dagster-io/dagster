@@ -19,8 +19,8 @@ setup(
     name="dagstermill",
     version=ver,
     description="run notebooks using the Dagster tools",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     packages=find_packages(exclude=["dagstermill_tests*"]),
     classifiers=[
@@ -31,6 +31,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         # ipykernel 5.4.0 and 5.4.1 broke papermill

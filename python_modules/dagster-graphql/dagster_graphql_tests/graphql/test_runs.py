@@ -1,8 +1,11 @@
 import copy
 import tempfile
 
+import pytest
 import yaml
-from dagster import AssetMaterialization, Output, job, op, repository
+from dagster import AssetMaterialization, Output, define_asset_job, job, op, repository
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import execute_run
 from dagster._core.storage.dagster_run import DagsterRunStatus
@@ -13,7 +16,7 @@ from dagster._utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
-    infer_pipeline_selector,
+    infer_job_selector,
 )
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
@@ -73,19 +76,6 @@ mutation DeleteRun($runId: String!) {
     }
     ... on PythonError {
       message
-    }
-  }
-}
-"""
-
-ALL_TAGS_QUERY = """
-{
-  runTagsOrError {
-    ... on RunTags {
-      tags {
-        key
-        values
-      }
     }
   }
 }
@@ -151,6 +141,16 @@ query PipelineRunsRootQuery($filter: RunsFilter!) {
         hasTerminatePermission
         hasDeletePermission
       }
+    }
+  }
+}
+"""
+
+RUN_IDS_QUERY = """
+query RunIds($filter: RunsFilter, $cursor: String, $limit: Int) {
+  runIdsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
+    ... on RunIds {
+      results
     }
   }
 }
@@ -230,6 +230,23 @@ query AssetRunsQuery($assetKey: AssetKeyInput!) {
 }
 """
 
+RUN_ASSETS_QUERY = """
+query RunQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+      assets {
+        id
+        key {
+          path
+        }
+      }
+    }
+  }
+}
+"""
+
+
 RUN_CONCURRENCY_QUERY = """
 {
   pipelineRunsOrError {
@@ -238,7 +255,55 @@ RUN_CONCURRENCY_QUERY = """
         runId
         status
         hasConcurrencyKeySlots
+        rootConcurrencyKeys
       }
+    }
+  }
+}
+"""
+
+RUN_LOGS_QUERY = """
+query RunLogsQuery($afterCursor:String, $limit:Int, $runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        eventConnection(limit: $limit, afterCursor: $afterCursor) {
+          cursor
+          hasMore
+          events {
+            ... on ExecutionStepFailureEvent {
+              stepKey
+              eventType
+              errorSource
+              error {
+                message
+                stack
+                causes {
+
+                  className
+                  stack
+                  message
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+}
+"""
+
+RUN_METRICS_QUERY = """
+query RunQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        runId
+        tags {
+          key
+          value
+        }
+        hasRunMetricsEnabled
     }
   }
 }
@@ -282,9 +347,9 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_runs_over_graphql(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
         # other code in this file which reads itself to load a repo
-        from .utils import sync_execute_get_run_log_data
+        from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         payload_one = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -342,12 +407,6 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         assert "fruit" in tag_keys
         assert "veggie" in tag_keys
 
-        all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
-        tags = all_tags_result.data["runTagsOrError"]["tags"]
-        tags_dict = {item["key"]: item["values"] for item in tags}
-        assert tags_dict["fruit"] == ["apple"]
-        assert tags_dict["veggie"] == ["carrot"]
-
         filtered_tags_result = execute_dagster_graphql(
             read_context, FILTERED_TAGS_QUERY, variables={"tagKeys": ["fruit"]}
         )
@@ -355,6 +414,24 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         tags_dict = {item["key"]: item["values"] for item in tags}
         assert len(tags_dict) == 1
         assert tags_dict["fruit"] == ["apple"]
+
+        run_logs_result = execute_dagster_graphql(
+            read_context, RUN_LOGS_QUERY, variables={"runId": run_id_one, "limit": 5}
+        )
+        run_log_events = run_logs_result.data["pipelineRunOrError"]["eventConnection"]["events"]
+        assert len(run_log_events) == 5
+        assert run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
+
+        cursor = run_logs_result.data["pipelineRunOrError"]["eventConnection"]["cursor"]
+        assert cursor
+
+        run_logs_result = execute_dagster_graphql(
+            read_context,
+            RUN_LOGS_QUERY,
+            variables={"runId": run_id_one, "limit": 5000, "afterCursor": cursor},
+        )
+
+        assert not run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
 
         # delete the second run
         result = execute_dagster_graphql(
@@ -385,9 +462,9 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_run_config(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
         # other code in this file which reads itself to load a repo
-        from .utils import sync_execute_get_run_log_data
+        from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
-        selector = infer_pipeline_selector(graphql_context, "required_resource_job")
+        selector = infer_job_selector(graphql_context, "required_resource_job")
 
         sync_execute_get_run_log_data(
             context=graphql_context,
@@ -463,18 +540,25 @@ def get_repo_at_time_2():
 
 
 def get_asset_repo():
-    @op
+    @op(tags={"dagster/concurrency_key": "foo"})
     def foo():
         yield AssetMaterialization(asset_key="foo", description="foo")
+        yield AssetObservation(asset_key="bar", description="bar")
         yield Output(None)
 
     @job
     def foo_job():
         foo()
 
+    @asset
+    def my_fail_asset():
+        raise Exception("OOPS")
+
+    my_fail_asset_job = define_asset_job(name="my_fail_asset_job", selection="my_fail_asset")
+
     @repository
     def asset_repo():
-        return [foo_job]
+        return [foo_job, my_fail_asset, my_fail_asset_job]
 
     return asset_repo
 
@@ -725,6 +809,44 @@ def test_filtered_runs_count():
             assert count == 1
 
 
+def test_run_ids():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        run_id_1 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
+        ).run_id
+        run_id_2 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        run_id_3 = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
+        ).run_id
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_3, run_id_2]
+
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}, "limit": 1},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_3]
+
+            result = execute_dagster_graphql(
+                context,
+                RUN_IDS_QUERY,
+                variables={"cursor": run_id_2},
+            )
+            assert result.data
+            assert result.data["runIdsOrError"]["results"] == [run_id_1]
+
+
 def test_run_group():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
@@ -797,6 +919,12 @@ def test_asset_batching():
         foo_job = repo.get_job("foo_job")
         for _ in range(3):
             foo_job.execute_in_process(instance=instance)
+
+        my_fail_asset_job = repo.get_job("my_fail_asset_job")
+        result = my_fail_asset_job.execute_in_process(instance=instance, raise_on_error=False)
+
+        fail_run_id = result.dagster_run.run_id
+
         with define_out_of_process_context(__file__, "asset_repo", instance) as context:
             traced_counter.set(Counter())
             result = execute_dagster_graphql(
@@ -807,10 +935,28 @@ def test_asset_batching():
             assert "assetMaterializations" in result.data["assetOrError"]
             materializations = result.data["assetOrError"]["assetMaterializations"]
             assert len(materializations) == 3
+
             counter = traced_counter.get()
             counts = counter.counts()
             assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1
+
+            run_ids = [materialization["runOrError"]["id"] for materialization in materializations]
+
+            run_id = run_ids[0]
+            result = execute_dagster_graphql(context, RUN_ASSETS_QUERY, variables={"runId": run_id})
+
+            asset_ids = [asset["id"] for asset in result.data["pipelineRunOrError"]["assets"]]
+            assert sorted(asset_ids) == sorted(['["foo"]', '["bar"]'])
+
+            fail_run_result = execute_dagster_graphql(
+                context, RUN_ASSETS_QUERY, variables={"runId": fail_run_id}
+            )
+            # despite no materialization or observation, the asset is returned, because it was planned
+            asset_ids = [
+                asset["id"] for asset in fail_run_result.data["pipelineRunOrError"]["assets"]
+            ]
+            assert asset_ids == ['["my_fail_asset"]']
 
 
 def test_run_has_concurrency_slots():
@@ -838,6 +984,7 @@ def test_run_has_concurrency_slots():
                 assert not result.data["pipelineRunsOrError"]["results"][0][
                     "hasConcurrencyKeySlots"
                 ]
+                assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
 
             claim = instance.event_log_storage.claim_concurrency_slot(
                 "foo", run_id, "fake_step_key"
@@ -850,3 +997,48 @@ def test_run_has_concurrency_slots():
                 assert len(result.data["pipelineRunsOrError"]["results"]) == 1
                 assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
                 assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]
+                assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
+
+
+@pytest.mark.parametrize(
+    "run_tag, run_tag_value, run_metrics_enabled, failure_message",
+    [
+        (None, None, False, "run_metrics tag not present should result to false"),
+        (".dagster/run_metrics", "true", True, "run_metrics tag set to true should result to true"),
+        (
+            ".dagster/run_metrics",
+            "false",
+            False,
+            "run_metrics tag set to falsy value should result to false",
+        ),
+        (
+            "dagster/run_metrics",
+            "true",
+            True,
+            "public run_metrics tag set to true should result to true",
+        ),
+    ],
+)
+def test_run_has_run_metrics_enabled(run_tag, run_tag_value, run_metrics_enabled, failure_message):
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        tags = (
+            {
+                run_tag: run_tag_value,
+            }
+            if run_tag
+            else {}
+        )
+        run = instance.create_run_for_job(
+            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED, tags=tags
+        )
+
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                RUN_METRICS_QUERY,
+                variables={"runId": run.run_id},
+            )
+            assert result.data
+            has_run_metrics_enabled = result.data["pipelineRunOrError"]["hasRunMetricsEnabled"]
+            assert has_run_metrics_enabled == run_metrics_enabled, failure_message

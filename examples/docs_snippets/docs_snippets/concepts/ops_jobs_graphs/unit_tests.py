@@ -11,6 +11,7 @@ from dagster import (
     Out,
     op,
     graph,
+    build_op_context,
 )
 
 
@@ -178,8 +179,7 @@ class Client:
     def __init__(self, api_key):
         self._api_key = api_key
 
-    def query(self, body):
-        ...
+    def query(self, body): ...
 
 
 class MyClientResource(ConfigurableResource):
@@ -330,7 +330,7 @@ def test_asset_with_inputs():
 
 
 # start_test_resource_asset
-from dagster import asset, ConfigurableResource, build_op_context, with_resources
+from dagster import asset, ConfigurableResource
 
 
 class BarResource(ConfigurableResource):
@@ -351,7 +351,7 @@ def test_asset_requires_bar():
 
 
 # start_test_config_asset
-from dagster import asset, Config, build_op_context
+from dagster import asset, Config
 
 
 class MyAssetConfig(Config):
@@ -410,18 +410,15 @@ from dagster import asset, materialize_to_memory, ConfigurableResource
 import mock
 
 
-class MyServiceResource(ConfigurableResource):
-    ...
+class MyServiceResource(ConfigurableResource): ...
 
 
 @asset
-def asset_requires_service(service: MyServiceResource):
-    ...
+def asset_requires_service(service: MyServiceResource): ...
 
 
 @asset
-def other_asset_requires_service(service: MyServiceResource):
-    ...
+def other_asset_requires_service(service: MyServiceResource): ...
 
 
 def test_assets_require_service():

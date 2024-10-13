@@ -1,14 +1,14 @@
 # start_marker
-from dagster import job, op
+from dagster import OpExecutionContext, job, op
 
 
 @op
-def return_one(context) -> int:
+def return_one(context: OpExecutionContext) -> int:
     return 1
 
 
 @op
-def add_one(context, number: int) -> int:
+def add_one(context: OpExecutionContext, number: int) -> int:
     return number + 1
 
 

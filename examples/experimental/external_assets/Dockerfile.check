@@ -1,0 +1,9 @@
+FROM rust:latest
+
+WORKDIR /app
+
+COPY pipes/rust_check /app/rust_check
+
+RUN cargo build --release --manifest-path /app/rust_check/Cargo.toml
+
+ENTRYPOINT ["/app/rust_check/target/release/rust_check"]

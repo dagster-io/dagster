@@ -1,9 +1,9 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
+import {CoreColors} from '../../palettes/CoreColors';
 import {Box} from '../Box';
-import {Colors} from '../Colors';
-import {IconNames as _iconNames, Icon} from '../Icon';
+import {Colors} from '../Color';
+import {Icon, IconNames as _iconNames} from '../Icon';
 import {Tooltip} from '../Tooltip';
 
 const IconNames = _iconNames.slice().sort();
@@ -39,17 +39,17 @@ export const Size24 = () => {
 };
 
 export const IconColors = () => {
-  const colorKeys = Object.keys(Colors);
+  const colorKeys = Object.keys(CoreColors);
   const numColors = colorKeys.length;
   const colorAtIndex = (index: number) => {
     const colorKey = colorKeys[index % numColors];
     if (colorKey) {
-      const colorAtKey = Colors[colorKey as keyof typeof Colors];
+      const colorAtKey = CoreColors[colorKey as keyof typeof CoreColors];
       if (colorAtKey) {
         return colorAtKey;
       }
     }
-    return Colors.Gray100;
+    return Colors.accentWhite();
   };
 
   return (

@@ -20,7 +20,10 @@ class: AzureBlobComputeLogManager
 config:
   storage_account: {{ include "stringSource" $azureBlobComputeLogManagerConfig.storageAccount }}
   container: {{ include "stringSource" $azureBlobComputeLogManagerConfig.container }}
+
+  {{- if $azureBlobComputeLogManagerConfig.secretKey }}
   secret_key: {{ include "stringSource" $azureBlobComputeLogManagerConfig.secretKey }}
+  {{- end }}
 
   {{- if $azureBlobComputeLogManagerConfig.localDir }}
   local_dir: {{ include "stringSource" $azureBlobComputeLogManagerConfig.localDir }}
@@ -61,6 +64,11 @@ config:
   {{- if $gcsComputeLogManagerConfig.uploadInterval }}
   upload_interval: {{ $gcsComputeLogManagerConfig.uploadInterval }}
   {{- end }}
+
+  {{- if $gcsComputeLogManagerConfig.showUrlOnly }}
+  show_url_only: {{ $gcsComputeLogManagerConfig.showUrlOnly }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.s3" }}

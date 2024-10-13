@@ -1,0 +1,157 @@
+---
+title: "Integrating Snowflake & dbt with Dagster+ Insights | Dagster Docs"
+description: "Integrating external metrics with Dagster Insights."
+
+platform_type: "cloud"
+---
+
+# Integrating Snowflake & dbt with Dagster+ Insights
+
+External metrics, such as Snowflake credits, can be integrated into the Dagster Insights UI. The [`dagster-cloud`](https://pypi.org/project/dagster-cloud/) package contains utilities for capturing and submitting external metrics about data operations to Dagster+ via an API.
+
+If you use dbt to materialize tables in Snowflake, use this guide to integrate Snowflake metrics into the Insights UI. For instructions on integrating direct Snowflake queries, see [Integrating Direct Snowflake Usage with Dagster+ Insights](/dagster-plus/insights/integrating-snowflake).
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- A Dagster+ account on the Pro plan
+- Access to the [Dagster+ Insights feature](/dagster-plus/insights)
+- Snowflake credentials which have access to the `snowflake.account_usage.query_history` table. For more information on granting access to this table, see the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles).
+- To install the following libraries:
+
+  ```shell
+  pip install dagster dagster-cloud dagster-dbt dagster-snowflake
+  ```
+
+  **Note**: If you already have `dagster-cloud` installed, **make sure you're using version 1.5.1 or newer**.
+
+---
+
+## Step 1: Instrument your Dagster code
+
+<TabGroup>
+<TabItem name="Using assets">
+
+First, append <PyObject object="with_insights" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="with_insights()" /> to the dbt CLI call in your Dagster <PyObject module="dagster_dbt" object="dbt_assets" decorator /> function:
+
+```python
+@dbt_assets(...)
+def my_asset(context: AssetExecutionContext, dbt: DbtCliResource):
+    # Chain `with_insights` after any other metadata fetch, e.g. `fetch_row_count`
+    yield from dbt_resource.cli(["build"], context=context).stream().with_insights()
+```
+
+This passes through all underlying events and emits an <PyObject object="AssetObservation" /> for each asset materialization. The observation contains the dbt invocation ID and unique ID recorded in the Dagster event log.
+
+</TabItem>
+<TabItem name="Using ops and jobs">
+
+First, append <PyObject object="with_insights" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="with_insights()" /> to the dbt CLI call in your Dagster op function:
+
+```python
+@op(out={})
+def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
+    # Chain `with_insights` after any other metadata fetch, e.g. `fetch_row_count`
+    yield from  dbt.cli(
+        ["build"], context=context, manifest=dbt_manifest_path
+    ).stream().with_insights()
+
+@job
+def my_dbt_job():
+  ...
+  my_dbt_op()
+  ...
+```
+
+This passes through all underlying events and emits an `AssetObservation` for each asset materialization. The observation contains the dbt invocation ID and unique ID that are recorded in the Dagster event log.
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Step 2: Update dbt_project.yml
+
+Next, add the following to your dbt project's `dbt_project.yml`:
+
+```yaml
+query-comment:
+  comment: "snowflake_dagster_dbt_v1_opaque_id[[[{{ node.unique_id }}:{{ invocation_id }}]]]"
+  append: true
+```
+
+This allows you to add a comment, containing the dbt invocation ID and unique ID, to every query recorded in Snowflake's `query_history` table. Using this data, Insights will attribute cost metrics in Snowflake to the corresponding Dagster jobs and assets.
+
+**Note**: Make sure to include `append: true`, as Snowflake strips leading comments.
+
+---
+
+## Step 3: Create a metrics ingestion pipeline in Dagster
+
+The last step is to create a Dagster pipeline that joins asset observation events with the Snowflake query history and calls the Dagster+ ingestion API. Snowflake usage information is available at a delay, so this pipeline will run on a schedule to ingest Snowflake usage information from the previous hour.
+
+Note that you only need to create this pipeline in a single code location per deployment, even if you have instrumented dbt assets in multiple code locations.
+
+To do this, you'll need a Snowflake resource (<PyObject module="dagster_snowflake" object="SnowflakeResource" />) that can query the `snowflake.account_usage.query_history` table. You can set up the ingestion pipeline like the following:
+
+```python
+from dagster_snowflake import SnowflakeResource
+from dagster import Definition, EnvVar
+
+from dagster_cloud.dagster_insights import (
+    create_snowflake_insights_asset_and_schedule,
+)
+
+snowflake_insights_definitions = create_snowflake_insights_asset_and_schedule(
+    start_date="2023-10-5-00:00",
+    snowflake_resource_key="snowflake_insights",
+)
+
+defs = Definitions(
+  assets=[..., *snowflake_insights_definitions.assets],
+  schedules=[..., snowflake_insights_definitions.schedule],
+  resources={
+    ...,
+    "snowflake_insights": SnowflakeResource(
+      account=EnvVar("SNOWFLAKE_PURINA_ACCOUNT"),
+      user=EnvVar("SNOWFLAKE_PURINA_USER"),
+      password=EnvVar("SNOWFLAKE_PURINA_PASSWORD"),
+    ),
+ }
+)
+```
+
+In this example, the `snowflake_resource_key` is a <PyObject module="dagster_snowflake" object="SnowflakeResource" /> that has access to the `query_history` table.
+
+Snowflake credit metrics should be available on the **Insights** tab in the Dagster UI after a short period of time (within 24 hours) of the ingestion job running:
+
+<!-- ![Snowflake credits in the Insights tab of the Dagster UI](/images/dagster-cloud/insights/insights-snowflake.png) -->
+
+<Image
+alt="Snowflake credits in the Insights tab of the Dagster UI"
+src="/images/dagster-cloud/insights/insights-snowflake.png"
+width={2640}
+height={1516}
+/>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster+ Insights"
+    href="/dagster-plus/insights"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Snowflake & Insights"
+    href="/dagster-plus/insights/integrating-snowflake"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster+ alerts"
+    href="/dagster-plus/managing-deployments/alerts"
+  ></ArticleListItem>
+</ArticleList>

@@ -1,17 +1,20 @@
 import os
 import uuid
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Iterator, Optional, cast
 
 import pandas as pd
 import pandas_gbq
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
+    Definitions,
     DynamicPartitionsDefinition,
     EnvVar,
+    MetadataValue,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
@@ -24,6 +27,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
 from google.cloud import bigquery
 
@@ -53,6 +57,31 @@ def temporary_bigquery_table(schema_name: Optional[str]) -> Iterator[str]:
         bq_client.query(
             f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
         ).result()
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.integration
+def test_io_manager_asset_metadata() -> None:
+    with temporary_bigquery_table(schema_name=SCHEMA) as table_name:
+
+        @asset(key_prefix=SCHEMA, name=table_name)
+        def my_pandas_df() -> pd.DataFrame:
+            return pd.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+
+        defs = Definitions(
+            assets=[my_pandas_df], resources={"io_manager": pythonic_bigquery_io_manager}
+        )
+
+        res = defs.get_implicit_global_asset_job_def().execute_in_process()
+        assert res.success
+
+        mats = res.get_asset_materialization_events()
+        assert len(mats) == 1
+        mat = mats[0]
+
+        assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+            f"{os.getenv('GCP_PROJECT_ID')}.{SCHEMA}.{table_name}"
+        )
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
@@ -141,9 +170,9 @@ def test_time_window_partitioned_asset(io_manager):
             key_prefix=SCHEMA,
             name=table_name,
         )
-        def daily_partitioned(context) -> pd.DataFrame:
-            partition = pd.Timestamp(context.asset_partition_key_for_output())
-            value = context.op_config["value"]
+        def daily_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+            partition = pd.Timestamp(context.partition_key)
+            value = context.op_execution_context.op_config["value"]
 
             return pd.DataFrame(
                 {
@@ -168,12 +197,20 @@ def test_time_window_partitioned_asset(io_manager):
 
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
-        materialize(
+        result = materialize(
             [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
+
+        materialization = next(
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        )
+        meta = materialization.materialization.metadata["dagster/partition_row_count"]
+        assert cast(IntMetadataValue, meta).value == 3
 
         out_df = pandas_gbq.read_gbq(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
@@ -220,9 +257,9 @@ def test_static_partitioned_asset(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context) -> pd.DataFrame:
-            partition = context.asset_partition_key_for_output()
-            value = context.op_config["value"]
+        def static_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+            partition = context.partition_key
+            value = context.op_execution_context.op_config["value"]
             return pd.DataFrame(
                 {
                     "COLOR": [partition, partition, partition],
@@ -306,7 +343,7 @@ def test_multi_partitioned_asset(io_manager):
             partition = context.partition_key.keys_by_dimension
             partition_time = pd.Timestamp(partition["time"])
             partition_color = partition["color"]
-            value = context.op_config["value"]
+            value = context.op_execution_context.op_config["value"]
 
             return pd.DataFrame(
                 {
@@ -394,9 +431,9 @@ def test_dynamic_partitioned_asset(io_manager):
             config_schema={"value": str},
             name=table_name,
         )
-        def dynamic_partitioned(context) -> pd.DataFrame:
-            partition = context.asset_partition_key_for_output()
-            value = context.op_config["value"]
+        def dynamic_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+            partition = context.partition_key
+            value = context.op_execution_context.op_config["value"]
             return pd.DataFrame(
                 {
                     "fruit": [partition, partition, partition],
@@ -488,17 +525,20 @@ def test_self_dependent_asset(io_manager):
             config_schema={"value": str, "last_partition_key": str},
             name=table_name,
         )
-        def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
-            key = context.asset_partition_key_for_output()
+        def self_dependent_asset(
+            context: AssetExecutionContext, self_dependent_asset: pd.DataFrame
+        ) -> pd.DataFrame:
+            key = context.partition_key
 
             if not self_dependent_asset.empty:
                 assert len(self_dependent_asset.index) == 3
                 assert (
-                    self_dependent_asset["key"] == context.op_config["last_partition_key"]
+                    self_dependent_asset["key"]
+                    == context.op_execution_context.op_config["last_partition_key"]
                 ).all()
             else:
-                assert context.op_config["last_partition_key"] == "NA"
-            value = context.op_config["value"]
+                assert context.op_execution_context.op_config["last_partition_key"] == "NA"
+            value = context.op_execution_context.op_config["value"]
             pd_df = pd.DataFrame(
                 {
                     "key": [key, key, key],

@@ -1,4 +1,4 @@
-from dagster._core.host_representation.handle import JobHandle
+from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
@@ -10,7 +10,7 @@ from dagster._grpc.server import ExecuteExternalJobArgs
 from dagster._grpc.types import StartRunResult
 from dagster._serdes.serdes import deserialize_value
 
-from .utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 
 def _check_event_log_contains(event_log, expected_type_and_message):
@@ -33,7 +33,7 @@ def test_launch_run_with_unloadable_job_grpc():
             run = create_run_for_test(instance, "foo")
             run_id = run.run_id
 
-            original_origin = job_handle.get_external_origin()
+            original_origin = job_handle.get_remote_origin()
 
             # point the api to a pipeline that cannot be loaded
             res = deserialize_value(
@@ -84,7 +84,7 @@ def test_launch_run_grpc():
             res = deserialize_value(
                 api_client.start_run(
                     ExecuteExternalJobArgs(
-                        job_origin=job_handle.get_external_origin(),
+                        job_origin=job_handle.get_remote_origin(),
                         run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )
@@ -130,7 +130,7 @@ def test_launch_unloadable_run_grpc():
                 res = deserialize_value(
                     api_client.start_run(
                         ExecuteExternalJobArgs(
-                            job_origin=job_handle.get_external_origin(),
+                            job_origin=job_handle.get_remote_origin(),
                             run_id=run_id,
                             instance_ref=other_instance.get_ref(),
                         )
@@ -140,9 +140,7 @@ def test_launch_unloadable_run_grpc():
 
                 assert not res.success
                 assert (
-                    "gRPC server could not load run {run_id} in order to execute it. "
-                    "Make sure that the gRPC server has access to your run storage.".format(
-                        run_id=run_id
-                    )
+                    f"gRPC server could not load run {run_id} in order to execute it. "
+                    "Make sure that the gRPC server has access to your run storage."
                     in res.serializable_error_info.message
                 )

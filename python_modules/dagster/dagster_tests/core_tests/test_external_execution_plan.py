@@ -28,10 +28,9 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.reconstruct import (
-    ReconstructableJob,
-    ReconstructableRepository,
-)
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition.valid_definitions import (
     PendingRepositoryListDefinition,
 )
@@ -261,7 +260,7 @@ def test_using_file_system_for_subplan_invalid_step():
         )
 
 
-def test_using_repository_data():
+def test_using_repository_data() -> None:
     with instance_for_test() as instance:
         # first, we resolve the repository to generate our cached metadata
         repository_def = pending_repo.compute_repository_definition()
@@ -316,7 +315,16 @@ def test_using_repository_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
+    _cacheable_data = AssetsDefinitionCacheableData(
+        keys_by_output_name={"result": AssetKey("foo")},
+        metadata_by_output_name={
+            "result": {
+                "some_val": MetadataValue.table_schema(
+                    schema=TableSchema(columns=[TableColumn("some_col")])
+                )
+            }
+        },
+    )
 
     def compute_cacheable_data(self):
         # used for tracking how many times this function gets called over an execution

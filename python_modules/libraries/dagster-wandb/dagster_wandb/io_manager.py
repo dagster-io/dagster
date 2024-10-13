@@ -24,25 +24,27 @@ from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from wandb import Artifact
 from wandb.data_types import WBValue
 
-from .resources import WANDB_CLOUD_HOST
-from .utils.errors import (
+from dagster_wandb.resources import WANDB_CLOUD_HOST
+from dagster_wandb.utils.errors import (
     WandbArtifactsIOManagerError,
     raise_on_empty_configuration,
     raise_on_unknown_partition_keys,
     raise_on_unknown_read_configuration_keys,
     raise_on_unknown_write_configuration_keys,
 )
-from .utils.pickling import (
+from dagster_wandb.utils.pickling import (
     ACCEPTED_SERIALIZATION_MODULES,
     pickle_artifact_content,
     unpickle_artifact_content,
 )
-from .version import __version__
+from dagster_wandb.version import __version__
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
     from typing_extensions import TypedDict
+
+UNIT_TEST_RUN_ID = "0ab2e48b-6d63-4ff5-b160-662cc60145f4"
 
 
 class Config(TypedDict):
@@ -161,8 +163,8 @@ class ArtifactsIOManager(IOManager):
 
         with self.wandb_run() as run:
             parameters = {}
-            if context.metadata is not None:
-                parameters = context.metadata.get("wandb_artifact_configuration", {})
+            if context.definition_metadata is not None:
+                parameters = context.definition_metadata.get("wandb_artifact_configuration", {})
 
             raise_on_unknown_write_configuration_keys(parameters)
 
@@ -179,8 +181,8 @@ class ArtifactsIOManager(IOManager):
             serialization_module_parameters = serialization_module.get("parameters", {})
             serialization_module_parameters_with_protocol = {
                 "protocol": (
-                    pickle.HIGHEST_PROTOCOL
-                ),  # we use the highest available protocol if we don't pass one
+                    pickle.HIGHEST_PROTOCOL  # we use the highest available protocol if we don't pass one
+                ),
                 **serialization_module_parameters,
             }
 
@@ -364,8 +366,8 @@ class ArtifactsIOManager(IOManager):
     def _download_artifact(self, context: InputContext):
         with self.wandb_run() as run:
             parameters = {}
-            if context.metadata is not None:
-                parameters = context.metadata.get("wandb_artifact_configuration", {})
+            if context.definition_metadata is not None:
+                parameters = context.definition_metadata.get("wandb_artifact_configuration", {})
 
             raise_on_unknown_read_configuration_keys(parameters)
 
@@ -468,7 +470,7 @@ class ArtifactsIOManager(IOManager):
                                 output[key] = download_path
                                 continue
 
-                    artifact_dir = artifact.download(root=artifacts_path, recursive=True)
+                    artifact_dir = artifact.download(root=artifacts_path)
                     unpickled_content = unpickle_artifact_content(artifact_dir)
                     if unpickled_content is not None:
                         output[key] = unpickled_content
@@ -479,7 +481,7 @@ class ArtifactsIOManager(IOManager):
 
                 if len(output) == 1:
                     # If there's only one partition, return the value directly
-                    return list(output.values())[0]
+                    return next(iter(output.values()))
 
                 return output
 
@@ -545,7 +547,7 @@ class ArtifactsIOManager(IOManager):
                 path = artifact.get_path(path)
                 return path.download(root=artifacts_path)
 
-            artifact_dir = artifact.download(root=artifacts_path, recursive=True)
+            artifact_dir = artifact.download(root=artifacts_path)
 
             unpickled_content = unpickle_artifact_content(artifact_dir)
             if unpickled_content is not None:
@@ -699,23 +701,19 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
     wandb_run_name = None
     wandb_run_id = None
     wandb_run_tags = None
+    base_dir = (
+        context.instance.storage_directory() if context.instance else os.environ["DAGSTER_HOME"]
+    )
     cache_duration_in_minutes = None
     if context.resource_config is not None:
         wandb_run_name = context.resource_config.get("run_name")
         wandb_run_id = context.resource_config.get("run_id")
         wandb_run_tags = context.resource_config.get("run_tags")
-        base_dir = context.resource_config.get(
-            "base_dir",
-            (
-                context.instance.storage_directory()
-                if context.instance
-                else os.environ["DAGSTER_HOME"]
-            ),
-        )
+        base_dir = context.resource_config.get("base_dir", base_dir)
         cache_duration_in_minutes = context.resource_config.get("cache_duration_in_minutes")
 
     if "PYTEST_CURRENT_TEST" in os.environ:
-        dagster_run_id = "unit-testing"
+        dagster_run_id = UNIT_TEST_RUN_ID
     else:
         dagster_run_id = context.run_id
 

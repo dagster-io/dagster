@@ -6,19 +6,21 @@ import {
   Menu,
   MenuItem,
   Popover,
-  StyledReadOnlyCodeMirror,
+  StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 
-export const CodeLocationMenu: React.FC<{locationNode: WorkspaceRepositoryLocationNode}> = ({
+export const CodeLocationMenu = ({
   locationNode,
+}: {
+  locationNode: WorkspaceRepositoryLocationNode;
 }) => {
-  const [configIsOpen, setConfigIsOpen] = React.useState(false);
-  const [libsIsOpen, setLibsIsOpen] = React.useState(false);
+  const [configIsOpen, setConfigIsOpen] = useState(false);
+  const [libsIsOpen, setLibsIsOpen] = useState(false);
 
   let libsMenuItem = null;
   let libsDialog = null;
@@ -61,11 +63,15 @@ export const CodeLocationMenu: React.FC<{locationNode: WorkspaceRepositoryLocati
   );
 };
 
-export const CodeLocationConfigDialog: React.FC<{
+export const CodeLocationConfigDialog = ({
+  isOpen,
+  setIsOpen,
+  metadata,
+}: {
   isOpen: boolean;
   setIsOpen: (next: boolean) => void;
   metadata: WorkspaceRepositoryLocationNode['displayMetadata'];
-}> = ({isOpen, setIsOpen, metadata}) => {
+}) => {
   return (
     <Dialog
       title="Code location configuration"
@@ -84,11 +90,15 @@ export const CodeLocationConfigDialog: React.FC<{
   );
 };
 
-export const DagsterLibrariesDialog: React.FC<{
+export const DagsterLibrariesDialog = ({
+  isOpen,
+  setIsOpen,
+  libraries,
+}: {
   isOpen: boolean;
   setIsOpen: (next: boolean) => void;
   libraries: {name: string; version: string}[];
-}> = ({isOpen, setIsOpen, libraries}) => {
+}) => {
   return (
     <Dialog
       title="Dagster library versions"
@@ -100,7 +110,7 @@ export const DagsterLibrariesDialog: React.FC<{
       <Table>
         <thead>
           <tr>
-            <th>Libray</th>
+            <th>Library</th>
             <th>Version</th>
           </tr>
         </thead>
@@ -122,20 +132,26 @@ export const DagsterLibrariesDialog: React.FC<{
   );
 };
 
-const CodeLocationConfig: React.FC<{
+const CodeLocationConfig = ({
+  displayMetadata,
+}: {
   displayMetadata: WorkspaceRepositoryLocationNode['displayMetadata'];
-}> = ({displayMetadata}) => {
-  const yamlString = React.useMemo(() => {
-    const kvPairs = displayMetadata.reduce((accum, item) => {
-      return {...accum, [item.key]: item.value};
-    }, {});
+}) => {
+  const yamlString = useMemo(() => {
+    const kvPairs = displayMetadata.reduce(
+      (accum, item) => {
+        accum[item.key] = item.value;
+        return accum;
+      },
+      {} as Record<string, string>,
+    );
     return yaml.stringify(kvPairs);
   }, [displayMetadata]);
 
   return (
-    <StyledReadOnlyCodeMirror
+    <StyledRawCodeMirror
       value={yamlString}
-      options={{lineNumbers: true, mode: 'yaml'}}
+      options={{readOnly: true, lineNumbers: true, mode: 'yaml'}}
       theme={['config-editor']}
     />
   );

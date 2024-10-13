@@ -18,8 +18,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-pagerduty",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for pagerduty Dagster framework components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pagerduty",
@@ -31,6 +31,8 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_pagerduty_tests*"]),
+    include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[f"dagster{pin}", "pypd"],
     zip_safe=False,
 )

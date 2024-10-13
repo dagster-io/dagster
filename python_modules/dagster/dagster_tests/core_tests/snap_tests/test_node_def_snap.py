@@ -1,9 +1,5 @@
 from dagster import In, Out, graph, op
-from dagster._core.snap import (
-    DependencyStructureIndex,
-    GraphDefSnap,
-    build_graph_def_snap,
-)
+from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, build_graph_def_snap
 from dagster._core.snap.node import OpDefSnap, build_op_def_snap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value

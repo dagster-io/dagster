@@ -1,6 +1,7 @@
 import json
 import shlex
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
+from contextlib import suppress
 from typing import (
     Any,
     Callable,
@@ -18,13 +19,13 @@ from typing import (
 
 import dagster._check as check
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     AutoMaterializePolicy,
     FreshnessPolicy,
     MetadataValue,
-    OpExecutionContext,
     PartitionsDefinition,
     ResourceDefinition,
     multi_asset,
@@ -35,7 +36,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.execution.context.init import build_init_resource_context
 
 from dagster_dbt.asset_utils import (
@@ -47,11 +48,11 @@ from dagster_dbt.asset_utils import (
     get_asset_deps,
     get_deps,
 )
+from dagster_dbt.cloud.resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
+from dagster_dbt.cloud.utils import result_to_events
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-
-from ..errors import DagsterDbtCloudJobInvariantViolationError
-from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
+from dagster_dbt.errors import DagsterDbtCloudJobInvariantViolationError
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
@@ -112,21 +113,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
+        from dbt.cli.flags import Flags, args_to_context
+
         args = shlex.split(dbt_command)[1:]
-        try:
-            from dbt.cli.flags import (
-                Flags,
-                args_to_context,
-            )
 
-            # nasty hack to get dbt to parse the args
-            # dbt >= 1.5.0 requires that profiles-dir is set to an existing directory
-            return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
-        except ImportError:
-            # dbt < 1.5.0 compat
-            from dbt.main import parse_args  # type: ignore
-
-            return parse_args(args=args)
+        # nasty hack to get dbt to parse the args, profiles-dir must be set to an existing directory
+        return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
 
     @staticmethod
     def get_job_materialization_command_step(execute_steps: List[str]) -> int:
@@ -164,6 +156,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return dbt_compile_options
 
     def _get_cached_compile_dbt_cloud_job_run(self, compile_run_id: int) -> Tuple[int, int]:
+        # If the compile run is ongoing, allow it a grace period of 10 minutes to finish.
+        with suppress(Exception):
+            self._dbt_cloud.poll_run(run_id=compile_run_id, poll_timeout=600)
+
         compile_run = self._dbt_cloud.get_run(
             run_id=compile_run_id, include_related=["trigger", "run_steps"]
         )
@@ -351,20 +347,27 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             def get_group_name(cls, dbt_resource_props):
                 return self._node_info_to_group_fn(dbt_resource_props)
 
+            @classmethod
+            def get_freshness_policy(cls, dbt_resource_props):
+                return self._node_info_to_freshness_policy_fn(dbt_resource_props)
+
+            @classmethod
+            def get_auto_materialize_policy(cls, dbt_resource_props):
+                return self._node_info_to_auto_materialize_policy_fn(dbt_resource_props)
+
         (
             asset_deps,
             asset_ins,
             asset_outs,
             group_names_by_key,
             freshness_policies_by_key,
-            auto_materialize_policies_by_key,
+            automation_conditions_by_key,
+            _,
             fqns_by_output_name,
             metadata_by_output_name,
         ) = get_asset_deps(
             dbt_nodes=dbt_nodes,
             deps=dbt_dependencies,
-            node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
-            node_info_to_auto_materialize_policy_fn=self._node_info_to_auto_materialize_policy_fn,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             dagster_dbt_translator=CustomDagsterDbtTranslator(),
@@ -407,12 +410,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 for asset_key, freshness_policy in freshness_policies_by_key.items()
             },
             auto_materialize_policies_by_output_name={
-                asset_outs[asset_key][0]: auto_materialize_policy
-                for asset_key, auto_materialize_policy in auto_materialize_policies_by_key.items()
+                asset_outs[asset_key][0]: automation_condition.as_auto_materialize_policy()
+                for asset_key, automation_condition in automation_conditions_by_key.items()
             },
         )
 
-    def _build_dbt_cloud_assets_metadata(self, dbt_metadata: Dict[str, Any]) -> MetadataUserInput:
+    def _build_dbt_cloud_assets_metadata(self, dbt_metadata: Dict[str, Any]) -> RawMetadataMapping:
         metadata = {
             "dbt Cloud Job": MetadataValue.url(
                 self._dbt_cloud.build_url_for_job(
@@ -481,7 +484,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             required_resource_keys={"dbt_cloud"},
             compute_kind="dbt",
         )
-        def _assets(context: OpExecutionContext):
+        def _assets(context: AssetExecutionContext):
             dbt_cloud = cast(DbtCloudClient, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.
@@ -496,34 +499,32 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
             # Map the selected outputs to dbt models that should be materialized.
             #
-            # HACK: This selection filter works even if an existing `--select` is specified in the
-            # dbt Cloud job. We take advantage of the fact that the last `--select` will be used.
+            # From version 1.5.0 dbt allows multiple select args to be used in command,
+            # so we cannot just add our arg as last one to be used and need to remove
+            # both command-native --select args and --selector arg to run dagster-generated
+            # subset of models
             #
-            # This is not ideal, as the triggered run for the dbt Cloud job will still have both
-            # `--select` options when displayed in the UI, but parsing the command line argument
-            # to remove the initial select using argparse.
-            if len(context.selected_output_names) != len(
-                assets_definition_cacheable_data.keys_by_output_name or {}
-            ):
+            # See https://docs.getdbt.com/reference/node-selection/syntax for details.
+            if context.is_subset:
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
-                    for output_name in context.selected_output_names
+                    for output_name in context.op_execution_context.selected_output_names
+                    # outputs corresponding to asset checks from dbt tests won't be in this dict
+                    if output_name in fqns_by_output_name
                 ]
 
                 dbt_options.append(f"--select {' '.join(sorted(selected_models))}")
 
-                # If the `--selector` option is used, we need to remove it from the command, since
-                # it disables other selection options from being functional.
-                #
-                # See https://docs.getdbt.com/reference/node-selection/syntax for details.
-                split_materialization_command = shlex.split(materialization_command)
-                if "--selector" in split_materialization_command:
-                    idx = split_materialization_command.index("--selector")
+                parser = ArgumentParser(description="Parse selection args from dbt command")
+                # Select arg should have nargs="+", but we probably want dbt itself to deal with it
+                parser.add_argument("-s", "--select", nargs="*", action="append")
+                parser.add_argument("--selector", nargs="*")
 
-                    materialization_command = " ".join(
-                        split_materialization_command[:idx]
-                        + split_materialization_command[idx + 2 :]
-                    )
+                split_materialization_command = shlex.split(materialization_command)
+                _, non_selection_command_parts = parser.parse_known_args(
+                    split_materialization_command
+                )
+                materialization_command = " ".join(non_selection_command_parts)
 
             job_commands[job_materialization_command_step] = (
                 f"{materialization_command} {' '.join(dbt_options)}".strip()
@@ -532,7 +533,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             # Run the dbt Cloud job to rematerialize the assets.
             dbt_cloud_output = dbt_cloud.run_job_and_poll(
                 job_id=job_id,
-                cause=f"Materializing software-defined assets in Dagster run {context.run_id[:8]}",
+                cause=f"Materializing software-defined assets in Dagster run {context.run.run_id[:8]}",
                 steps_override=job_commands,
             )
 
@@ -574,7 +575,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 @experimental_param(param="partitions_def")
 @experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
-    dbt_cloud: ResourceDefinition,
+    dbt_cloud: Union[DbtCloudClientResource, ResourceDefinition],
     job_id: int,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     node_info_to_group_fn: Callable[
@@ -617,7 +618,7 @@ def load_assets_from_dbt_cloud_job(
             config applied to dbt models, i.e.:
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]):
             A function that takes a dictionary of dbt node info and optionally returns a dictionary
             of metadata to be attached to the corresponding definition. This is added to the default
             metadata assigned to the node, which consists of the node's schema (if present).

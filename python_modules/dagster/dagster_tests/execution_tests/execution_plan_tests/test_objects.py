@@ -18,11 +18,13 @@ def test_failure_error_display_string():
             error_source=ErrorSource.USER_CODE_ERROR,
         )
 
-        assert step_failure_data.error_display_string.startswith("""
+        assert step_failure_data.error_display_string.startswith(
+            """
 dagster._core.errors.DagsterUserCodeExecutionError: Error occurred while doing the thing:
 
 ValueError: some error
 
 Stack Trace:
   File "
-""".strip())
+""".strip()
+        )

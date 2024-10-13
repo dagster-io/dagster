@@ -1,6 +1,8 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
+import {useState} from 'react';
 
+import {Box} from '../Box';
+import {Colors} from '../Color';
 import {MenuItem} from '../Menu';
 import {Suggest} from '../Suggest';
 
@@ -64,14 +66,15 @@ const US_STATES = [
 ];
 
 export const Default = () => {
-  const [selectedItem, setSelectedItem] = React.useState<string>('');
+  const [selectedItem, setSelectedItem] = useState<string>('');
   return (
     <Suggest<string>
       key="loading"
       inputProps={{
         placeholder: 'Type the name of a US state…',
-        style: {width: '250px'},
+        style: {width: '260px'},
       }}
+      icon="search"
       items={US_STATES}
       inputValueRenderer={(item) => item}
       itemPredicate={(query, item) => item.toLocaleLowerCase().includes(query.toLocaleLowerCase())}
@@ -83,7 +86,11 @@ export const Default = () => {
           text={item}
         />
       )}
-      noResults={<MenuItem disabled={true} text="No presets." />}
+      noResults={
+        <Box padding={4} style={{color: Colors.textDisabled()}}>
+          No matching states
+        </Box>
+      }
       onItemSelect={(item) => setSelectedItem(item)}
       selectedItem={selectedItem}
     />

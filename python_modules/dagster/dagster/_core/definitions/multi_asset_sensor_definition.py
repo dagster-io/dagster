@@ -18,25 +18,16 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated_param, experimental, public
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.run_request import RunRequest, SensorResult, SkipReason
 from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
-from dagster._utils import normalize_to_repository
-
-from .events import AssetKey
-from .run_request import RunRequest, SensorResult, SkipReason
-from .sensor_definition import (
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
@@ -45,15 +36,26 @@ from .sensor_definition import (
     get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
 )
-from .target import ExecutableDefinition
-from .utils import check_valid_name
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._utils import normalize_to_repository
+from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.remote_representation.origin import CodeLocationOrigin
     from dagster._core.storage.event_log.base import EventLogRecord
 
 MAX_NUM_UNCONSUMED_EVENTS = 25
+FETCH_MATERIALIZATION_BATCH_SIZE = 1000
 
 
 class MultiAssetSensorAssetCursorComponent(
@@ -126,6 +128,7 @@ class MultiAssetSensorContextCursor:
     # to serialize the cursor.
     def __init__(self, cursor: Optional[str], context: "MultiAssetSensorEvaluationContext"):
         loaded_cursor = json.loads(cursor) if cursor else {}
+        loaded_cursor = loaded_cursor if isinstance(loaded_cursor, dict) else {}
         self._cursor_component_by_asset_key: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
         # The initial latest consumed event ID at the beginning of the tick
@@ -160,6 +163,11 @@ class MultiAssetSensorContextCursor:
         return json.dumps(self._cursor_component_by_asset_key)
 
 
+@deprecated_param(
+    param="last_completion_time",
+    breaking_version="2.0",
+    additional_warn_text="Use `last_tick_completion_time` instead.",
+)
 @experimental
 class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a
@@ -195,7 +203,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key
             strings to a stringified tuple of (latest_event_partition, latest_event_storage_id,
             trailing_unconsumed_partitioned_event_ids).
-        last_completion_time (float): DEPRECATED The last time that the sensor was consumed (UTC).
+        last_tick_completion_time (Optional[float]): The last time that the sensor was evaluated for
+            a tick (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
@@ -204,6 +213,10 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
+        last_sensor_start_time (Optional[float]): The last time the sensor was started.
+        log_key (Optional[List[str]]): The log key to use for this sensor tick.
+        sensor_name (Optional[str]): The name of the sensor, used for logging and error messages.
+        code_location_origin (Optional[CodeLocationOrigin]): The code location that the sensor is in.
 
     Example:
         .. code-block:: python
@@ -218,15 +231,21 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
-        last_completion_time: Optional[float],
-        last_run_key: Optional[str],
-        cursor: Optional[str],
-        repository_name: Optional[str],
-        repository_def: Optional["RepositoryDefinition"],
         monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+        last_tick_completion_time: Optional[float] = None,
+        last_run_key: Optional[str] = None,
+        cursor: Optional[str] = None,
+        repository_name: Optional[str] = None,
+        repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         definitions: Optional["Definitions"] = None,
+        last_sensor_start_time: Optional[float] = None,
+        log_key: Optional[Sequence[str]] = None,
+        sensor_name: Optional[str] = None,
+        code_location_origin: Optional["CodeLocationOrigin"] = None,
+        # deprecated param
+        last_completion_time: Optional[float] = None,
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -237,25 +256,22 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         )
         self._monitored_asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
-            repo_assets = self._repository_def.assets_defs_by_key.values()
-            repo_source_assets = self._repository_def.source_assets_by_key.values()
-            self._monitored_asset_keys = list(
-                monitored_assets.resolve([*repo_assets, *repo_source_assets])
-            )
+            repo_assets = self._repository_def.asset_graph.assets_defs
+            self._monitored_asset_keys = list(monitored_assets.resolve(repo_assets))
         else:
             self._monitored_asset_keys = monitored_assets
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
         self._partitions_def_by_asset_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
+        asset_graph = self._repository_def.asset_graph
         for asset_key in self._monitored_asset_keys:
-            assets_def = self._repository_def.assets_defs_by_key.get(asset_key)
+            assets_def = (
+                asset_graph.get(asset_key).assets_def if asset_graph.has(asset_key) else None
+            )
             self._assets_by_key[asset_key] = assets_def
 
-            source_asset_def = self._repository_def.source_assets_by_key.get(asset_key)
             self._partitions_def_by_asset_key[asset_key] = (
-                assets_def.partitions_def
-                if assets_def
-                else source_asset_def.partitions_def if source_asset_def else None
+                assets_def.partitions_def if assets_def else None
             )
 
         # Cursor object with utility methods for updating and retrieving cursor information.
@@ -267,20 +283,32 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
         self._fetched_initial_unconsumed_events = False
 
+        normalized_last_tick_completion_time = normalize_renamed_param(
+            last_tick_completion_time,
+            "last_tick_completion_time",
+            last_completion_time,
+            "last_completion_time",
+        )
+
         super(MultiAssetSensorEvaluationContext, self).__init__(
             instance_ref=instance_ref,
-            last_completion_time=last_completion_time,
+            last_tick_completion_time=normalized_last_tick_completion_time,
             last_run_key=last_run_key,
             cursor=cursor,
             repository_name=repository_name,
             instance=instance,
             repository_def=repository_def,
             resources=resource_defs,
+            last_sensor_start_time=last_sensor_start_time,
+            sensor_name=sensor_name,
+            definitions=definitions,
+            last_completion_time=None,
+            code_location_origin=code_location_origin,
+            log_key=log_key,
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter
 
         # This method caches the initial unconsumed events for each asset key. To generate the
         # current unconsumed events, call get_trailing_unconsumed_events instead.
@@ -292,12 +320,13 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 self._get_cursor(asset_key).trailing_unconsumed_partitioned_event_ids.values()
             )
             if unconsumed_event_ids:
-                event_records = self.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                event_records = self.instance.fetch_materializations(
+                    AssetRecordsFilter(
+                        asset_key=asset_key,
                         storage_ids=unconsumed_event_ids,
-                    )
-                )
+                    ),
+                    limit=len(unconsumed_event_ids),
+                ).records
                 self._initial_unconsumed_events_by_id.update(
                     {event_record.storage_id: event_record for event_record in event_records}
                 )
@@ -423,26 +452,40 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             asset_key (AssetKey): The asset to fetch materialization events for
             limit (Optional[int]): The number of events to fetch
         """
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter
 
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         if asset_key not in self._assets_by_key:
             raise DagsterInvalidInvocationError(f"Asset key {asset_key} not monitored by sensor.")
 
-        events = list(
-            self.instance.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=asset_key,
-                    after_cursor=self._get_cursor(asset_key).latest_consumed_event_id,
-                ),
-                ascending=True,
-                limit=limit,
-            )
-        )
+        if not limit:
+            deprecation_warning("Calling materialization_records_for_key without a limit", "1.8")
+            records = []
+            has_more = True
+            cursor = None
+            while has_more:
+                result = self.instance.fetch_materializations(
+                    AssetRecordsFilter(
+                        asset_key=asset_key,
+                        after_storage_id=self._get_cursor(asset_key).latest_consumed_event_id,
+                    ),
+                    ascending=True,
+                    limit=FETCH_MATERIALIZATION_BATCH_SIZE,
+                    cursor=cursor,
+                )
+                cursor = result.cursor
+                has_more = result.has_more
+                records.extend(result.records)
+            return records
 
-        return events
+        return self.instance.fetch_materializations(
+            AssetRecordsFilter(
+                asset_key=asset_key,
+                after_storage_id=self._get_cursor(asset_key).latest_consumed_event_id,
+            ),
+            ascending=True,
+            limit=limit,
+        ).records
 
     def _get_cursor(self, asset_key: AssetKey) -> MultiAssetSensorAssetCursorComponent:
         """Returns the MultiAssetSensorAssetCursorComponent for the asset key.
@@ -489,8 +532,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 # returns {"2022-07-05": EventLogRecord(...)}
 
         """
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventLogRecord, EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -530,26 +572,31 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 # Add partition and materialization to the end of the OrderedDict
                 materialization_by_partition[partition] = unconsumed_event
 
-        partition_materializations = self.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                asset_partitions=partitions_to_fetch,
-                after_cursor=self._get_cursor(asset_key).latest_consumed_event_id,
-            ),
-            ascending=True,
-        )
-        for materialization in partition_materializations:
-            partition = materialization.partition_key
+        has_more = True
+        cursor = None
+        while has_more:
+            result = self.instance.fetch_materializations(
+                AssetRecordsFilter(
+                    asset_key=asset_key,
+                    asset_partitions=partitions_to_fetch,
+                    after_storage_id=self._get_cursor(asset_key).latest_consumed_event_id,
+                ),
+                ascending=True,
+                limit=FETCH_MATERIALIZATION_BATCH_SIZE,
+                cursor=cursor,
+            )
+            cursor = result.cursor
+            has_more = result.has_more
+            for materialization in result.records:
+                if not isinstance(materialization.partition_key, str):
+                    continue
 
-            if isinstance(partition, str):
-                if partition in materialization_by_partition:
+                if materialization.partition_key in materialization_by_partition:
                     # Remove partition to ensure materialization_by_partition preserves
                     # the order of materializations
-                    materialization_by_partition.pop(partition)
+                    materialization_by_partition.pop(materialization.partition_key)
                 # Add partition and materialization to the end of the OrderedDict
-                materialization_by_partition[partition] = materialization
-
+                materialization_by_partition[materialization.partition_key] = materialization
         return materialization_by_partition
 
     @public
@@ -635,9 +682,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             if len(partitions) == 0:
                 raise DagsterInvalidInvocationError("Must provide at least one partition in list")
 
-        materialization_count_by_partition = self.instance.get_materialization_count_by_partition(
-            [asset_key]
-        ).get(asset_key, {})
+        materialized_partitions = self.instance.get_materialized_partitions(asset_key)
         if not partitions:
             if asset_key not in self._monitored_asset_keys:
                 raise DagsterInvariantViolationError(
@@ -652,15 +697,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 )
             partitions = partitions_def.get_partition_keys(dynamic_partitions_store=self.instance)
 
-        return all(
-            [materialization_count_by_partition.get(partition, 0) != 0 for partition in partitions]
-        )
+        return all([partition in materialized_partitions for partition in partitions])
 
     def _get_asset(self, asset_key: AssetKey, fn_name: str) -> AssetsDefinition:
         from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         repo_def = cast(RepositoryDefinition, self._repository_def)
-        repository_assets = repo_def.assets_defs_by_key
         if asset_key in self._assets_by_key:
             asset_def = self._assets_by_key[asset_key]
             if asset_def is None:
@@ -671,8 +713,8 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 )
             else:
                 return asset_def
-        elif asset_key in repository_assets:
-            return repository_assets[asset_key]
+        elif repo_def.asset_graph.has(asset_key):
+            return repo_def.asset_graph.get(asset_key).assets_def
         else:
             raise DagsterInvalidInvocationError(
                 f"Asset key {asset_key} not monitored in sensor and does not exist in target jobs"
@@ -719,6 +761,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         downstream_partition_key_subset = (
             partition_mapping.get_downstream_partitions_for_partitions(
                 from_asset.partitions_def.empty_subset().with_partition_keys([partition_key]),
+                from_asset.partitions_def,
                 downstream_partitions_def=to_partitions_def,
                 dynamic_partitions_store=self.instance,
             )
@@ -828,8 +871,7 @@ class MultiAssetSensorCursorAdvances:
         context: MultiAssetSensorEvaluationContext,
         initial_cursor: MultiAssetSensorContextCursor,
     ) -> MultiAssetSensorAssetCursorComponent:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter
 
         advanced_records: Set[int] = self._advanced_record_ids_by_key.get(asset_key, set())
         if len(advanced_records) == 0:
@@ -850,20 +892,30 @@ class MultiAssetSensorCursorAdvances:
             latest_unconsumed_record_by_partition = (
                 initial_asset_cursor.trailing_unconsumed_partitioned_event_ids
             )
-            unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
-                context.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=asset_key,
-                        after_cursor=latest_consumed_event_id_at_tick_start,
-                        before_cursor=greatest_consumed_event_id_in_tick,
-                    ),
-                    ascending=True,
+
+            if greatest_consumed_event_id_in_tick > (latest_consumed_event_id_at_tick_start or 0):
+                materialization_events = []
+                has_more = True
+                cursor = None
+                while has_more:
+                    result = context.instance.fetch_materializations(
+                        AssetRecordsFilter(
+                            asset_key=asset_key,
+                            after_storage_id=latest_consumed_event_id_at_tick_start,
+                            before_storage_id=greatest_consumed_event_id_in_tick,
+                        ),
+                        ascending=True,
+                        limit=FETCH_MATERIALIZATION_BATCH_SIZE,
+                        cursor=cursor,
+                    )
+                    cursor = result.cursor
+                    has_more = result.has_more
+                    materialization_events.extend(result.records)
+                unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
+                    materialization_events
                 )
-                if greatest_consumed_event_id_in_tick
-                > (latest_consumed_event_id_at_tick_start or 0)
-                else []
-            )
+            else:
+                unconsumed_events = []
 
             # Iterate through events in ascending order, storing the latest unconsumed
             # event for each partition. If an advanced event exists for a partition, clear
@@ -883,7 +935,8 @@ class MultiAssetSensorCursorAdvances:
                 latest_unconsumed_record_by_partition.pop(latest_consumed_partition_in_tick)
 
             if len(latest_unconsumed_record_by_partition.keys()) >= MAX_NUM_UNCONSUMED_EVENTS:
-                raise DagsterInvariantViolationError(f"""
+                raise DagsterInvariantViolationError(
+                    f"""
                     You have reached the maximum number of trailing unconsumed events
                     ({MAX_NUM_UNCONSUMED_EVENTS}) for asset {asset_key} and no more events can be
                     added. You can access the unconsumed events by calling the
@@ -892,7 +945,8 @@ class MultiAssetSensorCursorAdvances:
 
                     Otherwise, you can clear all unconsumed events and reset the cursor to the latest
                     materialization for each asset by calling `advance_all_cursors`.
-                    """)
+                    """
+                )
 
         return MultiAssetSensorAssetCursorComponent(
             latest_consumed_event_partition=(
@@ -914,21 +968,12 @@ class MultiAssetSensorCursorAdvances:
 def get_cursor_from_latest_materializations(
     asset_keys: Sequence[AssetKey], instance: DagsterInstance
 ) -> str:
-    from dagster._core.events import DagsterEventType
-    from dagster._core.storage.event_log.base import EventRecordsFilter
-
     cursor_dict: Dict[str, MultiAssetSensorAssetCursorComponent] = {}
 
     for asset_key in asset_keys:
-        materializations = instance.get_event_records(
-            EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-            ),
-            limit=1,
-        )
+        materializations = instance.fetch_materializations(asset_key, limit=1).records
         if materializations:
-            last_materialization = list(materializations)[-1]
+            last_materialization = materializations[0]
 
             cursor_dict[str(asset_key)] = MultiAssetSensorAssetCursorComponent(
                 last_materialization.partition_key,
@@ -951,6 +996,7 @@ def build_multi_asset_sensor_context(
     cursor_from_latest_materializations: bool = False,
     resources: Optional[Mapping[str, object]] = None,
     definitions: Optional["Definitions"] = None,
+    last_sensor_start_time: Optional[float] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -999,6 +1045,7 @@ def build_multi_asset_sensor_context(
     )
 
     check.bool_param(cursor_from_latest_materializations, "cursor_from_latest_materializations")
+    check.opt_float_param(last_sensor_start_time, "last_sensor_start_time")
 
     if cursor_from_latest_materializations:
         if cursor:
@@ -1017,9 +1064,7 @@ def build_multi_asset_sensor_context(
         if isinstance(monitored_assets, AssetSelection):
             asset_keys = cast(
                 List[AssetKey],
-                list(
-                    monitored_assets.resolve(list(set(repository_def.assets_defs_by_key.values())))
-                ),
+                list(monitored_assets.resolve(list(set(repository_def.asset_graph.assets_defs)))),
             )
         else:
             asset_keys = monitored_assets
@@ -1036,6 +1081,7 @@ def build_multi_asset_sensor_context(
         monitored_assets=monitored_assets,
         repository_def=repository_def,
         resource_defs=wrap_resources_for_execution(resources),
+        last_sensor_start_time=last_sensor_start_time,
     )
 
 
@@ -1087,6 +1133,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
+        tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
+            be used for searching and filtering in the UI.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
+
     """
 
     def __init__(
@@ -1102,6 +1153,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_assets: Optional[AssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[Mapping[str, object]] = None,
     ):
         resource_arg_names: Set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
@@ -1127,14 +1180,19 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
                 with MultiAssetSensorEvaluationContext(
                     instance_ref=context.instance_ref,
-                    last_completion_time=context.last_completion_time,
+                    last_tick_completion_time=context.last_tick_completion_time,
                     last_run_key=context.last_run_key,
                     cursor=context.cursor,
-                    repository_name=context.repository_def.name,
+                    repository_name=check.not_none(context.repository_def).name,
                     repository_def=context.repository_def,
                     monitored_assets=monitored_assets,
                     instance=context.instance,
                     resource_defs=context.resource_defs,
+                    sensor_name=context._sensor_name,  # noqa: SLF001
+                    code_location_origin=context.code_location_origin,
+                    log_key=context.log_key,
+                    # deprecated
+                    last_completion_time=None,
                 ) as multi_asset_sensor_context:
                     context_param_name = get_context_param_name(materialization_fn)
                     context_param = (
@@ -1203,6 +1261,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
             default_status=default_status,
             asset_selection=request_assets,
             required_resource_keys=combined_required_resource_keys,
+            tags=tags,
+            metadata=metadata,
         )
 
     def __call__(self, *args, **kwargs) -> AssetMaterializationFunctionReturn:

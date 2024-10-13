@@ -7,34 +7,36 @@ import {
   Popover,
   Spinner,
   Subheading,
+  TextInput,
+  TextInputContainer,
   Tooltip,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
-import * as React from 'react';
-
-import {LiveDataForNode} from '../asset-graph/Utils';
-import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
-import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
-import {testId} from '../testing/testId';
+import {useMemo, useState} from 'react';
+import styled from 'styled-components';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {AssetPartitionStatusCheckboxes} from './AssetPartitionStatusCheckboxes';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
-import {AssetViewParams, AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {
-  usePartitionHealthData,
-  rangesClippedToSelection,
   keyCountByStateInSelection,
   partitionStatusAtIndex,
+  rangesClippedToSelection,
   selectionRangeWithSingleKey,
+  usePartitionHealthData,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
+import {LiveDataForNode} from '../asset-graph/Utils';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
+import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
+import {testId} from '../testing/testId';
 
 interface Props {
   assetKey: AssetKey;
@@ -50,6 +52,7 @@ interface Props {
 
   repository?: RepositorySelector;
   opName?: string | null;
+  isLoadingDefinition: boolean;
 }
 
 const DISPLAYED_STATUSES = [
@@ -66,13 +69,14 @@ enum SortType {
   REVERSE_ALPHABETICAL,
 }
 
-export const AssetPartitions: React.FC<Props> = ({
+export const AssetPartitions = ({
   assetKey,
   assetPartitionDimensions,
   params,
   setParams,
   dataRefreshHint,
-}) => {
+  isLoadingDefinition,
+}: Props) => {
   const assetHealth = usePartitionHealthData([assetKey], dataRefreshHint)[0]!;
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
@@ -81,7 +85,7 @@ export const AssetPartitions: React.FC<Props> = ({
     shouldReadPartitionQueryStringParam: false,
   });
 
-  const [sortTypes, setSortTypes] = React.useState<Array<SortType>>([]);
+  const [sortTypes, setSortTypes] = useState<Array<SortType>>([]);
 
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
@@ -90,6 +94,11 @@ export const AssetPartitions: React.FC<Props> = ({
       (qs.status || '')
         .split(',')
         .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
+  });
+
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
   });
 
   // Determine which axis we will show at the top of the page, if any.
@@ -105,7 +114,7 @@ export const AssetPartitions: React.FC<Props> = ({
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
-  const rangesForEachDimension = React.useMemo(() => {
+  const rangesForEachDimension = useMemo(() => {
     if (!assetHealth) {
       return selections.map(() => []);
     }
@@ -140,8 +149,12 @@ export const AssetPartitions: React.FC<Props> = ({
     const allKeys = dimension.partitionKeys;
     const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
+    // Apply the search filter
+    const searchLower = searchValue.toLocaleLowerCase().trim();
+    const filteredKeys = allKeys.filter((key) => key.toLowerCase().includes(searchLower));
+
     const getSelectionKeys = () =>
-      uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
+      uniq(selectedRanges.flatMap(({start, end}) => filteredKeys.slice(start.idx, end.idx + 1)));
 
     if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
       const result = getSelectionKeys();
@@ -154,7 +167,9 @@ export const AssetPartitions: React.FC<Props> = ({
     );
     const getKeysWithStates = (states: AssetPartitionStatus[]) => {
       return healthRangesInSelection.flatMap((r) =>
-        states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+        states.some((s) => r.value.includes(s))
+          ? filteredKeys.slice(r.start.idx, r.end.idx + 1)
+          : [],
       );
     };
 
@@ -173,7 +188,7 @@ export const AssetPartitions: React.FC<Props> = ({
             r.end.idx >= idx &&
             !r.value.includes(AssetPartitionStatus.MISSING),
         );
-      result = allKeys.filter(
+      result = filteredKeys.filter(
         (a, pidx) => selectionKeys.includes(a) && (matching.includes(a) || isMissingForIndex(pidx)),
       );
     } else {
@@ -186,14 +201,23 @@ export const AssetPartitions: React.FC<Props> = ({
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
   const countsFiltered = statusFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
 
+  if (isLoadingDefinition) {
+    return (
+      <Box
+        style={{height: 390}}
+        flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+      >
+        <Spinner purpose="page" />
+      </Box>
+    );
+  }
+
   return (
     <>
       {timeDimensionIdx !== -1 && (
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-        >
+        <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
+            dimensionType={selections[timeDimensionIdx]!.dimension.type}
             partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
             health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
             selected={selections[timeDimensionIdx]!.selectedKeys}
@@ -202,15 +226,13 @@ export const AssetPartitions: React.FC<Props> = ({
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
-            dimensionType={selections[timeDimensionIdx]!.dimension.type}
           />
         </Box>
       )}
-
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        border="bottom"
       >
         <div data-testid={testId('partitions-selected')}>
           {countsFiltered.toLocaleString()} Partitions Selected
@@ -230,16 +252,31 @@ export const AssetPartitions: React.FC<Props> = ({
               key={selection.dimension.name}
               style={{display: 'flex', flex: 1, paddingRight: 1, minWidth: 200}}
               flex={{direction: 'column'}}
-              border={{side: 'right', color: Colors.KeylineGray, width: 1}}
-              background={Colors.Gray50}
+              border="right"
+              background={Colors.backgroundLight()}
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
-                flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-                background={Colors.White}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                flex={{
+                  direction: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+                background={Colors.backgroundDefault()}
+                border="bottom"
                 padding={{horizontal: 24, vertical: 8}}
               >
+                <Box style={{display: 'flex', flex: 1}}>
+                  <StyledTextInputWrapper>
+                    <TextInput
+                      icon="search"
+                      value={searchValue}
+                      onChange={(e) => setSearchValue(e.target.value)}
+                      placeholder="Filter by name…"
+                    />
+                  </StyledTextInputWrapper>
+                </Box>
                 <div>
                   {selection.dimension.name !== 'default' && (
                     <Box flex={{gap: 8, alignItems: 'center'}}>
@@ -317,8 +354,8 @@ export const AssetPartitions: React.FC<Props> = ({
                   }
                   position="bottom-left"
                 >
-                  <SortButton style={{marginRight: '-16px'}} data-testid={`sort-${idx}`}>
-                    <Icon name="sort_by_alpha" color={Colors.Gray400} />
+                  <SortButton data-testid={`sort-${idx}`}>
+                    <Icon name="sort_by_alpha" color={Colors.accentGray()} />
                   </SortButton>
                 </Popover>
               </Box>
@@ -384,3 +421,15 @@ function getSort(sortTypes: Array<SortType>, idx: number, definitionType: Partit
       : SortType.CREATION
     : sortTypes[idx]!;
 }
+
+const StyledTextInputWrapper = styled.div`
+  width: 100%;
+
+  ${TextInputContainer} {
+    width: 100%;
+  }
+
+  input {
+    width: 100%;
+  }
+`;

@@ -1,23 +1,16 @@
 from dagster_pyspark import pyspark_resource
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
-from dagster import Definitions, EnvVar, asset
+from dagster import AssetExecutionContext, Definitions, EnvVar, asset
 
 SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_dataset(context) -> DataFrame:
+def iris_dataset(context: AssetExecutionContext) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(

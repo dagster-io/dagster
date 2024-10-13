@@ -1,13 +1,12 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {PipelineNav} from '../../nav/PipelineNav';
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 
-jest.mock('../../workspace/WorkspaceContext', () => ({
-  ...jest.requireActual('../../workspace/WorkspaceContext'),
+jest.mock('../../workspace/WorkspaceContext/util', () => ({
+  ...jest.requireActual('../../workspace/WorkspaceContext/util'),
   useRepository: jest.fn(() => null),
 }));
 
@@ -17,6 +16,11 @@ jest.mock('../../nav/JobMetadata', () => ({
 
 jest.mock('../../nav/RepositoryLink', () => ({
   RepositoryLink: () => <div />,
+}));
+
+// We don't actually want to import the PipelineOverviewRoot via context fallthrough.
+jest.mock('../PipelineOverviewRoot', () => ({
+  PipelineOverviewRoot: () => <div />,
 }));
 
 describe('PipelineNav', () => {

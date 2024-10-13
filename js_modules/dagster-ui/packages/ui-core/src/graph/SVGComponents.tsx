@@ -1,5 +1,6 @@
 import {FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
+import styled from 'styled-components';
 
 const PX_TO_UNITS = 0.53;
 
@@ -90,25 +91,11 @@ export class SVGMonospaceText extends React.PureComponent<
   }
 }
 
-export const SVGLabeledRect: React.FC<{
-  x: number;
-  y: number;
-  minified: boolean;
-  width: number;
-  height: number;
-  label: string;
-  fill: string;
-  className?: string;
-}> = ({minified, label, fill, className, ...rect}) => (
-  <g>
-    <rect {...rect} fill={fill} stroke="#979797" strokeWidth={1} className={className} />
-    <SVGMonospaceText
-      x={rect.x + (minified ? 10 : 5)}
-      y={rect.y + (minified ? 10 : 5)}
-      height={undefined}
-      size={minified ? 30 : 16}
-      text={label}
-      fill="#979797"
-    />
-  </g>
-);
+// In Safari 17.5, applying margin, relative or absolute offsets to the "root" DOM node within
+// a <foreignObject /> doesn't seem to work. For `top`, `marginTop`, etc., to work, we need to
+// place them inside a DOM node that starts at 0,0.
+export const SVGRelativeContainerForSafari = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+`;

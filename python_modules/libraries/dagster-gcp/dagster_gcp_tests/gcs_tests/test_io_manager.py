@@ -21,7 +21,6 @@ from dagster import (
     materialize,
     op,
     resource,
-    with_resources,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_base import InMemoryJob
@@ -30,9 +29,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.storage.dagster_run import (
-    DagsterRun as DagsterRun,
-)
+from dagster._core.storage.dagster_run import DagsterRun as DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
@@ -245,34 +242,6 @@ def test_asset_io_manager(gcs_bucket):
     }
 
 
-def test_nothing(gcs_bucket):
-    @asset
-    def asset1() -> None:
-        ...
-
-    @asset(deps=[asset1])
-    def asset2() -> None:
-        ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": gcs_pickle_io_manager.configured(
-                    {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}
-                ),
-                "gcs": ResourceDefinition.hardcoded_resource(FakeGCSClient()),
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata) == 0
-
-
 def test_asset_pythonic_io_manager(gcs_bucket):
     @op
     def first_op(first_input):
@@ -321,32 +290,3 @@ def test_asset_pythonic_io_manager(gcs_bucket):
         f"{gcs_bucket}/assets/asset3",
         f"{gcs_bucket}/assets/storage/{result.run_id}/files/graph_asset.first_op/result",
     }
-
-
-def test_nothing_pythonic_io_manager(gcs_bucket):
-    @asset
-    def asset1() -> None:
-        ...
-
-    @asset(deps=[asset1])
-    def asset2() -> None:
-        ...
-
-    result = materialize(
-        with_resources(
-            [asset1, asset2],
-            resource_defs={
-                "io_manager": GCSPickleIOManager(
-                    gcs_bucket=gcs_bucket,
-                    gcs_prefix="assets",
-                    gcs=ResourceDefinition.hardcoded_resource(FakeConfigurableGCSClient()),
-                ),
-            },
-        )
-    )
-
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-    assert len(handled_output_events) == 2
-
-    for event in handled_output_events:
-        assert len(event.event_specific_data.metadata) == 0

@@ -3,6 +3,7 @@ import navigation from '../../content/_navigation.json';
 type NavEntry = {
   title: string;
   path: string;
+  nonMdx?: boolean;
   children?: NavEntry[];
   icon?: string;
   isNotDynamic?: boolean;
@@ -32,10 +33,13 @@ export function flatten(yx: any, parentKey = '') {
   }, []);
 }
 
+const FULL_URL_REGEX = /https?:\/\//;
+
 export const latestAllPaths = () => {
-  // include path like /changelog which doesn't go through the markdoc renderer
+  // Include paths like /changelog, which don't go through the markdoc renderer.
+  // Skip any full URLs, as these don't belong in the sitemap.
   return flatten(navigation)
-    .filter((n: {path: any}) => n.path)
+    .filter((n: {path: any}) => n.path && !FULL_URL_REGEX.test(n.path))
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
       return {
@@ -46,10 +50,18 @@ export const latestAllPaths = () => {
     });
 };
 
-export const latestAllDynamicPaths = () => {
+export function latestAllDynamicPaths(config: {excludeNonMdx: boolean}) {
+  const {excludeNonMdx} = config;
+
   // only include paths that will be dynamically generated
   return flatten(navigation)
-    .filter((n: NavEntry) => n.path && !n.isExternalLink && !n.isNotDynamic)
+    .filter((n: NavEntry) => {
+      // exclude non-mdx pages in dynamic routes. we'll use the static routes instead for .md files
+      if (excludeNonMdx && n.nonMdx) {
+        return false;
+      }
+      return n.path && !n.isExternalLink && !n.isNotDynamic;
+    })
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
       return {
@@ -58,6 +70,6 @@ export const latestAllDynamicPaths = () => {
         },
       };
     });
-};
+}
 
 export default navigation;

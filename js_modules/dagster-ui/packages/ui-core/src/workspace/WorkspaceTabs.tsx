@@ -1,21 +1,17 @@
-import {QueryResult} from '@apollo/client';
 import {Box, Tabs} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {TabLink} from '../ui/TabLink';
 
 import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {TabLink} from '../ui/TabLink';
 
-interface Props<TData> {
+interface Props {
   repoAddress: RepoAddress;
   refreshState?: QueryRefreshState;
-  queryData?: QueryResult<TData, any>;
   tab: string;
 }
 
-export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
+export const WorkspaceTabs = (props: Props) => {
   const {repoAddress, refreshState, tab} = props;
 
   return (

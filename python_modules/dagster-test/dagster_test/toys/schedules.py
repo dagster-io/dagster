@@ -9,6 +9,7 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 from dagster_test.toys.longitudinal import longitudinal
 from dagster_test.toys.many_events import many_events
@@ -92,13 +93,13 @@ def monthly_materialization_schedule():
 
 
 def longitudinal_schedule():
-    from .longitudinal import longitudinal_job
+    from dagster_test.toys.longitudinal import longitudinal_job
 
     @daily_partitioned_config(start_date="2020-01-01", timezone=_toys_tz_info())
     def longitudinal_config(start, _end):
         return {
             "ops": {
-                op.name: {"config": {"partition": start.to_date_string()}}
+                op.name: {"config": {"partition": start.strftime(DEFAULT_DATE_FORMAT)}}
                 for op in longitudinal_job.nodes
             }
         }

@@ -71,7 +71,7 @@ export function Search() {
         <link
           rel="preconnect"
           href={`https://${process.env.NEXT_PUBLIC_ALGOLIA_APP_ID_TEST}-dsn.algolia.net`}
-          crossOrigin="true"
+          crossOrigin=""
         />
       </Head>
       <button
@@ -174,7 +174,7 @@ export function Search() {
                       onClick={() => setIsOpen(false)}
                       className="justify-center flex mt-3 text-gray-500"
                     >
-                      See all {state.context.nbHits} search results
+                      {`See all ${state.context.nbHits} search results`}
                     </a>
                   </Link>
                 );

@@ -23,6 +23,17 @@ def test_project_scaffold_command_fails_when_dir_path_exists():
         assert result.exit_code != 0
 
 
+def test_project_scaffold_command_fails_on_package_conflict():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(scaffold_command, ["--name", "dagster"])
+        assert "conflicts with an existing PyPI package" in result.output
+        assert result.exit_code != 0
+
+        result = runner.invoke(scaffold_command, ["--name", "dagster", "--ignore-package-conflict"])
+        assert result.exit_code == 0
+
+
 def test_project_scaffold_command_succeeds():
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -37,7 +48,7 @@ def test_project_scaffold_command_succeeds():
         # test target loadable
         origins = get_origins_from_toml("my_dagster_project/pyproject.toml")
         assert len(origins) == 1
-        assert origins[0].loadable_target_origin.module_name == "my_dagster_project"
+        assert origins[0].loadable_target_origin.module_name == "my_dagster_project.definitions"
 
 
 def test_scaffold_code_location_scaffold_command_fails_when_dir_path_exists():
@@ -62,7 +73,7 @@ def test_scaffold_code_location_command_succeeds():
         # test target loadable
         origins = get_origins_from_toml("my_dagster_code/pyproject.toml")
         assert len(origins) == 1
-        assert origins[0].loadable_target_origin.module_name == "my_dagster_code"
+        assert origins[0].loadable_target_origin.module_name == "my_dagster_code.definitions"
 
 
 def test_from_example_command_fails_when_example_not_available():
@@ -129,7 +140,6 @@ def test_from_example_command_default_name():
 
 def test_available_examples_in_sync_with_example_folder():
     # ensure the list of AVAILABLE_EXAMPLES is in sync with the example folder minus EXAMPLES_TO_IGNORE
-    # run me
     example_folder = file_relative_path(__file__, "../../../../examples")
     available_examples_in_folder = [
         e

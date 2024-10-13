@@ -22,7 +22,6 @@ You can start writing assets in `{{ repo_name }}/assets.py`. The assets are auto
 
 ## Development
 
-
 ### Adding new Python dependencies
 
 You can specify new Python dependencies in `setup.py`.

@@ -5,10 +5,11 @@ Revises: 16689497301f
 Create Date: 2023-01-19 11:41:41.062228
 
 """
+
 import sqlalchemy as db
 from alembic import op
 from dagster._core.storage.migration.utils import has_index, has_table
-from dagster._core.storage.sql import get_current_timestamp
+from dagster._core.storage.sql import get_sql_current_timestamp
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
@@ -30,7 +31,7 @@ def upgrade():
             ),
             db.Column("partitions_def_name", db.Text, nullable=False),
             db.Column("partition", db.Text, nullable=False),
-            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
         )
         op.create_index(
             "idx_dynamic_partitions",

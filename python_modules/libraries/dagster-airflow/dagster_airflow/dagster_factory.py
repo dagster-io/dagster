@@ -22,9 +22,7 @@ from dagster_airflow.resources import (
 )
 from dagster_airflow.resources.airflow_ephemeral_db import AirflowEphemeralDatabase
 from dagster_airflow.resources.airflow_persistent_db import AirflowPersistentDatabase
-from dagster_airflow.utils import (
-    is_airflow_2_loaded_in_environment,
-)
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
 def make_dagster_definitions_from_airflow_dag_bag(

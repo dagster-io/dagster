@@ -51,8 +51,7 @@ In this example, the priority is set to `-1` with a `dagster/priority` tag value
 
 ```python startafter=start_marker_priority endbefore=end_marker_priority file=/deploying/concurrency_limits/concurrency_limits.py
 @job(tags={"dagster/priority": "3"})
-def important_job():
-    ...
+def important_job(): ...
 
 
 @schedule(
@@ -61,8 +60,7 @@ def important_job():
     execution_timezone="US/Central",
     tags={"dagster/priority": "-1"},
 )
-def less_important_schedule(_):
-    ...
+def less_important_schedule(_): ...
 ```
 
 </TabItem>
@@ -133,8 +131,8 @@ To summarize, due to the concurrency limit, this configuration will change the r
     href="/concepts/assets/software-defined-assets"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing Dagster Cloud deployments"
-    href="/dagster-cloud/developing-testing/managing-deployments"
+    title="Managing Dagster+ deployments"
+    href="/dagster-plus/managing-deployments/managing-deployments"
   ></ArticleListItem>
   <ArticleListItem
     title="Ops"

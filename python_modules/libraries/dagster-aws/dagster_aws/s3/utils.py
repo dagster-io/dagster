@@ -1,8 +1,10 @@
+from typing import Optional, Union
+
 import boto3
 import dagster._check as check
 from botocore.handlers import disable_signing
 
-from ..utils import construct_boto_client_retry_config
+from dagster_aws.utils import construct_boto_client_retry_config
 
 
 class S3Callback:
@@ -18,26 +20,21 @@ class S3Callback:
         self._seen_so_far += bytes_amount
         percentage = (self._seen_so_far / self._size) * 100
         self._logger(
-            "Download of {bucket}/{key} to {target_path}: {percentage}% complete".format(
-                bucket=self._bucket,
-                key=self._key,
-                target_path=self._filename,
-                percentage=percentage,
-            )
+            f"Download of {self._bucket}/{self._key} to {self._filename}: {percentage}% complete"
         )
 
 
 def construct_s3_client(
-    max_attempts,
-    region_name=None,
-    endpoint_url=None,
-    use_unsigned_session=False,
-    profile_name=None,
-    use_ssl=True,
-    verify=None,
-    aws_access_key_id=None,
-    aws_secret_access_key=None,
-    aws_session_token=None,
+    max_attempts: int,
+    region_name: Optional[str] = None,
+    endpoint_url: Optional[str] = None,
+    use_unsigned_session: bool = False,
+    profile_name: Optional[str] = None,
+    use_ssl: bool = True,
+    verify: Optional[Union[str, bool]] = None,
+    aws_access_key_id: Optional[str] = None,
+    aws_secret_access_key: Optional[str] = None,
+    aws_session_token: Optional[str] = None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")
@@ -45,7 +42,6 @@ def construct_s3_client(
     check.bool_param(use_unsigned_session, "use_unsigned_session")
     check.opt_str_param(profile_name, "profile_name")
     check.bool_param(use_ssl, "use_ssl")
-    check.opt_str_param(verify, "verify")
     check.opt_str_param(profile_name, "aws_access_key_id")
     check.opt_str_param(profile_name, "aws_secret_access_key")
     check.opt_str_param(profile_name, "aws_session_token")

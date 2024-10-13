@@ -4,10 +4,10 @@ import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 
 import {Box} from './Box';
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
-import {IconName, Icon} from './Icon';
+import {Icon, IconName} from './Icon';
 
 interface Props
   extends Omit<
@@ -24,9 +24,9 @@ export const Dialog = (props: Props) => {
   return (
     <BlueprintDialog
       {...rest}
-      portalClassName="dagster-portal"
+      portalClassName={`dagster-portal${props.portalClassName ? ` ${props.portalClassName}` : ''}`}
       backdropClassName="dagster-backdrop"
-      className="dagster-dialog"
+      className={`dagster-dialog${props.className ? ` ${props.className}` : ''}`}
     >
       {title ? <DialogHeader icon={icon} label={title} /> : null}
       <ErrorBoundary region="dialog">{children}</ErrorBoundary>
@@ -39,16 +39,16 @@ interface HeaderProps {
   label: React.ReactNode;
 }
 
-export const DialogHeader: React.FC<HeaderProps> = (props) => {
+export const DialogHeader = (props: HeaderProps) => {
   const {icon, label} = props;
   return (
     <Box
-      background={Colors.White}
+      background={Colors.backgroundDefault()}
       padding={{vertical: 16, horizontal: 20}}
-      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+      border="bottom"
     >
       <Group direction="row" spacing={8} alignItems="center">
-        {icon ? <Icon name={icon} color={Colors.Gray800} /> : null}
+        {icon ? <Icon name={icon} color={Colors.accentPrimary()} /> : null}
         <DialogHeaderText>{label}</DialogHeaderText>
       </Group>
     </Box>
@@ -61,7 +61,7 @@ interface BodyProps {
 
 export const DialogBody = ({children, ...rest}: BodyProps) => {
   return (
-    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White} {...rest}>
+    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.backgroundDefault()} {...rest}>
       {children}
     </Box>
   );
@@ -73,16 +73,12 @@ interface DialogFooterProps {
   left?: React.ReactNode;
 }
 
-export const DialogFooter: React.FC<DialogFooterProps> = ({
-  children,
-  left,
-  topBorder,
-}: DialogFooterProps) => {
+export const DialogFooter = ({children, left, topBorder}: DialogFooterProps) => {
   return (
     <Box
       padding={{bottom: 16, top: topBorder ? 16 : 8, horizontal: 20}}
-      border={topBorder ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
-      background={Colors.White}
+      border={topBorder ? 'top' : null}
+      background={Colors.backgroundDefault()}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >
       <div>{left}</div>
@@ -101,20 +97,20 @@ export const DialogHeaderText = styled.div`
 `;
 
 export const GlobalDialogStyle = createGlobalStyle`
-  .dagster-portal .bp4-overlay-backdrop {
-    background-color: ${Colors.WashGray};
+  .dagster-portal .bp5-overlay-backdrop {
+    background-color: ${Colors.dialogBackground()};
   }
 
-  .dagster-portal .bp4-dialog-container {
+  .dagster-portal .bp5-dialog-container {
     display: grid;
     grid-template-rows: minmax(40px, 1fr) auto minmax(40px, 2fr);
     grid-template-columns: 40px 8fr 40px;
   }
 
-  .dagster-portal .bp4-dialog {
-    background-color: ${Colors.White};
+  .dagster-portal .bp5-dialog {
+    background-color: ${Colors.backgroundDefault()};
     border-radius: 4px;
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
+    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
     grid-row: 2;
     grid-column: 2;
     margin: 0 auto;
@@ -122,24 +118,24 @@ export const GlobalDialogStyle = createGlobalStyle`
     padding: 0;
   }
 
-  .dagster-portal .bp4-dialog > :first-child {
+  .dagster-portal .bp5-dialog > :first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
   }
 
-  .dagster-portal .bp4-dialog > :last-child {
+  .dagster-portal .bp5-dialog > :last-child {
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 4px;
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-enter > .bp4-dialog,
-  .dagster-portal .bp4-dialog-container.bp4-overlay-appear > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-enter > .bp5-dialog,
+  .dagster-portal .bp5-dialog-container.bp5-overlay-appear > .bp5-dialog {
     opacity: 0;
     transform:scale(0.95);
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-enter-active > .bp4-dialog,
-  .dagster-portal .bp4-dialog-container.bp4-overlay-appear-active > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-enter-active > .bp5-dialog,
+  .dagster-portal .bp5-dialog-container.bp5-overlay-appear-active > .bp5-dialog {
     opacity: 1;
     transform: scale(1);
     transition-delay: 0;
@@ -148,12 +144,12 @@ export const GlobalDialogStyle = createGlobalStyle`
     transition-timing-function: ease-in-out;
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-exit > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-exit > .bp5-dialog {
     opacity: 1;
     transform: scale(1);
   }
 
-  .dagster-portal .bp4-dialog-container.bp4-overlay-exit-active > .bp4-dialog {
+  .dagster-portal .bp5-dialog-container.bp5-overlay-exit-active > .bp5-dialog {
     opacity: 0;
     transform: scale(0.95);
     transition-delay:0;

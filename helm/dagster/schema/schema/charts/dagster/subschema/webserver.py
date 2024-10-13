@@ -2,8 +2,8 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import Extra
 
-from ...utils import kubernetes
-from ...utils.utils import BaseModel
+from schema.charts.utils import kubernetes
+from schema.charts.utils.utils import BaseModel
 
 
 class Server(BaseModel):
@@ -48,6 +48,7 @@ class Webserver(BaseModel):
     schedulerName: Optional[str]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
+    initContainerResources: Optional[kubernetes.Resources]
 
     class Config:
         extra = Extra.forbid

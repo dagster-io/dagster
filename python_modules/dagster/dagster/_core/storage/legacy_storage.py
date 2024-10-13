@@ -1,47 +1,46 @@
-from typing import (
-    TYPE_CHECKING,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeAssetEvaluation
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluationWithRunIds,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecord,
-)
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import PrintFn
-from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
-
-from .base_storage import DagsterStorage
-from .event_log.base import (
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+from dagster._core.storage.base_storage import DagsterStorage
+from dagster._core.storage.event_log.base import (
+    AssetCheckSummaryRecord,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
+    EventRecordsResult,
+    PlannedMaterializationInfo,
 )
-from .runs.base import RunStorage
-from .schedules.base import ScheduleStorage
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.run_request import InstigatorType
+    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionsFilter,
+        BulkActionStatus,
+        PartitionBackfill,
+    )
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster._core.host_representation.origin import ExternalJobOrigin
     from dagster._core.instance import DagsterInstance
+    from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import (
         AutoMaterializeAssetEvaluationRecord,
         InstigatorState,
@@ -51,7 +50,7 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.job_snapshot import JobSnapshot
+    from dagster._core.snap.job_snapshot import JobSnap
     from dagster._core.storage.dagster_run import (
         DagsterRun,
         DagsterRunStatsSnapshot,
@@ -201,8 +200,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+        ascending: bool = False,
     ) -> Iterable["DagsterRun"]:
-        return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by)
+        return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
 
     def get_run_ids(
         self,
@@ -233,7 +233,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def get_run_tags(
         self,
-        tag_keys: Optional[Sequence[str]] = None,
+        tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[Tuple[str, Set[str]]]:
@@ -250,7 +250,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def add_snapshot(
         self,
-        snapshot: Union["JobSnapshot", "ExecutionPlanSnapshot"],
+        snapshot: Union["JobSnap", "ExecutionPlanSnapshot"],
         snapshot_id: Optional[str] = None,
     ) -> None:
         return self._storage.run_storage.add_snapshot(snapshot, snapshot_id)
@@ -261,12 +261,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_job_snapshot(job_snapshot_id)
 
-    def add_job_snapshot(
-        self, job_snapshot: "JobSnapshot", snapshot_id: Optional[str] = None
-    ) -> str:
+    def add_job_snapshot(self, job_snapshot: "JobSnap", snapshot_id: Optional[str] = None) -> str:
         return self._storage.run_storage.add_job_snapshot(job_snapshot, snapshot_id)
 
-    def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnapshot":
+    def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnap":
         return self._storage.run_storage.get_job_snapshot(job_snapshot_id)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
@@ -313,11 +311,17 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def get_backfills(
         self,
-        status: Optional["BulkActionStatus"] = None,
+        filters: Optional["BulkActionsFilter"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._storage.run_storage.get_backfills(status, cursor, limit)
+        return self._storage.run_storage.get_backfills(
+            cursor=cursor, limit=limit, filters=filters, status=status
+        )
+
+    def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
+        return self._storage.run_storage.get_backfills_count(filters=filters)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)
@@ -337,7 +341,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         return self._storage.run_storage.set_cursor_values(pairs)
 
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalJobOrigin") -> None:
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "RemoteJobOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
 
 
@@ -375,6 +379,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     @property
     def _instance(self) -> Optional["DagsterInstance"]:
         return self._storage._instance  # noqa: SLF001
+
+    def index_connection(self):
+        return self._storage.event_log_storage.index_connection()
 
     def register_instance(self, instance: "DagsterInstance") -> None:
         if not self._storage.has_instance:
@@ -445,13 +452,67 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         # type ignored because `get_event_records` does not accept None. Unclear which type
         # annotation is wrong.
         return self._storage.event_log_storage.get_event_records(
-            event_records_filter, limit, ascending  # type: ignore
+            event_records_filter,  # type: ignore
+            limit,
+            ascending,
+        )
+
+    def fetch_materializations(
+        self,
+        filters: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.fetch_materializations(
+            filters, limit, cursor, ascending
+        )
+
+    def fetch_observations(
+        self,
+        filters: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.fetch_observations(filters, limit, cursor, ascending)
+
+    def fetch_run_status_changes(
+        self,
+        filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.fetch_run_status_changes(
+            filters, limit, cursor, ascending
+        )
+
+    def get_latest_planned_materialization_info(
+        self,
+        asset_key: AssetKey,
+        partition: Optional[str] = None,
+    ) -> Optional[PlannedMaterializationInfo]:
+        return self._storage.event_log_storage.get_latest_planned_materialization_info(
+            asset_key, partition
+        )
+
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_updated_data_version_partitions(
+            asset_key, partitions, since_storage_id
         )
 
     def get_asset_records(
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
         return self._storage.event_log_storage.get_asset_records(asset_keys)
+
+    def get_asset_check_summary_records(
+        self, asset_check_keys: Sequence["AssetCheckKey"]
+    ) -> Mapping["AssetCheckKey", AssetCheckSummaryRecord]:
+        return self._storage.event_log_storage.get_asset_check_summary_records(asset_check_keys)
 
     def has_asset_key(self, asset_key: "AssetKey") -> bool:
         return self._storage.event_log_storage.has_asset_key(asset_key)
@@ -472,17 +533,23 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         return self._storage.event_log_storage.get_latest_materialization_events(asset_keys)
 
-    def get_asset_run_ids(self, asset_key: "AssetKey") -> Iterable[str]:
-        return self._storage.event_log_storage.get_asset_run_ids(asset_key)
-
     def wipe_asset(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset(asset_key)
 
-    def get_materialization_count_by_partition(
-        self, asset_keys: Sequence["AssetKey"], after_cursor: Optional[int] = None
-    ) -> Mapping["AssetKey", Mapping[str, int]]:
-        return self._storage.event_log_storage.get_materialization_count_by_partition(
-            asset_keys, after_cursor
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
+        raise NotImplementedError(
+            "Partitioned asset wipe is not supported yet for this event log storage."
+        )
+
+    def get_materialized_partitions(
+        self,
+        asset_key: AssetKey,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_materialized_partitions(
+            asset_key, before_cursor, after_cursor
         )
 
     def get_latest_storage_id_by_partition(
@@ -506,10 +573,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         )
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
-        self, asset_key: "AssetKey"
+        self, asset_key: "AssetKey", after_storage_id: Optional[int] = None
     ) -> Mapping[str, Tuple[str, int]]:
         return self._storage.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-            asset_key
+            asset_key, after_storage_id
         )
 
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
@@ -542,8 +609,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, filter_tags, filter_event_id
         )
 
-    def can_cache_asset_status_data(self) -> bool:
-        return self._storage.event_log_storage.can_cache_asset_status_data()
+    def can_read_asset_status_cache(self) -> bool:
+        return self._storage.event_log_storage.can_read_asset_status_cache()
+
+    def can_write_asset_status_cache(self) -> bool:
+        return self._storage.event_log_storage.can_write_asset_status_cache()
 
     def wipe_asset_cached_status(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset_cached_status(asset_key)
@@ -567,8 +637,16 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             run_id, cursor, of_type, limit, ascending
         )
 
+    def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
+        return self._storage.event_log_storage.initialize_concurrency_limit_to_default(
+            concurrency_key
+        )
+
     def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
         return self._storage.event_log_storage.set_concurrency_slots(concurrency_key, num)
+
+    def delete_concurrency_limit(self, concurrency_key: str) -> None:
+        return self._storage.event_log_storage.delete_concurrency_limit(concurrency_key)
 
     def get_concurrency_keys(self) -> Set[str]:
         return self._storage.event_log_storage.get_concurrency_keys()
@@ -597,23 +675,23 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def free_concurrency_slot_for_step(self, run_id: str, step_key: str) -> None:
         return self._storage.event_log_storage.free_concurrency_slot_for_step(run_id, step_key)
 
-    def get_asset_check_executions(
+    def get_asset_check_execution_history(
         self,
-        asset_key: AssetKey,
-        check_name: str,
+        check_key: "AssetCheckKey",
         limit: int,
         cursor: Optional[int] = None,
-        materialization_event_storage_id: Optional[int] = None,
-        include_planned: bool = True,
     ) -> Sequence[AssetCheckExecutionRecord]:
-        return self._storage.event_log_storage.get_asset_check_executions(
-            asset_key=asset_key,
-            check_name=check_name,
+        return self._storage.event_log_storage.get_asset_check_execution_history(
+            check_key=check_key,
             limit=limit,
             cursor=cursor,
-            materialization_event_storage_id=materialization_event_storage_id,
-            include_planned=include_planned,
         )
+
+    def get_latest_asset_check_execution_by_key(
+        self,
+        check_keys: Sequence["AssetCheckKey"],
+    ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
+        return self._storage.event_log_storage.get_latest_asset_check_execution_by_key(check_keys)
 
 
 class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
@@ -691,6 +769,9 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     ) -> Mapping[str, Iterable["InstigatorTick"]]:
         return self._storage.schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
 
+    def get_tick(self, tick_id: int) -> "InstigatorTick":
+        return self._storage.schedule_storage.get_tick(tick_id)
+
     def get_ticks(
         self,
         origin_id: str,
@@ -724,17 +805,24 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutoMaterializeAssetEvaluation],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     ) -> None:
         return self._storage.schedule_storage.add_auto_materialize_asset_evaluations(
             evaluation_id, asset_evaluations
         )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: "AssetKey", limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key, limit, cursor
+            key, limit, cursor
+        )
+
+    def get_auto_materialize_evaluations_for_evaluation_id(
+        self, evaluation_id: int
+    ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
+        return self._storage.schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+            evaluation_id
         )
 
     def purge_asset_evaluations(self, before: float):

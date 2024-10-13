@@ -18,9 +18,7 @@ PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")
 CLUSTER_NAME = "test-%s" % uuid.uuid4().hex
 REGION = "us-west1"
 
-DATAPROC_BASE_URI = "https://dataproc.googleapis.com/v1/projects/{project}/regions/{region}".format(
-    project=PROJECT_ID, region=REGION
-)
+DATAPROC_BASE_URI = f"https://dataproc.googleapis.com/v1/projects/{PROJECT_ID}/regions/{REGION}"
 DATAPROC_CLUSTERS_URI = f"{DATAPROC_BASE_URI}/clusters"
 DATAPROC_JOBS_URI = f"{DATAPROC_BASE_URI}/jobs"
 DATAPROC_SCHEMA_URI = "https://www.googleapis.com/discovery/v1/apis/dataproc/v1/rest"

@@ -1,40 +1,36 @@
 import multiprocessing
+import time
 from signal import Signals
 
-import pendulum
 import pytest
 from dagster import DagsterInstance
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation import (
-    ExternalRepository,
-)
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace_context,
+    freeze_time,
     get_crash_signals,
 )
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._seven import IS_WINDOWS
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._time import create_datetime
 
-from .conftest import workspace_load_target
+from dagster_tests.daemon_tests.conftest import workspace_load_target
 
 spawn_ctx = multiprocessing.get_context("spawn")
 
 
 def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
-    execution_datetime = to_timezone(
-        create_pendulum_time(
-            year=2021,
-            month=2,
-            day=17,
-        ),
-        "US/Central",
+    execution_datetime = create_datetime(
+        year=2021,
+        month=2,
+        day=17,
     )
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace_context(
+            with freeze_time(execution_datetime), create_test_daemon_workspace_context(
                 workspace_load_target=workspace_load_target(), instance=instance
             ) as workspace_context:
                 list(
@@ -51,18 +47,18 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+def test_simple(instance: DagsterInstance, remote_repo: RemoteRepository):
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=time.time(),
         )
     )
     launch_process = spawn_ctx.Process(
@@ -73,7 +69,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
     launch_process.join(timeout=60)
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 @pytest.mark.skipif(
@@ -81,19 +77,19 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
 )
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_before_submit(
-    crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
+    crash_signal: Signals, instance: DagsterInstance, remote_repo: RemoteRepository
 ):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=time.time(),
         )
     )
     launch_process = spawn_ctx.Process(
@@ -119,7 +115,7 @@ def test_before_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert instance.get_runs_count() == 3
 
 
@@ -128,19 +124,19 @@ def test_before_submit(
 )
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_crash_after_submit(
-    crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
+    crash_signal: Signals, instance: DagsterInstance, remote_repo: RemoteRepository
 ):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=time.time(),
         )
     )
     launch_process = spawn_ctx.Process(
@@ -166,5 +162,5 @@ def test_crash_after_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert instance.get_runs_count() == 3

@@ -14,6 +14,8 @@ import dagster._check as check
 from dagster._config import StringSource
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.schema import SqlEventLogStorageMetadata
+from dagster._core.storage.event_log.sql_event_log import SqlDbConnection, SqlEventLogStorage
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -24,9 +26,6 @@ from dagster._core.storage.sql import (
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
-
-from ..schema import SqlEventLogStorageMetadata
-from ..sql_event_log import SqlDbConnection, SqlEventLogStorage
 
 SQLITE_EVENT_LOG_FILENAME = "event_log"
 
@@ -77,7 +76,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return ConsolidatedSqliteEventLogStorage(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def _init_db(self):
         mkdir_p(self._base_dir)
@@ -140,7 +139,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._obs = Observer()
             self._obs.start()
             self._obs.schedule(
-                ConsolidatedSqliteEventLogStorageWatchdog(self), self._base_dir, True
+                ConsolidatedSqliteEventLogStorageWatchdog(self), self._base_dir, recursive=True
             )
 
         self._watchers[run_id][callback] = cursor

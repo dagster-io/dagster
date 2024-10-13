@@ -11,10 +11,46 @@ Using our integration guides and libraries, you can extend Dagster to interopera
 
 ## Guides
 
+Explore guides for integrations with external services.
+
+<Note>
+  <strong>Looking for deployment options?</strong>
+  <ul>
+    <li>
+      For Dagster+ deployment, check out{" "}
+      <a href="/dagster-plus/deployment/agents">Dagster+ Hybrid Agent</a>.
+    </li>
+    <li>
+      For open source deployment, visit the{" "}
+      <a href="/deployment#deploying-dagster">Open Source Deployment</a> guides.
+    </li>
+  </ul>
+</Note>
+
 <ArticleList>
   <ArticleListItem
     title="Airbyte"
     href="/integrations/airbyte"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="AWS ECS"
+    href="/concepts/dagster-pipes/aws-ecs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="AWS Glue"
+    href="/concepts/dagster-pipes/aws-glue"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="AWS Lambda"
+    href="/concepts/dagster-pipes/aws-lambda"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Kubernetes"
+    href="/concepts/dagster-pipes/kubernetes"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Shell / Bash"
+    href="/concepts/dagster-pipes/subprocess"
   ></ArticleListItem>
   <ArticleListItem
     title="Airflow"
@@ -26,7 +62,7 @@ Using our integration guides and libraries, you can extend Dagster to interopera
   ></ArticleListItem>
   <ArticleListItem
     title="Databricks"
-    href="/integrations/databricks"
+    href="/concepts/dagster-pipes/databricks"
   ></ArticleListItem>
   <ArticleListItem title="dbt" href="/integrations/dbt"></ArticleListItem>
   <ArticleListItem
@@ -35,17 +71,18 @@ Using our integration guides and libraries, you can extend Dagster to interopera
   ></ArticleListItem>
   <ArticleListItem title="DuckDB" href="/integrations/duckdb"></ArticleListItem>
   <ArticleListItem
-    title="Fivetran"
-    href="/integrations/fivetran"
+    title="Embedded ELT"
+    href="/integrations/embedded-elt"
   ></ArticleListItem>
   <ArticleListItem
-    title="Great Expectations"
-    href="/integrations/great-expectations"
+    title="Fivetran"
+    href="/integrations/fivetran"
   ></ArticleListItem>
   <ArticleListItem
     title="Google BigQuery"
     href="/integrations/bigquery"
   ></ArticleListItem>
+  <ArticleListItem title="OpenAI" href="/integrations/openai"></ArticleListItem>
   <ArticleListItem title="Pandas" href="/integrations/pandas"></ArticleListItem>
   <ArticleListItem
     title="Pandera"
@@ -70,28 +107,8 @@ Explore libraries that are maintained by the Dagster core team.
     href="/_apidocs/libraries/dagster-airbyte"
   ></ArticleListItem>
   <ArticleListItem
-    title="Airflow"
-    href="/_apidocs/libraries/dagster-airflow"
-  ></ArticleListItem>
-  <ArticleListItem
     title="Amazon Web Services (AWS)"
     href="/_apidocs/libraries/dagster-aws"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Celery"
-    href="/_apidocs/libraries/dagster-celery"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Celery + Docker"
-    href="/_apidocs/libraries/dagster-celery-docker"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Census"
-    href="/_apidocs/libraries/dagster-census"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Dask"
-    href="/_apidocs/libraries/dagster-dask"
   ></ArticleListItem>
   <ArticleListItem
     title="Databricks"
@@ -102,28 +119,28 @@ Explore libraries that are maintained by the Dagster core team.
     href="/_apidocs/libraries/dagster-datadog"
   ></ArticleListItem>
   <ArticleListItem
-    title="Docker"
-    href="/_apidocs/libraries/dagster-docker"
-  ></ArticleListItem>
-  <ArticleListItem
     title="DuckDB"
     href="/_apidocs/libraries/dagster-duckdb"
   ></ArticleListItem>
   <ArticleListItem
-    title="DuckDB + Pandas"
+    title="DuckDB & Pandas"
     href="/_apidocs/libraries/dagster-duckdb-pandas"
   ></ArticleListItem>
   <ArticleListItem
-    title="DuckDB + PySpark"
+    title="DuckDB & PySpark"
     href="/_apidocs/libraries/dagster-duckdb-pyspark"
   ></ArticleListItem>
   <ArticleListItem
-    title="DuckDB + Polars"
+    title="DuckDB & Polars"
     href="/_apidocs/libraries/dagster-duckdb-polars"
   ></ArticleListItem>
   <ArticleListItem
     title="dbt"
     href="/_apidocs/libraries/dagster-dbt"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Embedded ELT"
+    href="/_apidocs/libraries/dagster-embedded-elt"
   ></ArticleListItem>
   <ArticleListItem
     title="Fivetran"
@@ -134,11 +151,11 @@ Explore libraries that are maintained by the Dagster core team.
     href="/_apidocs/libraries/dagster-gcp"
   ></ArticleListItem>
   <ArticleListItem
-    title="Google Cloud Platform (GCP) + Pandas"
+    title="Google Cloud Platform (GCP) & Pandas"
     href="/_apidocs/libraries/dagster-gcp-pandas"
   ></ArticleListItem>
   <ArticleListItem
-    title="Google Cloud Platform (GCP) + PySpark"
+    title="Google Cloud Platform (GCP) & PySpark"
     href="/_apidocs/libraries/dagster-gcp-pyspark"
   ></ArticleListItem>
   <ArticleListItem
@@ -162,12 +179,8 @@ Explore libraries that are maintained by the Dagster core team.
     href="/_apidocs/libraries/dagster-msteams"
   ></ArticleListItem>
   <ArticleListItem
-    title="MLflow"
-    href="/_apidocs/libraries/dagster-mlflow"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="MySQL"
-    href="/_apidocs/libraries/dagster-mysql"
+    title="OpenAI"
+    href="/_apidocs/libraries/dagster-openai"
   ></ArticleListItem>
   <ArticleListItem
     title="PagerDuty"
@@ -186,12 +199,8 @@ Explore libraries that are maintained by the Dagster core team.
     href="/_apidocs/libraries/dagstermill"
   ></ArticleListItem>
   <ArticleListItem
-    title="Papertrail"
-    href="/_apidocs/libraries/dagster-papertrail"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="PostgreSQL"
-    href="/_apidocs/libraries/dagster-postgres"
+    title="Polars"
+    href="/_apidocs/libraries/dagster-polars"
   ></ArticleListItem>
   <ArticleListItem
     title="Prometheus"
@@ -214,7 +223,7 @@ Explore libraries that are maintained by the Dagster core team.
     href="/_apidocs/libraries/dagster-snowflake"
   ></ArticleListItem>
   <ArticleListItem
-    title="Snowflake + Pandas"
+    title="Snowflake & Pandas"
     href="/_apidocs/libraries/dagster-snowflake-pandas"
   ></ArticleListItem>
   <ArticleListItem
@@ -249,15 +258,31 @@ Explore integration libraries that are maintained by the Dagster community.
     href="https://github.com/silentsokolov/dagster-hashicorp"
   ></ArticleListItem>
   <ArticleListItem
-    title="Noteable"
-    href="https://papermill-origami.readthedocs.io/en/latest/reference/noteable_dagstermill/assets/"
+    title="Hashicorp Nomad"
+    href="https://github.com/PayLead/dagster-nomad"
   ></ArticleListItem>
   <ArticleListItem
     title="Weights & Biases (W&B)"
     href="/_apidocs/libraries/dagster-wandb"
   ></ArticleListItem>
   <ArticleListItem
-    title="Polars"
-    href="https://github.com/danielgafni/dagster-polars"
+    title="Census"
+    href="/_apidocs/libraries/dagster-census"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Cube"
+    href="https://cube.dev/docs/product/apis-integrations/orchestration-api/dagster"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Delta Lake"
+    href="/integrations/deltalake"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="SDF"
+    href="https://docs.sdf.com/integrations/dagster/getting-started"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Open Metadata"
+    href="https://docs.open-metadata.org/latest/connectors/pipeline/dagster"
   ></ArticleListItem>
 </ArticleList>

@@ -3,16 +3,22 @@ import {
   Button,
   ButtonLink,
   Colors,
+  FontFamily,
   Icon,
-  JoinedButtons,
   MiddleTruncate,
   Tag,
   Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
+import {
+  LocationStatusEntryFragment,
+  WorkspaceDisplayMetadataFragment,
+} from './WorkspaceContext/types/WorkspaceQueries.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -23,97 +29,13 @@ import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
-import {TimeFromNow} from '../ui/TimeFromNow';
 
-import {CodeLocationMenu} from './CodeLocationMenu';
-import {RepositoryCountTags} from './RepositoryCountTags';
-import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
-import {workspacePathFromAddress} from './workspacePath';
-
-interface Props {
-  locationNode: WorkspaceRepositoryLocationNode;
-}
-
-export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
-  const {name, locationOrLoadError} = locationNode;
-
-  if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
-    return (
-      <tr>
-        <td style={{maxWidth: '400px', color: Colors.Gray500}}>
-          <MiddleTruncate text={name} />
-        </td>
-        <td>
-          <LocationStatus location={name} locationOrError={locationNode} />
-        </td>
-        <td style={{whiteSpace: 'nowrap'}}>
-          <TimeFromNow unixTimestamp={locationNode.updatedTimestamp} />
-        </td>
-        <td>{'\u2013'}</td>
-        <td style={{width: '180px'}}>
-          <JoinedButtons>
-            <ReloadButton location={name} />
-            <CodeLocationMenu locationNode={locationNode} />
-          </JoinedButtons>
-        </td>
-      </tr>
-    );
-  }
-
-  const repositories = [...locationOrLoadError.repositories].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
-
-  return (
-    <>
-      {repositories.map((repository) => {
-        const repoAddress = buildRepoAddress(repository.name, name);
-        const allMetadata = [...locationNode.displayMetadata, ...repository.displayMetadata];
-        return (
-          <tr key={repoAddressAsHumanString(repoAddress)}>
-            <td style={{maxWidth: '400px'}}>
-              <Box flex={{direction: 'column', gap: 4}}>
-                <div style={{fontWeight: 500}}>
-                  <Link to={workspacePathFromAddress(repoAddress)}>
-                    <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
-                  </Link>
-                </div>
-                <ImageName metadata={allMetadata} />
-                <ModuleOrPackageOrFile metadata={allMetadata} />
-              </Box>
-            </td>
-            <td>
-              <LocationStatus location={repository.name} locationOrError={locationNode} />
-            </td>
-            <td style={{whiteSpace: 'nowrap'}}>
-              <TimeFromNow unixTimestamp={locationNode.updatedTimestamp} />
-            </td>
-            <td>
-              <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
-            </td>
-            <td style={{width: '180px'}}>
-              <JoinedButtons>
-                <ReloadButton location={name} />
-                <CodeLocationMenu locationNode={locationNode} />
-              </JoinedButtons>
-            </td>
-          </tr>
-        );
-      })}
-    </>
-  );
-};
-
-export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
+export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
 
-  const onClick = React.useCallback(async () => {
+  const onClick = useCallback(async () => {
     copy(value);
     await showSharedToaster({
       intent: 'success',
@@ -127,9 +49,9 @@ export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}>
       <ImageNameBox flex={{direction: 'row', gap: 4}}>
         <span style={{fontWeight: 500}}>image:</span>
         <Tooltip content="Click to copy" placement="top" display="block">
-          <button onClick={onClick}>
+          <UnstyledButton onClick={onClick} style={MetadataValueButtonStyle}>
             <MiddleTruncate text={imageKV.value} />
-          </button>
+          </UnstyledButton>
         </Tooltip>
       </ImageNameBox>
     );
@@ -139,32 +61,18 @@ export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}>
 
 const ImageNameBox = styled(Box)`
   width: 100%;
-  color: ${Colors.Gray700};
+  color: ${Colors.textLight()};
   font-size: 12px;
 
-  .bp4-popover2-target {
+  .bp5-popover-target {
     overflow: hidden;
-  }
-
-  button {
-    background: transparent;
-    border: none;
-    color: ${Colors.Gray700};
-    cursor: pointer;
-    font-size: 12px;
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-    width: 100%;
-
-    :focus {
-      outline: none;
-    }
   }
 `;
 
-export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({
+export const ModuleOrPackageOrFile = ({
   metadata,
+}: {
+  metadata: WorkspaceDisplayMetadataFragment[];
 }) => {
   const imageKV = metadata.find(
     ({key}) => key === 'module_name' || key === 'package_name' || key === 'python_file',
@@ -173,46 +81,51 @@ export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadata
     return (
       <Box
         flex={{direction: 'row', gap: 4}}
-        style={{width: '100%', color: Colors.Gray700, fontSize: 12}}
+        style={{width: '100%', color: Colors.textLight(), fontSize: 12}}
       >
         <span style={{fontWeight: 500}}>{imageKV.key}:</span>
-        <MiddleTruncate text={imageKV.value} />
+        <div style={MetadataValueButtonStyle}>
+          <MiddleTruncate text={imageKV.value} />
+        </div>
       </Box>
     );
   }
   return null;
 };
 
-const LocationStatus: React.FC<{
-  location: string;
-  locationOrError: WorkspaceRepositoryLocationNode;
-}> = (props) => {
-  const {location, locationOrError} = props;
-  const [showDialog, setShowDialog] = React.useState(false);
+export const LocationStatus = (props: {
+  locationStatus: LocationStatusEntryFragment;
+  locationOrError: WorkspaceRepositoryLocationNode | null;
+}) => {
+  const {locationStatus, locationOrError} = props;
+  const [showDialog, setShowDialog] = useState(false);
 
-  const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
+  const reloadFn = useMemo(
+    () => buildReloadFnForLocation(locationStatus.name),
+    [locationStatus.name],
+  );
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,
   });
 
-  if (locationOrError.loadStatus === 'LOADING') {
-    if (locationOrError.locationOrLoadError) {
-      return (
-        <Tag minimal intent="primary">
-          Updating...
-        </Tag>
-      );
-    } else {
-      return (
-        <Tag minimal intent="primary">
-          Loading...
-        </Tag>
-      );
-    }
+  if (locationStatus.loadStatus === 'LOADING') {
+    return (
+      <Tag minimal intent="primary">
+        Updating…
+      </Tag>
+    );
   }
 
-  if (locationOrError.locationOrLoadError?.__typename === 'PythonError') {
+  if (locationOrError?.versionKey !== locationStatus.versionKey) {
+    return (
+      <Tag minimal intent="primary">
+        Loading…
+      </Tag>
+    );
+  }
+
+  if (locationOrError?.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <Box flex={{alignItems: 'center', gap: 12}}>
@@ -220,11 +133,11 @@ const LocationStatus: React.FC<{
             Failed
           </Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
-            <span style={{fontSize: '14px'}}>View error</span>
+            <span style={{fontSize: '12px'}}>View error</span>
           </ButtonLink>
         </Box>
         <RepositoryLocationNonBlockingErrorDialog
-          location={location}
+          location={locationStatus.name}
           isOpen={showDialog}
           error={locationOrError.locationOrLoadError}
           reloading={reloading}
@@ -242,7 +155,7 @@ const LocationStatus: React.FC<{
   );
 };
 
-const ReloadButton: React.FC<{location: string}> = ({location}) => {
+export const ReloadButton = ({location}: {location: string}) => {
   return (
     <ReloadRepositoryLocationButton
       location={location}
@@ -255,7 +168,7 @@ const ReloadButton: React.FC<{location: string}> = ({location}) => {
               useDisabledButtonTooltipFix
             >
               <Button
-                icon={<Icon name="refresh" />}
+                icon={<Icon name="code_location_reload" />}
                 disabled={!hasReloadPermission}
                 loading={reloading}
                 onClick={() => tryReload()}
@@ -268,4 +181,12 @@ const ReloadButton: React.FC<{location: string}> = ({location}) => {
       }}
     />
   );
+};
+
+const MetadataValueButtonStyle = {
+  width: '100%',
+  display: 'block',
+  fontFamily: FontFamily.monospace,
+  fontSize: '12px',
+  color: Colors.textLight(),
 };

@@ -1,26 +1,29 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, screen} from '@testing-library/react';
-import {renderHook} from '@testing-library/react-hooks';
+import {render, renderHook, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {InstigationStatus} from '../../graphql/types';
 import {useDaemonStatus} from '../../instance/useDaemonStatus';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {__resetForJest} from '../../search/useIndexedDBCachedQuery';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {
   buildInstanceWarningQuery,
   buildWorkspaceQueryWithNoSchedulesOrSensors,
   buildWorkspaceQueryWithScheduleAndSensor,
 } from '../__fixtures__/useDaemonStatus.fixtures';
 
+afterEach(() => {
+  __resetForJest();
+});
 describe('useDaemonStatus', () => {
   describe('Scheduler daemon', () => {
     it('does not surface scheduler errors if there are no schedules', async () => {
       const daemonHealth = [{daemonType: 'SCHEDULER', healthy: false, required: true}];
-      const {result, waitForNextUpdate} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithNoSchedulesOrSensors(),
+              ...buildWorkspaceQueryWithNoSchedulesOrSensors(),
               buildInstanceWarningQuery(daemonHealth),
             ]}
           >
@@ -29,18 +32,17 @@ describe('useDaemonStatus', () => {
         ),
       });
 
-      await waitForNextUpdate();
       expect(result.current).toBeNull();
     });
 
     it('does not surface scheduler errors if there are no running schedules', async () => {
       const daemonHealth = [{daemonType: 'SCHEDULER', healthy: false, required: true}];
 
-      const {result, waitForNextUpdate} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithScheduleAndSensor({
+              ...buildWorkspaceQueryWithScheduleAndSensor({
                 schedule: InstigationStatus.STOPPED,
                 sensor: InstigationStatus.RUNNING,
               }),
@@ -52,18 +54,17 @@ describe('useDaemonStatus', () => {
         ),
       });
 
-      await waitForNextUpdate();
       expect(result.current).toBeNull();
     });
 
     it('does surface scheduler errors if there is a running schedule', async () => {
       const daemonHealth = [{daemonType: 'SCHEDULER', healthy: false, required: true}];
 
-      const {result, waitFor} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithScheduleAndSensor({
+              ...buildWorkspaceQueryWithScheduleAndSensor({
                 schedule: InstigationStatus.RUNNING,
                 sensor: InstigationStatus.RUNNING,
               }),
@@ -87,11 +88,11 @@ describe('useDaemonStatus', () => {
     it('does not surface sensor daemon errors if there are no sensors', async () => {
       const daemonHealth = [{daemonType: 'SENSOR', healthy: false, required: true}];
 
-      const {result, waitForNextUpdate} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithNoSchedulesOrSensors(),
+              ...buildWorkspaceQueryWithNoSchedulesOrSensors(),
               buildInstanceWarningQuery(daemonHealth),
             ]}
           >
@@ -100,18 +101,17 @@ describe('useDaemonStatus', () => {
         ),
       });
 
-      await waitForNextUpdate();
       expect(result.current).toBeNull();
     });
 
     it('does not surface sensor daemon errors if there are no running sensors', async () => {
       const daemonHealth = [{daemonType: 'SENSOR', healthy: false, required: true}];
 
-      const {result, waitForNextUpdate} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithScheduleAndSensor({
+              ...buildWorkspaceQueryWithScheduleAndSensor({
                 schedule: InstigationStatus.RUNNING,
                 sensor: InstigationStatus.STOPPED,
               }),
@@ -123,18 +123,17 @@ describe('useDaemonStatus', () => {
         ),
       });
 
-      await waitForNextUpdate();
       expect(result.current).toBeNull();
     });
 
     it('does surface sensor daemon errors if there is a running sensor', async () => {
       const daemonHealth = [{daemonType: 'SENSOR', healthy: false, required: true}];
 
-      const {result, waitFor} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithScheduleAndSensor({
+              ...buildWorkspaceQueryWithScheduleAndSensor({
                 schedule: InstigationStatus.RUNNING,
                 sensor: InstigationStatus.RUNNING,
               }),
@@ -158,11 +157,11 @@ describe('useDaemonStatus', () => {
     it('does not surface backfill daemon errors if there are no backfills', async () => {
       const daemonHealth = [{daemonType: 'BACKFILL', healthy: false, required: true}];
 
-      const {result, waitForNextUpdate} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithNoSchedulesOrSensors(),
+              ...buildWorkspaceQueryWithNoSchedulesOrSensors(),
               buildInstanceWarningQuery(daemonHealth),
             ]}
           >
@@ -171,18 +170,17 @@ describe('useDaemonStatus', () => {
         ),
       });
 
-      await waitForNextUpdate();
       expect(result.current).toBeNull();
     });
 
     it('does surface backfill daemon errors if there is a backfill', async () => {
       const daemonHealth = [{daemonType: 'BACKFILL', healthy: false, required: true}];
 
-      const {result, waitFor} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithNoSchedulesOrSensors(),
+              ...buildWorkspaceQueryWithNoSchedulesOrSensors(),
               buildInstanceWarningQuery(daemonHealth, 1),
             ]}
           >
@@ -207,11 +205,11 @@ describe('useDaemonStatus', () => {
         {daemonType: 'BACKFILL', healthy: false, required: true},
       ];
 
-      const {result, waitFor} = renderHook(() => useDaemonStatus(), {
+      const {result} = renderHook(() => useDaemonStatus(), {
         wrapper: ({children}: {children: React.ReactNode}) => (
           <MockedProvider
             mocks={[
-              buildWorkspaceQueryWithScheduleAndSensor({
+              ...buildWorkspaceQueryWithScheduleAndSensor({
                 schedule: InstigationStatus.RUNNING,
                 sensor: InstigationStatus.RUNNING,
               }),

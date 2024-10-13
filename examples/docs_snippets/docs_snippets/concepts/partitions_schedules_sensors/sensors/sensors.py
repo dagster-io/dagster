@@ -16,7 +16,7 @@ from dagster import (
 
 
 # start_sensor_job_marker
-from dagster import op, job, Config
+from dagster import op, job, Config, OpExecutionContext
 
 
 class FileConfig(Config):
@@ -24,7 +24,7 @@ class FileConfig(Config):
 
 
 @op
-def process_file(context, config: FileConfig):
+def process_file(context: OpExecutionContext, config: FileConfig):
     context.log.info(config.filename)
 
 
@@ -77,8 +77,7 @@ def materializes_asset_sensor():
 
 # start_running_in_code
 @sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
-def my_running_sensor():
-    ...
+def my_running_sensor(): ...
 
 
 # end_running_in_code
@@ -203,12 +202,10 @@ def my_s3_sensor(context):
 
 
 @job
-def the_job():
-    ...
+def the_job(): ...
 
 
-def get_the_db_connection(_):
-    ...
+def get_the_db_connection(_): ...
 
 
 defs = Definitions(
@@ -252,11 +249,11 @@ def code_location_a_data_update_failure_sensor():
 
 # start_instance_sensor
 @run_status_sensor(
-    monitor_all_repositories=True,
+    monitor_all_code_locations=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
-def instance_sensor():
-    # when any job in the Dagster instance succeeds, this sensor will trigger
+def sensor_monitor_all_code_locations():
+    # when any job in the Dagster deployment succeeds, this sensor will trigger
     send_slack_alert()
 
 

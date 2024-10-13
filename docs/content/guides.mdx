@@ -16,19 +16,21 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 - [Transitioning data pipelines from development to production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) - Learn how to seamlessly transition your Dagster pipelines from local development to production
 
-- [Testing against production with Dagster Cloud Branch Deployments](/guides/dagster/branch_deployments) - Use Dagster Cloud Branch Deployments to quickly iterate on your Dagster code without impacting production data
+- [Testing against production with Dagster+ Branch Deployments](/guides/dagster/branch_deployments) - Use Dagster+ Branch Deployments to quickly iterate on your Dagster code without impacting production data
 
 ---
 
 ## Working with data assets
 
-- [Understanding how assets relate to ops and graphs](/guides/dagster/how-assets-relate-to-ops-and-graphs) - Learn how software-defined assets relate to ops and graphs, and when to use one over the other
+- [Understanding how assets relate to ops and graphs](/guides/dagster/how-assets-relate-to-ops-and-graphs) - Learn how asset definitions relate to ops and graphs, and when to use one over the other
 
-- [Moving to Software-defined Assets](/guides/dagster/enriching-with-software-defined-assets) - Already using ops and graphs, but not Software-defined Assets? Learn why and how to use Software-defined Assets
+- [Moving to asset definitions](/guides/dagster/enriching-with-software-defined-assets) - Already using ops and graphs, but not asset definitions? Learn why and how to use asset definitions
 
-- [Using Software-defined assets with Pandas and PySpark](/guides/dagster/software-defined-assets) - A quick introduction to Sofware-defined Assets, featuring Pandas and PySpark
+- [Using asset checks to check data freshness](/concepts/assets/asset-checks/checking-for-data-freshness) - Use freshness checks, a type of [asset check](/concepts/assets/asset-checks) to identify the data assets that are overdue for an update
 
-- [Testing assets](/guides/dagster/testing-assets) - Learn to test your Software-defined Assets
+- [Using asset definitions with Pandas and PySpark](/guides/dagster/software-defined-assets) - A quick introduction to asset definitions, featuring Pandas and PySpark
+
+- [Testing assets](/guides/dagster/testing-assets) - Learn to test your asset definitions
 
 - [Migrating to Pythonic resources and config](/guides/dagster/migrating-to-pythonic-resources-and-config) - Incrementally migrate existing Dagster codebases to Pythonic resources and config
 
@@ -40,21 +42,19 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 - [Re-executing Dagster jobs](/guides/dagster/re-execution) - Learn to re-execute Dagster jobs using either the UI or Dagster's APIs
 
-- [Migrating to graphs, jobs, and ops](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op) - **Legacy**. Migrate to Dagster graphs, jobs, and ops from Dagster solids and pipelines
+- [Migrating to graphs, jobs, and ops](https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.7/guides/dagster/graph_job_op) - **Legacy**. Migrate to Dagster graphs, jobs, and ops from Dagster solids and pipelines
 
 ---
 
 ## Migrating to Dagster
 
-- [Migrating from Airflow to Dagster](/integrations/airflow/migrating-to-dagster) - Perform a lift-and-shift migration from Airflow to Dagster
+- [Migrating Airflow to Dagster](/guides/migrations/migrating-airflow-to-dagster) - Learn how to migrate your pipelines from Airflow to Dagster
 
 ---
 
 ## Best practices
 
 - [Structuring your Dagster project](/guides/dagster/recommended-project-structure) - Learn about Dagster's recommendations on structuring larger projects to help stay organized and efficient
-
-- [Automating your data pipelines](/guides/dagster/automating-pipelines) - Learn how to automate your data pipelines with Dagster using schedules and sensors
 
 - [Building machine learning pipelines](/guides/dagster/ml-pipeline) - Learn about how to use Dagster to build a machine learning pipeline
 
@@ -76,10 +76,8 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 ### Experimental features
 
-- [Using Custom Run Coordinators to perform run attribution](/guides/dagster/run-attribution) - A look at using a Custom Run Coordinator to perform run attribution
-
-- [Airbyte ingestion as code](/guides/dagster/airbyte-ingestion-as-code) - Configure Airbyte connections with Dagster
-
 - [Asset versioning and caching](/guides/dagster/asset-versioning-and-caching) - Memoize assets using Dagster's data versioning system
+
+- [Linking to asset definition code with code references](/guides/dagster/code-references) - Attach code references to your Dagster assets to easily navigate to the code that backs the asset
 
 [def]: /guides/dagster/

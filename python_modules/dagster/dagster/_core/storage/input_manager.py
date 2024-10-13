@@ -100,8 +100,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
 @overload
 def input_manager(
     config_schema: InputLoadFn,
-) -> InputManagerDefinition:
-    ...
+) -> InputManagerDefinition: ...
 
 
 @overload
@@ -111,8 +110,7 @@ def input_manager(
     input_config_schema: Optional[CoercableToConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
-) -> Callable[[InputLoadFn], InputManagerDefinition]:
-    ...
+) -> Callable[[InputLoadFn], InputManagerDefinition]: ...
 
 
 def input_manager(
@@ -171,11 +169,9 @@ def input_manager(
     if _is_input_load_fn(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
 
-    config_schema = cast(Optional[CoercableToConfigSchema], config_schema)
-
     def _wrap(load_fn: InputLoadFn) -> InputManagerDefinition:
         return _InputManagerDecoratorCallable(
-            config_schema=config_schema,
+            config_schema=cast(CoercableToConfigSchema, config_schema),
             description=description,
             version=version,
             input_config_schema=input_config_schema,
@@ -199,9 +195,7 @@ class InputManagerWrapper(InputManager):
         # result is an InputManager. If so we call it's load_input method
         intermediate = (
             # type-ignore because function being used as attribute
-            self._load_fn(context)
-            if has_at_least_one_parameter(self._load_fn)
-            else self._load_fn()  # type: ignore  # (strict type guard)
+            self._load_fn(context) if has_at_least_one_parameter(self._load_fn) else self._load_fn()  # type: ignore  # (strict type guard)
         )
 
         if isinstance(intermediate, InputManager):

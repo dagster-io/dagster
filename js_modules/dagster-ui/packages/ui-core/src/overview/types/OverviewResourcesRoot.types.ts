@@ -44,15 +44,15 @@ export type OverviewResourcesQuery = {
                   name: string;
                   allTopLevelResourceDetails: Array<{
                     __typename: 'ResourceDetails';
+                    id: string;
                     name: string;
                     description: string | null;
                     resourceType: string;
+                    schedulesUsing: Array<string>;
+                    sensorsUsing: Array<string>;
                     parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
                     assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-                    jobsOpsUsing: Array<{
-                      __typename: 'JobWithOps';
-                      job: {__typename: 'Job'; id: string};
-                    }>;
+                    jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
                   }>;
                 }>;
               }
@@ -60,3 +60,5 @@ export type OverviewResourcesQuery = {
         }>;
       };
 };
+
+export const OverviewResourcesQueryVersion = '38594d66ef4f0161f6cd670cb369ce161f1f4a2b012080af70fb446f600b8cf0';

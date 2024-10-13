@@ -4,9 +4,8 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 import yaml
 
 import dagster._check as check
+from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
-
-from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance, DagsterInstanceOverrides
@@ -411,7 +410,8 @@ class InstanceRef(
                 event_storage_data,
                 schedule_storage_data,
             ] = configurable_storage_data(
-                config_value.get("storage"), defaults  # type: ignore  # (possible none)
+                config_value.get("storage"),  # type: ignore  # (possible none)
+                defaults,
             )
 
         scheduler_data = configurable_class_data_or_default(
@@ -440,7 +440,8 @@ class InstanceRef(
         )
 
         secrets_loader_data = configurable_secrets_loader_data(
-            config_value.get("secrets"), defaults["secrets"]  # type: ignore  # (possible none)
+            config_value.get("secrets"),  # type: ignore  # (possible none)
+            defaults["secrets"],
         )
 
         settings_keys = {
@@ -454,6 +455,7 @@ class InstanceRef(
             "schedules",
             "nux",
             "auto_materialize",
+            "concurrency",
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 

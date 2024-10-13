@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
 import {ReleasesJobProps} from '../__fixtures__/LaunchAssetChoosePartitionsDialog.fixtures';
@@ -15,7 +14,7 @@ import {NoRunningBackfills} from '../__fixtures__/RunningBackfillsNoticeQuery.fi
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'LaunchAssetChoosePartitionsDialog',
+  title: 'Assets/LaunchAssetChoosePartitionsDialog',
   component: LaunchAssetChoosePartitionsDialog,
 } as Meta;
 

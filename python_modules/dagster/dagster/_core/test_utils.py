@@ -1,15 +1,19 @@
 import asyncio
+import datetime
 import os
 import re
+import sys
 import time
+import unittest.mock
 import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import update_wrapper
+from pathlib import Path
 from signal import Signals
 from threading import Event
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -25,49 +29,57 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Self
 
 from dagster import (
     Permissive,
     Shape,
+    __file__ as dagster_init_py,
     _check as check,
     fs_io_manager,
 )
 from dagster._config import Array, Field
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
-from dagster._core.host_representation.origin import (
-    ExternalJobOrigin,
-    InProcessCodeLocationOrigin,
-)
 from dagster._core.instance import DagsterInstance
+
+# test utils from separate light weight file since are exported top level
+from dagster._core.instance_for_test import (
+    cleanup_test_instance as cleanup_test_instance,
+    environ as environ,
+    instance_for_test as instance_for_test,
+)
 from dagster._core.launcher import RunLauncher
+from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace.workspace import CodeLocationEntry, WorkspaceSnapshot
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._time import create_datetime, get_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
-
-# test utils from separate light weight file since are exported top level
-from .instance_for_test import (
-    cleanup_test_instance as cleanup_test_instance,
-    environ as environ,
-    instance_for_test as instance_for_test,
-)
-
-if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
 
 T = TypeVar("T")
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
@@ -146,10 +158,12 @@ def create_run_for_test(
     job_snapshot=None,
     execution_plan_snapshot=None,
     parent_job_snapshot=None,
-    external_job_origin=None,
+    remote_job_origin=None,
     job_code_origin=None,
     asset_selection=None,
+    asset_check_selection=None,
     op_selection=None,
+    asset_graph=None,
 ):
     return instance.create_run(
         job_name=job_name,
@@ -164,10 +178,12 @@ def create_run_for_test(
         job_snapshot=job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=parent_job_snapshot,
-        external_job_origin=external_job_origin,
+        remote_job_origin=remote_job_origin,
         job_code_origin=job_code_origin,
         asset_selection=asset_selection,
+        asset_check_selection=asset_check_selection,
         op_selection=op_selection,
+        asset_graph=asset_graph,
     )
 
 
@@ -251,8 +267,8 @@ def poll_for_finished_run(
                 raise Exception("Timed out")
 
 
-def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30):
-    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
+def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30, message=None):
+    poll_for_event(instance, run_id, event_type="STEP_START", message=message, timeout=timeout)
 
 
 def poll_for_event(
@@ -297,10 +313,11 @@ def new_cwd(path: str) -> Iterator[None]:
         os.chdir(old)
 
 
-def today_at_midnight(timezone_name="UTC") -> "DateTime":
+def today_at_midnight(timezone_name="UTC") -> datetime.datetime:
     check.str_param(timezone_name, "timezone_name")
-    now = pendulum.now(timezone_name)
-    return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
+    tzinfo = get_timezone(timezone_name)
+    now = datetime.datetime.now(tz=tzinfo)
+    return create_datetime(now.year, now.month, now.day, tz=timezone_name)
 
 
 from dagster._core.storage.runs import SqliteRunStorage
@@ -335,7 +352,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return ExplodingRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     def launch_run(self, context) -> NoReturn:
         raise NotImplementedError("The entire purpose of this is to throw on launch")
@@ -413,7 +430,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def submit_run(self, context: SubmitRunContext):
         dagster_run = context.dagster_run
-        check.inst(dagster_run.external_job_origin, ExternalJobOrigin)
+        check.not_none(dagster_run.remote_job_origin)
         self._queue.append(dagster_run)
         return dagster_run
 
@@ -458,14 +475,11 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return TestSecretsLoader(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
 
 def get_crash_signals() -> Sequence[Signals]:
     return [get_terminate_signal()]
-
-
-_mocked_system_timezone: Dict[str, Optional[str]] = {"timezone": None}
 
 
 # Test utility for creating a test workspace for a function
@@ -516,6 +530,16 @@ def create_test_daemon_workspace_context(
             grpc_server_registry=grpc_server_registry,
         ) as workspace_process_context:
             yield workspace_process_context
+
+
+def load_remote_repo(
+    workspace_context: WorkspaceProcessContext, repo_name: str
+) -> RemoteRepository:
+    code_location_entry = next(
+        iter(workspace_context.create_request_context().get_code_location_entries().values())
+    )
+    assert code_location_entry.code_location, code_location_entry.load_error
+    return code_location_entry.code_location.get_repository(repo_name)
 
 
 def remove_none_recursively(obj: T) -> T:
@@ -609,6 +633,7 @@ def test_counter():
 
 def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
+    results = {}
     for target_id, future in futures.copy().items():
         if timeout is not None:
             future_timeout = max(0, timeout - (time.time() - start_time))
@@ -616,8 +641,10 @@ def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None
             future_timeout = None
 
         if not future.done():
-            future.result(timeout=future_timeout)
+            results[target_id] = future.result(timeout=future_timeout)
             del futures[target_id]
+
+    return results
 
 
 class SingleThreadPoolExecutor(ThreadPoolExecutor):
@@ -677,11 +704,87 @@ class BlockingThreadPoolExecutor(ThreadPoolExecutor):
 def ignore_warning(message_substr: str):
     """Ignores warnings within the decorated function that contain the given string."""
 
-    def decorator(func: Callable):
+    def decorator(func: Callable[..., Any]):
         def wrapper(*args, **kwargs):
             warnings.filterwarnings("ignore", message=message_substr)
             return func(*args, **kwargs)
 
+        update_wrapper(wrapper, func)
         return wrapper
 
     return decorator
+
+
+def raise_exception_on_warnings():
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    warnings.filterwarnings("error")
+
+    # This resource warning can sometimes appear (nondeterministically) when ephemeral instances are
+    # used in tests. There seems to be an issue at the intersection of `DagsterInstance` weakrefs
+    # and guaranteeing timely cleanup of the LocalArtifactStorage for the instance
+    # LocalArtifactStorage.
+    warnings.filterwarnings(
+        "ignore", category=ResourceWarning, message=r".*Implicitly cleaning up.*"
+    )
+
+
+def ensure_dagster_tests_import() -> None:
+    dagster_package_root = (Path(dagster_init_py) / ".." / "..").resolve()
+    assert (
+        dagster_package_root / "dagster_tests"
+    ).exists(), "Could not find dagster_tests where expected"
+    sys.path.append(dagster_package_root.as_posix())
+
+
+def create_test_asset_job(
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
+    *,
+    selection: Optional[CoercibleToAssetSelection] = None,
+    name: str = "asset_job",
+    resources: Mapping[str, object] = {},
+    **kwargs: Any,
+) -> JobDefinition:
+    selection = selection or [a for a in assets if a.is_executable]
+    return Definitions(
+        assets=assets,
+        jobs=[define_asset_job(name, selection, **kwargs)],
+        resources=resources,
+    ).get_job_def(name)
+
+
+@contextmanager
+def freeze_time(new_now: Union[datetime.datetime, float]):
+    new_dt = (
+        new_now
+        if isinstance(new_now, datetime.datetime)
+        else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
+    )
+
+    with unittest.mock.patch(
+        "dagster._time._mockable_get_current_datetime", return_value=new_dt
+    ), unittest.mock.patch(
+        "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+    ):
+        yield
+
+
+class TestType: ...
+
+
+def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> WorkspaceSnapshot:
+    remote_repos = {}
+    for repo in repos:
+        remote_repos[repo.name] = RemoteRepository(
+            RepositorySnap.from_def(repo),
+            repository_handle=RepositoryHandle.for_test(
+                location_name="test",
+                repository_name=repo.name,
+            ),
+            instance=DagsterInstance.ephemeral(),
+        )
+    mock_entry = unittest.mock.MagicMock(spec=CodeLocationEntry)
+    mock_location = unittest.mock.MagicMock(spec=CodeLocation)
+    mock_location.get_repositories.return_value = remote_repos
+    type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
+    return WorkspaceSnapshot(code_location_entries={"test": mock_entry})

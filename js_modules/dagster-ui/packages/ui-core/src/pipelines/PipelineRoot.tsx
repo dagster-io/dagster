@@ -1,6 +1,9 @@
-import * as React from 'react';
-import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
+import {Redirect, Switch} from 'react-router-dom';
+import {JobFallthroughRoot} from 'shared/pipelines/JobFallthroughRoot.oss';
 
+import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
+import {PipelineRunsRoot} from './PipelineRunsRoot';
+import {Route} from '../app/Route';
 import {JobOrAssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchpadSetupFromRunRoot} from '../launchpad/LaunchpadSetupFromRunRoot';
 import {LaunchpadSetupRoot} from '../launchpad/LaunchpadSetupRoot';
@@ -8,15 +11,11 @@ import {PipelineNav} from '../nav/PipelineNav';
 import {PipelinePartitionsRoot} from '../partitions/PipelinePartitionsRoot';
 import {RepoAddress} from '../workspace/types';
 
-import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
-import {PipelineOverviewRoot} from './PipelineOverviewRoot';
-import {PipelineRunsRoot} from './PipelineRunsRoot';
-
 interface Props {
   repoAddress: RepoAddress;
 }
 
-export const PipelineRoot: React.FC<Props> = (props) => {
+export const PipelineRoot = (props: Props) => {
   const {repoAddress} = props;
 
   return (
@@ -63,9 +62,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             '/locations/:repoPath/pipelines/:pipelinePath/runs/:runId',
             '/locations/:repoPath/jobs/:pipelinePath/runs/:runId',
           ]}
-          render={(props: RouteComponentProps<{runId: string}>) => (
-            <Redirect to={`/runs/${props.match.params.runId}`} />
-          )}
+          render={(props) => <Redirect to={`/runs/${props.match.params.runId}`} />}
         />
         <Route
           path={[
@@ -93,7 +90,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
           )}
         />
         <Route path={['/locations/:repoPath/pipelines/(/?.*)', '/locations/:repoPath/jobs/(/?.*)']}>
-          <PipelineOverviewRoot repoAddress={repoAddress} />
+          <JobFallthroughRoot repoAddress={repoAddress} />
         </Route>
       </Switch>
     </div>

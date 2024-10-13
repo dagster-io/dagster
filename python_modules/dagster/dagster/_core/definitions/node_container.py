@@ -14,10 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
-
-from .dependency import (
+from dagster._core.definitions.dependency import (
     DependencyMapping,
     DependencyStructure,
     GraphNode,
@@ -26,16 +23,18 @@ from .dependency import (
     NodeInvocation,
     OpNode,
 )
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from .graph_definition import GraphDefinition
-    from .node_definition import NodeDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.node_definition import NodeDefinition
 
 T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 
 
 def normalize_dependency_dict(
-    dependencies: Optional[Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]]
+    dependencies: Optional[Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]],
 ) -> DependencyMapping[NodeInvocation]:
     prelude = (
         'The expected type for "dependencies" is Union[Mapping[str, Mapping[str, '
@@ -70,8 +69,7 @@ def normalize_dependency_dict(
         for input_key, dep in dep_dict.items():
             if not isinstance(input_key, str):
                 raise DagsterInvalidDefinitionError(
-                    prelude
-                    + f"Received non-string key in the inner dict for key {key}. "
+                    prelude + f"Received non-string key in the inner dict for key {key}. "
                     f"Unexpected inner dict key type: {type(input_key)}"
                 )
             if not isinstance(dep, IDependencyDefinition):
@@ -87,8 +85,7 @@ def normalize_dependency_dict(
             normalized_dependencies[key] = dep_dict
         else:
             raise DagsterInvalidDefinitionError(
-                prelude
-                + "Expected str or NodeInvocation key in the top level dict. "
+                prelude + "Expected str or NodeInvocation key in the top level dict. "
                 "Received value {key} of type {type(key)}"
             )
 
@@ -141,8 +138,8 @@ def create_execution_structure(
 
     as well as a dagster._core.definitions.dependency.DependencyStructure object.
     """
-    from .graph_definition import GraphDefinition
-    from .node_definition import NodeDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.node_definition import NodeDefinition
 
     check.sequence_param(node_defs, "node_defs", of_type=NodeDefinition)
     check.mapping_param(
@@ -191,7 +188,7 @@ def _build_graph_node_dict(
     alias_to_node_invocation: Mapping[str, NodeInvocation],
     graph_definition,
 ) -> Mapping[str, Node]:
-    from .graph_definition import GraphDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
 
     nodes: List[Node] = []
     for node_def in node_defs:
@@ -256,7 +253,7 @@ def _validate_dependencies(
                             f'"{from_node}" in dependency dictionary) not found in node list'
                         )
                 if not node_dict[from_node].definition.has_input(from_input):
-                    from .graph_definition import GraphDefinition
+                    from dagster._core.definitions.graph_definition import GraphDefinition
 
                     input_list = node_dict[from_node].definition.input_dict.keys()
                     node_type = (

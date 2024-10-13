@@ -1,22 +1,18 @@
 import {
   Box,
+  Button,
   ButtonGroup,
-  Colors,
-  Spinner,
-  Subheading,
-  ErrorBoundary,
   Checkbox,
-  Popover,
+  Colors,
+  ErrorBoundary,
+  Icon,
   Menu,
   MenuItem,
-  Button,
-  Icon,
+  Popover,
+  Spinner,
+  Subheading,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
-import {RepositorySelector} from '../graphql/types';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
@@ -26,7 +22,11 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
+import {getXAxisForParams} from './useRecentAssetEvents';
+import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
+import {RepositorySelector} from '../graphql/types';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 interface Props {
   assetKey: AssetKey;
@@ -44,36 +44,42 @@ interface Props {
   opName?: string | null;
 }
 
-export const AssetEvents: React.FC<Props> = ({
+export const AssetEvents = ({
   assetKey,
   assetNode,
   params,
   setParams,
   liveData,
   dataRefreshHint,
-}) => {
-  const {
-    xAxis,
-    materializations,
-    observations,
-    loadedPartitionKeys,
-    refetch,
-    loading,
-  } = useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
+}: Props) => {
+  /**
+   * We have a separate "Asset > Partitions" tab, but that is only available for SDAs with
+   * pre-defined partitions. For non-SDAs, this Events page still displays a "Time | Partition"
+   * picker and this xAxis can still be `partitions`!
+   *
+   * The partitions behavior in this case isn't ideal because the UI only "sees" partition names
+   * in the events it has fetched. Users should upgrade to SDAs for a better experience.
+   *
+   * To test this easily, unload / break your code location so your SDA becomes a non-SDA :-)
+   */
+  const xAxis = getXAxisForParams(params, {defaultToPartitions: false});
+  const {materializations, observations, loadedPartitionKeys, fetchMore, fetchLatest, loading} =
+    usePaginatedAssetEvents(assetKey, params);
 
   React.useEffect(() => {
-    if (params.asOf) {
-      return;
-    }
-    refetch();
-  }, [params.asOf, dataRefreshHint, refetch]);
+    fetchLatest();
+  }, [params.asOf, dataRefreshHint, fetchLatest]);
 
   const [filters, setFilters] = useStateWithStorage<{types: EventType[]}>(
     'asset-event-filters',
     (json) => ({types: json?.types || ALL_EVENT_TYPES}),
   );
 
-  const hideFilters = assetNode?.isSource;
+  // No need to show the type filter for assets without materializations
+  const hideFilters = !assetNode?.isMaterializable;
+  // Non-materializable assets never have a partitions tab, so we shouldn't allow links to it
+  const hidePartitionLinks = !assetNode?.isMaterializable;
+
   const grouped = useGroupedEvents(
     xAxis,
     hideFilters || filters.types.includes('materialization') ? materializations : [],
@@ -123,7 +129,7 @@ export const AssetEvents: React.FC<Props> = ({
       {assetHasUndefinedPartitions && (
         <Box
           flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
           padding={{vertical: 16, horizontal: 24}}
           style={{marginBottom: -1}}
         >
@@ -151,12 +157,12 @@ export const AssetEvents: React.FC<Props> = ({
         <>
           <FailedRunSinceMaterializationBanner
             stepKey={stepKeyForAsset(assetNode)}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            border="bottom"
             run={liveData?.runWhichFailedToMaterialize || null}
           />
           <CurrentRunsBanner
             stepKey={stepKeyForAsset(assetNode)}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            border="bottom"
             liveData={liveData}
           />
         </>
@@ -171,13 +177,13 @@ export const AssetEvents: React.FC<Props> = ({
         <Box
           style={{display: 'flex', flex: 1, minWidth: 200}}
           flex={{direction: 'column'}}
-          background={Colors.Gray50}
+          background={Colors.backgroundLight()}
         >
           {hideFilters ? undefined : (
             <Box
               flex={{alignItems: 'center', gap: 16}}
               padding={{vertical: 12, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+              border="bottom"
             >
               <EventTypeSelect
                 value={filters.types}
@@ -185,7 +191,7 @@ export const AssetEvents: React.FC<Props> = ({
               />
             </Box>
           )}
-          {loading ? (
+          {loading && grouped.length === 0 ? (
             <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
               <Spinner purpose="section" />
             </Box>
@@ -195,6 +201,9 @@ export const AssetEvents: React.FC<Props> = ({
               groups={grouped}
               focused={focused}
               setFocused={onSetFocused}
+              assetKey={assetKey}
+              loading={loading}
+              onLoadMore={fetchMore}
             />
           )}
         </Box>
@@ -202,7 +211,7 @@ export const AssetEvents: React.FC<Props> = ({
         <Box
           flex={{direction: 'column'}}
           style={{flex: 3, minWidth: 0, overflowY: 'auto'}}
-          border={{side: 'left', color: Colors.KeylineGray, width: 1}}
+          border="left"
         >
           <ErrorBoundary region="event" resetErrorOnChange={[focused]}>
             {xAxis === 'partition' ? (
@@ -213,12 +222,17 @@ export const AssetEvents: React.FC<Props> = ({
                   assetKey={assetKey}
                   stepKey={assetNode ? stepKeyForAsset(assetNode) : undefined}
                   latestRunForPartition={null}
+                  changedReasons={assetNode?.changedReasons}
                 />
               ) : (
                 <AssetPartitionDetailEmpty />
               )
             ) : focused?.latest ? (
-              <AssetEventDetail assetKey={assetKey} event={focused.latest} />
+              <AssetEventDetail
+                assetKey={assetKey}
+                event={focused.latest}
+                hidePartitionLinks={hidePartitionLinks}
+              />
             ) : (
               <AssetEventDetailEmpty />
             )}
@@ -233,10 +247,13 @@ type EventType = 'observation' | 'materialization';
 
 const ALL_EVENT_TYPES: EventType[] = ['observation', 'materialization'];
 
-export const EventTypeSelect: React.FC<{
+export const EventTypeSelect = ({
+  value,
+  onChange,
+}: {
   value: EventType[];
   onChange: (value: EventType[]) => void;
-}> = ({value, onChange}) => {
+}) => {
   const [showMenu, setShowMenu] = React.useState(false);
 
   const onToggle = (type: EventType) => {

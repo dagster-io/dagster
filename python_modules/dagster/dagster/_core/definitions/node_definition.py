@@ -12,21 +12,20 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
-
-from .hook_definition import HookDefinition
-from .utils import check_valid_name, validate_tags
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+    from dagster._core.definitions.input import InputDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
+    from dagster._core.definitions.output import OutputDefinition
     from dagster._core.types.dagster_type import DagsterType
-
-    from .asset_layer import AssetLayer
-    from .composition import PendingNodeInvocation
-    from .dependency import NodeHandle, NodeInputHandle
-    from .input import InputDefinition
-    from .op_definition import OpDefinition
-    from .output import OutputDefinition
 
 
 # base class for OpDefinition and GraphDefinition
@@ -52,7 +51,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._tags = validate_tags(tags)
+        self._tags = normalize_tags(tags)
         self._input_defs = input_defs
         self._input_dict = {input_def.name: input_def for input_def in input_defs}
         check.invariant(len(self._input_defs) == len(self._input_dict), "Duplicate input def names")
@@ -70,17 +69,14 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @property
     @abstractmethod
-    def node_type_str(self) -> str:
-        ...
+    def node_type_str(self) -> str: ...
 
     @property
     @abstractmethod
-    def is_graph_job_op_node(self) -> bool:
-        ...
+    def is_graph_job_op_node(self) -> bool: ...
 
     @abstractmethod
-    def all_dagster_types(self) -> Iterable["DagsterType"]:
-        ...
+    def all_dagster_types(self) -> Iterable["DagsterType"]: ...
 
     @property
     def name(self) -> str:
@@ -153,24 +149,20 @@ class NodeDefinition(NamedConfigurableDefinition):
         return self._output_dict[name]
 
     @abstractmethod
-    def iterate_node_defs(self) -> Iterable["NodeDefinition"]:
-        ...
+    def iterate_node_defs(self) -> Iterable["NodeDefinition"]: ...
 
     @abstractmethod
-    def iterate_op_defs(self) -> Iterable["OpDefinition"]:
-        ...
+    def iterate_op_defs(self) -> Iterable["OpDefinition"]: ...
 
     @abstractmethod
     def resolve_output_to_origin(
         self,
         output_name: str,
         handle: Optional["NodeHandle"],
-    ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]:
-        ...
+    ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]: ...
 
     @abstractmethod
-    def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
-        ...
+    def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition": ...
 
     @abstractmethod
     def resolve_input_to_destinations(
@@ -181,16 +173,13 @@ class NodeDefinition(NamedConfigurableDefinition):
         """
 
     @abstractmethod
-    def input_has_default(self, input_name: str) -> bool:
-        ...
+    def input_has_default(self, input_name: str) -> bool: ...
 
     @abstractmethod
-    def default_value_for_input(self, input_name: str) -> object:
-        ...
+    def default_value_for_input(self, input_name: str) -> object: ...
 
     @abstractmethod
-    def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
-        ...
+    def input_supports_dynamic_output_dep(self, input_name: str) -> bool: ...
 
     def all_input_output_types(self) -> Iterator["DagsterType"]:
         for input_def in self._input_defs:
@@ -208,12 +197,12 @@ class NodeDefinition(NamedConfigurableDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ) -> "PendingNodeInvocation":
-        from .composition import PendingNodeInvocation
+        from dagster._core.definitions.composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
             node_def=self,
             given_alias=given_alias,
-            tags=validate_tags(tags) if tags else None,
+            tags=normalize_tags(tags) if tags else None,
             hook_defs=hook_defs,
             retry_policy=retry_policy,
         )
@@ -237,5 +226,17 @@ class NodeDefinition(NamedConfigurableDefinition):
     @abstractmethod
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional["NodeHandle"] = None
-    ) -> Sequence["InputDefinition"]:
-        ...
+    ) -> Sequence["InputDefinition"]: ...
+
+    @abstractmethod
+    def resolve_output_to_destinations(
+        self, output_name: str, handle: Optional["NodeHandle"]
+    ) -> Sequence["NodeInputHandle"]: ...
+
+    @abstractmethod
+    def get_op_handles(self, parent: "NodeHandle") -> AbstractSet["NodeHandle"]: ...
+
+    @abstractmethod
+    def get_op_output_handles(
+        self, parent: Optional["NodeHandle"]
+    ) -> AbstractSet["NodeOutputHandle"]: ...

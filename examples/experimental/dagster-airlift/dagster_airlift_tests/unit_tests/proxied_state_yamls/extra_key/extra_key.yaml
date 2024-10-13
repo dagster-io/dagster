@@ -1,0 +1,4 @@
+tasks:
+  - id: some_task 
+    proxied: True 
+    extra_key: extra_value

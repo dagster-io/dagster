@@ -1,8 +1,10 @@
 ---
 title: "Lesson 1: What's data engineering?"
-module: "dagster_essentials"
-lesson: "1"
+module: 'dagster_essentials'
+lesson: '1'
 ---
+
+# What's data engineering?
 
 Data engineering is the practice of designing and building software for collecting, storing, and managing data. The most common goal in data engineering is to enable stakeholders (such as product managers, marketing, or the C-suite) to make informed decisions with data. Other common goals are providing data to external users, features for a machine learning model, or empowering applications to react to events.
 

@@ -1,27 +1,26 @@
 import {
   Box,
+  Caption,
   Checkbox,
   Colors,
   Icon,
   IconWrapper,
   Spinner,
   Table,
-  Caption,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from './ReloadRepositoryLocationButton';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export interface RepoSelectorOption {
   repositoryLocation: {name: string};
@@ -41,7 +40,7 @@ interface Props {
   selected: RepoSelectorOption[];
 }
 
-export const RepoSelector: React.FC<Props> = (props) => {
+export const RepoSelector = (props: Props) => {
   const {onBrowse, onToggle, options, selected} = props;
 
   const optionCount = options.length;
@@ -94,7 +93,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
                       <Box flex={{direction: 'column', gap: 2}}>
                         {option.repository.displayMetadata.map(({key, value}) => (
                           <Caption
-                            style={{color: Colors.Gray400}}
+                            style={{color: Colors.textLighter()}}
                             key={key}
                           >{`${key}: ${value}`}</Caption>
                         ))}
@@ -141,10 +140,10 @@ const RepoLabel = styled.label`
 `;
 
 const RepoLocation = styled.div`
-  color: ${Colors.Gray700};
+  color: ${Colors.textLight()};
 `;
 
-const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+const ReloadButton = ({repoAddress}: {repoAddress: RepoAddress}) => {
   return (
     <ReloadRepositoryLocationButton
       location={repoAddress.location}
@@ -170,7 +169,7 @@ const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
               ) : (
                 <Icon
                   name="refresh"
-                  color={hasReloadPermission ? Colors.Gray200 : Colors.Gray100}
+                  color={hasReloadPermission ? Colors.accentGray() : Colors.accentGrayHover()}
                 />
               )}
             </ReloadButtonInner>
@@ -194,20 +193,20 @@ const ReloadButtonInner = styled.button`
   }
 
   :disabled ${IconWrapper} {
-    background-color: ${Colors.Gray300};
+    background-color: ${Colors.textDisabled()};
     transition: background-color 100ms;
   }
 
   ${IconWrapper} {
-    background-color: ${Colors.Gray600};
+    background-color: ${Colors.textLight()};
     transition: background-color 100ms;
   }
 
   :hover:not(:disabled) ${IconWrapper} {
-    background-color: ${Colors.Gray800};
+    background-color: ${Colors.textLighter()};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${Colors.Link};
+    background-color: ${Colors.linkDefault()};
   }
 `;

@@ -7,6 +7,7 @@ import psycopg2
 import pytest
 from dagster._core.definitions.decorators import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
+
 from dagster_aws.redshift import (
     FakeRedshiftClient,
     FakeRedshiftClientResource,
@@ -241,9 +242,7 @@ def test_live_redshift(s3_bucket):
             cursor.execute(REDSHIFT_FAILED_LOAD_QUERY)
             res = cursor.fetchall()
             assert res[0][1] == "Char length exceeds DDL length"
-            assert res[0][2] == "s3://{s3_bucket}/{file_key}".format(
-                s3_bucket=s3_bucket, file_key=file_key
-            )
+            assert res[0][2] == f"s3://{s3_bucket}/{file_key}"
             assert res[0][3] == 7
             assert res[0][4].strip() == "52|PNC Arena|Raleigh|NC  ,25   |0"
             assert res[0][5].strip() == "NC  ,25"

@@ -1,29 +1,29 @@
 from dagster import (
     AssetKey,
     Definitions,
+    InputContext,
     IOManager,
     IOManagerDefinition,
+    OutputContext,
     asset,
     with_resources,
 )
 
 
 class MyIOManager(IOManager):
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj):
         assert False
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext):
         return 5
 
 
 def get_assets():
     @asset
-    def asset1():
-        ...
+    def asset1(): ...
 
     @asset
-    def asset2():
-        ...
+    def asset2(): ...
 
     return with_resources(
         [asset1, asset2],

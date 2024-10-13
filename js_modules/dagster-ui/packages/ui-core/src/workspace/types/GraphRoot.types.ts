@@ -4,8 +4,8 @@ import * as Types from '../../graphql/types';
 
 export type GraphExplorerRootQueryVariables = Types.Exact<{
   graphSelector?: Types.InputMaybe<Types.GraphSelector>;
-  rootHandleID: Types.Scalars['String'];
-  requestScopeHandleID?: Types.InputMaybe<Types.Scalars['String']>;
+  rootHandleID: Types.Scalars['String']['input'];
+  requestScopeHandleID?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type GraphExplorerRootQuery = {
@@ -1435,3 +1435,5 @@ export type GraphExplorerRootQuery = {
         }>;
       };
 };
+
+export const GraphExplorerRootQueryVersion = '2919ad8ac5b740274bcd6cdc2fe58ef6c68b695637b8c6f261477f9859dd683e';

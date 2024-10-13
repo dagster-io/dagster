@@ -21,7 +21,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -33,6 +33,9 @@ from dagster._core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.job_base import IJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -43,20 +46,17 @@ from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
-from .events import AssetKey
-from .job_base import IJob
-
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
+    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         PendingRepositoryDefinition,
+        RepositoryDefinition,
         RepositoryLoadData,
     )
     from dagster._core.definitions.source_asset import SourceAsset
-
-    from .graph_definition import GraphDefinition
-    from .repository_definition import RepositoryDefinition
 
 
 def get_ephemeral_repository_name(job_name: str) -> str:
@@ -115,7 +115,11 @@ class ReconstructableRepository(
         return self._replace(repository_load_data=metadata)
 
     def get_definition(self) -> "RepositoryDefinition":
-        return repository_def_from_pointer(self.pointer, self.repository_load_data)
+        from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
+
+        return repository_def_from_pointer(
+            self.pointer, DefinitionsLoadType.RECONSTRUCTION, self.repository_load_data
+        )
 
     def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
@@ -184,13 +188,13 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
             unpacked_dict["op_selection"] = solids_to_execute
         return unpacked_dict
 
-    def after_pack(self, **packed_dict: Any) -> Dict[str, Any]:
-        if packed_dict["op_selection"]:
-            packed_dict["solid_selection_str"] = json.dumps(packed_dict["op_selection"]["__set__"])
-        else:
-            packed_dict["solid_selection_str"] = None
-        del packed_dict["op_selection"]
-        return packed_dict
+    def pack_items(self, *args, **kwargs):
+        for k, v in super().pack_items(*args, **kwargs):
+            if k == "op_selection":
+                new_v = json.dumps(v["__set__"]) if v else None
+                yield "solid_selection_str", new_v
+            else:
+                yield k, v
 
 
 @whitelist_for_serdes(
@@ -208,6 +212,7 @@ class ReconstructableJob(
             ("job_name", str),
             ("op_selection", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
         ],
     ),
     IJob,
@@ -231,6 +236,7 @@ class ReconstructableJob(
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         op_selection = set(op_selection) if op_selection else None
         return super(ReconstructableJob, cls).__new__(
@@ -241,6 +247,9 @@ class ReconstructableJob(
             asset_selection=check.opt_nullable_set_param(
                 asset_selection, "asset_selection", AssetKey
             ),
+            asset_check_selection=check.opt_nullable_set_param(
+                asset_check_selection, "asset_check_selection", AssetCheckKey
+            ),
         )
 
     def with_repository_load_data(
@@ -248,14 +257,19 @@ class ReconstructableJob(
     ) -> "ReconstructableJob":
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
+    @lru_cache(maxsize=1)
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
+        return self.repository.get_definition()
+
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
     def get_definition(self) -> "JobDefinition":
-        return self.repository.get_definition().get_maybe_subset_job_def(
+        return check.not_none(self.get_repository_definition()).get_maybe_subset_job_def(
             self.job_name,
             self.op_selection,
             self.asset_selection,
+            self.asset_check_selection,
         )
 
     def get_reconstructable_repository(self) -> ReconstructableRepository:
@@ -266,10 +280,12 @@ class ReconstructableJob(
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:
-        if op_selection and asset_selection:
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    ) -> "ReconstructableJob":
+        if op_selection and (asset_selection or asset_check_selection):
             check.failed(
-                "op_selection and asset_selection cannot both be provided as arguments",
+                "op_selection and asset_selection or asset_check_selection cannot both be provided"
+                " as arguments",
             )
         op_selection = set(op_selection) if op_selection else None
         return ReconstructableJob(
@@ -277,12 +293,11 @@ class ReconstructableJob(
             job_name=self.job_name,
             op_selection=op_selection,
             asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
         )
 
     def describe(self) -> str:
-        return '"{name}" in repository ({repo})'.format(
-            repo=self.repository.pointer.describe, name=self.job_name
-        )
+        return f'"{self.job_name}" in repository ({self.repository.pointer.describe})'
 
     @staticmethod
     def for_file(python_file: str, fn_name: str) -> "ReconstructableJob":
@@ -302,9 +317,7 @@ class ReconstructableJob(
         inst = unpack_value(val)
         check.invariant(
             isinstance(inst, ReconstructableJob),
-            "Deserialized object is not instance of ReconstructableJob, got {type}".format(
-                type=type(inst)
-            ),
+            f"Deserialized object is not instance of ReconstructableJob, got {type(inst)}",
         )
         return inst  # type: ignore  # (illegible runtime check)
 
@@ -399,7 +412,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
             )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "
-            "by a decorated function, got {type}.".format(type=type(target)),
+            f"by a decorated function, got {type(target)}.",
         )
 
     if seven.is_lambda(target):
@@ -411,12 +424,10 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
 
     if seven.qualname_differs(target):
         raise DagsterInvariantViolationError(
-            'Reconstructable target "{target.__name__}" has a different '
-            '__qualname__ "{target.__qualname__}" indicating it is not '
+            f'Reconstructable target "{target.__name__}" has a different '
+            f'__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_job.".format(
-                target=target
-            )
+            "defined at module scope instead, or use build_reconstructable_job."
         )
 
     try:
@@ -547,7 +558,7 @@ def build_reconstructable_job(
 
 
 def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
-    # So this actually straps the the job for the sole
+    # So this actually straps the job for the sole
     # purpose of getting the job name. If we changed ReconstructableJob
     # to get the job on demand in order to get name, we could avoid this.
     job_def = job_def_from_pointer(pointer)
@@ -580,10 +591,14 @@ def _is_list_of_assets(
 
 
 def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
+        PendingRepositoryDefinition,
+        RepositoryDefinition,
+    )
+    from dagster._utils.test.definitions import LazyDefinitions
 
     if not (
         isinstance(
@@ -594,12 +609,13 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
                 PendingRepositoryDefinition,
                 GraphDefinition,
                 Definitions,
+                LazyDefinitions,
             ),
         )
         or _is_list_of_assets(definition)
     ):
         raise DagsterInvariantViolationError(
-            "Loadable attributes must be either a JobDefinition, GraphDefinition, "
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, "
             f"or RepositoryDefinition. Got {definition!r}."
         )
     return definition
@@ -630,9 +646,13 @@ def def_from_pointer(
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
+        PendingRepositoryDefinition,
+        RepositoryDefinition,
+    )
+    from dagster._utils.test.definitions import LazyDefinitions
 
     if isinstance(
         target,
@@ -641,6 +661,7 @@ def def_from_pointer(
             JobDefinition,
             PendingRepositoryDefinition,
             RepositoryDefinition,
+            LazyDefinitions,
         ),
     ) or not callable(target):
         return _check_is_loadable(target)  # type: ignore
@@ -650,17 +671,15 @@ def def_from_pointer(
 
     if seven.get_arg_names(target):
         raise DagsterInvariantViolationError(
-            "Error invoking function at {target} with no arguments. "
-            "Reconstructable target must be callable with no arguments".format(
-                target=pointer.describe()
-            )
+            f"Error invoking function at {pointer.describe()} with no arguments. "
+            "Reconstructable target must be callable with no arguments"
         )
 
     return _check_is_loadable(target())
 
 
 def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
-    from .job_definition import JobDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
 
     target = def_from_pointer(pointer)
 
@@ -668,44 +687,57 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a JobDefinition (or JobDefinition for legacy"
-        " code). Received a {type}".format(str=pointer.describe(), type=type(target))
+        f"CodePointer ({pointer.describe()}) must resolve to a JobDefinition (or JobDefinition for legacy"
+        f" code). Received a {type(target)}"
     )
 
 
 @overload
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
+    load_type: "DefinitionsLoadType",
     repository_load_data: Optional["RepositoryLoadData"] = None,
-) -> "RepositoryDefinition":
-    ...
+) -> "RepositoryDefinition": ...
 
 
 @overload
 def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
-) -> None:
-    ...
+    target: object,
+    load_type: "DefinitionsLoadType",
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+) -> None: ...
 
 
 def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+    target: object,
+    load_type: "DefinitionsLoadType",
+    repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> Optional["RepositoryDefinition"]:
-    from .assets import AssetsDefinition
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import (
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
-    from .source_asset import SourceAsset
+    from dagster._core.definitions.source_asset import SourceAsset
+    from dagster._utils.test.definitions import LazyDefinitions
+
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+    )
+
+    # LazyDefinitions is a private test utility
+    if isinstance(target, LazyDefinitions):
+        target = target()
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
-        target = target.get_inner_repository_for_loading_process()
+        target = target.get_inner_repository()
 
     # special case - we can wrap a single job in a repository
     if isinstance(target, (JobDefinition, GraphDefinition)):
@@ -734,14 +766,21 @@ def repository_def_from_target_def(
 
 
 def repository_def_from_pointer(
-    pointer: CodePointer, repository_load_data: Optional["RepositoryLoadData"] = None
+    pointer: CodePointer,
+    load_type: "DefinitionsLoadType",
+    repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=load_type, repository_load_data=repository_load_data)
+    )
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, repository_load_data)
+    repo_def = repository_def_from_target_def(target, load_type, repository_load_data)
     if not repo_def:
         raise DagsterInvariantViolationError(
-            "CodePointer ({str}) must resolve to a "
+            f"CodePointer ({pointer.describe()}) must resolve to a "
             "RepositoryDefinition, JobDefinition, or JobDefinition. "
-            "Received a {type}".format(str=pointer.describe(), type=type(target))
+            f"Received a {type(target)}"
         )
     return repo_def

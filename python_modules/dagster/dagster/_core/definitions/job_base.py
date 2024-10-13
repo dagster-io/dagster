@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Iterable, Optional
 
-from typing_extensions import Self
-
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
-    from .job_definition import JobDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
 class IJob(ABC):
@@ -21,11 +21,16 @@ class IJob(ABC):
         pass
 
     @abstractmethod
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
+        pass
+
+    @abstractmethod
     def get_subset(
         self,
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> "IJob":
         pass
 
@@ -37,6 +42,11 @@ class IJob(ABC):
     @property
     @abstractmethod
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
+        pass
+
+    @property
+    @abstractmethod
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
         pass
 
     @property
@@ -54,15 +64,23 @@ class InMemoryJob(IJob):
     def get_definition(self) -> "JobDefinition":
         return self._job_def
 
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
+        return None
+
     def get_subset(
         self,
         *,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
+    ) -> "InMemoryJob":
         op_selection = set(op_selection) if op_selection else None
         return InMemoryJob(
-            self._job_def.get_subset(op_selection=op_selection, asset_selection=asset_selection)
+            self._job_def.get_subset(
+                op_selection=op_selection,
+                asset_selection=asset_selection,
+                asset_check_selection=asset_check_selection,
+            )
         )
 
     @property
@@ -72,3 +90,7 @@ class InMemoryJob(IJob):
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return self._job_def.asset_selection
+
+    @property
+    def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
+        return self._job_def.asset_check_selection

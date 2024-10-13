@@ -73,9 +73,7 @@ def main(
     events_queue = None
     with tempfile.TemporaryDirectory() as tmp, StringIO() as stderr, StringIO() as stdout, redirect_stderr(
         stderr
-    ), redirect_stdout(
-        stdout
-    ):
+    ), redirect_stdout(stdout):
         step_run_dir = os.path.dirname(step_run_ref_filepath)
         stdout_filepath = os.path.join(step_run_dir, "stdout")
         stderr_filepath = os.path.join(step_run_dir, "stderr")

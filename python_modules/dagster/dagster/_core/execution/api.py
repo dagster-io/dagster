@@ -1,12 +1,11 @@
 import sys
 from contextlib import contextmanager
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -23,8 +22,16 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.context_creation_job import (
+    ExecutionContextManager,
+    PlanExecutionContextManager,
+    PlanOrchestrationContextManager,
+    orchestration_context_event_generator,
+    scoped_job_context,
+)
+from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -37,18 +44,6 @@ from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
-
-from .context_creation_job import (
-    ExecutionContextManager,
-    PlanExecutionContextManager,
-    PlanOrchestrationContextManager,
-    orchestration_context_event_generator,
-    scoped_job_context,
-)
-from .job_execution_result import JobExecutionResult
-
-if TYPE_CHECKING:
-    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 ## Brief guide to the execution APIs
 # | function name               | operates over      | sync  | supports    | creates new DagsterRun  |
@@ -119,7 +114,12 @@ def execute_run_iterator(
                         " and is restarted by the cluster. Marking the run as failed.",
                         dagster_run,
                     )
-                    yield instance.report_run_failed(dagster_run)
+                    yield instance.report_run_failed(
+                        dagster_run,
+                        job_failure_data=JobFailureData(
+                            error=None, failure_reason=RunFailureReason.RUN_WORKER_RESTART
+                        ),
+                    )
 
                 return gen_fail_restarted_run_worker()
 
@@ -128,14 +128,16 @@ def execute_run_iterator(
             dagster_run.status == DagsterRunStatus.STARTED
             or dagster_run.status == DagsterRunStatus.STARTING,
             desc=(
-                "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
-                "resuming from a run worker failure".format(
-                    dagster_run.job_name, dagster_run.run_id, dagster_run.status
-                )
+                f"Run of {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected STARTED or STARTING because it's "
+                "resuming from a run worker failure"
             ),
         )
 
-    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
+    if (
+        dagster_run.resolved_op_selection
+        or dagster_run.asset_selection
+        or dagster_run.asset_check_selection
+    ):
         # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
@@ -146,6 +148,7 @@ def execute_run_iterator(
                 else None
             ),
             asset_selection=dagster_run.asset_selection,
+            asset_check_selection=dagster_run.asset_check_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
@@ -215,11 +218,13 @@ def execute_run(
     check.invariant(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
-        desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.job_name, dagster_run.run_id, dagster_run.status
-        ),
+        desc=f"Run {dagster_run.job_name} ({dagster_run.run_id}) in state {dagster_run.status}, expected NOT_STARTED or STARTING",
     )
-    if dagster_run.resolved_op_selection or dagster_run.asset_selection:
+    if (
+        dagster_run.resolved_op_selection
+        or dagster_run.asset_selection
+        or dagster_run.asset_check_selection
+    ):
         # when `execute_run` is directly called, the sub job hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
@@ -230,13 +235,12 @@ def execute_run(
                 else None
             ),
             asset_selection=dagster_run.asset_selection,
+            asset_check_selection=dagster_run.asset_check_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
     if isinstance(job, ReconstructableJob):
         job = job.with_repository_load_data(execution_plan.repository_load_data)
-
-    output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
@@ -250,7 +254,7 @@ def execute_run(
             run_config=dagster_run.run_config,
             raise_on_error=raise_on_error,
             executor_defs=None,
-            output_capture=output_capture,
+            output_capture=None,
         ),
     )
     event_list = list(_execute_run_iterable)
@@ -314,19 +318,11 @@ class ReexecutionOptions(NamedTuple):
         Returns:
             ReexecutionOptions: Reexecution options to pass to a python execution.
         """
-        from dagster._core.execution.plan.state import KnownExecutionState
+        return ReexecuteFromFailureOption(parent_run_id=run_id)
 
-        parent_run = check.not_none(instance.get_run_by_id(run_id))
-        check.invariant(
-            parent_run.status == DagsterRunStatus.FAILURE,
-            "Cannot reexecute from failure a run that is not failed",
-        )
-        # Tried to thread through KnownExecutionState to execution plan creation, but little benefit.
-        # It is recalculated later by the re-execution machinery.
-        step_keys_to_execute, _ = KnownExecutionState.build_resume_retry_reexecution(
-            instance, parent_run=cast(DagsterRun, instance.get_run_by_id(run_id))
-        )
-        return ReexecutionOptions(parent_run_id=run_id, step_selection=step_keys_to_execute)
+
+class ReexecuteFromFailureOption(ReexecutionOptions):
+    """Marker subclass used to calculate reexecution information later."""
 
 
 def execute_job(
@@ -449,9 +445,8 @@ def execute_job(
             run_config = run.run_config
         return _reexecute_job(
             job_arg=job_def,
-            parent_run_id=reexecution_options.parent_run_id,
             run_config=run_config,
-            step_selection=list(reexecution_options.step_selection),
+            reexecution_options=reexecution_options,
             tags=tags,
             instance=instance,
             raise_on_error=raise_on_error,
@@ -520,18 +515,13 @@ def _logged_execute_job(
 
 def _reexecute_job(
     job_arg: Union[IJob, JobDefinition],
-    parent_run_id: str,
-    run_config: Optional[Mapping[str, object]] = None,
-    step_selection: Optional[Sequence[str]] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    instance: Optional[DagsterInstance] = None,
-    raise_on_error: bool = True,
+    run_config: Optional[Mapping[str, object]],
+    reexecution_options: ReexecutionOptions,
+    tags: Optional[Mapping[str, str]],
+    instance: DagsterInstance,
+    raise_on_error: bool,
 ) -> JobExecutionResult:
     """Reexecute an existing job run."""
-    check.opt_sequence_param(step_selection, "step_selection", of_type=str)
-
-    check.str_param(parent_run_id, "parent_run_id")
-
     with ephemeral_instance_if_missing(instance) as execute_instance:
         job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
 
@@ -541,24 +531,35 @@ def _reexecute_job(
             tags=tags,
         )
 
-        parent_dagster_run = execute_instance.get_run_by_id(parent_run_id)
+        parent_dagster_run = execute_instance.get_run_by_id(reexecution_options.parent_run_id)
         if parent_dagster_run is None:
             check.failed(
-                "No parent run with id {parent_run_id} found in instance.".format(
-                    parent_run_id=parent_run_id
-                ),
+                f"No parent run with id {reexecution_options.parent_run_id} found in instance.",
             )
 
         execution_plan: Optional[ExecutionPlan] = None
         # resolve step selection DSL queries using parent execution information
-        if step_selection:
+        if isinstance(reexecution_options, ReexecuteFromFailureOption):
+            step_keys, known_state = KnownExecutionState.build_resume_retry_reexecution(
+                instance=instance,
+                parent_run=parent_dagster_run,
+            )
+            execution_plan = create_execution_plan(
+                job_arg,
+                run_config,
+                step_keys_to_execute=step_keys,
+                known_state=known_state,
+                tags=parent_dagster_run.tags,
+            )
+        elif reexecution_options.step_selection:
             execution_plan = _resolve_reexecute_step_selection(
                 execute_instance,
                 job_arg,
                 run_config,
                 cast(DagsterRun, parent_dagster_run),
-                step_selection,
+                reexecution_options.step_selection,
             )
+        # else all steps will be executed and parent state is not needed
 
         if parent_dagster_run.asset_selection:
             job_arg = job_arg.get_subset(
@@ -587,7 +588,6 @@ def _reexecute_job(
             execute_instance,
             raise_on_error=raise_on_error,
         )
-    check.failed("Should not reach here.")
 
 
 def execute_plan_iterator(
@@ -665,23 +665,12 @@ def _get_execution_plan_from_run(
         else None
     )
 
-    # Rebuild from snapshot if able and selection has not changed
-    if (
-        execution_plan_snapshot is not None
-        and execution_plan_snapshot.can_reconstruct_plan
-        and job.resolved_op_selection == dagster_run.resolved_op_selection
-        and job.asset_selection == dagster_run.asset_selection
-    ):
-        return ExecutionPlan.rebuild_from_snapshot(
-            dagster_run.job_name,
-            execution_plan_snapshot,
-        )
-
     return create_execution_plan(
         job,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
+        tags=dagster_run.tags,
         repository_load_data=(
             execution_plan_snapshot.repository_load_data if execution_plan_snapshot else None
         ),
@@ -751,14 +740,16 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
-    failed_steps = []
+    failed_steps: List[
+        DagsterEvent
+    ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
     try:
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
             elif event.is_resource_init_failure and event.step_key:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
 
             # Telemetry
             log_dagster_event(event, job_context)
@@ -811,19 +802,41 @@ def job_execution_iterator(
                     job_context,
                     "Execution was interrupted unexpectedly. "
                     "No user initiated termination request was found, treating as failure.",
-                    job_canceled_info,
+                    failure_reason=RunFailureReason.UNEXPECTED_TERMINATION,
+                    error_info=job_canceled_info,
                 )
         elif job_exception_info:
-            event = DagsterEvent.job_failure(
-                job_context,
-                "An exception was thrown during execution.",
-                job_exception_info,
-            )
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
+                event = DagsterEvent.job_canceled(
+                    job_context,
+                    error_info=job_exception_info,
+                    message="Run failed after it was requested to be terminated.",
+                )
+            else:
+                event = DagsterEvent.job_failure(
+                    job_context,
+                    "An exception was thrown during execution.",
+                    failure_reason=RunFailureReason.RUN_EXCEPTION,
+                    error_info=job_exception_info,
+                )
         elif failed_steps:
-            event = DagsterEvent.job_failure(
-                job_context,
-                f"Steps failed: {failed_steps}.",
-            )
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
+            failed_step_keys = [event.step_key for event in failed_steps]
+
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
+                event = DagsterEvent.job_canceled(
+                    job_context,
+                    error_info=None,
+                    message=f"Run was canceled. Failed steps: {failed_step_keys}.",
+                )
+            else:
+                event = DagsterEvent.job_failure(
+                    job_context,
+                    f"Steps failed: {failed_step_keys}.",
+                    failure_reason=RunFailureReason.STEP_FAILURE,
+                    first_step_failure_event=failed_steps[0],
+                )
         else:
             event = DagsterEvent.job_success(job_context)
         if not generator_closed:
@@ -900,7 +913,7 @@ def _check_execute_job_args(
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(op_selection, "op_selection", of_type=str)
 
-    tags = merge_dicts(job_def.tags, tags)
+    tags = merge_dicts(job_def.run_tags, tags)
 
     # generate job subset from the given op_selection
     if op_selection:
@@ -933,14 +946,13 @@ def _resolve_reexecute_step_selection(
         known_state=state,
     )
     step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
-    execution_plan = create_execution_plan(
+    return create_execution_plan(
         job,
         run_config,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=state.update_for_step_selection(step_keys_to_execute),
         tags=parent_dagster_run.tags,
     )
-    return execution_plan
 
 
 def _job_with_repository_load_data(

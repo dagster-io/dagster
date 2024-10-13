@@ -11,7 +11,7 @@ from dagster._core.execution.context_creation_job import create_context_free_log
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
-from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import (
     create_run_for_test,
@@ -21,7 +21,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._utils.hosted_user_process import external_job_from_recon_job
+from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
@@ -65,15 +65,7 @@ THIRD_RESOURCES_TAGS = {
     resource_defs={"io_manager": fs_io_manager},
 )
 def bar_with_resources():
-    expected_resources = RESOURCE_TAGS
-    user_defined_k8s_config_with_resources = UserDefinedDagsterK8sConfig(
-        container_config={"resources": expected_resources},
-    )
-    user_defined_k8s_config_with_resources_json = json.dumps(
-        user_defined_k8s_config_with_resources.to_dict()
-    )
-
-    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_resources_json})
+    @op(tags={"dagster-k8s/config": {"container_config": {"resources": RESOURCE_TAGS}}})
     def foo():
         return 1
 
@@ -111,15 +103,7 @@ def bar_with_tags_in_job_and_op():
     resource_defs={"io_manager": fs_io_manager},
 )
 def bar_with_images():
-    # Construct Dagster op tags with user defined k8s config.
-    user_defined_k8s_config_with_image = UserDefinedDagsterK8sConfig(
-        container_config={"image": "new-image"},
-    )
-    user_defined_k8s_config_with_image_json = json.dumps(
-        user_defined_k8s_config_with_image.to_dict()
-    )
-
-    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_image_json})
+    @op(tags={"dagster-k8s/config": {"container_config": {"image": "new-image"}}})
     def foo():
         return 1
 
@@ -135,7 +119,7 @@ def bar_repo():
 def python_origin_with_container_context():
     container_context_config = {
         "k8s": {
-            "env_vars": ["BAZ_TEST"],
+            "env_vars": ["BAZ_TEST=baz_val"],
             "resources": {
                 "requests": {"cpu": "256m", "memory": "128Mi"},
                 "limits": {"cpu": "1000m", "memory": "2000Mi"},
@@ -241,7 +225,10 @@ def _step_handler_context(job_def, dagster_run, instance, executor):
     )
 
     execute_step_args = ExecuteStepArgs(
-        reconstructable(bar).get_python_origin(), dagster_run.run_id, ["foo"]
+        reconstructable(bar).get_python_origin(),
+        dagster_run.run_id,
+        ["foo"],
+        print_serialized_events=False,
     )
 
     return StepHandlerContext(
@@ -263,7 +250,7 @@ def test_executor_init_override_in_cluster_config(
         k8s_run_launcher_instance,
         reconstructable(bar),
         {
-            "env_vars": ["FOO_TEST"],
+            "env_vars": ["FOO_TEST=foo_val"],
             "scheduler_name": "my-scheduler",
             "load_incluster_config": True,
             "kubeconfig_file": None,
@@ -284,7 +271,7 @@ def test_executor_init_override_kubeconfig_file(
         k8s_run_launcher_instance,
         reconstructable(bar),
         {
-            "env_vars": ["FOO_TEST"],
+            "env_vars": ["FOO_TEST=foo_val"],
             "scheduler_name": "my-scheduler",
             "kubeconfig_file": "fake_file",
         },
@@ -308,7 +295,7 @@ def test_executor_init(
         k8s_run_launcher_instance,
         reconstructable(bar),
         {
-            "env_vars": ["FOO_TEST"],
+            "env_vars": ["FOO_TEST=foo"],
             "resources": resources,
             "scheduler_name": "my-scheduler",
         },
@@ -332,27 +319,24 @@ def test_executor_init(
 
     # env vars from both launcher and the executor
 
-    assert sorted(
-        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
-            step_handler_context
-        ).env_vars
-    ) == sorted(
-        [
-            "FOO_TEST",
-            "BAR_TEST",
-        ]
-    )
-
-    assert sorted(
-        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
-            step_handler_context
-        ).resources
-    ) == sorted(resources)
+    assert executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+        step_handler_context
+    ).run_k8s_config.container_config["env"] == [
+        {"name": "BAR_TEST", "value": "bar"},
+        {"name": "FOO_TEST", "value": "foo"},
+    ]
 
     assert (
         executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
             step_handler_context
-        ).scheduler_name
+        ).run_k8s_config.container_config["resources"]
+        == resources
+    )
+
+    assert (
+        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+            step_handler_context
+        ).run_k8s_config.pod_spec_config["scheduler_name"]
         == "my-scheduler"
     )
 
@@ -363,7 +347,7 @@ def test_executor_init_container_context(
     executor = _get_executor(
         k8s_run_launcher_instance,
         reconstructable(bar),
-        {"env_vars": ["FOO_TEST"], "max_concurrent": 4},
+        {"env_vars": ["FOO_TEST=foo"], "max_concurrent": 4},
     )
 
     run = create_run_for_test(
@@ -381,30 +365,27 @@ def test_executor_init_container_context(
 
     # env vars from both launcher and the executor
 
-    assert sorted(
-        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
-            step_handler_context
-        ).env_vars
-    ) == sorted(
-        [
-            "BAR_TEST",
-            "FOO_TEST",
-            "BAZ_TEST",
-        ]
-    )
+    assert executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+        step_handler_context
+    ).run_k8s_config.container_config["env"] == [
+        {"name": "BAR_TEST", "value": "bar"},
+        {"name": "BAZ_TEST", "value": "baz_val"},
+        {"name": "FOO_TEST", "value": "foo"},
+    ]
     assert executor._max_concurrent == 4  # noqa: SLF001
-    assert sorted(
+    assert (
         executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
             step_handler_context
-        ).resources
-    ) == sorted(
-        python_origin_with_container_context.repository_origin.container_context["k8s"]["resources"]
+        ).run_k8s_config.container_config["resources"]
+        == python_origin_with_container_context.repository_origin.container_context["k8s"][
+            "resources"
+        ]
     )
 
     assert (
         executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
             step_handler_context
-        ).scheduler_name
+        ).run_k8s_config.pod_spec_config["scheduler_name"]
         == "my-other-scheduler"
     )
 
@@ -450,11 +431,11 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_code_location(workspace.code_location_names[0])
-            repo_handle = RepositoryHandle(
+            repo_handle = RepositoryHandle.from_location(
                 repository_name="bar_repo",
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -462,7 +443,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
             run = create_run_for_test(
                 k8s_instance,
                 job_name="bar",
-                external_job_origin=fake_external_job.get_external_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
             list(
@@ -485,6 +466,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     method_name, _args, kwargs = mock_method_calls[0]
     assert method_name == "create_namespaced_job"
     assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
+    assert kwargs["body"].spec.template.spec.automount_service_account_token
 
     # appropriate labels applied
     labels = kwargs["body"].spec.template.metadata.labels
@@ -495,22 +477,22 @@ def test_step_handler(kubeconfig_file, k8s_instance):
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
     mock_k8s_client_batch_api = mock.MagicMock()
-    handler = K8sStepHandler(
-        image="bizbuz",
-        container_context=K8sContainerContext(
-            namespace="foo",
-            env_vars=["FOO_TEST"],
-            resources={
-                "requests": {"cpu": "128m", "memory": "64Mi"},
-                "limits": {"cpu": "500m", "memory": "1000Mi"},
-            },
-        ),
-        load_incluster_config=False,
-        kubeconfig_file=kubeconfig_file,
-        k8s_client_batch_api=mock_k8s_client_batch_api,
-    )
-
     with environ({"FOO_TEST": "bar"}):
+        handler = K8sStepHandler(
+            image="bizbuz",
+            container_context=K8sContainerContext(
+                namespace="foo",
+                env_vars=["FOO_TEST"],
+                resources={
+                    "requests": {"cpu": "128m", "memory": "64Mi"},
+                    "limits": {"cpu": "500m", "memory": "1000Mi"},
+                },
+            ),
+            load_incluster_config=False,
+            kubeconfig_file=kubeconfig_file,
+            k8s_client_batch_api=mock_k8s_client_batch_api,
+        )
+
         run = create_run_for_test(
             k8s_instance,
             job_name="bar",
@@ -586,19 +568,19 @@ def test_step_handler_image_override(kubeconfig_file, k8s_instance):
 def test_step_handler_with_container_context(
     kubeconfig_file, k8s_instance, python_origin_with_container_context
 ):
-    mock_k8s_client_batch_api = mock.MagicMock()
-    handler = K8sStepHandler(
-        image="bizbuz",
-        container_context=K8sContainerContext(
-            namespace="foo",
-            env_vars=["FOO_TEST"],
-        ),
-        load_incluster_config=False,
-        kubeconfig_file=kubeconfig_file,
-        k8s_client_batch_api=mock_k8s_client_batch_api,
-    )
+    with environ({"FOO_TEST": "bar"}):
+        mock_k8s_client_batch_api = mock.MagicMock()
+        handler = K8sStepHandler(
+            image="bizbuz",
+            container_context=K8sContainerContext(
+                namespace="foo",
+                env_vars=["FOO_TEST"],
+            ),
+            load_incluster_config=False,
+            kubeconfig_file=kubeconfig_file,
+            k8s_client_batch_api=mock_k8s_client_batch_api,
+        )
 
-    with environ({"FOO_TEST": "bar", "BAZ_TEST": "blergh"}):
         # Additional env vars come from container context on the run
         run = create_run_for_test(
             k8s_instance,
@@ -629,7 +611,7 @@ def test_step_handler_with_container_context(
         envs = {env.name: env.value for env in kwargs["body"].spec.template.spec.containers[0].env}
 
         assert envs["FOO_TEST"] == "bar"
-        assert envs["BAZ_TEST"] == "blergh"
+        assert envs["BAZ_TEST"] == "baz_val"
 
 
 def test_step_raw_k8s_config_inheritance(
@@ -681,7 +663,7 @@ def test_step_raw_k8s_config_inheritance(
         step_handler_context
     )
 
-    raw_k8s_config = container_context.get_run_user_defined_k8s_config()
+    raw_k8s_config = container_context.run_k8s_config
 
     assert raw_k8s_config.container_config["resources"] == OTHER_RESOURCE_TAGS
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"

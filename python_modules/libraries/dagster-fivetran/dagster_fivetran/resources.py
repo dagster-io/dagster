@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import os
 import time
 from typing import Any, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urljoin
@@ -18,7 +19,7 @@ from dagster import (
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
-from dateutil import parser
+from dagster._vendored.dateutil import parser
 from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
@@ -112,6 +113,7 @@ class FivetranResource(ConfigurableResource):
                     headers=headers,
                     auth=self._auth,
                     data=data,
+                    timeout=int(os.getenv("DAGSTER_FIVETRAN_CONNECTOR_REQUEST_TIMEOUT", "60")),
                 )
                 response.raise_for_status()
                 resp_dict = response.json()
@@ -269,8 +271,7 @@ class FivetranResource(ConfigurableResource):
         connector_details = self.get_connector_details(connector_id)
         self._log.info(
             f"Sync initialized for connector_id={connector_id}. View this resync in the Fivetran"
-            " UI: "
-            + get_fivetran_connector_url(connector_details)
+            " UI: " + get_fivetran_connector_url(connector_details)
         )
         return connector_details
 
@@ -396,6 +397,10 @@ class FivetranResource(ConfigurableResource):
             poll_timeout=poll_timeout,
         )
         return FivetranOutput(connector_details=final_details, schema_config=schema_config)
+
+    def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
+        """Fetches details about a given destination from the Fivetran API."""
+        return self.make_request("GET", f"destinations/{destination_id}")
 
 
 @dagster_maintained_resource

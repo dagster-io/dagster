@@ -6,15 +6,13 @@ from dagster import AutoMaterializePolicy, asset
 
 
 @asset
-def my_data():
-    ...
+def my_data(): ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.eager(),
 )
-def my_ml_model(my_data):
-    ...
+def my_ml_model(my_data): ...
 
 
 ## eager_materilization_end
@@ -25,16 +23,14 @@ from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
 
 
 @asset
-def my_other_data():
-    ...
+def my_other_data(): ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
 )
-def my_other_ml_model(my_other_data):
-    ...
+def my_other_ml_model(my_other_data): ...
 
 
 ## lazy_materlization_end
@@ -45,21 +41,18 @@ from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
 
 
 @asset
-def some_data():
-    ...
+def some_data(): ...
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.lazy())
-def some_ml_model(some_data):
-    ...
+def some_ml_model(some_data): ...
 
 
 @asset(
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=7 * 24 * 60),
 )
-def predictions(some_ml_model):
-    ...
+def predictions(some_ml_model): ...
 
 
 ## without_policy_end
@@ -77,13 +70,13 @@ basic_schedule = ScheduleDefinition(job=ml_asset_job, cron_schedule="0 9 * * *")
 ## conditional_monitoring_start
 
 from sklearn import linear_model
-from dagster import asset, Output, AssetKey
+from dagster import asset, Output, AssetKey, AssetExecutionContext
 import numpy as np
 from sklearn.model_selection import train_test_split
 
 
 @asset(output_required=False)
-def conditional_machine_learning_model(context):
+def conditional_machine_learning_model(context: AssetExecutionContext):
     X, y = np.random.randint(5000, size=(5000, 2)), range(5000)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.33, random_state=42
@@ -97,15 +90,23 @@ def conditional_machine_learning_model(context):
         AssetKey(["conditional_machine_learning_model"])
     )
     if materialization is None:
-        yield Output(reg, metadata={"model_accuracy": reg.score(X_test, y_test)})
+        yield Output(reg, metadata={"model_accuracy": float(reg.score(X_test, y_test))})
 
     else:
-        previous_model_accuracy = materialization.asset_materialization.metadata[
-            "model_accuracy"
-        ]
+        previous_model_accuracy = None
+        if materialization.asset_materialization and isinstance(
+            materialization.asset_materialization.metadata["model_accuracy"].value,
+            float,
+        ):
+            previous_model_accuracy = float(
+                materialization.asset_materialization.metadata["model_accuracy"].value
+            )
         new_model_accuracy = reg.score(X_test, y_test)
-        if new_model_accuracy > previous_model_accuracy:
-            yield Output(reg, metadata={"model_accuracy": new_model_accuracy})
+        if (
+            previous_model_accuracy is None
+            or new_model_accuracy > previous_model_accuracy
+        ):
+            yield Output(reg, metadata={"model_accuracy": float(new_model_accuracy)})
 
 
 ## conditional_monitoring_end

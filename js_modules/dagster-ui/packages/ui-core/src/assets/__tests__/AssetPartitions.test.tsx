@@ -1,17 +1,18 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {getByTestId, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {useState} from 'react';
+import {MemoryRouter} from 'react-router-dom';
 
+import {Route} from '../../app/Route';
 import {AssetKeyInput} from '../../graphql/types';
 import {AssetPartitionListProps} from '../AssetPartitionList';
 import {AssetPartitionStatus} from '../AssetPartitionStatus';
 import {AssetPartitions} from '../AssetPartitions';
 import {
+  MultiDimensionTimeFirstPartitionHealthQuery,
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-  MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.fixtures';
 import {AssetViewParams} from '../types';
 
@@ -35,11 +36,14 @@ jest.mock('../AssetPartitionList', () => ({
   ),
 }));
 
-const SingleDimensionAssetPartitions: React.FC<{
+const SingleDimensionAssetPartitions = ({
+  assetKey,
+  mocks,
+}: {
   assetKey: AssetKeyInput;
   mocks?: MockedResponse[];
-}> = ({assetKey, mocks}) => {
-  const [params, setParams] = React.useState<AssetViewParams>({});
+}) => {
+  const [params, setParams] = useState<AssetViewParams>({});
   return (
     <MemoryRouter>
       <MockedProvider
@@ -56,6 +60,7 @@ const SingleDimensionAssetPartitions: React.FC<{
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['default']}
           dataRefreshHint={undefined}
+          isLoadingDefinition={false}
         />
       </MockedProvider>
       <Route
@@ -143,7 +148,7 @@ describe('AssetPartitions', () => {
 
   it('should support reverse sorting individual dimensions', async () => {
     const Component = () => {
-      const [params, setParams] = React.useState<AssetViewParams>({});
+      const [params, setParams] = useState<AssetViewParams>({});
       return (
         <MemoryRouter>
           <MockedProvider mocks={[MultiDimensionTimeFirstPartitionHealthQuery]}>
@@ -154,6 +159,7 @@ describe('AssetPartitions', () => {
               paramsTimeWindowOnly={false}
               assetPartitionDimensions={['date', 'zstate']}
               dataRefreshHint={undefined}
+              isLoadingDefinition={false}
             />
           </MockedProvider>
         </MemoryRouter>

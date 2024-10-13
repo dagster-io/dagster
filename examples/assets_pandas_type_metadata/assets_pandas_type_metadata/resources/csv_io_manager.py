@@ -3,13 +3,13 @@ import textwrap
 from typing import Optional
 
 import pandas as pd
-from dagster import AssetKey, ConfigurableIOManager, MemoizableIOManager, TableSchemaMetadataValue
+from dagster import AssetKey, ConfigurableIOManager, TableSchemaMetadataValue
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 
-class LocalCsvIOManager(ConfigurableIOManager, MemoizableIOManager):
+class LocalCsvIOManager(ConfigurableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
     base_dir: Optional[str] = Field(default=None)
@@ -77,7 +77,9 @@ class LocalCsvIOManager(ConfigurableIOManager, MemoizableIOManager):
 
 
 def pandas_columns_to_markdown(dataframe: pd.DataFrame) -> str:
-    return textwrap.dedent("""
+    return textwrap.dedent(
+        """
         | Name | Type |
         | ---- | ---- |
-    """) + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.items()])
+    """
+    ) + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.items()])

@@ -4,25 +4,19 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
 from typing_extensions import Self
 
 import dagster._seven as seven
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterLaunchFailedError,
     DagsterUserCodeProcessError,
 )
+from dagster._core.launcher.base import LaunchRunContext, RunLauncher
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster._serdes import (
-    ConfigurableClass,
-    deserialize_value,
-)
+from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
-
-from .base import LaunchRunContext, RunLauncher
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -55,7 +49,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return DefaultRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     @staticmethod
     def launch_run_from_grpc_client(
@@ -84,12 +78,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_value(
             grpc_client.start_run(
                 ExecuteExternalJobArgs(
-                    job_origin=run.external_job_origin,  # type: ignore  # (possible none)
+                    job_origin=run.remote_job_origin,  # type: ignore  # (possible none)
                     run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             ),
-            StartRunResult,  # type: ignore
+            StartRunResult,
         )
         if not res.success:
             raise (
@@ -100,9 +94,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         # defer for perf
-        from dagster._core.host_representation.code_location import (
-            GrpcServerCodeLocation,
-        )
+        from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 
         run = context.dagster_run
 
@@ -113,9 +105,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
             )
 
-        external_job_origin = check.not_none(run.external_job_origin)
+        remote_job_origin = check.not_none(run.remote_job_origin)
         code_location = context.workspace.get_code_location(
-            external_job_origin.external_repository_origin.code_location_origin.location_name
+            remote_job_origin.repository_origin.code_location_origin.location_name
         )
 
         check.inst(
@@ -164,7 +156,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             return False
 
         run = self._instance.get_run_by_id(run_id)
-        if not run:
+        if not run or run.is_finished:
             return False
 
         self._instance.report_run_canceling(run)
@@ -210,11 +202,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 return
 
             if total_time >= timeout:
-                raise Exception(
-                    "Timed out waiting for these runs to finish: {active_run_ids}".format(
-                        active_run_ids=repr(active_run_ids)
-                    )
-                )
+                raise Exception(f"Timed out waiting for these runs to finish: {active_run_ids!r}")
 
             total_time += interval
             time.sleep(interval)

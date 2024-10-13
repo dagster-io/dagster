@@ -15,23 +15,28 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.repository_definition.caching_index import CacheingDefinitionIndex
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    RepositoryListDefinition,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from .caching_index import CacheingDefinitionIndex
-from .valid_definitions import RepositoryListDefinition
-
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
-
+    from dagster._core.definitions.asset_checks import AssetChecksDefinition
+    from dagster._core.definitions.partitioned_schedule import (
+        UnresolvedPartitionedAssetScheduleDefinition,
+    )
 
 T = TypeVar("T")
 Resolvable = Callable[[], T]
@@ -43,10 +48,6 @@ class RepositoryData(ABC):
     subclass :py:class:`RepositoryData` for fine-grained control over access to and lazy creation
     of repository members.
     """
-
-    @abstractmethod
-    def get_resource_key_mapping(self) -> Mapping[int, str]:
-        pass
 
     @abstractmethod
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
@@ -192,6 +193,11 @@ class RepositoryData(ABC):
         """Mapping[AssetKey, AssetsDefinition]: Get the asset definitions for the repository."""
         return {}
 
+    @public
+    def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
+        """Mapping[AssetCheckKey, AssetChecksDefinition]: Get the asset checks definitions for the repository."""
+        return {}
+
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
         self.get_all_jobs()
@@ -213,9 +219,12 @@ class CachingRepositoryData(RepositoryData):
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
+        asset_checks_defs_by_key: Mapping[AssetCheckKey, "AssetsDefinition"],
         top_level_resources: Mapping[str, ResourceDefinition],
         utilized_env_vars: Mapping[str, AbstractSet[str]],
-        resource_key_mapping: Mapping[int, str],
+        unresolved_partitioned_asset_schedules: Mapping[
+            str, "UnresolvedPartitionedAssetScheduleDefinition"
+        ],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -238,6 +247,8 @@ class CachingRepositoryData(RepositoryData):
             source_assets_by_key (Mapping[AssetKey, SourceAsset]): The source assets belonging to a repository.
             assets_defs_by_key (Mapping[AssetKey, AssetsDefinition]): The assets definitions
                 belonging to a repository.
+            asset_checks_defs_by_key (Mapping[AssetKey, AssetChecksDefinition]): The asset checks definitions
+                belonging to a repository.
             top_level_resources (Mapping[str, ResourceDefinition]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
         """
@@ -257,15 +268,18 @@ class CachingRepositoryData(RepositoryData):
             assets_defs_by_key, "assets_defs_by_key", key_type=AssetKey, value_type=AssetsDefinition
         )
         check.mapping_param(
+            asset_checks_defs_by_key,
+            "assets_checks_defs_by_key",
+            key_type=AssetCheckKey,
+            value_type=AssetsDefinition,
+        )
+        check.mapping_param(
             top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
         )
         check.mapping_param(
             utilized_env_vars,
             "utilized_resources",
             key_type=str,
-        )
-        check.mapping_param(
-            resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
 
         self._jobs = CacheingDefinitionIndex(
@@ -275,6 +289,16 @@ class CachingRepositoryData(RepositoryData):
             jobs,
             self._validate_job,
         )
+
+        schedules = {
+            **schedules,
+            **{
+                name: self._resolve_partitioned_asset_schedule_lambda(
+                    unresolved_partitioned_asset_schedule
+                )
+                for name, unresolved_partitioned_asset_schedule in unresolved_partitioned_asset_schedules.items()
+            },
+        }
 
         self._schedules = CacheingDefinitionIndex(
             ScheduleDefinition,
@@ -288,9 +312,9 @@ class CachingRepositoryData(RepositoryData):
 
         self._source_assets_by_key = source_assets_by_key
         self._assets_defs_by_key = assets_defs_by_key
+        self._assets_checks_defs_by_key = asset_checks_defs_by_key
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
-        self._resource_key_mapping = resource_key_mapping
 
         self._sensors = CacheingDefinitionIndex(
             SensorDefinition,
@@ -303,6 +327,15 @@ class CachingRepositoryData(RepositoryData):
         self._sensors.get_all_definitions()
 
         self._all_jobs = None
+
+    def _resolve_partitioned_asset_schedule_lambda(
+        self, unresolved_partitioned_asset_schedule: "UnresolvedPartitionedAssetScheduleDefinition"
+    ) -> Callable[[], ScheduleDefinition]:
+        def resolve_partitioned_asset_schedule() -> ScheduleDefinition:
+            job = self.get_job(unresolved_partitioned_asset_schedule.job.name)
+            return unresolved_partitioned_asset_schedule.resolve(job)
+
+        return resolve_partitioned_asset_schedule
 
     @staticmethod
     def from_dict(repository_definitions: Dict[str, Dict[str, Any]]) -> "CachingRepositoryData":
@@ -320,7 +353,9 @@ class CachingRepositoryData(RepositoryData):
             which can be helpful for performance when there are many definitions in a repository, or
             when constructing the definitions is costly.
         """
-        from .repository_data_builder import build_caching_repository_data_from_dict
+        from dagster._core.definitions.repository_definition.repository_data_builder import (
+            build_caching_repository_data_from_dict,
+        )
 
         return build_caching_repository_data_from_dict(repository_definitions)
 
@@ -331,7 +366,6 @@ class CachingRepositoryData(RepositoryData):
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-        resource_key_mapping: Optional[Mapping[int, str]] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -341,21 +375,19 @@ class CachingRepositoryData(RepositoryData):
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
         """
-        from .repository_data_builder import build_caching_repository_data_from_list
+        from dagster._core.definitions.repository_definition.repository_data_builder import (
+            build_caching_repository_data_from_list,
+        )
 
         return build_caching_repository_data_from_list(
             repository_definitions=repository_definitions,
             default_executor_def=default_executor_def,
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
-            resource_key_mapping=resource_key_mapping,
         )
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._utilized_env_vars
-
-    def get_resource_key_mapping(self) -> Mapping[int, str]:
-        return self._resource_key_mapping
 
     def get_job_names(self) -> Sequence[str]:
         """Get the names of all jobs in the repository.
@@ -466,6 +498,20 @@ class CachingRepositoryData(RepositoryData):
 
     def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
+
+    def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
+        from dagster._core.definitions.asset_checks import AssetChecksDefinition
+
+        return {
+            key: (
+                ad
+                if isinstance(ad, AssetChecksDefinition)
+                # some of the items may be AssetsDefinition objects, but AssetChecksDefinition are
+                # expected, so convert if necessary
+                else AssetChecksDefinition(**ad.get_attributes_dict())
+            )
+            for key, ad in self._assets_checks_defs_by_key.items()
+        }
 
     def _check_node_defs(self, job_defs: Sequence[JobDefinition]) -> None:
         node_defs = {}

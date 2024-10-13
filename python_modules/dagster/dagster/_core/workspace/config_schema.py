@@ -16,7 +16,7 @@ from dagster._utils.merger import merge_dicts
 
 
 def process_workspace_config(
-    workspace_config: Mapping[str, object]
+    workspace_config: Mapping[str, object],
 ) -> EvaluateValueResult[Mapping[str, object]]:
     workspace_config = check.mapping_param(workspace_config, "workspace_config")
 
@@ -32,9 +32,7 @@ def ensure_workspace_config(
     validation_result = process_workspace_config(workspace_config)
     if not validation_result.success:
         raise DagsterInvalidConfigError(
-            "Errors while loading workspace config from {yaml_path}.".format(
-                yaml_path=os.path.abspath(yaml_path)
-            ),
+            f"Errors while loading workspace config from {os.path.abspath(yaml_path)}.",
             validation_result.errors,
             workspace_config,
         )

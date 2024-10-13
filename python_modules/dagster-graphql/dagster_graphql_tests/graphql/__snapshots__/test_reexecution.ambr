@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: TestReexecution.test_full_pipeline_reexecution_fs_storage[0]
   dict({
     'launchPipelineExecution': dict({

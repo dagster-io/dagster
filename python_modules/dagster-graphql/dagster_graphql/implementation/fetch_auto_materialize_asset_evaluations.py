@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Sequence
 
+import dagster._check as check
 from dagster import AssetKey
-from dagster._daemon.asset_daemon import get_current_evaluation_id
+from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
-from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
     GrapheneAutoMaterializeAssetEvaluationRecord,
@@ -12,7 +12,35 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
 from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 
 if TYPE_CHECKING:
-    from ..schema.util import ResolveInfo
+    from dagster_graphql.schema.util import ResolveInfo
+
+
+def _get_migration_error(
+    graphene_info: "ResolveInfo",
+) -> Optional[GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError]:
+    if graphene_info.context.instance.schedule_storage is None:
+        return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
+            message="Instance does not have schedule storage configured, cannot fetch evaluations."
+        )
+    if not graphene_info.context.instance.schedule_storage.supports_auto_materialize_asset_evaluations:
+        return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
+            message=(
+                "Auto materialize evaluations are not getting logged. Run `dagster instance"
+                " migrate` to enable."
+            )
+        )
+    return None
+
+
+def _get_graphene_records_from_evaluations(
+    graphene_info: "ResolveInfo", evaluation_records: Sequence[AutoMaterializeAssetEvaluationRecord]
+) -> GrapheneAutoMaterializeAssetEvaluationRecords:
+    return GrapheneAutoMaterializeAssetEvaluationRecords(
+        records=[
+            GrapheneAutoMaterializeAssetEvaluationRecord(evaluation)
+            for evaluation in evaluation_records
+        ]
+    )
 
 
 def fetch_auto_materialize_asset_evaluations(
@@ -22,38 +50,36 @@ def fetch_auto_materialize_asset_evaluations(
     cursor: Optional[str],
 ):
     """Fetch asset policy evaluations from storage."""
-    if graphene_info.context.instance.schedule_storage is None:
-        return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
-            message="Instance does not have schedule storage configured, cannot fetch evaluations."
-        )
-    if (
-        not graphene_info.context.instance.schedule_storage.supports_auto_materialize_asset_evaluations
-    ):
-        return GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError(
-            message=(
-                "Auto materialize evaluations are not getting logged. Run `dagster instance"
-                " migrate` to enable."
-            )
-        )
+    migration_error = _get_migration_error(graphene_info)
+    if migration_error:
+        return migration_error
 
     asset_key = AssetKey.from_graphql_input(graphene_asset_key)
-    asset_node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key)
-    partitions_def = (
-        asset_node.external_asset_node.partitions_def_data.get_partitions_definition()
-        if asset_node and asset_node.external_asset_node.partitions_def_data
-        else None
+
+    schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
+    return _get_graphene_records_from_evaluations(
+        graphene_info,
+        schedule_storage.get_auto_materialize_asset_evaluations(
+            key=asset_key,
+            limit=limit,
+            cursor=int(cursor) if cursor else None,
+        ),
     )
 
-    current_evaluation_id = get_current_evaluation_id(graphene_info.context.instance)
 
-    return GrapheneAutoMaterializeAssetEvaluationRecords(
-        records=[
-            GrapheneAutoMaterializeAssetEvaluationRecord(record, partitions_def=partitions_def)
-            for record in graphene_info.context.instance.schedule_storage.get_auto_materialize_asset_evaluations(
-                asset_key=asset_key,
-                limit=limit,
-                cursor=int(cursor) if cursor else None,
-            )
-        ],
-        currentEvaluationId=current_evaluation_id,
+def fetch_auto_materialize_asset_evaluations_for_evaluation_id(
+    graphene_info: "ResolveInfo",
+    evaluation_id: int,
+):
+    migration_error = _get_migration_error(graphene_info)
+    if migration_error:
+        return migration_error
+
+    schedule_storage = check.not_none(graphene_info.context.instance.schedule_storage)
+
+    return _get_graphene_records_from_evaluations(
+        graphene_info,
+        schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+            evaluation_id=evaluation_id,
+        ),
     )

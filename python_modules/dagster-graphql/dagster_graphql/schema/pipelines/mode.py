@@ -2,9 +2,9 @@ import dagster._check as check
 import graphene
 from dagster._core.snap import ConfigSchemaSnapshot, ModeDefSnap
 
-from ..util import ResolveInfo, non_null_list
-from .logger import GrapheneLogger
-from .resource import GrapheneResource
+from dagster_graphql.schema.pipelines.logger import GrapheneLogger
+from dagster_graphql.schema.pipelines.resource import GrapheneResource
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneMode(graphene.ObjectType):
@@ -26,9 +26,7 @@ class GrapheneMode(graphene.ObjectType):
         self._job_snapshot_id = pipeline_snapshot_id
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return "{pipeline}-{mode}".format(
-            pipeline=self._job_snapshot_id, mode=self._mode_def_snap.name
-        )
+        return f"{self._job_snapshot_id}-{self._mode_def_snap.name}"
 
     def resolve_name(self, _graphene_info: ResolveInfo):
         return self._mode_def_snap.name

@@ -1,18 +1,12 @@
-import {
-  Button,
-  DialogFooter,
-  Dialog,
-  Icon,
-  StyledReadOnlyCodeMirror,
-} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Button, Dialog, DialogFooter, Icon, StyledRawCodeMirror} from '@dagster-io/ui-components';
+import {useEffect, useState} from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
 
-export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
-  const [open, setOpen] = React.useState(false);
+export const SidebarComponent = (props: IPluginSidebarProps) => {
+  const [open, setOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onClose = () => setOpen(true);
     document.addEventListener('show-kind-info', onClose);
     return () => document.removeEventListener('show-kind-info', onClose);
@@ -36,7 +30,10 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
         title={`SQL: ${props.definition.name}`}
         isOpen={open}
       >
-        <StyledReadOnlyCodeMirror options={{lineNumbers: true, mode: 'sql'}} value={sql.value} />
+        <StyledRawCodeMirror
+          options={{readOnly: true, lineNumbers: true, mode: 'sql'}}
+          value={sql.value}
+        />
         <DialogFooter topBorder>
           <Button intent="primary" onClick={() => setOpen(false)}>
             Close

@@ -1,9 +1,10 @@
 import asyncio
+import contextlib
 import logging
 import os
 import sys
 import textwrap
-from typing import Optional
+from typing import AsyncIterator, Optional
 
 import click
 import dagster._check as check
@@ -18,15 +19,13 @@ from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArg
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
-from dagster._core.workspace.context import (
-    IWorkspaceProcessContext,
-)
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
 
-from .app import create_app_from_workspace_process_context
-from .version import __version__
+from dagster_webserver.app import create_app_from_workspace_process_context
+from dagster_webserver.version import __version__
 
 
 def create_dagster_webserver_cli():
@@ -45,7 +44,8 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 
 @click.command(
     name="dagster-webserver",
-    help=textwrap.dedent(f"""
+    help=textwrap.dedent(
+        f"""
         Run dagster-webserver. Loads a code location.
 
         {WORKSPACE_TARGET_WARNING}
@@ -71,7 +71,8 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
         Options can also provide arguments via environment variables prefixed with DAGSTER_WEBSERVER.
 
         For example, DAGSTER_WEBSERVER_PORT=3333 dagster-webserver
-    """),
+    """
+    ),
 )
 @workspace_target_argument
 @click.option(
@@ -132,13 +133,30 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     is_flag=True,
 )
 @click.option(
-    "--log-level",
-    help="Set the log level for the web server.",
+    "--uvicorn-log-level",
+    "--log-level",  # Back-compat
+    help="Set the log level for the uvicorn web server.",
     show_default=True,
     default="warning",
     type=click.Choice(
         ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
     ),
+)
+@click.option(
+    "--dagster-log-level",
+    help="Set the log level for dagster log events.",
+    show_default=True,
+    default="info",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+    envvar="DAGSTER_WEBSERVER_LOG_LEVEL",
+)
+@click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from the webserver",
 )
 @click.option(
     "--code-server-log-level",
@@ -153,6 +171,14 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     required=False,
     hidden=True,
 )
+@click.option(
+    "--live-data-poll-rate",
+    help="Rate at which the dagster UI polls for updated asset data (in milliseconds)",
+    type=click.INT,
+    required=False,
+    default=2000,
+    show_default=True,
+)
 @click.version_option(version=__version__, prog_name="dagster-webserver")
 def dagster_webserver(
     host: str,
@@ -162,19 +188,18 @@ def dagster_webserver(
     db_pool_recycle: int,
     read_only: bool,
     suppress_warnings: bool,
-    log_level: str,
+    uvicorn_log_level: str,
+    dagster_log_level: str,
+    log_format: str,
     code_server_log_level: str,
     instance_ref: Optional[str],
+    live_data_poll_rate: int,
     **kwargs: ClickArgValue,
 ):
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
-    dagster_log_level = log_level.upper()
-    if dagster_log_level == "TRACE":  # uvicorn-specific level
-        dagster_log_level = "DEBUG"
-
-    configure_loggers(log_level=dagster_log_level)
+    configure_loggers(formatter=log_format, log_level=dagster_log_level.upper())
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     if sys.argv[0].endswith("dagit"):
@@ -199,11 +224,17 @@ def dagster_webserver(
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagster_ui_with_workspace_process_context(
-                workspace_process_context, host, port, path_prefix, log_level
+                workspace_process_context,
+                host,
+                port,
+                path_prefix,
+                uvicorn_log_level,
+                live_data_poll_rate,
             )
 
 
-async def _lifespan(app):
+@contextlib.asynccontextmanager
+async def _lifespan(app) -> AsyncIterator:
     # workaround from https://github.com/encode/uvicorn/issues/1160 for termination
     try:
         yield
@@ -221,6 +252,7 @@ def host_dagster_ui_with_workspace_process_context(
     port: Optional[int],
     path_prefix: str,
     log_level: str,
+    live_data_poll_rate: Optional[int] = None,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
@@ -228,11 +260,12 @@ def host_dagster_ui_with_workspace_process_context(
     host = check.opt_str_param(host, "host", "127.0.0.1")
     check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
+    check.opt_int_param(live_data_poll_rate, "live_data_poll_rate")
 
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
     app = create_app_from_workspace_process_context(
-        workspace_process_context, path_prefix, lifespan=_lifespan
+        workspace_process_context, path_prefix, live_data_poll_rate, lifespan=_lifespan
     )
 
     if not port:
@@ -243,9 +276,7 @@ def host_dagster_ui_with_workspace_process_context(
             port = DEFAULT_WEBSERVER_PORT
 
     logger.info(
-        "Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {pid}".format(
-            host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
-        )
+        f"Serving dagster-webserver on http://{host}:{port}{path_prefix} in process {os.getpid()}"
     )
     log_action(workspace_process_context.instance, START_DAGSTER_WEBSERVER)
     with uploading_logging_thread():

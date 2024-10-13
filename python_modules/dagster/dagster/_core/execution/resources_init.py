@@ -29,6 +29,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.plan.inputs import (
     StepInput,
     UnresolvedCollectStepInput,
@@ -44,8 +45,6 @@ from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration, time_execution_scope
-
-from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
@@ -72,11 +71,12 @@ def resource_initialization_manager(
 
 
 def resolve_resource_dependencies(
-    resource_defs: Mapping[str, ResourceDefinition]
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, AbstractSet[str]]:
     """Generates a dictionary that maps resource key to resource keys it requires for initialization."""
     resource_dependencies = {
-        key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
+        key: resource_def.get_required_resource_keys(resource_defs)
+        for key, resource_def in resource_defs.items()
     }
     return resource_dependencies
 
@@ -89,9 +89,7 @@ def ensure_resource_deps_satisfiable(resource_deps: Mapping[str, AbstractSet[str
         for reqd_resource_key in resource_deps[resource_key]:
             if reqd_resource_key in path:
                 raise DagsterInvariantViolationError(
-                    'Resource key "{key}" transitively depends on itself.'.format(
-                        key=reqd_resource_key
-                    )
+                    f'Resource key "{reqd_resource_key}" transitively depends on itself.'
                 )
             if reqd_resource_key not in resource_deps:
                 raise DagsterInvariantViolationError(
@@ -165,7 +163,7 @@ def _core_resource_initialization_event_generator(
 
                 resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)
                 resources = ScopedResourcesBuilder(resource_instances).build(
-                    resource_def.required_resource_keys
+                    resource_def.get_required_resource_keys(resource_defs)
                 )
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
@@ -178,6 +176,7 @@ def _core_resource_initialization_event_generator(
                     ),
                     resources=resources,
                     instance=instance,
+                    all_resource_defs=resource_defs,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
@@ -312,9 +311,7 @@ def single_resource_event_generator(
     context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
 ) -> Generator[InitializedResource, None, None]:
     try:
-        msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(
-            name=resource_name
-        )
+        msg_fn = lambda: f"Error executing resource_fn on ResourceDefinition {resource_name}"
         with user_code_error_boundary(
             DagsterResourceFunctionError, msg_fn, log_manager=context.log
         ):
@@ -406,7 +403,11 @@ def get_required_resource_keys_for_step(
 
         resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
 
-        resource_keys = resource_keys.union(step_input.source.required_resource_keys(job_def))
+        resource_keys = resource_keys.union(
+            step_input.source.required_resource_keys(
+                job_def, execution_step.node_handle, step_input.name
+            )
+        )
 
         if input_def.input_manager_key:
             resource_keys = resource_keys.union([input_def.input_manager_key])
@@ -438,7 +439,7 @@ def get_required_resource_keys_for_step(
 
 
 def _wrapped_resource_iterator(
-    resource_or_gen: Union[Any, Generator[Any, None, None]]
+    resource_or_gen: Union[Any, Generator[Any, None, None]],
 ) -> Generator[Any, None, None]:
     """Returns an iterator which yields a single item, which is the resource.
 

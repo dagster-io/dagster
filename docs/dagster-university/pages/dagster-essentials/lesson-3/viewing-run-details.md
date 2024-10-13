@@ -1,14 +1,14 @@
 ---
-title: "Lesson 3: Viewing run details"
-module: "dagster_essentials"
-lesson: "3"
+title: 'Lesson 3: Viewing run details'
+module: 'dagster_essentials'
+lesson: '3'
 ---
 
 # Viewing run details
 
 In the last section, you successfully materialized an asset using the Dagster UI. The UI told you that the run was successful - but what if it hadn’t been? What would that look like, and how would you troubleshoot it? In this section, we’ll show you where to find run information in the Dagster UI and how to use it to pinpoint issues.
 
-Before we jump into troubleshooting failures, let’s take a look at the details of the successful run you just kicked off. 
+Before we jump into troubleshooting failures, let’s take a look at the details of the successful run you just kicked off.
 
 To view the details, locate the **Materialized - <DATE>** portion of the asset in the graph. Click the **date -** highlighted in the following image - to open the **Run details** page:
 

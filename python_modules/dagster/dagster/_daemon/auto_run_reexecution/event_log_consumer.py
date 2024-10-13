@@ -7,9 +7,10 @@ from dagster import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
-
-from ..daemon import IntervalDaemon
-from .auto_run_reexecution import consume_new_runs_for_automatic_reexecution
+from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
+    consume_new_runs_for_automatic_reexecution,
+)
+from dagster._daemon.daemon import IntervalDaemon
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
@@ -49,9 +50,9 @@ class EventLogConsumerDaemon(IntervalDaemon):
         overall_max_event_id = instance.event_log_storage.get_maximum_record_id()
 
         events: List[EventLogEntry] = []
-        new_cursors: Dict[DagsterEventType, int] = (
-            {}
-        )  # keep these in memory until we handle the events
+        new_cursors: Dict[
+            DagsterEventType, int
+        ] = {}  # keep these in memory until we handle the events
         for event_type in DAGSTER_EVENT_TYPES:
             yield
 
@@ -86,9 +87,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
                     yield from fn(workspace_process_context, run_records)
                 except Exception:
                     self._logger.exception(
-                        "Error calling event event log consumer handler: {handler_fn}".format(
-                            handler_fn=fn.__name__,
-                        )
+                        f"Error calling event event log consumer handler: {fn.__name__}"
                     )
 
         # persist cursors now that we've processed all the events through the handlers
@@ -186,9 +185,7 @@ def get_new_cursor(
 
     check.invariant(
         max_new_event_id > persisted_cursor,
-        "The new cursor {} should be greater than the previous {}".format(
-            max_new_event_id, persisted_cursor
-        ),
+        f"The new cursor {max_new_event_id} should be greater than the previous {persisted_cursor}",
     )
 
     num_new_events = len(new_event_ids)

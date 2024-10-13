@@ -12,8 +12,9 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 import wandb
-from fashion_data import fashion
 from torch.autograd import Variable
+
+from .fashion_data import fashion
 
 hyperparameter_defaults = dict(
     dropout=0.5,
@@ -191,9 +192,7 @@ def main():
                 wandb.log(metrics)
 
                 # Print Loss
-                print(
-                    "Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(count, loss, accuracy)
-                )
+                print(f"Iteration: {count} Loss: {loss:.2f} Accuracy: {accuracy:.2f}")
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 

@@ -1,12 +1,20 @@
 # ruff: isort: skip_file
 
 from dagster_aws.s3.sensor import get_s3_keys
-from dagster import sensor, op, job, build_sensor_context, RunRequest, SkipReason
+from dagster import (
+    sensor,
+    op,
+    job,
+    build_sensor_context,
+    RunRequest,
+    SkipReason,
+    OpExecutionContext,
+)
 import os
 
 
 @op(config_schema={"filename": str})
-def process_file(context):
+def process_file(context: OpExecutionContext):
     filename = context.op_config["filename"]
     context.log.info(filename)
 

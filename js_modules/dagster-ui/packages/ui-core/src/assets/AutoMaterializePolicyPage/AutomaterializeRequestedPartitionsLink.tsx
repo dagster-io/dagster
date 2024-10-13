@@ -1,34 +1,32 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
   ButtonLink,
-  Colors,
+  Caption,
   Dialog,
   DialogFooter,
   NonIdealState,
   Spinner,
   Tag,
   TextInput,
-  Caption,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {
+  RunStatusAndPartitionKeyQuery,
+  RunStatusAndPartitionKeyQueryVariables,
+  RunStatusAndTagsFragment,
+} from './types/AutomaterializeRequestedPartitionsLink.types';
+import {gql, useQuery} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 import {DagsterTag} from '../../runs/RunTag';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
-
-import {
-  RunStatusAndPartitionKeyQuery,
-  RunStatusAndPartitionKeyQueryVariables,
-  RunStatusAndTagsFragment,
-} from './types/AutomaterializeRequestedPartitionsLink.types';
 
 interface Props {
   runIds?: string[];
@@ -89,7 +87,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
         <Box
           padding={{horizontal: 24, vertical: 16}}
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          border="bottom"
         >
           <div style={{fontSize: '16px'}}>
             {count === 1 ? '1 partition' : `${count} partitions`}
@@ -116,12 +114,13 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
 type PartitionRunTuple = [string, RunStatusAndTagsFragment];
 
 const PartitionAndRunList = ({runIds, partitionKeys}: Props) => {
-  const {data, loading} = useQuery<
+  const queryResult = useQuery<
     RunStatusAndPartitionKeyQuery,
     RunStatusAndPartitionKeyQueryVariables
   >(RUN_STATUS_AND_PARTITION_KEY, {
     variables: {filter: {runIds}},
   });
+  const {data, loading} = queryResult;
 
   const runs = data?.runsOrError;
 
@@ -251,11 +250,7 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-                border={
-                  index < partitionKeys.length - 1
-                    ? {side: 'bottom', width: 1, color: Colors.KeylineGray}
-                    : null
-                }
+                border={index < partitionKeys.length - 1 ? 'bottom' : null}
               >
                 <div>{partitionKeys[index]}</div>
                 {showRunTag ? (

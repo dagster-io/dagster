@@ -1,8 +1,6 @@
-import {Mono} from '@dagster-io/ui-components';
-import React from 'react';
+import {CaptionMono, Mono} from '@dagster-io/ui-components';
+import {useEffect} from 'react';
 import {Link, useHistory} from 'react-router-dom';
-
-import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 
 export interface ExplorerPath {
   pipelineName: string;
@@ -12,16 +10,35 @@ export interface ExplorerPath {
   opNames: string[];
 }
 
+export const explorerPathSeparator = '~';
+
 export function explorerPathToString(path: ExplorerPath) {
   const root = [
     path.pipelineName,
     path.snapshotId ? `@${path.snapshotId}` : ``,
     path.opsQuery
-      ? `~${path.explodeComposites ? '!' : ''}${encodeURIComponent(path.opsQuery)}`
+      ? `${explorerPathSeparator}${path.explodeComposites ? '!' : ''}${encodeURIComponent(
+          path.opsQuery,
+        )}`
       : ``,
   ].join('');
 
   return `${root}/${path.opNames.map(encodeURIComponent).join('/')}`;
+}
+
+/** react-router-dom helpfully auto-decodes the location.path, but does not auto-encode it.
+ * We still need explorerPathToString to encode the path, since the value could be passed
+ * to window.open, etc., and we need explorerPathFromString to reverse explorerPathToString.
+ *
+ * Our best option is to try decoding the path, and if it fails, assume that react-router-dom
+ * has already done it for us.
+ */
+function tryDecodeURIComponent(str: string) {
+  try {
+    return decodeURIComponent(str);
+  } catch (err) {
+    return str;
+  }
 }
 
 export function explorerPathFromString(path: string): ExplorerPath {
@@ -41,9 +58,9 @@ export function explorerPathFromString(path: string): ExplorerPath {
   return {
     pipelineName,
     snapshotId,
-    opsQuery: decodeURIComponent(opsQuery || ''),
+    opsQuery: tryDecodeURIComponent(opsQuery || ''),
     explodeComposites: explodeComposites === '!',
-    opNames: opNames.map(decodeURIComponent),
+    opNames: opNames.map(tryDecodeURIComponent),
   };
 }
 
@@ -51,7 +68,7 @@ export function useStripSnapshotFromPath(params: {pipelinePath: string}) {
   const history = useHistory();
   const {pipelinePath} = params;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const {snapshotId, ...rest} = explorerPathFromString(pipelinePath);
     if (!snapshotId) {
       return;
@@ -74,16 +91,12 @@ export function getPipelineSnapshotLink(pipelineName: string, snapshotId: string
   })}`;
 }
 
-export const PipelineSnapshotLink: React.FC<{
+export const PipelineSnapshotLink = (props: {
   pipelineName: string;
   snapshotId: string;
   size: 'small' | 'normal';
-}> = (props) => {
+}) => {
   const snapshotLink = getPipelineSnapshotLink(props.pipelineName, props.snapshotId);
-
-  return (
-    <Mono style={{fontSize: props.size === 'small' ? '14px' : '16px'}}>
-      <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>
-    </Mono>
-  );
+  const linkElem = <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>;
+  return props.size === 'small' ? <CaptionMono>{linkElem}</CaptionMono> : <Mono>{linkElem}</Mono>;
 };

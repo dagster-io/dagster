@@ -21,9 +21,7 @@ from dagster import (
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_bind_resource_to_job_at_defn_time_err() -> None:
@@ -64,9 +62,7 @@ def test_bind_resource_to_job_at_defn_time_err() -> None:
         DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
-        Definitions(
-            jobs=[hello_world_job],
-        )
+        Definitions.validate_loadable(Definitions(jobs=[hello_world_job]))
 
 
 def test_bind_resource_to_job_at_defn_time() -> None:
@@ -195,9 +191,7 @@ def test_bind_resource_to_job_with_job_config() -> None:
         DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
-        Definitions(
-            jobs=[hello_world_job],
-        )
+        Definitions.validate_loadable(Definitions(jobs=[hello_world_job]))
 
 
 def test_bind_resource_to_job_at_defn_time_override() -> None:
@@ -260,8 +254,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
         hello_world_op()
 
     @sensor(job=hello_world_job)
-    def hello_world_sensor():
-        ...
+    def hello_world_sensor(): ...
 
     hello_world_schedule = ScheduleDefinition(
         name="hello_world_schedule", cron_schedule="* * * * *", job=hello_world_job
@@ -314,8 +307,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
         hello_world_op()
 
     @sensor(job_name="hello_world_job")
-    def hello_world_sensor():
-        ...
+    def hello_world_sensor(): ...
 
     hello_world_schedule = ScheduleDefinition(
         name="hello_world_schedule", cron_schedule="* * * * *", job_name="hello_world_job"

@@ -1,22 +1,22 @@
 import {Colors} from '@dagster-io/ui-components';
 
-import {queuedStatuses, inProgressStatuses, failedStatuses, successStatuses} from './RunStatuses';
-import {TimelineRun} from './RunTimeline';
+import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
+import {TimelineRun} from './RunTimelineTypes';
 
 type BackgroundStatus = 'inProgress' | 'queued' | 'failed' | 'succeeded' | 'scheduled';
 
 const statusToColor = (status: BackgroundStatus) => {
   switch (status) {
     case 'queued':
-      return Colors.Blue200;
-    case 'inProgress':
-      return Colors.Blue500;
-    case 'failed':
-      return Colors.Red500;
-    case 'succeeded':
-      return Colors.Green500;
+      return Colors.backgroundDisabled();
     case 'scheduled':
-      return Colors.Blue200;
+      return Colors.backgroundDisabled();
+    case 'inProgress':
+      return Colors.accentBlue();
+    case 'failed':
+      return Colors.accentRed();
+    case 'succeeded':
+      return Colors.accentGreen();
   }
 };
 
@@ -52,7 +52,6 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
     return statusToColor(element!);
   }
 
-  // const colorList = statusArr.map(statusToColor);
   const runCount = runs.length;
 
   const colors = [

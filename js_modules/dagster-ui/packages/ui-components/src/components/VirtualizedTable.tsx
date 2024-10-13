@@ -2,12 +2,11 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Box} from './Box';
-import {Colors} from './Colors';
 
 export const HeaderCell = ({children}: {children?: React.ReactNode}) => (
   <CellBox
     padding={{vertical: 8, horizontal: 12}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
+    border="right"
     style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}
   >
     {children}
@@ -18,8 +17,8 @@ export const RowCell = ({children}: {children?: React.ReactNode}) => (
   <CellBox
     padding={12}
     flex={{direction: 'column', justifyContent: 'flex-start'}}
-    style={{color: Colors.Gray500, overflow: 'hidden'}}
-    border={{side: 'right', width: 1, color: Colors.KeylineGray}}
+    style={{overflow: 'hidden'}}
+    border="right"
   >
     {children}
   </CellBox>
@@ -53,7 +52,7 @@ export const Inner = styled.div.attrs<InnerProps>(({$totalHeight}) => ({
   width: 100%;
 `;
 
-type RowProps = {$height: number; $start: number};
+export type RowProps = {$height: number; $start: number};
 
 export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   style: {

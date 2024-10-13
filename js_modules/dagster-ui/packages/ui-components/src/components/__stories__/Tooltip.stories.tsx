@@ -4,25 +4,25 @@ import * as React from 'react';
 import {Box} from '../Box';
 import {Button} from '../Button';
 import {Checkbox} from '../Checkbox';
-import {Colors} from '../Colors';
+import {Colors} from '../Color';
 import {CustomTooltipProvider} from '../CustomTooltipProvider';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
-import {Tooltip, GlobalTooltipStyle} from '../Tooltip';
+import {GlobalTooltipStyle, Tooltip} from '../Tooltip';
 
 const SOLID_STYLES: React.CSSProperties = {
-  background: Colors.Yellow200,
+  background: Colors.backgroundDefault(),
   transform: 'translate(0,0)',
-  border: `1px solid ${Colors.Yellow500}`,
-  color: Colors.Gray900,
+  border: `1px solid ${Colors.accentYellow()}`,
+  color: Colors.textDefault(),
   fontSize: '12px',
   padding: 6,
 };
 
 const JOB_STYLES: React.CSSProperties = {
-  background: Colors.Gray700,
-  border: `1px solid ${Colors.Gray900}`,
-  color: Colors.White,
+  background: Colors.backgroundDefault(),
+  border: `1px solid ${Colors.borderDefault()}`,
+  color: Colors.textDefault(),
   fontSize: '15px',
   padding: 3,
 };
@@ -45,7 +45,7 @@ export const Default = () => {
       <CustomTooltipProvider />
       <GlobalTooltipStyle />
 
-      <p style={{color: Colors.Gray500}}>
+      <p style={{color: Colors.textLight()}}>
         Use the <code>Tooltip</code> component to attach additional explanations, descriptions, and
         context to controls, icons, etc.
       </p>
@@ -65,7 +65,7 @@ export const Default = () => {
       <Tooltip
         content={
           <div style={{display: 'flex', width: 400, gap: 8}}>
-            <Icon name="warning" color={Colors.Yellow500} />
+            <Icon name="warning" color={Colors.accentYellow()} />
             <div>
               Wow, who would have thought you can put an entire paragraph into a tooltip? Just
               don&apos;t try to put interactable content here, they don&apos;t hold focus.
@@ -79,7 +79,7 @@ export const Default = () => {
 
       <hr />
 
-      <p style={{color: Colors.Gray500}}>
+      <p style={{color: Colors.textLight()}}>
         Use the <code>data-tooltip</code> attribute to expand truncated job, op names, etc. on
         hover. These are highly stylable via <code>data-tooltip-style</code> so they can look like
         boxes / nodes expanding in place to reveal their full text. There is no per-component render

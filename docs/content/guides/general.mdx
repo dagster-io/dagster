@@ -14,19 +14,21 @@ title: General Dagster Guides | Dagster Docs
 
 - [Transitioning data pipelines from development to production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) - Learn how to seamlessly transition your Dagster pipelines from local development to production
 
-- [Testing against production with Dagster Cloud Branch Deployments](/guides/dagster/branch_deployments) - Use Dagster Cloud Branch Deployments to quickly iterate on your Dagster code without impacting production data
+- [Testing against production with Dagster+ Branch Deployments](/guides/dagster/branch_deployments) - Use Dagster+ Branch Deployments to quickly iterate on your Dagster code without impacting production data
 
 ---
 
 ## Working with data assets
 
-- [Understanding how assets relate to ops and graphs](/guides/dagster/how-assets-relate-to-ops-and-graphs) - Learn how software-defined assets relate to ops and graphs, and when to use one over the other
+- [Understanding how assets relate to ops and graphs](/guides/dagster/how-assets-relate-to-ops-and-graphs) - Learn how asset definitions relate to ops and graphs, and when to use one over the other
 
-- [Moving to Software-defined Assets](/guides/dagster/enriching-with-software-defined-assets) - Already using ops and graphs, but not Software-defined Assets? Learn why and how to use Software-defined Assets
+- [Moving to asset definitions](/guides/dagster/enriching-with-software-defined-assets) - Already using ops and graphs, but not asset definitions? Learn why and how to use asset definitions
 
-- [Using Software-defined assets with Pandas and PySpark](/guides/dagster/software-defined-assets) - A quick introduction to Sofware-defined Assets, featuring Pandas and PySpark
+- [Using asset checks to check data freshness](/concepts/assets/asset-checks/checking-for-data-freshness) - Use freshness checks, a type of [asset check](/concepts/assets/asset-checks) to identify the data assets that are overdue for an update
 
-- [Testing assets](/guides/dagster/testing-assets) - Learn to test your Software-defined Assets
+- [Using asset definitions with Pandas and PySpark](/guides/dagster/software-defined-assets) - A quick introduction to asset definitions, featuring Pandas and PySpark
+
+- [Testing assets](/guides/dagster/testing-assets) - Learn to test your asset definitions
 
 - [Migrating to Pythonic resources and config](/guides/dagster/migrating-to-pythonic-resources-and-config) - Incrementally migrate existing Dagster codebases to Pythonic resources and config
 
@@ -38,4 +40,4 @@ title: General Dagster Guides | Dagster Docs
 
 - [Intro to ops and jobs](/guides/dagster/intro-to-ops-jobs) - Learn to execute tasks that don't produce assets
 
-- [Migrating to graphs, jobs, and ops](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op) - **Legacy**. Migrate to Dagster graphs, jobs, and ops from Dagster solids and pipelines
+- [Migrating to graphs, jobs, and ops](https://legacy-versioned-docs.dagster.dagster-docs.io/0.15.7/guides/dagster/graph_job_op) - **Legacy**. Migrate to Dagster graphs, jobs, and ops from Dagster solids and pipelines

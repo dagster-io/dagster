@@ -1,5 +1,4 @@
-import {Box, Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
@@ -13,7 +12,7 @@ interface Props {
   onTryReload: () => void;
 }
 
-export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
+export const RepositoryLocationErrorDialog = (props: Props) => {
   const {isOpen, error, location, reloading, onTryReload, onDismiss} = props;
   return (
     <Dialog
@@ -37,7 +36,7 @@ export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
   );
 };
 
-export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props) => {
+export const RepositoryLocationNonBlockingErrorDialog = (props: Props) => {
   const {isOpen, error, location, reloading, onTryReload, onDismiss} = props;
   return (
     <Dialog
@@ -60,10 +59,13 @@ export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props)
   );
 };
 
-const ErrorContents: React.FC<{
+const ErrorContents = ({
+  location,
+  error,
+}: {
   location: string;
   error: PythonErrorFragment | {message: string} | null;
-}> = ({location, error}) => (
+}) => (
   <>
     <Box margin={{bottom: 12}}>
       Error loading <strong>{location}</strong>. Try reloading the code location after resolving the

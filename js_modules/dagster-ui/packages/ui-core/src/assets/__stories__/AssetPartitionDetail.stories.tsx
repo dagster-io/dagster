@@ -1,22 +1,25 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
 import {RunStatus, buildStaleCause} from '../../graphql/types';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {
   AssetPartitionDetail,
   AssetPartitionDetailEmpty,
   AssetPartitionDetailLoader,
 } from '../AssetPartitionDetail';
 import {
-  buildAssetPartitionDetailMock,
   MaterializationUpstreamDataFullMock,
+  buildAssetPartitionDetailMock,
+  buildAssetPartitionStaleMock,
 } from '../__fixtures__/AssetEventDetail.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetPartitionDetail};
+export default {
+  title: 'Asset Details/Partition Detail',
+  component: AssetPartitionDetail,
+};
 
 export const EmptyState = () => {
   return (
@@ -31,7 +34,11 @@ export const EmptyState = () => {
 export const MaterializationFollowedByObservations = () => {
   return (
     <MockedProvider
-      mocks={[buildAssetPartitionDetailMock(), MaterializationUpstreamDataFullMock]}
+      mocks={[
+        buildAssetPartitionDetailMock(),
+        buildAssetPartitionStaleMock(),
+        MaterializationUpstreamDataFullMock,
+      ]}
       cache={createAppCache()}
     >
       <WorkspaceProvider>
@@ -47,7 +54,8 @@ export const MaterializationWithRecentFailure = () => {
   return (
     <MockedProvider
       mocks={[
-        buildAssetPartitionDetailMock(RunStatus.FAILURE, [buildStaleCause()]),
+        buildAssetPartitionDetailMock(RunStatus.FAILURE),
+        buildAssetPartitionStaleMock([buildStaleCause()]),
         MaterializationUpstreamDataFullMock,
       ]}
       cache={createAppCache()}
@@ -66,6 +74,7 @@ export const MaterializationWithInProgressRun = () => {
     <MockedProvider
       mocks={[
         buildAssetPartitionDetailMock(RunStatus.STARTING),
+        buildAssetPartitionStaleMock(),
         MaterializationUpstreamDataFullMock,
       ]}
       cache={createAppCache()}

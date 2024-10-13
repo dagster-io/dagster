@@ -10,6 +10,7 @@ from dagster import execute_job, job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError
@@ -333,21 +334,19 @@ def test_hello_world_reexecution():
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"][0]
+            next(x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION")
         )
 
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
             reexecution_notebook_file.write(
-                (
-                    "from dagster import job\n"
-                    "from dagstermill.factory import define_dagstermill_op\n\n\n"
-                    "reexecution_op = define_dagstermill_op(\n"
-                    "    'hello_world_reexecution', '{output_notebook_path}'\n"
-                    ")\n\n"
-                    "@job\n"
-                    "def reexecution_job():\n"
-                    "    reexecution_op()\n"
-                ).format(output_notebook_path=output_notebook_path)
+                "from dagster import job\n"
+                "from dagstermill.factory import define_dagstermill_op\n\n\n"
+                "reexecution_op = define_dagstermill_op(\n"
+                f"    'hello_world_reexecution', '{output_notebook_path}'\n"
+                ")\n\n"
+                "@job\n"
+                "def reexecution_job():\n"
+                "    reexecution_op()\n"
             )
             reexecution_notebook_file.flush()
 
@@ -398,7 +397,6 @@ def test_resources_notebook():
 @pytest.mark.skip
 @pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
-    result = None
     with safe_tempfile_path() as path:
         with exec_for_test(
             "resource_with_exception_job",
@@ -494,7 +492,7 @@ def test_default_tags():
     test_op_default_tags = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
 
     assert test_op_default_tags.tags == {
-        "kind": "ipynb",
+        COMPUTE_KIND_TAG: "ipynb",
         "notebook_path": BACKING_NB_PATH,
     }
 
@@ -505,7 +503,7 @@ def test_custom_tags():
     )
 
     assert test_op_custom_tags.tags == {
-        "kind": "ipynb",
+        COMPUTE_KIND_TAG: "ipynb",
         "notebook_path": BACKING_NB_PATH,
         "foo": "bar",
     }
@@ -516,7 +514,7 @@ def test_reserved_tags_not_overridden():
         define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"notebook_path": "~"})
 
     with pytest.raises(CheckError, match="key is reserved for use by Dagster"):
-        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"kind": "py"})
+        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={COMPUTE_KIND_TAG: "py"})
 
 
 def test_default_description():

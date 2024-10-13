@@ -1,10 +1,9 @@
 import * as React from 'react';
 
+import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
 import {AppContext} from '../app/AppContext';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {RepositoryLocationErrorDialog} from '../workspace/RepositoryLocationErrorDialog';
-
-import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
 
 export type ChildProps = {
   codeLocation: string;
@@ -14,13 +13,13 @@ export type ChildProps = {
 };
 
 interface Props {
-  ChildComponent: React.FC<ChildProps>;
+  ChildComponent: React.ComponentType<ChildProps>;
   location: string;
 }
 
 export const NO_RELOAD_PERMISSION_TEXT = 'You do not have permission to reload this code location';
 
-export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
+export const ReloadRepositoryLocationButton = (props: Props) => {
   const {ChildComponent, location} = props;
   const [shown, setShown] = React.useState(false);
 

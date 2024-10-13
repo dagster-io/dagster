@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 export const useUpdatingRef = <T,>(value: T): React.MutableRefObject<T> => {
   const ref = React.useRef(value);

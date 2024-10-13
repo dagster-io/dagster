@@ -6,6 +6,8 @@ export type ResourceDetailsFragment = {
   __typename: 'ResourceDetails';
   name: string;
   description: string | null;
+  schedulesUsing: Array<string>;
+  sensorsUsing: Array<string>;
   resourceType: string;
   configFields: Array<{
     __typename: 'ConfigTypeField';
@@ -43,15 +45,7 @@ export type ResourceDetailsFragment = {
     } | null;
   }>;
   assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-  jobsOpsUsing: Array<{
-    __typename: 'JobWithOps';
-    job: {__typename: 'Job'; id: string; name: string};
-    opsUsing: Array<{
-      __typename: 'SolidHandle';
-      handleID: string;
-      solid: {__typename: 'Solid'; name: string};
-    }>;
-  }>;
+  jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string; opHandleIDs: Array<string>}>;
 };
 
 export type ResourceRootQueryVariables = Types.Exact<{
@@ -75,6 +69,8 @@ export type ResourceRootQuery = {
         __typename: 'ResourceDetails';
         name: string;
         description: string | null;
+        schedulesUsing: Array<string>;
+        sensorsUsing: Array<string>;
         resourceType: string;
         configFields: Array<{
           __typename: 'ConfigTypeField';
@@ -114,13 +110,11 @@ export type ResourceRootQuery = {
         assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
         jobsOpsUsing: Array<{
           __typename: 'JobWithOps';
-          job: {__typename: 'Job'; id: string; name: string};
-          opsUsing: Array<{
-            __typename: 'SolidHandle';
-            handleID: string;
-            solid: {__typename: 'Solid'; name: string};
-          }>;
+          jobName: string;
+          opHandleIDs: Array<string>;
         }>;
       }
     | {__typename: 'ResourceNotFoundError'};
 };
+
+export const ResourceRootQueryVersion = '43f17e6a448c083d86843c38edbae83098853097a8a7a5f3ef3a3238e3880bff';

@@ -3,10 +3,10 @@ import sys
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-import pendulum
 import pytest
 from dagster import (
     AssetKey,
+    IAttachDifferentObjectToOpContext,
     SensorEvaluationContext,
     job,
     multi_asset_sensor,
@@ -44,15 +44,18 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import (
-    create_test_daemon_workspace_context,
-)
+from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._time import create_datetime, get_timezone
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
+from dagster_tests.daemon_sensor_tests.test_sensor_run import (
+    evaluate_sensors,
+    validate_tick,
+    wait_for_all_runs_to_start,
+)
 
 
 @op(out={})
@@ -82,6 +85,13 @@ class MyResource(ConfigurableResource):
     a_str: str
 
 
+class MyResourceAttachDifferentObject(ConfigurableResource, IAttachDifferentObjectToOpContext):
+    a_str: str
+
+    def get_object_to_set_on_execution_context(self) -> str:
+        return self.a_str
+
+
 @sensor(job_name="the_job", required_resource_keys={"my_resource"})
 def sensor_from_context(context: SensorEvaluationContext):
     return RunRequest(context.resources.my_resource.a_str, run_config={}, tags={})
@@ -107,6 +117,15 @@ def sensor_with_job_with_resource_dep(context: SensorEvaluationContext, my_resou
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
+@sensor(job_name="the_job")
+def sensor_with_resource_from_context(
+    context: SensorEvaluationContext, my_resource_attach: MyResourceAttachDifferentObject
+):
+    assert context.resources.my_resource_attach == my_resource_attach.a_str
+
+    return RunRequest(my_resource_attach.a_str, run_config={}, tags={})
+
+
 is_in_cm = False
 
 
@@ -114,7 +133,7 @@ is_in_cm = False
 @contextmanager
 def my_cm_resource(_) -> Iterator[str]:
     global is_in_cm  # noqa: PLW0603
-    is_in_cm = True  # noqa: PLW0603
+    is_in_cm = True
     yield "foo"
     is_in_cm = False
 
@@ -293,6 +312,7 @@ the_repo = Definitions(
         sensor_from_context,
         sensor_from_fn_arg,
         sensor_with_job_with_resource_dep,
+        sensor_with_resource_from_context,
         sensor_with_cm,
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
@@ -314,6 +334,7 @@ the_repo = Definitions(
     resources={
         "my_resource": MyResource(a_str="foo"),
         "my_cm_resource": my_cm_resource,
+        "my_resource_attach": MyResourceAttachDifferentObject(a_str="foo"),
         "the_inner": the_inner,
         "the_outer": the_outer,
     },
@@ -324,7 +345,7 @@ def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY
     return ModuleTarget(
         module_name="dagster_tests.daemon_sensor_tests.test_pythonic_resources",
         attribute=None,
-        working_directory=os.path.dirname(__file__),
+        working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
         location_name="test_location",
     )
 
@@ -338,12 +359,12 @@ def workspace_fixture(instance_module_scoped):
         yield workspace
 
 
-@pytest.fixture(name="external_repo_struct_resources", scope="module")
-def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessContext):
+@pytest.fixture(name="remote_repo_struct_resources", scope="module")
+def remote_repo_fixture(workspace_context_struct_resources: WorkspaceProcessContext):
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
-            .get_workspace_snapshot()
+            .get_code_location_entries()
             .values()
         )
     ).code_location
@@ -376,6 +397,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
         "sensor_from_context",
         "sensor_from_fn_arg",
         "sensor_with_job_with_resource_dep",
+        "sensor_with_resource_from_context",
         "sensor_with_cm",
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",
@@ -393,41 +415,35 @@ def test_resources(
     caplog,
     instance: DagsterInstance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     sensor_name,
 ) -> None:
     assert not is_in_cm
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(get_timezone("US/Central"))
 
-    with pendulum.test(freeze_datetime):
+    with freeze_time(freeze_datetime):
         base_run_count = 0
         if "asset" in sensor_name:
             the_job.execute_in_process(instance=instance)
             base_run_count = 1
 
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+        sensor = remote_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
         assert instance.get_runs_count() == base_run_count
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context_struct_resources, None)
@@ -435,14 +451,12 @@ def test_resources(
 
         assert instance.get_runs_count() == base_run_count + 1
         run = instance.get_runs()[0]
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 1
         assert ticks[0].run_keys == ["foo"]
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
@@ -461,63 +475,55 @@ def test_resources_freshness_policy_sensor(
     caplog,
     instance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     sensor_name,
 ) -> None:
     assert not is_in_cm
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(get_timezone("US/Central"))
     original_time = freeze_datetime
 
-    with pendulum.test(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+    with freeze_time(freeze_datetime):
+        sensor = remote_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 0
 
     # We have to do two ticks because the first tick will be skipped due to the freshness policy
     # sensor initializing its cursor
-    with pendulum.test(freeze_datetime):
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
-    freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum.test(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum.test(freeze_datetime):
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+    with freeze_time(freeze_datetime):
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
-            external_sensor,
+            sensor,
             freeze_datetime,
             TickStatus.SKIPPED,
             expected_run_ids=[],
         )
         validate_tick(
             ticks[1],
-            external_sensor,
+            sensor,
             original_time,
             TickStatus.SKIPPED,
             expected_run_ids=[],
@@ -536,54 +542,46 @@ def test_resources_run_status_sensor(
     caplog,
     instance: DagsterInstance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     sensor_name,
 ) -> None:
     assert not is_in_cm
 
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(get_timezone("US/Central"))
     original_time = freeze_datetime
 
-    with pendulum.test(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+    with freeze_time(freeze_datetime):
+        remote_sensor = remote_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                remote_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 0
 
     # We have to do two ticks because the first tick will be skipped due to the run status
     # sensor initializing its cursor
-    with pendulum.test(freeze_datetime):
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     the_job.execute_in_process(instance=instance)
-    freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum.test(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum.test(freeze_datetime):
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+    with freeze_time(freeze_datetime):
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 2
 
         assert instance.get_runs_count() == 2
@@ -591,7 +589,7 @@ def test_resources_run_status_sensor(
         assert ticks[0].run_keys == ["foo"]
         validate_tick(
             ticks[0],
-            external_sensor,
+            remote_sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
@@ -599,7 +597,7 @@ def test_resources_run_status_sensor(
 
         validate_tick(
             ticks[1],
-            external_sensor,
+            remote_sensor,
             original_time,
             TickStatus.SKIPPED,
             expected_run_ids=[],
@@ -618,54 +616,46 @@ def test_resources_run_failure_sensor(
     caplog,
     instance: DagsterInstance,
     workspace_context_struct_resources,
-    external_repo_struct_resources,
+    remote_repo_struct_resources,
     sensor_name,
 ) -> None:
     assert not is_in_cm
 
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(get_timezone("US/Central"))
     original_time = freeze_datetime
 
-    with pendulum.test(freeze_datetime):
-        external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
+    with freeze_time(freeze_datetime):
+        remote_sensor = remote_repo_struct_resources.get_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
-                external_sensor.get_external_origin(),
+                remote_sensor.get_remote_origin(),
                 InstigatorType.SENSOR,
                 InstigatorStatus.RUNNING,
             )
         )
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 0
 
     # We have to do two ticks because the first tick will be skipped due to the run status
     # sensor initializing its cursor
-    with pendulum.test(freeze_datetime):
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     the_failure_job.execute_in_process(instance=instance, raise_on_error=False)
-    freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum.test(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum.test(freeze_datetime):
-        ticks = instance.get_ticks(
-            external_sensor.get_external_origin_id(), external_sensor.selector_id
-        )
+    with freeze_time(freeze_datetime):
+        ticks = instance.get_ticks(remote_sensor.get_remote_origin_id(), remote_sensor.selector_id)
         assert len(ticks) == 2
 
         assert instance.get_runs_count() == 2
@@ -673,7 +663,7 @@ def test_resources_run_failure_sensor(
         assert ticks[0].run_keys == ["foo"]
         validate_tick(
             ticks[0],
-            external_sensor,
+            remote_sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
@@ -681,7 +671,7 @@ def test_resources_run_failure_sensor(
 
         validate_tick(
             ticks[1],
-            external_sensor,
+            remote_sensor,
             original_time,
             TickStatus.SKIPPED,
             expected_run_ids=[],

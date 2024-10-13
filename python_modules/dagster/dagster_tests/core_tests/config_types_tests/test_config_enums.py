@@ -124,8 +124,7 @@ def test_native_enum_not_allowed_as_default_value():
             pass
 
     assert (
-        str(exc_info.value)
-        == "You have passed into a python enum value as the default value into "
+        str(exc_info.value) == "You have passed into a python enum value as the default value into "
         "of a config enum type NativeEnum. You must pass in the underlying string "
         "represention as the default value. One of ['FOO', 'BAR']."
     )
@@ -202,8 +201,7 @@ def test_dict_enum_with_bad_default():
             pass
 
     assert (
-        str(exc_info.value)
-        == "You have passed into a python enum value as the default value into "
+        str(exc_info.value) == "You have passed into a python enum value as the default value into "
         "of a config enum type NativeEnum. You must pass in the underlying string "
         "represention as the default value. One of ['FOO', 'BAR']."
     )

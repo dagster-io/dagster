@@ -1,17 +1,16 @@
-import {Box, Colors, Tabs, ErrorBoundary} from '@dagster-io/ui-components';
+import {Box, ErrorBoundary, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
-import {TypeListContainer} from '../typeexplorer/TypeListContainer';
-import {TabLink} from '../ui/TabLink';
-import {RepoAddress} from '../workspace/types';
 
 import {RightInfoPanelContent} from './GraphExplorer';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarContainerOverview} from './SidebarContainerOverview';
 import {SidebarOp} from './SidebarOp';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
+import {OpNameOrPath} from '../ops/OpNameOrPath';
+import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
+import {TypeListContainer} from '../typeexplorer/TypeListContainer';
+import {TabLink} from '../ui/TabLink';
+import {RepoAddress} from '../workspace/types';
 
 type TabKey = 'types' | 'info';
 
@@ -34,7 +33,7 @@ interface SidebarRootProps {
   repoAddress?: RepoAddress;
 }
 
-export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
+export const SidebarRoot = (props: SidebarRootProps) => {
   const {
     tab,
     typeName,
@@ -100,10 +99,7 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
 
   return (
     <>
-      <Box
-        padding={{horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      >
+      <Box padding={{horizontal: 24}} border="bottom">
         <Tabs selectedTabId={activeTab}>
           {TabDefinitions.map(({name, key}) => (
             <TabLink id={key} key={key} to={{search: `?tab=${key}`}} title={name} />

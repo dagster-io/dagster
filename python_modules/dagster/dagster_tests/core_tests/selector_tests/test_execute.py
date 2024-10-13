@@ -6,7 +6,10 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._core.test_utils import instance_for_test
 
-from .test_subset_selector import foo_job, get_asset_selection_job
+from dagster_tests.core_tests.selector_tests.test_subset_selector import (
+    foo_job,
+    get_asset_selection_job,
+)
 
 
 def test_subset_for_execution():
@@ -133,11 +136,7 @@ def test_execute_job_with_op_selection_invalid():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvalidSubsetError,
-            match=re.escape(
-                "No qualified ops to execute found for op_selection={input}".format(
-                    input=invalid_input
-                )
-            ),
+            match=re.escape(f"No qualified ops to execute found for op_selection={invalid_input}"),
         ):
             execute_job(reconstructable(foo_job), op_selection=invalid_input, instance=instance)
 

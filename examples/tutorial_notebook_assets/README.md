@@ -1,4 +1,4 @@
-# Dagster + Jupyter/Papermill
+# Dagster + Jupyter/Papermill [UNMAINTAINED]
 
 This example is meant to be used alongside the [Using Jupyter notebooks with Papermill and Dagster tutorial](https://docs.dagster.io/integrations/dagstermill/using-notebooks-with-dagster).
 
@@ -8,7 +8,6 @@ This example contains:
 
 - A blank template project (located in `tutorial_template`) that can be used to follow along with the tutorial
 - A finished project (`tutorial_finished`) that contains the completed project produced by the tutorial
-
 
 ---
 

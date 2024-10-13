@@ -2,7 +2,9 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, c
 
 from typing_extensions import Literal
 
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
@@ -18,6 +20,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._time import get_current_datetime
 
 
 class MaterializationTable:
@@ -127,8 +130,7 @@ def materialize_asset(
     partition_key: Optional[str] = ...,
     run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = ...,
     tags: Optional[Mapping[str, str]] = ...,
-) -> MaterializationTable:
-    ...
+) -> MaterializationTable: ...
 
 
 @overload
@@ -141,8 +143,7 @@ def materialize_asset(
     partition_key: Optional[str] = ...,
     run_config: Optional[Union[RunConfig, Mapping[str, Any]]] = ...,
     tags: Optional[Mapping[str, str]] = ...,
-) -> AssetMaterialization:
-    ...
+) -> AssetMaterialization: ...
 
 
 # Use only for AssetsDefinition with one asset
@@ -188,6 +189,7 @@ def materialize_assets(
     partition_key: Optional[str] = None,
     run_config: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
+    selection: Optional[CoercibleToAssetSelection] = None,
 ) -> MaterializationTable:
     result = materialize(
         assets,
@@ -196,6 +198,7 @@ def materialize_assets(
         partition_key=partition_key,
         run_config=run_config,
         tags=tags,
+        selection=selection,
     )
     return get_mats_from_result(result, assets)
 
@@ -214,7 +217,14 @@ def get_stale_status_resolver(
     instance: DagsterInstance,
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
 ) -> CachingStaleStatusResolver:
+    asset_graph = AssetGraph.from_assets(assets)
+    asset_graph_view = AssetGraphView(
+        temporal_context=TemporalContext(effective_dt=get_current_datetime(), last_event_id=None),
+        instance=instance,
+        asset_graph=asset_graph,
+    )
     return CachingStaleStatusResolver(
         instance=instance,
         asset_graph=AssetGraph.from_assets(assets),
+        loading_context=asset_graph_view,
     )

@@ -24,7 +24,7 @@ def check_schema_compat(schema):
 
 
 def validate_column(column: Column):
-    """This function is used to validate individual DB columns in a a schema for cross-DBAPI compatibility.
+    """This function is used to validate individual DB columns in a schema for cross-DBAPI compatibility.
 
     i.e.:
         1. plain db.String not allowed (MySQL compatability)
@@ -55,7 +55,7 @@ def validate_column(column: Column):
         raise Exception(
             f"Column {column} has a server default of CURRENT_TIMESTAMP without precision"
             " specified. To allow schema compatibility between MySQL, Postgres, and SQLite, use"
-            " dagster._core.storage.sql.py::get_current_timestamp() instead."
+            " dagster._core.storage.sql.py::get_sql_current_timestamp() instead."
         )
 
 

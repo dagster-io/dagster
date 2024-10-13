@@ -1,15 +1,20 @@
 import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {InstigationStatus} from '../graphql/types';
-import {humanCronString} from '../schedules/humanCronString';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LeftNavItemType} from './LeftNavItemType';
 import {Item} from './RepositoryContentList';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
+import {InstigationStatesQuery, InstigationStatesQueryVariables} from './types/LeftNavItem.types';
+import {gql, useFragment, useQuery} from '../apollo-client';
+import {InstigationStatus} from '../graphql/types';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
+import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
+import {humanCronString} from '../schedules/humanCronString';
+import {useRepository} from '../workspace/WorkspaceContext/util';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface LeftNavItemProps {
   active: boolean;
@@ -22,8 +27,31 @@ export const LeftNavItem = React.forwardRef(
     const {label, leftIcon, path, repoAddress, schedules, sensors} = item;
 
     const [showDialog, setShowDialog] = React.useState(false);
+    const repositoryId = useRepository(repoAddress)?.repository.id;
 
-    const rightIcon = () => {
+    useQuery<InstigationStatesQuery, InstigationStatesQueryVariables>(INSTIGATION_STATES_QUERY, {
+      variables: {
+        repositoryID: repositoryId!,
+      },
+      skip: !repositoryId,
+    });
+    const [data, setData] = useState<Record<string, InstigationStateFragment>>({});
+
+    const status = useMemo(() => {
+      const anyScheduleIsRunning = schedules.some((schedule) => {
+        const state = data[schedule.id];
+        return (state?.status ?? schedule.scheduleState.status) === InstigationStatus.RUNNING;
+      });
+      const anySensorIsRunning = sensors.some((sensor) => {
+        const state = data[sensor.id];
+        return (state?.status ?? sensor.sensorState.status) === InstigationStatus.RUNNING;
+      });
+      return anyScheduleIsRunning || anySensorIsRunning
+        ? InstigationStatus.RUNNING
+        : InstigationStatus.STOPPED;
+    }, [schedules, sensors, data]);
+
+    const rightIcon = useMemo(() => {
       const scheduleCount = schedules.length;
       const sensorCount = sensors.length;
 
@@ -33,14 +61,6 @@ export const LeftNavItem = React.forwardRef(
 
       const whichIcon = scheduleCount ? 'schedule' : 'sensors';
       const needsDialog = scheduleCount > 1 || sensorCount > 1 || (scheduleCount && sensorCount);
-
-      const status = () => {
-        return schedules.some(
-          (schedule) => schedule.scheduleState.status === InstigationStatus.RUNNING,
-        ) || sensors.some((sensor) => sensor.sensorState.status === InstigationStatus.RUNNING)
-          ? InstigationStatus.RUNNING
-          : InstigationStatus.STOPPED;
-      };
 
       const tooltipContent = () => {
         if (scheduleCount && sensorCount) {
@@ -77,7 +97,9 @@ export const LeftNavItem = React.forwardRef(
         const icon = (
           <Icon
             name={whichIcon}
-            color={status() === InstigationStatus.RUNNING ? Colors.Green500 : Colors.Gray600}
+            color={
+              status === InstigationStatus.RUNNING ? Colors.accentGreen() : Colors.accentGray()
+            }
           />
         );
 
@@ -113,19 +135,82 @@ export const LeftNavItem = React.forwardRef(
           ) : null}
         </>
       );
-    };
+    }, [repoAddress, schedules, sensors, showDialog, status]);
+
+    const setFragmentData = React.useCallback((fragment: InstigationStateFragment) => {
+      setData((data) => {
+        return {
+          ...data,
+          [fragment.id]: fragment,
+        };
+      });
+    }, []);
+
+    /**
+     * This is pretty clowny but `INSTIGATION_STATES_QUERY` only returns instigation states for sensors/schedules that were  previously turned on or off.
+     * A side effect of this is that if on a sensor/schedule page we toggle it on/off then the new instigation state does not propagate to our query
+     * since our query may not have returned an instigation state for that ID. To work around this we rely on
+     * `useFragment` to subscribe to the individual instigation state fragments so that updates from elsewhere in the app propagate here while relying
+     * on our useQuery above to batch fetch instigation states for sensors/schedules that were turned on/off previously.
+     */
+    const sensorFragmentSubscriptions = useMemo(
+      () =>
+        sensors.map((sensors) => (
+          <InstigationStateFragmentSubscriptionComponent
+            key={sensors.id}
+            id={sensors.id}
+            setData={setFragmentData}
+          />
+        )),
+      [sensors, setFragmentData],
+    );
+    const scheduleFragmentSubscriptions = useMemo(
+      () =>
+        schedules.map((schedule) => (
+          <InstigationStateFragmentSubscriptionComponent
+            key={schedule.id}
+            id={schedule.id}
+            setData={setFragmentData}
+          />
+        )),
+      [schedules, setFragmentData],
+    );
 
     return (
       <ItemContainer ref={ref}>
+        {sensorFragmentSubscriptions}
+        {scheduleFragmentSubscriptions}
         <Item $active={active} to={path}>
-          <Icon name={leftIcon} color={active ? Colors.Blue700 : Colors.Dark} />
+          <Icon name={leftIcon} color={active ? Colors.accentBlue() : Colors.textDefault()} />
           {label}
         </Item>
-        {rightIcon()}
+        {rightIcon}
       </ItemContainer>
     );
   },
 );
+
+const InstigationStateFragmentSubscriptionComponent = ({
+  id,
+  setData,
+}: {
+  id: string;
+  setData: (data: InstigationStateFragment) => void;
+}) => {
+  const {data, complete} = useFragment<InstigationStateFragment>({
+    fragment: INSTIGATION_STATE_BASE_FRAGMENT,
+    from: {
+      __typename: 'InstigationState',
+      id,
+    },
+  });
+  useEffect(() => {
+    if (complete && data) {
+      setData(data);
+    }
+  }, [data, complete, setData]);
+  return null;
+};
 
 const SensorScheduleDialogButton = styled.button`
   background: transparent;
@@ -154,4 +239,22 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
+`;
+
+const INSTIGATION_STATES_QUERY = gql`
+  query InstigationStatesQuery($repositoryID: String!) {
+    instigationStatesOrError(repositoryID: $repositoryID) {
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on InstigationStates {
+        results {
+          id
+          ...InstigationStateBaseFragment
+        }
+      }
+    }
+  }
+  ${INSTIGATION_STATE_BASE_FRAGMENT}
 `;

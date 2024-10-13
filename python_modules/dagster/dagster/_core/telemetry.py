@@ -28,6 +28,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Tuple,
     TypeVar,
     Union,
     overload,
@@ -55,10 +56,10 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import (
-        ExternalJob,
-        ExternalRepository,
-        ExternalResource,
+    from dagster._core.remote_representation.external import (
+        RemoteJob,
+        RemoteRepository,
+        RemoteResource,
     )
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
@@ -106,15 +107,14 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
 @overload
-def telemetry_wrapper(target_fn: T_Callable) -> T_Callable:
-    ...
+def telemetry_wrapper(target_fn: T_Callable) -> T_Callable: ...
 
 
 @overload
 def telemetry_wrapper(
-    *, metadata: Optional[Mapping[str, str]]
-) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    ...
+    *,
+    metadata: Optional[Mapping[str, str]],
+) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
 def telemetry_wrapper(
@@ -142,10 +142,8 @@ def _telemetry_wrapper(
 
     if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
         raise DagsterInvariantViolationError(
-            "Attempted to log telemetry for function {name} that is not in telemetry whitelisted "
-            "functions list: {whitelist}.".format(
-                name=f.__name__, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS
-            )
+            f"Attempted to log telemetry for function {f.__name__} that is not in telemetry whitelisted "
+            f"functions list: {TELEMETRY_WHITELISTED_FUNCTIONS}."
         )
 
     var_names = f.__code__.co_varnames
@@ -347,9 +345,7 @@ def _check_telemetry_instance_param(
             args[instance_index],  # type: ignore
             "instance",
             DagsterInstance,
-            "'instance' argument at position {position} must be a DagsterInstance".format(
-                position=instance_index
-            ),
+            f"'instance' argument at position {instance_index} must be a DagsterInstance",
         )
 
 
@@ -397,7 +393,9 @@ def write_telemetry_log_line(log_line: object) -> None:
     logger.info(json.dumps(log_line))
 
 
-def _get_instance_telemetry_info(instance: DagsterInstance):
+def _get_instance_telemetry_info(
+    instance: DagsterInstance,
+) -> Tuple[bool, Optional[str], Optional[str]]:
     from dagster._core.storage.runs import SqlRunStorage
 
     check.inst_param(instance, "instance", DagsterInstance)
@@ -460,18 +458,23 @@ def hash_name(name: str) -> str:
     return hashlib.sha256(name.encode("utf-8")).hexdigest()
 
 
-def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
-    from dagster._core.host_representation.external_data import (
-        ExternalDynamicPartitionsDefinitionData,
-        ExternalMultiPartitionsDefinitionData,
+def get_stats_from_remote_repo(remote_repo: "RemoteRepository") -> Mapping[str, str]:
+    from dagster._core.remote_representation.external_data import (
+        DynamicPartitionsSnap,
+        MultiPartitionsSnap,
     )
 
-    num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
-    num_schedules_in_repo = len(external_repo.get_external_schedules())
-    num_sensors_in_repo = len(external_repo.get_external_sensors())
-    external_asset_nodes = external_repo.get_external_asset_nodes()
-    num_assets_in_repo = len(external_asset_nodes)
-    external_resources = external_repo.get_external_resources()
+    num_pipelines_in_repo = len(remote_repo.get_all_jobs())
+    num_schedules_in_repo = len(remote_repo.get_schedules())
+    num_sensors_in_repo = len(remote_repo.get_sensors())
+    asset_node_snaps = remote_repo.get_asset_node_snaps()
+    num_assets_in_repo = len(asset_node_snaps)
+    remote_resources = remote_repo.get_resources()
+
+    num_checks = len(remote_repo.repository_snap.asset_check_nodes or [])
+    num_assets_with_checks = len(
+        {c.asset_key for c in remote_repo.repository_snap.asset_check_nodes or []}
+    )
 
     num_partitioned_assets_in_repo = 0
     num_multi_partitioned_assets_in_repo = 0
@@ -486,14 +489,14 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
     num_dbt_assets_in_repo = 0
     num_assets_with_code_versions_in_repo = 0
 
-    for asset in external_asset_nodes:
-        if asset.partitions_def_data:
+    for asset in asset_node_snaps:
+        if asset.partitions:
             num_partitioned_assets_in_repo += 1
 
-            if isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+            if isinstance(asset.partitions, DynamicPartitionsSnap):
                 num_dynamic_partitioned_assets_in_repo += 1
 
-            if isinstance(asset.partitions_def_data, ExternalMultiPartitionsDefinitionData):
+            if isinstance(asset.partitions, MultiPartitionsSnap):
                 num_multi_partitioned_assets_in_repo += 1
 
         if asset.freshness_policy is not None:
@@ -524,13 +527,11 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
             num_dbt_assets_in_repo += 1
 
     num_asset_reconciliation_sensors_in_repo = sum(
-        1
-        for external_sensor in external_repo.get_external_sensors()
-        if external_sensor.name == "asset_reconciliation_sensor"
+        1 for sensor in remote_repo.get_sensors() if sensor.name == "asset_reconciliation_sensor"
     )
 
     return {
-        **get_resource_stats(external_resources=list(external_resources)),
+        **get_resource_stats(remote_resources=list(remote_resources)),
         "num_pipelines_in_repo": str(num_pipelines_in_repo),
         "num_schedules_in_repo": str(num_schedules_in_repo),
         "num_sensors_in_repo": str(num_sensors_in_repo),
@@ -558,14 +559,16 @@ def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping
         "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
         "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
         "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
+        "num_asset_checks": str(num_checks),
+        "num_assets_with_checks": str(num_assets_with_checks),
     }
 
 
-def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapping[str, Any]:
+def get_resource_stats(remote_resources: Sequence["RemoteResource"]) -> Mapping[str, Any]:
     used_dagster_resources = []
     used_custom_resources = False
 
-    for resource in external_resources:
+    for resource in remote_resources:
         resource_type = resource.resource_type
         split_resource_type = resource_type.split(".")
         module_name = split_resource_type[0]
@@ -582,25 +585,25 @@ def get_resource_stats(external_resources: Sequence["ExternalResource"]) -> Mapp
     }
 
 
-def log_external_repo_stats(
+def log_remote_repo_stats(
     instance: DagsterInstance,
     source: str,
-    external_repo: "ExternalRepository",
-    external_job: Optional["ExternalJob"] = None,
+    remote_repo: "RemoteRepository",
+    remote_job: Optional["RemoteJob"] = None,
 ):
-    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
+    from dagster._core.remote_representation.external import RemoteJob, RemoteRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
-    check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.opt_inst_param(external_job, "external_job", ExternalJob)
+    check.inst_param(remote_repo, "remote_repo", RemoteRepository)
+    check.opt_inst_param(remote_job, "remote_job", RemoteJob)
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        job_name_hash = hash_name(external_job.name) if external_job else ""
-        repo_hash = hash_name(external_repo.name)
-        location_name_hash = hash_name(external_repo.handle.location_name)
+        job_name_hash = hash_name(remote_job.name) if remote_job else ""
+        repo_hash = hash_name(remote_repo.name)
+        location_name_hash = hash_name(remote_repo.handle.location_name)
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -609,7 +612,7 @@ def log_external_repo_stats(
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
                 metadata={
-                    **get_stats_from_external_repo(external_repo),
+                    **get_stats_from_remote_repo(remote_repo),
                     "source": source,
                     "pipeline_name_hash": job_name_hash,
                     "repo_hash": repo_hash,
@@ -708,8 +711,8 @@ def log_workspace_stats(
     request_context = workspace_process_context.create_request_context()
 
     for code_location in request_context.code_locations:
-        for external_repo in code_location.get_repositories().values():
-            log_external_repo_stats(instance, source="dagit", external_repo=external_repo)
+        for repo in code_location.get_repositories().values():
+            log_remote_repo_stats(instance, source="dagit", remote_repo=repo)
 
 
 def log_action(
@@ -735,7 +738,7 @@ def log_action(
                 client_time=str(client_time),
                 elapsed_time=str(elapsed_time),
                 event_id=str(uuid.uuid4()),
-                instance_id=instance_id,
+                instance_id=check.not_none(instance_id),
                 metadata=metadata,
                 run_storage_id=run_storage_id,
             )._asdict()
@@ -771,11 +774,10 @@ def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext
 TELEMETRY_TEXT = """
   %(telemetry)s
 
-  As an open source project, we collect usage statistics to inform development priorities. For more
+  As an open-source project, we collect usage statistics to inform development priorities. For more
   information, read https://docs.dagster.io/getting-started/telemetry.
 
-  We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
-  any data that is processed within solids and pipelines.
+  We will not see or store any data that is processed by your code.
 
   To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file if necessary:
 

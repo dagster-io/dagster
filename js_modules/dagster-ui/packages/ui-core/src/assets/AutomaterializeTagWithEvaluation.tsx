@@ -1,5 +1,5 @@
-import {Box, Colors, Icon, MiddleTruncate, Popover, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {Box, Icon, MiddleTruncate, Popover, Tag} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Props) => {
-  const sortedKeys = React.useMemo(() => {
+  const sortedKeys = useMemo(() => {
     return [...assetKeys].sort((a, b) => COLLATOR.compare(a.path.join('/'), b.path.join('/')));
   }, [assetKeys]);
 
@@ -22,11 +22,7 @@ export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Prop
       placement="bottom"
       content={
         <div style={{width: '340px'}}>
-          <Box
-            padding={{vertical: 8, horizontal: 12}}
-            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            style={{fontWeight: 600}}
-          >
+          <Box padding={{vertical: 8, horizontal: 12}} border="bottom" style={{fontWeight: 600}}>
             Auto-materialized
           </Box>
           <Box
@@ -36,7 +32,7 @@ export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Prop
           >
             {sortedKeys.map((assetKey) => {
               const url = assetDetailsPathForKey(assetKey, {
-                view: 'auto-materialize-history',
+                view: 'automation',
                 evaluation: evaluationId,
               });
               return (

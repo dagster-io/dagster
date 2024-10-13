@@ -65,10 +65,7 @@ class PandasColumn:
             # Ignore validation if column is missing from dataframe and is not required
             if self.is_required:
                 raise ConstraintViolationException(
-                    "Required column {column_name} not in dataframe with columns"
-                    " {dataframe_columns}".format(
-                        column_name=self.name, dataframe_columns=dataframe.columns
-                    )
+                    f"Required column {self.name} not in dataframe with columns {dataframe.columns}"
                 )
         else:
             for constraint in self.constraints:

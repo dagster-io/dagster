@@ -1,0 +1,4 @@
+locations:
+  - location_name: dagster_university
+    code_source:
+      package_name: dagster_university

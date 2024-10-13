@@ -107,6 +107,9 @@ data:
       {{- if $runRetries.maxRetries }}
       max_retries: {{ $runRetries.maxRetries }}
       {{- end }}
+      {{- if hasKey $runRetries "retryOnAssetOrOpFailure" }}
+      retry_on_asset_or_op_failure: {{ $runRetries.retryOnAssetOrOpFailure }}
+      {{- end }}
     {{- end }}
 
     {{- $sensors := .Values.dagsterDaemon.sensors }}
@@ -145,6 +148,10 @@ data:
       {{- if .Values.retention.schedule }}
       schedule:
         purge_after_days: {{ .Values.retention.schedule.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
+      {{- if .Values.retention.autoMaterialize }}
+      auto_materialize:
+        purge_after_days: {{ .Values.retention.autoMaterialize.purgeAfterDays | toYaml | nindent 12 }}
       {{- end }}
     {{- end }}
 

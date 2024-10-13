@@ -1,10 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
 import {StorybookProvider} from '../../testing/StorybookProvider';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {AssetEventDetail, AssetEventDetailEmpty} from '../AssetEventDetail';
 import {
   BasicObservationEvent,
@@ -15,7 +14,10 @@ import {
 } from '../__fixtures__/AssetEventDetail.fixtures';
 
 // eslint-disable-next-line import/no-default-export
-export default {component: AssetEventDetail};
+export default {
+  title: 'Asset Details/Event Detail',
+  component: AssetEventDetail,
+};
 
 export const EmptyState = () => {
   return (

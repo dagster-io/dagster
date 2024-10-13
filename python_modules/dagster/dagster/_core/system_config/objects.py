@@ -1,4 +1,5 @@
 """System-provided config objects and constructors."""
+
 from typing import (
     AbstractSet,
     Any,
@@ -21,7 +22,11 @@ from dagster._core.definitions.executor_definition import (
 )
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterConfigMappingFunctionError,
+    DagsterInvalidConfigError,
+    user_code_error_boundary,
+)
 from dagster._utils import ensure_single_item
 
 
@@ -70,7 +75,7 @@ class OutputsConfig(NamedTuple):
         else:
             return set()
 
-    def get_output_manager_config(self, output_name) -> object:
+    def get_output_manager_config(self, output_name: str) -> object:
         if isinstance(self.config, dict):
             return self.config.get(output_name)
         else:
@@ -81,7 +86,7 @@ class ResourceConfig(NamedTuple):
     config: Any
 
     @staticmethod
-    def from_dict(config):
+    def from_dict(config: Dict[str, object]) -> "ResourceConfig":
         check.dict_param(config, "config", key_type=str)
 
         return ResourceConfig(config=config.get("config"))
@@ -138,8 +143,7 @@ class ResolvedRunConfig(
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         """
         from dagster._config import process_config
-
-        from .composite_descent import composite_descent
+        from dagster._core.system_config.composite_descent import composite_descent
 
         check.inst_param(job_def, "job_def", JobDefinition)
         run_config = check.opt_mapping_param(run_config, "run_config")
@@ -147,9 +151,16 @@ class ResolvedRunConfig(
         run_config_schema = job_def.run_config_schema
         if run_config_schema.config_mapping:
             # add user code boundary
-            run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
-                run_config
-            )
+            with user_code_error_boundary(
+                DagsterConfigMappingFunctionError,
+                lambda: (
+                    f"The config mapping function on job {job_def.name} has"
+                    " thrown an unexpected error during its execution."
+                ),
+            ):
+                run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
+                    run_config
+                )
 
         config_evr = process_config(
             run_config_schema.run_config_schema_type, check.not_none(run_config)
@@ -255,7 +266,7 @@ def config_map_resources(
             )
         else:
             config_mapped_resource_configs[resource_key] = ResourceConfig.from_dict(
-                resource_config_evr.value
+                check.not_none(resource_config_evr.value)
             )
 
     return config_mapped_resource_configs
@@ -332,10 +343,8 @@ def config_map_objects(
     check.inst(
         obj_def,
         def_type,
-        (
-            "Could not find a {def_type} definition on the selected mode that matches the "
-            '{def_type} "{obj_name}" given in run config'
-        ).format(def_type=def_type, obj_name=obj_name),
+        f"Could not find a {def_type} definition on the selected mode that matches the "
+        f'{def_type} "{obj_name}" given in run config',
     )
     obj_def = cast(ConfigurableDefinition, obj_def)
 

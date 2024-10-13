@@ -6,8 +6,8 @@ export const OptionsContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 5px 12px 5px 24px;
-  border-bottom: 1px solid ${Colors.KeylineGray};
-  background: ${Colors.White};
+  border-bottom: 1px solid ${Colors.keylineDefault()};
+  background: ${Colors.backgroundDefault()};
   flex-shrink: 0;
   flex-wrap: wrap;
   z-index: 3;

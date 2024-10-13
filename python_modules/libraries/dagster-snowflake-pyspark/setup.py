@@ -20,8 +20,8 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-snowflake-pyspark",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for integrating Snowflake and PySpark with Dagster.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake-pyspark",
@@ -33,6 +33,8 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_snowflake_pyspark_tests*"]),
+    include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         f"dagster-snowflake{pin}",

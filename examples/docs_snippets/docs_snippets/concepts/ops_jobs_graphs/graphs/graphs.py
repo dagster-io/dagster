@@ -1,7 +1,7 @@
 # ruff: isort: skip_file
 
 
-from dagster import graph, op
+from dagster import graph, op, OpExecutionContext
 
 
 @op
@@ -11,12 +11,12 @@ def my_op():
 
 # start_graph_one
 @op
-def return_one(context):
+def return_one(context: OpExecutionContext):
     return 1
 
 
 @op
-def add_one(context, number: int):
+def add_one(context: OpExecutionContext, number: int):
     return number + 1
 
 

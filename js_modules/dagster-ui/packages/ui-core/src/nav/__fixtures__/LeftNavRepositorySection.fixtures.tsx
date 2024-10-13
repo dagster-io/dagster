@@ -1,16 +1,13 @@
-import {MockedResponse} from '@apollo/client/testing';
-
 import {
+  WorkspaceLocationEntry,
   buildAssetGroup,
   buildPipeline,
   buildRepository,
   buildRepositoryLocation,
-  buildWorkspace,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {ROOT_WORKSPACE_QUERY} from '../../workspace/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
-import {RootWorkspaceQuery} from '../../workspace/types/WorkspaceContext.types';
 
 const buildRepo = ({
   name,
@@ -38,135 +35,66 @@ const buildRepo = ({
   });
 };
 
-export const buildWorkspaceQueryWithZeroLocations = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          locationEntries: [],
+export const buildWorkspaceQueryWithZeroLocations = () => buildWorkspaceMocks([]);
+
+const locationEntries = [
+  buildWorkspaceLocationEntry({
+    id: 'ipsum-entry',
+    name: 'ipsum-entry',
+    locationOrLoadError: buildRepositoryLocation({
+      id: 'ipsum',
+      name: 'ipsum',
+      repositories: [buildRepo({name: 'lorem', jobNames: ['my_pipeline', 'other_pipeline']})],
+    }),
+  }),
+  buildWorkspaceLocationEntry({
+    id: 'bar-entry',
+    name: 'bar-entry',
+    locationOrLoadError: buildRepositoryLocation({
+      id: 'bar',
+      name: 'bar',
+      repositories: [buildRepo({name: 'foo', jobNames: ['bar_job', 'd_job', 'e_job', 'f_job']})],
+    }),
+  }),
+  buildWorkspaceLocationEntry({
+    id: 'abc_location-entry',
+    name: 'abc_location-entry',
+    locationOrLoadError: buildRepositoryLocation({
+      id: 'abc_location',
+      name: 'abc_location',
+      repositories: [
+        buildRepo({
+          name: DUNDER_REPO_NAME,
+          jobNames: ['abc_job', 'def_job', 'ghi_job', 'jkl_job', 'mno_job', 'pqr_job'],
         }),
-      },
-    },
-  };
+      ],
+    }),
+  }),
+] as [WorkspaceLocationEntry, WorkspaceLocationEntry, WorkspaceLocationEntry];
+
+export const buildWorkspaceQueryWithOneLocation = () => {
+  return buildWorkspaceMocks([locationEntries[0]]);
 };
 
-export const buildWorkspaceQueryWithOneLocation = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          locationEntries: [
-            buildWorkspaceLocationEntry({
-              id: 'ipsum-entry',
-              name: 'ipsum-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'ipsum',
-                name: 'ipsum',
-                repositories: [
-                  buildRepo({name: 'lorem', jobNames: ['my_pipeline', 'other_pipeline']}),
-                ],
-              }),
-            }),
-          ],
-        }),
-      },
-    },
-  };
+export const buildWorkspaceQueryWithThreeLocations = () => {
+  return buildWorkspaceMocks(locationEntries);
 };
 
-export const buildWorkspaceQueryWithThreeLocations = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          locationEntries: [
-            buildWorkspaceLocationEntry({
-              id: 'ipsum-entry',
-              name: 'ipsum-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'ipsum',
-                name: 'ipsum',
-                repositories: [
-                  buildRepo({name: 'lorem', jobNames: ['my_pipeline', 'other_pipeline']}),
-                ],
-              }),
-            }),
-            buildWorkspaceLocationEntry({
-              id: 'bar-entry',
-              name: 'bar-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'bar',
-                name: 'bar',
-                repositories: [
-                  buildRepo({name: 'foo', jobNames: ['bar_job', 'd_job', 'e_job', 'f_job']}),
-                ],
-              }),
-            }),
-            buildWorkspaceLocationEntry({
-              id: 'abc_location-entry',
-              name: 'abc_location-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'abc_location',
-                name: 'abc_location',
-                repositories: [
-                  buildRepo({
-                    name: DUNDER_REPO_NAME,
-                    jobNames: ['abc_job', 'def_job', 'ghi_job', 'jkl_job', 'mno_job', 'pqr_job'],
-                  }),
-                ],
-              }),
-            }),
-          ],
-        }),
-      },
-    },
-  };
-};
+const entryWithOneLocationAndAssetGroup = buildWorkspaceLocationEntry({
+  id: 'unique-entry',
+  name: 'unique-entry',
+  locationOrLoadError: buildRepositoryLocation({
+    id: 'unique',
+    name: 'unique',
+    repositories: [
+      buildRepo({
+        name: 'entry',
+        jobNames: ['my_pipeline', 'other_pipeline'],
+        assetGroupNames: ['my_asset_group'],
+      }),
+    ],
+  }),
+});
 
-export const buildWorkspaceQueryWithOneLocationAndAssetGroup = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          locationEntries: [
-            buildWorkspaceLocationEntry({
-              id: 'ipsum-entry',
-              name: 'ipsum-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'ipsum',
-                name: 'ipsum',
-                repositories: [
-                  buildRepo({
-                    name: 'lorem',
-                    jobNames: ['my_pipeline', 'other_pipeline'],
-                    assetGroupNames: ['my_asset_group'],
-                  }),
-                ],
-              }),
-            }),
-          ],
-        }),
-      },
-    },
-  };
-};
+export const buildWorkspaceQueryWithOneLocationAndAssetGroup = () =>
+  buildWorkspaceMocks([entryWithOneLocationAndAssetGroup]);

@@ -1,5 +1,5 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
+  Body2,
   Box,
   Button,
   Checkbox,
@@ -13,19 +13,35 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 
+import {
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
+  DaemonNotRunningAlert,
+  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
+  UsingDefaultLauncherAlert,
+  isBackfillDaemonHealthy,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
+} from './BackfillMessaging';
+import {DimensionRangeWizard} from './DimensionRangeWizard';
+import {PartitionRunStatusCheckboxes, countsByState} from './PartitionRunStatusCheckboxes';
+import {
+  BackfillSelectorQuery,
+  BackfillSelectorQueryVariables,
+} from './types/BackfillSelector.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {PartitionDefinitionType, RunStatus} from '../graphql/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
-} from '../instance/types/BackfillUtils.types';
+} from '../instance/backfill/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
@@ -34,44 +50,31 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {
-  DaemonNotRunningAlert,
-  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
-  showBackfillErrorToast,
-  showBackfillSuccessToast,
-  UsingDefaultLauncherAlert,
-  USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
-} from './BackfillMessaging';
-import {DimensionRangeWizard} from './DimensionRangeWizard';
-import {countsByState, PartitionRunStatusCheckboxes} from './PartitionRunStatusCheckboxes';
-import {
-  BackfillSelectorQuery,
-  BackfillSelectorQueryVariables,
-} from './types/BackfillSelector.types';
-
 interface BackfillOptions {
   reexecute: boolean;
   fromFailure: boolean;
 }
 
-export const BackfillPartitionSelector: React.FC<{
-  partitionSetName: string;
-  partitionNames: string[];
-  runStatusData: {[partitionName: string]: RunStatus};
-  pipelineName: string;
-  onLaunch?: (backfillId: string, stepQuery: string) => void;
-  onCancel?: () => void;
-  onSubmit: () => void;
-  repoAddress: RepoAddress;
-}> = ({
+export const BackfillPartitionSelector = ({
   partitionSetName,
   onLaunch,
   onCancel,
   onSubmit,
   repoAddress,
   runStatusData,
+  refreshing,
   pipelineName,
   partitionNames,
+}: {
+  partitionSetName: string;
+  partitionNames: string[];
+  runStatusData: {[partitionName: string]: RunStatus};
+  refreshing: boolean;
+  pipelineName: string;
+  onLaunch?: (backfillId: string, stepQuery: string) => void;
+  onCancel?: () => void;
+  onSubmit: () => void;
+  repoAddress: RepoAddress;
 }) => {
   const history = useHistory();
   const [range, _setRange] = React.useState<string[]>(
@@ -178,7 +181,19 @@ export const BackfillPartitionSelector: React.FC<{
     <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 24}}>
-          <Section title="Partitions">
+          <Section
+            title={
+              <Box flex={{justifyContent: 'space-between'}}>
+                <div>Partitions</div>
+                {refreshing && (
+                  <Box flex={{gap: 4, alignItems: 'center'}}>
+                    <Spinner purpose="body-text" />
+                    <Body2 color={Colors.textLight()}>Refreshing...</Body2>
+                  </Box>
+                )}
+              </Box>
+            }
+          >
             <Box>
               Select partitions to materialize. Click and drag to select a range on the timeline.
             </Box>
@@ -238,7 +253,7 @@ export const BackfillPartitionSelector: React.FC<{
                       placement="top"
                       content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed. Only applies for selections of failed partitions."
                     >
-                      <Icon name="info" color={Colors.Gray500} />
+                      <Icon name="info" color={Colors.accentGray()} />
                     </Tooltip>
                   </Box>
                 }
@@ -254,7 +269,7 @@ export const BackfillPartitionSelector: React.FC<{
                   placement="top"
                   content="Applies a step-selection to each run for the requested partitions."
                 >
-                  <Icon name="info" color={Colors.Gray500} />
+                  <Icon name="info" color={Colors.accentGray()} />
                 </Tooltip>
               </Box>
             }
@@ -270,7 +285,7 @@ export const BackfillPartitionSelector: React.FC<{
                 autoApplyChanges={true}
               />
               {query ? (
-                <div style={{color: Colors.Gray500}}>
+                <div style={{color: Colors.textLight()}}>
                   {stepRows.length} step{stepRows.length === 1 ? '' : 's'} selected
                 </div>
               ) : null}
@@ -285,7 +300,9 @@ export const BackfillPartitionSelector: React.FC<{
               onRequestClose={() => setTagEditorOpen(false)}
             />
             {tags.length ? (
-              <div style={{border: `1px solid ${Colors.Gray300}`, borderRadius: 8, padding: 3}}>
+              <div
+                style={{border: `1px solid ${Colors.borderDefault()}`, borderRadius: 8, padding: 3}}
+              >
                 <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
               </div>
             ) : (
@@ -296,7 +313,7 @@ export const BackfillPartitionSelector: React.FC<{
           </Section>
 
           <Box flex={{direction: 'column', gap: 16}}>
-            <DaemonNotRunningAlert instance={instance} />
+            {!isBackfillDaemonHealthy(instance) ? <DaemonNotRunningAlert /> : null}
 
             <UsingDefaultLauncherAlert instance={instance} />
           </Box>
@@ -326,17 +343,7 @@ export const BackfillPartitionSelector: React.FC<{
   );
 };
 
-const LaunchBackfillButton: React.FC<{
-  partitionSetName: string;
-  partitionNames: string[];
-  reexecutionSteps?: string[];
-  fromFailure?: boolean;
-  tags?: PipelineRunTag[];
-  onSuccess?: (backfillId: string, isPureAssetBackfill: boolean) => void;
-  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
-  onSubmit: () => void;
-  repoAddress: RepoAddress;
-}> = ({
+const LaunchBackfillButton = ({
   partitionSetName,
   partitionNames,
   reexecutionSteps,
@@ -346,6 +353,16 @@ const LaunchBackfillButton: React.FC<{
   onError,
   onSubmit,
   repoAddress,
+}: {
+  partitionSetName: string;
+  partitionNames: string[];
+  reexecutionSteps?: string[];
+  fromFailure?: boolean;
+  tags?: PipelineRunTag[];
+  onSuccess?: (backfillId: string, isPureAssetBackfill: boolean) => void;
+  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
+  onSubmit: () => void;
+  repoAddress: RepoAddress;
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
@@ -478,11 +495,7 @@ const Section = ({
 }) => (
   <Box flex={{direction: 'column', gap: 4}}>
     <Subheading>{title}</Subheading>
-    <Box
-      flex={{direction: 'column', gap: 8}}
-      padding={{top: 16}}
-      border={{width: 1, color: Colors.KeylineGray, side: 'top'}}
-    >
+    <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} border="top">
       {children}
     </Box>
   </Box>

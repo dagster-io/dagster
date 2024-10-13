@@ -1,10 +1,10 @@
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {IconWrapper} from './Icon';
 
 export const RadioContainer = styled.div`
-  .bp4-control {
+  .bp5-control {
     margin-bottom: 0;
     display: flex;
     flex-direction: row;
@@ -14,39 +14,39 @@ export const RadioContainer = styled.div`
     }
   }
 
-  .bp4-control.bp4-radio {
+  .bp5-control.bp5-radio {
     padding: 4px 4px 4px 0;
   }
 
-  .bp4-control.bp4-radio.bp4-disabled {
+  .bp5-control.bp5-radio.bp5-disabled {
     cursor: default;
-    color: ${Colors.Gray300};
+    color: ${Colors.backgroundDisabled()};
 
     ${IconWrapper} {
       opacity: 0.3;
     }
   }
 
-  .bp4-control .bp4-control-indicator {
+  .bp5-control .bp5-control-indicator {
     margin: 0;
     margin-right: 8px;
   }
 
-  .bp4-control input:checked ~ .bp4-control-indicator {
-    background-color: ${Colors.Blue500};
+  .bp5-control input:checked ~ .bp5-control-indicator {
+    background-color: ${Colors.accentBlue()};
   }
 
-  .bp4-control.bp4-radio input:disabled ~ .bp4-control-indicator {
+  .bp5-control.bp5-radio input:disabled ~ .bp5-control-indicator {
     cursor: default;
     opacity: 0.7;
   }
 
-  .bp4-control.bp4-radio input:disabled:checked ~ .bp4-control-indicator {
-    background-color: ${Colors.Blue200};
+  .bp5-control.bp5-radio input:disabled:checked ~ .bp5-control-indicator {
+    background-color: ${Colors.accentBlue()};
   }
 
-  .bp4-control .bp4-control-indicator,
-  .bp4-control .bp4-control-indicator::before {
+  .bp5-control .bp5-control-indicator,
+  .bp5-control .bp5-control-indicator::before {
     width: 18px;
     height: 18px;
   }

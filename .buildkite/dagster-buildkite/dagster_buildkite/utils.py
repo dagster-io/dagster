@@ -3,7 +3,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 import packaging.version
 import yaml
@@ -12,9 +12,9 @@ from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 from dagster_buildkite.git import ChangedFiles, get_commit_message
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
-    "rex@elementl.com": "eng-buildkite-rex",
-    "dish@elementl.com": "eng-buildkite-dish",
-    "johann@elementl.com": "eng-buildkite-johann",
+    "rex@dagsterlabs.com": "eng-buildkite-rex",
+    "dish@dagsterlabs.com": "eng-buildkite-dish",
+    "johann@dagsterlabs.com": "eng-buildkite-johann",
 }
 
 # ########################
@@ -63,9 +63,44 @@ TriggerStep = TypedDict(
 
 WaitStep: TypeAlias = Literal["wait"]
 
-BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep]
+InputSelectOption = TypedDict("InputSelectOption", {"label": str, "value": str})
+InputSelectField = TypedDict(
+    "InputSelectField",
+    {
+        "select": str,
+        "key": str,
+        "options": List[InputSelectOption],
+        "hint": Optional[str],
+        "default": Optional[str],
+        "required": Optional[bool],
+        "multiple": Optional[bool],
+    },
+)
+InputTextField = TypedDict(
+    "InputTextField",
+    {
+        "text": str,
+        "key": str,
+        "hint": Optional[str],
+        "default": Optional[str],
+        "required": Optional[bool],
+    },
+)
+
+BlockStep = TypedDict(
+    "BlockStep",
+    {
+        "block": str,
+        "prompt": Optional[str],
+        "fields": List[Union[InputSelectField, InputTextField]],
+    },
+)
+
+BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
+
+UV_PIN = "uv==0.4.8"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
@@ -82,7 +117,9 @@ def safe_getenv(env_var: str) -> str:
     return os.environ[env_var]
 
 
-def buildkite_yaml_for_steps(steps) -> str:
+def buildkite_yaml_for_steps(
+    steps: Sequence[BuildkiteStep], custom_slack_channel: Optional[str] = None
+) -> str:
     return yaml.dump(
         {
             "env": {
@@ -101,7 +138,17 @@ def buildkite_yaml_for_steps(steps) -> str:
                     ),
                 }
                 for buildkite_email, slack_channel in BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP.items()
-            ],
+            ]
+            + (
+                [
+                    {
+                        "slack": f"elementl#{custom_slack_channel}",
+                        "if": "build.state != 'canceled'",
+                    }
+                ]
+                if custom_slack_channel
+                else []
+            ),
         },
         default_flow_style=False,
     )
@@ -135,9 +182,7 @@ def network_buildkite_container(network_name: str) -> List[str]:
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
         # then, we dynamically bind this container into the user-defined bridge
         # network to make the target containers visible...
-        "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
-            network_name=network_name
-        ),
+        f"docker network connect {network_name} \\${{CONTAINER_NAME}}",
     ]
 
 
@@ -195,14 +240,61 @@ def get_commit(rev):
     return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
-def skip_if_no_python_changes():
+def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
+    if message_contains("NO_SKIP"):
+        return None
+
     if not is_feature_branch():
         return None
 
     if any(path.suffix == ".py" for path in ChangedFiles.all):
         return None
 
+    if overrides and any(
+        Path(override) in path.parents for override in overrides for path in ChangedFiles.all
+    ):
+        return None
+
     return "No python changes"
+
+
+def skip_if_no_pyright_requirements_txt_changes():
+    if message_contains("NO_SKIP"):
+        return None
+
+    if not is_feature_branch():
+        return None
+
+    if any(path.match("pyright/*/requirements.txt") for path in ChangedFiles.all):
+        return None
+
+    return "No pyright requirements.txt changes"
+
+
+def skip_if_no_yaml_changes():
+    if message_contains("NO_SKIP"):
+        return None
+
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix in [".yml", ".yaml"] for path in ChangedFiles.all):
+        return None
+
+    return "No yaml changes"
+
+
+def skip_if_no_non_docs_markdown_changes():
+    if message_contains("NO_SKIP"):
+        return None
+
+    if not is_feature_branch():
+        return None
+
+    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
+        return None
+
+    return "No markdown changes outside of docs"
 
 
 @functools.lru_cache(maxsize=None)
@@ -210,7 +302,24 @@ def has_helm_changes():
     return any(Path("helm") in path.parents for path in ChangedFiles.all)
 
 
+@functools.lru_cache(maxsize=None)
+def has_dagster_airlift_changes():
+    return any("dagster-airlift" in str(path) for path in ChangedFiles.all)
+
+
+@functools.lru_cache(maxsize=None)
+def has_storage_test_fixture_changes():
+    # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
+    return any(
+        Path("python_modules/dagster/dagster_tests/storage_tests/utils") in path.parents
+        for path in ChangedFiles.all
+    )
+
+
 def skip_if_no_helm_changes():
+    if message_contains("NO_SKIP"):
+        return None
+
     if not is_feature_branch():
         return None
 
@@ -229,6 +338,9 @@ def message_contains(substring: str) -> bool:
 
 
 def skip_if_no_docs_changes():
+    if message_contains("NO_SKIP"):
+        return None
+
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):
         return None
 

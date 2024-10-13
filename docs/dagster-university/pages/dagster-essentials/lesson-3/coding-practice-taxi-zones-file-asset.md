@@ -1,7 +1,7 @@
 ---
-title: "Lesson 3: Practice: Create a taxi_zones_file asset"
-module: "dagster_essentials"
-lesson: "3"
+title: 'Lesson 3: Practice: Create a taxi_zones_file asset'
+module: 'dagster_essentials'
+lesson: '3'
 ---
 
 # Practice: Create a taxi_zones_file asset
@@ -16,20 +16,20 @@ To practice what you’ve learned, create an asset in `trips.py` that:
 
 ## Check your work
 
-The asset you built should look similar to the code contained in the **View answer** toggle. Click to open it.
+The asset you built should look similar to the following code. Click **View answer** to view it.
 
-```python
+**If there are differences**, compare what you wrote to the asset below and change them, as this asset will be used as-is in future lessons.
+
+```python {% obfuscated="true" %}
 @asset
-def taxi_zones_file():
+def taxi_zones_file() -> None:
     """
-        The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
+      The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
     """
     raw_taxi_zones = requests.get(
         "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
     )
 
-    with open("data/raw/taxi_zones.csv", "wb") as output_file:
+    with open(constants.TAXI_ZONES_FILE_PATH, "wb") as output_file:
         output_file.write(raw_taxi_zones.content)
 ```
-
-**If there are differences**, compare what you wrote to the asset above and change them, as this asset will be used as-is in future lessons.

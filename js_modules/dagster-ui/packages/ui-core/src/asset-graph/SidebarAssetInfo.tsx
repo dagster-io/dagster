@@ -1,14 +1,18 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
+import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
+import {gql, useQuery} from '../apollo-client';
+import {COMMON_COLLATOR} from '../app/Util';
+import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
-  AssetMetadataTable,
   ASSET_NODE_OP_METADATA_FRAGMENT,
+  AssetMetadataTable,
   metadataForAssetNode,
 } from '../assets/AssetMetadata';
 import {AssetSidebarActivitySummary} from '../assets/AssetSidebarActivitySummary';
@@ -16,14 +20,20 @@ import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {UnderlyingOpsOrGraph} from '../assets/UnderlyingOpsOrGraph';
 import {Version} from '../assets/Version';
+import {
+  EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT,
+  EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
+} from '../assets/asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   healthRefreshHintFromLiveData,
   usePartitionHealthData,
 } from '../assets/usePartitionHealthData';
+import {useRecentAssetEvents} from '../assets/useRecentAssetEvents';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {TableSchemaAssetContext} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
@@ -32,33 +42,33 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {
-  LiveDataForNode,
-  displayNameForAssetKey,
-  GraphNode,
-  nodeDependsOnSelf,
-  stepKeyForAsset,
-} from './Utils';
-import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-
-export const SidebarAssetInfo: React.FC<{
-  graphNode: GraphNode;
-  liveData?: LiveDataForNode;
-}> = ({graphNode, liveData}) => {
+export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {assetKey, definition} = graphNode;
+  const {liveData} = useAssetLiveData(assetKey, 'sidebar');
   const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
   const partitionHealthData = usePartitionHealthData(
     [assetKey],
     partitionHealthRefreshHint,
     'background',
   );
-  const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
+  const queryResult = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
+  const {data} = queryResult;
 
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
+
+  const recentEvents = useRecentAssetEvents(
+    asset?.assetKey,
+    {},
+    {assetHasDefinedPartitions: !!asset?.partitionDefinition},
+  );
+
+  const latestEvent = recentEvents.materializations
+    ? recentEvents.materializations[recentEvents.materializations.length - 1]
+    : undefined;
+
   if (!asset) {
     return (
       <>
@@ -103,14 +113,19 @@ export const SidebarAssetInfo: React.FC<{
       <AssetSidebarActivitySummary
         asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
-        isSourceAsset={definition.isSource}
+        recentEvents={recentEvents}
+        isObservable={definition.isObservable}
         stepKey={stepKeyForAsset(definition)}
         liveData={liveData}
       />
 
-      <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
+      <div style={{borderBottom: `2px solid ${Colors.borderDefault()}`}} />
 
-      {nodeDependsOnSelf(graphNode) && <DependsOnSelfBanner />}
+      {nodeDependsOnSelf(graphNode) && (
+        <Box padding={{vertical: 16, left: 24, right: 12}} border="bottom">
+          <DependsOnSelfBanner />
+        </Box>
+      )}
 
       {asset.opVersion && (
         <SidebarSection title="Code Version">
@@ -132,35 +147,51 @@ export const SidebarAssetInfo: React.FC<{
       )}
 
       {asset.requiredResources.length > 0 && (
-        <SidebarSection title="Required Resources">
+        <SidebarSection title="Required resources">
           <Box padding={{vertical: 16, horizontal: 24}}>
-            {asset.requiredResources.map((resource) => (
-              <ResourceContainer key={resource.resourceKey}>
-                <Icon name="resource" color={Colors.Gray700} />
-                {repoAddress ? (
-                  <Link
-                    to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
-                  >
+            {[...asset.requiredResources]
+              .sort((a, b) => COMMON_COLLATOR.compare(a.resourceKey, b.resourceKey))
+              .map((resource) => (
+                <ResourceContainer key={resource.resourceKey}>
+                  <Icon name="resource" color={Colors.accentGray()} />
+                  {repoAddress ? (
+                    <Link
+                      to={workspacePathFromAddress(
+                        repoAddress,
+                        `/resources/${resource.resourceKey}`,
+                      )}
+                    >
+                      <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                    </Link>
+                  ) : (
                     <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                  </Link>
-                ) : (
-                  <ResourceHeader>{resource.resourceKey}</ResourceHeader>
-                )}
-              </ResourceContainer>
-            ))}
+                  )}
+                </ResourceContainer>
+              ))}
           </Box>
         </SidebarSection>
       )}
 
       {assetMetadata.length > 0 && (
         <SidebarSection title="Metadata">
-          <AssetMetadataTable assetMetadata={assetMetadata} repoLocation={repoAddress?.location} />
+          <TableSchemaAssetContext.Provider
+            value={{
+              assetKey,
+              materializationMetadataEntries: latestEvent?.metadataEntries,
+              definitionMetadataEntries: assetMetadata,
+            }}
+          >
+            <AssetMetadataTable
+              assetMetadata={assetMetadata}
+              repoLocation={repoAddress?.location}
+            />
+          </TableSchemaAssetContext.Provider>
         </SidebarSection>
       )}
 
       {assetType && <TypeSidebarSection assetType={assetType} />}
 
-      {asset.partitionDefinition && !definition.isSource && (
+      {asset.partitionDefinition && definition.isMaterializable && (
         <SidebarSection title="Partitions">
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 16}}>
             <p>{asset.partitionDefinition.description}</p>
@@ -172,9 +203,7 @@ export const SidebarAssetInfo: React.FC<{
   );
 };
 
-const TypeSidebarSection: React.FC<{
-  assetType: DagsterTypeFragment;
-}> = ({assetType}) => {
+const TypeSidebarSection = ({assetType}: {assetType: DagsterTypeFragment}) => {
   return (
     <SidebarSection title="Type">
       <DagsterTypeSummary type={assetType} />
@@ -182,11 +211,13 @@ const TypeSidebarSection: React.FC<{
   );
 };
 
-const Header: React.FC<{
+interface HeaderProps {
   assetNode: AssetNodeForGraphQueryFragment;
   opName?: string;
   repoAddress?: RepoAddress | null;
-}> = ({assetNode, repoAddress}) => {
+}
+
+const Header = ({assetNode, repoAddress}: HeaderProps) => {
   const displayName = displayNameForAssetKey(assetNode.assetKey);
 
   return (
@@ -204,7 +235,7 @@ const Header: React.FC<{
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <AssetCatalogLink to={assetDetailsPathForKey(assetNode.assetKey)}>
           {'View in Asset Catalog '}
-          <Icon name="open_in_new" color={Colors.Link} />
+          <Icon name="open_in_new" color={Colors.linkDefault()} />
         </AssetCatalogLink>
 
         {repoAddress && (
@@ -214,11 +245,12 @@ const Header: React.FC<{
     </Box>
   );
 };
+
 const AssetCatalogLink = styled(Link)`
   display: flex;
-  gap: 5px;
-  padding: 6px;
-  margin: -6px;
+  gap: 4px;
+  padding: 2px;
+  margin: -2px;
   align-items: center;
   white-space: nowrap;
 `;
@@ -227,7 +259,6 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description
-    ...AssetNodeConfigFragment
     metadataEntries {
       ...MetadataEntryFragment
     }
@@ -236,11 +267,8 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       cronSchedule
       cronScheduleTimezone
     }
-    autoMaterializePolicy {
-      policyType
-      rules {
-        description
-      }
+    backfillPolicy {
+      description
     }
     partitionDefinition {
       description
@@ -257,6 +285,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       }
     }
     opVersion
+    jobNames
     repository {
       id
       name
@@ -268,13 +297,26 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     requiredResources {
       resourceKey
     }
+    assetChecksOrError {
+      ... on AssetChecks {
+        checks {
+          name
+          ...ExecuteChecksButtonCheckFragment
+        }
+      }
+    }
+    changedReasons
 
+    ...AssetNodeConfigFragment
     ...AssetNodeOpMetadataFragment
+    ...ExecuteChecksButtonAssetNodeFragment
   }
 
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_ASSET_NODE_FRAGMENT}
+  ${EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT}
 `;
 
 export const SIDEBAR_ASSET_QUERY = gql`

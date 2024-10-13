@@ -8,8 +8,8 @@ import dagster._check as check
 from dagster._config import Field, IntSource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation import ExternalSchedule
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import RemoteSchedule
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -17,7 +17,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_timestamp
 from dagster._utils import mkdir_p
 
 
@@ -64,7 +64,7 @@ class Scheduler(abc.ABC):
     """
 
     def start_schedule(
-        self, instance: DagsterInstance, external_schedule: ExternalSchedule
+        self, instance: DagsterInstance, remote_schedule: RemoteSchedule
     ) -> InstigatorState:
         """Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
 
@@ -72,27 +72,27 @@ class Scheduler(abc.ABC):
 
         Args:
             instance (DagsterInstance): The current instance.
-            external_schedule (ExternalSchedule): The schedule to start
+            remote_schedule (ExternalSchedule): The schedule to start
 
         """
         check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
+        check.inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(
-            external_schedule.get_external_origin_id(), external_schedule.selector_id
+            remote_schedule.get_remote_origin_id(), remote_schedule.selector_id
         )
-        computed_state = external_schedule.get_current_instigator_state(stored_state)
+        computed_state = remote_schedule.get_current_instigator_state(stored_state)
         if computed_state.is_running:
             return computed_state
 
         new_instigator_data = ScheduleInstigatorData(
-            external_schedule.cron_schedule,
-            get_current_datetime_in_utc().timestamp(),
+            remote_schedule.cron_schedule,
+            get_current_timestamp(),
         )
 
         if not stored_state:
             started_state = InstigatorState(
-                external_schedule.get_external_origin(),
+                remote_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
                 new_instigator_data,
@@ -110,7 +110,7 @@ class Scheduler(abc.ABC):
         instance: DagsterInstance,
         schedule_origin_id: str,
         schedule_selector_id: str,
-        external_schedule: Optional[ExternalSchedule],
+        remote_schedule: Optional[RemoteSchedule],
     ) -> InstigatorState:
         """Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
 
@@ -120,26 +120,26 @@ class Scheduler(abc.ABC):
             schedule_origin_id (string): The id of the schedule target to stop running.
         """
         check.str_param(schedule_origin_id, "schedule_origin_id")
-        check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
+        check.opt_inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
 
         stored_state = instance.get_instigator_state(schedule_origin_id, schedule_selector_id)
 
-        if not external_schedule:
+        if not remote_schedule:
             computed_state = stored_state
         else:
-            computed_state = external_schedule.get_current_instigator_state(stored_state)
+            computed_state = remote_schedule.get_current_instigator_state(stored_state)
 
         if computed_state and not computed_state.is_running:
             return computed_state
 
         if not stored_state:
-            assert external_schedule
+            assert remote_schedule
             stopped_state = InstigatorState(
-                external_schedule.get_external_origin(),
+                remote_schedule.get_remote_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(
-                    external_schedule.cron_schedule,
+                    remote_schedule.cron_schedule,
                 ),
             )
             instance.add_instigator_state(stopped_state)
@@ -152,6 +152,47 @@ class Scheduler(abc.ABC):
             instance.update_instigator_state(stopped_state)
 
         return stopped_state
+
+    def reset_schedule(
+        self, instance: DagsterInstance, remote_schedule: RemoteSchedule
+    ) -> InstigatorState:
+        """If the given schedule has a default schedule status, then update the status to
+        `InstigatorStatus.DECLARED_IN_CODE` in schedule storage.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            remote_schedule (ExternalSchedule): The schedule to reset.
+        """
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(remote_schedule, "remote_schedule", RemoteSchedule)
+
+        stored_state = instance.get_instigator_state(
+            remote_schedule.get_remote_origin_id(), remote_schedule.selector_id
+        )
+
+        new_status = InstigatorStatus.DECLARED_IN_CODE
+
+        if not stored_state:
+            new_instigator_data = ScheduleInstigatorData(
+                remote_schedule.cron_schedule,
+                start_timestamp=None,
+            )
+            reset_state = instance.add_instigator_state(
+                state=InstigatorState(
+                    remote_schedule.get_remote_origin(),
+                    InstigatorType.SCHEDULE,
+                    new_status,
+                    new_instigator_data,
+                )
+            )
+        else:
+            reset_state = instance.update_instigator_state(
+                state=stored_state.with_status(new_status)
+            )
+
+        return reset_state
 
     @abc.abstractmethod
     def debug_info(self) -> str:
@@ -170,9 +211,9 @@ DEFAULT_MAX_CATCHUP_RUNS = 5
 
 
 class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
-    """Default scheduler implementation that submits runs from the `dagster-daemon`
-    long-lived process. Periodically checks each running schedule for execution times that don't
-    have runs yet and launches them.
+    """Default scheduler implementation that submits runs from the long-lived ``dagster-daemon``
+    process. Periodically checks each running schedule for execution times that don't yet
+    have runs and launches them.
     """
 
     def __init__(
@@ -202,12 +243,11 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
             partitions for each schedule that will be considered when looking for missing
             runs . Generally this parameter will only come into play if the scheduler
             falls behind or launches after experiencing downtime. This parameter will not be checked for
-            schedules without partition sets (for example, schedules created using the @schedule
-            decorator) - only the most recent execution time will be considered for those schedules.
+            schedules without partition sets (for example, schedules created using the :py:func:`@schedule <dagster.schedule>` decorator) - only the most recent execution time will be considered for those schedules.
 
-            Note that no matter what this value is, the scheduler will never launch a run from a time
-            before the schedule was turned on (even if the start_date on the schedule is earlier) - if
-            you want to launch runs for earlier partitions, launch a backfill.
+            Note: No matter what this value is, the scheduler will never launch a run from a time
+            before the schedule was turned on, even if the schedule's ``start_date`` is earlier. If
+            you want to launch runs for earlier partitions, `launch a backfill </concepts/partitions-schedules-sensors/backfills>`_.
             """,
             ),
             "max_tick_retries": Field(
@@ -215,7 +255,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
                 default_value=0,
                 is_required=False,
                 description=(
-                    "For each schedule tick that raises an error, how many times to retry that tick"
+                    "For each schedule tick that raises an error, the number of times to retry the tick."
                 ),
             ),
         }
@@ -224,7 +264,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return DagsterDaemonScheduler(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def debug_info(self) -> str:
         return ""

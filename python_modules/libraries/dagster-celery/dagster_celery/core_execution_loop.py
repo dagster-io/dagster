@@ -11,9 +11,9 @@ from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .defaults import task_default_priority, task_default_queue
-from .make_app import make_app
-from .tags import (
+from dagster_celery.defaults import task_default_priority, task_default_queue
+from dagster_celery.make_app import make_app
+from dagster_celery.tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
     DAGSTER_CELERY_STEP_PRIORITY_TAG,
@@ -83,9 +83,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
                         step = active_execution.get_step_by_key(step_key)
                         yield DagsterEvent.engine_event(
                             job_context.for_step(step),
-                            'celery task for running step "{step_key}" was revoked.'.format(
-                                step_key=step_key,
-                            ),
+                            f'celery task for running step "{step_key}" was revoked.',
                             EngineEventData(marker_end=DELEGATE_MARKER),
                         )
                     except Exception:
@@ -125,9 +123,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
                     queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
                     yield DagsterEvent.engine_event(
                         job_context.for_step(step),
-                        'Submitting celery task for step "{step_key}" to queue "{queue}".'.format(
-                            step_key=step.key, queue=queue
-                        ),
+                        f'Submitting celery task for step "{step.key}" to queue "{queue}".',
                         EngineEventData(marker_start=DELEGATE_MARKER),
                     )
 

@@ -1,3 +1,3 @@
-from .cli import main
+from dagstermill.cli import main
 
 main()

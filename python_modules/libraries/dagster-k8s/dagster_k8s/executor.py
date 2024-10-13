@@ -24,17 +24,17 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._utils.merger import merge_dicts
 
-from dagster_k8s.launcher import K8sRunLauncher
-
-from .client import DagsterKubernetesClient
-from .container_context import K8sContainerContext
-from .job import (
-    USER_DEFINED_K8S_CONFIG_SCHEMA,
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_k8s.job import (
+    USER_DEFINED_K8S_JOB_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
+    UserDefinedDagsterK8sConfig,
     construct_dagster_k8s_job,
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
+from dagster_k8s.launcher import K8sRunLauncher
 
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),
@@ -69,7 +69,7 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
         ),
         "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         "step_k8s_config": Field(
-            USER_DEFINED_K8S_CONFIG_SCHEMA,
+            USER_DEFINED_K8S_JOB_CONFIG_SCHEMA,
             is_required=False,
             description="Raw Kubernetes configuration for each step launched by the executor.",
         ),
@@ -139,9 +139,10 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         namespace=exc_cfg.get("job_namespace"),  # type: ignore
         resources=exc_cfg.get("resources"),  # type: ignore
         scheduler_name=exc_cfg.get("scheduler_name"),  # type: ignore
+        security_context=exc_cfg.get("security_context"),  # type: ignore
         # step_k8s_config feeds into the run_k8s_config field because it is merged
         # with any configuration for the run that was set on the run launcher or code location
-        run_k8s_config=exc_cfg.get("step_k8s_config"),  # type: ignore
+        run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(exc_cfg.get("step_k8s_config", {})),
     )
 
     if "load_incluster_config" in exc_cfg:
@@ -224,7 +225,7 @@ class K8sStepHandler(StepHandler):
         user_defined_k8s_config = get_user_defined_k8s_config(
             step_handler_context.step_tags[step_key]
         )
-        return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict()))
+        return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config))
 
     def _get_k8s_step_job_name(self, step_handler_context: StepHandlerContext):
         step_key = self._get_step_key(step_handler_context)
@@ -271,9 +272,9 @@ class K8sStepHandler(StepHandler):
             "dagster/op": step_key,
             "dagster/run-id": step_handler_context.execute_step_args.run_id,
         }
-        if run.external_job_origin:
+        if run.remote_job_origin:
             labels["dagster/code-location"] = (
-                run.external_job_origin.external_repository_origin.code_location_origin.location_name
+                run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
         job = construct_dagster_k8s_job(
             job_config=job_config,
@@ -281,7 +282,7 @@ class K8sStepHandler(StepHandler):
             job_name=job_name,
             pod_name=pod_name,
             component="step_worker",
-            user_defined_k8s_config=container_context.get_run_user_defined_k8s_config(),
+            user_defined_k8s_config=container_context.run_k8s_config,
             labels=labels,
             env_vars=[
                 *step_handler_context.execute_step_args.get_command_env(),
@@ -290,7 +291,6 @@ class K8sStepHandler(StepHandler):
                     "value": run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
-                *container_context.env,
             ],
         )
 
@@ -316,6 +316,10 @@ class K8sStepHandler(StepHandler):
             namespace=container_context.namespace,
             job_name=job_name,
         )
+        if not status:
+            return CheckStepHealthResult.unhealthy(
+                reason=f"Kubernetes job {job_name} for step {step_key} could not be found."
+            )
         if status.failed:
             return CheckStepHealthResult.unhealthy(
                 reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",

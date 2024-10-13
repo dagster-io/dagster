@@ -1,14 +1,15 @@
 from typing import Any, Mapping, Optional, Sequence
 
 import docker
+import docker.errors
 from dagster import Field, In, Nothing, OpExecutionContext, StringSource, op
 from dagster._annotations import experimental
 from dagster._core.utils import parse_env_var
 from dagster._serdes.utils import hash_str
 
-from ..container_context import DockerContainerContext
-from ..docker_run_launcher import DockerRunLauncher
-from ..utils import DOCKER_CONFIG_SCHEMA, validate_docker_image
+from dagster_docker.container_context import DockerContainerContext
+from dagster_docker.docker_run_launcher import DockerRunLauncher
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_image
 
 DOCKER_CONTAINER_OP_CONFIG = {
     **DOCKER_CONFIG_SCHEMA,
@@ -44,7 +45,6 @@ def _get_client(docker_container_context: DockerContainerContext):
 def _get_container_name(run_id, op_name, retry_number):
     container_name = hash_str(run_id + op_name)
 
-    retry_number = retry_number
     if retry_number > 0:
         container_name = f"{container_name}-{retry_number}"
 

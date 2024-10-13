@@ -13,12 +13,7 @@ from dagster._core.definitions.decorators import graph
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph
-from dagster._core.utility_ops import (
-    create_op_with_deps,
-    create_root_op,
-    create_stub_op,
-    input_set,
-)
+from dagster._core.utility_ops import create_op_with_deps, create_root_op, create_stub_op, input_set
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 

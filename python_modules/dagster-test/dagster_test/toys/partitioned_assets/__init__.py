@@ -1,7 +1,8 @@
-from .different_static_partitions import *  # noqa: F403
-from .dynamic_asset_partitions import *  # noqa: F403
-from .failing_partitions import *  # noqa: F403
-from .hourly_and_daily_and_unpartitioned import *  # noqa: F403
-from .hourly_partitions_to_daily import *  # noqa: F403
-from .partitioned_run_request_sensors import *  # noqa: F403
-from .single_partitions_to_multi import *  # noqa: F403
+from dagster_test.toys.partitioned_assets.different_static_partitions import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)
+from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)
+from dagster_test.toys.partitioned_assets.failing_partitions import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)
+from dagster_test.toys.partitioned_assets.hourly_and_daily_and_unpartitioned import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)
+from dagster_test.toys.partitioned_assets.hourly_partitions_to_daily import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)
+from dagster_test.toys.partitioned_assets.partitioned_run_request_sensors import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)
+from dagster_test.toys.partitioned_assets.single_partitions_to_multi import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)
+from dagster_test.toys.partitioned_assets.with_backfill_policies import *  # noqa: F403  # pyright: ignore (reportWildcardImportFromLibrary)

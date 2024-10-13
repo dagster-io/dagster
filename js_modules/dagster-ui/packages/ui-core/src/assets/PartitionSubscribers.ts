@@ -1,13 +1,13 @@
-import React from 'react';
+import {useEffect, useRef} from 'react';
 
 const subscriptions: Array<() => void> = [];
 
 export function usePartitionDataSubscriber(onInvalidate: () => void) {
   // Use a ref so that if the callback changes we don't retrigger the useEffect below
-  const onInvalidateRef = React.useRef(onInvalidate);
+  const onInvalidateRef = useRef(onInvalidate);
   onInvalidateRef.current = onInvalidate;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const cb = () => onInvalidateRef.current();
     subscriptions.push(cb);
     return () => {

@@ -26,20 +26,17 @@ from dagster._core.decorator_utils import (
     positional_arg_name_list,
 )
 from dagster._core.definitions.inference import infer_input_props
-from dagster._core.definitions.resource_annotation import (
-    get_resource_args,
-)
+from dagster._core.definitions.input import In, InputDefinition
+from dagster._core.definitions.output import Out
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.warnings import normalize_renamed_param
-
-from ..input import In, InputDefinition
-from ..output import Out
-from ..policy import RetryPolicy
-from ..utils import DEFAULT_OUTPUT
+from dagster._utils.warnings import config_argument_warning, normalize_renamed_param
 
 if TYPE_CHECKING:
-    from ..op_definition import OpDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
 
 
 class _Op:
@@ -77,8 +74,7 @@ class _Op:
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
         from dagster._config.pythonic_config import validate_resource_annotated_function
-
-        from ..op_definition import OpDefinition
+        from dagster._core.definitions.op_definition import OpDefinition
 
         validate_resource_annotated_function(fn)
 
@@ -90,6 +86,8 @@ class _Op:
             if self.decorator_takes_context
             else NoContextDecoratedOpFunction(decorated_fn=fn)
         )
+
+        compute_fn.validate_malformed_config()
 
         if compute_fn.has_config_arg():
             check.param_invariant(
@@ -140,8 +138,7 @@ class _Op:
 
 
 @overload
-def op(compute_fn: Callable[..., Any]) -> "OpDefinition":
-    ...
+def op(compute_fn: Callable[..., Any]) -> "OpDefinition": ...
 
 
 @overload
@@ -157,8 +154,7 @@ def op(
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
-) -> _Op:
-    ...
+) -> _Op: ...
 
 
 @deprecated_param(
@@ -286,6 +282,11 @@ class DecoratedOpFunction(NamedTuple):
     def has_context_arg(self) -> bool:
         return is_context_provided(get_function_params(self.decorated_fn))
 
+    def get_context_arg(self) -> Parameter:
+        if self.has_context_arg():
+            return get_function_params(self.decorated_fn)[0]
+        check.failed("Requested context arg on function that does not have one")
+
     @lru_cache(maxsize=1)
     def _get_function_params(self) -> Sequence[Parameter]:
         return get_function_params(self.decorated_fn)
@@ -296,6 +297,15 @@ class DecoratedOpFunction(NamedTuple):
                 return True
 
         return False
+
+    def validate_malformed_config(self) -> None:
+        from dagster._config.pythonic_config.config import Config
+        from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+
+        positional_inputs = self.positional_inputs()
+        for param in get_function_params(self.decorated_fn):
+            if safe_is_subclass(param.annotation, Config) and param.name in positional_inputs:
+                config_argument_warning(param.name, self.name)
 
     def get_config_arg(self) -> Parameter:
         for param in get_function_params(self.decorated_fn):
@@ -324,7 +334,7 @@ class DecoratedOpFunction(NamedTuple):
         return len(params) > 0 and param_is_var_keyword(params[-1])
 
     def get_output_annotation(self) -> Any:
-        from ..inference import infer_output_props
+        from dagster._core.definitions.inference import infer_output_props
 
         return infer_output_props(self.decorated_fn).annotation
 
@@ -429,11 +439,16 @@ def resolve_checked_op_fn_inputs(
     undeclared_inputs = explicit_names - used_inputs
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        nothing_exemption = (
+            ", except for Ins that have the Nothing dagster_type"
+            if decorator_name not in {"@graph", "@graph_asset"}
+            else ""
+        )
         raise DagsterInvalidDefinitionError(
             f"{decorator_name} '{fn_name}' decorated function does not have argument(s)"
             f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have a"
-            " keyword argument for each of their Ins, except for Ins that have the Nothing"
-            " dagster_type. Alternatively, they can accept **kwargs."
+            f" keyword argument for each of their Ins{nothing_exemption}. Alternatively, they can"
+            " accept **kwargs."
         )
 
     inferred_props = {

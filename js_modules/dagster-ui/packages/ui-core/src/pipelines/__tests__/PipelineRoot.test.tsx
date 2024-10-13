@@ -1,6 +1,6 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
 import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
@@ -51,9 +51,11 @@ describe('PipelineRoot', () => {
 
   it('renders overview by default', async () => {
     render(
-      <MemoryRouter initialEntries={[path]}>
-        <PipelineRoot repoAddress={repoAddress} />
-      </MemoryRouter>,
+      <RecoilRoot>
+        <MemoryRouter initialEntries={[path]}>
+          <PipelineRoot repoAddress={repoAddress} />
+        </MemoryRouter>
+      </RecoilRoot>,
     );
 
     const overviewDummy = await screen.findByText(/pipeline overview placeholder/i);
@@ -68,11 +70,13 @@ describe('PipelineRoot', () => {
     };
 
     render(
-      <TestPermissionsProvider locationOverrides={locationPermissions}>
-        <MemoryRouter initialEntries={[`${path}/playground`]}>
-          <PipelineRoot repoAddress={repoAddress} />
-        </MemoryRouter>
-      </TestPermissionsProvider>,
+      <RecoilRoot>
+        <TestPermissionsProvider locationOverrides={locationPermissions}>
+          <MemoryRouter initialEntries={[`${path}/playground`]}>
+            <PipelineRoot repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
+      </RecoilRoot>,
     );
 
     const playgroundDummy = await screen.findByText(/launchpad allowed placeholder/i);
@@ -87,11 +91,13 @@ describe('PipelineRoot', () => {
     };
 
     render(
-      <TestPermissionsProvider locationOverrides={locationPermissions}>
-        <MemoryRouter initialEntries={[`${path}/playground`]}>
-          <PipelineRoot repoAddress={repoAddress} />
-        </MemoryRouter>
-      </TestPermissionsProvider>,
+      <RecoilRoot>
+        <TestPermissionsProvider locationOverrides={locationPermissions}>
+          <MemoryRouter initialEntries={[`${path}/playground`]}>
+            <PipelineRoot repoAddress={repoAddress} />
+          </MemoryRouter>
+        </TestPermissionsProvider>
+      </RecoilRoot>,
     );
 
     const overviewDummy = await screen.findByText(/pipeline or job disambiguation placeholder/i);

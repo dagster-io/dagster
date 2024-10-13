@@ -18,3 +18,11 @@ Ops
 .. autoconfigurable:: docker_container_op
 
 .. autofunction:: execute_docker_container
+
+
+Pipes
+=====
+
+.. autoclass:: PipesDockerClient
+
+.. autoclass:: PipesDockerLogsMessageReader

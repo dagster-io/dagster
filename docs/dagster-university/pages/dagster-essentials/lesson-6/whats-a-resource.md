@@ -1,7 +1,7 @@
 ---
 title: "Lesson 6: What's a resource?"
-module: "dagster_essentials"
-lesson: "6"
+module: 'dagster_essentials'
+lesson: '6'
 ---
 
 # What's a resource?

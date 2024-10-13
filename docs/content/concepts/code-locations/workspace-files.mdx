@@ -81,7 +81,7 @@ To load a code location from a local or installed Python module, use the `python
 # workspace.yaml
 
 load_from:
-  - python_module: hello_world_module
+  - python_module: hello_world_module.definitions
 ```
 
 </TabItem>
@@ -107,7 +107,7 @@ When `dagster dev` is run, Dagster will load all the code locations defined by t
 
 If a code location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in the Dagster UI. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
 
-**Note**: If a code location is re-named or its configuration in a workspace file is modified, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in the UI by navigating to the [**Deployment overview** page](/concepts/webserver/ui#deployment-overview) and using the **Schedules** and **Sensors** tabs.
+**Note**: If a code location is re-named or its configuration in a workspace file is modified, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in the UI by navigating to the [**Deployment overview** page](/concepts/webserver/ui#deployment), clicking a code location, and using the **Schedules** and **Sensors** tabs.
 
 This is required because when you start a schedule or a sensor, a serialized representation of the entry in your workspace file is stored in a database. The Dagster daemon process uses this serialized representation to identify and load your schedule or sensor. If the code location is modified and its schedules and sensors aren't restarted, the Dagster daemon process will use an outdated serialized representation, resulting in issues.
 
@@ -153,7 +153,7 @@ dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --socket /path/to
 Using a Python module:
 
 ```shell
-dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
+dagster api grpc --module-name my_module_name.definitions --host 0.0.0.0 --port 4266
 ```
 
 ---
@@ -257,3 +257,5 @@ The example above also illustrates the `location_name` key. Each code location i
 
 </TabItem>
 </TabGroup>
+
+You can see a working example of a Dagster project that has multiple code locations in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).

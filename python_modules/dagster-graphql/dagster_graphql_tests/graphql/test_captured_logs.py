@@ -2,11 +2,13 @@ from dagster._core.events import DagsterEventType
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_subscription,
-    infer_pipeline_selector,
+    infer_job_selector,
 )
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .utils import sync_execute_get_run_log_data
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
+from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
 CAPTURED_LOGS_QUERY = """
   query CapturedLogsQuery($logKey: [String!]!) {
@@ -53,7 +55,7 @@ CAPTURED_LOGS_EVENT_QUERY = """
 
 class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
     def test_get_captured_logs_over_graphql(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "spew_job")
+        selector = infer_job_selector(graphql_context, "spew_job")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
@@ -74,7 +76,7 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
         assert stdout == "HELLO WORLD\n"
 
     def test_captured_logs_subscription_graphql(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "spew_job")
+        selector = infer_job_selector(graphql_context, "spew_job")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
@@ -96,7 +98,7 @@ class TestCapturedLogs(ExecutingGraphQLContextTestMatrix):
         assert stdout == "HELLO WORLD\n"
 
     def test_captured_logs_event_graphql(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "spew_job")
+        selector = infer_job_selector(graphql_context, "spew_job")
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={"executionParams": {"selector": selector, "mode": "default"}},

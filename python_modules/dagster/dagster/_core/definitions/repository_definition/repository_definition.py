@@ -15,56 +15,75 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
-from dagster._core.definitions.assets_job import (
-    ASSET_BASE_JOB_PREFIX,
-)
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+)
+from dagster._core.definitions.repository_definition.repository_data import (
+    CachingRepositoryData,
+    RepositoryData,
+)
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    RepositoryListDefinition as RepositoryListDefinition,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
-
-from .repository_data import CachingRepositoryData, RepositoryData
-from .valid_definitions import (
-    RepositoryListDefinition as RepositoryListDefinition,
-)
+from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
+    from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"cacheable_asset_data": "cached_data_by_key"},
+)
 class RepositoryLoadData(
     NamedTuple(
         "_RepositoryLoadData",
         [
-            ("cached_data_by_key", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
+            ("cacheable_asset_data", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
+            ("reconstruction_metadata", Mapping[str, Any]),
         ],
     )
 ):
-    def __new__(cls, cached_data_by_key: Mapping[str, Sequence[AssetsDefinitionCacheableData]]):
+    def __new__(
+        cls,
+        cacheable_asset_data: Optional[
+            Mapping[str, Sequence[AssetsDefinitionCacheableData]]
+        ] = None,
+        reconstruction_metadata: Optional[
+            Mapping[str, CodeLocationReconstructionMetadataValue]
+        ] = None,
+    ):
         return super(RepositoryLoadData, cls).__new__(
             cls,
-            cached_data_by_key=(
-                check.mapping_param(
-                    cached_data_by_key,
-                    "cached_data_by_key",
+            cacheable_asset_data=(
+                check.opt_mapping_param(
+                    cacheable_asset_data,
+                    "cacheable_asset_data",
                     key_type=str,
                     value_type=list,
                 )
+            ),
+            reconstruction_metadata=check.opt_mapping_param(
+                reconstruction_metadata, "reconstruction_metadata", key_type=str
             ),
         )
 
@@ -89,23 +108,22 @@ class RepositoryDefinition:
         name (str): The name of the repository.
         repository_data (RepositoryData): Contains the definitions making up the repository.
         description (Optional[str]): A string description of the repository.
-        metadata (Optional[MetadataMapping]): A map of arbitrary metadata for the repository.
+        metadata (Optional[MetadataMapping]): Arbitrary metadata for the repository. Not
+            displayed in the UI but accessible on RepositoryDefinition at runtime.
     """
 
     def __init__(
         self,
-        name,
+        name: str,
         *,
-        repository_data,
-        description=None,
-        metadata=None,
-        repository_load_data=None,
+        repository_data: RepositoryData,
+        description: Optional[str] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
+        repository_load_data: Optional[RepositoryLoadData] = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._repository_data: RepositoryData = check.inst_param(
-            repository_data, "repository_data", RepositoryData
-        )
+        self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
         self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self._repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
@@ -133,7 +151,7 @@ class RepositoryDefinition:
         """Optional[MetadataMapping]: Arbitrary metadata for the repository."""
         return self._metadata
 
-    def load_all_definitions(self):
+    def load_all_definitions(self) -> None:
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
 
@@ -148,9 +166,6 @@ class RepositoryDefinition:
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._repository_data.get_env_vars_by_top_level_resource()
-
-    def get_resource_key_mapping(self) -> Mapping[int, str]:
-        return self._repository_data.get_resource_key_mapping()
 
     @public
     def has_job(self, name: str) -> bool:
@@ -239,75 +254,61 @@ class RepositoryDefinition:
         """bool: Check if a sensor with a given name is present in the repository."""
         return self._repository_data.has_sensor(name)
 
+    @public
     @property
     def source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
+        """Mapping[AssetKey, SourceAsset]: The source assets defined in the repository."""
         return self._repository_data.get_source_assets_by_key()
 
+    # NOTE: `assets_defs_by_key` should generally not be used internally. It returns the
+    # `AssetsDefinition` supplied at repository construction time. Internally, assets defs should be
+    # obtained from the `AssetGraph` via `asset_graph.assets_defs`. This returns a normalized set of
+    # assets defs, where:
+    #
+    # - `SourceAsset` instances are replaced with external `AssetsDefinition`
+    # - Relative asset key dependencies are resolved
+    # - External `AssetsDefinition` have been generated for referenced asset keys without a
+    #   corresponding user-provided definition
+
+    @public
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        """Mapping[AssetKey, AssetsDefinition]: The assets definitions defined in the repository."""
         return self._repository_data.get_assets_defs_by_key()
 
+    @public
+    @property
+    def asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
+        """Mapping[AssetCheckKey, AssetChecksDefinition]: The assets checks defined in the repository."""
+        return self._repository_data.get_asset_checks_defs_by_key()
+
     def has_implicit_global_asset_job_def(self) -> bool:
-        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
-        return self.has_job(ASSET_BASE_JOB_PREFIX)
+        return self.has_job(IMPLICIT_ASSET_JOB_NAME)
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
-        """A useful conveninence method for repositories where there are a set of assets with
-        the same partitioning schema and one wants to access their corresponding implicit job
-        easily.
-        """
-        if not self.has_job(ASSET_BASE_JOB_PREFIX):
-            raise DagsterInvariantViolationError(
-                "There is no single global asset job, likely due to assets using "
-                "different partitioning schemes via their partitions_def parameter. You must "
-                "use get_implicit_job_def_for_assets in order to access the correct implicit job."
-            )
-
-        return self.get_job(ASSET_BASE_JOB_PREFIX)
+        return self.get_job(IMPLICIT_ASSET_JOB_NAME)
 
     def get_implicit_asset_job_names(self) -> Sequence[str]:
-        return [
-            job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)
-        ]
+        return [IMPLICIT_ASSET_JOB_NAME]
 
     def get_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
-        """Returns the asset base job that contains all the given assets, or None if there is no such
-        job.
-        """
-        if self.has_job(ASSET_BASE_JOB_PREFIX):
-            base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
-            if all(
-                key in base_job.asset_layer.assets_defs_by_key
-                or base_job.asset_layer.is_observable_for_asset(key)
-                for key in asset_keys
-            ):
-                return base_job
-        else:
-            i = 0
-            while self.has_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
-                base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
-
-                if all(
-                    key in base_job.asset_layer.assets_defs_by_key
-                    or base_job.asset_layer.is_observable_for_asset(key)
-                    for key in asset_keys
-                ):
-                    return base_job
-
-                i += 1
-
-        return None
+        return self.get_job(IMPLICIT_ASSET_JOB_NAME)
 
     def get_maybe_subset_job_def(
         self,
         job_name: str,
         op_selection: Optional[Iterable[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):
         defn = self.get_job(job_name)
-        return defn.get_subset(op_selection=op_selection, asset_selection=asset_selection)
+        return defn.get_subset(
+            op_selection=op_selection,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+        )
 
     @public
     def load_asset_value(
@@ -343,9 +344,11 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        with AssetValueLoader(
-            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
-        ) as loader:
+        # The normalized assets defs must be obtained from the asset graph, not the repository data
+        normalized_assets_defs_by_key = {
+            k: ad for ad in self.asset_graph.assets_defs for k in ad.keys
+        }
+        with AssetValueLoader(normalized_assets_defs_by_key, instance=instance) as loader:
             return loader.load_asset_value(
                 asset_key,
                 python_type=python_type,
@@ -374,14 +377,21 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        return AssetValueLoader(
-            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
-        )
+        # The normalized assets defs must be obtained from the asset graph, not the repository data
+        normalized_assets_defs_by_key = {
+            k: ad for ad in self.asset_graph.assets_defs for k in ad.keys
+        }
+        return AssetValueLoader(normalized_assets_defs_by_key, instance=instance)
 
     @property
-    def asset_graph(self) -> InternalAssetGraph:
+    @cached_method
+    def asset_graph(self) -> AssetGraph:
         return AssetGraph.from_assets(
-            [*set(self.assets_defs_by_key.values()), *self.source_assets_by_key.values()]
+            [
+                *list(set(self.assets_defs_by_key.values())),
+                *self.source_assets_by_key.values(),
+                *list(set(self.asset_checks_defs_by_key.values())),
+            ],
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be
@@ -402,7 +412,6 @@ class PendingRepositoryDefinition:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-        _resource_key_mapping: Optional[Mapping[int, str]] = None,
     ):
         self._repository_definitions = check.list_param(
             repository_definitions,
@@ -413,11 +422,10 @@ class PendingRepositoryDefinition:
         )
         self._name = name
         self._description = description
-        self._metadata = metadata
+        self._metadata = metadata or {}
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
-        self._resource_key_mapping = _resource_key_mapping
 
     @property
     def name(self) -> str:
@@ -426,12 +434,20 @@ class PendingRepositoryDefinition:
     def _compute_repository_load_data(self) -> RepositoryLoadData:
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
+        cacheable_asset_data = {
+            defn.unique_id: defn.compute_cacheable_data()
+            for defn in self._repository_definitions
+            if isinstance(defn, CacheableAssetsDefinition)
+        }
+
         return RepositoryLoadData(
-            cached_data_by_key={
-                defn.unique_id: defn.compute_cacheable_data()
-                for defn in self._repository_definitions
-                if isinstance(defn, CacheableAssetsDefinition)
-            }
+            cacheable_asset_data=cacheable_asset_data,
+            # Extract all CodeLocationReconstructionMetadataValue to make available for reconstruction
+            reconstruction_metadata={
+                k: v
+                for k, v in self._metadata.items()
+                if isinstance(v, CodeLocationReconstructionMetadataValue)
+            },
         )
 
     def _get_repository_definition(
@@ -444,14 +460,14 @@ class PendingRepositoryDefinition:
             if isinstance(defn, CacheableAssetsDefinition):
                 # should always have metadata for each cached defn at this point
                 check.invariant(
-                    defn.unique_id in repository_load_data.cached_data_by_key,
+                    defn.unique_id in repository_load_data.cacheable_asset_data,
                     "No metadata found for CacheableAssetsDefinition with unique_id"
                     f" {defn.unique_id}.",
                 )
                 # use the emtadata to generate definitions
                 resolved_definitions.extend(
                     defn.build_definitions(
-                        data=repository_load_data.cached_data_by_key[defn.unique_id]
+                        data=repository_load_data.cacheable_asset_data[defn.unique_id]
                     )
                 )
             else:
@@ -462,7 +478,6 @@ class PendingRepositoryDefinition:
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
             top_level_resources=self._top_level_resources,
-            resource_key_mapping=self._resource_key_mapping,
         )
 
         return RepositoryDefinition(

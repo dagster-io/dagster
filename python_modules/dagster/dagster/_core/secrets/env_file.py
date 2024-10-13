@@ -6,10 +6,9 @@ from dotenv import dotenv_values
 from typing_extensions import Self
 
 from dagster._config import Field, StringSource
+from dagster._core.secrets.loader import SecretsLoader
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-
-from .loader import SecretsLoader
 
 
 def get_env_var_dict(base_dir: str) -> Dict[str, str]:
@@ -56,4 +55,4 @@ class EnvFileLoader(SecretsLoader, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return EnvFileLoader(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)

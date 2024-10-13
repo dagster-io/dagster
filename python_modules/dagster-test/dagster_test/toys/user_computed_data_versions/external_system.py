@@ -17,13 +17,13 @@ _SOURCE_ASSETS: Mapping[str, Any] = {
 }
 
 
-class AssetSpec(TypedDict):
+class AssetInfo(TypedDict):
     key: str
     code_version: str
     dependencies: AbstractSet[str]
 
 
-class SourceAssetSpec(TypedDict):
+class SourceAssetInfo(TypedDict):
     key: str
 
 
@@ -46,7 +46,7 @@ class ExternalSystem:
         self._db = _Database(storage_path)
 
     def materialize(
-        self, asset_spec: AssetSpec, provenance_spec: Optional[ProvenanceSpec]
+        self, asset_spec: AssetInfo, provenance_spec: Optional[ProvenanceSpec]
     ) -> MaterializeResult:
         """Recompute an asset if its provenance is missing or stale.
 
@@ -55,7 +55,7 @@ class ExternalSystem:
         dependencies to determine whether something has changed and the asset should be recomputed.
 
         Args:
-            asset_spec (AssetSpec):
+            asset_spec (AssetInfo):
                 A dictionary containing an asset key, code version, and data dependencies.
             provenance_spec (ProvenanceSpec):
                 A dictionary containing provenance info for the last materialization of the
@@ -83,11 +83,11 @@ class ExternalSystem:
             is_memoized = True
         return {"data_version": record.data_version, "is_memoized": is_memoized}
 
-    def observe(self, asset_spec: Union[AssetSpec, SourceAssetSpec]) -> ObserveResult:
+    def observe(self, asset_spec: Union[AssetInfo, SourceAssetInfo]) -> ObserveResult:
         """Observe an asset or source asset, returning its current data version.
 
         Args:
-            asset_spec (Union[AssetSpec, SourceAssetSpec]):
+            asset_spec (Union[AssetInfo, SourceAssetInfo]):
                 A dictionary containing an asset key.
 
         Returns (ObserveResult):
@@ -95,7 +95,7 @@ class ExternalSystem:
         """
         return {"data_version": self._db.get(asset_spec["key"]).data_version}
 
-    def _is_provenance_stale(self, asset_spec: AssetSpec, provenance_spec: ProvenanceSpec) -> bool:
+    def _is_provenance_stale(self, asset_spec: AssetInfo, provenance_spec: ProvenanceSpec) -> bool:
         # did code change?
         if provenance_spec["code_version"] != asset_spec["code_version"]:
             return True

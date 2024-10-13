@@ -46,6 +46,13 @@ export type FlexProperties = {
   wrap?: FlexWrap;
 };
 
-export type BorderSide = 'top' | 'right' | 'bottom' | 'left' | 'horizontal' | 'vertical' | 'all';
+export type BorderSide =
+  | 'top'
+  | 'right'
+  | 'bottom'
+  | 'left'
+  | 'top-and-bottom'
+  | 'left-and-right'
+  | 'all';
 export type BorderWidth = 1 | 2 | 4;
-export type BorderSetting = {width: BorderWidth; color: string; side: BorderSide};
+export type BorderSetting = {width?: BorderWidth; color?: string; side: BorderSide};

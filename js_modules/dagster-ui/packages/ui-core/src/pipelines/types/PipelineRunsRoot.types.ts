@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type PipelineRunsRootQueryVariables = Types.Exact<{
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
   filter: Types.RunsFilter;
 }>;
 
@@ -33,12 +33,14 @@ export type PipelineRunsRootQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -49,7 +51,14 @@ export type PipelineRunsRootQuery = {
             repositoryLocationName: string;
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          assetCheckSelection: Array<{
+            __typename: 'AssetCheckhandle';
+            name: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         }>;
       };
 };
+
+export const PipelineRunsRootQueryVersion = '3ed2a4c2669f29ed627eb12c6d95beb7d7c6d87a4914938ff83da8f174c61695';

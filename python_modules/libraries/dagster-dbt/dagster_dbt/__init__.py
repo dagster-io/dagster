@@ -1,9 +1,6 @@
-from .asset_decorator import dbt_assets as dbt_assets
-from .asset_defs import (
-    load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
-    load_assets_from_dbt_project as load_assets_from_dbt_project,
-)
-from .asset_utils import (
+from dagster_dbt.asset_decorator import dbt_assets as dbt_assets
+from dagster_dbt.asset_specs import build_dbt_asset_specs as build_dbt_asset_specs
+from dagster_dbt.asset_utils import (
     build_dbt_asset_selection as build_dbt_asset_selection,
     build_schedule_from_dbt_selection as build_schedule_from_dbt_selection,
     default_group_from_dbt_resource_props as default_group_from_dbt_resource_props,
@@ -13,7 +10,7 @@ from .asset_utils import (
     get_asset_keys_by_output_name_for_source as get_asset_keys_by_output_name_for_source,
     group_from_dbt_resource_props_fallback_to_directory as group_from_dbt_resource_props_fallback_to_directory,
 )
-from .cloud import (
+from dagster_dbt.cloud import (
     DbtCloudClientResource as DbtCloudClientResource,
     DbtCloudOutput as DbtCloudOutput,
     DbtCloudResource as DbtCloudResource,
@@ -21,33 +18,30 @@ from .cloud import (
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
-from .core import (
-    DbtCliEventMessage as DbtCliEventMessage,
-    DbtCliInvocation as DbtCliInvocation,
-    DbtCliResource as DbtCliResource,
-)
-from .dagster_dbt_translator import (
+from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage as DbtCliEventMessage
+from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation as DbtCliInvocation
+from dagster_dbt.core.resource import DbtCliResource as DbtCliResource
+from dagster_dbt.dagster_dbt_translator import (
     DagsterDbtTranslator as DagsterDbtTranslator,
-    KeyPrefixDagsterDbtTranslator as KeyPrefixDagsterDbtTranslator,
+    DagsterDbtTranslatorSettings as DagsterDbtTranslatorSettings,
 )
-from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
-from .errors import (
+from dagster_dbt.dbt_manifest_asset_selection import (
+    DbtManifestAssetSelection as DbtManifestAssetSelection,
+)
+from dagster_dbt.dbt_project import (
+    DagsterDbtProjectPreparer as DagsterDbtProjectPreparer,
+    DbtProject as DbtProject,
+    DbtProjectPreparer as DbtProjectPreparer,
+)
+from dagster_dbt.errors import (
     DagsterDbtCliRuntimeError as DagsterDbtCliRuntimeError,
-    DagsterDbtCliUnexpectedOutputError as DagsterDbtCliUnexpectedOutputError,
     DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
     DagsterDbtError as DagsterDbtError,
 )
-from .ops import (
-    dbt_build_op as dbt_build_op,
-    dbt_compile_op as dbt_compile_op,
-    dbt_docs_generate_op as dbt_docs_generate_op,
-    dbt_ls_op as dbt_ls_op,
-    dbt_run_op as dbt_run_op,
-    dbt_seed_op as dbt_seed_op,
-    dbt_snapshot_op as dbt_snapshot_op,
-    dbt_test_op as dbt_test_op,
+from dagster_dbt.freshness_builder import (
+    build_freshness_checks_from_dbt_assets as build_freshness_checks_from_dbt_assets,
 )
-from .version import __version__ as __version__
+from dagster_dbt.version import __version__ as __version__
 
 # isort: split
 
@@ -55,34 +49,17 @@ from .version import __version__ as __version__
 # ##### DYNAMIC IMPORTS
 # ########################
 import importlib
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Sequence, Tuple
 
+from dagster._annotations import deprecated
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._utils.warnings import deprecation_warning
+from dbt.version import __version__ as __dbt_version__
 from typing_extensions import Final
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
+DagsterLibraryRegistry.register("dbt-core", __dbt_version__, is_dagster_package=False)
 
-if TYPE_CHECKING:
-    ##### EXAMPLE
-    # from dagster.some.module import (
-    #     Foo as Foo,
-    # )
-
-    # isort: split
-    ##### Deprecating DbtCliClientResource
-    from .core import (
-        DbtCliClientResource as DbtCliClientResource,
-        DbtCliOutput as DbtCliOutput,
-        dbt_cli_resource as dbt_cli_resource,
-    )
-    from .dbt_resource import DbtResource as DbtResource
-    from .errors import (
-        DagsterDbtCliFatalRuntimeError as DagsterDbtCliFatalRuntimeError,
-        DagsterDbtCliHandledRuntimeError as DagsterDbtCliHandledRuntimeError,
-        DagsterDbtCliOutputsNotFoundError as DagsterDbtCliOutputsNotFoundError,
-    )
-    from .types import DbtOutput as DbtOutput
 
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     ##### EXAMPLE
@@ -91,41 +68,30 @@ _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
     #     "1.1.0",  # breaking version
     #     "Use Bar instead.",
     # ),
-    **{
-        value: (
-            module,
-            "0.21.0",
-            additional_warn_text,
-        )
-        for value, module, additional_warn_text in [
-            (
-                "DbtCliClientResource",
-                "dagster_dbt.core",
-                "DbtCliClientResource is deprecated. Use DbtCliResource instead.",
-            ),
-            ("DbtCliOutput", "dagster_dbt.core", None),
-            (
-                "dbt_cli_resource",
-                "dagster_dbt.core",
-                "dbt_cli_resource is deprecated. Use DbtCliResource instead.",
-            ),
-            (
-                "DbtResource",
-                "dagster_dbt.dbt_resource",
-                "DbtResource is deprecated. Use DbtCliResource instead.",
-            ),
-            ("DagsterDbtCliFatalRuntimeError", "dagster_dbt.errors", None),
-            ("DagsterDbtCliHandledRuntimeError", "dagster_dbt.errors", None),
-            ("DagsterDbtCliOutputsNotFoundError", "dagster_dbt.errors", None),
-            ("DbtOutput", "dagster_dbt.types", None),
-        ]
-    },
+}
+
+_DEPRECATED_WARNING: Final[Mapping[str, Tuple[str, str, str]]] = {
+    ##### EXAMPLE
+    # "Foo": (
+    #     "dagster.some.module",
+    #     "1.1.0",  # breaking version
+    #     "Use Bar instead.",
+    # ),
 }
 
 
 def __getattr__(name: str) -> Any:
     if name in _DEPRECATED:
         module, breaking_version, additional_warn_text = _DEPRECATED[name]
+
+        value = deprecated(
+            breaking_version=breaking_version, additional_warn_text=additional_warn_text
+        )(getattr(importlib.import_module(module), name))
+
+        return value
+    elif name in _DEPRECATED_WARNING:
+        module, breaking_version, additional_warn_text = _DEPRECATED_WARNING[name]
+
         if additional_warn_text:
             deprecation_warning(name, breaking_version, additional_warn_text)
 

@@ -13,8 +13,8 @@ def old_config() -> None:
 
     @asset(config_schema={"conn_string": str, "port": int})
     def an_asset(context: AssetExecutionContext, upstream_asset):
-        assert context.op_config["conn_string"]
-        assert context.op_config["port"]
+        assert context.op_execution_context.op_config["conn_string"]
+        assert context.op_execution_context.op_config["port"]
 
     defs = Definitions(assets=[an_asset, upstream_asset])
 

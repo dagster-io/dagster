@@ -30,9 +30,8 @@ import dagster
 import dagster._check as check
 from botocore.exceptions import WaiterError
 
+from dagster_aws.emr.types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
-
-from .types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 
 # if we can't create or find our own service role, use the one
 # created by the AWS console and CLI
@@ -113,11 +112,7 @@ class EmrJobRunner:
             if cluster["Name"] == cluster_name:
                 return cluster["Id"]
 
-        raise EmrError(
-            "cluster {cluster_name} not found in region {region}".format(
-                cluster_name=cluster_name, region=self.region
-            )
-        )
+        raise EmrError(f"cluster {cluster_name} not found in region {self.region}")
 
     @staticmethod
     def construct_step_dict_for_command(step_name, command, action_on_failure="CONTINUE"):
@@ -372,9 +367,7 @@ class EmrJobRunner:
 
         log_bucket, log_key_prefix = self.log_location_for_cluster(cluster_id)
 
-        prefix = "{log_key_prefix}{cluster_id}/steps/{step_id}".format(
-            log_key_prefix=log_key_prefix, cluster_id=cluster_id, step_id=step_id
-        )
+        prefix = f"{log_key_prefix}{cluster_id}/steps/{step_id}"
         stdout_log = self.wait_for_log(log, log_bucket, f"{prefix}/stdout.gz")
         stderr_log = self.wait_for_log(log, log_bucket, f"{prefix}/stderr.gz")
         return stdout_log, stderr_log
@@ -400,11 +393,7 @@ class EmrJobRunner:
         check.int_param(waiter_delay, "waiter_delay")
         check.int_param(waiter_max_attempts, "waiter_max_attempts")
 
-        log.info(
-            "Attempting to get log: s3://{log_bucket}/{log_key}".format(
-                log_bucket=log_bucket, log_key=log_key
-            )
-        )
+        log.info(f"Attempting to get log: s3://{log_bucket}/{log_key}")
 
         s3 = _wrap_aws_client(boto3.client("s3"), min_backoff=self.check_cluster_every)
         waiter = s3.get_waiter("object_exists")

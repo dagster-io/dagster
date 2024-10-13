@@ -1,8 +1,7 @@
-import React from 'react';
+import {useEffect} from 'react';
 
+import {ILogCaptureInfo, IRunMetadataDict} from './RunMetadataProvider';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-
-import {IRunMetadataDict, ILogCaptureInfo} from './RunMetadataProvider';
 
 export const matchingComputeLogKeyFromStepKey = (
   logCaptureSteps: {[fileKey: string]: ILogCaptureInfo} | undefined,
@@ -17,17 +16,23 @@ export function useComputeLogFileKeyForSelection({
   stepKeys,
   selectionStepKeys,
   metadata,
+  defaultToFirstStep = true,
 }: {
   stepKeys: string[];
   selectionStepKeys: string[];
   metadata: IRunMetadataDict;
+  defaultToFirstStep?: boolean;
 }) {
   const [computeLogFileKey, setComputeLogFileKey] = useQueryPersistedState<string>({
     queryKey: 'logFileKey',
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!stepKeys?.length || computeLogFileKey) {
+      return;
+    }
+
+    if (!selectionStepKeys.length && !defaultToFirstStep) {
       return;
     }
 
@@ -60,6 +65,7 @@ export function useComputeLogFileKeyForSelection({
     selectionStepKeys,
     metadata.logCaptureSteps,
     setComputeLogFileKey,
+    defaultToFirstStep,
   ]);
 
   const logCaptureInfo: ILogCaptureInfo | undefined =

@@ -2,9 +2,12 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {RunStatus, StaleStatus} from '../../graphql/types';
 import {ASSET_MATERIALIZATION_UPSTREAM_QUERY} from '../AssetMaterializationUpstreamData';
-import {ASSET_PARTITION_DETAIL_QUERY} from '../AssetPartitionDetail';
+import {ASSET_PARTITION_DETAIL_QUERY, ASSET_PARTITION_STALE_QUERY} from '../AssetPartitionDetail';
 import {AssetMaterializationUpstreamQuery} from '../types/AssetMaterializationUpstreamData.types';
-import {AssetPartitionDetailQuery} from '../types/AssetPartitionDetail.types';
+import {
+  AssetPartitionDetailQuery,
+  AssetPartitionStaleQuery,
+} from '../types/AssetPartitionDetail.types';
 import {
   AssetMaterializationFragment,
   AssetObservationFragment,
@@ -212,73 +215,71 @@ export const BasicObservationEvent: AssetObservationFragment = {
   __typename: 'ObservationEvent',
 };
 
-export const MaterializationUpstreamDataFullMock: MockedResponse<AssetMaterializationUpstreamQuery> = {
-  request: {
-    operationName: 'AssetMaterializationUpstreamQuery',
-    variables: {assetKey: {path: ['asset_1']}, timestamp: '1673996425523'},
-    query: ASSET_MATERIALIZATION_UPSTREAM_QUERY,
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      assetNodeOrError: {
-        __typename: 'AssetNode',
-        id: 'test.py.repo.["asset_1"]',
-        assetMaterializationUsedData: [
-          {
-            __typename: 'MaterializationUpstreamDataVersion',
-            timestamp: `${MaterializationTimestamp - 2 * ONE_MIN}`,
-            assetKey: {
-              path: ['inp2'],
-              __typename: 'AssetKey',
+export const MaterializationUpstreamDataFullMock: MockedResponse<AssetMaterializationUpstreamQuery> =
+  {
+    request: {
+      operationName: 'AssetMaterializationUpstreamQuery',
+      variables: {assetKey: {path: ['asset_1']}, timestamp: '1673996425523'},
+      query: ASSET_MATERIALIZATION_UPSTREAM_QUERY,
+    },
+    result: {
+      data: {
+        __typename: 'Query',
+        assetNodeOrError: {
+          __typename: 'AssetNode',
+          id: 'test.py.repo.["asset_1"]',
+          assetMaterializationUsedData: [
+            {
+              __typename: 'MaterializationUpstreamDataVersion',
+              timestamp: `${MaterializationTimestamp - 2 * ONE_MIN}`,
+              assetKey: {
+                path: ['inp2'],
+                __typename: 'AssetKey',
+              },
+              downstreamAssetKey: {
+                path: ['asset_1'],
+                __typename: 'AssetKey',
+              },
             },
-            downstreamAssetKey: {
-              path: ['asset_1'],
-              __typename: 'AssetKey',
+            {
+              __typename: 'MaterializationUpstreamDataVersion',
+              timestamp: `${MaterializationTimestamp - 4 * ONE_MIN}`,
+              assetKey: {
+                path: ['inp3'],
+                __typename: 'AssetKey',
+              },
+              downstreamAssetKey: {
+                path: ['asset_1'],
+                __typename: 'AssetKey',
+              },
             },
-          },
-          {
-            __typename: 'MaterializationUpstreamDataVersion',
-            timestamp: `${MaterializationTimestamp - 4 * ONE_MIN}`,
-            assetKey: {
-              path: ['inp3'],
-              __typename: 'AssetKey',
-            },
-            downstreamAssetKey: {
-              path: ['asset_1'],
-              __typename: 'AssetKey',
-            },
-          },
-        ],
+          ],
+        },
       },
     },
-  },
-};
+  };
 
-export const MaterializationUpstreamDataEmptyMock: MockedResponse<AssetMaterializationUpstreamQuery> = {
-  request: {
-    operationName: 'AssetMaterializationUpstreamQuery',
-    variables: {assetKey: {path: ['asset_1']}, timestamp: '1673996425523'},
-    query: ASSET_MATERIALIZATION_UPSTREAM_QUERY,
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      assetNodeOrError: {
-        __typename: 'AssetNode',
-        id: 'test.py.repo.["asset_1"]',
-        assetMaterializationUsedData: [],
+export const MaterializationUpstreamDataEmptyMock: MockedResponse<AssetMaterializationUpstreamQuery> =
+  {
+    request: {
+      operationName: 'AssetMaterializationUpstreamQuery',
+      variables: {assetKey: {path: ['asset_1']}, timestamp: '1673996425523'},
+      query: ASSET_MATERIALIZATION_UPSTREAM_QUERY,
+    },
+    result: {
+      data: {
+        __typename: 'Query',
+        assetNodeOrError: {
+          __typename: 'AssetNode',
+          id: 'test.py.repo.["asset_1"]',
+          assetMaterializationUsedData: [],
+        },
       },
     },
-  },
-};
+  };
 
 export const buildAssetPartitionDetailMock = (
   currentRunStatus?: RunStatus,
-  staleCauses: Extract<
-    AssetPartitionDetailQuery['assetNodeOrError'],
-    {__typename: 'AssetNode'}
-  >['staleCauses'] = [],
 ): MockedResponse<AssetPartitionDetailQuery> => ({
   request: {
     operationName: 'AssetPartitionDetailQuery',
@@ -301,8 +302,6 @@ export const buildAssetPartitionDetailMock = (
             timestamp: `${Number(BasicObservationEvent.timestamp) + 2 * 60 * 1000}`,
           },
         ],
-        staleCauses,
-        staleStatus: staleCauses.length ? StaleStatus.STALE : StaleStatus.FRESH,
         latestRunForPartition: currentRunStatus
           ? {
               __typename: 'Run',
@@ -311,6 +310,30 @@ export const buildAssetPartitionDetailMock = (
               endTime: null,
             }
           : null,
+      },
+    },
+  },
+});
+
+export const buildAssetPartitionStaleMock = (
+  staleCauses: Extract<
+    AssetPartitionStaleQuery['assetNodeOrError'],
+    {__typename: 'AssetNode'}
+  >['staleCauses'] = [],
+): MockedResponse<AssetPartitionStaleQuery> => ({
+  request: {
+    operationName: 'AssetPartitionStaleQuery',
+    variables: {assetKey: {path: ['asset_1']}, partitionKey: Partition},
+    query: ASSET_PARTITION_STALE_QUERY,
+  },
+  result: {
+    data: {
+      __typename: 'Query',
+      assetNodeOrError: {
+        __typename: 'AssetNode',
+        id: 'test.py.repo.["asset_1"]',
+        staleCauses,
+        staleStatus: staleCauses.length ? StaleStatus.STALE : StaleStatus.FRESH,
       },
     },
   },

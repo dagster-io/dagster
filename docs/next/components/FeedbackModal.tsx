@@ -40,7 +40,7 @@ const FeedbackModal = ({isOpen, closeFeedback}: {isOpen: boolean; closeFeedback:
   return (
     <Transition show={isOpen}>
       <section
-        className="absolute inset-y-0 pl-16 max-w-full right-0 flex z-50"
+        className="fixed right-0 inset-y-0 pl-16 max-w-full flex z-50"
         aria-labelledby="slide-over-heading"
       >
         <Transition.Child

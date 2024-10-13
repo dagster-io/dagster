@@ -11,10 +11,11 @@ from dagster._config import (
     resolve_defaults,
     validate_config,
 )
-from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.definitions.definition_config_schema import (
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
 from dagster._core.errors import DagsterInvalidConfigError
-
-from .definition_config_schema import convert_user_facing_definition_config_schema
 
 ConfigMappingFn: TypeAlias = Callable[[Any], Any]
 
