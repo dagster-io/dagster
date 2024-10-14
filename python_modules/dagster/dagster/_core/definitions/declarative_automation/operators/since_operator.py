@@ -1,3 +1,4 @@
+import asyncio
 from typing import Sequence
 
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -31,15 +32,17 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         # must evaluate child condition over the entire subset to avoid missing state transitions
         child_candidate_subset = context.asset_graph_view.get_full_subset(key=context.key)
 
-        # compute result for trigger condition
-        trigger_result = await context.for_child_condition(
-            self.trigger_condition, child_index=0, candidate_subset=child_candidate_subset
-        ).evaluate_async()
-
-        # compute result for reset condition
-        reset_result = await context.for_child_condition(
-            self.reset_condition, child_index=1, candidate_subset=child_candidate_subset
-        ).evaluate_async()
+        # compute result for trigger and reset conditions
+        trigger_result, reset_result = await asyncio.gather(
+            *[
+                context.for_child_condition(
+                    self.trigger_condition, child_index=0, candidate_subset=child_candidate_subset
+                ).evaluate_async(),
+                context.for_child_condition(
+                    self.reset_condition, child_index=1, candidate_subset=child_candidate_subset
+                ).evaluate_async(),
+            ]
+        )
 
         # take the previous subset that this was true for
         true_subset = context.previous_true_subset or context.get_empty_subset()
