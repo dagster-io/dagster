@@ -25,7 +25,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     get_serializable_candidate_subset,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._record import copy, record
 from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
@@ -753,7 +753,7 @@ class AutomationResult(Generic[T_EntityKey]):
             extra_state=self._extra_state,
         )
 
-    @cached_property
+    @property
     def serializable_evaluation(self) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
@@ -826,7 +826,7 @@ def _compute_subset_value_str(subset: SerializableEntitySubset) -> str:
         return str(subset.value)
     elif isinstance(subset.value, AllPartitionsSubset):
         return AllPartitionsSubset.__name__
-    elif isinstance(subset.value, BaseTimeWindowPartitionsSubset):
+    elif isinstance(subset.value, TimeWindowPartitionsSubset):
         return str(
             [
                 (tw.start.timestamp(), tw.end.timestamp())
