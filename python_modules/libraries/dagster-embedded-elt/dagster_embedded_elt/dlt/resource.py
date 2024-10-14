@@ -126,17 +126,17 @@ class DagsterDltResource(ConfigurableResource):
         with contextlib.suppress(DataItemRequiredForDynamicTableHints):
             normalized_table_name = normalize_table_identifiers(
                 resource.compute_table_schema(), default_schema.naming
-            )
+            ).get("name", resource.table_name)
 
-        # job metadata for specific target `resource.table_name`
+        # job metadata for specific target `normalized_table_name`
         base_metadata["jobs"] = [
             job
             for load_package in load_info_dict.get("load_packages", [])
             for job in load_package.get("jobs", [])
-            if job.get("table_name") == resource.table_name
+            if job.get("table_name") == normalized_table_name
         ]
         rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
-            str(resource.table_name)
+            str(normalized_table_name)
         )
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
@@ -144,7 +144,7 @@ class DagsterDltResource(ConfigurableResource):
         schema: Optional[str] = None
         for load_package in load_info_dict.get("load_packages", []):
             for table in load_package.get("tables", []):
-                if table.get("name") == resource.table_name:
+                if table.get("name") == normalized_table_name:
                     schema = table.get("schema_name")
                     break
             if schema:
@@ -153,7 +153,7 @@ class DagsterDltResource(ConfigurableResource):
         destination_name: Optional[str] = base_metadata.get("destination_name")
         relation_identifier = None
         if destination_name and schema:
-            relation_identifier = ".".join([destination_name, schema, str(resource.table_name)])
+            relation_identifier = ".".join([destination_name, schema, str(normalized_table_name)])
 
         child_table_names = [
             name
@@ -164,7 +164,9 @@ class DagsterDltResource(ConfigurableResource):
             table_name: self._extract_table_schema_metadata(table_name, default_schema)
             for table_name in child_table_names
         }
-        table_schema = self._extract_table_schema_metadata(str(resource.table_name), default_schema)
+        table_schema = self._extract_table_schema_metadata(
+            str(normalized_table_name), default_schema
+        )
 
         base_metadata = {
             **child_table_schemas,
