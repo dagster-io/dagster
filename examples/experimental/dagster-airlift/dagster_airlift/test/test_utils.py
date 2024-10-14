@@ -33,11 +33,13 @@ def chmod_script(script_path: Path) -> None:
 def configured_airflow_home(airflow_home: Path) -> Generator[None, None, None]:
     path_to_dags = airflow_home / "airflow_dags"
     with environ({"AIRFLOW_HOME": str(airflow_home)}):
-        # Start by removing old cruft if it exists
-        remove_airflow_home_remnants(airflow_home)
-        # Scaffold the airflow configuration file.
-        chmod_script(airflow_cfg_script_path())
-        subprocess.check_output([str(airflow_cfg_script_path()), str(path_to_dags)])
-        yield
-        # Clean up after ourselves.
-        remove_airflow_home_remnants(airflow_home)
+        try:
+            # Start by removing old cruft if it exists
+            remove_airflow_home_remnants(airflow_home)
+            # Scaffold the airflow configuration file.
+            chmod_script(airflow_cfg_script_path())
+            subprocess.check_output([str(airflow_cfg_script_path()), str(path_to_dags)])
+            yield
+        finally:
+            # Clean up after ourselves.
+            remove_airflow_home_remnants(airflow_home)

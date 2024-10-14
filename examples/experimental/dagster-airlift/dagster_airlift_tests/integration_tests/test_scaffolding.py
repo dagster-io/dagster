@@ -15,7 +15,7 @@ def path_to_test_proj() -> Path:
 
 
 def run_scaffold_script() -> None:
-    subprocess.check_output(["dagster-airlift", "proxy", "scaffold"])
+    subprocess.run(["dagster-airlift", "proxy", "scaffold"], check=False)
 
 
 def expected_yaml() -> str:

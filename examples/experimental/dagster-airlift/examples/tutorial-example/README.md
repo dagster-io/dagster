@@ -77,7 +77,7 @@ uv pip install 'dagster-airlift[core]' dagster-webserver dagster
 Next, create a `Definitions` object using `build_defs_from_airflow_instance`. You can use the empty [`tutorial_example/dagster_defs/definitions.py`](./tutorial_example/dagster_defs/definitions.py) file as a starting point:
 
 ```python
-# peer.py
+# tutorial_example/dagster_defs/stages/peer.py
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 
 defs = build_defs_from_airflow_instance(
@@ -91,7 +91,6 @@ defs = build_defs_from_airflow_instance(
         name="airflow_instance_one",
     )
 )
-
 ```
 
 This function creates:
@@ -189,7 +188,7 @@ uv pip install 'dagster-airlift[dbt]'
 Then, we will construct our assets:
 
 ```python
-# observe.py
+# tutorial_example/dagster_defs/stages/observe.py
 import os
 from pathlib import Path
 
@@ -241,7 +240,6 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
-
 ```
 
 ### Viewing observed assets
@@ -281,25 +279,26 @@ tasks:
 Next, you will need to modify your Airflow DAG to make it aware of the proxied state. This is already done in the example DAG:
 
 ```python
-# tutorial_example/airflow_dags/dags.py
-from dagster_airlift.in_airflow import proxying_to_dagster
-from dagster_airlift.proxied_state import load_proxied_state_from_yaml
+# tutorial_example/snippets/dags_truncated.py
+# Dags file can be found at tutorial_example/airflow_dags/dags.py
 from pathlib import Path
-from airflow import DAG
 
-dag = DAG("rebuild_customers_list")
+from airflow import DAG
+from dagster_airlift.in_airflow import proxying_to_dagster
+from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
+
+dag = DAG("rebuild_customers_list", ...)
+
 ...
 
 # Set this to True to begin the proxying process
 PROXYING = False
 
 if PROXYING:
-   mark_as_dagster_proxying(
-       global_vars=globals(),
-       proxied_state=load_proxied_state_from_yaml(
-           Path(__file__).parent / "proxied_state"
-       ),
-   )
+    proxying_to_dagster(
+        global_vars=globals(),
+        proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
+    )
 ```
 
 Set `PROXYING` to `True` or eliminate the `if` statement.
@@ -334,16 +333,13 @@ We can create a custom `BaseProxyToDagsterOperator` subclass which will retrieve
 will be made using that api key.
 
 ```python
-# tutorial_example/custom_operator_examples/custom_proxy.py
+# tutorial_example/snippets/custom_operator_examples/custom_proxy.py
 from pathlib import Path
 
 import requests
 from airflow import DAG
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import (
-    BaseProxyTaskToDagsterOperator,
-    proxying_to_dagster,
-)
+from dagster_airlift.in_airflow import BaseProxyTaskToDagsterOperator, proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 
 
@@ -370,7 +366,6 @@ proxying_to_dagster(
     proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
     build_from_task_fn=CustomProxyToDagsterOperator.build_from_task,
 )
-
 ```
 
 #### Dagster Plus Authorization
@@ -379,13 +374,13 @@ You can use a customer proxy operator to establish a connection to a Dagster plu
 Airflow Variables. To set a Dagster+ user token, follow this guide: https://docs.dagster.io/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens.
 
 ```python
-# tutorial_example/custom_operator_examples/plus_proxy_operator.py
+# tutorial_example/snippets/custom_operator_examples/plus_proxy_operator.py
 import requests
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import BaseProxyToDagsterOperator
+from dagster_airlift.in_airflow import BaseProxyTaskToDagsterOperator
 
 
-class DagsterCloudProxyOperator(BaseProxyToDagsterOperator):
+class DagsterCloudProxyOperator(BaseProxyTaskToDagsterOperator):
     def get_variable(self, context: Context, var_name: str) -> str:
         if "var" not in context:
             raise ValueError("No variables found in context")
@@ -408,12 +403,11 @@ class DagsterCloudProxyOperator(BaseProxyToDagsterOperator):
 For some common operator patterns, like our dbt operator, Dagster supplies factories to build software defined assets for our tasks. In fact, the `@dbt_assets` decorator used earlier already backs its assets with definitions, so we can toggle the proxied state of the `build_dbt_models` task to `proxied: True` in the proxied state file:
 
 ```yaml
-# tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml
+# tutorial_example/snippets/dbt_proxied.yaml
 tasks:
   - id: load_raw_customers
     proxied: False
   - id: build_dbt_models
-    # change this to move execution to Dagster
     proxied: True
   - id: export_customers
     proxied: False
@@ -438,7 +432,7 @@ For all other operator types, we will need to build our own asset definitions. W
 For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a function `load_csv_to_duckdb_defs` factory to build corresponding software-defined assets. Similarly for `export_customers` we'll define a function `export_duckdb_to_csv_defs` to build SDAs:
 
 ```python
-# migrate.py
+# tutorial_example/dagster_defs/stages/migrate.py
 import os
 from pathlib import Path
 
@@ -545,20 +539,16 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
-
-
-
 ```
 
 We can then toggle the proxied state of the remaining tasks in the `proxied_state` file:
 
 ```yaml
-# tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml
+# tutorial_example/snippets/all_proxied.yaml
 tasks:
   - id: load_raw_customers
     proxied: True
   - id: build_dbt_models
-    # change this to move execution to Dagster
     proxied: True
   - id: export_customers
     proxied: True
@@ -571,7 +561,7 @@ Once we are confident in our migrated versions of the tasks, we can decommission
 Next, we can strip the task associations from our Dagster definitions. This can be done by removing the `assets_with_task_mappings` call. We can use this opportunity to attach our assets to a `ScheduleDefinition` so that Dagster's scheduler can manage their execution:
 
 ```python
-# standalone.py
+# tutorial_example/dagster_defs/stages/standalone.py
 import os
 from pathlib import Path
 
@@ -689,7 +679,6 @@ defs = Definitions(
     asset_checks=[validate_exported_csv],
     resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
 )
-
 ```
 
 ## Addendum: Adding asset checks
@@ -699,7 +688,7 @@ Once you have peered your Airflow DAGs in Dagster, regardless of migration progr
 For example, given a peered version of our DAG, we can add an asset check to ensure that the final `customers` CSV output exists and has a non-zero number of rows:
 
 ```python
-# peer_with_check.py
+# tutorial_example/dagster_defs/stages/peer_with_check.py
 import os
 from pathlib import Path
 
@@ -745,7 +734,6 @@ defs = Definitions.merge(
     ),
     Definitions(asset_checks=[validate_exported_csv]),
 )
-
 ```
 
 Once we have introduced representations of the assets produced by our Airflow tasks, we can directly attach asset checks to these assets. These checks will run once the corresponding task completes, regardless of whether the task is executed in Airflow or Dagster.
@@ -756,7 +744,7 @@ Asset checks on an observed or migrated DAG
 </summary>
 
 ```python
-# migrate_with_check.py
+# tutorial_example/dagster_defs/stages/migrate_with_check.py
 import os
 from pathlib import Path
 
@@ -890,9 +878,6 @@ defs = build_defs_from_airflow_instance(
         resources={"dbt": DbtCliResource(project_dir=dbt_project_path())},
     ),
 )
-
-
-
 ```
 
 </details>
