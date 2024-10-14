@@ -20,7 +20,7 @@ from dagster import (
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
-from dagster._core.errors import raise_execution_interrupts
+from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.context.init import InitResourceContext
@@ -427,7 +427,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             run_info = client.jobs.get_run(databricks_run_id)
             # if a new job cluster is created, the cluster_instance key may not be immediately present in the run response
             try:
-                cluster_id = run_info.tasks[0].cluster_instance.cluster_id
+                if run_info.tasks is not None and run_info.tasks[0].cluster_instance is not None:
+                    cluster_id = run_info.tasks[0].cluster_instance.cluster_id
+                else:
+                    raise DagsterInvariantViolationError(f"run_info {run_info} doesn't contain cluster_id")
                 break
             except:
                 log.warning(
