@@ -676,7 +676,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert record["numRequested"] == 0
 
         # all nodes in the tree
-        assert len(record["evaluationNodes"]) == 32
+        assert len(record["evaluationNodes"]) == 35
 
         rootNode = record["evaluationNodes"][0]
         assert rootNode["uniqueId"] == record["rootUniqueId"]

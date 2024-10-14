@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.instance import DagsterInstance
     from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
+    from dagster._core.storage.dagster_run import RunRecord
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -472,6 +473,86 @@ class AssetGraphView(LoadingContext):
             check_method=self._compute_missing_check_subset,
             asset_method=functools.partial(
                 self._compute_missing_asset_subset, from_subset=from_subset
+            ),
+        )
+
+    def _expensively_filter_entity_subset(
+        self, subset: EntitySubset, filter_fn: Callable[[Optional[str]], bool]
+    ) -> EntitySubset:
+        if subset.is_partitioned:
+            return subset.compute_intersection_with_partition_keys(
+                {pk for pk in subset.expensively_compute_partition_keys() if filter_fn(pk)}
+            )
+        else:
+            return (
+                subset
+                if not subset.is_empty and filter_fn(None)
+                else self.get_empty_subset(key=subset.key)
+            )
+
+    def _run_record_targets_entity(self, run_record: "RunRecord", target_key: EntityKey) -> bool:
+        asset_selection = run_record.dagster_run.asset_selection or set()
+        check_selection = run_record.dagster_run.asset_check_selection or set()
+        return target_key in (asset_selection | check_selection)
+
+    def _compute_latest_check_run_executed_with_target(
+        self, partition_key: Optional[str], query_key: AssetCheckKey, target_key: EntityKey
+    ) -> bool:
+        from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+        from dagster._core.storage.dagster_run import RunRecord
+
+        check.invariant(partition_key is None, "Partitioned checks not supported")
+        check_record = AssetCheckExecutionRecord.blocking_get(self, query_key)
+        if check_record and check_record.event:
+            run_record = RunRecord.blocking_get(self, check_record.event.run_id)
+            return bool(run_record) and self._run_record_targets_entity(run_record, target_key)
+        else:
+            return False
+
+    def _compute_latest_asset_run_executed_with_target(
+        self, partition_key: Optional[str], query_key: AssetKey, target_key: EntityKey
+    ) -> bool:
+        from dagster._core.storage.dagster_run import RunRecord
+        from dagster._core.storage.event_log.base import AssetRecord
+
+        asset_record = AssetRecord.blocking_get(self, query_key)
+        if (
+            asset_record
+            and asset_record.asset_entry.last_materialization
+            and asset_record.asset_entry.last_materialization.asset_materialization
+            and asset_record.asset_entry.last_materialization.asset_materialization.partition
+            == partition_key
+        ):
+            run_record = RunRecord.blocking_get(
+                self, asset_record.asset_entry.last_materialization.run_id
+            )
+            return bool(run_record) and self._run_record_targets_entity(run_record, target_key)
+        else:
+            return False
+
+    def compute_latest_run_executed_with_subset(
+        self, from_subset: EntitySubset, target: EntityKey
+    ) -> EntitySubset:
+        """Computes the subset of from_subset for which the latest run also targeted
+        the provided target EntityKey.
+        """
+        return _dispatch(
+            key=from_subset.key,
+            check_method=lambda k: self._expensively_filter_entity_subset(
+                from_subset,
+                filter_fn=functools.partial(
+                    self._compute_latest_check_run_executed_with_target,
+                    query_key=k,
+                    target_key=target,
+                ),
+            ),
+            asset_method=lambda k: self._expensively_filter_entity_subset(
+                from_subset,
+                filter_fn=functools.partial(
+                    self._compute_latest_asset_run_executed_with_target,
+                    query_key=k,
+                    target_key=target,
+                ),
             ),
         )
 
