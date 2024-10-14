@@ -3,7 +3,7 @@ agate==1.9.1
 aiofile==3.9.0
 aiofiles==24.1.0
 aiohappyeyeballs==2.4.3
-aiohttp==3.10.9
+aiohttp==3.10.10
 aiohttp-retry==2.8.3
 aiosignal==1.3.1
 alabaster==1.0.0
@@ -12,7 +12,7 @@ altair==4.2.2
 amqp==5.2.0
 aniso8601==9.0.1
 ansicolors==1.1.8
-anyio==4.6.0
+anyio==4.6.2.post1
 apache-airflow==2.7.3
 apache-airflow-providers-apache-spark==4.9.0
 apache-airflow-providers-cncf-kubernetes==8.3.4
@@ -56,10 +56,10 @@ billiard==4.2.1
 bleach==6.1.0
 blinker==1.8.2
 bokeh==3.6.0
-boto3==1.35.36
-boto3-stubs-lite==1.35.36
-botocore==1.35.36
-botocore-stubs==1.35.36
+boto3==1.35.40
+boto3-stubs-lite==1.35.40
+botocore==1.35.40
+botocore-stubs==1.35.40
 buildkite-test-collector==0.1.9
 cachecontrol==0.14.0
 cached-property==1.5.2
@@ -71,7 +71,7 @@ cattrs==23.1.2
 celery==5.4.0
 certifi==2024.8.30
 cffi==1.17.1
-cfn-lint==1.16.0
+cfn-lint==1.16.1
 chardet==5.2.0
 charset-normalizer==3.4.0
 click==8.1.7
@@ -81,16 +81,16 @@ click-plugins==1.1.1
 click-repl==0.3.0
 click-spinner==0.1.10
 clickclick==20.10.2
-cloudpickle==3.0.0
+cloudpickle==3.1.0
 colorama==0.4.6
 coloredlogs==14.0
 colorlog==4.8.0
 comm==0.2.2
 configupdater==3.2
-confluent-kafka==2.5.3
+confluent-kafka==2.6.0
 connexion==2.14.2
 contourpy==1.3.0
-coverage==7.6.1
+coverage==7.6.3
 cron-descriptor==1.4.5
 croniter==3.0.3
 cryptography==43.0.1
@@ -184,7 +184,7 @@ dbt-duckdb==1.9.0
 -e examples/experimental/dagster-airlift/examples/dbt-example
 dbt-extractor==0.5.1
 dbt-semantic-interfaces==0.5.1
-debugpy==1.8.6
+debugpy==1.8.7
 decopatch==1.4.10
 decorator==5.1.1
 deepdiff==8.0.1
@@ -194,7 +194,7 @@ deprecated==1.2.14
 -e examples/development_to_production
 dict2css==0.3.0.post1
 dill==0.3.9
-distlib==0.3.8
+distlib==0.3.9
 distributed==2024.9.1
 distro==1.9.0
 dlt==1.2.0
@@ -206,7 +206,7 @@ docker-pycreds==0.4.0
 docstring-parser==0.16
 docutils==0.21.2
 domdf-python-tools==3.9.0
-duckdb==1.1.1
+duckdb==1.1.2
 ecdsa==0.19.0
 email-validator==1.3.1
 entrypoints==0.4
@@ -237,8 +237,8 @@ fsspec==2024.3.0
 gitdb==4.0.11
 gitpython==3.1.43
 giturlparse==0.12.0
-google-api-core==2.20.0
-google-api-python-client==2.148.0
+google-api-core==2.21.0
+google-api-python-client==2.149.0
 google-auth==2.35.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
@@ -251,7 +251,7 @@ google-resumable-media==2.7.2
 googleapis-common-protos==1.65.0
 gql==3.5.0
 graphene==3.3
-graphql-core==3.2.4
+graphql-core==3.2.5
 graphql-relay==3.2.0
 graphviz==0.20.3
 great-expectations==0.17.11
@@ -266,11 +266,11 @@ hexbytes==1.2.1
 html5lib==1.1
 httpcore==1.0.6
 httplib2==0.22.0
-httptools==0.6.1
+httptools==0.6.2
 httpx==0.27.2
 humanfriendly==10.0
 humanize==4.11.0
-hypothesis==6.113.0
+hypothesis==6.115.0
 idna==3.10
 ijson==3.3.0
 imagesize==1.4.1
@@ -294,7 +294,7 @@ joblib==1.4.2
 json5==0.9.25
 jsondiff==2.2.1
 jsonpatch==1.33
-jsonpath-ng==1.6.1
+jsonpath-ng==1.7.0
 jsonpointer==3.0.0
 jsonref==1.1.0
 jsonschema==4.23.0
@@ -321,7 +321,7 @@ langchain-community==0.2.9
 langchain-core==0.2.41
 langchain-openai==0.1.14
 langchain-text-splitters==0.2.4
-langsmith==0.1.132
+langsmith==0.1.135
 lazy-object-proxy==1.10.0
 leather==0.4.0
 limits==3.13.0
@@ -359,10 +359,11 @@ msal-extensions==1.2.0
 msgpack==1.1.0
 multidict==6.1.0
 multimethod==1.10
-mypy-boto3-ecs==1.35.21
-mypy-boto3-emr==1.35.18
+mypy-boto3-ecs==1.35.38
+mypy-boto3-emr==1.35.39
 mypy-boto3-emr-serverless==1.35.25
 mypy-boto3-glue==1.35.25
+mypy-boto3-logs==1.35.12
 mypy-boto3-s3==1.35.32
 mypy-extensions==1.0.0
 mypy-protobuf==3.6.0
@@ -372,7 +373,7 @@ nbclient==0.10.0
 nbconvert==7.16.4
 nbformat==5.10.4
 nest-asyncio==1.6.0
-networkx==3.3
+networkx==3.4.1
 nh3==0.2.18
 nodeenv==1.9.1
 notebook==7.2.2
@@ -392,7 +393,7 @@ nvidia-nvjitlink-cu12==12.6.77
 nvidia-nvtx-cu12==12.1.105
 oauth2client==4.1.3
 oauthlib==3.2.2
-objgraph==3.6.1
+objgraph==3.6.2
 onnx==1.17.0
 onnxconverter-common==1.13.0
 onnxruntime==1.19.2
@@ -415,7 +416,7 @@ overrides==7.7.0
 packaging==24.1
 pandas==2.2.3
 pandas-gbq==0.23.2
-pandas-stubs==2.2.2.240909
+pandas-stubs==2.2.3.241009
 pandera==0.20.4
 pandocfilters==1.5.1
 papermill==2.6.0
@@ -432,7 +433,7 @@ pendulum==2.1.2
 pexpect==4.9.0
 pillow==10.4.0
 pip==24.2
-pkginfo==1.11.1
+pkginfo==1.11.2
 platformdirs==4.3.6
 plotly==5.24.1
 pluggy==1.5.0
@@ -466,7 +467,7 @@ pyjwt==2.9.0
 pymdown-extensions==10.11.2
 pynacl==1.5.0
 pyopenssl==24.2.1
-pyparsing==3.1.4
+pyparsing==3.2.0
 pypd==1.1.0
 pyproject-api==1.8.0
 pyright==1.1.379
@@ -542,12 +543,12 @@ snowflake-connector-python==3.12.2
 snowflake-sqlalchemy==1.6.1
 sortedcontainers==2.4.0
 soupsieve==2.6
-sphinx==8.0.2
+sphinx==8.1.3
 sphinx-autodoc-typehints==2.5.0
 sphinx-jinja2-compat==0.3.0
 sphinx-prompt==1.9.0
-sphinx-tabs==3.4.7
-sphinx-toolbox==3.8.0
+sphinx-tabs==3.4.5
+sphinx-toolbox==3.8.1
 sphinxcontrib-applehelp==2.0.0
 sphinxcontrib-devhelp==2.0.0
 sphinxcontrib-htmlhelp==2.1.0
@@ -557,7 +558,7 @@ sphinxcontrib-serializinghtml==2.0.0
 sqlalchemy==1.4.54
 sqlalchemy-jsonfield==1.0.2
 sqlalchemy-utils==0.41.2
-sqlglot==25.24.5
+sqlglot==25.25.0
 sqlglotrs==0.2.12
 sqlparse==0.5.1
 sshpubkeys==3.3.1
@@ -615,7 +616,7 @@ types-pytz==2024.2.0.20241003
 types-pyyaml==6.0.12.20240917
 types-requests==2.31.0.6
 types-s3transfer==0.10.3
-types-setuptools==75.1.0.20240917
+types-setuptools==75.1.0.20241014
 types-simplejson==3.19.0.20240801
 types-six==1.16.21.20241009
 types-sqlalchemy==1.4.53.34
@@ -634,7 +635,7 @@ uri-template==1.3.0
 uritemplate==4.1.1
 urllib3==1.26.20
 -e examples/use_case_repository
-uvicorn==0.31.0
+uvicorn==0.31.1
 uvloop==0.20.0
 vine==5.1.0
 virtualenv==20.25.0
@@ -661,6 +662,6 @@ wtforms==3.0.1
 xgboost==2.1.1
 xmltodict==0.12.0
 xyzservices==2024.9.0
-yarl==1.14.0
+yarl==1.15.2
 zict==3.0.0
 zipp==3.20.2
