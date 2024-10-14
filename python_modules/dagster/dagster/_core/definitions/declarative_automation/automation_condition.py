@@ -441,6 +441,18 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return NewlyUpdatedCondition()
 
+    @experimental
+    @staticmethod
+    def executed_with_root_target() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the latest run that updated the target also executed
+        with the root key that the global condition is applied to.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            LatestRunExecutedWithRootTargetCondition,
+        )
+
+        return LatestRunExecutedWithRootTargetCondition()
+
     @public
     @experimental
     @staticmethod
@@ -496,7 +508,11 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """
         with disable_dagster_warnings():
             return AutomationCondition.any_deps_match(
-                AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
+                (
+                    AutomationCondition.newly_updated()
+                    & ~AutomationCondition.executed_with_root_target()
+                ).with_label("newly_updated_without_root")
+                | AutomationCondition.will_be_requested()
             ).with_label("any_deps_updated")
 
     @experimental
