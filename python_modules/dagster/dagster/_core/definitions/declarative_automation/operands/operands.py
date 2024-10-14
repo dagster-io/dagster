@@ -60,8 +60,8 @@ class MissingAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "missing"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.asset_graph_view.compute_missing_subset(
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return await context.asset_graph_view.compute_missing_subset(
             key=context.key, from_subset=context.candidate_subset
         )
 
@@ -95,8 +95,8 @@ class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "execution_failed"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.asset_graph_view.compute_execution_failed_subset(key=context.key)
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return await context.asset_graph_view.compute_execution_failed_subset(key=context.key)
 
 
 @whitelist_for_serdes
