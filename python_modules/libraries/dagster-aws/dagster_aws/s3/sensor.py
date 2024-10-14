@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, List, Optional, cast
 
 import boto3
 import dagster._check as check
@@ -49,7 +49,7 @@ def get_objects(
     objects: List[ObjectTypeDef] = []
     for page in page_iterator:
         contents = page.get("Contents", [])
-        objects.extend([ObjectTypeDef(obj) for obj in contents])
+        objects.extend([cast(ObjectTypeDef, obj) for obj in contents])
 
     if since_key and not any(obj.get("Key") == since_key for obj in objects):
         raise Exception("Provided `since_key` is not present in list of objects")
