@@ -1,3 +1,4 @@
+import contextlib
 from datetime import datetime, timezone
 from typing import Any, Iterator, Mapping, Optional, Union
 
@@ -16,6 +17,8 @@ from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
 from dlt.common.schema import Schema
+from dlt.common.schema.utils import normalize_table_identifiers
+from dlt.extract.exceptions import DataItemRequiredForDynamicTableHints
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
@@ -119,6 +122,11 @@ class DagsterDltResource(ConfigurableResource):
 
         # shared metadata that is displayed for all assets
         base_metadata = {k: v for k, v in load_info_dict.items() if k in dlt_base_metadata_types}
+        default_schema = dlt_pipeline.default_schema
+        with contextlib.suppress(DataItemRequiredForDynamicTableHints):
+            normalized_table_name = normalize_table_identifiers(
+                resource.compute_table_schema(), default_schema.naming
+            )
 
         # job metadata for specific target `resource.table_name`
         base_metadata["jobs"] = [
@@ -147,11 +155,10 @@ class DagsterDltResource(ConfigurableResource):
         if destination_name and schema:
             relation_identifier = ".".join([destination_name, schema, str(resource.table_name)])
 
-        default_schema = dlt_pipeline.default_schema
         child_table_names = [
             name
             for name in default_schema.data_table_names()
-            if name.startswith(f"{resource.table_name}__")
+            if name.startswith(f"{normalized_table_name}__")
         ]
         child_table_schemas = {
             table_name: self._extract_table_schema_metadata(table_name, default_schema)
@@ -276,6 +283,7 @@ class DagsterDltResource(ConfigurableResource):
                 ]
             )
 
+        dlt_source.discover_schema()
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 
         load_info.raise_on_failed_jobs()
