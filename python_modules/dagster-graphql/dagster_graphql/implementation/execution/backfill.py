@@ -440,7 +440,7 @@ def delete_partition_backfill(
     if backfill.status not in BULK_ACTION_TERMINAL_STATUSES:
         # TODO - cancel the backfill if not in terminal state?
         raise DagsterInvariantViolationError(
-            f"Cannot re-execute backfill {backfill_id} because it is still in progress."
+            f"Cannot delete backfill {backfill_id} because it is still in progress."
         )
 
     if backfill.is_asset_backfill:
@@ -467,6 +467,6 @@ def delete_partition_backfill(
             graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name
         )
 
-    graphene_info.context.instance.delete_backfill(backfill_id)
+    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.DELETING))
 
     return GrapheneDeleteBackfillSuccess(backfillId=backfill_id)
