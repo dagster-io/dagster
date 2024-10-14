@@ -101,7 +101,7 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
 
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.FAILURE
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+        assert ticks[0].automation_condition_evaluation_id == 1
         assert ticks[0].timestamp == execution_time.timestamp()
 
     # advancing past MAX_TIME_TO_RESUME_TICK_SECONDS gives up and advances to a new evaluation
@@ -123,7 +123,7 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
 
         assert len(ticks) == 2
         assert ticks[0].status == TickStatus.FAILURE
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 2
+        assert ticks[0].automation_condition_evaluation_id == 2
 
     # advancing less than that retries the same tick
     execution_time = execution_time + datetime.timedelta(
@@ -144,7 +144,7 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
 
         assert len(ticks) == 3
         assert ticks[0].status == TickStatus.FAILURE
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 2
+        assert ticks[0].automation_condition_evaluation_id == 2
 
 
 @pytest.mark.parametrize(
@@ -182,7 +182,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             assert ticks[0].status == TickStatus.FAILURE
             assert ticks[0].timestamp == test_time.timestamp()
             assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-            assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+            assert ticks[0].automation_condition_evaluation_id == 1
 
             # each tick is considered a brand new retry since it happened before the cursor
             # was written
@@ -217,7 +217,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
     assert ticks[0].status == TickStatus.SUCCESS
     assert ticks[0].timestamp == test_time.timestamp()
     assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1  # finally finishes
+    assert ticks[0].automation_condition_evaluation_id == 1  # finally finishes
 
     runs = instance.get_runs()
     assert len(runs) == 5
@@ -263,7 +263,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         assert ticks[0].status == TickStatus.FAILURE
         assert ticks[0].timestamp == test_time.timestamp()
         assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+        assert ticks[0].automation_condition_evaluation_id == 1
 
         # failure count does not increase since it was a user code error
         assert ticks[0].tick_data.failure_count == 0
@@ -304,7 +304,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             assert ticks[0].status == TickStatus.FAILURE
             assert ticks[0].timestamp == test_time.timestamp()
             assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-            assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+            assert ticks[0].automation_condition_evaluation_id == 1
 
             # failure count only increases if the cursor was written - otherwise
             # each tick is considered a brand new retry
@@ -342,7 +342,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         assert ticks[0].status == TickStatus.FAILURE
         assert ticks[0].timestamp == test_time.timestamp()
         assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 2  # advances
+        assert ticks[0].automation_condition_evaluation_id == 5  # advances, skipping a few numbers
 
         assert "Oops new tick" in str(ticks[0].tick_data.error)
 
@@ -370,7 +370,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
     assert ticks[0].status != TickStatus.FAILURE
     assert ticks[0].timestamp == test_time.timestamp()
     assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 2  # finishes
+    assert ticks[0].automation_condition_evaluation_id == 5  # finishes
 
 
 spawn_ctx = multiprocessing.get_context("spawn")
@@ -438,7 +438,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     assert not ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()
 
     assert not len(ticks[0].tick_data.run_ids)
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+    assert ticks[0].automation_condition_evaluation_id == 1
 
     freeze_datetime = scenario.current_time + datetime.timedelta(seconds=1)
 
@@ -479,7 +479,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     )
     assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
     assert len(ticks[0].tick_data.run_ids) == 5
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+    assert ticks[0].automation_condition_evaluation_id == 1
 
     if len(ticks) == 2:
         # first tick is intercepted and moved into skipped instead of being stuck in STARTED
@@ -547,7 +547,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     assert ticks[0].timestamp == scenario.current_time.timestamp()
     assert ticks[0].tick_data.end_timestamp == scenario.current_time.timestamp()
 
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+    assert ticks[0].automation_condition_evaluation_id == 1
 
     tick_data_written = crash_location not in ("EVALUATIONS_FINISHED", "ASSET_EVALUATIONS_ADDED")
 
@@ -592,7 +592,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     assert ticks[0].timestamp == freeze_datetime.timestamp()
     assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
     assert len(ticks[0].tick_data.run_ids) == 5
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+    assert ticks[0].automation_condition_evaluation_id == 1
 
     _assert_run_requests_match(scenario.expected_run_requests, ticks[0].tick_data.run_requests)
 

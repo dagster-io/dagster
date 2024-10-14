@@ -271,7 +271,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             cursor=tick.cursor,
             logKey=tick.log_key,
             endTimestamp=tick.end_timestamp,
-            autoMaterializeAssetEvaluationId=tick.tick_data.auto_materialize_evaluation_id,
+            autoMaterializeAssetEvaluationId=tick.automation_condition_evaluation_id,
         )
 
     def resolve_id(self, _):
