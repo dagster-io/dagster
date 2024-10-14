@@ -322,6 +322,9 @@ class IHaveNew:
 
         def __new__(cls, **kwargs) -> Self: ...
 
+        # let type checker know these objects are sortable (by way of being a namedtuple)
+        def __lt__(self, other) -> bool: ...
+
 
 def is_record(obj) -> bool:
     """Whether or not this object was produced by a record decorator."""

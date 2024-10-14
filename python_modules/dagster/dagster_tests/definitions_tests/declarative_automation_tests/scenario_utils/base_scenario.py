@@ -592,13 +592,18 @@ FAIL_TAG = "test/fail"
 
 
 def run_request(
-    asset_keys: Sequence[CoercibleToAssetKey],
+    asset_keys: Union[AssetKey, Sequence[CoercibleToAssetKey]],
     partition_key: Optional[str] = None,
     fail_keys: Optional[Sequence[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> RunRequest:
+    if isinstance(asset_keys, AssetKey):
+        asset_selection = [asset_keys]
+    else:
+        asset_selection = [AssetKey.from_coercible(key) for key in asset_keys]
+
     return RunRequest(
-        asset_selection=[AssetKey.from_coercible(key) for key in asset_keys],
+        asset_selection=asset_selection,
         partition_key=partition_key,
         tags={**(tags or {}), **({FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {})},
     )
