@@ -23,7 +23,7 @@ EXECUTION_PLAN_CREATION_RETRIES = 1
 
 class RunRequestExecutionData(NamedTuple):
     remote_job: RemoteJob
-    external_execution_plan: RemoteExecutionPlan
+    remote_execution_plan: RemoteExecutionPlan
 
 
 def _get_implicit_job_name_for_assets(
@@ -92,7 +92,7 @@ def _get_job_execution_data_from_run_request(
         code_location = workspace.get_code_location(handle.location_name)
         remote_job = code_location.get_job(pipeline_selector)
 
-        external_execution_plan = code_location.get_execution_plan(
+        remote_execution_plan = code_location.get_execution_plan(
             remote_job,
             {},
             step_keys_to_execute=None,
@@ -102,7 +102,7 @@ def _get_job_execution_data_from_run_request(
 
         run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
             remote_job,
-            external_execution_plan,
+            remote_execution_plan,
         )
 
     return run_request_execution_data_cache[pipeline_selector]
@@ -167,7 +167,7 @@ def _create_asset_run(
 
         if not should_retry:
             execution_plan_entity_keys = _get_execution_plan_entity_keys(
-                check.not_none(execution_data).external_execution_plan.execution_plan_snapshot
+                check.not_none(execution_data).remote_execution_plan.execution_plan_snapshot
             )
 
             if not all(
@@ -190,11 +190,11 @@ def _create_asset_run(
 
         if not should_retry:
             remote_job = check.not_none(execution_data).remote_job
-            external_execution_plan = check.not_none(execution_data).external_execution_plan
+            remote_execution_plan = check.not_none(execution_data).remote_execution_plan
 
             run = instance.create_run(
                 job_snapshot=remote_job.job_snapshot,
-                execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+                execution_plan_snapshot=remote_execution_plan.execution_plan_snapshot,
                 parent_job_snapshot=remote_job.parent_job_snapshot,
                 job_name=remote_job.name,
                 run_id=run_id,

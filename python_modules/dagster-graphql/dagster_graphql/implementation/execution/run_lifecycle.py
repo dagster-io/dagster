@@ -14,7 +14,7 @@ from dagster._utils.merger import merge_dicts
 
 from dagster_graphql.implementation.external import (
     ensure_valid_config,
-    get_external_execution_plan_or_raise,
+    get_remote_execution_plan_or_raise,
 )
 from dagster_graphql.implementation.utils import ExecutionParams
 
@@ -60,29 +60,29 @@ def is_resume_retry(execution_params: ExecutionParams) -> bool:
 
 def create_valid_pipeline_run(
     graphql_context: BaseWorkspaceRequestContext,
-    external_pipeline: RemoteJob,
+    remote_job: RemoteJob,
     execution_params: ExecutionParams,
     code_location: CodeLocation,
 ) -> DagsterRun:
-    ensure_valid_config(external_pipeline, execution_params.run_config)
+    ensure_valid_config(remote_job, execution_params.run_config)
 
     step_keys_to_execute, known_state = compute_step_keys_to_execute(
         graphql_context, execution_params
     )
 
-    external_execution_plan = get_external_execution_plan_or_raise(
+    execution_plan = get_remote_execution_plan_or_raise(
         graphql_context=graphql_context,
-        external_pipeline=external_pipeline,
+        remote_job=remote_job,
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
     )
-    tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
+    tags = merge_dicts(remote_job.tags, execution_params.execution_metadata.tags)
 
     dagster_run = graphql_context.instance.create_run(
-        job_snapshot=external_pipeline.job_snapshot,
-        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_job_snapshot=external_pipeline.parent_job_snapshot,
+        job_snapshot=remote_job.job_snapshot,
+        execution_plan_snapshot=execution_plan.execution_plan_snapshot,
+        parent_job_snapshot=remote_job.parent_job_snapshot,
         job_name=execution_params.selector.job_name,
         run_id=(
             execution_params.execution_metadata.run_id
@@ -106,15 +106,15 @@ def create_valid_pipeline_run(
             else None
         ),
         run_config=execution_params.run_config,
-        step_keys_to_execute=external_execution_plan.execution_plan_snapshot.step_keys_to_execute,
+        step_keys_to_execute=execution_plan.execution_plan_snapshot.step_keys_to_execute,
         tags=tags,
         root_run_id=execution_params.execution_metadata.root_run_id,
         parent_run_id=execution_params.execution_metadata.parent_run_id,
         status=DagsterRunStatus.NOT_STARTED,
-        remote_job_origin=external_pipeline.get_remote_origin(),
-        job_code_origin=external_pipeline.get_python_origin(),
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         asset_graph=code_location.get_repository(
-            external_pipeline.repository_handle.repository_name
+            remote_job.repository_handle.repository_name
         ).asset_graph,
     )
 

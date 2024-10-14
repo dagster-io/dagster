@@ -21,7 +21,7 @@ def sync_get_streaming_external_repositories_data_grpc(
     for repository_name in code_location.repository_names:  # type: ignore
         external_repository_chunks = list(
             api_client.streaming_external_repository(
-                external_repository_origin=RemoteRepositoryOrigin(
+                remote_repository_origin=RemoteRepositoryOrigin(
                     code_location.origin,
                     repository_name,
                 )
@@ -57,7 +57,7 @@ async def gen_streaming_external_repositories_data_grpc(
         external_repository_chunks = [
             chunk
             async for chunk in api_client.gen_streaming_external_repository(
-                external_repository_origin=RemoteRepositoryOrigin(
+                remote_repository_origin=RemoteRepositoryOrigin(
                     code_location.origin,
                     repository_name,
                 )

@@ -370,7 +370,7 @@ class GraphenePartitionSet(graphene.ObjectType):
 
     def _get_partition_names(self, graphene_info: ResolveInfo) -> Sequence[str]:
         if self._partition_names is None:
-            result = graphene_info.context.get_external_partition_names(
+            result = graphene_info.context.get_partition_names(
                 repository_handle=self._repository_handle,
                 job_name=self._remote_partition_set.job_name,
                 instance=graphene_info.context.instance,

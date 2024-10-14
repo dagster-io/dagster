@@ -146,7 +146,7 @@ def create_and_launch_partition_backfill(
         remote_partition_set = next(iter(matches))
 
         if backfill_params.get("allPartitions"):
-            result = graphene_info.context.get_external_partition_names(
+            result = graphene_info.context.get_partition_names(
                 repository_handle=repository.handle,
                 job_name=remote_partition_set.job_name,
                 instance=graphene_info.context.instance,
