@@ -14,6 +14,7 @@ from dagster._core.storage.tags import KIND_PREFIX
 from dagster_airlift.constants import (
     AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
     DAG_MAPPING_METADATA_KEY,
+    PEERED_DAG_MAPPING_METADATA_KEY,
     TASK_MAPPING_METADATA_KEY,
 )
 
@@ -50,6 +51,10 @@ def metadata_for_task_mapping(*, task_id: str, dag_id: str) -> dict:
     return {TASK_MAPPING_METADATA_KEY: [{"dag_id": dag_id, "task_id": task_id}]}
 
 
+def metadata_for_dag_mapping(*, dag_id: str) -> dict:
+    return {DAG_MAPPING_METADATA_KEY: [{"dag_id": dag_id}]}
+
+
 def get_metadata_key(instance_name: str) -> str:
     return f"{AIRFLOW_SOURCE_METADATA_KEY_PREFIX}/{instance_name}"
 
@@ -60,6 +65,10 @@ def is_task_mapped_asset_spec(spec: AssetSpec) -> bool:
 
 def is_dag_mapped_asset_spec(spec: AssetSpec) -> bool:
     return DAG_MAPPING_METADATA_KEY in spec.metadata
+
+
+def is_peered_dag_asset_spec(spec: AssetSpec) -> bool:
+    return PEERED_DAG_MAPPING_METADATA_KEY in spec.metadata
 
 
 def task_handles_for_spec(spec: AssetSpec) -> Set["TaskHandle"]:
@@ -81,4 +90,14 @@ def dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
     return {
         DagHandle(dag_id=dag_handle_dict["dag_id"])
         for dag_handle_dict in spec.metadata[DAG_MAPPING_METADATA_KEY]
+    }
+
+
+def peered_dag_handles_for_spec(spec: AssetSpec) -> Set["DagHandle"]:
+    from dagster_airlift.core.serialization.serialized_data import DagHandle
+
+    check.param_invariant(is_peered_dag_asset_spec(spec), "spec", "Must be mapped spec")
+    return {
+        DagHandle(dag_id=dag_handle_dict["dag_id"])
+        for dag_handle_dict in spec.metadata[PEERED_DAG_MAPPING_METADATA_KEY]
     }

@@ -24,7 +24,7 @@ from dagster._core.errors import (
     DagsterUserCodeExecutionError,
     user_code_error_boundary,
 )
-from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
@@ -43,8 +43,9 @@ from dagster_airlift.core.sensor.event_translation import (
     AssetEvent,
     DagsterEventTransformerFn,
     get_timestamp_from_materialization,
-    materializations_for_dag_run,
     synthetic_mats_for_mapped_asset_keys,
+    synthetic_mats_for_mapped_dag_asset_keys,
+    synthetic_mats_for_peered_dag_asset_keys,
     synthetic_mats_for_task_instance,
 )
 
@@ -260,13 +261,9 @@ def materializations_and_requests_from_batch_iter(
     context.log.info(f"Found {len(runs)} dag runs for {airflow_data.airflow_instance.name}")
     context.log.info(f"All runs {runs}")
     for i, dag_run in enumerate(runs):
-        # TODO: add pluggability here (ignoring `event_transformer_fn` for now)
-
-        dag_mats = materializations_for_dag_run(dag_run, airflow_data)
-        synthetic_mats = build_synthetic_asset_materializations(
+        mats = build_synthetic_asset_materializations(
             context, airflow_data.airflow_instance, dag_run, airflow_data
         )
-        mats = list(dag_mats) + synthetic_mats
         context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
 
         all_asset_keys_materialized = {mat.asset_key for mat in mats}
@@ -307,40 +304,62 @@ def build_synthetic_asset_materializations(
     This also currently does not support dynamic tasks in Airflow, in which case
     the use should instead map at the dag-level granularity.
     """
+    # https://linear.app/dagster-labs/issue/FOU-444/make-sensor-work-with-an-airflow-dag-run-that-has-more-than-1000
+    dagster_runs = context.instance.get_runs(
+        filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: dag_run.run_id}),
+        limit=1000,
+    )
+    context.log.info(f"Found {len(dagster_runs)} dagster runs for {dag_run.run_id}")
+
+    context.log.info(
+        f"Airlift Sensor: Found dagster run ids: {[run.run_id for run in dagster_runs]}"
+        f" for airflow run id {dag_run.run_id} and dag id {dag_run.dag_id}"
+    )
+    synthetic_mats = []
+    # Peered dag-level materializations will always be emitted.
+    synthetic_mats.extend(synthetic_mats_for_peered_dag_asset_keys(dag_run, airflow_data))
+    # If there is a dagster run for this dag, we don't need to synthesize materializations for mapped dag assets.
+    if not dagster_runs:
+        synthetic_mats.extend(synthetic_mats_for_mapped_dag_asset_keys(dag_run, airflow_data))
+    synthetic_mats.extend(
+        get_synthetic_task_mats(
+            airflow_instance=airflow_instance,
+            dagster_runs=dagster_runs,
+            dag_run=dag_run,
+            airflow_data=airflow_data,
+            context=context,
+        )
+    )
+    return synthetic_mats
+
+
+def get_synthetic_task_mats(
+    airflow_instance: AirflowInstance,
+    dagster_runs: Sequence[DagsterRun],
+    dag_run: DagRun,
+    airflow_data: AirflowDefinitionsData,
+    context: SensorEvaluationContext,
+) -> List[AssetMaterialization]:
     task_instances = airflow_instance.get_task_instance_batch(
         run_id=dag_run.run_id,
         dag_id=dag_run.dag_id,
         task_ids=[task_id for task_id in airflow_data.task_ids_in_dag(dag_run.dag_id)],
         states=["success"],
     )
-
-    context.log.info(f"Found {len(task_instances)} task instances for {dag_run.run_id}")
-    context.log.info(f"All task instances {task_instances}")
-
     check.invariant(
         len({ti.task_id for ti in task_instances}) == len(task_instances),
         "Assuming one task instance per task_id for now. Dynamic Airflow tasks not supported.",
     )
-
-    # https://linear.app/dagster-labs/issue/FOU-444/make-sensor-work-with-an-airflow-dag-run-that-has-more-than-1000
-    dagster_runs = context.instance.get_runs(
-        filters=RunsFilter(tags={DAG_RUN_ID_TAG_KEY: dag_run.run_id}),
-        limit=1000,
-    )
-
-    context.log.info(
-        f"Airlift Sensor: Found dagster run ids: {[run.run_id for run in dagster_runs]}"
-        f" for airflow run id {dag_run.run_id} and dag id {dag_run.dag_id}"
-    )
-
-    dagster_runs_by_task_id = {run.tags[TASK_ID_TAG_KEY]: run for run in dagster_runs}
-    task_instances_by_task_id = {ti.task_id: ti for ti in task_instances}
-
     synthetic_mats = []
-
+    context.log.info(f"Found {len(task_instances)} task instances for {dag_run.run_id}")
+    context.log.info(f"All task instances {task_instances}")
+    dagster_runs_by_task_id = {
+        run.tags[TASK_ID_TAG_KEY]: run for run in dagster_runs if TASK_ID_TAG_KEY in run.tags
+    }
+    task_instances_by_task_id = {ti.task_id: ti for ti in task_instances}
     for task_id, task_instance in task_instances_by_task_id.items():
-        # If there is no dagster_run for this task, it was not proxied.
-        # Therefore synthensize a materialization based on the task information.
+        # No dagster runs means that the computation that materializes the asset was not proxied to Dagster.
+        # Therefore the dags ran completely in Airflow, and we will synthesize materializations in Dagster corresponding to that data run.
         if task_id not in dagster_runs_by_task_id:
             context.log.info(
                 f"Synthesizing materialization for tasks {task_id} in dag {dag_run.dag_id} because no dagster run found."
@@ -361,7 +380,6 @@ def build_synthetic_asset_materializations(
             context.log.info(
                 f"Dagster run found for task {task_id} in dag {dag_run.dag_id}. Run {dagster_runs_by_task_id[task_id].run_id}"
             )
-
     return synthetic_mats
 
 

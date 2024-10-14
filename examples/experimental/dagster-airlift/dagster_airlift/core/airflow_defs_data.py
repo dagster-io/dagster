@@ -11,7 +11,9 @@ from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHa
 from dagster_airlift.core.utils import (
     dag_handles_for_spec,
     is_dag_mapped_asset_spec,
+    is_peered_dag_asset_spec,
     is_task_mapped_asset_spec,
+    peered_dag_handles_for_spec,
     task_handles_for_spec,
 )
 
@@ -37,7 +39,7 @@ class AirflowDefinitionsData:
         return self.mapping_info.dag_ids
 
     @cached_property
-    def asset_keys_per_task_handle(self) -> Mapping[TaskHandle, AbstractSet[AssetKey]]:
+    def mapped_asset_keys_by_task_handle(self) -> Mapping[TaskHandle, AbstractSet[AssetKey]]:
         asset_keys_per_handle = defaultdict(set)
         for spec in self.mapped_defs.get_all_asset_specs():
             if is_task_mapped_asset_spec(spec):
@@ -47,7 +49,7 @@ class AirflowDefinitionsData:
         return asset_keys_per_handle
 
     @cached_property
-    def asset_keys_per_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
+    def mapped_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
         asset_keys_per_handle = defaultdict(set)
         for spec in self.mapped_defs.get_all_asset_specs():
             if is_dag_mapped_asset_spec(spec):
@@ -56,5 +58,15 @@ class AirflowDefinitionsData:
                     asset_keys_per_handle[dag_handle].add(spec.key)
         return asset_keys_per_handle
 
+    @cached_property
+    def peered_dag_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
+        asset_keys_per_handle = defaultdict(set)
+        for spec in self.mapped_defs.get_all_asset_specs():
+            if is_peered_dag_asset_spec(spec):
+                dag_handles = peered_dag_handles_for_spec(spec)
+                for dag_handle in dag_handles:
+                    asset_keys_per_handle[dag_handle].add(spec.key)
+        return asset_keys_per_handle
+
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
-        return self.asset_keys_per_task_handle[TaskHandle(dag_id=dag_id, task_id=task_id)]
+        return self.mapped_asset_keys_by_task_handle[TaskHandle(dag_id=dag_id, task_id=task_id)]

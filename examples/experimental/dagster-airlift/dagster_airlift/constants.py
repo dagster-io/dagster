@@ -1,3 +1,4 @@
+PEERED_DAG_MAPPING_METADATA_KEY = "dagster-airlift/peered-dag-mapping"
 DAG_MAPPING_METADATA_KEY = "dagster-airlift/dag-mapping"
 AIRFLOW_SOURCE_METADATA_KEY_PREFIX = "dagster-airlift/source"
 TASK_MAPPING_METADATA_KEY = "dagster-airlift/task-mapping"
