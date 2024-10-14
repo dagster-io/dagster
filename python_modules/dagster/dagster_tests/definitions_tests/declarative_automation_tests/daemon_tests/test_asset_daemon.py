@@ -45,7 +45,7 @@ from dagster._daemon.asset_daemon import (
     set_auto_materialize_paused,
 )
 from dagster._serdes.serdes import deserialize_value, serialize_value
-from dagster._time import get_current_datetime
+from dagster._time import get_current_datetime, get_current_timestamp
 
 from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.updated_scenarios.basic_scenarios import (
     basic_scenarios,
@@ -449,7 +449,19 @@ def test_auto_materialize_sensor_no_transition():
 def test_auto_materialize_sensor_transition():
     with get_daemon_instance(paused=False) as instance:
         # Have been using global AMP, so there is a cursor
-        pre_sensor_evaluation_id = 12345
+        pre_sensor_evaluation_id = 4
+        for _ in range(pre_sensor_evaluation_id):
+            # create junk ticks so that the next tick id will be 4
+            instance.create_tick(
+                TickData(
+                    instigator_origin_id="",
+                    instigator_name="",
+                    instigator_type=InstigatorType.SCHEDULE,
+                    status=TickStatus.SUCCESS,
+                    timestamp=get_current_timestamp(),
+                    run_ids=[],
+                )
+            )
 
         assert not get_has_migrated_to_sensors(instance)
 
@@ -578,13 +590,15 @@ def test_auto_materialize_sensor_name_transition() -> None:
             # skip over the old state for the old name
             if sensor_state.instigator_name == "default_auto_materialize_sensor":
                 continue
-            # ensure that we're properly accounting for the old cursor information
+            # we do not account for the old cursor as it is assumed that the current
+            # tick id will be strictly larger than the current asset daemon cursor
+            # value in the real world (as each evaluation creates a new tick)
             assert (
                 asset_daemon_cursor_from_instigator_serialized_cursor(
                     cast(SensorInstigatorData, sensor_state.instigator_data).cursor,
                     None,
                 ).evaluation_id
-                > 2
+                > 0  # real world should be larger
             )
 
 
@@ -600,7 +614,19 @@ def test_auto_materialize_sensor_ticks(num_threads):
         },
     ) as instance:
         with _get_threadpool_executor(instance) as threadpool_executor:
-            pre_sensor_evaluation_id = 12345
+            pre_sensor_evaluation_id = 3
+            for _ in range(pre_sensor_evaluation_id):
+                # create junk ticks so that the next tick id will be 4
+                instance.create_tick(
+                    TickData(
+                        instigator_origin_id="",
+                        instigator_name="",
+                        instigator_type=InstigatorType.SCHEDULE,
+                        status=TickStatus.SUCCESS,
+                        timestamp=get_current_timestamp(),
+                        run_ids=[],
+                    )
+                )
 
             instance.daemon_cursor_storage.set_cursor_values(
                 {

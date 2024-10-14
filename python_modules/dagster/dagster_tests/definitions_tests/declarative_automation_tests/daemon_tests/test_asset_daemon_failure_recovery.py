@@ -342,7 +342,9 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         assert ticks[0].status == TickStatus.FAILURE
         assert ticks[0].timestamp == test_time.timestamp()
         assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-        assert ticks[0].tick_data.auto_materialize_evaluation_id == 2  # advances
+        assert (
+            ticks[0].tick_data.auto_materialize_evaluation_id == 5
+        )  # advances, skipping a few numbers
 
         assert "Oops new tick" in str(ticks[0].tick_data.error)
 
@@ -370,7 +372,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
     assert ticks[0].status != TickStatus.FAILURE
     assert ticks[0].timestamp == test_time.timestamp()
     assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
-    assert ticks[0].tick_data.auto_materialize_evaluation_id == 2  # finishes
+    assert ticks[0].tick_data.auto_materialize_evaluation_id == 5  # finishes
 
 
 spawn_ctx = multiprocessing.get_context("spawn")
