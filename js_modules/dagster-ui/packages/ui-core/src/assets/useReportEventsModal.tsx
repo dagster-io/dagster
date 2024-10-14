@@ -47,19 +47,23 @@ type Asset = {
 
 export function useReportEventsModal(asset: Asset | null, onEventReported?: () => void) {
   const [isOpen, setIsOpen] = useState(false);
-  const isPartitioned = asset?.isPartitioned;
   const hasReportRunlessAssetEventPermission = asset?.hasReportRunlessAssetEventPermission;
 
   const dropdownOptions = useMemo(
-    () => [
-      {
-        label: isPartitioned ? 'Report materialization events' : 'Report materialization event',
-        icon: <Icon name="asset_non_sda" />,
-        onClick: () => setIsOpen(true),
-        disabled: !hasReportRunlessAssetEventPermission,
-      },
-    ],
-    [isPartitioned, hasReportRunlessAssetEventPermission],
+    () =>
+      asset
+        ? [
+            {
+              label: asset.isPartitioned
+                ? 'Report materialization events'
+                : 'Report materialization event',
+              icon: <Icon name="asset_non_sda" />,
+              disabled: !hasReportRunlessAssetEventPermission,
+              onClick: () => setIsOpen(true),
+            },
+          ]
+        : [],
+    [asset, hasReportRunlessAssetEventPermission],
   );
 
   const element = asset ? (

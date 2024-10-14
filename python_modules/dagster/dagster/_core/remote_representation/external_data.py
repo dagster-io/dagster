@@ -95,7 +95,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.snap import JobSnapshot
+from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -115,117 +115,246 @@ DEFAULT_PRESET_NAME = "default"
 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
 
-@whitelist_for_serdes(storage_field_names={"external_job_datas": "external_pipeline_datas"})
+@whitelist_for_serdes(
+    storage_name="ExternalRepositoryData",
+    storage_field_names={
+        "schedules": "external_schedule_datas",
+        "partition_sets": "external_partition_set_datas",
+        "sensors": "external_sensor_datas",
+        "asset_nodes": "external_asset_graph_data",
+        "resources": "external_resource_data",
+        "asset_check_nodes": "external_asset_checks",
+        "job_datas": "external_pipeline_datas",
+        "job_refs": "external_job_refs",
+    },
+)
 @record_custom
-class ExternalRepositoryData(IHaveNew):
+class RepositorySnap(IHaveNew):
     name: str
-    external_schedule_datas: Sequence["ScheduleSnap"]
-    external_partition_set_datas: Sequence["PartitionSetSnap"]
-    external_sensor_datas: Sequence["SensorSnap"]
-    external_asset_graph_data: Sequence["AssetNodeSnap"]
-    external_job_datas: Optional[Sequence["ExternalJobData"]]
-    external_job_refs: Optional[Sequence["ExternalJobRef"]]
-    external_resource_data: Optional[Sequence["ResourceSnap"]]
-    external_asset_checks: Optional[Sequence["AssetCheckNodeSnap"]]
+    schedules: Sequence["ScheduleSnap"]
+    partition_sets: Sequence["PartitionSetSnap"]
+    sensors: Sequence["SensorSnap"]
+    asset_nodes: Sequence["AssetNodeSnap"]
+    job_datas: Optional[Sequence["JobDataSnap"]]
+    job_refs: Optional[Sequence["JobRefSnap"]]
+    resources: Optional[Sequence["ResourceSnap"]]
+    asset_check_nodes: Optional[Sequence["AssetCheckNodeSnap"]]
     metadata: Optional[MetadataMapping]
     utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]]
 
     def __new__(
         cls,
         name: str,
-        external_schedule_datas: Sequence["ScheduleSnap"],
-        external_partition_set_datas: Sequence["PartitionSetSnap"],
-        external_sensor_datas: Optional[Sequence["SensorSnap"]] = None,
-        external_asset_graph_data: Optional[Sequence["AssetNodeSnap"]] = None,
-        external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
-        external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
-        external_resource_data: Optional[Sequence["ResourceSnap"]] = None,
-        external_asset_checks: Optional[Sequence["AssetCheckNodeSnap"]] = None,
+        schedules: Sequence["ScheduleSnap"],
+        partition_sets: Sequence["PartitionSetSnap"],
+        sensors: Optional[Sequence["SensorSnap"]] = None,
+        asset_nodes: Optional[Sequence["AssetNodeSnap"]] = None,
+        job_datas: Optional[Sequence["JobDataSnap"]] = None,
+        job_refs: Optional[Sequence["JobRefSnap"]] = None,
+        resources: Optional[Sequence["ResourceSnap"]] = None,
+        asset_check_nodes: Optional[Sequence["AssetCheckNodeSnap"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
         return super().__new__(
             cls,
             name=name,
-            external_schedule_datas=external_schedule_datas,
-            external_partition_set_datas=external_partition_set_datas,
-            external_sensor_datas=external_sensor_datas or [],
-            external_asset_graph_data=external_asset_graph_data or [],
-            external_job_datas=external_job_datas,
-            external_job_refs=external_job_refs,
-            external_resource_data=external_resource_data,
-            external_asset_checks=external_asset_checks,
+            schedules=schedules,
+            partition_sets=partition_sets,
+            sensors=sensors or [],
+            asset_nodes=asset_nodes or [],
+            job_datas=job_datas,
+            job_refs=job_refs,
+            resources=resources,
+            asset_check_nodes=asset_check_nodes,
             metadata=metadata or {},
             utilized_env_vars=utilized_env_vars,
         )
 
+    @classmethod
+    def from_def(
+        cls,
+        repository_def: RepositoryDefinition,
+        defer_snapshots: bool = False,
+    ) -> Self:
+        check.inst_param(repository_def, "repository_def", RepositoryDefinition)
+
+        jobs = repository_def.get_all_jobs()
+        if defer_snapshots:
+            job_datas = None
+            job_refs = sorted(
+                list(map(external_job_ref_from_def, jobs)),
+                key=lambda pd: pd.name,
+            )
+        else:
+            job_datas = sorted(
+                list(
+                    map(
+                        lambda job: external_job_data_from_def(job, include_parent_snapshot=True),
+                        jobs,
+                    )
+                ),
+                key=lambda pd: pd.name,
+            )
+            job_refs = None
+
+        resource_datas = repository_def.get_top_level_resources()
+        asset_node_snaps = asset_node_snaps_from_repo(repository_def)
+
+        nested_resource_map = _get_nested_resources_map(
+            resource_datas, repository_def.get_top_level_resources()
+        )
+        inverted_nested_resources_map: Dict[str, Dict[str, str]] = defaultdict(dict)
+        for resource_key, nested_resources in nested_resource_map.items():
+            for attribute, nested_resource in nested_resources.items():
+                if nested_resource.type == NestedResourceType.TOP_LEVEL:
+                    inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
+
+        resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
+        # collect resource usage from normal non-source assets
+        for asset in asset_node_snaps:
+            if asset.required_top_level_resources:
+                for resource_key in asset.required_top_level_resources:
+                    resource_asset_usage_map[resource_key].append(asset.asset_key)
+
+        resource_schedule_usage_map: Dict[str, List[str]] = defaultdict(list)
+        for schedule in repository_def.schedule_defs:
+            if schedule.required_resource_keys:
+                for resource_key in schedule.required_resource_keys:
+                    resource_schedule_usage_map[resource_key].append(schedule.name)
+
+        resource_sensor_usage_map: Dict[str, List[str]] = defaultdict(list)
+        for sensor in repository_def.sensor_defs:
+            if sensor.required_resource_keys:
+                for resource_key in sensor.required_resource_keys:
+                    resource_sensor_usage_map[resource_key].append(sensor.name)
+
+        resource_job_usage_map: ResourceJobUsageMap = _get_resource_job_usage(jobs)
+
+        return cls(
+            name=repository_def.name,
+            schedules=sorted(
+                [
+                    ScheduleSnap.from_def(schedule_def, repository_def)
+                    for schedule_def in repository_def.schedule_defs
+                ],
+                key=lambda sd: sd.name,
+            ),
+            # `PartitionSetDefinition` has been deleted, so we now construct `PartitionSetSnap`
+            # from jobs instead of going through the intermediary `PartitionSetDefinition`. Eventually
+            # we will remove `PartitionSetSnap` as well.
+            partition_sets=sorted(
+                [
+                    PartitionSetSnap.from_job_def(job_def)
+                    for job_def in repository_def.get_all_jobs()
+                    if job_def.partitions_def is not None
+                ],
+                key=lambda pss: pss.name,
+            ),
+            sensors=sorted(
+                [
+                    SensorSnap.from_def(sensor_def, repository_def)
+                    for sensor_def in repository_def.sensor_defs
+                ],
+                key=lambda sd: sd.name,
+            ),
+            asset_nodes=asset_node_snaps,
+            job_datas=job_datas,
+            job_refs=job_refs,
+            resources=sorted(
+                [
+                    ResourceSnap.from_def(
+                        res_data,
+                        res_name,
+                        nested_resource_map[res_name],
+                        inverted_nested_resources_map[res_name],
+                        resource_asset_usage_map,
+                        resource_job_usage_map,
+                        resource_schedule_usage_map,
+                        resource_sensor_usage_map,
+                    )
+                    for res_name, res_data in resource_datas.items()
+                ],
+                key=lambda rd: rd.name,
+            ),
+            asset_check_nodes=asset_check_node_snaps_from_repo(repository_def),
+            metadata=repository_def.metadata,
+            utilized_env_vars={
+                env_var: [
+                    EnvVarConsumer(type=EnvVarConsumerType.RESOURCE, name=res_name)
+                    for res_name in res_names
+                ]
+                for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
+            },
+        )
+
     def has_job_data(self):
-        return self.external_job_datas is not None
+        return self.job_datas is not None
 
-    def get_external_job_datas(self) -> Sequence["ExternalJobData"]:
-        if self.external_job_datas is None:
+    def get_job_datas(self) -> Sequence["JobDataSnap"]:
+        if self.job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
-        return self.external_job_datas
+        return self.job_datas
 
-    def get_external_job_refs(self) -> Sequence["ExternalJobRef"]:
-        if self.external_job_refs is None:
+    def get_job_refs(self) -> Sequence["JobRefSnap"]:
+        if self.job_refs is None:
             check.failed("Snapshots were not deferred, external_job_refs not loaded")
-        return self.external_job_refs
+        return self.job_refs
 
-    def get_job_snapshot(self, name):
+    def get_job_snap(self, name):
         check.str_param(name, "name")
-        if self.external_job_datas is None:
+        if self.job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_job_data in self.external_job_datas:
+        for external_job_data in self.job_datas:
             if external_job_data.name == name:
-                return external_job_data.job_snapshot
+                return external_job_data.job
 
         check.failed("Could not find pipeline snapshot named " + name)
 
-    def get_external_job_data(self, name):
+    def get_job_data(self, name):
         check.str_param(name, "name")
-        if self.external_job_datas is None:
+        if self.job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_job_data in self.external_job_datas:
+        for external_job_data in self.job_datas:
             if external_job_data.name == name:
                 return external_job_data
 
         check.failed("Could not find external pipeline data named " + name)
 
-    def get_external_schedule_data(self, name):
+    def get_schedule(self, name):
         check.str_param(name, "name")
 
-        for external_schedule_data in self.external_schedule_datas:
-            if external_schedule_data.name == name:
-                return external_schedule_data
+        for schedule in self.schedules:
+            if schedule.name == name:
+                return schedule
 
         check.failed("Could not find external schedule data named " + name)
 
-    def has_external_partition_set_data(self, name) -> bool:
+    def has_partition_set(self, name) -> bool:
         check.str_param(name, "name")
-        for external_partition_set_data in self.external_partition_set_datas:
-            if external_partition_set_data.name == name:
+        for partition_set in self.partition_sets:
+            if partition_set.name == name:
                 return True
 
         return False
 
-    def get_external_partition_set_data(self, name) -> "PartitionSetSnap":
+    def get_partition_set(self, name) -> "PartitionSetSnap":
         check.str_param(name, "name")
 
-        for external_partition_set_data in self.external_partition_set_datas:
-            if external_partition_set_data.name == name:
-                return external_partition_set_data
+        for partition_set in self.partition_sets:
+            if partition_set.name == name:
+                return partition_set
 
         check.failed("Could not find external partition set data named " + name)
 
-    def get_external_sensor_data(self, name):
+    def get_sensor(self, name):
         check.str_param(name, "name")
 
-        for external_sensor_data in self.external_sensor_datas:
-            if external_sensor_data.name == name:
-                return external_sensor_data
+        for sensor in self.sensors:
+            if sensor.name == name:
+                return sensor
 
         check.failed("Could not find sensor data named " + name)
 
@@ -262,8 +391,8 @@ class PresetSnap(IHaveNew):
 @whitelist_for_serdes(
     storage_name="ExternalPipelineData",
     storage_field_names={
-        "job_snapshot": "pipeline_snapshot",
-        "parent_job_snapshot": "parent_pipeline_snapshot",
+        "job": "pipeline_snapshot",
+        "parent_job": "parent_pipeline_snapshot",
     },
     # There was a period during which `JobDefinition` was a newer subclass of the legacy
     # `PipelineDefinition`, and `is_job` was a boolean field used to distinguish between the two
@@ -271,22 +400,22 @@ class PresetSnap(IHaveNew):
     old_fields={"is_job": True},
 )
 @record
-class ExternalJobData:
+class JobDataSnap:
     name: str
-    job_snapshot: JobSnapshot
+    job: JobSnap
     active_presets: Sequence["PresetSnap"]
-    parent_job_snapshot: Optional[JobSnapshot]
+    parent_job: Optional[JobSnap]
 
 
 @whitelist_for_serdes(
     storage_name="ExternalPipelineSubsetResult",
-    storage_field_names={"external_job_data": "external_pipeline_data"},
+    storage_field_names={"job_data_snap": "external_pipeline_data"},
 )
 @record
-class ExternalJobSubsetResult:
+class RemoteJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
-    external_job_data: Optional[ExternalJobData] = None
+    job_data_snap: Optional[JobDataSnap] = None
 
 
 @whitelist_for_serdes
@@ -312,9 +441,9 @@ class NestedResource(NamedTuple):
     name: str
 
 
-@whitelist_for_serdes(old_fields={"is_legacy_pipeline": False})
+@whitelist_for_serdes(storage_name="ExternalJobRef", old_fields={"is_legacy_pipeline": False})
 @record
-class ExternalJobRef:
+class JobRefSnap:
     name: str
     snapshot_id: str
     active_presets: Sequence["PresetSnap"]
@@ -1084,7 +1213,7 @@ class ResourceSnap(IHaveNew):
         # we parse the JSON and break it out into defaults for each individual nested Field
         # for display in the UI
         configured_values = {
-            k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
+            k: resource_value_snap_from_raw(v) for k, v in config_schema_default.items()
         }
 
         resource_type_def = resource_def
@@ -1439,119 +1568,6 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
     return resource_job_usage_map
 
 
-def external_repository_data_from_def(
-    repository_def: RepositoryDefinition,
-    defer_snapshots: bool = False,
-) -> ExternalRepositoryData:
-    check.inst_param(repository_def, "repository_def", RepositoryDefinition)
-
-    jobs = repository_def.get_all_jobs()
-    if defer_snapshots:
-        job_datas = None
-        job_refs = sorted(
-            list(map(external_job_ref_from_def, jobs)),
-            key=lambda pd: pd.name,
-        )
-    else:
-        job_datas = sorted(
-            list(
-                map(lambda job: external_job_data_from_def(job, include_parent_snapshot=True), jobs)
-            ),
-            key=lambda pd: pd.name,
-        )
-        job_refs = None
-
-    resource_datas = repository_def.get_top_level_resources()
-    asset_node_snaps = asset_node_snaps_from_repo(repository_def)
-
-    nested_resource_map = _get_nested_resources_map(
-        resource_datas, repository_def.get_top_level_resources()
-    )
-    inverted_nested_resources_map: Dict[str, Dict[str, str]] = defaultdict(dict)
-    for resource_key, nested_resources in nested_resource_map.items():
-        for attribute, nested_resource in nested_resources.items():
-            if nested_resource.type == NestedResourceType.TOP_LEVEL:
-                inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
-
-    resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
-    # collect resource usage from normal non-source assets
-    for asset in asset_node_snaps:
-        if asset.required_top_level_resources:
-            for resource_key in asset.required_top_level_resources:
-                resource_asset_usage_map[resource_key].append(asset.asset_key)
-
-    resource_schedule_usage_map: Dict[str, List[str]] = defaultdict(list)
-    for schedule in repository_def.schedule_defs:
-        if schedule.required_resource_keys:
-            for resource_key in schedule.required_resource_keys:
-                resource_schedule_usage_map[resource_key].append(schedule.name)
-
-    resource_sensor_usage_map: Dict[str, List[str]] = defaultdict(list)
-    for sensor in repository_def.sensor_defs:
-        if sensor.required_resource_keys:
-            for resource_key in sensor.required_resource_keys:
-                resource_sensor_usage_map[resource_key].append(sensor.name)
-
-    resource_job_usage_map: ResourceJobUsageMap = _get_resource_job_usage(jobs)
-
-    return ExternalRepositoryData(
-        name=repository_def.name,
-        external_schedule_datas=sorted(
-            [
-                ScheduleSnap.from_def(schedule_def, repository_def)
-                for schedule_def in repository_def.schedule_defs
-            ],
-            key=lambda sd: sd.name,
-        ),
-        # `PartitionSetDefinition` has been deleted, so we now construct `PartitionSetSnap`
-        # from jobs instead of going through the intermediary `PartitionSetDefinition`. Eventually
-        # we will remove `PartitionSetSnap` as well.
-        external_partition_set_datas=sorted(
-            [
-                PartitionSetSnap.from_job_def(job_def)
-                for job_def in repository_def.get_all_jobs()
-                if job_def.partitions_def is not None
-            ],
-            key=lambda pss: pss.name,
-        ),
-        external_sensor_datas=sorted(
-            [
-                SensorSnap.from_def(sensor_def, repository_def)
-                for sensor_def in repository_def.sensor_defs
-            ],
-            key=lambda sd: sd.name,
-        ),
-        external_asset_graph_data=asset_node_snaps,
-        external_job_datas=job_datas,
-        external_job_refs=job_refs,
-        external_resource_data=sorted(
-            [
-                ResourceSnap.from_def(
-                    res_data,
-                    res_name,
-                    nested_resource_map[res_name],
-                    inverted_nested_resources_map[res_name],
-                    resource_asset_usage_map,
-                    resource_job_usage_map,
-                    resource_schedule_usage_map,
-                    resource_sensor_usage_map,
-                )
-                for res_name, res_data in resource_datas.items()
-            ],
-            key=lambda rd: rd.name,
-        ),
-        external_asset_checks=asset_check_node_snaps_from_repo(repository_def),
-        metadata=repository_def.metadata,
-        utilized_env_vars={
-            env_var: [
-                EnvVarConsumer(type=EnvVarConsumerType.RESOURCE, name=res_name)
-                for res_name in res_names
-            ]
-            for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
-        },
-    )
-
-
 def asset_check_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetCheckNodeSnap]:
     job_names_by_check_key: Dict[AssetCheckKey, List[str]] = defaultdict(list)
 
@@ -1699,20 +1715,20 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
 def external_job_data_from_def(
     job_def: JobDefinition, include_parent_snapshot: bool
-) -> ExternalJobData:
+) -> JobDataSnap:
     check.inst_param(job_def, "job_def", JobDefinition)
-    return ExternalJobData(
+    return JobDataSnap(
         name=job_def.name,
-        job_snapshot=job_def.get_job_snapshot(),
-        parent_job_snapshot=job_def.get_parent_job_snapshot() if include_parent_snapshot else None,
+        job=job_def.get_job_snapshot(),
+        parent_job=job_def.get_parent_job_snapshot() if include_parent_snapshot else None,
         active_presets=active_presets_from_job_def(job_def),
     )
 
 
-def external_job_ref_from_def(job_def: JobDefinition) -> ExternalJobRef:
+def external_job_ref_from_def(job_def: JobDefinition) -> JobRefSnap:
     check.inst_param(job_def, "job_def", JobDefinition)
 
-    return ExternalJobRef(
+    return JobRefSnap(
         name=job_def.name,
         snapshot_id=job_def.get_job_snapshot_id(),
         parent_snapshot_id=None,
@@ -1720,7 +1736,7 @@ def external_job_ref_from_def(job_def: JobDefinition) -> ExternalJobRef:
     )
 
 
-def external_resource_value_from_raw(v: Any) -> ResourceValueSnap:
+def resource_value_snap_from_raw(v: Any) -> ResourceValueSnap:
     if isinstance(v, dict) and set(v.keys()) == {"env"}:
         return ResourceConfigEnvVarSnap(name=v["env"])
     return json.dumps(v)

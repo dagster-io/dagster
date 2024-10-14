@@ -714,7 +714,6 @@ enum ChangeReason {
 
 type AssetDependency {
   asset: AssetNode!
-  inputName: String!
   partitionMapping: PartitionMapping
 }
 
@@ -1440,6 +1439,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
   hasUnconstrainedRootNodes: Boolean!
+  hasRunMetricsEnabled: Boolean!
 }
 
 interface RunsFeedEntry {
@@ -1718,6 +1718,7 @@ type AssetKey {
 union LaunchBackfillResult =
     LaunchBackfillSuccess
   | PartitionSetNotFoundError
+  | PartitionKeysNotFoundError
   | InvalidStepError
   | InvalidOutputError
   | RunConfigValidationInvalid
@@ -1729,6 +1730,11 @@ union LaunchBackfillResult =
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
+
+type PartitionKeysNotFoundError implements Error {
+  message: String!
+  partitionKeys: [String!]!
+}
 
 type LaunchBackfillSuccess {
   backfillId: String!
@@ -2350,7 +2356,6 @@ input RunsFilter {
   createdBefore: Float
   createdAfter: Float
   mode: String
-  excludeSubruns: Boolean
 }
 
 input PipelineSelector {
@@ -3201,6 +3206,7 @@ type TableColumn {
   type: String!
   description: String
   constraints: TableColumnConstraints!
+  tags: [DefinitionTag!]!
 }
 
 type TableColumnConstraints {
@@ -3293,7 +3299,7 @@ type Query {
     filter: RunsFilter
     includeRunsFromBackfills: Boolean
   ): RunsFeedConnectionOrError!
-  runsFeedCountOrError(filter: RunsFilter): RunsFeedCountOrError!
+  runsFeedCountOrError(filter: RunsFilter, includeRunsFromBackfills: Boolean): RunsFeedCountOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!

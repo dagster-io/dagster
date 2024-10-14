@@ -7,7 +7,6 @@ import {DeletionDialog} from './DeletionDialog';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses} from './RunStatuses';
-import {DagsterTag} from './RunTag';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {RunFragment} from './types/RunFragments.types';
@@ -35,7 +34,7 @@ type VisibleDialog =
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
   const {runConfigYaml} = run;
-  const runMetricsEnabled = run.tags.some((t) => t.key === DagsterTag.RunMetrics);
+  const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
 

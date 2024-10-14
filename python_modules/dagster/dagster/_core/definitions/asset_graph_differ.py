@@ -17,7 +17,7 @@ import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -82,9 +82,9 @@ class AssetDefinitionDiffDetails:
     metadata: Optional[DictDiff[str]] = None
 
 
-def _get_external_repo_from_context(
+def _get_remote_repo_from_context(
     context: BaseWorkspaceRequestContext, code_location_name: str, repository_name: str
-) -> Optional[ExternalRepository]:
+) -> Optional[RemoteRepository]:
     """Returns the ExternalRepository specified by the code location name and repository name
     for the provided workspace context. If the repository doesn't exist, return None.
     """
@@ -134,7 +134,7 @@ class AssetGraphDiffer:
             self._branch_asset_graph_load_fn = branch_asset_graph
 
     @classmethod
-    def from_external_repositories(
+    def from_remote_repositories(
         cls,
         code_location_name: str,
         repository_name: str,
@@ -146,7 +146,7 @@ class AssetGraphDiffer:
 
         We cannot make RemoteAssetGraphs directly from the workspaces because if multiple code locations
         use the same asset key, those asset keys will override each other in the dictionaries the RemoteAssetGraph
-        creates (see from_repository_selectors_and_asset_node_snaps in RemoteAssetGraph). We need to ensure
+        creates (see from_repository_handles_and_asset_node_snaps in RemoteAssetGraph). We need to ensure
         that we are comparing assets in the same code location and repository, so we need to make the
         RemoteAssetGraph from an ExternalRepository to ensure that there are no duplicate asset keys
         that could override each other.
@@ -154,14 +154,14 @@ class AssetGraphDiffer:
         check.inst_param(branch_workspace, "branch_workspace", BaseWorkspaceRequestContext)
         check.inst_param(base_workspace, "base_workspace", BaseWorkspaceRequestContext)
 
-        branch_repo = _get_external_repo_from_context(
+        branch_repo = _get_remote_repo_from_context(
             branch_workspace, code_location_name, repository_name
         )
         if branch_repo is None:
             raise DagsterInvariantViolationError(
                 f"Repository {repository_name} does not exist in code location {code_location_name} for the branch deployment."
             )
-        base_repo = _get_external_repo_from_context(
+        base_repo = _get_remote_repo_from_context(
             base_workspace, code_location_name, repository_name
         )
         return AssetGraphDiffer(

@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from unittest import mock
 
@@ -16,14 +15,10 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
-from dagster._utils.hosted_user_process import external_job_from_recon_job
+from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
-from dagster_k8s.job import (
-    DAGSTER_PG_PASSWORD_ENV_VAR,
-    UserDefinedDagsterK8sConfig,
-    get_job_name_from_run_id,
-)
+from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, get_job_name_from_run_id
 from kubernetes import __version__ as kubernetes_version
 from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.models.v1_job_status import V1JobStatus
@@ -181,7 +176,7 @@ def test_launcher_with_container_context(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -192,7 +187,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.register_instance(instance)
@@ -256,7 +251,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -275,7 +270,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
                 job_code_origin=python_origin,
             )
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -324,11 +319,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
         }
     }
 
-    run_tags_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"working_dir": "my_working_dir"},
-    )
-    user_defined_k8s_config_json = json.dumps(run_tags_k8s_config.to_dict())
-    run_tags = {"dagster-k8s/config": user_defined_k8s_config_json}
+    run_tags = {"dagster-k8s/config": {"container_config": {"working_dir": "my_working_dir"}}}
 
     # Create fake external job.
     recon_job = reconstructable(fake_job)
@@ -350,7 +341,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -361,7 +352,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
                 job_code_origin=python_origin,
                 tags=run_tags,
             )
@@ -424,12 +415,13 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
     }
-    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"image": expected_image, "resources": expected_resources},
-        pod_spec_config={"scheduler_name": "test-scheduler-2"},
-    )
-    user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
-    tags = {"dagster-k8s/config": user_defined_k8s_config_json}
+
+    tags = {
+        "dagster-k8s/config": {
+            "container_config": {"image": expected_image, "resources": expected_resources},
+            "pod_spec_config": {"scheduler_name": "test-scheduler-2"},
+        }
+    }
 
     # Create fake external job.
     recon_job = reconstructable(fake_job)
@@ -444,7 +436,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -456,8 +448,8 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 instance,
                 job_name=job_name,
                 tags=tags,
-                external_job_origin=fake_external_job.get_remote_origin(),
-                job_code_origin=fake_external_job.get_python_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -525,7 +517,7 @@ def test_raise_on_error(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -536,8 +528,8 @@ def test_raise_on_error(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
-                job_code_origin=fake_external_job.get_python_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -586,7 +578,7 @@ def test_no_postgres(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -597,8 +589,8 @@ def test_no_postgres(kubeconfig_file):
             run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
-                job_code_origin=fake_external_job.get_python_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -652,7 +644,7 @@ def test_check_run_health(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -664,15 +656,15 @@ def test_check_run_health(kubeconfig_file):
             started_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
-                job_code_origin=fake_external_job.get_python_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
                 status=DagsterRunStatus.STARTED,
             )
             finished_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
-                job_code_origin=fake_external_job.get_python_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
                 status=DagsterRunStatus.FAILURE,
             )
             k8s_run_launcher.register_instance(instance)
@@ -789,7 +781,7 @@ def test_get_run_worker_debug_info(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -798,8 +790,8 @@ def test_get_run_worker_debug_info(kubeconfig_file):
             started_run = create_run_for_test(
                 instance,
                 job_name=job_name,
-                external_job_origin=fake_external_job.get_remote_origin(),
-                job_code_origin=fake_external_job.get_python_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
                 status=DagsterRunStatus.STARTING,
             )
 

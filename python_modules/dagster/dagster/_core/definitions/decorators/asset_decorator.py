@@ -55,11 +55,11 @@ from dagster._core.definitions.utils import (
     DEFAULT_OUTPUT,
     NoValueSentinel,
     resolve_automation_condition,
-    validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 
@@ -224,7 +224,7 @@ def asset(
         code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
-        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
+        check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
             execute in the decorated function after materializing the asset.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
@@ -254,7 +254,7 @@ def asset(
             "Cannot specify compute_kind and kinds on the @asset decorator."
         )
     tags_with_kinds = {
-        **(validate_tags_strict(tags) or {}),
+        **(normalize_tags(tags, strict=True)),
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
     }
 
@@ -469,7 +469,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,
-                    tags=validate_tags_strict(args.tags),
+                    tags=normalize_tags(args.tags or {}, strict=True),
                 )
             },
             upstream_asset_deps=args.deps,
@@ -576,9 +576,9 @@ def multi_asset(
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
-        specs (Optional[Sequence[AssetSpec]]): (Experimental) The specifications for the assets materialized
+        specs (Optional[Sequence[AssetSpec]]): The specifications for the assets materialized
             by this function.
-        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
+        check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
             execute in the decorated function after materializing the assets.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the
@@ -756,9 +756,9 @@ def graph_asset(
             compose the asset.
         metadata (Optional[RawMetadataMapping]): Dictionary of metadata to be associated with
             the asset.
-        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+        tags (Optional[Mapping[str, str]]): (Experimental) Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+        owners (Optional[Sequence[str]]): (Experimental) A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
         freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional, Sequence
 
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -36,6 +37,15 @@ def defs_from_lakehouse(
         )
 
     return Definitions(assets=[_multi_asset])
+
+
+def lakehouse_existence_check(csv_path: Path, duckdb_path: Path) -> AssetChecksDefinition:
+    return build_table_existence_check(
+        target_key=lakehouse_asset_key(csv_path=csv_path),
+        duckdb_path=duckdb_path,
+        table_name=id_from_path(csv_path),
+        schema="lakehouse",
+    )
 
 
 def lakehouse_existence_check_defs(csv_path: Path, duckdb_path: Path) -> Definitions:

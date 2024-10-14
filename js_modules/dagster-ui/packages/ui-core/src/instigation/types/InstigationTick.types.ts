@@ -51,6 +51,7 @@ export type LaunchedRunListQuery = {
           hasReExecutePermission: boolean;
           hasTerminatePermission: boolean;
           hasDeletePermission: boolean;
+          hasRunMetricsEnabled: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;
@@ -78,4 +79,4 @@ export type LaunchedRunListQuery = {
       };
 };
 
-export const LaunchedRunListQueryVersion = 'e4ae437ebe25fa33cb6b3f658cf90b5c9ce035ae9c03ceb519129a61c585325a';
+export const LaunchedRunListQueryVersion = 'c4a50f5d4e56aff9965413816c16db2489bf487d5dacd786bfadfad508f8f32b';

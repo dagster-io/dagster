@@ -10,7 +10,7 @@ import {
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
-import React, {useContext} from 'react';
+import React, {useContext, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
@@ -37,6 +37,7 @@ import {
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {useObserveAction} from './useObserveAction';
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -85,7 +86,11 @@ type LaunchAssetsState =
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
-const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
+const countIfPluralOrNotAll = (k: unknown[], all: unknown[]) =>
+  k.length > 1 || (k.length > 0 && k.length !== all.length) ? ` (${k.length})` : '';
+
+const countIfNotAll = (k: unknown[], all: unknown[]) =>
+  k.length > 0 && k.length !== all.length ? ` (${k.length})` : '';
 
 type Asset =
   | {
@@ -108,7 +113,8 @@ export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: A
 type LaunchOption = {
   assetKeys: AssetKey[];
   label: string;
-  icon?: JSX.Element;
+  disabledReason: string | null;
+  icon: JSX.Element;
 };
 
 const isAnyPartitioned = (assets: Asset[]) =>
@@ -123,53 +129,48 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-function optionsForButton(scope: AssetsInScope): LaunchOption[] {
-  // If you pass a set of selected assets, we always show just one option
-  // to materialize that selection.
-  if ('selected' in scope) {
-    const executable = scope.selected.filter((a) => !a.isObservable && a.isExecutable);
+export function optionsForExecuteButton(
+  assets: Asset[],
+  {skipAllTerm, isSelection}: {skipAllTerm?: boolean; isSelection?: boolean},
+): {materializeOption: LaunchOption; observeOption: LaunchOption} {
+  const materializable = assets.filter((a) => !a.isObservable && a.isExecutable);
+  const observable = assets.filter((a) => a.isObservable && a.isExecutable);
+  const ellipsis = isAnyPartitioned(materializable) ? '…' : '';
 
-    return [
-      {
-        assetKeys: executable.map((a) => a.assetKey),
-        label: `Materialize selected${countOrBlank(executable)}${
-          isAnyPartitioned(executable) ? '…' : ''
-        }`,
-      },
-    ];
-  }
-
-  const options: LaunchOption[] = [];
-  const executable = scope.all.filter((a) => !a.isObservable && a.isExecutable);
-
-  options.push({
-    assetKeys: executable.map((a) => a.assetKey),
-    label:
-      executable.length > 1 && !scope.skipAllTerm
-        ? `Materialize all${isAnyPartitioned(executable) ? '…' : ''}`
-        : `Materialize${isAnyPartitioned(executable) ? '…' : ''}`,
-  });
-
-  return options;
-}
-
-export function executionDisabledMessageForAssets(
-  assets: {
-    isObservable: boolean;
-    isExecutable: boolean;
-    hasMaterializePermission: boolean;
-  }[],
-) {
-  if (!assets.length) {
-    return null;
-  }
-  return assets.some((a) => !a.hasMaterializePermission)
-    ? 'You do not have permission to materialize assets'
-    : assets.every((a) => a.isObservable)
-    ? 'Observable assets cannot be materialized'
-    : assets.every((a) => !a.isExecutable)
-    ? 'External assets cannot be materialized'
-    : null;
+  return {
+    materializeOption: {
+      assetKeys: materializable.map((a) => a.assetKey),
+      disabledReason: assets.some((a) => !a.hasMaterializePermission)
+        ? 'You do not have permission to materialize assets'
+        : assets.every((a) => !a.isExecutable)
+        ? 'External assets cannot be materialized'
+        : assets.every((a) => a.isObservable)
+        ? 'Observable assets cannot be materialized'
+        : materializable.length === 0
+        ? 'No executable assets selected.'
+        : null,
+      icon: <Icon name="materialization" />,
+      label: isSelection
+        ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
+        : materializable.length > 1 && !skipAllTerm
+        ? `Materialize all${countIfNotAll(materializable, assets)}${ellipsis}`
+        : `Materialize${countIfNotAll(materializable, assets)}${ellipsis}`,
+    },
+    observeOption: {
+      assetKeys: observable.map((a) => a.assetKey),
+      disabledReason: assets.some((a) => !a.hasMaterializePermission)
+        ? 'You do not have permission to observe assets'
+        : observable.length === 0
+        ? 'Assets do not have observation functions'
+        : null,
+      icon: <Icon name="observation" />,
+      label: isSelection
+        ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`
+        : observable.length > 1 && !skipAllTerm
+        ? `Observe all${countIfNotAll(observable, assets)}`
+        : `Observe${countIfNotAll(observable, assets)}`,
+    },
+  };
 }
 
 export const LaunchAssetExecutionButton = ({
@@ -193,11 +194,12 @@ export const LaunchAssetExecutionButton = ({
       }
   )[];
 }) => {
-  const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
-  const [isOpen, setIsOpen] = React.useState(false);
+  const materialize = useMaterializationAction(preferredJobName);
+  const observe = useObserveAction(preferredJobName);
+  const loading = materialize.loading || observe.loading;
 
-  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] =
-    React.useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showCalculatingUnsyncedDialog, setShowCalculatingUnsyncedDialog] = useState(false);
 
   const {
     featureContext: {canSeeMaterializeAction},
@@ -206,22 +208,22 @@ export const LaunchAssetExecutionButton = ({
   if (!canSeeMaterializeAction) {
     return null;
   }
+  const [assets, {materializeOption, observeOption}] =
+    'selected' in scope
+      ? [scope.selected, optionsForExecuteButton(scope.selected, {isSelection: true})]
+      : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
 
-  const options = optionsForButton(scope);
-  const firstOption = options[0]!;
-  if (!firstOption) {
-    return <span />;
-  }
+  const [firstOption, firstAction, secondOption, secondAction] =
+    materializeOption.disabledReason && !observeOption.disabledReason
+      ? [observeOption, observe.onClick, materializeOption, materialize.onClick]
+      : [materializeOption, materialize.onClick, observeOption, observe.onClick];
 
-  const inScope = 'selected' in scope ? scope.selected : scope.all;
-  const disabledMessage = executionDisabledMessageForAssets(inScope);
-
-  if (disabledMessage) {
+  if (firstOption.disabledReason) {
     return (
-      <Tooltip content={disabledMessage} position="bottom-right">
+      <Tooltip content={firstOption.disabledReason} position="bottom-right">
         <Button
           intent={primary ? 'primary' : undefined}
-          icon={<Icon name="materialization" />}
+          icon={firstOption.icon}
           data-testid={testId('materialize-button')}
           disabled
         >
@@ -234,25 +236,21 @@ export const LaunchAssetExecutionButton = ({
   return (
     <>
       <CalculateUnsyncedDialog
+        assets={assets}
         isOpen={showCalculatingUnsyncedDialog}
-        onClose={() => {
-          setShowCalculatingUnsyncedDialog(false);
-        }}
-        assets={inScope}
-        onMaterializeAssets={(assets: AssetKey[], e: React.MouseEvent<any>) => {
-          onClick(assets, e);
-        }}
+        onClose={() => setShowCalculatingUnsyncedDialog(false)}
+        onMaterializeAssets={materialize.onClick}
       />
       <Box flex={{alignItems: 'center'}}>
         <Tooltip
           content="Shift+click to add configuration"
-          position="bottom-right"
+          placement="left"
           useDisabledButtonTooltipFix
         >
           <MaterializeButton
             intent={primary ? 'primary' : undefined}
             data-testid={testId('materialize-button')}
-            onClick={(e) => onClick(firstOption.assetKeys, e)}
+            onClick={(e) => firstAction(firstOption.assetKeys, e)}
             style={{
               borderTopRightRadius: 0,
               borderBottomRightRadius: 0,
@@ -271,19 +269,26 @@ export const LaunchAssetExecutionButton = ({
           position="bottom-right"
           content={
             <Menu>
-              {options.slice(1).map((option) => (
+              <Tooltip
+                canShow={!!secondOption.disabledReason}
+                content={secondOption.disabledReason || ''}
+                useDisabledButtonTooltipFix
+                position="left"
+              >
                 <MenuItem
-                  key={option.label}
-                  text={option.label}
-                  icon={option.icon || 'materialization'}
-                  disabled={option.assetKeys.length === 0}
-                  onClick={(e) => onClick(option.assetKeys, e)}
+                  key={secondOption.label}
+                  text={secondOption.label}
+                  icon={secondOption.icon}
+                  data-testid={testId('materialize-secondary-option')}
+                  disabled={secondOption.assetKeys.length === 0}
+                  onClick={(e) => secondAction(secondOption.assetKeys, e)}
                 />
-              ))}
+              </Tooltip>
               {showChangedAndMissingOption ? (
                 <MenuItem
                   text="Materialize unsynced"
                   icon="changes_present"
+                  disabled={!!materializeOption.disabledReason}
                   onClick={() => setShowCalculatingUnsyncedDialog(true)}
                 />
               ) : null}
@@ -291,7 +296,7 @@ export const LaunchAssetExecutionButton = ({
                 text="Open launchpad"
                 icon="open_in_new"
                 onClick={(e: React.MouseEvent<any>) => {
-                  onClick(firstOption.assetKeys, e, true);
+                  materialize.onClick(firstOption.assetKeys, e, true);
                 }}
               />
               {additionalDropdownOptions?.map((option) => {
@@ -322,14 +327,15 @@ export const LaunchAssetExecutionButton = ({
         >
           <Button
             role="button"
+            data-testid={testId('materialize-button-dropdown')}
             style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
             icon={<Icon name="arrow_drop_down" />}
-            disabled={!firstOption.assetKeys.length}
+            disabled={false}
             intent={primary ? 'primary' : undefined}
           />
         </Popover>
       </Box>
-      {launchpadElement}
+      {materialize.launchpadElement}
     </>
   );
 };

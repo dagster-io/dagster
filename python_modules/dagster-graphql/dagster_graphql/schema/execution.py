@@ -1,6 +1,6 @@
 import dagster._check as check
 import graphene
-from dagster._core.remote_representation import ExternalExecutionPlan
+from dagster._core.remote_representation import RemoteExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
 from dagster_graphql.schema.metadata import GrapheneMetadataItemDefinition
@@ -36,7 +36,7 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
             step_input_snap, "step_input_snap", ExecutionStepInputSnap
         )
         self._external_execution_plan = check.inst_param(
-            external_execution_plan, "external_execution_plan", ExternalExecutionPlan
+            external_execution_plan, "external_execution_plan", RemoteExecutionPlan
         )
 
     def resolve_name(self, _graphene_info: ResolveInfo):
@@ -91,7 +91,7 @@ class GrapheneExecutionStep(graphene.ObjectType):
     def __init__(self, external_execution_plan, execution_step_snap):
         super().__init__()
         self._external_execution_plan = check.inst_param(
-            external_execution_plan, "external_execution_plan", ExternalExecutionPlan
+            external_execution_plan, "external_execution_plan", RemoteExecutionPlan
         )
         self._plan_snapshot = external_execution_plan.execution_plan_snapshot
         self._step_snap = check.inst_param(
@@ -133,7 +133,7 @@ class GrapheneExecutionPlan(graphene.ObjectType):
     def __init__(self, external_execution_plan):
         super().__init__()
         self._external_execution_plan = check.inst_param(
-            external_execution_plan, external_execution_plan, ExternalExecutionPlan
+            external_execution_plan, external_execution_plan, RemoteExecutionPlan
         )
 
     def resolve_steps(self, _graphene_info: ResolveInfo):

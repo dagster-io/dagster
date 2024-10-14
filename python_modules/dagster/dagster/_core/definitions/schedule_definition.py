@@ -40,7 +40,7 @@ from dagster._core.definitions.target import (
     ExecutableDefinition,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -56,6 +56,7 @@ from dagster._time import get_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -673,7 +674,7 @@ class ScheduleDefinition(IHasInternalInit):
                 self._execution_fn = execution_fn
             else:
                 self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
-            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            self._tags = normalize_tags(tags, allow_private_system_tags=False, warning_stacklevel=5)
             self._tags_fn = None
             self._run_config_fn = None
         else:
@@ -699,7 +700,7 @@ class ScheduleDefinition(IHasInternalInit):
                     "Attempted to provide both tags_fn and tags as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            self._tags = normalize_tags(tags, allow_private_system_tags=False, warning_stacklevel=5)
             if tags_fn:
                 self._tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
@@ -742,7 +743,9 @@ class ScheduleDefinition(IHasInternalInit):
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = normalize_tags(tags_fn(context), allow_reserved_tags=False)
+                    evaluated_tags = normalize_tags(
+                        tags_fn(context), allow_private_system_tags=False
+                    )
 
                 yield RunRequest(
                     run_key=None,

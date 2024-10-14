@@ -338,7 +338,6 @@ export type AssetConnection = {
 export type AssetDependency = {
   __typename: 'AssetDependency';
   asset: AssetNode;
-  inputName: Scalars['String']['output'];
   partitionMapping: Maybe<PartitionMapping>;
 };
 
@@ -2193,6 +2192,7 @@ export type LaunchBackfillResult =
   | InvalidSubsetError
   | LaunchBackfillSuccess
   | NoModeProvidedError
+  | PartitionKeysNotFoundError
   | PartitionSetNotFoundError
   | PipelineNotFoundError
   | PresetNotFoundError
@@ -3163,6 +3163,12 @@ export type PartitionKeys = {
   partitionKeys: Array<Scalars['String']['output']>;
 };
 
+export type PartitionKeysNotFoundError = Error & {
+  __typename: 'PartitionKeysNotFoundError';
+  message: Scalars['String']['output'];
+  partitionKeys: Array<Scalars['String']['output']>;
+};
+
 export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
 
 export type PartitionMapping = {
@@ -3968,6 +3974,7 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedCountOrErrorArgs = {
   filter?: InputMaybe<RunsFilter>;
+  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type QueryRunsFeedOrErrorArgs = {
@@ -4434,6 +4441,7 @@ export type Run = PipelineRun &
     hasConcurrencyKeySlots: Scalars['Boolean']['output'];
     hasDeletePermission: Scalars['Boolean']['output'];
     hasReExecutePermission: Scalars['Boolean']['output'];
+    hasRunMetricsEnabled: Scalars['Boolean']['output'];
     hasTerminatePermission: Scalars['Boolean']['output'];
     hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
@@ -4790,7 +4798,6 @@ export type RunsFeedEntry = {
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
-  excludeSubruns?: InputMaybe<Scalars['Boolean']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
   runIds?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -5383,6 +5390,7 @@ export type TableColumn = {
   constraints: TableColumnConstraints;
   description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  tags: Array<DefinitionTag>;
   type: Scalars['String']['output'];
 };
 
@@ -6279,8 +6287,6 @@ export const buildAssetDependency = (
         : relationshipsToOmit.has('AssetNode')
         ? ({} as AssetNode)
         : buildAssetNode({}, relationshipsToOmit),
-    inputName:
-      overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'aspernatur',
     partitionMapping:
       overrides && overrides.hasOwnProperty('partitionMapping')
         ? overrides.partitionMapping!
@@ -10949,6 +10955,20 @@ export const buildPartitionKeys = (
   };
 };
 
+export const buildPartitionKeysNotFoundError = (
+  overrides?: Partial<PartitionKeysNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeysNotFoundError'} & PartitionKeysNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeysNotFoundError');
+  return {
+    __typename: 'PartitionKeysNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'minima',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
 export const buildPartitionMapping = (
   overrides?: Partial<PartitionMapping>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -12981,6 +13001,10 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('hasReExecutePermission')
         ? overrides.hasReExecutePermission!
         : true,
+    hasRunMetricsEnabled:
+      overrides && overrides.hasOwnProperty('hasRunMetricsEnabled')
+        ? overrides.hasRunMetricsEnabled!
+        : false,
     hasTerminatePermission:
       overrides && overrides.hasOwnProperty('hasTerminatePermission')
         ? overrides.hasTerminatePermission!
@@ -13649,8 +13673,6 @@ export const buildRunsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
-    excludeSubruns:
-      overrides && overrides.hasOwnProperty('excludeSubruns') ? overrides.excludeSubruns! : false,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'voluptas',
@@ -14672,6 +14694,7 @@ export const buildTableColumn = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'illum',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'explicabo',
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : 'a',
   };
 };

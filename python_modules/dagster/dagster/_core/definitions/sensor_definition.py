@@ -62,7 +62,7 @@ from dagster._core.definitions.target import (
     AutomationTarget,
     ExecutableDefinition,
 )
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -76,6 +76,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._time import get_current_datetime
 from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 if TYPE_CHECKING:
@@ -737,7 +738,7 @@ class SensorDefinition(IHasInternalInit):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
-        self._tags = normalize_tags(tags).tags
+        self._tags = normalize_tags(tags)
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)  # type: ignore  # (pyright bug)
         )

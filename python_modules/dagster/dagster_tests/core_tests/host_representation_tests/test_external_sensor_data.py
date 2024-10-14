@@ -5,7 +5,7 @@ from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.remote_representation.external_data import SensorSnap
 
 
-def test_external_sensor_has_asset_selection():
+def test_remote_sensor_has_asset_selection():
     @sensor(asset_selection=["asset1", "asset2"])
     def sensor1(): ...
 

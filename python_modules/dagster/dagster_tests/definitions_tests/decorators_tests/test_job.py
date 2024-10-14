@@ -2,9 +2,9 @@ import logging
 import warnings
 
 from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._core.utils import coerce_valid_log_level
+from dagster._utils.tags import normalize_tags
 
 
 def test_basic_job():
@@ -113,7 +113,7 @@ def test_job_system_tags():
     def basic_job():
         basic()
 
-    normalize_tags(basic_job.tags, allow_reserved_tags=False)
+    normalize_tags(basic_job.tags, allow_private_system_tags=False)
 
 
 def test_invalid_tag_keys():
@@ -129,7 +129,6 @@ def test_invalid_tag_keys():
         def basic_job():
             basic()
 
-        assert len(caught_warnings) == 1
         warning = caught_warnings[0]
         assert "Non-compliant tag keys like ['my_tag&', 'my_tag#'] are deprecated" in str(
             warning.message

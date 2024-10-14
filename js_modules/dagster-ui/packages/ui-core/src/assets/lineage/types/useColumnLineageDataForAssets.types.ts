@@ -26,7 +26,19 @@ export type AssetColumnLineageQuery = {
       | {__typename: 'PathMetadataEntry'; label: string}
       | {__typename: 'PipelineRunMetadataEntry'; label: string}
       | {__typename: 'PythonArtifactMetadataEntry'; label: string}
-      | {__typename: 'TableColumnLineageMetadataEntry'; label: string}
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
+        }
       | {__typename: 'TableMetadataEntry'; label: string}
       | {
           __typename: 'TableSchemaMetadataEntry';
@@ -38,6 +50,7 @@ export type AssetColumnLineageQuery = {
               name: string;
               type: string;
               description: string | null;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
           };
         }
@@ -86,6 +99,7 @@ export type AssetColumnLineageQuery = {
                 name: string;
                 type: string;
                 description: string | null;
+                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
               }>;
             };
           }
@@ -97,4 +111,4 @@ export type AssetColumnLineageQuery = {
   }>;
 };
 
-export const AssetColumnLineageVersion = 'c88c38558eb5d45b3c51b125853bc0df120213c4b8f5933a264525c3689bcef1';
+export const AssetColumnLineageVersion = 'ce1683cb51cf7ac96c82f05bbf5f1cc2df57ce6c944615109e30dc6d93246dc4';

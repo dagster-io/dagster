@@ -13,9 +13,14 @@ import {
   useQueryPersistedRunFilters,
   useRunsFilterInput,
 } from './RunsFilterInput';
+import {SCHEDULED_RUNS_LIST_QUERY, ScheduledRunList} from './ScheduledRunListRoot';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/RunsFeedRoot.types';
+import {
+  ScheduledRunsListQuery,
+  ScheduledRunsListQueryVariables,
+} from './types/ScheduledRunListRoot.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
-import {gql} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
@@ -26,7 +31,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {LoadingSpinner} from '../ui/Loading';
+import {Loading, LoadingSpinner} from '../ui/Loading';
 
 const PAGE_SIZE = 25;
 
@@ -41,7 +46,12 @@ const filters: RunFilterTokenType[] = [
   'status',
 ];
 
-export function useRunsFeedEntries(filter: RunsFilter, includeRunsFromBackfills: boolean) {
+export function useRunsFeedEntries(
+  filter: RunsFilter,
+  currentTab: ReturnType<typeof useSelectedRunsFeedTab>,
+  includeRunsFromBackfills: boolean,
+) {
+  const isScheduled = currentTab === 'scheduled';
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsFeedRootQuery,
     RunsFeedRootQueryVariables
@@ -49,6 +59,7 @@ export function useRunsFeedEntries(filter: RunsFilter, includeRunsFromBackfills:
     query: RUNS_FEED_ROOT_QUERY,
     pageSize: PAGE_SIZE,
     variables: {filter, includeRunsFromBackfills},
+    skip: isScheduled,
     nextCursorForResult: (runs) => {
       if (runs.runsFeedOrError.__typename !== 'RunsFeedConnection') {
         return undefined;
@@ -68,7 +79,20 @@ export function useRunsFeedEntries(filter: RunsFilter, includeRunsFromBackfills:
   const entries =
     data?.runsFeedOrError.__typename === 'RunsFeedConnection' ? data?.runsFeedOrError.results : [];
 
-  return {queryResult, paginationProps, entries};
+  const scheduledQueryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
+    SCHEDULED_RUNS_LIST_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      skip: !isScheduled,
+    },
+  );
+
+  return {
+    queryResult,
+    paginationProps,
+    entries,
+    scheduledQueryResult,
+  };
 }
 
 export const RunsFeedRoot = () => {
@@ -125,11 +149,15 @@ export const RunsFeedRoot = () => {
   });
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter, includeRunsFromBackfills);
 
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
+  const {entries, paginationProps, queryResult, scheduledQueryResult} = useRunsFeedEntries(
     filter,
+    currentTab,
     includeRunsFromBackfills,
   );
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const refreshState = useQueryRefreshAtInterval(
+    currentTab === 'scheduled' ? scheduledQueryResult : queryResult,
+    FIFTEEN_SECONDS,
+  );
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
   const {error} = queryResult;
@@ -158,6 +186,15 @@ export const RunsFeedRoot = () => {
   ) : null;
 
   function content() {
+    if (currentTab === 'scheduled') {
+      return (
+        <Loading queryResult={scheduledQueryResult} allowStaleData>
+          {(result) => {
+            return <ScheduledRunList result={result} />;
+          }}
+        </Loading>
+      );
+    }
     if (error) {
       const badRequest = !!(
         typeof error === 'object' &&

@@ -13,7 +13,7 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
-from dagster._core.remote_representation.external import ExternalSensor
+from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
 from dagster._core.storage.dagster_run import DagsterRun
@@ -50,18 +50,16 @@ def get_code_location_origin(filename: str) -> InProcessCodeLocationOrigin:
     )
 
 
-def _get_all_sensors(context: WorkspaceRequestContext) -> Sequence[ExternalSensor]:
-    external_sensors = []
+def _get_all_sensors(context: WorkspaceRequestContext) -> Sequence[RemoteSensor]:
+    sensors = []
     for cl_name in context.get_code_location_entries():
-        external_sensors.extend(
-            next(
-                iter(context.get_code_location(cl_name).get_repositories().values())
-            ).get_external_sensors()
+        sensors.extend(
+            next(iter(context.get_code_location(cl_name).get_repositories().values())).get_sensors()
         )
-    return external_sensors
+    return sensors
 
 
-def _get_automation_sensors(context: WorkspaceRequestContext) -> Sequence[ExternalSensor]:
+def _get_automation_sensors(context: WorkspaceRequestContext) -> Sequence[RemoteSensor]:
     return [
         sensor
         for sensor in _get_all_sensors(context)

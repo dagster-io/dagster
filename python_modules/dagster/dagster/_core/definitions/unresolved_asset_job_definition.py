@@ -17,9 +17,9 @@ from dagster._core.definitions.partition import PartitionedConfig, PartitionsDef
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition
@@ -388,9 +388,9 @@ def define_asset_job(
         selection=resolved_selection,
         config=config,
         description=description,
-        tags=normalize_tags(tags).tags,
+        tags=normalize_tags(tags),
         # Need to preserve None value
-        run_tags=normalize_tags(run_tags).tags if run_tags is not None else None,
+        run_tags=normalize_tags(run_tags) if run_tags is not None else None,
         metadata=metadata,
         partitions_def=partitions_def,
         executor_def=executor_def,

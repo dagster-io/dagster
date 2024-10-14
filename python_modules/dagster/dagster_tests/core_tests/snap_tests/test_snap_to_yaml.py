@@ -13,7 +13,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.external import ExternalJob
+    from dagster._core.remote_representation.external import RemoteJob
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ def test_print_root(
     instance,
 ) -> None:
     external_repository = _external_repository_for_function(instance, trivial_job_defs)
-    external_a_job: ExternalJob = external_repository.get_full_external_job("a_job")
+    external_a_job: RemoteJob = external_repository.get_full_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
@@ -114,7 +114,7 @@ def test_print_root_op_config(
     instance,
 ) -> None:
     external_repository = _external_repository_for_function(instance, job_def_with_config)
-    external_a_job: ExternalJob = external_repository.get_full_external_job("a_job")
+    external_a_job: RemoteJob = external_repository.get_full_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)
@@ -149,7 +149,7 @@ def job_def_with_complex_config():
 
 def test_print_root_complex_op_config(instance) -> None:
     external_repository = _external_repository_for_function(instance, job_def_with_complex_config)
-    external_a_job: ExternalJob = external_repository.get_full_external_job("a_job")
+    external_a_job: RemoteJob = external_repository.get_full_job("a_job")
     root_config_key = external_a_job.root_config_key
     assert root_config_key
     root_type = external_a_job.config_schema_snapshot.get_config_snap(root_config_key)

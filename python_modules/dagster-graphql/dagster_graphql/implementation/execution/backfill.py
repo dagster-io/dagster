@@ -23,6 +23,8 @@ from dagster_graphql.implementation.utils import (
     BackfillParams,
     assert_permission_for_asset_graph,
     assert_permission_for_location,
+    assert_valid_asset_partition_backfill,
+    assert_valid_job_partition_backfill,
 )
 
 BACKFILL_CHUNK_SIZE = 25
@@ -85,6 +87,14 @@ def create_and_launch_partition_backfill(
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
 
     backfill_id = make_new_backfill_id()
+    backfill_timestamp = get_current_timestamp()
+    backfill_datetime = datetime_from_timestamp(backfill_timestamp)
+    dynamic_partitions_store = CachingInstanceQueryer(
+        instance=graphene_info.context.instance,
+        asset_graph=graphene_info.context.asset_graph,
+        loading_context=graphene_info.context,
+        evaluation_time=backfill_datetime,
+    )
 
     asset_selection = (
         [
@@ -109,8 +119,6 @@ def create_and_launch_partition_backfill(
 
     tags = {**tags, **graphene_info.context.get_viewer_tags()}
 
-    backfill_timestamp = get_current_timestamp()
-
     if backfill_params.get("selector") is not None:  # job backfill
         partition_set_selector = backfill_params["selector"]
         partition_set_name = partition_set_selector.get("partitionSetName")
@@ -125,7 +133,7 @@ def create_and_launch_partition_backfill(
         repository = location.get_repository(repository_selector.repository_name)
         matches = [
             partition_set
-            for partition_set in repository.get_external_partition_sets()
+            for partition_set in repository.get_partition_sets()
             if partition_set.name == partition_set_selector.get("partitionSetName")
         ]
         if not matches:
@@ -135,12 +143,12 @@ def create_and_launch_partition_backfill(
             raise DagsterInvariantViolationError(
                 f"Partition set names must be unique: found {len(matches)} matches for {partition_set_name}"
             )
-        external_partition_set = next(iter(matches))
+        remote_partition_set = next(iter(matches))
 
         if backfill_params.get("allPartitions"):
             result = graphene_info.context.get_external_partition_names(
                 repository_handle=repository.handle,
-                job_name=external_partition_set.job_name,
+                job_name=remote_partition_set.job_name,
                 instance=graphene_info.context.instance,
                 selected_asset_keys=None,
             )
@@ -161,7 +169,7 @@ def create_and_launch_partition_backfill(
 
         backfill = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=external_partition_set.get_remote_origin(),
+            partition_set_origin=remote_partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=bool(backfill_params.get("fromFailure")),
@@ -171,6 +179,13 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             title=backfill_params.get("title"),
             description=backfill_params.get("description"),
+        )
+        assert_valid_job_partition_backfill(
+            graphene_info,
+            backfill,
+            remote_partition_set.get_partitions_definition(),
+            dynamic_partitions_store,
+            backfill_datetime,
         )
 
         if backfill_params.get("forceSynchronousSubmission"):
@@ -216,15 +231,16 @@ def create_and_launch_partition_backfill(
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
             partition_names=backfill_params.get("partitionNames"),
-            dynamic_partitions_store=CachingInstanceQueryer(
-                instance=graphene_info.context.instance,
-                asset_graph=asset_graph,
-                loading_context=graphene_info.context,
-                evaluation_time=datetime_from_timestamp(backfill_timestamp),
-            ),
+            dynamic_partitions_store=dynamic_partitions_store,
             all_partitions=backfill_params.get("allPartitions", False),
             title=backfill_params.get("title"),
             description=backfill_params.get("description"),
+        )
+        assert_valid_asset_partition_backfill(
+            graphene_info,
+            backfill,
+            dynamic_partitions_store,
+            backfill_datetime,
         )
     elif partitions_by_assets is not None:
         if backfill_params.get("forceSynchronousSubmission"):
@@ -252,16 +268,18 @@ def create_and_launch_partition_backfill(
             asset_graph=asset_graph,
             backfill_timestamp=backfill_timestamp,
             tags=tags,
-            dynamic_partitions_store=CachingInstanceQueryer(
-                instance=graphene_info.context.instance,
-                asset_graph=asset_graph,
-                loading_context=graphene_info.context,
-                evaluation_time=datetime_from_timestamp(backfill_timestamp),
-            ),
+            dynamic_partitions_store=dynamic_partitions_store,
             partitions_by_assets=partitions_by_assets,
             title=backfill_params.get("title"),
             description=backfill_params.get("description"),
         )
+        assert_valid_asset_partition_backfill(
+            graphene_info,
+            backfill,
+            dynamic_partitions_store,
+            backfill_datetime,
+        )
+
     else:
         raise DagsterError(
             "Backfill requested without specifying partition set selector or asset selection"

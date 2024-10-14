@@ -581,7 +581,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self._current_task
 
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
-        return get_task_definition_family("run", check.not_none(run.external_job_origin))
+        return get_task_definition_family("run", check.not_none(run.remote_job_origin))
 
     def _get_container_name(self, container_context) -> str:
         return container_context.container_name or self.container_name

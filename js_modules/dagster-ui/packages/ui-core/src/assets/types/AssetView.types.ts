@@ -787,6 +787,7 @@ export type AssetViewDefinitionQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -809,6 +810,7 @@ export type AssetViewDefinitionQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -978,6 +980,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -1003,6 +1010,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -2268,6 +2280,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -2293,6 +2310,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -3558,6 +3580,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -3583,6 +3610,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -4835,6 +4867,7 @@ export type AssetViewDefinitionQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -4860,6 +4893,7 @@ export type AssetViewDefinitionQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -6133,6 +6167,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -6158,6 +6197,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -7423,6 +7467,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -7448,6 +7497,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -8713,6 +8767,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -8738,6 +8797,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -9990,6 +10054,7 @@ export type AssetViewDefinitionQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -10015,6 +10080,7 @@ export type AssetViewDefinitionQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -11288,6 +11354,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -11313,6 +11384,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -12578,6 +12654,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -12603,6 +12684,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -13868,6 +13954,11 @@ export type AssetViewDefinitionQuery = {
                                     unique: boolean;
                                     other: Array<string>;
                                   };
+                                  tags: Array<{
+                                    __typename: 'DefinitionTag';
+                                    key: string;
+                                    value: string;
+                                  }>;
                                 }>;
                                 constraints: {
                                   __typename: 'TableConstraints';
@@ -13893,6 +13984,11 @@ export type AssetViewDefinitionQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
+                                tags: Array<{
+                                  __typename: 'DefinitionTag';
+                                  key: string;
+                                  value: string;
+                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -15145,6 +15241,7 @@ export type AssetViewDefinitionQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -15170,6 +15267,7 @@ export type AssetViewDefinitionQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -17058,6 +17156,7 @@ export type AssetViewDefinitionNodeFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -17080,6 +17179,7 @@ export type AssetViewDefinitionNodeFragment = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -17235,6 +17335,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -17257,6 +17358,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -18515,6 +18617,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -18537,6 +18640,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -19795,6 +19899,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -19817,6 +19922,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -21066,6 +21172,7 @@ export type AssetViewDefinitionNodeFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -21088,6 +21195,7 @@ export type AssetViewDefinitionNodeFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -22352,6 +22460,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -22374,6 +22483,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -23632,6 +23742,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -23654,6 +23765,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -24912,6 +25024,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -24934,6 +25047,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -26183,6 +26297,7 @@ export type AssetViewDefinitionNodeFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -26205,6 +26320,7 @@ export type AssetViewDefinitionNodeFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -27469,6 +27585,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -27491,6 +27608,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -28749,6 +28867,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -28771,6 +28890,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -30029,6 +30149,7 @@ export type AssetViewDefinitionNodeFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -30051,6 +30172,7 @@ export type AssetViewDefinitionNodeFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -31300,6 +31422,7 @@ export type AssetViewDefinitionNodeFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -31322,6 +31445,7 @@ export type AssetViewDefinitionNodeFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -32448,4 +32572,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '932aa7a5c3d285d2a938c89f24eb6cab960123277a2abaab3027d80f944d0ddd';
+export const AssetViewDefinitionQueryVersion = '74d10d49cfe5620c16ce66d285b26c4020c758003076c17255a0451ebdc757ce';

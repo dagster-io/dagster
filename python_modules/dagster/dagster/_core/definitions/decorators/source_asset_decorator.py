@@ -20,7 +20,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
-from dagster._core.definitions.utils import validate_tags_strict
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 
@@ -128,7 +128,7 @@ def observable_source_asset(
         auto_observe_interval_minutes,
         freshness_policy,
         op_tags,
-        tags=validate_tags_strict(tags),
+        tags=normalize_tags(tags, strict=True),
     )
 
 

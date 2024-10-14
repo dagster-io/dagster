@@ -16,6 +16,28 @@ from dagster._utils.schedules import reverse_cron_string_iterator
 
 
 @record
+@whitelist_for_serdes
+class InitialEvaluationCondition(BuiltinAutomationCondition):
+    """Condition to determine if this is the initial evaluation of a given AutomationCondition."""
+
+    @property
+    def description(self) -> str:
+        return "Initial evaluation"
+
+    @property
+    def name(self) -> str:
+        return "initial_evaluation"
+
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
+        condition_tree_id = context.root_context.condition.get_unique_id()
+        if context.previous_true_subset is None or condition_tree_id != context.cursor:
+            subset = context.candidate_subset
+        else:
+            subset = context.get_empty_subset()
+        return AutomationResult(context, subset, cursor=condition_tree_id)
+
+
+@record
 class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """Base class for simple conditions which compute a simple subset of the asset graph."""
 

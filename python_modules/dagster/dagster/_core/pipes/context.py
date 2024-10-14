@@ -161,7 +161,9 @@ class PipesMessageHandler:
     # Type ignores because we currently validate in individual handlers
     def handle_message(self, message: PipesMessage) -> None:
         if self._received_closed_msg:
-            self._context.log.warn(f"[pipes] unexpected message received after closed: `{message}`")
+            self._context.log.warning(
+                f"[pipes] unexpected message received after closed: `{message}`"
+            )
 
         method = cast(Method, message["method"])
         if method == "opened":
@@ -330,9 +332,9 @@ class PipesSession:
             "dagster/job": self.context.job_name,
         }
 
-        if self.context.dagster_run.external_job_origin:
+        if self.context.dagster_run.remote_job_origin:
             tags["dagster/code-location"] = (
-                self.context.dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
+                self.context.dagster_run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
 
         if user := self.context.get_tag("dagster/user"):

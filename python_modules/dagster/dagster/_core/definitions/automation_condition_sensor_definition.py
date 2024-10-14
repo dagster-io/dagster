@@ -14,7 +14,8 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext,
     SensorType,
 )
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
+from dagster._utils.tags import normalize_tags
 
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
@@ -111,7 +112,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             "Setting a `default_condition` for a non-user-code AutomationConditionSensorDefinition is not supported.",
         )
 
-        self._run_tags = normalize_tags(run_tags).tags
+        self._run_tags = normalize_tags(run_tags)
 
         super().__init__(
             name=check_valid_name(name),

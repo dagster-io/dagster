@@ -26,6 +26,10 @@ class EntityMatchesCondition(
     key: U_EntityKey
     operand: AutomationCondition[U_EntityKey]
 
+    @property
+    def name(self) -> str:
+        return self.key.to_user_string()
+
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         to_candidate_subset = context.candidate_subset.compute_mapped_subset(self.key)
         to_context = context.for_child_condition(

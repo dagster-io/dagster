@@ -48,14 +48,6 @@ class TaskHandle(NamedTuple):
     task_id: str
 
 
-@whitelist_for_serdes
-@record
-class MappedAirflowTaskData:
-    # remove if we keep it in SerializedDataData
-    task_info: TaskInfo
-    task_handle: TaskHandle
-
-
 ###################################################################################################
 # Serialized data that scopes to airflow DAGs and tasks.
 ###################################################################################################
@@ -67,7 +59,6 @@ class SerializedDagData:
     """A record containing pre-computed data about a given airflow dag."""
 
     dag_id: str
-    task_handle_data: Mapping[str, "SerializedTaskHandleData"]
     dag_info: DagInfo
     source_code: str
     leaf_asset_keys: Set[AssetKey]
@@ -78,7 +69,7 @@ class SerializedDagData:
 @record
 class KeyScopedDataItem:
     asset_key: AssetKey
-    mapped_tasks: List[MappedAirflowTaskData]
+    mapped_tasks: AbstractSet[TaskHandle]
 
 
 ###################################################################################################
@@ -98,15 +89,5 @@ class SerializedAirflowDefinitionsData:
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
+    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
         return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
-
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedTaskHandleData:
-    """A record containing known data about a given airflow task handle."""
-
-    asset_keys_in_task: AbstractSet[AssetKey]

@@ -192,7 +192,7 @@ class AssetDaemonScenarioState(ScenarioState):
             sensor = (
                 next(
                     iter(workspace.get_code_location("test_location").get_repositories().values())
-                ).get_external_sensor(self.sensor_name)
+                ).get_sensor(self.sensor_name)
                 if self.sensor_name
                 else None
             )

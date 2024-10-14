@@ -36,6 +36,11 @@ from dagster._core.origin import (
     get_python_environment_entry_point,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import (
+    RUN_METRIC_TAGS,
+    RUN_METRICS_POLLING_INTERVAL_TAG,
+    RUN_METRICS_PYTHON_RUNTIME_TAG,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
@@ -87,11 +92,11 @@ def execute_run_command(input_json: str) -> None:
 
 
 def _should_start_metrics_thread(dagster_run: DagsterRun) -> bool:
-    return get_boolean_tag_value(dagster_run.tags.get("dagster/run_metrics"))
+    return any(get_boolean_tag_value(dagster_run.tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
 
 def _enable_python_runtime_metrics(dagster_run: DagsterRun) -> bool:
-    return get_boolean_tag_value(dagster_run.tags.get("dagster/python_runtime_metrics"))
+    return get_boolean_tag_value(dagster_run.tags.get(RUN_METRICS_PYTHON_RUNTIME_TAG))
 
 
 def _metrics_polling_interval(
@@ -100,7 +105,7 @@ def _metrics_polling_interval(
     try:
         return float(
             dagster_run.tags.get(
-                "dagster/run_metrics_polling_interval_seconds",
+                RUN_METRICS_POLLING_INTERVAL_TAG,
                 DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
             )
         )
@@ -138,14 +143,12 @@ def _execute_run_command_body(
         f"Run with id '{run_id}' does not include an origin.",
     )
 
-    start_metric_thread = _should_start_metrics_thread(dagster_run)
-    if start_metric_thread:
+    if _should_start_metrics_thread(dagster_run):
         logger = logging.getLogger("run_metrics")
         polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
         metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
             instance,
             dagster_run,
-            container_metrics_enabled=True,
             python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
             polling_interval=polling_interval,
             logger=logger,
@@ -178,29 +181,48 @@ def _execute_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
-        if metrics_thread and metrics_thread_shutdown_event:
-            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
-            if not stopped:
-                instance.report_engine_event("Metrics thread did not shutdown properly")
-
-        if instance.should_start_background_run_thread:
-            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
-            cancellation_thread = check.not_none(cancellation_thread)
-            cancellation_thread_shutdown_event.set()
-            if cancellation_thread.is_alive():
-                cancellation_thread.join(timeout=15)
-                if cancellation_thread.is_alive():
-                    instance.report_engine_event(
-                        "Cancellation thread did not shutdown gracefully",
-                        dagster_run,
-                    )
-
-        instance.report_engine_event(
-            f"Process for run exited (pid: {pid}).",
+        _shutdown_threads(
+            instance,
             dagster_run,
+            metrics_thread,
+            metrics_thread_shutdown_event,
+            cancellation_thread,
+            cancellation_thread_shutdown_event,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
+
+
+def _shutdown_threads(
+    instance: DagsterInstance,
+    dagster_run: DagsterRun,
+    metrics_thread: Optional[threading.Thread],
+    metrics_thread_shutdown_event: Optional[threading.Event],
+    cancellation_thread: Optional[threading.Thread],
+    cancellation_thread_shutdown_event: Optional[threading.Event],
+):
+    pid = os.getpid()
+    if metrics_thread and metrics_thread_shutdown_event:
+        stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
+        if not stopped:
+            instance.report_engine_event("Metrics thread did not shutdown properly")
+
+    if instance.should_start_background_run_thread:
+        cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
+        cancellation_thread = check.not_none(cancellation_thread)
+        cancellation_thread_shutdown_event.set()
+        if cancellation_thread.is_alive():
+            cancellation_thread.join(timeout=15)
+            if cancellation_thread.is_alive():
+                instance.report_engine_event(
+                    "Cancellation thread did not shutdown gracefully",
+                    dagster_run,
+                )
+
+    instance.report_engine_event(
+        f"Process for run exited (pid: {pid}).",
+        dagster_run,
+    )
 
 
 @api_cli.command(
@@ -253,14 +275,12 @@ def _resume_run_command_body(
         f"Run with id '{run_id}' does not include an origin.",
     )
 
-    start_metric_thread = _should_start_metrics_thread(dagster_run)
-    if start_metric_thread:
+    if _should_start_metrics_thread(dagster_run):
         logger = logging.getLogger("run_metrics")
         polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
         metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
             instance,
             dagster_run,
-            container_metrics_enabled=True,
             python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
             polling_interval=polling_interval,
             logger=logger,
@@ -295,25 +315,13 @@ def _resume_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
-        if metrics_thread and metrics_thread_shutdown_event:
-            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
-            if not stopped:
-                instance.report_engine_event("Metrics thread did not shutdown properly")
-
-        if instance.should_start_background_run_thread:
-            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
-            cancellation_thread = check.not_none(cancellation_thread)
-            cancellation_thread_shutdown_event.set()
-            if cancellation_thread.is_alive():
-                cancellation_thread.join(timeout=15)
-                if cancellation_thread.is_alive():
-                    instance.report_engine_event(
-                        "Cancellation thread did not shutdown gracefully",
-                        dagster_run,
-                    )
-        instance.report_engine_event(
-            f"Process for job exited (pid: {pid}).",
+        _shutdown_threads(
+            instance,
             dagster_run,
+            metrics_thread,
+            metrics_thread_shutdown_event,
+            cancellation_thread,
+            cancellation_thread_shutdown_event,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
@@ -444,9 +452,7 @@ def _execute_step_command_body(
         )
 
         location_name = (
-            dagster_run.external_job_origin.location_name
-            if dagster_run.external_job_origin
-            else None
+            dagster_run.remote_job_origin.location_name if dagster_run.remote_job_origin else None
         )
 
         instance.inject_env_vars(location_name)

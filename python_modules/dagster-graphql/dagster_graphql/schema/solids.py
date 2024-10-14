@@ -6,7 +6,7 @@ import graphene
 from dagster._core.definitions import NodeHandle
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.remote_representation import RepresentedJob
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
@@ -434,32 +434,34 @@ class ISolidDefinitionMixin:
         if isinstance(self._represented_pipeline, HistoricalJob):
             return []
         else:
-            assert isinstance(self._represented_pipeline, ExternalJob)
+            assert isinstance(self._represented_pipeline, RemoteJob)
             repo_handle = self._represented_pipeline.repository_handle
             origin = repo_handle.code_location_origin
             location = graphene_info.context.get_code_location(origin.location_name)
             ext_repo = location.get_repository(repo_handle.repository_name)
-            nodes = [
-                node
-                for node in ext_repo.get_asset_node_snaps()
+            remote_nodes = [
+                remote_node
+                for remote_node in ext_repo.asset_graph.asset_nodes
                 if (
-                    (node.node_definition_name == self.solid_def_name)
-                    or (node.graph_name and node.graph_name == self.solid_def_name)
+                    (remote_node.priority_node_snap.node_definition_name == self.solid_def_name)
+                    or (
+                        remote_node.priority_node_snap.graph_name
+                        and remote_node.priority_node_snap.graph_name == self.solid_def_name
+                    )
                 )
             ]
             asset_checks_loader = AssetChecksLoader(
-                context=graphene_info.context, asset_keys=[node.asset_key for node in nodes]
+                context=graphene_info.context, asset_keys=[node.key for node in remote_nodes]
             )
 
             base_deployment_context = graphene_info.context.get_base_deployment_context()
 
             return [
                 GrapheneAssetNode(
-                    repository_selector=ext_repo.selector,
-                    asset_node_snap=node,
+                    remote_node=remote_node,
                     asset_checks_loader=asset_checks_loader,
                     # base_deployment_context will be None if we are not in a branch deployment
-                    asset_graph_differ=AssetGraphDiffer.from_external_repositories(
+                    asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
                         code_location_name=location.name,
                         repository_name=ext_repo.name,
                         branch_workspace=graphene_info.context,
@@ -468,7 +470,7 @@ class ISolidDefinitionMixin:
                     if base_deployment_context is not None
                     else None,
                 )
-                for node in nodes
+                for remote_node in remote_nodes
             ]
 
 

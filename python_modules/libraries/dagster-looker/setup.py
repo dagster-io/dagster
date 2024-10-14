@@ -39,7 +39,8 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "lkml",
-        "looker_sdk",
+        # Remove pin after resolution of: https://github.com/looker-open-source/sdk-codegen/issues/1518
+        "looker_sdk<24.18.0",
         "sqlglot",
         "cattrs<23.2",  # https://github.com/looker-open-source/sdk-codegen/issues/1410
     ],

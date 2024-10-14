@@ -46,13 +46,13 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_representation.external_data import (
-    ExternalJobSubsetResult,
     PartitionExecutionErrorSnap,
+    RemoteJobSubsetResult,
     RepositoryErrorSnap,
+    RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
     external_job_data_from_def,
-    external_repository_data_from_def,
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
@@ -770,7 +770,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             _maybe_log_exception(self._logger, "JobSubset")
             serialized_external_pipeline_subset_result = serialize_value(
-                ExternalJobSubsetResult(
+                RemoteJobSubsetResult(
                     success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
@@ -789,7 +789,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             return serialize_value(
-                external_repository_data_from_def(
+                RepositorySnap.from_def(
                     self._get_repo_for_origin(repository_origin),
                     defer_snapshots=request.defer_snapshots,
                 )

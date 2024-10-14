@@ -185,6 +185,7 @@ export type PipelineRunLogsSubscription = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -210,6 +211,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -385,6 +387,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -407,6 +410,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -582,6 +586,7 @@ export type PipelineRunLogsSubscription = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -607,6 +612,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -766,6 +772,7 @@ export type PipelineRunLogsSubscription = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -791,6 +798,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -947,6 +955,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -969,6 +978,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -1117,6 +1127,7 @@ export type PipelineRunLogsSubscription = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -1142,6 +1153,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -1354,6 +1366,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -1376,6 +1389,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -1571,6 +1585,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -1593,6 +1608,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -1771,6 +1787,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -1793,6 +1810,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -1949,6 +1967,7 @@ export type PipelineRunLogsSubscription = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -1974,6 +1993,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -2129,6 +2149,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -2151,6 +2172,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -2308,6 +2330,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -2330,6 +2353,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -2496,6 +2520,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -2518,6 +2543,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -2674,6 +2700,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -2696,6 +2723,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -2945,6 +2973,7 @@ export type PipelineRunLogsSubscription = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -2970,6 +2999,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -3127,6 +3157,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -3149,6 +3180,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -3305,6 +3337,7 @@ export type PipelineRunLogsSubscription = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -3327,6 +3360,7 @@ export type PipelineRunLogsSubscription = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -3525,6 +3559,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -3547,6 +3582,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -3722,6 +3758,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -3744,6 +3781,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -3914,6 +3952,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -3936,6 +3975,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4095,6 +4135,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -4117,6 +4158,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4273,6 +4315,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4295,6 +4338,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -4438,6 +4482,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -4460,6 +4505,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4672,6 +4718,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4694,6 +4741,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -4884,6 +4932,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4906,6 +4955,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -5079,6 +5129,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -5101,6 +5152,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -5252,6 +5304,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -5274,6 +5327,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -5429,6 +5483,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -5451,6 +5506,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -5603,6 +5659,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -5625,6 +5682,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -5786,6 +5844,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -5808,6 +5867,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -5959,6 +6019,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -5981,6 +6042,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -6225,6 +6287,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -6247,6 +6310,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -6404,6 +6468,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -6426,6 +6491,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -6577,6 +6643,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -6599,6 +6666,7 @@ export type RunLogsSubscriptionSuccessFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -6810,6 +6878,7 @@ export type RunLogsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -6835,6 +6904,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7010,6 +7080,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7032,6 +7103,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -7207,6 +7279,7 @@ export type RunLogsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -7232,6 +7305,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7391,6 +7465,7 @@ export type RunLogsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -7416,6 +7491,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7572,6 +7648,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7594,6 +7671,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -7742,6 +7820,7 @@ export type RunLogsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -7767,6 +7846,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7979,6 +8059,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8001,6 +8082,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -8196,6 +8278,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8218,6 +8301,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -8396,6 +8480,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8418,6 +8503,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -8574,6 +8660,7 @@ export type RunLogsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -8599,6 +8686,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8754,6 +8842,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8776,6 +8865,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -8933,6 +9023,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8955,6 +9046,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -9121,6 +9213,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -9143,6 +9236,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -9299,6 +9393,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -9321,6 +9416,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -9570,6 +9666,7 @@ export type RunLogsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
+                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -9595,6 +9692,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -9752,6 +9850,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -9774,6 +9873,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -9930,6 +10030,7 @@ export type RunLogsQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
+                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -9952,6 +10053,7 @@ export type RunLogsQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
+                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -9982,6 +10084,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '24c8a33ddd3d1b204589488bc967577f5a3ff8d183d12591c7b74ca7bbd30458';
+export const PipelineRunLogsSubscriptionVersion = '202711a6aa7efe67e6102bb08d499f2c9527070a51c60b9ff8703fade9cb6685';
 
-export const RunLogsQueryVersion = 'a7e61774ee31f4b2f9c2354ce17ed62b14b404a11de9a576d66702b5664a059e';
+export const RunLogsQueryVersion = 'f33410b4ec491b557f2615e5f83456a3862d3602e6f391852ec1d11227f4a363';

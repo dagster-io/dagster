@@ -52,12 +52,12 @@ from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for
 from dagster._serdes.serdes import RecordSerializer
 
 
-def create_job_snapshot_id(snapshot: "JobSnapshot") -> str:
-    check.inst_param(snapshot, "snapshot", JobSnapshot)
+def create_job_snapshot_id(snapshot: "JobSnap") -> str:
+    check.inst_param(snapshot, "snapshot", JobSnap)
     return create_snapshot_id(snapshot)
 
 
-class JobSnapshotSerializer(RecordSerializer["JobSnapshot"]):
+class JobSnapSerializer(RecordSerializer["JobSnap"]):
     # v0
     # v1:
     #     - lineage added
@@ -92,14 +92,14 @@ class JobSnapshotSerializer(RecordSerializer["JobSnapshot"]):
 # serialization.
 @whitelist_for_serdes(
     storage_name="PipelineSnapshot",
-    serializer=JobSnapshotSerializer,
+    serializer=JobSnapSerializer,
     skip_when_empty_fields={"metadata"},
     skip_when_none_fields={"run_tags"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
 @record_custom
-class JobSnapshot(IHaveNew):
+class JobSnap(IHaveNew):
     name: str
     description: Optional[str]
     tags: Mapping[str, Any]
@@ -114,7 +114,7 @@ class JobSnapshot(IHaveNew):
     node_defs_snapshot: NodeDefsSnapshot
     dep_structure_snapshot: DependencyStructureSnapshot
     mode_def_snaps: Sequence[ModeDefSnap]
-    lineage_snapshot: Optional["JobLineageSnapshot"]
+    lineage_snapshot: Optional["JobLineageSnap"]
     graph_def_name: str
     metadata: Mapping[str, MetadataValue]
 
@@ -129,7 +129,7 @@ class JobSnapshot(IHaveNew):
         node_defs_snapshot: NodeDefsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
         mode_def_snaps: Sequence[ModeDefSnap],
-        lineage_snapshot: Optional["JobLineageSnapshot"],
+        lineage_snapshot: Optional["JobLineageSnap"],
         graph_def_name: str,
         metadata: Optional[Mapping[str, RawMetadataValue]],
     ):
@@ -152,11 +152,11 @@ class JobSnapshot(IHaveNew):
         )
 
     @classmethod
-    def from_job_def(cls, job_def: JobDefinition) -> "JobSnapshot":
+    def from_job_def(cls, job_def: JobDefinition) -> "JobSnap":
         check.inst_param(job_def, "job_def", JobDefinition)
         lineage = None
         if job_def.op_selection_data:
-            lineage = JobLineageSnapshot(
+            lineage = JobLineageSnap(
                 parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.op_selection_data.parent_job_def)
                 ),
@@ -164,7 +164,7 @@ class JobSnapshot(IHaveNew):
                 resolved_op_selection=job_def.op_selection_data.resolved_op_selection,
             )
         if job_def.asset_selection_data:
-            lineage = JobLineageSnapshot(
+            lineage = JobLineageSnap(
                 parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.asset_selection_data.parent_job_def)
                 ),
@@ -172,7 +172,7 @@ class JobSnapshot(IHaveNew):
                 asset_check_selection=job_def.asset_selection_data.asset_check_selection,
             )
 
-        return JobSnapshot(
+        return JobSnap(
             name=job_def.name,
             description=job_def.description,
             tags=job_def.tags,
@@ -398,7 +398,7 @@ def construct_config_type_from_snap(
     },
 )
 @record
-class JobLineageSnapshot:
+class JobLineageSnap:
     parent_snapshot_id: str
     op_selection: Optional[Sequence[str]] = None
     resolved_op_selection: Optional[AbstractSet[str]] = None

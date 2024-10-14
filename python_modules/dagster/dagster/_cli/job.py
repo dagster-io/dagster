@@ -16,11 +16,11 @@ from dagster._cli.workspace.cli_target import (
     ClickArgValue,
     ClickOption,
     get_code_location_from_workspace,
-    get_external_job_from_external_repo,
-    get_external_job_from_kwargs,
-    get_external_repository_from_code_location,
-    get_external_repository_from_kwargs,
     get_job_python_origin_from_kwargs,
+    get_remote_job_from_kwargs,
+    get_remote_job_from_remote_repo,
+    get_remote_repository_from_code_location,
+    get_remote_repository_from_kwargs,
     get_workspace_from_kwargs,
     job_repository_target_argument,
     job_target_argument,
@@ -30,7 +30,6 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -39,17 +38,17 @@ from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
     CodeLocation,
-    ExternalJob,
-    ExternalRepository,
+    RemoteJob,
+    RemoteRepository,
     RepositoryHandle,
 )
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
     PartitionSetExecutionParamSnap,
 )
-from dagster._core.snap import JobSnapshot, NodeInvocationSnap
+from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
+from dagster._core.telemetry import log_remote_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
@@ -60,6 +59,7 @@ from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
+from dagster._utils.tags import normalize_tags
 from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
 T = TypeVar("T")
@@ -88,14 +88,14 @@ def job_list_command(**kwargs):
 
 def execute_list_command(cli_args, print_fn):
     with get_possibly_temporary_instance_for_cli("``dagster job list``") as instance:
-        with get_external_repository_from_kwargs(
+        with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as external_repository:
-            title = f"Repository {external_repository.name}"
+        ) as repo:
+            title = f"Repository {repo.name}"
             print_fn(title)
             print_fn("*" * len(title))
             first = True
-            for job in external_repository.get_all_external_jobs():
+            for job in repo.get_all_jobs():
                 job_title = f"Job: {job.name}"
 
                 if not first:
@@ -145,12 +145,12 @@ def job_print_command(verbose, **cli_args):
 
 
 def execute_print_command(instance, verbose, cli_args, print_fn):
-    with get_external_job_from_kwargs(
+    with get_remote_job_from_kwargs(
         instance,
         version=dagster_version,
         kwargs=cli_args,
-    ) as external_job:
-        job_snapshot = external_job.job_snapshot
+    ) as remote_job:
+        job_snapshot = remote_job.job_snapshot
 
         if verbose:
             print_job(
@@ -165,10 +165,10 @@ def execute_print_command(instance, verbose, cli_args, print_fn):
 
 
 def print_ops(
-    job_snapshot: JobSnapshot,
+    job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
 ):
-    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
     check.callable_param(print_fn, "print_fn")
 
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
@@ -181,10 +181,10 @@ def print_ops(
 
 
 def print_job(
-    job_snapshot: JobSnapshot,
+    job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
 ):
-    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
     check.callable_param(print_fn, "print_fn")
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line(f"Job: {job_snapshot.name}")
@@ -216,10 +216,10 @@ def format_description(desc: str, indent: str):
 
 def print_op(
     printer: IndentingPrinter,
-    job_snapshot: JobSnapshot,
+    job_snapshot: JobSnap,
     node_invocation_snap: NodeInvocationSnap,
 ) -> None:
-    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
     check.inst_param(node_invocation_snap, "node_invocation_snap", NodeInvocationSnap)
     printer.line(f"Op: {node_invocation_snap.node_name}")
     with printer.with_indent():
@@ -396,18 +396,18 @@ def execute_launch_command(
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
         code_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
-        external_repo = get_external_repository_from_code_location(
+        repo = get_remote_repository_from_code_location(
             code_location, cast(Optional[str], kwargs.get("repository"))
         )
-        external_job = get_external_job_from_external_repo(
-            external_repo,
+        remote_job = get_remote_job_from_remote_repo(
+            repo,
             cast(Optional[str], kwargs.get("job_name")),
         )
 
-        log_external_repo_stats(
+        log_remote_repo_stats(
             instance=instance,
-            external_job=external_job,
-            external_repo=external_repo,
+            remote_job=remote_job,
+            remote_repo=repo,
             source="pipeline_launch_command",
         )
 
@@ -418,11 +418,11 @@ def execute_launch_command(
 
         op_selection = get_op_selection_from_args(kwargs)
 
-        dagster_run = _create_external_run(
+        dagster_run = _create_run(
             instance=instance,
             code_location=code_location,
-            external_repo=external_repo,
-            external_job=external_job,
+            remote_repo=repo,
+            remote_job=remote_job,
             run_config=config,
             tags=run_tags,
             op_selection=op_selection,
@@ -432,11 +432,11 @@ def execute_launch_command(
         return instance.submit_run(dagster_run.run_id, workspace)
 
 
-def _create_external_run(
+def _create_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
-    external_repo: ExternalRepository,
-    external_job: ExternalJob,
+    remote_repo: RemoteRepository,
+    remote_job: RemoteJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
@@ -444,78 +444,78 @@ def _create_external_run(
 ) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(code_location, "code_location", CodeLocation)
-    check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.inst_param(external_job, "external_job", ExternalJob)
+    check.inst_param(remote_repo, "remote_repo", RemoteRepository)
+    check.inst_param(remote_job, "remote_job", RemoteJob)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(op_selection, "op_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
-    run_config, tags, op_selection = _check_execute_external_job_args(
-        external_job,
+    run_config, tags, op_selection = _check_execute_remote_job_args(
+        remote_job,
         run_config,
         tags,
         op_selection,
     )
 
-    job_name = external_job.name
+    job_name = remote_job.name
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
-        repository_name=external_repo.name,
+        repository_name=remote_repo.name,
         job_name=job_name,
         op_selection=op_selection,
     )
 
-    external_job = code_location.get_external_job(job_subset_selector)
+    remote_job = code_location.get_job(job_subset_selector)
 
-    external_execution_plan = code_location.get_external_execution_plan(
-        external_job,
+    execution_plan = code_location.get_execution_plan(
+        remote_job,
         run_config,
         step_keys_to_execute=None,
         known_state=None,
         instance=instance,
     )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+    execution_plan_snapshot = execution_plan.execution_plan_snapshot
 
     return instance.create_run(
         job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        resolved_op_selection=external_job.resolved_op_selection,
+        resolved_op_selection=remote_job.resolved_op_selection,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
         op_selection=op_selection,
         status=None,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        job_snapshot=external_job.job_snapshot,
+        job_snapshot=remote_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_remote_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        parent_job_snapshot=remote_job.parent_job_snapshot,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         asset_selection=None,
         asset_check_selection=None,
-        asset_graph=external_repo.asset_graph,
+        asset_graph=remote_repo.asset_graph,
     )
 
 
-def _check_execute_external_job_args(
-    external_job: ExternalJob,
+def _check_execute_remote_job_args(
+    remote_job: RemoteJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
-    check.inst_param(external_job, "external_job", ExternalJob)
+    check.inst_param(remote_job, "remote_job", RemoteJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(op_selection, "op_selection", of_type=str)
-    tags = merge_dicts(external_job.tags, tags)
+    tags = merge_dicts(remote_job.tags, tags)
 
     return (
         run_config,
-        normalize_tags(tags).tags,
+        normalize_tags(tags),
         op_selection,
     )
 
@@ -618,39 +618,37 @@ def _execute_backfill_command_at_location(
     workspace: BaseWorkspaceRequestContext,
     code_location: CodeLocation,
 ) -> None:
-    external_repo = get_external_repository_from_code_location(
+    repo = get_remote_repository_from_code_location(
         code_location, check.opt_str_elem(cli_args, "repository")
     )
 
-    external_job = get_external_job_from_external_repo(
-        external_repo, check.opt_str_elem(cli_args, "job_name")
-    )
+    remote_job = get_remote_job_from_remote_repo(repo, check.opt_str_elem(cli_args, "job_name"))
 
     noprompt = cli_args.get("noprompt")
 
     job_partition_set = next(
         (
-            external_partition_set
-            for external_partition_set in external_repo.get_external_partition_sets()
-            if external_partition_set.job_name == external_job.name
+            partition_set
+            for partition_set in repo.get_partition_sets()
+            if partition_set.job_name == remote_job.name
         ),
         None,
     )
 
     if not job_partition_set:
-        raise click.UsageError(f"Job `{external_job.name}` is not partitioned.")
+        raise click.UsageError(f"Job `{remote_job.name}` is not partitioned.")
 
     run_tags = get_tags_from_args(cli_args)
 
     repo_handle = RepositoryHandle.from_location(
-        repository_name=external_repo.name,
+        repository_name=repo.name,
         code_location=code_location,
     )
 
     try:
-        partition_names_or_error = code_location.get_external_partition_names(
+        partition_names_or_error = code_location.get_partition_names(
             repository_handle=repo_handle,
-            job_name=external_job.name,
+            job_name=remote_job.name,
             instance=instance,
             selected_asset_keys=None,
         )
@@ -670,7 +668,7 @@ def _execute_backfill_command_at_location(
     )
 
     # Print backfill info
-    print_fn(f"\n Job: {external_job.name}")
+    print_fn(f"\n Job: {remote_job.name}")
     print_fn(f"   Partitions: {print_partition_format(partition_names, indent_level=15)}\n")
 
     # Confirm and launch
@@ -691,13 +689,11 @@ def _execute_backfill_command_at_location(
             backfill_timestamp=get_current_timestamp(),
         )
         try:
-            partition_execution_data = (
-                code_location.get_external_partition_set_execution_param_data(
-                    repository_handle=repo_handle,
-                    partition_set_name=job_partition_set.name,
-                    partition_names=partition_names,
-                    instance=instance,
-                )
+            partition_execution_data = code_location.get_partition_set_execution_params(
+                repository_handle=repo_handle,
+                partition_set_name=job_partition_set.name,
+                partition_names=partition_names,
+                instance=instance,
             )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -712,7 +708,7 @@ def _execute_backfill_command_at_location(
             dagster_run = create_backfill_run(
                 instance,
                 code_location,
-                external_job,
+                remote_job,
                 job_partition_set,
                 backfill_job,
                 partition_data.name,

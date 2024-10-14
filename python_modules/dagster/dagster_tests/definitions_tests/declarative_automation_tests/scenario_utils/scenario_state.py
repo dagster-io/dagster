@@ -49,7 +49,7 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 )
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
@@ -92,7 +92,7 @@ def get_code_location_origin(
 
 def _get_code_location_origin_from_repository(repository: RepositoryDefinition, location_name: str):
     attribute_name = (
-        f"_asset_daemon_target_{create_snapshot_id(external_repository_data_from_def(repository))}"
+        f"_asset_daemon_target_{create_snapshot_id(RepositorySnap.from_def(repository))}"
     )
 
     if attribute_name not in globals():
@@ -418,22 +418,22 @@ class ScenarioState:
         return self
 
     def start_sensor(self, sensor_name: str) -> Self:
-        with self._get_external_sensor(sensor_name) as sensor:
+        with self._get_remote_sensor(sensor_name) as sensor:
             self.instance.start_sensor(sensor)
         return self
 
     def stop_sensor(self, sensor_name: str) -> Self:
-        with self._get_external_sensor(sensor_name) as sensor:
+        with self._get_remote_sensor(sensor_name) as sensor:
             self.instance.stop_sensor(sensor.get_remote_origin_id(), sensor.selector_id, sensor)
         return self
 
     @contextmanager
-    def _get_external_sensor(self, sensor_name):
+    def _get_remote_sensor(self, sensor_name):
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
             sensor = next(
                 iter(workspace.get_code_location("test_location").get_repositories().values())
-            ).get_external_sensor(sensor_name)
+            ).get_sensor(sensor_name)
             assert sensor
             yield sensor
 

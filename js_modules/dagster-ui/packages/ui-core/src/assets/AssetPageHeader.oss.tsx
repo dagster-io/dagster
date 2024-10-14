@@ -76,17 +76,21 @@ export const AssetPageHeader = ({
           <Title>
             <BreadcrumbsWithSlashes
               items={breadcrumbs}
-              currentBreadcrumbRenderer={({text}) => (
-                <TruncatedHeading>
-                  {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                </TruncatedHeading>
+              currentBreadcrumbRenderer={({text, href}) => (
+                <span key={href}>
+                  <TruncatedHeading>
+                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                  </TruncatedHeading>
+                </span>
               )}
               breadcrumbRenderer={({text, href}) => (
-                <TruncatedHeading>
-                  <BreadcrumbLink to={href || '#'}>
-                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                  </BreadcrumbLink>
-                </TruncatedHeading>
+                <span key={href}>
+                  <TruncatedHeading>
+                    <BreadcrumbLink to={href || '#'}>
+                      {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                    </BreadcrumbLink>
+                  </TruncatedHeading>
+                </span>
               )}
               $numHeaderBreadcrumbs={headerBreadcrumbs.length}
               popoverProps={{

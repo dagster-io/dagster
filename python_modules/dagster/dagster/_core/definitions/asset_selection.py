@@ -2,7 +2,7 @@ import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
+from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -14,10 +14,11 @@ from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
+    asset_keys_from_defs_and_coercibles,
     key_prefix_from_coercible,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -134,18 +135,7 @@ class AssetSelection(ABC, DagsterModel):
                 asset_key_list = [AssetKey(["a"]), AssetKey(["b"])]
                 AssetSelection.assets(*asset_key_list)
         """
-        selected_keys: List[AssetKey] = []
-        for el in assets_defs:
-            if isinstance(el, AssetsDefinition):
-                selected_keys.extend(el.keys)
-            else:
-                selected_keys.append(
-                    AssetKey.from_user_string(el)
-                    if isinstance(el, str)
-                    else AssetKey.from_coercible(el)
-                )
-
-        return KeysAssetSelection(selected_keys=selected_keys)
+        return KeysAssetSelection(selected_keys=asset_keys_from_defs_and_coercibles(assets_defs))
 
     @public
     @staticmethod
@@ -260,10 +250,17 @@ class AssetSelection(ABC, DagsterModel):
 
     @public
     @staticmethod
-    def checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeysSelection":
-        """Returns a selection with the asset checks that target the provided assets."""
+    def checks_for_assets(
+        *assets_defs: Union[AssetsDefinition, CoercibleToAssetKey],
+    ) -> "AssetChecksForAssetKeysSelection":
+        """Returns a selection with the asset checks that target the provided assets.
+
+        Args:
+            *assets_defs (Union[AssetsDefinition, str, Sequence[str], AssetKey]): The assets to
+                select checks for.
+        """
         return AssetChecksForAssetKeysSelection(
-            selected_asset_keys=[key for assets_def in assets_defs for key in assets_def.keys]
+            selected_asset_keys=asset_keys_from_defs_and_coercibles(assets_defs)
         )
 
     @public
@@ -355,6 +352,13 @@ class AssetSelection(ABC, DagsterModel):
         use the `upstream_source_assets` method.
         """
         return RootsAssetSelection(child=self)
+
+    @public
+    def materializable(self) -> "MaterializableAssetSelection":
+        """Given an asset selection, returns a new asset selection that contains all of the assets
+        that are materializable. Removes any assets which are not materializable.
+        """
+        return MaterializableAssetSelection(child=self)
 
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="Use AssetSelection.roots instead.")
@@ -779,6 +783,18 @@ class RootsAssetSelection(ChainedAssetSelection):
     ) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
         return fetch_sources(asset_graph.asset_dep_graph, selection)
+
+
+@whitelist_for_serdes
+class MaterializableAssetSelection(ChainedAssetSelection):
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        return {
+            asset_key
+            for asset_key in self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
+            if cast(BaseAssetNode, asset_graph.get(asset_key)).is_materializable
+        }
 
 
 @whitelist_for_serdes

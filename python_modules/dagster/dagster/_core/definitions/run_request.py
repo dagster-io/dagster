@@ -30,7 +30,6 @@ from dagster._core.definitions.dynamic_partitions_request import (
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.utils import NormalizedTags, normalize_tags
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
@@ -42,6 +41,7 @@ from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_cust
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
@@ -122,7 +122,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         cls,
         run_key: Optional[str] = None,
         run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
-        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         stale_assets_only: bool = False,
@@ -139,7 +139,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
                 cls,
                 run_key=None,
                 run_config={},
-                tags=normalize_tags(tags).tags,
+                tags=normalize_tags(tags),
                 job_name=None,
                 asset_selection=None,
                 stale_assets_only=False,
@@ -154,7 +154,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             cls,
             run_key=run_key,
             run_config=convert_config_input(run_config) or {},
-            tags=normalize_tags(tags).tags,
+            tags=normalize_tags(tags),
             job_name=job_name,
             asset_selection=asset_selection,
             stale_assets_only=stale_assets_only,

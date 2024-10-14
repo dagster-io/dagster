@@ -42,17 +42,17 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.remote_representation import external_job_data_from_def
 from dagster._core.remote_representation.external_data import (
-    ExternalJobSubsetResult,
     PartitionConfigSnap,
     PartitionExecutionErrorSnap,
     PartitionExecutionParamSnap,
     PartitionNamesSnap,
     PartitionSetExecutionParamSnap,
     PartitionTagsSnap,
+    RemoteJobSubsetResult,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
+    external_job_data_from_def,
     job_name_for_partition_set_snap_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
@@ -102,8 +102,8 @@ def core_execute_run(
     if inject_env_vars:
         try:
             location_name = (
-                dagster_run.external_job_origin.location_name
-                if dagster_run.external_job_origin
+                dagster_run.remote_job_origin.location_name
+                if dagster_run.remote_job_origin
                 else None
             )
 
@@ -287,12 +287,12 @@ def get_external_pipeline_subset_result(
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
         )
-        external_job_data = external_job_data_from_def(
+        job_data_snap = external_job_data_from_def(
             definition, include_parent_snapshot=include_parent_snapshot
         )
-        return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
+        return RemoteJobSubsetResult(success=True, job_data_snap=job_data_snap)
     except Exception:
-        return ExternalJobSubsetResult(
+        return RemoteJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 

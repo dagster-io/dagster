@@ -41,7 +41,7 @@ from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
@@ -53,7 +53,7 @@ from dagster._core.storage.partition_status_cache import (
     is_cacheable_partition_type,
 )
 
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
+from dagster_graphql.implementation.loader import StaleStatusLoader
 
 if TYPE_CHECKING:
     from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
@@ -166,14 +166,7 @@ def get_asset_node_definition_collisions(
                 if not is_defined:
                     continue
 
-                code_location = graphene_info.context.get_code_location(repo_handle.location_name)
-                repos[asset_node_snap.asset_key].append(
-                    GrapheneRepository(
-                        workspace_context=graphene_info.context,
-                        repository=code_location.get_repository(repo_handle.repository_name),
-                        repository_location=code_location,
-                    )
-                )
+                repos[asset_node_snap.asset_key].append(GrapheneRepository(repo_handle))
 
     results: List[GrapheneAssetNodeDefinitionCollision] = []
     for asset_key in repos.keys():
@@ -191,26 +184,23 @@ def _graphene_asset_node(
     graphene_info: "ResolveInfo",
     remote_node: RemoteAssetNode,
     asset_checks_loader: "AssetChecksLoader",
-    depended_by_loader: Optional[CrossRepoAssetDependedByLoader],
     stale_status_loader: Optional[StaleStatusLoader],
     dynamic_partitions_loader: CachingDynamicPartitionsLoader,
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
-    selector = remote_node.priority_repository_selector
+    handle = remote_node.priority_repository_handle
     base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return GrapheneAssetNode(
-        repository_selector=selector,
-        asset_node_snap=remote_node.priority_node_snap,
+        remote_node=remote_node,
         asset_checks_loader=asset_checks_loader,
-        depended_by_loader=depended_by_loader,
         stale_status_loader=stale_status_loader,
         dynamic_partitions_loader=dynamic_partitions_loader,
         # base_deployment_context will be None if we are not in a branch deployment
-        asset_graph_differ=AssetGraphDiffer.from_external_repositories(
-            code_location_name=selector.location_name,
-            repository_name=selector.repository_name,
+        asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
+            code_location_name=handle.location_name,
+            repository_name=handle.repository_name,
             branch_workspace=graphene_info.context,
             base_workspace=base_deployment_context,
         )
@@ -226,8 +216,6 @@ def get_asset_nodes_by_asset_key(
     has an op.
     """
     from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
-
-    depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
     stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
@@ -247,7 +235,6 @@ def get_asset_nodes_by_asset_key(
             graphene_info,
             remote_node,
             asset_checks_loader=asset_checks_loader,
-            depended_by_loader=depended_by_loader,
             stale_status_loader=stale_status_loader,
             dynamic_partitions_loader=dynamic_partitions_loader,
         )
@@ -275,7 +262,6 @@ def get_asset_node(
             asset_graph=lambda: graphene_info.context.asset_graph,
             loading_context=graphene_info.context,
         ),
-        depended_by_loader=None,
         asset_checks_loader=AssetChecksLoader(
             context=graphene_info.context,
             asset_keys=[asset_key],
@@ -304,7 +290,6 @@ def get_asset(
             graphene_info,
             remote_node,
             stale_status_loader=None,
-            depended_by_loader=None,
             asset_checks_loader=AssetChecksLoader(
                 context=graphene_info.context,
                 asset_keys=[asset_key],
@@ -762,17 +747,17 @@ def get_freshness_info(
 
 
 def unique_repos(
-    external_repositories: Sequence[ExternalRepository],
-) -> Sequence[ExternalRepository]:
+    remote_repositories: Sequence[RemoteRepository],
+) -> Sequence[RemoteRepository]:
     repos = []
     used = set()
-    for external_repository in external_repositories:
+    for remote_repository in remote_repositories:
         repo_id = (
-            external_repository.handle.location_name,
-            external_repository.name,
+            remote_repository.handle.location_name,
+            remote_repository.name,
         )
         if repo_id not in used:
             used.add(repo_id)
-            repos.append(external_repository)
+            repos.append(remote_repository)
 
     return repos

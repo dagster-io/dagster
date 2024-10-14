@@ -129,20 +129,20 @@ def test_refreshable_semantic_model(
 
     workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{BASE_API_URL}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
         json={"notifyOption": "NoNotification"},
         status=202,
     )
 
     workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{BASE_API_URL}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
         json={"value": [{"status": "Unknown"}]},
         status=200,
     )
     workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{BASE_API_URL}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
         json={
             "value": [{"status": "Completed" if success else "Failed", "serviceExceptionJson": {}}]
         },

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Sequence
 import graphene
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from dagster_graphql.implementation.utils import capture_error
@@ -21,9 +21,9 @@ class GrapheneAssetSelection(graphene.ObjectType):
     assets = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneAsset")
     assetsOrError = graphene.NonNull("dagster_graphql.schema.roots.assets.GrapheneAssetsOrError")
 
-    def __init__(self, asset_selection: AssetSelection, external_repository: ExternalRepository):
+    def __init__(self, asset_selection: AssetSelection, remote_repository: RemoteRepository):
         self._asset_selection = asset_selection
-        self._external_repository = external_repository
+        self._remote_repository = remote_repository
 
     def resolve_assetSelectionString(self, _graphene_info):
         return str(self._asset_selection)
@@ -48,7 +48,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
     @cached_property
     def _resolved_and_sorted_keys(self) -> Sequence[AssetKey]:
         """Use this to maintain stability in ordering."""
-        return sorted(self._asset_selection.resolve(self._external_repository.asset_graph), key=str)
+        return sorted(self._asset_selection.resolve(self._remote_repository.asset_graph), key=str)
 
     @capture_error
     def resolve_assetsOrError(self, graphene_info) -> "GrapheneAssetConnection":

@@ -2,6 +2,7 @@ import functools
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
+from datetime import datetime
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -25,9 +26,12 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
 
@@ -100,13 +104,13 @@ def has_permission_for_asset_graph(
 
     # If any of the asset keys don't map to a location (e.g. because they are no longer in the
     # graph) need deployment-wide permissions - no valid code location to check
-    if asset_keys.difference(asset_graph.repository_selectors_by_key.keys()):
+    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
         return context.has_permission(permission)
 
     if asset_keys:
-        selectors = [asset_graph.get_repository_selector(asset_key) for asset_key in asset_keys]
+        selectors = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
     else:
-        selectors = asset_graph.repository_selectors_by_key.values()
+        selectors = asset_graph.repository_handles_by_key.values()
 
     location_names = set(s.location_name for s in selectors)
 
@@ -129,6 +133,60 @@ def assert_permission_for_asset_graph(
 
     if not has_permission_for_asset_graph(graphene_info, asset_graph, asset_selection, permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def assert_valid_job_partition_backfill(
+    graphene_info: "ResolveInfo",
+    backfill: PartitionBackfill,
+    partitions_def: PartitionsDefinition,
+    dynamic_partitions_store: CachingInstanceQueryer,
+    backfill_datetime: datetime,
+) -> None:
+    from dagster_graphql.schema.errors import GraphenePartitionKeysNotFoundError
+
+    partition_names = backfill.get_partition_names(graphene_info.context)
+
+    if not partition_names:
+        return
+
+    invalid_keys = set(partition_names) - set(
+        partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+    )
+
+    if invalid_keys:
+        raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
+
+
+def assert_valid_asset_partition_backfill(
+    graphene_info: "ResolveInfo",
+    backfill: PartitionBackfill,
+    dynamic_partitions_store: CachingInstanceQueryer,
+    backfill_datetime: datetime,
+) -> None:
+    from dagster_graphql.schema.errors import GraphenePartitionKeysNotFoundError
+
+    asset_graph = graphene_info.context.asset_graph
+    asset_backfill_data = backfill.asset_backfill_data
+
+    if not asset_backfill_data:
+        return
+
+    partition_subset_by_asset_key = (
+        asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+    )
+
+    for asset_key, partition_subset in partition_subset_by_asset_key.items():
+        partitions_def = asset_graph.get(asset_key).partitions_def
+
+        if not partitions_def:
+            continue
+
+        invalid_keys = set(partition_subset.get_partition_keys()) - set(
+            partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+        )
+
+        if invalid_keys:
+            raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
 
 
 def _noop(_) -> None:

@@ -3735,7 +3735,6 @@ __metadata:
     "@types/react-dates": "npm:^21.8.0"
     "@types/react-dom": "npm:^18.3.0"
     "@types/react-is": "npm:^18.3.0"
-    "@types/rollup-plugin-node-globals": "npm:^1"
     "@types/styled-components": "npm:^5.1.26"
     "@types/testing-library__jest-dom": "npm:^5.14.2"
     amator: "npm:^1.1.0"
@@ -3756,7 +3755,6 @@ __metadata:
     react-dom: "npm:^18.3.1"
     regenerator-runtime: "npm:^0.13.9"
     rollup: "npm:^2.79.2"
-    rollup-plugin-node-globals: "npm:^1.4.0"
     rollup-plugin-polyfill-node: "npm:^0.8.0"
     rollup-plugin-styles: "npm:^4.0.0"
     storybook: "npm:^8.2.7"
@@ -7627,16 +7625,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/rollup-plugin-node-globals@npm:^1":
-  version: 1.4.1
-  resolution: "@types/rollup-plugin-node-globals@npm:1.4.1"
-  dependencies:
-    "@types/node": "npm:*"
-    rollup: "npm:^0.63.4"
-  checksum: 10/099c001c5a5dbb3c69f139591611508e3e12c90abde96af144ce573f1880ea6ec4d9b5c6e01406f2cb199c647417eea88e5576cf4a3372b4df2cd0eb2895d661
-  languageName: node
-  linkType: hard
-
 "@types/semver@npm:^7.3.12, @types/semver@npm:^7.3.4":
   version: 7.5.0
   resolution: "@types/semver@npm:7.5.0"
@@ -8509,15 +8497,6 @@ __metadata:
   version: 8.2.0
   resolution: "acorn-walk@npm:8.2.0"
   checksum: 10/e69f7234f2adfeb16db3671429a7c80894105bd7534cb2032acf01bb26e6a847952d11a062d071420b43f8d82e33d2e57f26fe87d9cce0853e8143d8910ff1de
-  languageName: node
-  linkType: hard
-
-"acorn@npm:^5.7.3":
-  version: 5.7.4
-  resolution: "acorn@npm:5.7.4"
-  bin:
-    acorn: bin/acorn
-  checksum: 10/97f2ae55e99aed81a7aa9039719c60283a66817fadb3152beb323ba6038824770512f807436e99090be38602f23bcbf6021867d86442616da471f1dfaca7c3d9
   languageName: node
   linkType: hard
 
@@ -9883,13 +9862,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"buffer-es6@npm:^4.9.3":
-  version: 4.9.3
-  resolution: "buffer-es6@npm:4.9.3"
-  checksum: 10/896dbf346afb275dedeabc47313a93130fdcfd6f67d19748399ee61d7122a6baf6f4204ae50bda212115e454e5808bb1d856d4838bba8089965376dc8012095c
-  languageName: node
-  linkType: hard
-
 "buffer-from@npm:^1.0.0":
   version: 1.1.2
   resolution: "buffer-from@npm:1.1.2"
@@ -10736,10 +10708,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cookie@npm:0.6.0":
-  version: 0.6.0
-  resolution: "cookie@npm:0.6.0"
-  checksum: 10/c1f8f2ea7d443b9331680598b0ae4e6af18a618c37606d1bbdc75bec8361cce09fe93e727059a673f2ba24467131a9fb5a4eec76bb1b149c1b3e1ccb268dc583
+"cookie@npm:0.7.1":
+  version: 0.7.1
+  resolution: "cookie@npm:0.7.1"
+  checksum: 10/aec6a6aa0781761bf55d60447d6be08861d381136a0fe94aa084fddd4f0300faa2b064df490c6798adfa1ebaef9e0af9b08a189c823e0811b8b313b3d9a03380
   languageName: node
   linkType: hard
 
@@ -13012,20 +12984,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"estree-walker@npm:^0.5.2":
-  version: 0.5.2
-  resolution: "estree-walker@npm:0.5.2"
-  checksum: 10/3ff50f03ff5b4171f564f4f38ad00bcac3369a5f0b3fe8b13552ce904203203434e3a95f27a78b8fb7f421f40d8d3bf91b08da23cc007310faad278b62ff74d7
-  languageName: node
-  linkType: hard
-
-"estree-walker@npm:^0.6.1":
-  version: 0.6.1
-  resolution: "estree-walker@npm:0.6.1"
-  checksum: 10/b8da7815030c4e0b735f5f8af370af09525e052ee14e539cecabc24ad6da1782448778361417e7c438091a59e7ca9f4a0c11642f7da4f2ebf1ba7a150a590bcc
-  languageName: node
-  linkType: hard
-
 "estree-walker@npm:^1.0.1":
   version: 1.0.1
   resolution: "estree-walker@npm:1.0.1"
@@ -13178,15 +13136,15 @@ __metadata:
   linkType: hard
 
 "express@npm:^4.19.2":
-  version: 4.21.0
-  resolution: "express@npm:4.21.0"
+  version: 4.21.1
+  resolution: "express@npm:4.21.1"
   dependencies:
     accepts: "npm:~1.3.8"
     array-flatten: "npm:1.1.1"
     body-parser: "npm:1.20.3"
     content-disposition: "npm:0.5.4"
     content-type: "npm:~1.0.4"
-    cookie: "npm:0.6.0"
+    cookie: "npm:0.7.1"
     cookie-signature: "npm:1.0.6"
     debug: "npm:2.6.9"
     depd: "npm:2.0.0"
@@ -13212,7 +13170,7 @@ __metadata:
     type-is: "npm:~1.6.18"
     utils-merge: "npm:1.0.1"
     vary: "npm:~1.1.2"
-  checksum: 10/3b1ee5bc5b1bd996f688702519cebc9b63a24e506965f6e1773268238cfa2c24ffdb38cc3fcb4fde66f77de1c0bebd9ee058dad06bb9c6f084b525f3c09164d3
+  checksum: 10/5d4a36dd03c1d1cce93172e9b185b5cd13a978d29ee03adc51cd278be7b4a514ae2b63e2fdaec0c00fdc95c6cfb396d9dd1da147917ffd337d6cd0778e08c9bc
   languageName: node
   linkType: hard
 
@@ -16824,15 +16782,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"magic-string@npm:^0.22.5":
-  version: 0.22.5
-  resolution: "magic-string@npm:0.22.5"
-  dependencies:
-    vlq: "npm:^0.2.2"
-  checksum: 10/a5514579480f5fb6cc24d87073b431aa647f02d6a1fd2972dd2116e5ac73f9a3bb1e2bd0d635b5f59a1ecbf9ad825262385a5f192514acbba7cd597eff86e726
-  languageName: node
-  linkType: hard
-
 "magic-string@npm:^0.25.7":
   version: 0.25.9
   resolution: "magic-string@npm:0.25.9"
@@ -19454,13 +19403,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"process-es6@npm:^0.11.6":
-  version: 0.11.6
-  resolution: "process-es6@npm:0.11.6"
-  checksum: 10/da3b69b1b714df7144f785f44afdda68d7fb07b7fc2c85f33eb37b203efcde6693acb81404f455e7f5af9b7f80cc683c3cf6b40ee7fdea5dac39a784ae307ce4
-  languageName: node
-  linkType: hard
-
 "process-nextick-args@npm:~2.0.0":
   version: 2.0.1
   resolution: "process-nextick-args@npm:2.0.1"
@@ -20845,20 +20787,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup-plugin-node-globals@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "rollup-plugin-node-globals@npm:1.4.0"
-  dependencies:
-    acorn: "npm:^5.7.3"
-    buffer-es6: "npm:^4.9.3"
-    estree-walker: "npm:^0.5.2"
-    magic-string: "npm:^0.22.5"
-    process-es6: "npm:^0.11.6"
-    rollup-pluginutils: "npm:^2.3.1"
-  checksum: 10/bf2cb476906ce5f2a844787753ec3c58816784382f281404510d7fead6e34752c0368337732debed5aa0f6661e1f683d5fc9291a42430d660b3008c5ce27cd6c
-  languageName: node
-  linkType: hard
-
 "rollup-plugin-polyfill-node@npm:^0.8.0":
   version: 0.8.0
   resolution: "rollup-plugin-polyfill-node@npm:0.8.0"
@@ -20895,27 +20823,6 @@ __metadata:
   peerDependencies:
     rollup: ^2.63.0
   checksum: 10/3c817d9979b13751a4295f4a23d2977bbbd86f748d637661ea09ae5994a55d560b391100386c46a2f2e6bf53f83d8f4ce055bbed89299a195f674d6f8c67e8de
-  languageName: node
-  linkType: hard
-
-"rollup-pluginutils@npm:^2.3.1":
-  version: 2.8.2
-  resolution: "rollup-pluginutils@npm:2.8.2"
-  dependencies:
-    estree-walker: "npm:^0.6.1"
-  checksum: 10/f3dc20a8731523aff43e07fa50ed84857e9dd3ab81e2cfb0351d517c46820e585bfbd1530a5dddec3ac14d61d41eb9bf50b38ded987e558292790331cc5b0628
-  languageName: node
-  linkType: hard
-
-"rollup@npm:^0.63.4":
-  version: 0.63.5
-  resolution: "rollup@npm:0.63.5"
-  dependencies:
-    "@types/estree": "npm:0.0.39"
-    "@types/node": "npm:*"
-  bin:
-    rollup: ./bin/rollup
-  checksum: 10/c52ad022bb732ea0e962b3ec45779d9d0523f75283bded8d0c97788f97946781d617b971e7e732ad7a63af60aad76ca534c415d8b101c7ff7d3f5cc879aba025
   languageName: node
   linkType: hard
 
@@ -23476,13 +23383,6 @@ __metadata:
     unist-util-stringify-position: "npm:^3.0.0"
     vfile-message: "npm:^3.0.0"
   checksum: 10/d8f59b419d4c83b3ed24f500cf02393149b728f8803f88519c18fe0733f62544fa9ab0d8425a8bc7835181d848b9ce29c014168dc45af72f416074bbe475f643
-  languageName: node
-  linkType: hard
-
-"vlq@npm:^0.2.2":
-  version: 0.2.3
-  resolution: "vlq@npm:0.2.3"
-  checksum: 10/2231d8caeb5b2c1a438677ab029e9a94aa6fb61ab05819c72691b792aea0456dab29576aff5ae29309ee45bad0a309e832dc45173119bca1393f3b87709d8f8d
   languageName: node
   linkType: hard
 

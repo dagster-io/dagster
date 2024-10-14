@@ -16,6 +16,7 @@ from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.event_api import (
     AssetRecordsFilter,
     EventHandlerFn,
@@ -35,6 +36,7 @@ from dagster._core.instance import DagsterInstance, MayHaveInstanceWeakref, T_Da
 from dagster._core.loader import InstanceLoadableBy
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
+from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._utils import PrintFn
@@ -634,3 +636,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def default_run_scoped_event_tailer_offset(self) -> int:
         return 0
+
+    def get_asset_status_cache_values(
+        self,
+        partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
+    ) -> Sequence[Optional["AssetStatusCacheValue"]]:
+        """Get the cached status information for each asset."""
+        values = []
+        for asset_key, partitions_def in partitions_defs_by_key.items():
+            values.append(
+                get_and_update_asset_status_cache_value(self._instance, asset_key, partitions_def)
+            )
+        return values

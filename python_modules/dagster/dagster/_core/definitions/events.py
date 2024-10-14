@@ -750,18 +750,16 @@ UserEvent = Union[AssetMaterialization, AssetObservation, ExpectationResult]
 
 
 def validate_asset_event_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
-    from dagster._core.definitions.utils import validate_tag_strict
+    from dagster._utils.tags import normalize_tags
 
     if tags is None:
         return None
 
-    for key, value in tags.items():
-        # The format of these particular tags does not fit strict validation. E.g.
-        # - Some of the keys have two slashes
-        # - The value for the data/code version tags can be an arbitrary string
-        if not is_system_asset_event_tag(key):
-            validate_tag_strict(key, value)
-
+    # The format of these particular tags does not fit strict validation. E.g.
+    # - Some of the keys have two slashes
+    # - The value for the data/code version tags can be an arbitrary string
+    tags_to_validate = {k: v for k, v in tags.items() if not is_system_asset_event_tag(k)}
+    normalize_tags(tags_to_validate, strict=True)  # performs validation
     return tags
 
 

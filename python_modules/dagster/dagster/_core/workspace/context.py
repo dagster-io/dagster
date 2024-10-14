@@ -23,7 +23,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
+from dagster._core.definitions.selector import JobSelector, JobSubsetSelector, RepositorySelector
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -31,12 +31,12 @@ from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation import (
     CodeLocation,
     CodeLocationOrigin,
-    ExternalExecutionPlan,
-    ExternalJob,
     GrpcServerCodeLocation,
+    RemoteExecutionPlan,
+    RemoteJob,
     RepositoryHandle,
 )
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -231,7 +231,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
-    def has_external_job(self, selector: JobSubsetSelector) -> bool:
+    def has_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> bool:
         check.inst_param(selector, "selector", JobSubsetSelector)
         if not self.has_code_location(selector.location_name):
             return False
@@ -239,26 +239,24 @@ class BaseWorkspaceRequestContext(LoadingContext):
         loc = self.get_code_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
-        ).has_external_job(selector.job_name)
+        ).has_job(selector.job_name)
 
-    def get_full_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
+    def get_full_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> RemoteJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
-            .get_full_external_job(selector.job_name)
+            .get_full_job(selector.job_name)
         )
 
     def get_external_execution_plan(
         self,
-        external_job: ExternalJob,
+        remote_job: RemoteJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-    ) -> ExternalExecutionPlan:
-        return self.get_code_location(
-            external_job.handle.location_name
-        ).get_external_execution_plan(
-            external_job=external_job,
+    ) -> RemoteExecutionPlan:
+        return self.get_code_location(remote_job.handle.location_name).get_execution_plan(
+            remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -272,9 +270,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         partition_name: str,
         instance: DagsterInstance,
     ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(
-            repository_handle.location_name
-        ).get_external_partition_config(
+        return self.get_code_location(repository_handle.location_name).get_partition_config(
             repository_handle=repository_handle,
             job_name=job_name,
             partition_name=partition_name,
@@ -289,7 +285,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(repository_handle.location_name).get_external_partition_tags(
+        return self.get_code_location(repository_handle.location_name).get_partition_tags(
             repository_handle=repository_handle,
             job_name=job_name,
             partition_name=partition_name,
@@ -304,7 +300,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["PartitionNamesSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(repository_handle.location_name).get_external_partition_names(
+        return self.get_code_location(repository_handle.location_name).get_partition_names(
             repository_handle=repository_handle,
             job_name=job_name,
             instance=instance,
@@ -320,7 +316,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
     ) -> Union["PartitionSetExecutionParamSnap", "PartitionExecutionErrorSnap"]:
         return self.get_code_location(
             repository_handle.location_name
-        ).get_external_partition_set_execution_param_data(
+        ).get_partition_set_execution_params(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
             partition_names=partition_names,
@@ -331,7 +327,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         check.str_param(code_location_name, "code_location_name")
         check.str_param(notebook_path, "notebook_path")
         code_location = self.get_code_location(code_location_name)
-        return code_location.get_external_notebook_data(notebook_path=notebook_path)
+        return code_location.get_notebook_data(notebook_path=notebook_path)
 
     def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
         return None
@@ -342,7 +338,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
         return self.get_workspace_snapshot().asset_graph.get(asset_key)
 
-    def get_repository(self, selector: RepositorySelector) -> ExternalRepository:
+    def get_repository(self, selector: RepositorySelector) -> RemoteRepository:
         return self.get_code_location(selector.location_name).get_repository(
             selector.repository_name
         )

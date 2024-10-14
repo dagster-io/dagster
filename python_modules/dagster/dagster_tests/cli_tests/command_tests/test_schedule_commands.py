@@ -14,7 +14,7 @@ from dagster._cli.schedule import (
     schedule_wipe_command,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import environ
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
@@ -190,8 +190,8 @@ def test_schedules_logs(gen_schedule_args):
 
 
 def test_check_repo_and_scheduler_no_external_schedules():
-    repository = mock.MagicMock(spec=ExternalRepository)
-    repository.get_external_schedules.return_value = []
+    repository = mock.MagicMock(spec=RemoteRepository)
+    repository.get_schedules.return_value = []
     instance = mock.MagicMock(spec=DagsterInstance)
     with pytest.raises(click.UsageError, match="There are no schedules defined for repository"):
         check_repo_and_scheduler(repository, instance)
@@ -199,8 +199,8 @@ def test_check_repo_and_scheduler_no_external_schedules():
 
 def test_check_repo_and_scheduler_dagster_home_not_set():
     with environ({"DAGSTER_HOME": ""}):
-        repository = mock.MagicMock(spec=ExternalRepository)
-        repository.get_external_schedules.return_value = [mock.MagicMock()]
+        repository = mock.MagicMock(spec=RemoteRepository)
+        repository.get_schedules.return_value = [mock.MagicMock()]
         instance = mock.MagicMock(spec=DagsterInstance)
 
         with pytest.raises(

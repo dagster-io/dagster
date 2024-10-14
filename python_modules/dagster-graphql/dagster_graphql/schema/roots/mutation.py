@@ -30,7 +30,7 @@ from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_reexecution,
     launch_reexecution_from_parent_run,
 )
-from dagster_graphql.implementation.external import fetch_workspace, get_full_external_job_or_raise
+from dagster_graphql.implementation.external import fetch_workspace, get_full_remote_job_or_raise
 from dagster_graphql.implementation.telemetry import log_ui_telemetry_event
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
@@ -119,7 +119,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 )
             )
 
-        external_pipeline = get_full_external_job_or_raise(
+        external_pipeline = get_full_remote_job_or_raise(
             graphene_info,
             selector,
         )

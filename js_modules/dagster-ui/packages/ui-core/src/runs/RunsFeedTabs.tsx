@@ -38,6 +38,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
       variables: {
         queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
         inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
+        includeRunsFromBackfills,
       },
     },
   );
@@ -140,13 +141,23 @@ export const useSelectedRunsFeedTab = (filterTokens: TokenizingFieldValue[]) => 
 };
 
 export const RUN_FEED_TABS_COUNT_QUERY = gql`
-  query RunFeedTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
-    queuedCount: runsFeedCountOrError(filter: $queuedFilter) {
+  query RunFeedTabsCountQuery(
+    $queuedFilter: RunsFilter!
+    $inProgressFilter: RunsFilter!
+    $includeRunsFromBackfills: Boolean!
+  ) {
+    queuedCount: runsFeedCountOrError(
+      filter: $queuedFilter
+      includeRunsFromBackfills: $includeRunsFromBackfills
+    ) {
       ... on RunsFeedCount {
         count
       }
     }
-    inProgressCount: runsFeedCountOrError(filter: $inProgressFilter) {
+    inProgressCount: runsFeedCountOrError(
+      filter: $inProgressFilter
+      includeRunsFromBackfills: $includeRunsFromBackfills
+    ) {
       ... on RunsFeedCount {
         count
       }

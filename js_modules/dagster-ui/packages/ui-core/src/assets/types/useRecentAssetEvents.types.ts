@@ -138,6 +138,7 @@ export type AssetMaterializationFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -160,6 +161,7 @@ export type AssetMaterializationFragment = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -316,6 +318,7 @@ export type AssetObservationFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -338,6 +341,7 @@ export type AssetObservationFragment = {
               unique: boolean;
               other: Array<string>;
             };
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -513,6 +517,7 @@ export type AssetEventsQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -535,6 +540,7 @@ export type AssetEventsQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -705,6 +711,7 @@ export type AssetEventsQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
+                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -727,6 +734,7 @@ export type AssetEventsQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
+                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -761,4 +769,4 @@ export type AssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetEventsQueryVersion = 'e8ff6854e6cfcd19485a2c33aa4db5c3b12fc7d0696b76279ff777001bca18e0';
+export const AssetEventsQueryVersion = '3bc04ab95edadabdeba60c3b7298bfc9674c817910432c126f8a59736d908b86';

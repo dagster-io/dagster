@@ -56,6 +56,15 @@ SAMPLE_DATASET_DATA = {
 }
 
 
+@pytest.fixture(name="lineage_warn")
+def lineage_warn_fixture() -> None:
+    responses.replace(
+        method_or_response=responses.GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks/4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e/lineage/elements/_MuHPbskp0",
+        status=400,
+    )
+
+
 @pytest.fixture(name="sigma_sample_data")
 def sigma_sample_data_fixture() -> None:
     # Single workbook, dataset
