@@ -83,6 +83,7 @@ from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
+from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.remote_representation.origin import (
     InProcessCodeLocationOrigin,
@@ -6023,7 +6024,9 @@ class TestEventLogStorage:
             AssetKey("static"): StaticPartitionsDefinition(["a", "b", "c"]),
         }
 
-        assert storage.get_asset_status_cache_values(partition_defs_by_key) == [
+        assert storage.get_asset_status_cache_values(
+            partition_defs_by_key, LoadingContext.ephemeral(instance)
+        ) == [
             None,
             None,
             None,
@@ -6038,6 +6041,10 @@ class TestEventLogStorage:
         instance.report_runless_asset_event(AssetMaterialization(asset_key="static", partition="a"))
 
         partition_defs = list(partition_defs_by_key.values())
-        for i, value in enumerate(storage.get_asset_status_cache_values(partition_defs_by_key)):
+        for i, value in enumerate(
+            storage.get_asset_status_cache_values(
+                partition_defs_by_key, LoadingContext.ephemeral(instance)
+            )
+        ):
             assert value is not None
             assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1
