@@ -8,6 +8,7 @@ import pytest
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AndAssetSelection
 from dagster._core.definitions.events import AssetKey
+from dagster._record import replace
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
@@ -273,25 +274,30 @@ def test_dbt_asset_selection_equality(
         altered_manifest = copy.deepcopy(dbt_manifest_asset_selection.manifest)
         altered_manifest["metadata"]["project_id"] = 12345
 
-        assert dbt_manifest_asset_selection != dbt_manifest_asset_selection.model_copy(
-            update={"manifest": altered_manifest}
+        assert dbt_manifest_asset_selection != replace(
+            dbt_manifest_asset_selection,
+            manifest=altered_manifest,
         )
 
-        assert dbt_manifest_asset_selection != dbt_manifest_asset_selection.model_copy(
-            update={"select": "other_select"}
+        assert dbt_manifest_asset_selection != replace(
+            dbt_manifest_asset_selection,
+            select="other_select",
         )
 
-        assert dbt_manifest_asset_selection != dbt_manifest_asset_selection.model_copy(
-            update={"dagster_dbt_translator": mock.MagicMock()}
+        assert dbt_manifest_asset_selection != replace(
+            dbt_manifest_asset_selection,
+            dagster_dbt_translator=mock.MagicMock(),
         )
 
-        assert dbt_manifest_asset_selection != dbt_manifest_asset_selection.model_copy(
-            update={"exclude": "other_exclude"}
+        assert dbt_manifest_asset_selection != replace(
+            dbt_manifest_asset_selection,
+            exclude="other_exclude",
         )
 
         # changing non-metadata fields does not affect equality
         altered_nodes_manifest = dict(copy.deepcopy(dbt_manifest_asset_selection.manifest))
         altered_nodes_manifest["nodes"] = []
-        assert dbt_manifest_asset_selection == dbt_manifest_asset_selection.model_copy(
-            update={"manifest": altered_nodes_manifest}
+        assert dbt_manifest_asset_selection == replace(
+            dbt_manifest_asset_selection,
+            manifest=altered_nodes_manifest,
         )
