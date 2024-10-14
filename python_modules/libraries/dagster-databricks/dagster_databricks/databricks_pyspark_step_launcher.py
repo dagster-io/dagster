@@ -430,7 +430,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 if run_info.tasks is not None and run_info.tasks[0].cluster_instance is not None:
                     cluster_id = run_info.tasks[0].cluster_instance.cluster_id
                 else:
-                    raise DagsterInvariantViolationError(f"run_info {run_info} doesn't contain cluster_id")
+                    raise DagsterInvariantViolationError(
+                        f"run_info {run_info} doesn't contain cluster_id"
+                    )
                 break
             except:
                 log.warning(
