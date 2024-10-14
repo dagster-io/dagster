@@ -17,7 +17,7 @@ import {TabLink} from '../ui/TabLink';
 const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) => {
   switch (selected) {
     case 'all':
-      return 'Runs | All runs';
+      return 'Runs | All';
     case 'failed':
       return 'Runs | Failed';
     case 'in-progress':
@@ -72,7 +72,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
 
   const tabs = (
     <Tabs selectedTabId={selectedTab}>
-      <TabLink id="all" title="All runs" to={urlForStatus([])} />
+      <TabLink id="all" title="Runs" to={urlForStatus([])} />
       <TabLink
         id="queued"
         title={`Queued (${queuedCount})`}
