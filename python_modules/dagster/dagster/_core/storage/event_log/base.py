@@ -659,6 +659,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         values = []
         for asset_key, partitions_def in partitions_defs_by_key.items():
             values.append(
-                get_and_update_asset_status_cache_value(self._instance, asset_key, partitions_def)
+                get_and_update_asset_status_cache_value(
+                    self._instance,
+                    asset_key,
+                    partitions_def,  # loading_context=loading_context
+                )
             )
         return values

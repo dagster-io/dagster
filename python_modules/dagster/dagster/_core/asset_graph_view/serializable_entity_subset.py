@@ -1,4 +1,3 @@
-from dataclasses import dataclass, replace
 from typing import Generic, Optional, Union
 
 import dagster._check as check
@@ -10,12 +9,13 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._serdes.serdes import DataclassSerializer, whitelist_for_serdes
+from dagster._record import record, replace
+from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
 
 
-class EntitySubsetSerializer(DataclassSerializer):
+class EntitySubsetSerializer(NamedTupleSerializer):
     """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
 
     def get_storage_name(self) -> str:
@@ -33,7 +33,7 @@ class EntitySubsetSerializer(DataclassSerializer):
     storage_field_names={"key": "asset_key"},
     old_storage_names={"AssetSubset"},
 )
-@dataclass(frozen=True)
+@record(checked=False)
 class SerializableEntitySubset(Generic[T_EntityKey]):
     """Represents a serializable subset of a given EntityKey."""
 
