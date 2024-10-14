@@ -55,6 +55,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
+    requires=["click"],
     extras_require={
         "core": [
             f"dagster{pin}",
@@ -80,6 +81,11 @@ setup(
             "dagster-webserver",
             *AIRFLOW_REQUIREMENTS,
         ],
+    },
+    entry_points={
+        "console_scripts": [
+            "dagster-airlift = dagster_airlift.cli:cli",
+        ]
     },
     zip_safe=False,
 )
