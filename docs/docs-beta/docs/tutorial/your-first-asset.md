@@ -6,39 +6,65 @@ last_update:
   author: Alex Noonan
 ---
 
-# Copying Data Files
+# Your First Software Defined Asset
 
-Before you can make your first Dagster Asset you need to copy the raw data files. 
+## Step 1: Create Dagster Project Files
 
-1. Create a new folder for the raw data:
+Dagster needs several project files to run. 
 
-   ```bash title="Create the data directory"
-   mkdir data
-   cd data
-   ```
 
-2. Copy the raw csv files:
+1. Create Config file
 
-   ```bash title="Copy the csv files"
-   curl -L -o products.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/products.csv
+  ```bash title="Create Config file"
+    echo -e "[metadata]\nname = dagster_etl_tutorial" > setup.cfg
+  ```
 
-   curl -L -o sales_reps.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sales_reps.csv
+2. Create Setup Python File
 
-   curl -L -o sales_data.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sales_data.csv
+  ```bash title="Create Setup file"
+    echo > setup.py
+  ```
 
-   source venv/bin/activate
-   # On Windows, use `venv\Scripts\activate` check this
-   
-   ```
-3. Copy Sample Request json file
+In this file we will be creating the environemnt for Dagster to run our project. One thing in particular we need to do is define our Python dependencies. Open that python file and put the following code in there. 
 
-   ```bash title="Create the sample request"
-   mkdir sample_request
-   cd sample_request
-   curl -L -o request.json https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sample_request/request.json
-   
-   # navigating back to the root directory
-   cd../..
-   ```
 
-# Next we will create our Python Definitions file 
+  ```python title="Setup.py"
+    from setuptools import find_packages, setup
+
+    setup(
+        name="dagster_etl_tutorial",
+        packages=find_packages(exclude=["dagster_etl_tutorial_tests"]),
+        install_requires=[
+            "dagster",
+            "dagster-cloud",
+            "duckdb"
+        ],
+        extras_require={"dev": ["dagster-webserver", "pytest"]},
+    )
+  ```
+3. Create Toml file
+
+idk what this does but its in there. use scout for this:
+
+
+  ```bash title="Create Pyproject file"
+    echo > pyproject.toml
+  ```
+
+  Open that file up and add the following
+
+  ```toml
+    [build-system]
+    requires = ["setuptools"]
+    build-backend = "setuptools.build_meta"
+
+    [tool.dagster]
+    module_name = "dagster_tutorial.definitions"
+    code_location_name = "dagster_tutorial"
+  ```
+
+4. Create Dagster Python Module and Definitions file
+
+
+
+## Next we will create our Python Definitions file 

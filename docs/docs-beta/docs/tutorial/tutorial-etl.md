@@ -45,18 +45,44 @@ First, set up a new Dagster project.
    pip install dagster dagster-webserver pandas
    ```
 
+## Step 2: Copying Data Files
+
+Next we will get the raw data for the project. 
+
+1. Create a new folder for the raw data:
+
+   ```bash title="Create the data directory"
+   mkdir data
+   cd data
+   ```
+
+2. Copy the raw csv files:
+
+   ```bash title="Copy the csv files"
+   curl -L -o products.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/products.csv
+
+   curl -L -o sales_reps.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sales_reps.csv
+
+   curl -L -o sales_data.csv https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sales_data.csv  
+   ```
+3. Copy Sample Request json file
+
+   ```bash title="Create the sample request"
+   mkdir sample_request
+   cd sample_request
+   curl -L -o request.json https://raw.githubusercontent.com/dagster-io/dagster/refs/heads/master/examples/docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/data/sample_request/request.json
+   
+   # navigating back to the root directory
+   cd../..
+   ```
+
+
+
 ## What you've learned
 
-Congratulations! You've just built and run your first ETL pipeline with Dagster. You've learned how to:
-
-- Set up a Dagster project
-- Define Software-Defined Assets for each step of your ETL process
-- Use Dagster's UI to run and monitor your pipeline
+- Set up a Python virtual environment and installed Dagster
+- Copied raw data for project
 
 ## Next steps
 
-To expand on this tutorial, you could:
-
-- Add more complex transformations
-- Implement error handling and retries
-- Create a schedule to run your pipeline periodically
+- Continue this tutorial with your [first asset](/tutorial/your-first-asset)
