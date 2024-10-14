@@ -1,6 +1,9 @@
 import {NonIdealState, Page, Tab, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
+import {useFeatureFlags} from 'shared/app/Flags';
+import {RunsFilter} from 'shared/graphql/types';
+import {RunsFeedTableWithFilters} from 'shared/runs/RunsFeedTable';
 
 import {SCHEDULE_ASSET_SELECTIONS_QUERY} from './ScheduleAssetSelectionsQuery';
 import {ScheduleDetails} from './ScheduleDetails';
@@ -41,6 +44,7 @@ export const ScheduleRoot = (props: Props) => {
 
   const {repoAddress} = props;
   const {scheduleName} = useParams<{scheduleName: string}>();
+  const {flagRunsFeed} = useFeatureFlags();
 
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
@@ -82,6 +86,16 @@ export const ScheduleRoot = (props: Props) => {
       ? selectionQueryResult.data.scheduleOrError.assetSelection
       : null;
 
+  const runsFilter: RunsFilter = React.useMemo(
+    () => ({
+      tags: [
+        {key: DagsterTag.ScheduleName, value: scheduleName},
+        {key: DagsterTag.RepositoryLabelTag, value: repoAddressAsTag(repoAddress)},
+      ],
+    }),
+    [repoAddress, scheduleName],
+  );
+
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
       {({scheduleOrError, instance}) => {
@@ -107,6 +121,8 @@ export const ScheduleRoot = (props: Props) => {
             ) : null}
             {selectedTab === 'ticks' ? (
               <TicksTable tabs={tabs} repoAddress={repoAddress} name={scheduleOrError.name} />
+            ) : flagRunsFeed ? (
+              <RunsFeedTableWithFilters filter={runsFilter} />
             ) : (
               <SchedulePreviousRuns
                 repoAddress={repoAddress}

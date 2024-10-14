@@ -8,15 +8,20 @@ import {
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useMemo, useRef} from 'react';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from 'shared/app/QueryRefresh';
+import {LoadingSpinner} from 'shared/ui/Loading';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
+import {RunsQueryRefetchContext} from './RunUtils';
+import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRow';
 import {RunFilterToken} from './RunsFilterInput';
 import {
   RunsFeedTableEntryFragment,
   RunsFeedTableEntryFragment_Run,
 } from './types/RunsFeedRow.types';
+import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {CheckAllBox} from '../ui/CheckAllBox';
@@ -27,13 +32,14 @@ import {numberFormatter} from '../ui/formatters';
 interface RunsFeedTableProps {
   entries: RunsFeedTableEntryFragment[];
   loading: boolean;
-  onAddTag: (token: RunFilterToken) => void;
+  onAddTag?: (token: RunFilterToken) => void;
   refetch: () => void;
   actionBarComponents?: React.ReactNode;
   belowActionBarComponents?: React.ReactNode;
   paginationProps: CursorPaginationProps;
   filter?: RunsFilter;
   emptyState?: () => React.ReactNode;
+  scroll?: boolean;
 }
 
 export const RunsFeedTable = ({
@@ -46,6 +52,7 @@ export const RunsFeedTable = ({
   paginationProps,
   filter,
   emptyState,
+  scroll = true,
 }: RunsFeedTableProps) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
 
@@ -78,7 +85,7 @@ export const RunsFeedTable = ({
         style={{width: '100%'}}
         padding={{left: 24, right: 12}}
       >
-        {actionBarComponents}
+        {actionBarComponents ?? <span />}
         <Box flex={{gap: 12}} style={{marginRight: 8}}>
           <CursorHistoryControls {...paginationProps} style={{marginTop: 0}} />
           <RunBulkActionsMenu
@@ -108,7 +115,7 @@ export const RunsFeedTable = ({
   );
 
   function content() {
-    if (entries.length === 0) {
+    if (entries.length === 0 && !loading) {
       const anyFilter = !!Object.keys(filter || {}).length;
       if (emptyState) {
         return <>{emptyState()}</>;
@@ -119,7 +126,7 @@ export const RunsFeedTable = ({
     return (
       <div style={{overflow: 'hidden'}}>
         <IndeterminateLoadingBar loading={loading} />
-        <Container ref={parentRef}>
+        <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
           <RunsFeedTableHeader
             checkbox={
               <CheckAllBox
@@ -129,6 +136,11 @@ export const RunsFeedTable = ({
               />
             }
           />
+          {entries.length === 0 && loading && (
+            <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 32}} border="top">
+              <LoadingSpinner purpose="page" />
+            </Box>
+          )}
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, size, start, key}) => {
               const entry = entries[index];
@@ -157,9 +169,54 @@ export const RunsFeedTable = ({
   }
 
   return (
-    <Box flex={{direction: 'column', gap: 8}} padding={{vertical: 12}} style={{height: '100%'}}>
+    <Box
+      flex={{direction: 'column', gap: 8}}
+      padding={{vertical: 12}}
+      style={scroll ? {height: '100%'} : {}}
+    >
       {actionBar}
       {content()}
     </Box>
+  );
+};
+
+export const RunsFeedTableWithFilters = ({
+  filter,
+  actionBarComponents,
+}: {
+  filter: RunsFilter;
+  actionBarComponents?: React.ReactNode;
+}) => {
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter, 'all', true);
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
+  function content() {
+    if (queryResult.error) {
+      return <RunsFeedError error={queryResult.error} />;
+    }
+    if (queryResult.loading && !queryResult.data) {
+      return (
+        <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8}} border="top">
+          <LoadingSpinner purpose="page" />
+        </Box>
+      );
+    }
+
+    return (
+      <RunsFeedTable
+        entries={entries}
+        actionBarComponents={actionBarComponents}
+        loading={queryResult.loading}
+        refetch={refreshState.refetch}
+        paginationProps={paginationProps}
+        scroll={false}
+      />
+    );
+  }
+
+  return (
+    <RunsQueryRefetchContext.Provider value={{refetch: refreshState.refetch}}>
+      {content()}
+    </RunsQueryRefetchContext.Provider>
   );
 };
