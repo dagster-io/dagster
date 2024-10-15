@@ -41,6 +41,9 @@ airflow_run:
 dagster_run:
 	dagster dev -m tutorial_example.dagster_defs.definitions -p 3000
 
+backfill_today:
+	airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%d")
+
 
 update_readme_snippets:
 	python ../../scripts/update_readme_snippets.py $(MAKEFILE_DIR)/README.md

@@ -1,12 +1,13 @@
 # Define the default arguments for the DAG
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import List, Optional
 
 from airflow import DAG
 from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
+from dagster._time import get_current_datetime_midnight
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
@@ -78,7 +79,7 @@ class ExportDuckDBToCSV(BaseOperator):
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    "start_date": datetime(2024, 7, 18),
+    "start_date": get_current_datetime_midnight(),
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
 }
@@ -87,7 +88,7 @@ DBT_DIR = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
 dag = DAG(
     "rebuild_customers_list",
     default_args=default_args,
-    schedule_interval=None,
+    schedule="@daily",
     is_paused_upon_creation=False,
 )
 
