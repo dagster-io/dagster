@@ -74,21 +74,23 @@ def stand_up_airflow(
         preexec_fn=os.setsid,  # noqa  # fuck it we ball
         stdout=stdout_channel,
     )
-    # Give airflow a second to stand up
-    time.sleep(5)
-    initial_time = get_current_timestamp()
+    try:
+        # Give airflow a second to stand up
+        time.sleep(5)
+        initial_time = get_current_timestamp()
 
-    airflow_ready = False
-    while get_current_timestamp() - initial_time < 60:
-        if _airflow_is_ready():
-            airflow_ready = True
-            break
-        time.sleep(1)
+        airflow_ready = False
+        while get_current_timestamp() - initial_time < 60:
+            if _airflow_is_ready():
+                airflow_ready = True
+                break
+            time.sleep(1)
 
-    assert airflow_ready, "Airflow did not start within 30 seconds..."
-    yield process
-    # Kill process group, since process.kill and process.terminate do not work.
-    os.killpg(process.pid, signal.SIGKILL)
+        assert airflow_ready, "Airflow did not start within 30 seconds..."
+        yield process
+    finally:
+        # Kill process group, since process.kill and process.terminate do not work.
+        os.killpg(process.pid, signal.SIGKILL)
 
 
 @pytest.fixture(name="airflow_instance")
@@ -135,20 +137,22 @@ def setup_dagster(dagster_home: str, dagster_dev_cmd: List[str]) -> Generator[An
         shell=False,
         preexec_fn=os.setsid,  # noqa
     )
-    # Give dagster a second to stand up
-    time.sleep(5)
+    try:
+        # Give dagster a second to stand up
+        time.sleep(5)
 
-    dagster_ready = False
-    initial_time = get_current_timestamp()
-    while get_current_timestamp() - initial_time < 60:
-        if _dagster_is_ready():
-            dagster_ready = True
-            break
-        time.sleep(1)
+        dagster_ready = False
+        initial_time = get_current_timestamp()
+        while get_current_timestamp() - initial_time < 60:
+            if _dagster_is_ready():
+                dagster_ready = True
+                break
+            time.sleep(1)
 
-    assert dagster_ready, "Dagster did not start within 30 seconds..."
-    yield process
-    os.killpg(process.pid, signal.SIGKILL)
+        assert dagster_ready, "Dagster did not start within 30 seconds..."
+        yield process
+    finally:
+        os.killpg(process.pid, signal.SIGKILL)
 
 
 ####################################################################################################
