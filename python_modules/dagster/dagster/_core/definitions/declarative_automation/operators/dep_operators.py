@@ -31,14 +31,28 @@ class EntityMatchesCondition(
         return self.key.to_user_string()
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
-        to_candidate_subset = context.candidate_subset.compute_mapped_subset(self.key)
+        # if the key we're mapping to is a child of the key we're mapping from and is not
+        # self-dependent, use the downstream mapping function, otherwise use upstream
+        if (
+            self.key in context.asset_graph.get(context.key).child_entity_keys
+            and self.key != context.key
+        ):
+            directions = ("down", "up")
+        else:
+            directions = ("up", "down")
+
+        to_candidate_subset = context.candidate_subset.compute_mapped_subset(
+            self.key, direction=directions[0]
+        )
         to_context = context.for_child_condition(
             child_condition=self.operand, child_index=0, candidate_subset=to_candidate_subset
         )
 
         to_result = self.operand.evaluate(to_context)
 
-        true_subset = to_result.true_subset.compute_mapped_subset(context.key)
+        true_subset = to_result.true_subset.compute_mapped_subset(
+            context.key, direction=directions[1]
+        )
         return AutomationResult(context=context, true_subset=true_subset, child_results=[to_result])
 
 

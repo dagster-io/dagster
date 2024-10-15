@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, AbstractSet, Dict, Literal, NamedTuple, Optional, Type, TypeVar
 
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
@@ -219,7 +219,7 @@ class AssetGraphView(LoadingContext):
         check.invariant(
             parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
         )
-        return self.compute_mapped_subset(parent_key, subset)
+        return self.compute_mapped_subset(parent_key, subset, direction="up")
 
     def compute_child_subset(
         self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
@@ -227,10 +227,10 @@ class AssetGraphView(LoadingContext):
         check.invariant(
             child_key in self.asset_graph.get(subset.key).child_entity_keys,
         )
-        return self.compute_mapped_subset(child_key, subset)
+        return self.compute_mapped_subset(child_key, subset, direction="down")
 
     def compute_mapped_subset(
-        self, to_key: T_EntityKey, from_subset: EntitySubset
+        self, to_key: T_EntityKey, from_subset: EntitySubset, direction: Literal["up", "down"]
     ) -> EntitySubset[T_EntityKey]:
         from_key = from_subset.key
         from_partitions_def = self.asset_graph.get(from_key).partitions_def
@@ -238,7 +238,7 @@ class AssetGraphView(LoadingContext):
 
         partition_mapping = self.asset_graph.get_partition_mapping(from_key, to_key)
 
-        if from_key in self.asset_graph.get(to_key).parent_entity_keys:
+        if direction == "down":
             if from_partitions_def is None or to_partitions_def is None:
                 return (
                     self.get_empty_subset(key=to_key)
