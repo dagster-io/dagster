@@ -555,7 +555,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return GraphenePipelineTag(
                 key=AUTO_OBSERVE_TAG, value=self._backfill_job.tags[AUTO_OBSERVE_TAG]
             )
-        return GraphenePipelineTag(kind="manual", value="")
+        return GraphenePipelineTag(key="manual", value="")
 
     def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
         return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
