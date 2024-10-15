@@ -73,8 +73,8 @@ class RunInProgressAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "execution_in_progress"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.asset_graph_view.compute_run_in_progress_subset(key=context.key)
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return await context.asset_graph_view.compute_run_in_progress_subset(key=context.key)
 
 
 @whitelist_for_serdes
@@ -84,8 +84,8 @@ class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "backfill_in_progress"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.asset_graph_view.compute_backfill_in_progress_subset(key=context.key)
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        return await context.asset_graph_view.compute_backfill_in_progress_subset(key=context.key)
 
 
 @whitelist_for_serdes(storage_name="FailedAutomationCondition")
@@ -147,11 +147,11 @@ class NewlyUpdatedCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "newly_updated"
 
-    def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
         # if it's the first time evaluating, just return the empty subset
         if context.previous_temporal_context is None:
             return context.get_empty_subset()
-        return context.asset_graph_view.compute_updated_since_temporal_context_subset(
+        return await context.asset_graph_view.compute_updated_since_temporal_context_subset(
             key=context.key, temporal_context=context.previous_temporal_context
         )
 
@@ -240,7 +240,7 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
     def name(self) -> str:
         return "check_passed" if self.passed else "check_failed"
 
-    def compute_subset(
+    async def compute_subset(
         self, context: AutomationContext[AssetCheckKey]
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.storage.asset_check_execution_record import (
@@ -252,6 +252,6 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
             if self.passed
             else AssetCheckExecutionResolvedStatus.FAILED
         )
-        return context.asset_graph_view.compute_subset_with_status(
+        return await context.asset_graph_view.compute_subset_with_status(
             key=context.key, status=target_status
         )
