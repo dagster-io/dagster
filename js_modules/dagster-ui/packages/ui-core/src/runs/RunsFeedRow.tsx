@@ -138,7 +138,7 @@ export const RunsFeedRow = ({
         </Tag>
       </RowCell>
       <RowCell>
-        <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
+        <CreatedByTagCell launchedBy={entry.launchedBy} onAddTag={onAddTag} />
       </RowCell>
       <RowCell>
         <div>
@@ -224,6 +224,13 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
     tags {
       key
       value
+    }
+    launchedBy {
+      kind
+      tag {
+        key
+        value
+      }
     }
     jobName
     assetSelection {

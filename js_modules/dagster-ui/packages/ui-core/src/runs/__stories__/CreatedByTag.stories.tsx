@@ -1,10 +1,10 @@
 import {MetadataTableWIP} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 
-import {buildPipelineTag} from '../../graphql/types';
+import {buildLaunchedBy, buildPipelineTag} from '../../graphql/types';
 import {CreatedByTag} from '../CreatedByTag';
 import {DagsterTag} from '../RunTag';
-import {RunTagsFragment} from '../types/RunTagsFragment.types';
+import {LaunchedByFragment} from '../types/launchedByFragment.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -20,13 +20,14 @@ export const Default = () => {
           <td>User launched</td>
           <td>
             <CreatedByTag
-              tags={
-                [
-                  buildPipelineTag({
+              launchedBy={
+                buildLaunchedBy({
+                  kind: 'user',
+                  tag: buildPipelineTag({
                     key: DagsterTag.User,
                     value: 'foo@dagsterlabs.com',
                   }),
-                ] as RunTagsFragment[]
+                }) as LaunchedByFragment
               }
             />
           </td>
@@ -35,13 +36,14 @@ export const Default = () => {
           <td>Schedule</td>
           <td>
             <CreatedByTag
-              tags={
-                [
-                  buildPipelineTag({
+              launchedBy={
+                buildLaunchedBy({
+                  kind: 'schedule',
+                  tag: buildPipelineTag({
                     key: DagsterTag.ScheduleName,
                     value: 'my_cool_schedule',
                   }),
-                ] as RunTagsFragment[]
+                }) as LaunchedByFragment
               }
             />
           </td>
@@ -50,13 +52,14 @@ export const Default = () => {
           <td>Sensor</td>
           <td>
             <CreatedByTag
-              tags={
-                [
-                  buildPipelineTag({
+              launchedBy={
+                buildLaunchedBy({
+                  kind: 'sensor',
+                  tag: buildPipelineTag({
                     key: DagsterTag.SensorName,
                     value: 'my_cool_sensor',
                   }),
-                ] as RunTagsFragment[]
+                }) as LaunchedByFragment
               }
             />
           </td>
@@ -65,13 +68,14 @@ export const Default = () => {
           <td>Auto-materialize</td>
           <td>
             <CreatedByTag
-              tags={
-                [
-                  buildPipelineTag({
+              launchedBy={
+                buildLaunchedBy({
+                  kind: 'auto-materialize',
+                  tag: buildPipelineTag({
                     key: DagsterTag.Automaterialize,
                     value: 'auto',
                   }),
-                ] as RunTagsFragment[]
+                }) as LaunchedByFragment
               }
             />
           </td>
@@ -80,13 +84,14 @@ export const Default = () => {
           <td>Auto-observation</td>
           <td>
             <CreatedByTag
-              tags={
-                [
-                  buildPipelineTag({
+              launchedBy={
+                buildLaunchedBy({
+                  kind: 'auto-observe',
+                  tag: buildPipelineTag({
                     key: DagsterTag.AutoObserve,
                     value: 'auto',
                   }),
-                ] as RunTagsFragment[]
+                }) as LaunchedByFragment
               }
             />
           </td>
@@ -94,7 +99,14 @@ export const Default = () => {
         <tr>
           <td>Manually launched</td>
           <td>
-            <CreatedByTag tags={[] as RunTagsFragment[]} />
+            <CreatedByTag
+              launchedBy={
+                buildLaunchedBy({
+                  kind: 'manual',
+                  tag: buildPipelineTag({key: '', value: ''}),
+                }) as LaunchedByFragment
+              }
+            />
           </td>
         </tr>
       </tbody>

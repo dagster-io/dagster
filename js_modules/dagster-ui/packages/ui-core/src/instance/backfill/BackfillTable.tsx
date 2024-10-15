@@ -93,6 +93,13 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
       key
       value
     }
+    launchedBy {
+      kind
+      tag {
+        key
+        value
+      }
+    }
     error {
       ...PythonErrorFragment
     }

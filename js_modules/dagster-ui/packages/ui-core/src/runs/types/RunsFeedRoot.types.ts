@@ -57,6 +57,11 @@ export type RunsFeedRootQuery = {
               } | null;
               assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+              launchedBy: {
+                __typename: 'LaunchedBy';
+                kind: string;
+                tag: {__typename: 'PipelineTag'; key: string; value: string};
+              };
               assetCheckSelection: Array<{
                 __typename: 'AssetCheckhandle';
                 name: string;
@@ -87,6 +92,11 @@ export type RunsFeedRootQuery = {
                 repositoryLocationName: string;
               } | null;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+              launchedBy: {
+                __typename: 'LaunchedBy';
+                kind: string;
+                tag: {__typename: 'PipelineTag'; key: string; value: string};
+              };
               assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
               assetCheckSelection: Array<{
                 __typename: 'AssetCheckhandle';
@@ -98,4 +108,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = 'ef8eb6ca144d661c6bcd409ed878551851f15dd1c0aa8c03ee9c68c1c4c301d1';
+export const RunsFeedRootQueryVersion = '2edf857805f36da5e27728a6bf2e8d6b4ada27c6dc18fdc97f59671a0b9a4c3b';

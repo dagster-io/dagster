@@ -109,7 +109,7 @@ export const RunRow = ({
         <td>
           <CreatedByTagCell
             repoAddress={repoAddressGuess}
-            tags={run.tags || []}
+            launchedBy={run.launchedBy}
             onAddTag={onAddTag}
           />
         </td>

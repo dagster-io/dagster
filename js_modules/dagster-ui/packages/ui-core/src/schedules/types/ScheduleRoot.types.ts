@@ -159,10 +159,15 @@ export type PreviousRunsForScheduleQuery = {
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
           }> | null;
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+          launchedBy: {
+            __typename: 'LaunchedBy';
+            kind: string;
+            tag: {__typename: 'PipelineTag'; key: string; value: string};
+          };
         }>;
       };
 };
 
 export const ScheduleRootQueryVersion = 'b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc';
 
-export const PreviousRunsForScheduleQueryVersion = '0ffc329d3c65a2f7a29553bd3a72f8e8adb4b3a10944221b4a3c68335fad1d31';
+export const PreviousRunsForScheduleQueryVersion = 'c22e2bb09109c4d2ba363ffb3c50d2b6fa0159be0364d22b21ff163fa10cc70c';

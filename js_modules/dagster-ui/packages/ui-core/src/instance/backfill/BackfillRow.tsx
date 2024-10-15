@@ -129,7 +129,7 @@ export const BackfillRowContent = ({
         />
       </td>
       <td style={{width: 160}}>
-        <CreatedByTagCell tags={backfill.tags} repoAddress={repoAddress} />
+        <CreatedByTagCell launchedBy={backfill.launchedBy} repoAddress={repoAddress} />
       </td>
       <td style={{width: 140}}>{renderBackfillStatus()}</td>
       <td>
