@@ -1,8 +1,15 @@
 from dagster import (
+    AssetDep,
     AssetKey,
+    AssetMaterialization,
     AutomationCondition,
+    DailyPartitionsDefinition,
     Definitions,
+    DimensionPartitionMapping,
+    MultiPartitionMapping,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     evaluate_automation_conditions,
 )
@@ -148,4 +155,52 @@ def test_eager_static_partitioned() -> None:
         result = evaluate_automation_conditions(
             defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
         )
+        assert result.total_requested == 0
+
+
+def test_eager_multi_partitioned_self_dependency() -> None:
+    pd = MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition(start_date="2024-08-01"),
+            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    @asset(partitions_def=pd)
+    def parent() -> None: ...
+
+    @asset(
+        deps=[
+            parent,
+            AssetDep(
+                "child",
+                partition_mapping=MultiPartitionMapping(
+                    {
+                        "time": DimensionPartitionMapping(
+                            "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        ),
+                    }
+                ),
+            ),
+        ],
+        partitions_def=pd,
+        automation_condition=AutomationCondition.eager().without(
+            AutomationCondition.in_latest_time_window()
+        ),
+    )
+    def child() -> None: ...
+
+    defs = Definitions(assets=[parent, child])
+
+    with instance_for_test() as instance:
+        # nothing happening
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+        assert result.total_requested == 0
+
+        # materialize upstream
+        instance.report_runless_asset_event(
+            AssetMaterialization("parent", partition="a|2024-08-16")
+        )
+        result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+        # can't materialize downstream yet because previous partition of child is still missing
         assert result.total_requested == 0
