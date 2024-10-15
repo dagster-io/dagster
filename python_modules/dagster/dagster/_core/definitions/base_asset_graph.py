@@ -192,16 +192,18 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
     def __init__(
         self,
         key: AssetCheckKey,
+        additional_deps: Sequence[AssetKey],
         blocking: bool,
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
     ):
         self.key = key
         self.blocking = blocking
         self._automation_condition = automation_condition
+        self._additional_deps = additional_deps
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
-        return {self.key.asset_key}
+        return {self.key.asset_key, *self._additional_deps}
 
     @property
     def child_entity_keys(self) -> AbstractSet[EntityKey]:
