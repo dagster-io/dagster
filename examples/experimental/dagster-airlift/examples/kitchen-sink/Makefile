@@ -7,7 +7,6 @@ endef
 export MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
-export DAGSTER_AIRLIFT_PROXIED_STATE_DIR := $(MAKEFILE_DIR)/kitchen_sink/airflow_dags/proxied_state
 export DAGSTER_URL := http://localhost:3333
 
 help:

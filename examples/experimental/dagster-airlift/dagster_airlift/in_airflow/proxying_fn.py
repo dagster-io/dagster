@@ -1,21 +1,18 @@
-import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Set
 
 from airflow import DAG
-from airflow.models import BaseOperator, Variable
-from airflow.utils.session import create_session
+from airflow.models import BaseOperator
 
 from dagster_airlift.in_airflow.dag_proxy_operator import (
     BaseProxyDAGToDagsterOperator,
     DefaultProxyDAGToDagsterOperator,
 )
-from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState, DagProxiedState
+from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState
 from dagster_airlift.in_airflow.task_proxy_operator import (
     BaseProxyTaskToDagsterOperator,
     DefaultProxyTaskToDagsterOperator,
 )
-from dagster_airlift.utils import get_local_proxied_state_dir
 
 
 def proxying_to_dagster(
@@ -91,7 +88,6 @@ def proxying_to_dagster(
         dag.task_dict[override_task.task_id] = override_task
     for dag in task_level_proxying_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as proxied.")
-        set_proxied_state_for_dag_if_changed(dag.dag_id, proxied_state.dags[dag.dag_id], logger)
         proxied_state_for_dag = proxied_state.dags[dag.dag_id]
         num_proxied_tasks = len(
             [
@@ -132,36 +128,3 @@ def proxying_to_dagster(
         logger.debug(f"Proxied tasks {proxied_tasks} in dag {dag.dag_id}.")
     logging.debug(f"Proxied {len(task_level_proxying_dags)}.")
     logging.debug(f"Completed switching proxied tasks to dagster{suffix}.")
-
-
-def set_proxied_state_for_dag_if_changed(
-    dag_id: str, proxied_state: DagProxiedState, logger: logging.Logger
-) -> None:
-    if get_local_proxied_state_dir():
-        logger.info(
-            "Executing in local mode. Not setting proxied state in airflow metadata database, and instead expect dagster to be pointed at proxied state via DAGSTER_AIRLIFT_PROXIED_STATE_DIR env var."
-        )
-        return
-    else:
-        prev_proxied_state = get_proxied_state_var_for_dag(dag_id)
-        if prev_proxied_state is None or prev_proxied_state != proxied_state:
-            logger.info(
-                f"Migration state for dag {dag_id} has changed. Setting proxied state in airflow metadata database via Variable."
-            )
-            set_proxied_state_var_for_dag(dag_id, proxied_state)
-
-
-def get_proxied_state_var_for_dag(dag_id: str) -> Optional[DagProxiedState]:
-    proxied_var = Variable.get(f"{dag_id}_dagster_proxied_state", None)
-    if not proxied_var:
-        return None
-    return DagProxiedState.from_dict(json.loads(proxied_var))
-
-
-def set_proxied_state_var_for_dag(dag_id: str, proxied_state: DagProxiedState) -> None:
-    with create_session() as session:
-        Variable.set(
-            key=f"{dag_id}_dagster_proxied_state",
-            value=json.dumps(proxied_state.to_dict()),
-            session=session,
-        )
