@@ -5,6 +5,8 @@ from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster import (
     Config,
     ConfigurableResource,
+    Enum,
+    EnumValue,
     Field as DagsterField,
     Permissive,
     Selector,
@@ -52,7 +54,12 @@ DEFAULT_AZURE_CREDENTIAL_CONFIG = DagsterField(
 
 ADLS2_CLIENT_CONFIG = {
     "storage_account": DagsterField(StringSource, description="The storage account name."),
-    "cloud_type": DagsterField(StringSource, description="The Azure Cloud type. Either 'public' or 'government.'")
+    "cloud_type": DagsterField(
+        Enum("cloud_type", [EnumValue("public"), EnumValue("government")]),
+        description="The Azure Cloud type. Either 'public' or 'government.'",
+        is_required=False,
+        default_value="public"
+    ),
     "credential": DagsterField(
         Selector(
             {
@@ -167,7 +174,7 @@ def adls2_resource(context):
             "adls2_file_system": DagsterField(
                 StringSource, description="ADLS Gen2 file system name"
             ),
-            "adls2_prefix": DagsterField(StringSource, is_required=False, default_value="dagster"),
+            "adls2_prefix": DagsterField(StringSource, is_required=False, default_value="dagster")
         },
     )
 )
