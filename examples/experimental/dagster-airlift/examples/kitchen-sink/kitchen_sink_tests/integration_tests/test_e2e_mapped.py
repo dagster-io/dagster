@@ -241,3 +241,24 @@ def test_partitioned_observation(
     )
     assert entry.asset_materialization
     assert entry.asset_materialization.partition
+
+
+def test_assets_multiple_jobs_same_task(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Test the case where multiple assets within the same task have different jobs. Ensure we still materialize them correctly."""
+    from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
+
+    af_instance = local_airflow_instance()
+    assert af_instance.get_task_info(dag_id="overridden_dag_custom_callback", task_id="OVERRIDDEN")
+
+    expected_mats_per_dag = {
+        "multi_job_assets_dag": [
+            AssetKey("multi_job__a"),
+            AssetKey("multi_job__b"),
+            AssetKey("multi_job__c"),
+        ],
+    }
+    poll_for_expected_mats(af_instance, expected_mats_per_dag)
