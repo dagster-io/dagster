@@ -128,7 +128,7 @@ def evaluate_automation_conditions(
             if asset_graph.get(key).automation_condition is not None
         },
         evaluation_time=evaluation_time,
-        allow_backfills=False,
+        emit_backfills=False,
         logger=logging.getLogger("dagster.automation_condition_tester"),
         # round-trip the provided cursor to simulate actual usage
         cursor=deserialize_value(serialize_value(cursor), AssetDaemonCursor)

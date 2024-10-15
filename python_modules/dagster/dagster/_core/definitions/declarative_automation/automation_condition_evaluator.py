@@ -30,7 +30,7 @@ class AutomationConditionEvaluator:
         instance: DagsterInstance,
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
-        allow_backfills: bool,
+        emit_backfills: bool,
         default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
@@ -59,7 +59,7 @@ class AutomationConditionEvaluator:
         self.legacy_respect_materialization_data_versions = (
             _instance.auto_materialize_respect_materialization_data_versions
         )
-        self.allow_backfills = allow_backfills or _instance.da_request_backfills()
+        self.emit_backfills = emit_backfills or _instance.da_request_backfills()
 
         self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)

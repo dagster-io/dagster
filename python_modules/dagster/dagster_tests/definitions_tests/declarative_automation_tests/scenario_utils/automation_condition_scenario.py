@@ -94,7 +94,7 @@ class AutomationConditionScenarioState(ScenarioState):
                     0, 0, [], [self.condition_cursor] if self.condition_cursor else []
                 ),
                 logger=self.logger,
-                allow_backfills=False,
+                emit_backfills=False,
             )
             evaluator.request_subsets_by_key = self._get_request_subsets_by_key(
                 evaluator.asset_graph_view
