@@ -325,6 +325,9 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
     """
 
     def __init__(self, partition_keys: Sequence[str]):
+        if isinstance(partition_keys, str):
+            # backcompat
+            partition_keys = [pk for pk in partition_keys]
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
         raise_error_on_invalid_partition_key_substring(partition_keys)

@@ -29,6 +29,13 @@ def test_static_partitions(partition_keys: Sequence[str]):
     assert static_partitions.get_partition_keys() == partition_keys
 
 
+def test_static_partition_string_input() -> None:
+    # backcompat
+    static_partitions = StaticPartitionsDefinition("abcdef")
+
+    assert static_partitions.get_partition_keys() == ["a", "b", "c", "d", "e", "f"]
+
+
 def test_invalid_partition_key():
     with pytest.raises(DagsterInvalidDefinitionError, match="'...'"):
         StaticPartitionsDefinition(["foo", "foo...bar"])
