@@ -201,3 +201,20 @@ def test_custom_callback_behavior(
         assert affected_print_task.metadata["retries"] == 1
         unaffected_print_task = af_instance.get_task_info(dag_id="unaffected_dag", task_id=task_id)
         assert unaffected_print_task.metadata["retries"] == 0
+
+
+def test_migrated_overridden_dag_custom_operator_materializes(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Test that assets are properly materialized from an overridden dag, and that the proxied task retains attributes from the custom operator."""
+    from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
+
+    af_instance = local_airflow_instance()
+    assert af_instance.get_task_info(dag_id="overridden_dag_custom_callback", task_id="OVERRIDDEN")
+
+    expected_mats_per_dag = {
+        "overridden_dag_custom_callback": [AssetKey("asset_overridden_dag_custom_callback")],
+    }
+    poll_for_expected_mats(af_instance, expected_mats_per_dag)

@@ -145,11 +145,11 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
             assets_to_trigger_per_job[_build_dagster_job_identifier(asset_node)].append(
                 asset_node["assetKey"]["path"]
             )
-        logger.debug(f"Found {len(assets_to_trigger_per_job)} jobs to trigger")
+        logger.info(f"Found {len(assets_to_trigger_per_job)} jobs to trigger")
 
         triggered_runs = []
         for job_identifier, asset_key_paths in assets_to_trigger_per_job.items():
-            logger.debug(f"Triggering run for {job_identifier} with assets {asset_key_paths}")
+            logger.info(f"Triggering run for {job_identifier} with assets {asset_key_paths}")
             run_id = self.launch_dagster_run(
                 context,
                 session,
@@ -168,14 +168,14 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
                     continue
                 run_status = self.get_dagster_run_status(session, dagster_url, run_id)
                 if run_status in ["SUCCESS", "FAILURE", "CANCELED"]:
-                    logger.debug(f"Run {run_id} completed with status {run_status}")
+                    logger.info(f"Run {run_id} completed with status {run_status}")
                     completed_runs[run_id] = run_status
         non_successful_runs = [
             run_id for run_id, status in completed_runs.items() if status != "SUCCESS"
         ]
         if non_successful_runs:
             raise Exception(f"Runs {non_successful_runs} did not complete successfully.")
-        logger.debug("All runs completed successfully.")
+        logger.info("All runs completed successfully.")
         return None
 
     def execute(self, context: Context) -> Any:
