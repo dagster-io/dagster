@@ -17,6 +17,7 @@ class GrapheneRunsFeedEntry(graphene.Interface):
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
     )
+    launchedBy = graphene.NonNull("dagster_graphql.schema.tags.GraphenePipelineTag")
 
     class Meta:
         name = "RunsFeedEntry"

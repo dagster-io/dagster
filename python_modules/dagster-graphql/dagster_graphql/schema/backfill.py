@@ -23,6 +23,11 @@ from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunR
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    AUTO_MATERIALIZE_TAG,
+    AUTO_OBSERVE_TAG,
+    SCHEDULE_NAME_TAG,
+    SENSOR_NAME_TAG,
+    USER_TAG,
     TagType,
     get_tag_type,
 )
@@ -385,6 +390,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
     )
+    launchedBy = graphene.NonNull("dagster_graphql.schema.tags.GraphenePipelineTag")
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -519,6 +525,37 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             for key, value in self._backfill_job.tags.items()
             if get_tag_type(key) != TagType.HIDDEN
         ]
+
+    def resolve_launchedBy(self, _graphene_info: ResolveInfo):
+        """Determines which value should be shown in the Launched by column in the UI. This value is
+        deetermined based on the tags of the backfill, not the source of the backfill as stored in the DB. Thus, some
+        backfills may have different launchedBy values from source columns.
+        """
+        from dagster_graphql.schema.tags import GraphenePipelineTag
+
+        if self._backfill_job.tags.get(USER_TAG):
+            return GraphenePipelineTag(key=USER_TAG, value=self._backfill_job.tags[USER_TAG])
+        if self._backfill_job.tags.get(SCHEDULE_NAME_TAG):
+            return GraphenePipelineTag(
+                key=SCHEDULE_NAME_TAG, value=self._backfill_job.tags[SCHEDULE_NAME_TAG]
+            )
+        if self._backfill_job.tags.get(SENSOR_NAME_TAG):
+            return GraphenePipelineTag(
+                key=SENSOR_NAME_TAG, value=self._backfill_job.tags[SENSOR_NAME_TAG]
+            )
+        if self._backfill_job.tags.get(AUTO_MATERIALIZE_TAG):
+            return GraphenePipelineTag(
+                key=AUTO_MATERIALIZE_TAG, value=self._backfill_job.tags[AUTO_MATERIALIZE_TAG]
+            )
+        if self._backfill_job.tags.get("dagster/created_by") == "auto_materialize":
+            return GraphenePipelineTag(
+                key="dagster/created_by", value=self._backfill_job.tags["dagster/created_by"]
+            )
+        if self._backfill_job.tags.get(AUTO_OBSERVE_TAG):
+            return GraphenePipelineTag(
+                key=AUTO_OBSERVE_TAG, value=self._backfill_job.tags[AUTO_OBSERVE_TAG]
+            )
+        return GraphenePipelineTag(kind="manual", value="")
 
     def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
         return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
