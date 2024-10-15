@@ -21,10 +21,6 @@ class InitialEvaluationCondition(BuiltinAutomationCondition):
     """Condition to determine if this is the initial evaluation of a given AutomationCondition."""
 
     @property
-    def description(self) -> str:
-        return "Initial evaluation"
-
-    @property
     def name(self) -> str:
         return "initial_evaluation"
 
@@ -64,10 +60,6 @@ class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 @record
 class MissingAutomationCondition(SubsetAutomationCondition):
     @property
-    def description(self) -> str:
-        return "Missing"
-
-    @property
     def name(self) -> str:
         return "missing"
 
@@ -81,10 +73,6 @@ class MissingAutomationCondition(SubsetAutomationCondition):
 @record
 class InProgressAutomationCondition(SubsetAutomationCondition):
     @property
-    def description(self) -> str:
-        return "Part of an in-progress run"
-
-    @property
     def name(self) -> str:
         return "in_progress"
 
@@ -95,10 +83,6 @@ class InProgressAutomationCondition(SubsetAutomationCondition):
 @whitelist_for_serdes(storage_name="FailedAutomationCondition")
 @record
 class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
-    @property
-    def description(self) -> str:
-        return "Latest execution failed"
-
     @property
     def name(self) -> str:
         return "execution_failed"
@@ -141,10 +125,6 @@ class WillBeRequestedCondition(SubsetAutomationCondition):
 @record
 class NewlyRequestedCondition(SubsetAutomationCondition):
     @property
-    def description(self) -> str:
-        return "Was requested on the previous tick"
-
-    @property
     def name(self) -> str:
         return "newly_requested"
 
@@ -155,10 +135,6 @@ class NewlyRequestedCondition(SubsetAutomationCondition):
 @whitelist_for_serdes
 @record
 class NewlyUpdatedCondition(SubsetAutomationCondition):
-    @property
-    def description(self) -> str:
-        return "Updated since previous tick"
-
     @property
     def name(self) -> str:
         return "newly_updated"
@@ -179,12 +155,8 @@ class CronTickPassedCondition(SubsetAutomationCondition):
     cron_timezone: str
 
     @property
-    def description(self) -> str:
-        return f"New tick of {self.cron_schedule} ({self.cron_timezone})"
-
-    @property
     def name(self) -> str:
-        return "cron_tick_passed"
+        return f"cron_tick_passed(cron_schedule={self.cron_schedule}, cron_timezone={self.cron_timezone})"
 
     def _get_previous_cron_tick(self, effective_dt: datetime.datetime) -> datetime.datetime:
         previous_ticks = reverse_cron_string_iterator(
@@ -240,7 +212,10 @@ class InLatestTimeWindowCondition(SubsetAutomationCondition):
 
     @property
     def name(self) -> str:
-        return "in_latest_time_window"
+        name = "in_latest_time_window"
+        if self.serializable_lookback_timedelta:
+            name += f"(lookback_timedelta={self.lookback_timedelta})"
+        return name
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset:
         return context.asset_graph_view.compute_latest_time_window_subset(

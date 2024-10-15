@@ -18,12 +18,6 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     reset_condition: AutomationCondition[T_EntityKey]
 
     @property
-    def description(self) -> str:
-        return (
-            "Trigger condition has become true since the last time the reset condition became true."
-        )
-
-    @property
     def name(self) -> str:
         return "SINCE"
 

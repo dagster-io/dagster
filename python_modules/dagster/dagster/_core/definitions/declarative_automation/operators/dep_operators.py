@@ -66,16 +66,20 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @property
     @abstractmethod
-    def base_description(self) -> str: ...
+    def base_name(self) -> str: ...
 
     @property
-    def description(self) -> str:
-        description = f"{self.base_description} deps"
+    def name(self) -> str:
+        name = self.base_name
+        props = []
         if self.allow_selection is not None:
-            description += f" within selection {self.allow_selection}"
+            props.append("allow_selection={self.allow_selection}")
         if self.ignore_selection is not None:
-            description += f" except for {self.ignore_selection}"
-        return description
+            props.append("ignore_selection={self.ignore_selection}")
+
+        if props:
+            name += f"({','.join(props)})"
+        return name
 
     @property
     def requires_cursor(self) -> bool:
@@ -119,11 +123,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 @whitelist_for_serdes
 class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     @property
-    def base_description(self) -> str:
-        return "Any"
-
-    @property
-    def name(self) -> str:
+    def base_name(self) -> str:
         return "ANY_DEPS_MATCH"
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
@@ -149,11 +149,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
 @whitelist_for_serdes
 class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
     @property
-    def base_description(self) -> str:
-        return "All"
-
-    @property
-    def name(self) -> str:
+    def base_name(self) -> str:
         return "ALL_DEPS_MATCH"
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
