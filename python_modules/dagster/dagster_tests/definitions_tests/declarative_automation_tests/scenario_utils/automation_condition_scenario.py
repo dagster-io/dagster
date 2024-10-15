@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Mapping, Optional, Sequence, Tuple
 
 import dagster._check as check
-from dagster import AssetKey
+from dagster import AssetKey, AutomationContext
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -16,7 +16,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
-from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
     AndAutomationCondition,
 )
