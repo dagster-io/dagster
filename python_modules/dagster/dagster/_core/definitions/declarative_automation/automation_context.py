@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -200,6 +200,11 @@ class AutomationContext(Generic[T_EntityKey]):
     def previous_evaluation_time(self) -> Optional[datetime.datetime]:
         """The `evaluation_time` value used on the previous tick's evaluation."""
         return self._cursor.temporal_context.effective_dt if self._cursor else None
+
+    @property
+    def previous_temporal_context(self) -> Optional[TemporalContext]:
+        """The `temporal_context` value used on the previous tick's evaluation."""
+        return self._cursor.temporal_context if self._cursor else None
 
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:

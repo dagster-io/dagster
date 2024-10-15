@@ -1,7 +1,7 @@
 from dagster._core.definitions.declarative_automation.operands import (
     CodeVersionChangedCondition as CodeVersionChangedCondition,
     CronTickPassedCondition as CronTickPassedCondition,
-    FailedAutomationCondition as FailedAutomationCondition,
+    ExecutionFailedAutomationCondition as ExecutionFailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressAutomationCondition as InProgressAutomationCondition,
     MissingAutomationCondition as MissingAutomationCondition,
