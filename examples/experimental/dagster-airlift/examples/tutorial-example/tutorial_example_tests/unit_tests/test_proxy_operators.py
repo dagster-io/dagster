@@ -38,3 +38,17 @@ def test_custom_proxy_operator(mock_airflow_variable: None) -> None:
     )
     session = operator.get_dagster_session({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
     assert session.headers["Authorization"] == "Bearer test_key"
+
+
+def test_dag_override_operator(mock_airflow_variable: None) -> None:
+    from tutorial_example.snippets.custom_operator_examples.custom_dag_level_proxy import (
+        CustomProxyToDagsterOperator,
+    )
+
+    operator = CustomProxyToDagsterOperator(task_id="test_task")
+    assert (
+        operator.get_dagster_url({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
+        == "https://dagster.example.com/"
+    )
+    session = operator.get_dagster_session({"var": {"value": {"my_api_key": "test_key"}}})  # type: ignore
+    assert session.headers["Authorization"] == "Bearer test_key"
