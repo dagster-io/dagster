@@ -35,14 +35,18 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
   const onClickRemove = React.useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      onRemove && onRemove();
+      if (onRemove) {
+        onRemove();
+      }
     },
     [onRemove],
   );
 
   const handleBlur = React.useCallback(() => {
     setEditing(false);
-    onChange && onChange(value);
+    if (onChange) {
+      onChange(value);
+    }
   }, [onChange, value]);
 
   const handleChange = React.useCallback(

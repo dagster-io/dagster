@@ -208,10 +208,10 @@ export const AssetPartitionDetail = ({
     currentRun?.status === RunStatus.STARTED
       ? 'that targets this partition has started .'
       : currentRun?.status === RunStatus.STARTING
-      ? 'that targets this partition is starting.'
-      : currentRun?.status === RunStatus.QUEUED
-      ? 'that targets this partition is queued.'
-      : undefined;
+        ? 'that targets this partition is starting.'
+        : currentRun?.status === RunStatus.QUEUED
+          ? 'that targets this partition is queued.'
+          : undefined;
 
   const repositoryOrigin = latestEventRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin

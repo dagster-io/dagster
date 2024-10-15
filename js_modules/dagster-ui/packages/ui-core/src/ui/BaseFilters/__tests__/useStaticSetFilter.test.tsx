@@ -29,7 +29,7 @@ describe('useStaticSetFilter', () => {
     });
   }
 
-  function createTestFilter() {
+  function _createTestFilter() {
     return renderHook(() => useTestHook());
   }
 
@@ -41,7 +41,7 @@ describe('useStaticSetFilter', () => {
     expect(filter.result.current).toHaveProperty('state', new Set(['banana']));
   });
 
-  function select(filter: ReturnType<typeof createTestFilter>, value: string) {
+  function select(filter: ReturnType<typeof _createTestFilter>, value: string) {
     const close = jest.fn();
     const createPortal = jest.fn();
     act(() => {

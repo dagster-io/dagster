@@ -6,13 +6,13 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {gql, useQuery} from '../apollo-client';
 import {
   AssetMaterializationUpstreamQuery,
   AssetMaterializationUpstreamQueryVariables,
   AssetMaterializationUpstreamTableFragment,
   MaterializationUpstreamDataVersionFragment,
 } from './types/AssetMaterializationUpstreamData.types';
-import {gql, useQuery} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';

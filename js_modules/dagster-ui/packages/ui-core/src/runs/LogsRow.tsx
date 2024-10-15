@@ -12,8 +12,8 @@ import {
 } from './LogsRowComponents';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
 import {IRunMetadataDict} from './RunMetadataProvider';
-import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
 import {gql} from '../apollo-client';
+import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

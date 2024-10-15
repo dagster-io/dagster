@@ -300,7 +300,7 @@ export const allStoredSessions = () => {
         // If it's not a parseable object, it's not a launchpad session.
         try {
           parsed = JSON.parse(value);
-        } catch (e) {
+        } catch {
           continue;
         }
 
@@ -351,7 +351,7 @@ export const writeLaunchpadSessionToStorage =
       try {
         setState(data);
         return true;
-      } catch (e) {
+      } catch {
         // The data could not be written to localStorage. This is probably due to
         // a QuotaExceededError, but since different browsers use slightly different
         // objects for this, we don't try to get clever detecting it.

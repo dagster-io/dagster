@@ -54,7 +54,9 @@ export const Tooltip = (props: Props) => {
       document.body.addEventListener('mousemove', listener);
     }
     return () => {
-      listener && document.body.removeEventListener('mousemove', listener);
+      if (listener) {
+        document.body.removeEventListener('mousemove', listener);
+      }
     };
   }, [isOpen, useDisabledButtonTooltipFix]);
 

@@ -225,7 +225,9 @@ export const TokenizingField = ({
 
   const _onTextChange = (text: string) => {
     setTyped(text);
-    onTextChange && onTextChange(text);
+    if (onTextChange) {
+      onTextChange(text);
+    }
   };
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
@@ -422,7 +424,9 @@ export const TokenizingField = ({
         inputProps={{
           onFocus: () => {
             setOpen(true);
-            onFocus && onFocus();
+            if (onFocus) {
+              onFocus();
+            }
           },
           onBlur: () => {
             // Emulate behavior of addOnBlur for TagInput
@@ -431,7 +435,9 @@ export const TokenizingField = ({
               onConfirmText(typed);
             }
             setOpen(false);
-            onBlur && onBlur();
+            if (onBlur) {
+              onBlur();
+            }
           },
         }}
         $maxWidth={fullwidth ? '100%' : undefined}

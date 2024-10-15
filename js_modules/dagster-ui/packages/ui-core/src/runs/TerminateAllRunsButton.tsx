@@ -4,11 +4,11 @@ import {useState} from 'react';
 
 import {queuedStatuses} from './RunStatuses';
 import {TerminationDialog} from './TerminationDialog';
+import {gql, useApolloClient} from '../apollo-client';
 import {
   TerminateRunIdsQuery,
   TerminateRunIdsQueryVariables,
 } from './types/TerminateAllRunsButton.types';
-import {gql, useApolloClient} from '../apollo-client';
 import {RunsFilter} from '../graphql/types';
 
 export const TerminateAllRunsButton = ({

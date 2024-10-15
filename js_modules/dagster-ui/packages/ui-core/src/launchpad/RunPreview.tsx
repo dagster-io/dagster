@@ -17,11 +17,11 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {LaunchpadType} from './types';
+import {gql} from '../apollo-client';
 import {
   RunPreviewValidationErrorsFragment,
   RunPreviewValidationFragment,
 } from './types/RunPreview.types';
-import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -375,10 +375,10 @@ export const RunPreview = (props: RunPreviewProps) => {
           isMissing && item.isRequired
             ? 'missing'
             : isInvalid
-            ? 'invalid'
-            : isPresent
-            ? 'present'
-            : 'none';
+              ? 'invalid'
+              : isPresent
+                ? 'present'
+                : 'none';
 
         return (
           <Tooltip

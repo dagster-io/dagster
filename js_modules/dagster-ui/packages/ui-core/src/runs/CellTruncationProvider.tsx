@@ -73,7 +73,11 @@ export class CellTruncationProvider extends React.Component<
 
   onView = () => {
     const {onExpand} = this.props;
-    onExpand ? onExpand() : this.setState({showDialog: true});
+    if (onExpand) {
+      onExpand();
+    } else {
+      this.setState({showDialog: true});
+    }
   };
 
   render() {

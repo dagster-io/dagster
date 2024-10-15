@@ -18,7 +18,11 @@ const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'toggle-one': {
       const {checked, id} = action.payload;
-      checked ? copy.add(id) : copy.delete(id);
+      if (checked) {
+        copy.add(id);
+      } else {
+        copy.delete(id);
+      }
       return {lastCheckedId: id, checkedIds: copy};
     }
 
@@ -34,7 +38,11 @@ const reducer = (state: State, action: Action): State => {
 
       const [start, end] = [indexOfLast, indexOfChecked].sort();
       allIds.slice(start, end! + 1).forEach((id) => {
-        checked ? copy.add(id) : copy.delete(id);
+        if (checked) {
+          copy.add(id);
+        } else {
+          copy.delete(id);
+        }
       });
 
       return {

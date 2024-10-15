@@ -152,8 +152,8 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
         event.deltaMode === WheelEvent.DOM_DELTA_LINE
           ? 0.05 // Firefox cmd+wheel, numbers are in lines and not px
           : Math.abs(event.deltaY) > 30
-          ? 0.002 // Chrome, Edge, Safari cmd+wheel, numbers get very large
-          : 0.01; // trackpad;
+            ? 0.002 // Chrome, Edge, Safari cmd+wheel, numbers get very large
+            : 0.01; // trackpad;
       const targetScale = viewport.state.scale * (1 - event.deltaY * zoomSpeed);
       const scale = Math.max(viewport.getMinZoom(), Math.min(viewport.getMaxZoom(), targetScale));
 
@@ -565,7 +565,9 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     if (event.target instanceof HTMLElement && event.target.closest('#zoom-slider-container')) {
       return;
     }
-    this.props.onDoubleClick && this.props.onDoubleClick(event);
+    if (this.props.onDoubleClick) {
+      this.props.onDoubleClick(event);
+    }
   };
 
   onExportToSVG = async () => {

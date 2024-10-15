@@ -463,18 +463,18 @@ const usePathMatch = () => {
           itemType: 'job' as const,
         }
       : groupName
-      ? {
-          repoAddress,
-          itemName: groupName,
-          itemType: 'asset-group' as const,
-        }
-      : resourceName
-      ? {
-          repoAddress,
-          itemName: resourceName,
-          itemType: 'resource' as const,
-        }
-      : null;
+        ? {
+            repoAddress,
+            itemName: groupName,
+            itemType: 'asset-group' as const,
+          }
+        : resourceName
+          ? {
+              repoAddress,
+              itemName: resourceName,
+              itemType: 'resource' as const,
+            }
+          : null;
   }, [groupName, repoPath, pipelinePath, resourceName]);
 };
 

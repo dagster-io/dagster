@@ -100,8 +100,8 @@ export const AssetEvents = ({
       params.time
         ? Number(b.timestamp) <= Number(params.time)
         : params.partition
-        ? b.partition === params.partition
-        : false,
+          ? b.partition === params.partition
+          : false,
     ) || grouped[0];
 
   // Note: This page still has a LOT of logic for displaying events by partition but it's only enabled

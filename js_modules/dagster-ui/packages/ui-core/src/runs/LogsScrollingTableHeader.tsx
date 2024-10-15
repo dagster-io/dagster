@@ -29,7 +29,9 @@ export class ColumnWidthsProvider extends React.Component<
 
   onWidthsChangedFromContext = (columnWidths: typeof ColumnWidths) => {
     window.localStorage.setItem(ColumnWidthsStorageKey, JSON.stringify(columnWidths));
-    this.props.onWidthsChanged && this.props.onWidthsChanged(columnWidths);
+    if (this.props.onWidthsChanged) {
+      this.props.onWidthsChanged(columnWidths);
+    }
     this.setState(columnWidths);
   };
 
@@ -94,7 +96,9 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 
   onMouseUp = () => {
     const {isDragging} = this.state;
-    isDragging && this.setState({isDragging: false});
+    if (isDragging) {
+      this.setState({isDragging: false});
+    }
     document.removeEventListener('mousemove', this.onMouseMove);
     document.removeEventListener('mouseup', this.onMouseUp);
   };

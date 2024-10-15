@@ -40,7 +40,9 @@ export const Sizes = () => {
         )}
         onChange={(values: number[]) => {
           const [first] = values;
-          first && setValue(first);
+          if (typeof first === 'number') {
+            setValue(first);
+          }
         }}
       >
         <MultiSlider.Handle value={value} type="full" intentAfter={Intent.PRIMARY} />

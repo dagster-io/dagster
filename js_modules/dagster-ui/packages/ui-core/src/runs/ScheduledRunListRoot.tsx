@@ -10,11 +10,11 @@ import {
 } from '@dagster-io/ui-components';
 
 import {useRunListTabs} from './RunListTabs';
+import {gql, useQuery} from '../apollo-client';
 import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
 } from './types/ScheduledRunListRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
