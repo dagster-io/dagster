@@ -24,7 +24,14 @@ import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
-import {IntMetadataEntry, MaterializationEvent, TableMetadataEntry} from '../graphql/types';
+import {
+  IntMetadataEntry,
+  MaterializationEvent,
+  TableColumn,
+  TableMetadataEntry,
+  TableSchema as TableSchemaType,
+  Table as TableType,
+} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
@@ -366,7 +373,18 @@ const MetadataEntryModalAction = (props: {
   );
 };
 
-export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}) => {
+type TableSchemaCompat = Omit<TableSchemaType, 'columns'> & {
+  columns: Omit<TableColumn, 'tags'>[];
+};
+
+type TableCompat = Omit<TableType, 'schema'> & {
+  schema: TableSchemaCompat;
+};
+type TableMetadataEntryCompat = Omit<TableMetadataEntry, 'table'> & {
+  table: TableCompat;
+};
+
+export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntryCompat}) => {
   const [showSchema, setShowSchema] = React.useState(false);
 
   const schema = entry.table.schema;
