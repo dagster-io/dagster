@@ -1,3 +1,14 @@
+def ensure_airflow_installed() -> None:
+    """Ensures that Airflow is installed."""
+    try:
+        import airflow  # noqa
+    except ImportError:
+        raise Exception(
+            "Airflow is not installed. Please install Apache Airflow >= 2.0.0 before using this functionality."
+        )
+
+
+ensure_airflow_installed()
 from .base_asset_operator import BaseDagsterAssetsOperator as BaseDagsterAssetsOperator
 from .dag_proxy_operator import (
     BaseProxyDAGToDagsterOperator as BaseProxyDAGToDagsterOperator,
