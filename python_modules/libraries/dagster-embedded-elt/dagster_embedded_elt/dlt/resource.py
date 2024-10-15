@@ -75,20 +75,25 @@ class DagsterDltResource(ConfigurableResource):
 
     def _extract_table_schema_metadata(self, table_name: str, schema: Schema) -> TableSchema:
         # Pyright does not detect the default value from 'pop' and 'get'
-        return TableSchema(
-            columns=[
-                TableColumn(
-                    name=column.pop("name", ""),  # type: ignore
-                    type=column.pop("data_type", "string"),  # type: ignore
-                    constraints=TableColumnConstraints(
-                        nullable=column.pop("nullable", True),  # type: ignore
-                        unique=column.pop("unique", False),  # type: ignore
-                        other=[*column.keys()],  # e.g. "primary_key" or "foreign_key"
-                    ),
-                )
-                for column in schema.get_table_columns(table_name).values()
-            ]
-        )
+        try:
+            table_schema = TableSchema(
+                columns=[
+                    TableColumn(
+                        name=column.pop("name", ""),  # type: ignore
+                        type=column.pop("data_type", "string"),  # type: ignore
+                        constraints=TableColumnConstraints(
+                            nullable=column.pop("nullable", True),  # type: ignore
+                            unique=column.pop("unique", False),  # type: ignore
+                            other=[*column.keys()],  # e.g. "primary_key" or "foreign_key"
+                        ),
+                    )
+                    for column in schema.get_table_columns(table_name).values()
+                ]
+            )
+        except KeyError:
+            # We want the asset to materialize even if we failed to extract the table schema.
+            table_schema = TableSchema(columns=[])
+        return table_schema
 
     def extract_resource_metadata(
         self,
@@ -126,7 +131,7 @@ class DagsterDltResource(ConfigurableResource):
         with contextlib.suppress(DataItemRequiredForDynamicTableHints):
             normalized_table_name = normalize_table_identifiers(
                 resource.compute_table_schema(), default_schema.naming
-            ).get("name", resource.table_name)
+            ).get("name") or str(resource.table_name)
 
         # job metadata for specific target `normalized_table_name`
         base_metadata["jobs"] = [
@@ -136,7 +141,7 @@ class DagsterDltResource(ConfigurableResource):
             if job.get("table_name") == normalized_table_name
         ]
         rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
-            str(normalized_table_name)
+            normalized_table_name
         )
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
@@ -153,7 +158,7 @@ class DagsterDltResource(ConfigurableResource):
         destination_name: Optional[str] = base_metadata.get("destination_name")
         relation_identifier = None
         if destination_name and schema:
-            relation_identifier = ".".join([destination_name, schema, str(normalized_table_name)])
+            relation_identifier = ".".join([destination_name, schema, normalized_table_name])
 
         child_table_names = [
             name
@@ -164,9 +169,7 @@ class DagsterDltResource(ConfigurableResource):
             table_name: self._extract_table_schema_metadata(table_name, default_schema)
             for table_name in child_table_names
         }
-        table_schema = self._extract_table_schema_metadata(
-            str(normalized_table_name), default_schema
-        )
+        table_schema = self._extract_table_schema_metadata(normalized_table_name, default_schema)
 
         base_metadata = {
             **child_table_schemas,
