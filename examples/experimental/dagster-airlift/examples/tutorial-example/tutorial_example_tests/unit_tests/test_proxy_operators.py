@@ -1,5 +1,5 @@
 def test_dagster_cloud_proxy_operator(mock_airflow_variable: None) -> None:
-    from tutorial_example.custom_operator_examples.plus_proxy_operator import (
+    from tutorial_example.snippets.custom_operator_examples.plus_proxy_operator import (
         DagsterCloudProxyOperator,
     )
 
@@ -27,7 +27,9 @@ def test_dagster_cloud_proxy_operator(mock_airflow_variable: None) -> None:
 
 
 def test_custom_proxy_operator(mock_airflow_variable: None) -> None:
-    from tutorial_example.custom_operator_examples.custom_proxy import CustomProxyToDagsterOperator
+    from tutorial_example.snippets.custom_operator_examples.custom_proxy import (
+        CustomProxyToDagsterOperator,
+    )
 
     operator = CustomProxyToDagsterOperator(task_id="test_task")
     assert (

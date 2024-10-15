@@ -41,6 +41,7 @@ def scaffold_proxied_state(logger: Any) -> None:
         )
     logger.info(f"Scaffolding proxied state directory at {proxied_state_dir}")
     for dag_id, dag in get_all_dags().items():
+        logger.info(f"Scaffolding proxied state for dag {dag_id}")
         proxied_state_file = proxied_state_dir / f"{dag_id}.yaml"
         proxied_state_file.parent.mkdir(parents=True, exist_ok=True)
         tasks_in_alphabetical_order = sorted(dag.tasks, key=lambda task: task.task_id)

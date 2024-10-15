@@ -44,11 +44,5 @@ dagster_run:
 
 
 update_readme_snippets:
-	python ../../scripts/update_readme_snippets.py \
-		$(MAKEFILE_DIR)/README.md \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/peer.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/observe.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/migrate.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/standalone.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/migrate_with_check.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/peer_with_check.py
+	python ../../scripts/update_readme_snippets.py $(MAKEFILE_DIR)/README.md
+
