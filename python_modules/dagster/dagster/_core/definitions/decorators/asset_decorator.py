@@ -221,7 +221,7 @@ def asset(
         backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
             BackfillPolicy.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
-        code_version (Optional[str]): (Experimental) Version of the code that generates this asset. In
+        code_version (Optional[str]): Version of the code that generates this asset. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
         check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
@@ -574,7 +574,7 @@ def multi_asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
-        code_version (Optional[str]): (Experimental) Version of the code encapsulated by the multi-asset. If set,
+        code_version (Optional[str]): Version of the code encapsulated by the multi-asset. If set,
             this is used as a default code version for all defined assets.
         specs (Optional[Sequence[AssetSpec]]): The specifications for the assets materialized
             by this function.
@@ -691,6 +691,7 @@ def graph_asset(
     backfill_policy: Optional[BackfillPolicy] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
@@ -717,6 +718,7 @@ def graph_asset(
     backfill_policy: Optional[BackfillPolicy] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
@@ -766,6 +768,9 @@ def graph_asset(
         automation_condition (Optional[AutomationCondition]): The AutomationCondition to use
             for this asset.
         backfill_policy (Optional[BackfillPolicy]): The BackfillPolicy to use for this asset.
+        code_version (Optional[str]): Version of the code that generates this asset. In
+            general, versions should be set only for code that deterministically produces the same
+            output when given the same inputs.
         key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
 
     Examples:
@@ -803,6 +808,7 @@ def graph_asset(
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            code_version=code_version,
             key=key,
         )
     else:
@@ -825,6 +831,7 @@ def graph_asset(
             backfill_policy=backfill_policy,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            code_version=code_version,
             key=key,
         )
 
@@ -847,6 +854,7 @@ def graph_asset_no_defaults(
     backfill_policy: Optional[BackfillPolicy],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     check_specs: Optional[Sequence[AssetCheckSpec]],
+    code_version: Optional[str],
     key: Optional[CoercibleToAssetKey],
 ) -> AssetsDefinition:
     ins = ins or {}
@@ -905,6 +913,7 @@ def graph_asset_no_defaults(
         resource_defs=resource_defs,
         check_specs=check_specs,
         owners_by_output_name={"result": owners} if owners else None,
+        code_versions_by_output_name={"result": code_version} if code_version else None,
     )
 
 
