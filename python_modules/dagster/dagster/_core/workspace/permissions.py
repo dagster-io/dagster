@@ -18,6 +18,7 @@ class Permissions(str, Enum):
     REPORT_RUNLESS_ASSET_EVENTS = "report_runless_asset_events"
     LAUNCH_PARTITION_BACKFILL = "launch_partition_backfill"
     CANCEL_PARTITION_BACKFILL = "cancel_partition_backfill"
+    DELETE_PARTITION_BACKFILL = "delete_partition_backfill"
     EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
     TOGGLE_AUTO_MATERIALIZE = "toggle_auto_materialize"
     EDIT_CONCURRENCY_LIMIT = "edit_concurrency_limit"
@@ -41,6 +42,7 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.REPORT_RUNLESS_ASSET_EVENTS: False,
     Permissions.LAUNCH_PARTITION_BACKFILL: False,
     Permissions.CANCEL_PARTITION_BACKFILL: False,
+    Permissions.DELETE_PARTITION_BACKFILL: False,
     Permissions.EDIT_DYNAMIC_PARTITIONS: False,
     Permissions.TOGGLE_AUTO_MATERIALIZE: False,
     Permissions.EDIT_CONCURRENCY_LIMIT: False,
@@ -61,6 +63,7 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.REPORT_RUNLESS_ASSET_EVENTS: True,
     Permissions.LAUNCH_PARTITION_BACKFILL: True,
     Permissions.CANCEL_PARTITION_BACKFILL: True,
+    Permissions.DELETE_PARTITION_BACKFILL: True,
     Permissions.EDIT_DYNAMIC_PARTITIONS: True,
     Permissions.TOGGLE_AUTO_MATERIALIZE: True,
     Permissions.EDIT_CONCURRENCY_LIMIT: True,
@@ -78,6 +81,7 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.RELOAD_REPOSITORY_LOCATION,
     Permissions.LAUNCH_PARTITION_BACKFILL,
     Permissions.CANCEL_PARTITION_BACKFILL,
+    Permissions.DELETE_PARTITION_BACKFILL,
     Permissions.EDIT_DYNAMIC_PARTITIONS,
     Permissions.REPORT_RUNLESS_ASSET_EVENTS,
 }

@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         GrapheneResumeBackfillSuccess,
     )
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
+    from dagster_graphql.schema.roots.mutation import GrapheneDeleteBackfillSuccess
     from dagster_graphql.schema.util import ResolveInfo
 
 
@@ -425,3 +426,47 @@ def retry_partition_backfill(
 
     graphene_info.context.instance.add_backfill(new_backfill)
     return GrapheneLaunchBackfillSuccess(backfill_id=new_backfill.backfill_id)
+
+
+def delete_partition_backfill(
+    graphene_info: "ResolveInfo", backfill_id: str
+) -> "GrapheneDeleteBackfillSuccess":
+    from dagster_graphql.schema.roots.mutation import GrapheneDeleteBackfillSuccess
+
+    backfill = graphene_info.context.instance.get_backfill(backfill_id)
+    if not backfill:
+        check.failed(f"No backfill found for id: {backfill_id}")
+
+    if backfill.status not in BULK_ACTION_TERMINAL_STATUSES:
+        # TODO - cancel the backfill if not in terminal state?
+        raise DagsterInvariantViolationError(
+            f"Cannot delete backfill {backfill_id} because it is still in progress."
+        )
+
+    if backfill.is_asset_backfill:
+        asset_graph = graphene_info.context.asset_graph
+        assert_permission_for_asset_graph(
+            graphene_info,
+            asset_graph,
+            backfill.asset_selection,
+            Permissions.DELETE_PARTITION_BACKFILL,
+        )
+        assert_permission_for_asset_graph(
+            graphene_info,
+            asset_graph,
+            backfill.asset_selection,
+            Permissions.DELETE_PIPELINE_RUN,
+        )
+    else:
+        partition_set_origin = check.not_none(backfill.partition_set_origin)
+        location_name = partition_set_origin.selector.location_name
+        assert_permission_for_location(
+            graphene_info, Permissions.DELETE_PARTITION_BACKFILL, location_name
+        )
+        assert_permission_for_location(
+            graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name
+        )
+
+    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.DELETING))
+
+    return GrapheneDeleteBackfillSuccess(backfillId=backfill_id)
