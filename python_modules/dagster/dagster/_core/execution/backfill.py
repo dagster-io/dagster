@@ -36,6 +36,7 @@ class BulkActionStatus(Enum):
     CANCELED = "CANCELED"
     COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
     COMPLETED_FAILED = "COMPLETED_FAILED"  # denotes that the backfill daemon completed successfully, but some runs failed
+    DELETING = "DELETING"
 
     @staticmethod
     def from_graphql_input(graphql_str):
