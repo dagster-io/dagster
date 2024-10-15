@@ -156,7 +156,7 @@ class AssetCheckExecutionRecord(
         else:
             check.failed(f"Unexpected status {self.status}")
 
-    def targets_latest_materialization(self, loading_context: LoadingContext) -> bool:
+    async def targets_latest_materialization(self, loading_context: LoadingContext) -> bool:
         from dagster._core.storage.event_log.base import AssetRecord
 
         resolved_status = self.resolve_status(loading_context)
@@ -164,7 +164,7 @@ class AssetCheckExecutionRecord(
             # all in-progress checks execute against the latest version
             return True
 
-        asset_record = AssetRecord.blocking_get(loading_context, self.key.asset_key)
+        asset_record = await AssetRecord.gen(loading_context, self.key.asset_key)
         latest_materialization = (
             asset_record.asset_entry.last_materialization_record if asset_record else None
         )
@@ -197,10 +197,10 @@ class AssetCheckExecutionRecord(
         ]:
             # the evaluation didn't complete, so we don't have target_materialization_data, so check if
             # the check's run executed after the materializations as a fallback
-            latest_materialization_run_record = RunRecord.blocking_get(
+            latest_materialization_run_record = await RunRecord.gen(
                 loading_context, latest_materialization_run_id
             )
-            check_run_record = RunRecord.blocking_get(loading_context, self.run_id)
+            check_run_record = await RunRecord.gen(loading_context, self.run_id)
             return bool(
                 latest_materialization_run_record
                 and check_run_record
