@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Mapping, Optional, Sequence, Tuple
 
 import dagster._check as check
-import mock
 from dagster import AssetKey
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -52,19 +52,16 @@ class AutomationConditionScenarioState(ScenarioState):
     ensure_empty_result: bool = True
     request_backfills: bool = False
 
-    def _get_current_results_by_key(
+    def _get_request_subsets_by_key(
         self, asset_graph_view: AssetGraphView
-    ) -> Mapping[AssetKey, AutomationResult]:
+    ) -> Mapping[AssetKey, EntitySubset]:
         if self.requested_asset_partitions is None:
             return {}
         ap_by_key = defaultdict(set)
         for ap in self.requested_asset_partitions:
             ap_by_key[ap.asset_key].add(ap)
         return {
-            asset_key: mock.MagicMock(
-                true_subset=asset_graph_view.get_asset_subset_from_asset_partitions(asset_key, aps),
-                cursor=None,
-            )
+            asset_key: asset_graph_view.get_asset_subset_from_asset_partitions(asset_key, aps)
             for asset_key, aps in ap_by_key.items()
         }
 
@@ -99,7 +96,7 @@ class AutomationConditionScenarioState(ScenarioState):
                 logger=self.logger,
                 allow_backfills=False,
             )
-            evaluator.current_results_by_key = self._get_current_results_by_key(
+            evaluator.request_subsets_by_key = self._get_request_subsets_by_key(
                 evaluator.asset_graph_view
             )  # type: ignore
             context = AutomationContext.create(key=asset_key, evaluator=evaluator)
