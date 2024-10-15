@@ -12,7 +12,10 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.sensor.event_translation import DagsterEventTransformerFn
+from dagster_airlift.core.sensor.event_translation import (
+    DagsterEventTransformerFn,
+    default_event_transformer,
+)
 from dagster_airlift.core.sensor.sensor_builder import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor_defs,
@@ -68,7 +71,7 @@ def build_defs_from_airflow_instance(
     airflow_instance: AirflowInstance,
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    event_transformer_fn: Optional[DagsterEventTransformerFn] = None,
+    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> Definitions:
     mapped_defs = build_airflow_mapped_defs(airflow_instance=airflow_instance, defs=defs)
     return Definitions.merge(
@@ -123,7 +126,6 @@ def build_full_automapped_dags_from_airflow_instance(
             minimum_interval_seconds=sensor_minimum_interval_seconds,
             mapped_defs=resolved_defs,
             airflow_instance=airflow_instance,
-            event_transformer_fn=None,
         ),
     )
 

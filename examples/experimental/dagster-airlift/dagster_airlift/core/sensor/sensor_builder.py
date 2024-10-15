@@ -42,6 +42,7 @@ from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskI
 from dagster_airlift.core.sensor.event_translation import (
     AssetEvent,
     DagsterEventTransformerFn,
+    default_event_transformer,
     get_timestamp_from_materialization,
     synthetic_mats_for_mapped_asset_keys,
     synthetic_mats_for_mapped_dag_asset_keys,
@@ -81,7 +82,7 @@ def build_airflow_polling_sensor_defs(
     *,
     mapped_defs: Definitions,
     airflow_instance: AirflowInstance,
-    event_transformer_fn: Optional[DagsterEventTransformerFn],
+    event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> Definitions:
     """The constructed sensor polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
