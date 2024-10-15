@@ -818,26 +818,26 @@ def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPool
         ).code_location
         assert code_location
         external_repo = code_location.get_repository("the_repo")
-        running_schedule = external_repo.get_external_schedule("simple_schedule")
-        stopped_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
+        running_schedule = external_repo.get_schedule("simple_schedule")
+        stopped_schedule = external_repo.get_schedule("simple_schedule_no_timezone")
 
         assert len(instance.all_instigator_state()) == 0
 
         def _get_ticks(external_schedule):
             return instance.get_ticks(
-                external_schedule.get_external_origin().get_id(), external_schedule.selector_id
+                external_schedule.get_remote_origin().get_id(), external_schedule.selector_id
             )
 
         def _get_state(external_schedule):
             return instance.get_instigator_state(
-                external_schedule.get_external_origin().get_id(), external_schedule.selector_id
+                external_schedule.get_remote_origin().get_id(), external_schedule.selector_id
             )
 
         with freeze_time(initial_datetime):
             instance.start_schedule(running_schedule)
             instance.start_schedule(stopped_schedule)
             instance.stop_schedule(
-                stopped_schedule.get_external_origin().get_id(),
+                stopped_schedule.get_remote_origin().get_id(),
                 stopped_schedule.selector_id,
                 stopped_schedule,
             )
@@ -1080,13 +1080,6 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         with freeze_time(freeze_datetime):
             # The schedule remains, within the 12h grace period
             evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
-            assert len(instance.all_instigator_state()) == 1
-
-        # The ticks remain, but the schedule state is removed
-        with freeze_time(day_after_last_evaluation):
-            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
-            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
-            assert len(ticks) == 2
             assert len(instance.all_instigator_state()) == 0
 
 

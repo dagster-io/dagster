@@ -323,6 +323,10 @@ def launch_scheduled_runs(
         schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
         if selector_id not in all_workspace_schedule_selector_ids
+        or (
+            schedule_state.status == InstigatorStatus.DECLARED_IN_CODE
+            and not running_schedules.get(selector_id)
+        )
     ]
     for state in states_to_delete:
         location_name = state.origin.repository_origin.code_location_origin.location_name
@@ -331,20 +335,24 @@ def launch_scheduled_runs(
             # don't clean up state if its location is an error state
             continue
 
-        if (
-            isinstance(state.instigator_data, ScheduleInstigatorData)
-            and end_datetime_utc.timestamp()
-            < (state.instigator_data.last_iteration_timestamp or 0)
-            + RETAIN_ORPHANED_STATE_INTERVAL_SECONDS
-        ):
-            # don't clean up state if its last iteration time is within a grace period
-            continue
-
-        logger.info(
-            f"Removing state for schedule {state.instigator_name} that is "
-            f"no longer present in {location_name}."
+        _last_iteration_time = (
+            state.instigator_data.last_iteration_timestamp or 0.0
+            if isinstance(state.instigator_data, ScheduleInstigatorData)
+            else 0.0
         )
-        instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
+
+        # Remove all-stopped states declared in code immediately.
+        # Also remove all other states that are not present in the workspace after a 12-hour grace period.
+        if (
+            state.status == InstigatorStatus.DECLARED_IN_CODE
+            or _last_iteration_time + RETAIN_ORPHANED_STATE_INTERVAL_SECONDS
+            < end_datetime_utc.timestamp()
+        ):
+            logger.info(
+                f"Removing state for schedule {state.instigator_name} that is "
+                f"no longer present in {location_name}."
+            )
+            instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
     if not running_schedules:
         yield
