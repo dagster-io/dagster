@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 pin = ""
 setup(
     name="dagster_sigma",
-    version="0.0.11",
+    version="0.0.12",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
