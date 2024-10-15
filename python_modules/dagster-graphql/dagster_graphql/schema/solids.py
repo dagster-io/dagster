@@ -443,10 +443,10 @@ class ISolidDefinitionMixin:
                 remote_node
                 for remote_node in ext_repo.asset_graph.asset_nodes
                 if (
-                    (remote_node.priority_node_snap.node_definition_name == self.solid_def_name)
+                    (remote_node.asset_node_snap.node_definition_name == self.solid_def_name)
                     or (
-                        remote_node.priority_node_snap.graph_name
-                        and remote_node.priority_node_snap.graph_name == self.solid_def_name
+                        remote_node.asset_node_snap.graph_name
+                        and remote_node.asset_node_snap.graph_name == self.solid_def_name
                     )
                 )
             ]

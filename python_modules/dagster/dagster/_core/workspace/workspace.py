@@ -8,7 +8,7 @@ from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
     from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
 
 
@@ -48,10 +48,10 @@ class WorkspaceSnapshot:
     code_location_entries: Mapping[str, CodeLocationEntry]
 
     @cached_property
-    def asset_graph(self) -> "RemoteAssetGraph":
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
+        from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 
-        return RemoteAssetGraph.from_workspace_snapshot(self)
+        return RemoteWorkspaceAssetGraph.build(self)
 
     def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
         return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})

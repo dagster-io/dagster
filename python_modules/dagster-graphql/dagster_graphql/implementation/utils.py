@@ -27,7 +27,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -95,7 +95,7 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
 
 def has_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     asset_selection: Optional[Sequence[AssetKey]],
     permission: str,
 ) -> bool:
@@ -125,7 +125,7 @@ def has_permission_for_asset_graph(
 
 def assert_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
-    asset_graph: RemoteAssetGraph,
+    asset_graph: RemoteWorkspaceAssetGraph,
     asset_selection: Optional[Sequence[AssetKey]],
     permission: str,
 ) -> None:
