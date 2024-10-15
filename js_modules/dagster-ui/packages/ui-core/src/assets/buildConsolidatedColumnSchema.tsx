@@ -38,9 +38,8 @@ export function buildConsolidatedColumnSchema({
       const definitionsCol = definitionsTableColumnsByName[column.name.toLowerCase()];
 
       const description = definitionsCol?.description || column.description;
-      const tags = definitionsCol?.tags || column.tags;
 
-      return {...column, name: column.name.toLowerCase(), description, tags};
+      return {...column, name: column.name.toLowerCase(), description};
     });
 
     tableSchema = {

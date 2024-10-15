@@ -5390,7 +5390,6 @@ export type TableColumn = {
   constraints: TableColumnConstraints;
   description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
-  tags: Array<DefinitionTag>;
   type: Scalars['String']['output'];
 };
 
@@ -14694,7 +14693,6 @@ export const buildTableColumn = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'illum',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'explicabo',
-    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : 'a',
   };
 };

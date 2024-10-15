@@ -79,7 +79,7 @@ const getColumnLineage = (
           type: schemaParsed[columnName]?.type || null,
           description: schemaParsed[columnName]?.description || null,
           upstream: lineageByName[columnName]?.columnDeps || [],
-          tags: schemaParsed[columnName]?.tags || [],
+          tags: [],
         },
       ]),
     ),
@@ -141,10 +141,6 @@ const ASSET_COLUMN_LINEAGE_QUERY = gql`
               name
               type
               description
-              tags {
-                key
-                value
-              }
             }
           }
         }
@@ -172,10 +168,6 @@ const ASSET_COLUMN_LINEAGE_QUERY = gql`
                 name
                 type
                 description
-                tags {
-                  key
-                  value
-                }
               }
             }
           }

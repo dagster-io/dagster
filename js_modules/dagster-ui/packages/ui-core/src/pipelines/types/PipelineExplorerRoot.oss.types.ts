@@ -140,7 +140,6 @@ export type PipelineExplorerRootQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -163,7 +162,6 @@ export type PipelineExplorerRootQuery = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -1604,4 +1602,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = 'c3e50f36f2ebc68b75778399d1c6a4543f3dc77a054c8a8879b0f7b96c8436f1';
+export const PipelineExplorerRootQueryVersion = 'f351896aa934dd97af817742b8d069bd5876a9315933e98aa988931c90ad17c2';
