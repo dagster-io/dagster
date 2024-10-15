@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from airflow import DAG
 from airflow.models import BaseOperator, Variable
@@ -11,7 +11,6 @@ from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState, DagPro
 from dagster_airlift.in_airflow.task_proxy_operator import (
     BaseProxyTaskToDagsterOperator,
     DefaultProxyTaskToDagsterOperator,
-    build_dagster_task,
 )
 from dagster_airlift.utils import get_local_proxied_state_dir
 
@@ -21,9 +20,9 @@ def proxying_to_dagster(
     global_vars: Dict[str, Any],
     proxied_state: AirflowProxiedState,
     logger: Optional[logging.Logger] = None,
-    dagster_operator_klass: Type[
-        BaseProxyTaskToDagsterOperator
-    ] = DefaultProxyTaskToDagsterOperator,
+    build_from_task_fn: Callable[
+        [BaseOperator], BaseProxyTaskToDagsterOperator
+    ] = DefaultProxyTaskToDagsterOperator.build_from_task,
 ) -> None:
     """Uses passed-in dictionary to alter dags and tasks to proxy to dagster.
     Uses a proxied dictionary to determine the proxied status for each task within each dag.
@@ -116,7 +115,7 @@ def proxying_to_dagster(
             logger.debug(
                 f"Creating new operator for task {original_op.task_id} in dag {original_op.dag_id}"
             )
-            new_op = build_dagster_task(original_op, dagster_operator_klass)
+            new_op = build_from_task_fn(original_op)
             original_op.dag.task_dict[original_op.task_id] = new_op
 
             new_op.upstream_task_ids = original_op.upstream_task_ids
