@@ -367,7 +367,7 @@ class AssetGraphView(LoadingContext):
         latest_record = summary.last_check_execution_record if summary else None
         resolved_status = (
             latest_record.resolve_status(self)
-            if latest_record and latest_record.targets_latest_materialization(self)
+            if latest_record and await latest_record.targets_latest_materialization(self)
             else None
         )
         if resolved_status == status:
