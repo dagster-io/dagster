@@ -57,7 +57,7 @@ class EntityMatchesCondition(
 
 
 @record
-class DepCondition(BuiltinAutomationCondition[T_EntityKey]):
+class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition
 
     # Should be AssetSelection, but this causes circular reference issues
@@ -81,7 +81,7 @@ class DepCondition(BuiltinAutomationCondition[T_EntityKey]):
     def requires_cursor(self) -> bool:
         return False
 
-    def allow(self, selection: "AssetSelection") -> "DepCondition":
+    def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.
         """
@@ -93,7 +93,7 @@ class DepCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
         return copy(self, allow_selection=allow_selection)
 
-    def ignore(self, selection: "AssetSelection") -> "DepCondition":
+    def ignore(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will ignore dependencies within the provided
         AssetSelection.
         """
@@ -117,7 +117,7 @@ class DepCondition(BuiltinAutomationCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes
-class AnyDepsCondition(DepCondition[T_EntityKey]):
+class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     @property
     def base_description(self) -> str:
         return "Any"
@@ -147,7 +147,7 @@ class AnyDepsCondition(DepCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes
-class AllDepsCondition(DepCondition[T_EntityKey]):
+class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
     @property
     def base_description(self) -> str:
         return "All"
