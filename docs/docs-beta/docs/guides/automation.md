@@ -25,6 +25,7 @@ Dagster offers several ways to automate pipeline execution:
 1. [Schedules](#schedules) - Run jobs at specified times
 2. [Sensors](#sensors) - Trigger runs based on events
 3. [Asset Sensors](#asset-sensors) - Trigger jobs when specific assets materialize
+4. [GraphQL Endpoint](#graphql-endpoint) - Trigger materializations and jobs from the GraphQL endpoint
 
 ## Schedules
 
@@ -92,6 +93,75 @@ Use this table to help guide your decision:
 | Sensors                | Event-driven automation                | Assets, Ops, Graphs |
 | Declarative Automation | Asset-centric, condition-based updates | Assets only         |
 | Asset Sensors          | Cross-job/location asset dependencies  | Assets only         |
+
+## GraphQL Endpoint
+
+It is possible to trigger asset materializations in a job from external services using the GraphQL endpoint.
+
+### When to use the GraphQL endpoint
+
+- You want to integrate Dagster with an external system or tool
+- You need to trigger a materialization or job over an HTTP endpoint
+- You are creating a custom script for batching operations
+
+To trigger a job to run from the GraphQL endpoint in Dagster, you can use the `launchRun` mutation provided by Dagster's GraphQL API. Here's a general outline of how you can achieve this:
+
+```python
+import requests
+
+
+graphql_endpoint = "http://localhost:3000/graphql"
+
+query = """
+mutation LaunchRunMutation(
+  $repositoryLocationName: String!
+  $repositoryName: String!
+  $jobName: String!
+  $runConfigData: RunConfigData!
+) {
+  launchRun(
+    executionParams: {
+      selector: {
+        repositoryLocationName: $repositoryLocationName
+        repositoryName: $repositoryName
+        jobName: $jobName
+      }
+      runConfigData: $runConfigData
+    }
+  ) {
+    __typename
+    ... on LaunchRunSuccess {
+      run {
+        runId
+      }
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        reason
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+response = requests.post(
+    graphql_endpoint,
+    json={
+        "query": query,
+        "variables": {
+            "repositoryLocationName": "<replace-with-code-location-name>",
+            "repositoryName": "__repository__",  # default if using `Definitions`
+            "jobName": "<replace-with-job-name>",
+            "runConfigData": {},
+        },
+    },
+)
+```
+
 
 ## Next steps
 
