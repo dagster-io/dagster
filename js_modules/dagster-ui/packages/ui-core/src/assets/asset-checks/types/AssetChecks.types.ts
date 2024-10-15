@@ -165,7 +165,7 @@ export type AssetChecksQuery = {
                                   __typename: 'DefinitionTag';
                                   key: string;
                                   value: string;
-                                }>;
+                                } | null> | null;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -195,7 +195,7 @@ export type AssetChecksQuery = {
                                 __typename: 'DefinitionTag';
                                 key: string;
                                 value: string;
-                              }>;
+                              } | null> | null;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';

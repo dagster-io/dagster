@@ -32,7 +32,7 @@ class GrapheneTableColumn(graphene.ObjectType):
     type = graphene.NonNull(graphene.String)
     description = graphene.String()
     constraints = graphene.NonNull(GrapheneTableColumnConstraints)
-    tags = non_null_list(GrapheneDefinitionTag)
+    tags = graphene.List(GrapheneDefinitionTag)
 
     class Meta:
         name = "TableColumn"

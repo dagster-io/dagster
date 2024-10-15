@@ -219,7 +219,11 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -242,7 +246,7 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -398,7 +402,7 @@ export type RunDagsterRunEventFragment_EngineEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -421,7 +425,7 @@ export type RunDagsterRunEventFragment_EngineEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -582,7 +586,11 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -605,7 +613,7 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -750,7 +758,11 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -773,7 +785,7 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -910,7 +922,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -933,7 +945,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1067,7 +1079,11 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -1090,7 +1106,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1283,7 +1299,7 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1306,7 +1322,7 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1482,7 +1498,7 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1505,7 +1521,7 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1664,7 +1680,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1687,7 +1703,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1829,7 +1845,11 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -1852,7 +1872,7 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1988,7 +2008,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2011,7 +2031,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2149,7 +2169,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2172,7 +2192,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2319,7 +2339,7 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2342,7 +2362,7 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2479,7 +2499,7 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2502,7 +2522,7 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2737,7 +2757,11 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -2760,7 +2784,7 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2898,7 +2922,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2921,7 +2945,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -3058,7 +3082,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -3081,7 +3105,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
