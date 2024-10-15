@@ -49,7 +49,10 @@ def pipeline(month: Optional[str] = None):
                 yield d
 
     @dlt.transformer(
-        primary_key=["repo_id", "issue_id"], write_disposition="merge", data_from=repos
+        primary_key=["repo_id", "issue_id"],
+        write_disposition="merge",
+        data_from=repos,
+        table_name="RepoIssues",
     )
     def repo_issues(repo):
         """Extracted list of issues from repositories."""
