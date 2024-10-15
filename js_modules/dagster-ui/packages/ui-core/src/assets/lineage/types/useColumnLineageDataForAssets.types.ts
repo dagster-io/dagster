@@ -50,7 +50,7 @@ export type AssetColumnLineageQuery = {
               name: string;
               type: string;
               description: string | null;
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
           };
         }
@@ -99,7 +99,11 @@ export type AssetColumnLineageQuery = {
                 name: string;
                 type: string;
                 description: string | null;
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
             };
           }

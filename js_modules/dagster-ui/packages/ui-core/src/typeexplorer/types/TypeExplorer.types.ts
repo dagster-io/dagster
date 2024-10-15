@@ -116,7 +116,7 @@ export type TypeExplorerFragment_ListDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -139,7 +139,7 @@ export type TypeExplorerFragment_ListDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1365,7 +1365,7 @@ export type TypeExplorerFragment_NullableDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1388,7 +1388,7 @@ export type TypeExplorerFragment_NullableDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2614,7 +2614,7 @@ export type TypeExplorerFragment_RegularDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2637,7 +2637,7 @@ export type TypeExplorerFragment_RegularDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };

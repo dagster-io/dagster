@@ -143,7 +143,11 @@ export type DagsterTypeFragment_ListDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -166,7 +170,11 @@ export type DagsterTypeFragment_ListDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -1420,7 +1428,11 @@ export type DagsterTypeFragment_ListDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -1443,7 +1455,11 @@ export type DagsterTypeFragment_ListDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -2697,7 +2713,11 @@ export type DagsterTypeFragment_ListDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -2720,7 +2740,11 @@ export type DagsterTypeFragment_ListDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -3955,7 +3979,7 @@ export type DagsterTypeFragment_ListDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -3978,7 +4002,7 @@ export type DagsterTypeFragment_ListDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -5231,7 +5255,11 @@ export type DagsterTypeFragment_NullableDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -5254,7 +5282,11 @@ export type DagsterTypeFragment_NullableDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -6508,7 +6540,11 @@ export type DagsterTypeFragment_NullableDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -6531,7 +6567,11 @@ export type DagsterTypeFragment_NullableDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -7785,7 +7825,11 @@ export type DagsterTypeFragment_NullableDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -7808,7 +7852,11 @@ export type DagsterTypeFragment_NullableDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -9043,7 +9091,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -9066,7 +9114,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -10319,7 +10367,11 @@ export type DagsterTypeFragment_RegularDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -10342,7 +10394,11 @@ export type DagsterTypeFragment_RegularDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -11596,7 +11652,11 @@ export type DagsterTypeFragment_RegularDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -11619,7 +11679,11 @@ export type DagsterTypeFragment_RegularDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -12873,7 +12937,11 @@ export type DagsterTypeFragment_RegularDagsterType = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                    tags: Array<{
+                      __typename: 'DefinitionTag';
+                      key: string;
+                      value: string;
+                    } | null> | null;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -12896,7 +12964,11 @@ export type DagsterTypeFragment_RegularDagsterType = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  tags: Array<{
+                    __typename: 'DefinitionTag';
+                    key: string;
+                    value: string;
+                  } | null> | null;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -14131,7 +14203,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -14154,7 +14226,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -15391,7 +15463,7 @@ export type InnerDagsterTypeFragment_ListDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -15414,7 +15486,7 @@ export type InnerDagsterTypeFragment_ListDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -16646,7 +16718,7 @@ export type InnerDagsterTypeFragment_NullableDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -16669,7 +16741,7 @@ export type InnerDagsterTypeFragment_NullableDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -17901,7 +17973,7 @@ export type InnerDagsterTypeFragment_RegularDagsterType = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -17924,7 +17996,7 @@ export type InnerDagsterTypeFragment_RegularDagsterType = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };

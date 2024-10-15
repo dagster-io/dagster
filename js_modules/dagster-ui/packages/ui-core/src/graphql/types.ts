@@ -5390,7 +5390,7 @@ export type TableColumn = {
   constraints: TableColumnConstraints;
   description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
-  tags: Array<DefinitionTag>;
+  tags: Maybe<Array<Maybe<DefinitionTag>>>;
   type: Scalars['String']['output'];
 };
 

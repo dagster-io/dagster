@@ -15,7 +15,7 @@ export type TableSchemaFragment = {
       unique: boolean;
       other: Array<string>;
     };
-    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
   }>;
   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
 };

@@ -3206,7 +3206,7 @@ type TableColumn {
   type: String!
   description: String
   constraints: TableColumnConstraints!
-  tags: [DefinitionTag!]!
+  tags: [DefinitionTag]
 }
 
 type TableColumnConstraints {

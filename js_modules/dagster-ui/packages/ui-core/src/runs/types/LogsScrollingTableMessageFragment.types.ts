@@ -161,7 +161,11 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -184,7 +188,7 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -340,7 +344,7 @@ export type LogsScrollingTableMessageFragment_EngineEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -363,7 +367,7 @@ export type LogsScrollingTableMessageFragment_EngineEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -524,7 +528,11 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -547,7 +555,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -692,7 +700,11 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -715,7 +727,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -852,7 +864,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -875,7 +887,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1009,7 +1021,11 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -1032,7 +1048,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1225,7 +1241,7 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1248,7 +1264,7 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1424,7 +1440,7 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1447,7 +1463,7 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1605,7 +1621,7 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1628,7 +1644,7 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -1770,7 +1786,11 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -1793,7 +1813,7 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1929,7 +1949,7 @@ export type LogsScrollingTableMessageFragment_ObservationEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -1952,7 +1972,7 @@ export type LogsScrollingTableMessageFragment_ObservationEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2090,7 +2110,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2113,7 +2133,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2260,7 +2280,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2283,7 +2303,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2420,7 +2440,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2443,7 +2463,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2678,7 +2698,11 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
                   unique: boolean;
                   other: Array<string>;
                 };
-                tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                tags: Array<{
+                  __typename: 'DefinitionTag';
+                  key: string;
+                  value: string;
+                } | null> | null;
               }>;
               constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
             };
@@ -2701,7 +2725,7 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2839,7 +2863,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -2862,7 +2886,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -2999,7 +3023,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -3022,7 +3046,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string} | null> | null;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
