@@ -5,6 +5,8 @@ def ensure_airflow_installed() -> None:
     except ImportError:
         raise Exception(
             "Airflow is not installed. Please install Apache Airflow >= 2.0.0 before using this functionality."
+            "Airflow has very specific installation instructions, please refer to the official installation guide: "
+            "https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html"
         )
 
 
