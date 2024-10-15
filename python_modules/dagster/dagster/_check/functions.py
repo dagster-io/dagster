@@ -1108,12 +1108,7 @@ def sequence_param(
 ) -> Sequence[T]:
     ttype = type(obj)
     # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
-    if not (
-        ttype is list
-        or ttype is tuple
-        # even though str/bytes are technically sequences, its likely not desired so error
-        or (isinstance(obj, collections.abc.Sequence) and ttype not in (str, bytes))
-    ):
+    if not (ttype is list or ttype is tuple or isinstance(obj, collections.abc.Sequence)):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Sequence,), param_name, additional_message
         )
