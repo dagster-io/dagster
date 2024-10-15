@@ -44,7 +44,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     TaskHandle,
 )
 from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
-from dagster_airlift.core.utils import is_mapped_asset_spec, metadata_for_task_mapping
+from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
 
@@ -229,7 +229,7 @@ def test_transitive_asset_deps() -> None:
 
     b_asset = repo_def.assets_defs_by_key[b_key]
     assert [dep.asset_key for dep in next(iter(b_asset.specs)).deps] == [a_key]
-    assert not is_mapped_asset_spec(next(iter(b_asset.specs)))
+    assert not is_task_mapped_asset_spec(next(iter(b_asset.specs)))
 
     c_asset = repo_def.assets_defs_by_key[c_key]
     assert [dep.asset_key for dep in next(iter(c_asset.specs)).deps] == [b_key]
@@ -549,9 +549,15 @@ def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
     Definitions.validate_loadable(defs)
 
     mapping_info = build_airlift_metadata_mapping_info(defs)
-    assert mapping_info.asset_keys_per_dag_id["other_dag"] == {AssetKey("single_targeted_asset")}
-    assert mapping_info.asset_keys_per_dag_id["weekly_dag"] == {AssetKey("double_targeted_asset")}
-    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {AssetKey("double_targeted_asset")}
+    assert mapping_info.all_mapped_asset_keys_by_dag_id["other_dag"] == {
+        AssetKey("single_targeted_asset"),
+    }
+    assert mapping_info.all_mapped_asset_keys_by_dag_id["weekly_dag"] == {
+        AssetKey("double_targeted_asset"),
+    }
+    assert mapping_info.all_mapped_asset_keys_by_dag_id["daily_dag"] == {
+        AssetKey("double_targeted_asset"),
+    }
 
     assert mapping_info.task_handle_map[AssetKey("single_targeted_asset")] == {
         TaskHandle(dag_id="other_dag", task_id="task1")
@@ -597,11 +603,13 @@ def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
     Definitions.validate_loadable(defs)
 
     mapping_info = build_airlift_metadata_mapping_info(defs)
-    assert mapping_info.asset_keys_per_dag_id["weekly_dag"] == {
+    assert mapping_info.all_mapped_asset_keys_by_dag_id["weekly_dag"] == {
         AssetKey("other_asset"),
         AssetKey("double_targeted_asset"),
     }
-    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {AssetKey("double_targeted_asset")}
+    assert mapping_info.all_mapped_asset_keys_by_dag_id["daily_dag"] == {
+        AssetKey("double_targeted_asset"),
+    }
 
     assert mapping_info.task_handle_map[AssetKey("other_asset")] == {
         TaskHandle(dag_id="weekly_dag", task_id="task_for_other_asset")
@@ -647,11 +655,13 @@ def test_mixed_multiple_task_single_task_mapping_same_task() -> None:
     Definitions.validate_loadable(defs)
 
     mapping_info = build_airlift_metadata_mapping_info(defs)
-    assert mapping_info.asset_keys_per_dag_id["weekly_dag"] == {
+    assert mapping_info.all_mapped_asset_keys_by_dag_id["weekly_dag"] == {
         AssetKey("other_asset"),
         AssetKey("double_targeted_asset"),
     }
-    assert mapping_info.asset_keys_per_dag_id["daily_dag"] == {AssetKey("double_targeted_asset")}
+    assert mapping_info.all_mapped_asset_keys_by_dag_id["daily_dag"] == {
+        AssetKey("double_targeted_asset"),
+    }
 
     assert mapping_info.task_handle_map[AssetKey("other_asset")] == {
         TaskHandle(dag_id="weekly_dag", task_id="task1")

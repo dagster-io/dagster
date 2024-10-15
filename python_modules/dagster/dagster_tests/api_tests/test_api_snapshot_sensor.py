@@ -17,7 +17,7 @@ from dagster._serdes import deserialize_value
 from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 
-def test_external_sensor_grpc(instance):
+def test_remote_sensor_grpc(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         result = sync_get_external_sensor_execution_data_ephemeral_grpc(
             instance, repository_handle, "sensor_foo", None, None, None, None
@@ -29,7 +29,7 @@ def test_external_sensor_grpc(instance):
         assert run_request.tags == {"foo": "foo_tag", "dagster/sensor_name": "sensor_foo"}
 
 
-def test_external_sensor_grpc_fallback_to_streaming(instance):
+def test_remote_sensor_grpc_fallback_to_streaming(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         origin = repository_handle.get_remote_origin()
         with ephemeral_grpc_api_client(
@@ -63,7 +63,7 @@ def test_external_sensor_grpc_fallback_to_streaming(instance):
                     }
 
 
-def test_external_sensor_error(instance):
+def test_remote_sensor_error(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         with pytest.raises(DagsterUserCodeProcessError, match="womp womp"):
             sync_get_external_sensor_execution_data_ephemeral_grpc(
@@ -73,7 +73,7 @@ def test_external_sensor_error(instance):
 
 @pytest.mark.parametrize(argnames="timeout", argvalues=[0, 1], ids=["zero", "nonzero"])
 @pytest.mark.parametrize("env_var_default_val", [200, None], ids=["env-var-set", "env-var-not-set"])
-def test_external_sensor_client_timeout(instance, timeout: int, env_var_default_val: Optional[int]):
+def test_remote_sensor_client_timeout(instance, timeout: int, env_var_default_val: Optional[int]):
     if env_var_default_val:
         os.environ["DAGSTER_SENSOR_GRPC_TIMEOUT_SECONDS"] = str(env_var_default_val)
     with get_bar_repo_handle(instance) as repository_handle:
@@ -93,7 +93,7 @@ def test_external_sensor_client_timeout(instance, timeout: int, env_var_default_
             )
 
 
-def test_external_sensor_deserialize_error(instance):
+def test_remote_sensor_deserialize_error(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         origin = repository_handle.get_remote_origin()
         with ephemeral_grpc_api_client(
@@ -115,7 +115,7 @@ def test_external_sensor_deserialize_error(instance):
             assert isinstance(result, SensorExecutionErrorSnap)
 
 
-def test_external_sensor_raises_dagster_error(instance):
+def test_remote_sensor_raises_dagster_error(instance):
     with get_bar_repo_handle(instance) as repository_handle:
         with pytest.raises(DagsterUserCodeProcessError, match="Dagster error"):
             sync_get_external_sensor_execution_data_ephemeral_grpc(

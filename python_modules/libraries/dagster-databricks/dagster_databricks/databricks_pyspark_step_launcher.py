@@ -20,7 +20,7 @@ from dagster import (
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
-from dagster._core.errors import raise_execution_interrupts
+from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.context.init import InitResourceContext
@@ -418,25 +418,28 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             raise
 
     def _grant_permissions(
-        self, log: DagsterLogManager, databricks_run_id: int, request_retries: int = 3
+        self, log: DagsterLogManager, databricks_run_id: int, request_retries: int = 6
     ) -> None:
         client = self.databricks_runner.client.workspace_client
         # Retrieve run info
         cluster_id = None
         for i in range(1, request_retries + 1):
             run_info = client.jobs.get_run(databricks_run_id)
-            if run_info.cluster_instance is None:
-                check.failed("Databricks run {databricks_run_id} has null cluster_instance")
             # if a new job cluster is created, the cluster_instance key may not be immediately present in the run response
             try:
-                cluster_id = run_info.cluster_instance.cluster_id
+                if run_info.tasks is not None and run_info.tasks[0].cluster_instance is not None:
+                    cluster_id = run_info.tasks[0].cluster_instance.cluster_id
+                else:
+                    raise DagsterInvariantViolationError(
+                        f"run_info {run_info} doesn't contain cluster_id"
+                    )
                 break
             except:
                 log.warning(
                     f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id}. "
                     f"Retrying {i} of {request_retries} times."
                 )
-                time.sleep(5)
+                time.sleep(10)
         if not cluster_id:
             log.warning(
                 f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id} "

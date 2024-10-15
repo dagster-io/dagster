@@ -15,7 +15,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation import RemoteJob
-from dagster._core.remote_representation.external_data import external_job_data_from_def
+from dagster._core.remote_representation.external_data import JobDataSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 
 
@@ -51,6 +51,6 @@ def remote_job_from_recon_job(
         job_def = recon_job.get_definition()
 
     return RemoteJob(
-        external_job_data_from_def(job_def, include_parent_snapshot=True),
+        JobDataSnap.from_job_def(job_def, include_parent_snapshot=True),
         repository_handle=repository_handle,
     )

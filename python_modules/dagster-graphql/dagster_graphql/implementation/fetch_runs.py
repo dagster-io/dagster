@@ -327,9 +327,9 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_remote_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=remote_job.name)
 
 
 def get_execution_plan(
@@ -341,11 +341,11 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_remote_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
     return GrapheneExecutionPlan(
-        graphene_info.context.get_external_execution_plan(
-            remote_job=external_job,
+        graphene_info.context.get_execution_plan(
+            remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,

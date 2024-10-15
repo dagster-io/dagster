@@ -46,13 +46,13 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_representation.external_data import (
+    JobDataSnap,
     PartitionExecutionErrorSnap,
     RemoteJobSubsetResult,
     RepositoryErrorSnap,
     RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
-    external_job_data_from_def,
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
@@ -515,14 +515,14 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _get_repo_for_origin(
         self,
-        external_repo_origin: RemoteRepositoryOrigin,
+        remote_repo_origin: RemoteRepositoryOrigin,
     ) -> RepositoryDefinition:
         loaded_repos = check.not_none(self._loaded_repositories)
-        if external_repo_origin.repository_name not in loaded_repos.definitions_by_name:
+        if remote_repo_origin.repository_name not in loaded_repos.definitions_by_name:
             raise Exception(
-                f'Could not find a repository called "{external_repo_origin.repository_name}"'
+                f'Could not find a repository called "{remote_repo_origin.repository_name}"'
             )
-        return loaded_repos.definitions_by_name[external_repo_origin.repository_name]
+        return loaded_repos.definitions_by_name[remote_repo_origin.repository_name]
 
     def ReloadCode(
         self, _request: api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
@@ -820,7 +820,7 @@ class DagsterApiServer(DagsterApiServicer):
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
             ser_job_data = serialize_value(
-                external_job_data_from_def(job_def, include_parent_snapshot=True)
+                JobDataSnap.from_job_def(job_def, include_parent_snapshot=True)
             )
             return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:

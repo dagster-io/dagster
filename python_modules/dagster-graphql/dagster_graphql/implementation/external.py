@@ -92,15 +92,15 @@ def ensure_valid_config(remote_job: RemoteJob, run_config: object) -> object:
     return validated_config
 
 
-def get_external_execution_plan_or_raise(
+def get_remote_execution_plan_or_raise(
     graphql_context: BaseWorkspaceRequestContext,
-    external_pipeline: RemoteJob,
+    remote_job: RemoteJob,
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
 ) -> RemoteExecutionPlan:
-    return graphql_context.get_external_execution_plan(
-        remote_job=external_pipeline,
+    return graphql_context.get_execution_plan(
+        remote_job=remote_job,
         run_config=run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,

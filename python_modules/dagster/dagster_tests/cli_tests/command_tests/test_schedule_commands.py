@@ -189,7 +189,7 @@ def test_schedules_logs(gen_schedule_args):
             assert "scheduler.log" in result.output
 
 
-def test_check_repo_and_scheduler_no_external_schedules():
+def test_check_repo_and_scheduler_no_remote_schedules():
     repository = mock.MagicMock(spec=RemoteRepository)
     repository.get_schedules.return_value = []
     instance = mock.MagicMock(spec=DagsterInstance)
