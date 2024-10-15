@@ -325,13 +325,24 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @experimental
     @staticmethod
-    def in_progress() -> "BuiltinAutomationCondition":
+    def run_in_progress() -> "BuiltinAutomationCondition":
         """Returns an AutomationCondition that is true if the target is part of an in-progress run."""
         from dagster._core.definitions.declarative_automation.operands import (
-            InProgressAutomationCondition,
+            RunInProgressAutomationCondition,
         )
 
-        return InProgressAutomationCondition()
+        return RunInProgressAutomationCondition()
+
+    @public
+    @experimental
+    @staticmethod
+    def backfill_in_progress() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the target is part of an in-progress backfill."""
+        from dagster._core.definitions.declarative_automation.operands import (
+            BackfillInProgressAutomationCondition,
+        )
+
+        return BackfillInProgressAutomationCondition()
 
     @public
     @experimental
@@ -343,6 +354,17 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return ExecutionFailedAutomationCondition()
+
+    @public
+    @experimental
+    @staticmethod
+    def in_progress() -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true for an asset partition if it is part of an
+        in-progress run or backfill.
+        """
+        return (
+            AutomationCondition.run_in_progress() | AutomationCondition.backfill_in_progress()
+        ).with_label("in_progress")
 
     @public
     @experimental
