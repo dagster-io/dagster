@@ -12,7 +12,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {CreatedByTagCell, CreatedByTagCellWrapper} from './CreatedByTag';
+import {CreatedByTagCell, CreatedByTagCellWrapper} from './NewCreatedByTag';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RUN_ACTIONS_MENU_RUN_FRAGMENT, RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
@@ -138,7 +138,7 @@ export const RunsFeedRow = ({
         </Tag>
       </RowCell>
       <RowCell>
-        <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
+        <CreatedByTagCell tag={entry.launchedBy} onAddTag={onAddTag} />
       </RowCell>
       <RowCell>
         <div>
@@ -222,6 +222,10 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
     startTime
     endTime
     tags {
+      key
+      value
+    }
+    launchedBy {
       key
       value
     }
