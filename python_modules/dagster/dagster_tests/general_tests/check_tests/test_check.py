@@ -1115,6 +1115,8 @@ def test_sequence_param():
     assert check.sequence_param(tuple(), "sequence_param") == tuple()
 
     assert check.sequence_param(["foo"], "sequence_param", of_type=str) == ["foo"]
+    assert check.sequence_param("foo", "sequence_param") == "foo"
+    assert check.sequence_param("foo", "sequence_param", of_type=str) == "foo"
 
     with pytest.raises(ParameterCheckError):
         check.sequence_param(None, "sequence_param")
@@ -1124,12 +1126,6 @@ def test_sequence_param():
 
     with pytest.raises(CheckError):
         check.sequence_param(["foo"], "sequence_param", of_type=int)
-
-    with pytest.raises(CheckError):
-        check.sequence_param("foo", "sequence_param")
-
-    with pytest.raises(CheckError):
-        check.sequence_param("foo", "sequence_param", of_type=str)
 
 
 def test_opt_sequence_param():
@@ -1620,7 +1616,7 @@ BUILD_CASES = [
     (Bar, [Bar()], [Foo()]),
     (Optional[Bar], [Bar()], [Foo()]),
     (List[str], [["a", "b"]], [[1, 2]]),
-    (Sequence[str], [["a", "b"]], [[1, 2], "just_a_string"]),
+    (Sequence[str], [["a", "b"]], [[1, 2]]),
     (Iterable[str], [["a", "b"]], [[1, 2]]),
     (Set[str], [{"a", "b"}], [{1, 2}]),
     (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
