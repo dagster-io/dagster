@@ -17,12 +17,16 @@ except ImportError:
 
 
 def _create_url(storage_account, subdomain):
-    return f"https://{storage_account}.{subdomain}.core.windows.net/"
+    return f"https://{storage_account}.{subdomain}.net/"
 
 
-def create_adls2_client(storage_account: str, credential) -> DataLakeServiceClient:
+def create_adls2_client(storage_account: str, cloud_type: str, credential) -> DataLakeServiceClient:
     """Create an ADLS2 client."""
-    account_url = _create_url(storage_account, "dfs")
+    if cloud_type == "public":
+        subdomain = "dfs.core.windows"
+    elif cloud_type == "government":
+        subdomain = "dfs.core.usgovcloudapi"
+    account_url = _create_url(storage_account, subdomain)
     return DataLakeServiceClient(account_url, credential)
 
 

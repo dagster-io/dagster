@@ -52,6 +52,7 @@ DEFAULT_AZURE_CREDENTIAL_CONFIG = DagsterField(
 
 ADLS2_CLIENT_CONFIG = {
     "storage_account": DagsterField(StringSource, description="The storage account name."),
+    "cloud_type": DagsterField(StringSource, description="The Azure Cloud type. Either 'public' or 'government.'")
     "credential": DagsterField(
         Selector(
             {
