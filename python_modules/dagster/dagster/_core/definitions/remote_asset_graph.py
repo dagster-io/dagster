@@ -409,7 +409,12 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
     @cached_property
     def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:
         return {
-            k: AssetCheckNode(k, v.asset_check.blocking, v.asset_check.automation_condition)
+            k: AssetCheckNode(
+                k,
+                v.asset_check.additional_asset_keys,
+                v.asset_check.blocking,
+                v.asset_check.automation_condition,
+            )
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 
