@@ -11,6 +11,8 @@ from dagster_looker.lkml.dagster_looker_lkml_translator import (
 
 from dagster_looker_tests.looker_projects import (
     test_exception_derived_table_path,
+    test_extensions,
+    test_refinements,
     test_retail_demo_path,
 )
 
@@ -293,6 +295,41 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
         " in file `exception_derived_table.view.lkml`."
         " The upstream dependencies for the view will be omitted."
     ) in caplog.text
+
+
+def test_refinement_views(caplog: pytest.LogCaptureFixture):
+    [spec] = build_looker_asset_specs(project_dir=test_refinements)
+
+    assert spec.key == AssetKey(["view", "base"])
+    assert len(list(spec.deps)) == 1
+
+    # Ensure we get the asset key from the refined view
+    assert next(iter(spec.deps)).asset_key == AssetKey(["prod", "new_base_data"])
+
+
+def test_extension_views(caplog: pytest.LogCaptureFixture):
+    specs = build_looker_asset_specs(project_dir=test_extensions)
+
+    assert len(specs) == 3
+    assert set(spec.key for spec in specs) == {
+        AssetKey(["view", "base"]),
+        AssetKey(["view", "extension"]),
+        AssetKey(["view", "double_extension"]),
+    }
+
+    base_spec = next(spec for spec in specs if spec.key == AssetKey(["view", "base"]))
+    assert base_spec.description == "This is the base view"
+
+    extension_spec = next(spec for spec in specs if spec.key == AssetKey(["view", "extension"]))
+    assert extension_spec.description == "This is an extension view"
+
+    double_extension_spec = next(
+        spec for spec in specs if spec.key == AssetKey(["view", "double_extension"])
+    )
+    # Latest extension should take precedence
+    assert double_extension_spec.description == "This is an extension view"
+
+    assert base_spec.deps and (base_spec.deps == extension_spec.deps)
 
 
 def test_with_asset_key_replacements() -> None:
