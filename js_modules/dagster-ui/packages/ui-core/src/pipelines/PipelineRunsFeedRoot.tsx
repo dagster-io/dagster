@@ -59,7 +59,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
     ].filter(Boolean) as TokenizingFieldValue[];
   }, [isJob, pipelineName, snapshotId]);
 
-  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption();
+  const includeRunsFromBackfills = useIncludeRunsFromBackfillsOption(filterTokens);
 
   const runsFilter: RunsFilter = useMemo(() => {
     const allTokens = [...filterTokens, ...permanentTokens];
