@@ -92,8 +92,8 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
       const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i - 1)
         ? tick.timestamp
         : tick.endTimestamp
-        ? tick.endTimestamp * 1000
-        : now;
+          ? tick.endTimestamp * 1000
+          : now;
       const endX = getX(endTimestamp, viewport.width, minX, fullRange);
       return {
         ...tick,

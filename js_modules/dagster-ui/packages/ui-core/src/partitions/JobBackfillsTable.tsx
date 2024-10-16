@@ -6,8 +6,8 @@ import {
 } from '@dagster-io/ui-components';
 import {useEffect, useState} from 'react';
 
-import {JobBackfillsQuery, JobBackfillsQueryVariables} from './types/JobBackfillsTable.types';
 import {gql, useQuery} from '../apollo-client';
+import {JobBackfillsQuery, JobBackfillsQueryVariables} from './types/JobBackfillsTable.types';
 import {RepositorySelector} from '../graphql/types';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from '../instance/backfill/BackfillTable';
 import {Loading} from '../ui/Loading';
@@ -38,7 +38,9 @@ export const JobBackfillsTable = ({
 
   const refetch = queryResult.refetch;
   useEffect(() => {
-    refetchCounter && refetch();
+    if (refetchCounter) {
+      refetch();
+    }
   }, [refetch, refetchCounter]);
 
   return (

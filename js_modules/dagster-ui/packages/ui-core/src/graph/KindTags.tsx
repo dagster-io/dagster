@@ -64,10 +64,10 @@ export const AssetKind = ({
             onClick: currentPageFilter
               ? () => currentPageFilter.setState(new Set([kind, ...currentPageFilter.state]))
               : shouldLink
-              ? () => {
-                  window.location.href = linkToAssetTableWithKindFilter(kind);
-                }
-              : () => {},
+                ? () => {
+                    window.location.href = linkToAssetTableWithKindFilter(kind);
+                  }
+                : () => {},
           },
         ]}
       />

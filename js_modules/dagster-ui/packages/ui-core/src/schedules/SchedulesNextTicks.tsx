@@ -24,6 +24,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {TimestampDisplay} from './TimestampDisplay';
+import {gql, useLazyQuery} from '../apollo-client';
 import {
   RepositoryForNextTicksFragment,
   ScheduleFutureTickEvaluationResultFragment,
@@ -32,7 +33,6 @@ import {
   ScheduleTickConfigQuery,
   ScheduleTickConfigQueryVariables,
 } from './types/SchedulesNextTicks.types';
-import {gql, useLazyQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

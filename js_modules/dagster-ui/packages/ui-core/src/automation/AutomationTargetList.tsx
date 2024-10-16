@@ -189,8 +189,8 @@ const AssetSelectionTag = ({
           {error
             ? 'Error loading asset selection'
             : isAllAssets
-            ? 'All materializable assets'
-            : assetSelectionString}
+              ? 'All materializable assets'
+              : assetSelectionString}
         </ButtonLink>
       </Tag>
     </>

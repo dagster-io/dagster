@@ -9,7 +9,7 @@ export const SVGSaveZoomLevel = ({scale}: {scale: number}) => {
   useEffect(() => {
     try {
       window.localStorage.setItem(LINEAGE_GRAPH_ZOOM_LEVEL, JSON.stringify(scale));
-    } catch (err) {
+    } catch {
       // no-op
     }
   }, [scale]);

@@ -77,7 +77,7 @@ def get_partition_key_from_timestamp(
     check.invariant(
         datetime_in_tz.timestamp() == partition_window.end.timestamp(),
         (
-            "Expected logical date to match a partition in the partitions definition. This likely means that "
+            f"Expected logical date {datetime_in_tz.isoformat()} to match a partition in the partitions definition. This likely means that "
             "The partition range is not aligned with the scheduling interval in airflow."
         ),
     )

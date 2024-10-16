@@ -8,8 +8,8 @@ import {
 } from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
-import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/JobsPageContent.types';
 import {gql, useQuery} from '../apollo-client';
+import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/JobsPageContent.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,

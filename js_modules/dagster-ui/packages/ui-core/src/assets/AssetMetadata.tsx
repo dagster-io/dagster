@@ -1,7 +1,7 @@
 import {Box, MetadataTable} from '@dagster-io/ui-components';
 
-import {AssetNodeOpMetadataFragment} from './types/AssetMetadata.types';
 import {gql} from '../apollo-client';
+import {AssetNodeOpMetadataFragment} from './types/AssetMetadata.types';
 import {DAGSTER_TYPE_FRAGMENT} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {HIDDEN_METADATA_ENTRY_LABELS, MetadataEntry} from '../metadata/MetadataEntry';

@@ -15,8 +15,8 @@ import {
   isNodeOffscreen,
   isOpHighlighted,
 } from './common';
-import {OpGraphOpFragment} from './types/OpGraph.types';
 import {gql} from '../apollo-client';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 const NoOp = () => {};

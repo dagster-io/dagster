@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 
-import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 import {gql} from '../apollo-client';
+import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';

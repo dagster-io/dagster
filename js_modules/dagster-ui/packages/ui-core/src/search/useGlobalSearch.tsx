@@ -128,8 +128,8 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
                 description: manyLocations
                   ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
                   : isJob
-                  ? 'Job'
-                  : 'Pipeline',
+                    ? 'Job'
+                    : 'Pipeline',
                 href: workspacePath(
                   repoName,
                   locationName,

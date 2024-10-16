@@ -158,7 +158,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
       dbName: 'indexDBAsyncMemoizeDB',
       maxCount: 50,
     });
-  } catch (e) {}
+  } catch {}
 
   async function genHashKey(arg: T, ...rest: any[]) {
     const hash = hashFn ? hashFn(arg, ...rest) : arg;
@@ -211,8 +211,6 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
 //
 // Uses WeakMap to tie the lifecycle of the cache to the lifecycle of the
 // object argument.
-//
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function weakmapMemoize<T extends object, R>(
   fn: (arg: T, ...rest: any[]) => R,
 ): (arg: T, ...rest: any[]) => R {

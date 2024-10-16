@@ -9,7 +9,6 @@ export TUTORIAL_EXAMPLE_DIR := $(MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
 export TUTORIAL_DBT_PROJECT_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
-export DAGSTER_AIRLIFT_PROXIED_STATE_DIR := $(MAKEFILE_DIR)/tutorial_example/airflow_dags/proxied_state
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DAGSTER_URL := http://localhost:3000
 
@@ -41,6 +40,9 @@ airflow_run:
 
 dagster_run:
 	dagster dev -m tutorial_example.dagster_defs.definitions -p 3000
+
+backfill_today:
+	airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%d")
 
 
 update_readme_snippets:

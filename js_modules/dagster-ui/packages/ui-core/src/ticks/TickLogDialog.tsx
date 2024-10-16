@@ -11,8 +11,8 @@ import {
 } from '@dagster-io/ui-components';
 
 import {INSTIGATION_EVENT_LOG_FRAGMENT, InstigationEventLogTable} from './InstigationEventLogTable';
-import {TickLogEventsQuery, TickLogEventsQueryVariables} from './types/TickLogDialog.types';
 import {gql, useQuery} from '../apollo-client';
+import {TickLogEventsQuery, TickLogEventsQueryVariables} from './types/TickLogDialog.types';
 import {InstigationSelector} from '../graphql/types';
 import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -104,8 +104,8 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
     instigationType === 'SENSOR'
       ? 'https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#logging-in-sensors'
       : instigationType === 'SCHEDULE'
-      ? 'https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#logging-in-schedules'
-      : undefined;
+        ? 'https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#logging-in-schedules'
+        : undefined;
 
   return (
     <Box

@@ -7,7 +7,7 @@ export function getJSONForKey(key: string) {
     if (stored) {
       return JSON.parse(stored);
     }
-  } catch (err) {
+  } catch {
     if (typeof stored === 'string') {
       // With useStateWithStorage, some values like timezone are moving from `UTC` to `"UTC"`
       // in LocalStorage. To read the old values, pass through raw string values. We can

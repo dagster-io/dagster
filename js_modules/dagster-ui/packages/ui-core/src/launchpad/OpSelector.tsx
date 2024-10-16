@@ -2,8 +2,8 @@ import {Box, Colors, Popover} from '@dagster-io/ui-components';
 import {useRef, useState} from 'react';
 import styled from 'styled-components';
 
-import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 import {gql, useQuery} from '../apollo-client';
+import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -93,8 +93,8 @@ export const OpSelector = (props: IOpSelectorProps) => {
       ? `You must provide a valid op query or * to execute the entire job.`
       : `You must provide a valid solid query or * to execute the entire pipeline.`
     : serverProvidedSubsetError
-    ? serverProvidedSubsetError.message
-    : opsFetchError;
+      ? serverProvidedSubsetError.message
+      : opsFetchError;
 
   const onTextChange = (nextQuery: string) => {
     if (nextQuery === '') {

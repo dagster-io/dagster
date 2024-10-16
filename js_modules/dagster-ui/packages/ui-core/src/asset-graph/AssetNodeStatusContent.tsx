@@ -268,8 +268,8 @@ export function _buildAssetNodeStatusContent({
             {numMaterializing === 1
               ? `Materializing 1 partition...`
               : numMaterializing
-              ? `Materializing ${numMaterializing} partitions...`
-              : `Materializing...`}
+                ? `Materializing ${numMaterializing} partitions...`
+                : `Materializing...`}
           </span>
           {expanded && <SpacerDot />}
           {!numMaterializing || numMaterializing === 1 ? (
@@ -288,15 +288,15 @@ export function _buildAssetNodeStatusContent({
         overdue || numFailed || checksFailed
           ? AssetPartitionStatus.FAILED
           : numMissing
-          ? AssetPartitionStatus.MISSING
-          : AssetPartitionStatus.MATERIALIZED
+            ? AssetPartitionStatus.MISSING
+            : AssetPartitionStatus.MATERIALIZED
       ];
     const statusCase =
       overdue || numFailed || checksFailed
         ? (StatusCase.PARTITIONS_FAILED as const)
         : numMissing
-        ? (StatusCase.PARTITIONS_MISSING as const)
-        : (StatusCase.PARTITIONS_MATERIALIZED as const);
+          ? (StatusCase.PARTITIONS_MISSING as const)
+          : (StatusCase.PARTITIONS_MATERIALIZED as const);
 
     return {
       case: statusCase,

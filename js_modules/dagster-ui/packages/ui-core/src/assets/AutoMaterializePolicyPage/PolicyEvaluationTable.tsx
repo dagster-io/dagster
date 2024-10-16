@@ -136,8 +136,8 @@ const NewPolicyEvaluationTable = ({
             numTrue === 0 && !anyCandidatePartitions
               ? AssetConditionEvaluationStatus.SKIPPED
               : numTrue > 0
-              ? AssetConditionEvaluationStatus.TRUE
-              : AssetConditionEvaluationStatus.FALSE;
+                ? AssetConditionEvaluationStatus.TRUE
+                : AssetConditionEvaluationStatus.FALSE;
 
           let endTimestamp, startTimestamp;
           if ('endTimestamp' in evaluation) {
