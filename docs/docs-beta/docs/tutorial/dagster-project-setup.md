@@ -11,11 +11,6 @@ last_update:
 ## What you'll learn
 
 - Setting up a Dagster project with the recommended project structure
-- Creating Assets and using Resources to connect to external systems
-- Adding metadata to your assets
-- Building dependencies between assets
-- Running a pipeline by materializing assets
-- Adding schedules, sensors, and partitions to your assets
 
 
 ## Step 1: Create Dagster Project Files
@@ -85,8 +80,8 @@ The pyproject.toml file is a configuation file that specifices package core meta
 1. Create ETL tutorial directory
 
    ```bash title="Create the tutorial directory"
-   mkdir dagster-etl-tutorial
-   cd dagster-etl-tutorial
+    mkdir dagster-etl-tutorial
+    cd dagster-etl-tutorial
    ```
 
 2. Create Dagster Definitions File

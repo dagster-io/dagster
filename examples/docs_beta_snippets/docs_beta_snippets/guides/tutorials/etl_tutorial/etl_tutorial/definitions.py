@@ -6,25 +6,6 @@ from dagster_duckdb import DuckDBResource
 import dagster as dg
 
 
-def query_to_markdown(conn, query, limit=10):
-    """Performs SQL query and converts result to markdown.
-
-    Args:
-        conn(DuckDBPyConnection) connection to duckdb
-        query (str): query to run against duckdb connection
-        limit (int): maximum number of rows to render to markdown
-
-    Returns:
-        Markdown representation of query result
-
-    """
-    result = conn.execute(query).fetchdf()
-    if result.empty:
-        return "No results found."
-
-    return result.head(limit).to_markdown(index=False)
-
-
 @dg.asset(
     compute_kind="duckdb",
     group_name="ingestion",
@@ -40,14 +21,14 @@ def products(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
         preview_query = "select * from products limit 10"
-        preview_md = query_to_markdown(conn, preview_query)
+        preview_df = conn.execute(preview_query).fetchdf()
         row_count = conn.execute("select count(*) from products").fetchone()
         count = row_count[0] if row_count else 0
 
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(count),
-                "preview": dg.MetadataValue.md(preview_md),
+                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
 
@@ -67,14 +48,14 @@ def sales_reps(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
         preview_query = "select * from sales_reps limit 10"
-        preview_md = query_to_markdown(conn, preview_query)
+        preview_df = conn.execute(preview_query).fetchdf()
         row_count = conn.execute("select count(*) from sales_reps").fetchone()
         count = row_count[0] if row_count else 0
 
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(count),
-                "preview": dg.MetadataValue.md(preview_md),
+                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
 
@@ -93,14 +74,14 @@ def sales_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
         preview_query = "SELECT * FROM sales_data LIMIT 10"
-        preview_md = query_to_markdown(conn, preview_query)
+        preview_df = conn.execute(preview_query).fetchdf()
         row_count = conn.execute("select count(*) from sales_data").fetchone()
         count = row_count[0] if row_count else 0
 
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(count),
-                "preview": dg.MetadataValue.md(preview_md),
+                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
 
@@ -137,14 +118,15 @@ def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
         )
 
         preview_query = "select * from joined_data limit 10"
-        preview_md = query_to_markdown(conn, preview_query)
+        preview_df = conn.execute(preview_query).fetchdf()
+
         row_count = conn.execute("select count(*) from joined_data").fetchone()
         count = row_count[0] if row_count else 0
 
         return dg.MaterializeResult(
             metadata={
                 "row_count": dg.MetadataValue.int(count),
-                "preview": dg.MetadataValue.md(preview_md),
+                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
             }
         )
 
@@ -208,7 +190,7 @@ def monthly_sales_performance(
         )
 
         preview_query = f"select * from monthly_sales_performance where partition_date = '{month_to_fetch}';"
-        preview_md = query_to_markdown(conn, preview_query)
+        preview_df = conn.execute(preview_query).fetchdf()
         row_count = conn.execute(
             f"""
             select count(*)
@@ -221,7 +203,7 @@ def monthly_sales_performance(
     return dg.MaterializeResult(
         metadata={
             "row_count": dg.MetadataValue.int(count),
-            "preview": dg.MetadataValue.md(preview_md),
+            "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
         }
     )
 
@@ -266,7 +248,7 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
             """
         )
         preview_query = f"select * from product_performance where product_category = '{product_category_str}';"
-        preview_md = query_to_markdown(conn, preview_query)
+        preview_df = conn.execute(preview_query).fetchdf()
         row_count = conn.execute(
             f"""
             SELECT COUNT(*)
@@ -279,7 +261,7 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
     return dg.MaterializeResult(
         metadata={
             "row_count": dg.MetadataValue.int(count),
-            "preview": dg.MetadataValue.md(preview_md),
+            "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
         }
     )
 
@@ -329,9 +311,9 @@ def adhoc_request(
     """
 
     with duckdb.get_connection() as conn:
-        preview_md = query_to_markdown(conn, query)
+        preview_df = conn.execute(query).fetchdf()
 
-    return dg.MaterializeResult(metadata={"preview": dg.MetadataValue.md(preview_md)})
+    return dg.MaterializeResult(metadata={"preview": dg.MetadataValue.md(preview_df.to_markdown(index=False))})
 
 
 adhoc_request_job = dg.define_asset_job(

@@ -77,7 +77,6 @@ Next we will get the raw data for the project.
    ```
 
 
-
 ## What you've learned
 
 - Set up a Python virtual environment and installed Dagster
