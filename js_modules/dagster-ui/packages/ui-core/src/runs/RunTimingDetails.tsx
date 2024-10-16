@@ -2,8 +2,8 @@ import {Colors, MetadataTable} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {TimeElapsed} from './TimeElapsed';
-import {RunTimingFragment} from './types/RunTimingDetails.types';
 import {gql} from '../apollo-client';
+import {RunTimingFragment} from './types/RunTimingDetails.types';
 import {RunStatus} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 

@@ -37,8 +37,8 @@ export const AssetNodeLineage = ({
     params.lineageScope === 'upstream'
       ? maxDistances.upstream
       : params.lineageScope === 'downstream'
-      ? maxDistances.downstream
-      : Math.max(maxDistances.upstream, maxDistances.downstream);
+        ? maxDistances.downstream
+        : Math.max(maxDistances.upstream, maxDistances.downstream);
 
   const currentDepth = Math.max(1, Math.min(maxDepth, requestedDepth));
 

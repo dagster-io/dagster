@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {RawLogContent} from './RawLogContent';
 import {ILogCaptureInfo} from './RunMetadataProvider';
+import {gql, useQuery, useSubscription} from '../apollo-client';
 import {
   CapturedLogFragment,
   CapturedLogsMetadataQuery,
@@ -12,7 +13,6 @@ import {
   CapturedLogsSubscription,
   CapturedLogsSubscriptionVariables,
 } from './types/CapturedLogPanel.types';
-import {gql, useQuery, useSubscription} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {WebSocketContext} from '../app/WebSocketProvider';
 

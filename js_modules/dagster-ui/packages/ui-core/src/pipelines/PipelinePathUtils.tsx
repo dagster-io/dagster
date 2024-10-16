@@ -36,7 +36,7 @@ export function explorerPathToString(path: ExplorerPath) {
 function tryDecodeURIComponent(str: string) {
   try {
     return decodeURIComponent(str);
-  } catch (err) {
+  } catch {
     return str;
   }
 }

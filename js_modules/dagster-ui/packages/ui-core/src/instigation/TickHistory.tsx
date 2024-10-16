@@ -368,7 +368,9 @@ export const TickHistoryTimeline = ({
       pausePolling(false);
     }
     if (tick?.runIds) {
-      onHighlightRunIds && onHighlightRunIds(tick.runIds);
+      if (onHighlightRunIds) {
+        onHighlightRunIds(tick.runIds);
+      }
       pausePolling(true);
     }
   };

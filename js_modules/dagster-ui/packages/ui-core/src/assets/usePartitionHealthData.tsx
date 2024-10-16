@@ -6,11 +6,11 @@ import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPart
 import {Transition, assembleRangesFromTransitions} from './MultipartitioningSupport';
 import {usePartitionDataSubscriber} from './PartitionSubscribers';
 import {AssetKey} from './types';
+import {gql, useApolloClient} from '../apollo-client';
 import {
   PartitionHealthQuery,
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
-import {gql, useApolloClient} from '../apollo-client';
 import {assertUnreachable} from '../app/Util';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
@@ -377,8 +377,8 @@ export function keyCountByStateInSelection(
                 ),
               )
             : b.value.includes(status)
-            ? secondDimensionKeyCount
-            : 0),
+              ? secondDimensionKeyCount
+              : 0),
       0,
     );
   };
@@ -420,10 +420,10 @@ function addKeyIndexesToMaterializedRanges(
       partitions.materializedPartitions.includes(key)
         ? AssetPartitionStatus.MATERIALIZED
         : partitions.materializingPartitions.includes(key)
-        ? AssetPartitionStatus.MATERIALIZING
-        : partitions.failedPartitions.includes(key)
-        ? AssetPartitionStatus.FAILED
-        : AssetPartitionStatus.MISSING,
+          ? AssetPartitionStatus.MATERIALIZING
+          : partitions.failedPartitions.includes(key)
+            ? AssetPartitionStatus.FAILED
+            : AssetPartitionStatus.MISSING,
     );
     return spans.map(
       (s) =>
@@ -616,16 +616,17 @@ export function usePartitionHealthData(
 //
 export const healthRefreshHintFromLiveData = (liveData: LiveDataForNode | undefined) =>
   liveData
-    ? `${liveData.lastMaterialization?.timestamp},${liveData.runWhichFailedToMaterialize
-        ?.id},${JSON.stringify(liveData.partitionStats)}`
+    ? `${liveData.lastMaterialization?.timestamp},${
+        liveData.runWhichFailedToMaterialize?.id
+      },${JSON.stringify(liveData.partitionStats)}`
     : `-`;
 
 const rangeStatusToState = (rangeStatus: PartitionRangeStatus) =>
   rangeStatus === PartitionRangeStatus.MATERIALIZED
     ? AssetPartitionStatus.MATERIALIZED
     : rangeStatus === PartitionRangeStatus.MATERIALIZING
-    ? AssetPartitionStatus.MATERIALIZING
-    : AssetPartitionStatus.FAILED;
+      ? AssetPartitionStatus.MATERIALIZING
+      : AssetPartitionStatus.FAILED;
 
 export const PARTITION_HEALTH_QUERY = gql`
   query PartitionHealthQuery($assetKey: AssetKeyInput!) {

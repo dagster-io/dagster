@@ -58,8 +58,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     const filteredFilters = selectedFilter
       ? []
       : search
-      ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
-      : filters;
+        ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
+        : filters;
 
     const results: Record<string, {label: JSX.Element; key: string; value: any}[]> = {};
     if (search) {

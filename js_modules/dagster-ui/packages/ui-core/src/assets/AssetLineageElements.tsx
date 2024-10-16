@@ -3,8 +3,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetLineageFragment} from './types/AssetLineageElements.types';
 import {gql} from '../apollo-client';
+import {AssetLineageFragment} from './types/AssetLineageElements.types';
 import {Timestamp} from '../app/time/Timestamp';
 
 const AssetLineageInfoElement = ({

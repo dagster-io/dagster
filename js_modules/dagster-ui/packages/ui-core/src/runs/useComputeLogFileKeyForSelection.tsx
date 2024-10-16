@@ -51,13 +51,17 @@ export function useComputeLogFileKeyForSelection({
         metadata.logCaptureSteps,
         selectionStepKeys.length === 1 ? selectionStepKeys[0]! : stepKeys[0]!,
       );
-      matching && setComputeLogFileKey(matching);
+      if (matching) {
+        setComputeLogFileKey(matching);
+      }
     } else if (selectionStepKeys.length === 1 && computeLogFileKey !== selectionStepKeys[0]) {
       const matching = matchingComputeLogKeyFromStepKey(
         metadata.logCaptureSteps,
         selectionStepKeys[0]!,
       );
-      matching && setComputeLogFileKey(matching);
+      if (matching) {
+        setComputeLogFileKey(matching);
+      }
     }
   }, [
     stepKeys,

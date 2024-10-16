@@ -2,11 +2,11 @@ import {Alert, Box} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
+import {gql, useQuery} from '../apollo-client';
 import {
   QueueDaemonStatusQuery,
   QueueDaemonStatusQueryVariables,
 } from './types/QueuedRunsBanners.types';
-import {gql, useQuery} from '../apollo-client';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 

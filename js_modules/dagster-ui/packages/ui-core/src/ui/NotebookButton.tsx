@@ -33,7 +33,7 @@ export const NotebookButton = ({
     try {
       const url = new URL(value);
       return url.toString();
-    } catch (e) {
+    } catch {
       // Not a full valid URL
       return null;
     }

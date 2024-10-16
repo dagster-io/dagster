@@ -1,10 +1,10 @@
+import {ApolloClient, gql} from '../apollo-client';
 import {
   ConfigPartitionForAssetJobQuery,
   ConfigPartitionForAssetJobQueryVariables,
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from './types/ConfigFetch.types';
-import {ApolloClient, gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

@@ -149,8 +149,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         {!currentRunSelection || !currentRunSelection.present
           ? 'Re-executes the same step subset used for this run if one was present.'
           : !currentRunSelection.finished
-          ? 'Wait for all of the steps to finish to re-execute the same subset.'
-          : 'Re-execute the same step subset used for this run:'}
+            ? 'Wait for all of the steps to finish to re-execute the same subset.'
+            : 'Re-execute the same step subset used for this run:'}
         <StepSelectionDescription selection={currentRunSelection} />
       </div>
     ),
@@ -167,8 +167,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         {!selection.present
           ? 'Select a step or type a step subset to re-execute.'
           : !selection.finished
-          ? 'Wait for the steps to finish to re-execute them.'
-          : 'Re-execute the selected steps with existing configuration:'}
+            ? 'Wait for the steps to finish to re-execute them.'
+            : 'Re-execute the selected steps with existing configuration:'}
         <StepSelectionDescription selection={selection} />
       </div>
     ),
@@ -221,10 +221,10 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   const preferredRerun = selection.present
     ? selected
     : fromFailureEnabled && currentRunIsFromFailure
-    ? fromFailure
-    : currentRunSelection?.present
-    ? same
-    : null;
+      ? fromFailure
+      : currentRunSelection?.present
+        ? same
+        : null;
 
   const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
@@ -246,8 +246,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             primary.scope === '*'
               ? `Re-execute all (*)`
               : primary.scope
-              ? `Re-execute (${primary.scope})`
-              : `Re-execute ${primary.title}`
+                ? `Re-execute (${primary.scope})`
+                : `Re-execute ${primary.title}`
           }
           tooltip={tooltip()}
           icon={jobError?.icon}
