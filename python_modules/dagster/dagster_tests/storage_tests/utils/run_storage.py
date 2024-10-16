@@ -1735,6 +1735,65 @@ class TestRunStorage:
         )
         assert backfills_for_id[0].backfill_id == backfill.backfill_id
 
+    def test_delete_backfill(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        one = PartitionBackfill(
+            "one",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+
+        storage.add_backfill(one)
+
+        two = PartitionBackfill(
+            "two",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(two)
+        for _ in range(3):
+            storage.add_run(
+                TestRunStorage.build_run(
+                    run_id=make_new_run_id(),
+                    job_name="some_pipeline",
+                    status=DagsterRunStatus.SUCCESS,
+                    tags={BACKFILL_ID_TAG: two.backfill_id},
+                )
+            )
+
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=make_new_run_id(),
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={},
+            )
+        )
+
+        storage.delete_backfill("one")
+        assert storage.get_backfill("one") is None
+
+        res = storage.get_backfill("two")
+        assert res
+        assert res.backfill_id == "two"
+
+        assert len(storage.get_runs()) == 4
+        storage.delete_backfill("two")
+        assert storage.get_backfill("two") is None
+        # deleting a backfill does not delete the runs that are part of the backfill
+        assert len(storage.get_runs()) == 4
+
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
 

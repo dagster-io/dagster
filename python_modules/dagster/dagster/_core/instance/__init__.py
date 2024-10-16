@@ -3108,6 +3108,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         self._run_storage.update_backfill(partition_backfill)
 
+    def delete_backfill(self, backfill_id: str) -> None:
+        self._run_storage.delete_backfill(backfill_id)
+
     @property
     def should_start_background_run_thread(self) -> bool:
         """Gate on an experimental feature to start a thread that monitors for if the run should be canceled."""
