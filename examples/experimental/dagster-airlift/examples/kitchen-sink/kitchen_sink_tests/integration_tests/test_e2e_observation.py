@@ -56,6 +56,10 @@ def test_observation_defs_are_observed(
     from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
 
     af_instance = local_airflow_instance()
+    print("IMPORT ERRORS HERE")
+    import_errors = af_instance.list_import_errors()
+    print(af_instance.list_import_errors())
+    assert len(import_errors) == 0
 
     expected_obs_per_dag = {
         "simple_unproxied_dag": [AssetKey("my_asset"), AssetKey("my_downstream_asset")],
