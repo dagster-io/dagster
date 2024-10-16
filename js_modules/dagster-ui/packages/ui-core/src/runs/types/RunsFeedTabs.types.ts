@@ -5,18 +5,13 @@ import * as Types from '../../graphql/types';
 export type RunFeedTabsCountQueryVariables = Types.Exact<{
   queuedFilter: Types.RunsFilter;
   inProgressFilter: Types.RunsFilter;
+  includeRunsFromBackfills: Types.Scalars['Boolean']['input'];
 }>;
 
 export type RunFeedTabsCountQuery = {
   __typename: 'Query';
-  queuedCount:
-    | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
-    | {__typename: 'Runs'; count: number | null};
-  inProgressCount:
-    | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
-    | {__typename: 'Runs'; count: number | null};
+  queuedCount: {__typename: 'PythonError'} | {__typename: 'RunsFeedCount'; count: number};
+  inProgressCount: {__typename: 'PythonError'} | {__typename: 'RunsFeedCount'; count: number};
 };
 
-export const RunFeedTabsCountQueryVersion = 'e845ed2b46945b3ae28446fd8b44ce96a48d59f06ca2f58cfad30f8d4f4d8fa2';
+export const RunFeedTabsCountQueryVersion = 'fe1a07dfc152faddc4fd8936aee1f856b8d8308edf8078bdaa4e5cd111e044cc';

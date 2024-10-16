@@ -28,6 +28,8 @@ from dagster._annotations import deprecated, deprecated_param, experimental_para
 from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.run_request import RunRequest, SkipReason
@@ -38,7 +40,7 @@ from dagster._core.definitions.target import (
     ExecutableDefinition,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -54,6 +56,7 @@ from dagster._time import get_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -531,6 +534,10 @@ class ScheduleDefinition(IHasInternalInit):
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This is an experimental parameter that will replace `job` and `job_name`.
+        metadata (Optional[Mapping[str, Any]]): A set of metadata entries that annotate the
+            schedule. Values will be normalized to typed `MetadataValue` objects. Not currently
+            shown in the UI but available at runtime via
+            `ScheduleEvaluationContext.repository_def.get_schedule_def(<name>).metadata`.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
@@ -555,6 +562,7 @@ class ScheduleDefinition(IHasInternalInit):
             run_config_fn=None,
             tags=None,
             tags_fn=None,
+            metadata=self.metadata,
             should_execute=None,
             target=None,
         )
@@ -569,6 +577,7 @@ class ScheduleDefinition(IHasInternalInit):
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
         tags: Optional[Mapping[str, str]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Mapping[str, str]] = None,
         execution_timezone: Optional[str] = None,
@@ -665,7 +674,7 @@ class ScheduleDefinition(IHasInternalInit):
                 self._execution_fn = execution_fn
             else:
                 self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
-            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            self._tags = normalize_tags(tags, allow_private_system_tags=False, warning_stacklevel=5)
             self._tags_fn = None
             self._run_config_fn = None
         else:
@@ -691,7 +700,7 @@ class ScheduleDefinition(IHasInternalInit):
                     "Attempted to provide both tags_fn and tags as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            self._tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
+            self._tags = normalize_tags(tags, allow_private_system_tags=False, warning_stacklevel=5)
             if tags_fn:
                 self._tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
@@ -734,7 +743,9 @@ class ScheduleDefinition(IHasInternalInit):
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = normalize_tags(tags_fn(context), allow_reserved_tags=False)
+                    evaluated_tags = normalize_tags(
+                        tags_fn(context), allow_private_system_tags=False
+                    )
 
                 yield RunRequest(
                     run_key=None,
@@ -773,6 +784,9 @@ class ScheduleDefinition(IHasInternalInit):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
+        )
 
     @staticmethod
     def dagster_internal_init(
@@ -784,6 +798,7 @@ class ScheduleDefinition(IHasInternalInit):
         run_config_fn: Optional[ScheduleRunConfigFunction],
         tags: Optional[Mapping[str, str]],
         tags_fn: Optional[ScheduleTagsFunction],
+        metadata: Optional[RawMetadataMapping],
         should_execute: Optional[ScheduleShouldExecuteFunction],
         environment_vars: Optional[Mapping[str, str]],
         execution_timezone: Optional[str],
@@ -809,6 +824,7 @@ class ScheduleDefinition(IHasInternalInit):
             run_config_fn=run_config_fn,
             tags=tags,
             tags_fn=tags_fn,
+            metadata=metadata,
             should_execute=should_execute,
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
@@ -897,6 +913,12 @@ class ScheduleDefinition(IHasInternalInit):
     def tags(self) -> Mapping[str, str]:
         """Mapping[str, str]: The tags for this schedule."""
         return self._tags
+
+    @public
+    @property
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        """Mapping[str, str]: The metadata for this schedule."""
+        return self._metadata
 
     @public
     @property

@@ -248,6 +248,7 @@ export const AssetCatalogTableMockAssets: Asset[] = [
     definition: buildAssetNode({
       id: 'test.py.repo.["good_asset"]',
       groupName: 'GROUP2',
+      isExecutable: true,
       partitionDefinition: null,
       hasMaterializePermission: true,
       computeKind: 'snowflake',
@@ -269,6 +270,7 @@ export const AssetCatalogTableMockAssets: Asset[] = [
         cronScheduleTimezone: null,
       }),
       hasMaterializePermission: true,
+      isExecutable: true,
       computeKind: null,
       description: null,
       repository,

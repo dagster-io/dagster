@@ -964,6 +964,22 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
 
+    def subset_with_all_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        first_window = self.get_first_partition_window(current_time)
+        last_window = self.get_last_partition_window(current_time)
+        windows = (
+            []
+            if first_window is None or last_window is None
+            else [TimeWindow(first_window.start, last_window.end)]
+        )
+        return TimeWindowPartitionsSubset(
+            partitions_def=self, num_partitions=None, included_time_windows=windows
+        )
+
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
@@ -2133,16 +2149,14 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.remote_representation.external_data import (
-            external_time_window_partitions_definition_from_def,
-        )
+        from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
 
         # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
         # this partitions definition into a raw TimeWindowPartitionsDefinition to make it
         # serializable. to do this, we just convert it to its external representation and back.
         partitions_def = self.partitions_def
         if type(self.partitions_def) != TimeWindowPartitionsSubset:
-            partitions_def = external_time_window_partitions_definition_from_def(
+            partitions_def = TimeWindowPartitionsSnap.from_def(
                 partitions_def
             ).get_partitions_definition()
         return TimeWindowPartitionsSubset(
@@ -2474,9 +2488,7 @@ class TimeWindowPartitionsSubset(
         )
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.remote_representation.external_data import (
-            external_time_window_partitions_definition_from_def,
-        )
+        from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
 
         # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
         # this partitions definition into a raw TimeWindowPartitionsDefinition to make it
@@ -2485,7 +2497,7 @@ class TimeWindowPartitionsSubset(
         # and so this conversion is rarely necessary.
         partitions_def = self.partitions_def
         if type(self.partitions_def) != TimeWindowPartitionsSubset:
-            partitions_def = external_time_window_partitions_definition_from_def(
+            partitions_def = TimeWindowPartitionsSnap.from_def(
                 partitions_def
             ).get_partitions_definition()
             return self.with_partitions_def(partitions_def)

@@ -30,7 +30,7 @@ def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
     )
 
 
-def _default_failure_email_subject(context) -> str:
+def _default_failure_email_subject(context: "RunFailureSensorContext") -> str:
     return f"Dagster Run Failed: {context.dagster_run.job_name}"
 
 
@@ -55,7 +55,7 @@ def send_email_via_ssl(
     smtp_host: str,
     smtp_port: int,
     smtp_user: str,
-):
+) -> None:
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
         server.login(smtp_user, email_password)
@@ -70,7 +70,7 @@ def send_email_via_starttls(
     smtp_host: str,
     smtp_port: int,
     smtp_user: str,
-):
+) -> None:
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls(context=context)

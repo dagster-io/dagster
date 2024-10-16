@@ -12,7 +12,8 @@ import styled from 'styled-components';
 
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
-import {RunFilterToken, runsPathWithFilters} from './RunsFilterInput';
+import {getBackfillPath} from './RunsFeedUtils';
+import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -23,11 +24,13 @@ export const RunRowTags = ({
   onAddTag,
   isHovered,
   isJob,
+  hideTags,
 }: {
   run: Pick<RunTableRunFragment, 'tags' | 'assetSelection' | 'mode'>;
   onAddTag?: (token: RunFilterToken) => void;
   isHovered: boolean;
   isJob: boolean;
+  hideTags?: string[];
 }) => {
   const {isTagPinned, onToggleTagPin} = useTagPinning();
   const [showRunTags, setShowRunTags] = React.useState(false);
@@ -47,15 +50,8 @@ export const RunRowTags = ({
     const tagKeys: Set<string> = new Set([]);
     const tags: TagType[] = [];
 
-    if (targetBackfill && targetBackfill.pinned) {
-      const link = run.assetSelection?.length
-        ? `/overview/backfills/${targetBackfill.value}`
-        : runsPathWithFilters([
-            {
-              token: 'tag',
-              value: `${DagsterTag.Backfill}=${targetBackfill.value}`,
-            },
-          ]);
+    if (targetBackfill && targetBackfill.pinned && !hideTags?.includes(DagsterTag.Backfill)) {
+      const link = getBackfillPath(targetBackfill.value, !!run.assetSelection?.length);
       tags.push({
         ...targetBackfill,
         link,
@@ -67,12 +63,15 @@ export const RunRowTags = ({
         // We already added this tag
         return;
       }
+      if (hideTags?.includes(tag.key)) {
+        return;
+      }
       if (tag.pinned) {
         tags.push(tag);
       }
     });
     return tags;
-  }, [allTagsWithPinned, run.assetSelection?.length]);
+  }, [allTagsWithPinned, hideTags, run.assetSelection?.length]);
 
   return (
     <>

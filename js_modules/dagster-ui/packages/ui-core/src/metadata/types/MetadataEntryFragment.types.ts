@@ -209,6 +209,31 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_TimestampMetadataEntry
   | MetadataEntryFragment_UrlMetadataEntry;
 
+export type TableMetadataEntryFragment = {
+  __typename: 'TableMetadataEntry';
+  label: string;
+  table: {
+    __typename: 'Table';
+    records: Array<string>;
+    schema: {
+      __typename: 'TableSchema';
+      columns: Array<{
+        __typename: 'TableColumn';
+        name: string;
+        description: string | null;
+        type: string;
+        constraints: {
+          __typename: 'TableColumnConstraints';
+          nullable: boolean;
+          unique: boolean;
+          other: Array<string>;
+        };
+      }>;
+      constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
+    };
+  };
+};
+
 export type TableSchemaForMetadataEntryFragment = {
   __typename: 'TableSchemaMetadataEntry';
   schema: {

@@ -48,7 +48,16 @@ def validate_command_options(f):
 )
 @definitions_cli.command(
     name="validate",
-    help="Validate if Dagster definitions are loadable.",
+    help="""
+    The `dagster definitions validate` command loads and validate your Dagster definitions using a Dagster instance.
+
+    This command indicates which code locations contain errors, and which ones can be successfully loaded. 
+    Code locations containing errors are considered invalid, otherwise valid.
+    
+    This command returns an exit code 1 when errors are found, otherwise an exit code 0.
+    
+    This command should be run in a Python environment where the `dagster` package is installed.
+    """,
 )
 def definitions_validate_command(log_level: str, log_format: str, **kwargs: ClickArgValue):
     configure_loggers(formatter=log_format, log_level=log_level.upper())

@@ -47,6 +47,9 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -60,7 +63,10 @@ from dagster._core.instance_for_test import (
     instance_for_test as instance_for_test,
 )
 from dagster._core.launcher import RunLauncher
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
@@ -68,6 +74,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace.workspace import CodeLocationEntry, WorkspaceSnapshot
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._time import create_datetime, get_timezone
@@ -151,7 +158,7 @@ def create_run_for_test(
     job_snapshot=None,
     execution_plan_snapshot=None,
     parent_job_snapshot=None,
-    external_job_origin=None,
+    remote_job_origin=None,
     job_code_origin=None,
     asset_selection=None,
     asset_check_selection=None,
@@ -171,7 +178,7 @@ def create_run_for_test(
         job_snapshot=job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_job_snapshot=parent_job_snapshot,
-        external_job_origin=external_job_origin,
+        remote_job_origin=remote_job_origin,
         job_code_origin=job_code_origin,
         asset_selection=asset_selection,
         asset_check_selection=asset_check_selection,
@@ -423,7 +430,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def submit_run(self, context: SubmitRunContext):
         dagster_run = context.dagster_run
-        check.not_none(dagster_run.external_job_origin)
+        check.not_none(dagster_run.remote_job_origin)
         self._queue.append(dagster_run)
         return dagster_run
 
@@ -525,9 +532,9 @@ def create_test_daemon_workspace_context(
             yield workspace_process_context
 
 
-def load_external_repo(
+def load_remote_repo(
     workspace_context: WorkspaceProcessContext, repo_name: str
-) -> ExternalRepository:
+) -> RemoteRepository:
     code_location_entry = next(
         iter(workspace_context.create_request_context().get_code_location_entries().values())
     )
@@ -763,3 +770,21 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
 
 
 class TestType: ...
+
+
+def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> WorkspaceSnapshot:
+    remote_repos = {}
+    for repo in repos:
+        remote_repos[repo.name] = RemoteRepository(
+            RepositorySnap.from_def(repo),
+            repository_handle=RepositoryHandle.for_test(
+                location_name="test",
+                repository_name=repo.name,
+            ),
+            instance=DagsterInstance.ephemeral(),
+        )
+    mock_entry = unittest.mock.MagicMock(spec=CodeLocationEntry)
+    mock_location = unittest.mock.MagicMock(spec=CodeLocation)
+    mock_location.get_repositories.return_value = remote_repos
+    type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
+    return WorkspaceSnapshot(code_location_entries={"test": mock_entry})

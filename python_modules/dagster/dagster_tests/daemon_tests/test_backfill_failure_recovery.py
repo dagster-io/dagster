@@ -5,7 +5,7 @@ from signal import Signals
 import pytest
 from dagster import DagsterInstance
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation import ExternalRepository
+from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace_context,
@@ -47,12 +47,12 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+def test_simple(instance: DagsterInstance, remote_repo: RemoteRepository):
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -77,13 +77,13 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
 )
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_before_submit(
-    crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
+    crash_signal: Signals, instance: DagsterInstance, remote_repo: RemoteRepository
 ):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,
@@ -124,13 +124,13 @@ def test_before_submit(
 )
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_crash_after_submit(
-    crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
+    crash_signal: Signals, instance: DagsterInstance, remote_repo: RemoteRepository
 ):
-    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
-            partition_set_origin=external_partition_set.get_external_origin(),
+            partition_set_origin=partition_set.get_remote_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=["one", "two", "three"],
             from_failure=False,

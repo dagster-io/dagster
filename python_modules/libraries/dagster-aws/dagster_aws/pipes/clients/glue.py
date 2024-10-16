@@ -17,7 +17,7 @@ from dagster._core.pipes.client import (
 from dagster._core.pipes.utils import open_pipes_session
 
 from dagster_aws.pipes.context_injectors import PipesS3ContextInjector
-from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
+from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:
     from mypy_boto3_glue.client import GlueClient
@@ -59,7 +59,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         self,
         context_injector: PipesContextInjector,
         message_reader: Optional[PipesMessageReader] = None,
-        client: Optional[boto3.client] = None,  # pyright: ignore (reportGeneralTypeIssues)
+        client: Optional["GlueClient"] = None,
         forward_termination: bool = True,
     ):
         self._client: GlueClient = client or boto3.client("glue")
@@ -186,8 +186,6 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             if isinstance(self._context_injector, PipesS3ContextInjector):
                 params["Arguments"].update(pipes_args)  # pyright: ignore (reportAttributeAccessIssue)
 
-            start_timestamp = time.time() * 1000  # unix time in ms
-
             try:
                 run_id = self._client.start_job_run(**params)["JobRunId"]  # pyright: ignore (reportArgumentType)
 
@@ -218,12 +216,21 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             else:
                 context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
 
+            # Glue is dumping both stdout and stderr to the same log group called */output
             if isinstance(self._message_reader, PipesCloudWatchMessageReader):
-                # TODO: consume messages in real-time via a background thread
-                # so we don't have to wait for the job run to complete
-                # before receiving any logs
-                self._message_reader.consume_cloudwatch_logs(
-                    f"{log_group}/output", run_id, start_time=int(start_timestamp)
+                session.report_launched(
+                    {
+                        "extras": {"log_group": f"{log_group}/output", "log_stream": run_id},
+                    }
+                )
+            if isinstance(self._message_reader, PipesCloudWatchMessageReader):
+                self._message_reader.add_log_reader(
+                    PipesCloudWatchLogReader(
+                        client=self._message_reader.client,
+                        log_group=f"{log_group}/output",
+                        log_stream=run_id,
+                        start_time=int(session.created_at.timestamp() * 1000),
+                    ),
                 )
 
         return PipesClientCompletedInvocation(session)

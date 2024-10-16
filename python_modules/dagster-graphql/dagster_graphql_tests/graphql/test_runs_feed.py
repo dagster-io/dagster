@@ -5,6 +5,7 @@ import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
 from dagster._time import get_current_timestamp
@@ -16,8 +17,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 )
 
 GET_RUNS_FEED_QUERY = """
-query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter) {
-    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter) {
+query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter, $includeRunsFromBackfills: Boolean!) {
+    runsFeedOrError(cursor: $cursor, limit: $limit, filter: $filter, includeRunsFromBackfills: $includeRunsFromBackfills) {
       ... on RunsFeedConnection {
           results {
             __typename
@@ -45,6 +46,11 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!, $filter: RunsFilter) {
         stack
         message
       }
+    }
+    runsFeedCountOrError(filter: $filter, includeRunsFromBackfills: $includeRunsFromBackfills) {
+        ... on RunsFeedCount {
+            count
+        }
     }
 }
 """
@@ -97,6 +103,11 @@ def _create_backfill(
     return backfill.backfill_id
 
 
+def _assert_results_match_count_match_expected(query_result, expected_count):
+    assert len(query_result.data["runsFeedOrError"]["results"]) == expected_count
+    assert query_result.data["runsFeedCountOrError"]["count"] == expected_count
+
+
 class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
     """Tests for the runs feed that can be done on a instance that has 10 runs and 10 backfills
     created in alternating order. Split these tests into a separate class so that we can make the runs
@@ -120,8 +131,10 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
+        _assert_results_match_count_match_expected(result, 20)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -135,13 +148,15 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
-
+        # limit was used, count will differ from number of results returned
         assert len(result.data["runsFeedOrError"]["results"]) == 10
+
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -159,6 +174,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": old_cursor,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -178,6 +194,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 15,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -201,10 +218,12 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
-
+        # limit was used, count will differ from number of results returned
         assert len(result.data["runsFeedOrError"]["results"]) == 5
+
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
@@ -220,6 +239,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -251,6 +271,7 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": old_cursor.to_string(),
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -275,9 +296,11 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 25,
                 "cursor": None,
-                "filter": {"excludeSubruns": False},
+                "filter": None,
+                "includeRunsFromBackfills": True,
             },
         )
+        _assert_results_match_count_match_expected(result, 10)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             assert res["__typename"] == "Run"
@@ -291,7 +314,8 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"excludeSubruns": False},
+                "filter": None,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -314,7 +338,8 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 5,
                 "cursor": None,
-                "filter": {"excludeSubruns": False},
+                "filter": None,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -339,7 +364,8 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 5,
                 "cursor": old_cursor,
-                "filter": {"excludeSubruns": False},
+                "filter": None,
+                "includeRunsFromBackfills": True,
             },
         )
 
@@ -376,13 +402,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         prev_run_time = None
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
@@ -400,13 +427,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
     def test_get_runs_feed_one_backfill_long_ago(self, graphql_context):
@@ -422,6 +450,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -453,6 +482,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -483,6 +513,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -510,6 +541,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -541,6 +573,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 5,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -573,6 +606,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
@@ -610,13 +644,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 9
+        _assert_results_match_count_match_expected(result, 9)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -626,11 +661,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["SUCCESS"]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -639,11 +675,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["FAILURE"]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -652,11 +689,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELING"]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -665,11 +703,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["CANCELED"]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -678,11 +717,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"statuses": ["NOT_STARTED"]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
     def test_get_runs_feed_filter_status_and_show_subruns(self, graphql_context):
         _create_run(graphql_context, status=DagsterRunStatus.SUCCESS)
@@ -702,14 +742,15 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"excludeSubruns": False},
+                "filter": None,
+                "includeRunsFromBackfills": True,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        _assert_results_match_count_match_expected(result, 4)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -718,12 +759,13 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"statuses": ["SUCCESS"], "excludeSubruns": False},
+                "filter": {"statuses": ["SUCCESS"]},
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -731,12 +773,13 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"statuses": ["FAILURE"], "excludeSubruns": False},
+                "filter": {"statuses": ["FAILURE"]},
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -744,12 +787,13 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"statuses": ["CANCELING"], "excludeSubruns": False},
+                "filter": {"statuses": ["CANCELING"]},
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -757,12 +801,13 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"statuses": ["CANCELED"], "excludeSubruns": False},
+                "filter": {"statuses": ["CANCELED"]},
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
 
     def test_get_runs_feed_filter_create_time(self, graphql_context):
         nothing_created_ts = get_current_timestamp()
@@ -790,13 +835,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 20
+        _assert_results_match_count_match_expected(result, 20)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -806,11 +852,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": nothing_created_ts},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -820,11 +867,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": half_created_ts},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        _assert_results_match_count_match_expected(result, 10)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -834,11 +882,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 25,
                 "cursor": None,
                 "filter": {"createdBefore": all_created_ts},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 20
+        _assert_results_match_count_match_expected(result, 20)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         # ensure the cursor overrides the createdBefore filter when the query is called multiple times for
@@ -850,6 +899,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 6,
                 "cursor": None,
                 "filter": {"createdBefore": half_created_ts},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -864,6 +914,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 4,
                 "cursor": result.data["runsFeedOrError"]["cursor"],
                 "filter": {"createdBefore": half_created_ts},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
@@ -878,7 +929,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         repository = code_location.get_repository("test_repo")
 
         partition_set_origin = RemotePartitionSetOrigin(
-            repository_origin=repository.get_external_origin(),
+            repository_origin=repository.get_remote_origin(),
             partition_set_name="foo_partition",
         )
         for _ in range(3):
@@ -890,7 +941,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             _create_run_for_backfill(graphql_context, backfill_id, job_name="foo")
 
         partition_set_origin = RemotePartitionSetOrigin(
-            repository_origin=repository.get_external_origin(),
+            repository_origin=repository.get_remote_origin(),
             partition_set_name="bar_partition",
         )
         for _ in range(3):
@@ -908,13 +959,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        _assert_results_match_count_match_expected(result, 12)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -924,11 +976,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"pipelineName": "foo"},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -937,11 +990,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"pipelineName": "bar"},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
 
     def test_get_runs_feed_filter_tags(self, graphql_context):
         if not self.supports_filtering():
@@ -967,13 +1021,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        _assert_results_match_count_match_expected(result, 12)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -983,11 +1038,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "bar"}]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 6
+        _assert_results_match_count_match_expected(result, 6)
 
         # filtering for tags that are only on sub-runs of backfills should not return the backfill
         result = execute_dagster_graphql(
@@ -997,11 +1053,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "baz", "value": "quux"}]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 0
+        _assert_results_match_count_match_expected(result, 0)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1010,11 +1067,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "baz"}]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 3
+        _assert_results_match_count_match_expected(result, 3)
 
     def test_get_runs_feed_filters_that_dont_apply_to_backfills(self, graphql_context):
         run = _create_run(graphql_context)
@@ -1028,13 +1086,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -1044,11 +1103,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"runIds": [run.run_id]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
     def test_get_runs_feed_filters_that_dont_apply_to_backfills_and_show_subruns(
         self, graphql_context
@@ -1063,14 +1123,15 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 20,
                 "cursor": None,
-                "filter": {"excludeSubruns": False},
+                "filter": None,
+                "includeRunsFromBackfills": True,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -1079,12 +1140,13 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"runIds": [run.run_id], "excludeSubruns": False},
+                "filter": {"runIds": [run.run_id]},
+                "includeRunsFromBackfills": True,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        _assert_results_match_count_match_expected(result, 1)
 
     def test_get_runs_feed_filter_tags_and_status(self, graphql_context):
         if not self.supports_filtering():
@@ -1129,13 +1191,14 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 20,
                 "cursor": None,
                 "filter": None,
+                "includeRunsFromBackfills": False,
             },
         )
 
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 12
+        _assert_results_match_count_match_expected(result, 12)
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -1145,11 +1208,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "bar"}], "statuses": ["SUCCESS"]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 2
+        _assert_results_match_count_match_expected(result, 2)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1161,11 +1225,12 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                     "tags": [{"key": "foo", "value": "bar"}],
                     "statuses": ["FAILURE", "CANCELED"],
                 },
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
-        assert len(result.data["runsFeedOrError"]["results"]) == 4
+        _assert_results_match_count_match_expected(result, 4)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1174,8 +1239,67 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
                 "limit": 10,
                 "cursor": None,
                 "filter": {"tags": [{"key": "foo", "value": "baz"}], "statuses": ["FAILURE"]},
+                "includeRunsFromBackfills": False,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        _assert_results_match_count_match_expected(result, 1)
+
+    def test_get_backfill_id_filter(self, graphql_context):
+        backfill_id = _create_backfill(graphql_context)
+        _create_run_for_backfill(graphql_context, backfill_id)
+        _create_run_for_backfill(graphql_context, backfill_id)
+        _create_run_for_backfill(graphql_context, backfill_id)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 20,
+                "cursor": None,
+                "filter": None,
+                "includeRunsFromBackfills": False,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert len(result.data["runsFeedOrError"]["results"]) == 1
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {"tags": [{"key": BACKFILL_ID_TAG, "value": backfill_id}]},
+                "includeRunsFromBackfills": False,
             },
         )
         assert not result.errors
         assert result.data
         assert len(result.data["runsFeedOrError"]["results"]) == 1
+
+        assert result.data["runsFeedOrError"]["results"][0]["__typename"] == "PartitionBackfill"
+        assert result.data["runsFeedOrError"]["results"][0]["id"] == backfill_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+                "filter": {
+                    "tags": [
+                        {"key": BACKFILL_ID_TAG, "value": backfill_id},
+                        {"key": "not", "value": "present"},
+                    ]
+                },
+                "includeRunsFromBackfills": False,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        _assert_results_match_count_match_expected(result, 0)

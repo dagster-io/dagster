@@ -194,21 +194,19 @@ a.pyobject {
   h4,
   h5,
   h6 {
-    --ifm-h1-font-size: 2rem;
+    --ifm-h1-font-size: 1.8rem;
+    --ifm-h1-vertical-rhythm-bottom: 0.5;
     --ifm-h2-font-size: 1.5rem;
+    --ifm-heading-vertical-rhythm-bottom: 1;
     --ifm-h3-font-size: 1.3rem;
     --ifm-h4-font-size: 1rem;
     --ifm-h5-font-size: 0.8rem;
   }
 
-  // Emulate horizontal rule above h2 headers
-  h2 {
-    border-top: 1px;
-    border-top-style: solid;
-    border-top-color: var(--theme-color-keyline);
-    margin-top: 0px;
-    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading));
+  h1 {
+    margin-top: 8px;
   }
+
 
   // We want this to only apply to inline code
   :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
@@ -552,19 +550,23 @@ dd code {
   display: grid;
   gap: 1rem;
   margin-bottom: 2rem;
-
   &.cols-2 {
     grid-template-columns: repeat(2, 1fr);
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
   }
   &.cols-3 {
     grid-template-columns: repeat(3, 1fr);
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
   }
   &.cols-4 {
     grid-template-columns: repeat(4, 1fr);
-  }
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
   }
 }
 
@@ -659,14 +661,72 @@ span {
 /* Announcement bar */
 div[class^='announcementBar_'] {
   color: var(--theme-color-text);
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  background-color: var(--theme-color-background-yellow);
+  padding-top: 8px;
+  padding-bottom: 8px;
+  height: auto;
+  background-color: var(--theme-color-background-blue);
+  border-bottom: 1px solid var(--theme-color-keyline);
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+  }
+  a {
+    color: var(--theme-color-accent-blue);
+    font-weight: 500;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
+
 
 /* Feedback navigation item */
 .feedback-nav-link {
-  color: var(--theme-color-text-yellow);
-  text-decoration: underline;
+  color: var(--theme-color-text-light);
+  display: block;
+  font-weight: 500;
+  padding: 0.5rem .5rem;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid var(--theme-color-border-default);
+  border-radius: 8px;
+  text-decoration: none;
+    transition: all 0.3s ease;
+
+  &:hover {
+    background-color: var(--theme-color-background-light);
+    color:  var(--theme-color-text-light);
+    border-color: var(--theme-color-border-hover);
+  }
+
 }
 
+/* Markdown Card */
+
+  .card {
+    background-color: var(--theme-color-background-default);
+    border: 1px solid var(--theme-color-keyline) !important;
+    transition: all .3s ease;
+    
+    h2: {
+      font-size: 1.5rem;
+      margin-top: 0;
+      margin-bottom: 0;
+      font-weight: 600;
+      display: none;
+    }
+    
+    &:hover {
+      background-color: var(--theme-color-background-light);
+      border: 1px solid var(--theme-color-border-default) !important;
+      transform: translateY(0px);
+    }  
+  }

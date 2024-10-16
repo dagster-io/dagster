@@ -4,6 +4,7 @@ from typing import Any, Optional, Sequence
 
 import pytest
 from dagster import (
+    AssetCheckKey,
     AssetDep,
     AssetExecutionContext,
     AssetKey,
@@ -1095,3 +1096,15 @@ def test_definitions_class_metadata():
     defs = Definitions(metadata={"foo": "bar"})
     assert defs.metadata == {"foo": MetadataValue.text("bar")}
     assert defs.get_repository_def().metadata == {"foo": MetadataValue.text("bar")}
+
+
+def test_assets_def_with_only_checks():
+    @asset_check(asset="asset1")
+    def check1():
+        pass
+
+    assets_def = AssetsDefinition(**check1.get_attributes_dict())
+    defs = Definitions(assets=[assets_def])
+    check_key = AssetCheckKey(AssetKey("asset1"), "check1")
+    assert defs.get_asset_graph().asset_check_keys == {check_key}
+    assert check_key in defs.get_repository_def().asset_checks_defs_by_key

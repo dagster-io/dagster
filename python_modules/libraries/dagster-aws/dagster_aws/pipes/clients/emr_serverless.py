@@ -18,7 +18,7 @@ from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 from dagster._utils.merger import deep_merge_dicts
 
-from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
+from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:
     from mypy_boto3_emr_serverless.client import EMRServerlessClient
@@ -51,7 +51,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        client=None,
+        client: Optional["EMRServerlessClient"] = None,
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
         forward_termination: bool = True,
@@ -110,7 +110,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             try:
                 completion_response = self._wait_for_completion(context, start_response)
                 context.log.info(f"[pipes] {self.AWS_SERVICE_NAME} workload is complete!")
-                self._read_messages(context, completion_response)
+                self._read_messages(context, session, completion_response)
                 return PipesClientCompletedInvocation(session)
 
             except DagsterExecutionInterruptedError:
@@ -199,7 +199,12 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     f"Unexpected state for AWS EMR Serverless job {job_run_id}: {state}"
                 )
 
-    def _read_messages(self, context: OpExecutionContext, response: "GetJobRunResponseTypeDef"):
+    def _read_messages(
+        self,
+        context: OpExecutionContext,
+        session: PipesSession,
+        response: "GetJobRunResponseTypeDef",
+    ):
         application_id = response["jobRun"]["applicationId"]
         job_id = response["jobRun"]["jobRunId"]
 
@@ -279,23 +284,33 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             "stderr": sys.stderr,
         }
 
-        # TODO: do this in a background thread in real-time once https://github.com/dagster-io/dagster/pull/24098 is merged
-        for output_stream in output_streams:
-            output_file = output_files[output_stream]
-            context.log.debug(
-                f"[pipes] Reading AWS CloudWatch logs from group {log_group} stream {log_stream}/{output_stream}"
+        # update MessageReader params so it can start receiving messages
+        if isinstance(self.message_reader, PipesCloudWatchMessageReader):
+            session.report_launched(
+                {
+                    "extras": {
+                        "log_group": log_group,
+                        "log_stream": f"{log_stream}/stdout",
+                    }
+                }
             )
-            self.message_reader.consume_cloudwatch_logs(
-                log_group,
-                f"{log_stream}/{output_stream}",
-                start_time=int(
-                    response["jobRun"]
-                    .get("attemptCreatedAt", response["jobRun"]["createdAt"])
-                    .timestamp()
-                    * 1000
-                ),
-                output_file=output_file,
-            )
+
+            # now add LogReaders for stdout and stderr logs
+            for output_stream in output_streams:
+                output_file = output_files[output_stream]
+                context.log.debug(
+                    f"[pipes] Adding PipesCloudWatchLogReader for group {log_group} stream {log_stream}/{output_stream}"
+                )
+                self.message_reader.add_log_reader(
+                    PipesCloudWatchLogReader(
+                        client=self.message_reader.client,
+                        log_group=log_group,
+                        log_stream=f"{log_stream}/{output_stream}",
+                        target_stream=output_file,
+                        start_time=int(session.created_at.timestamp() * 1000),
+                        debug_info=output_stream,
+                    ),
+                )
 
     def _terminate(self, context: OpExecutionContext, start_response: "StartJobRunResponseTypeDef"):
         job_run_id = start_response["jobRunId"]

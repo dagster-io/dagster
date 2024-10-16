@@ -1,97 +1,76 @@
-from typing import AbstractSet, Any, List, Mapping, Optional
+from collections import defaultdict
+from functools import cached_property
+from typing import AbstractSet, Mapping, Set
 
-from dagster import (
-    AssetKey,
-    AssetSpec,
-    Definitions,
-    JsonMetadataValue,
-    UrlMetadataValue,
-    external_asset_from_spec,
-)
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 
-from dagster_airlift.core.dag_asset import dag_asset_metadata, dag_description
-from dagster_airlift.core.serialization.serialized_data import (
-    MappedAirflowTaskData,
-    SerializedAirflowDefinitionsData,
+from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.serialization.compute import AirliftMetadataMappingInfo
+from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
+from dagster_airlift.core.utils import (
+    dag_handles_for_spec,
+    is_dag_mapped_asset_spec,
+    is_peered_dag_asset_spec,
+    is_task_mapped_asset_spec,
+    peered_dag_handles_for_spec,
+    task_handles_for_spec,
 )
-from dagster_airlift.core.utils import airflow_kind_dict
 
 
-def tags_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, str]:
-    all_not_migrated = all(not task.migrated for task in tasks)
-    # Only show the airflow kind if the asset is orchestrated exlusively by airflow
-    return airflow_kind_dict() if all_not_migrated else {}
-
-
-def metadata_for_mapped_tasks(tasks: List[MappedAirflowTaskData]) -> Mapping[str, Any]:
-    mapped_task = tasks[0]
-    task_info, migration_state = mapped_task.task_info, mapped_task.migrated
-    task_level_metadata = {
-        "Task Info (raw)": JsonMetadataValue(task_info.metadata),
-        "Dag ID": task_info.dag_id,
-        "Link to DAG": UrlMetadataValue(task_info.dag_url),
-    }
-    task_level_metadata[
-        "Computed in Task ID" if not migration_state else "Triggered by Task ID"
-    ] = task_info.task_id
-    return task_level_metadata
-
-
-def enrich_spec_with_airflow_metadata(
-    spec: AssetSpec, tasks: List[MappedAirflowTaskData]
-) -> AssetSpec:
-    return spec._replace(
-        tags={**spec.tags, **tags_for_mapped_tasks(tasks)},
-        metadata={**spec.metadata, **metadata_for_mapped_tasks(tasks)},
-    )
-
-
-def make_dag_external_asset(dag_data) -> AssetsDefinition:
-    return external_asset_from_spec(
-        AssetSpec(
-            key=dag_data.dag_info.dag_asset_key,
-            description=dag_description(dag_data.dag_info),
-            metadata=dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
-            tags=airflow_kind_dict(),
-            deps=dag_data.leaf_asset_keys,
-        )
-    )
-
-
-@whitelist_for_serdes
 @record
 class AirflowDefinitionsData:
-    instance_name: str
-    serialized_data: SerializedAirflowDefinitionsData
-
-    def map_airflow_data_to_spec(self, spec: AssetSpec) -> AssetSpec:
-        """If there is airflow data applicable to the asset key, transform the spec and apply the data."""
-        mapped_tasks = self.serialized_data.all_mapped_tasks.get(spec.key)
-        return enrich_spec_with_airflow_metadata(spec, mapped_tasks) if mapped_tasks else spec
-
-    def construct_dag_assets_defs(self) -> Definitions:
-        return Definitions(
-            [
-                make_dag_external_asset(dag_data)
-                for dag_data in self.serialized_data.dag_datas.values()
-            ]
-        )
+    airflow_instance: AirflowInstance
+    mapped_defs: Definitions
 
     @property
-    def all_dag_ids(self) -> AbstractSet[str]:
-        return set(self.serialized_data.dag_datas.keys())
+    def instance_name(self) -> str:
+        return self.airflow_instance.name
 
-    def asset_key_for_dag(self, dag_id: str) -> AssetKey:
-        return self.serialized_data.dag_datas[dag_id].dag_info.dag_asset_key
+    @cached_property
+    def mapping_info(self) -> AirliftMetadataMappingInfo:
+        return AirliftMetadataMappingInfo(asset_specs=list(self.mapped_defs.get_all_asset_specs()))
 
-    def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
-        return set(self.serialized_data.dag_datas[dag_id].task_handle_data.keys())
+    @cached_property
+    def all_asset_specs_by_key(self) -> Mapping[AssetKey, AssetSpec]:
+        return {spec.key: spec for spec in self.mapped_defs.get_all_asset_specs()}
 
-    def migration_state_for_task(self, dag_id: str, task_id: str) -> Optional[bool]:
-        return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].migration_state
+    def task_ids_in_dag(self, dag_id: str) -> Set[str]:
+        return self.mapping_info.task_id_map[dag_id]
+
+    @property
+    def dag_ids_with_mapped_asset_keys(self) -> AbstractSet[str]:
+        return self.mapping_info.dag_ids
+
+    @cached_property
+    def mapped_asset_keys_by_task_handle(self) -> Mapping[TaskHandle, AbstractSet[AssetKey]]:
+        asset_keys_per_handle = defaultdict(set)
+        for spec in self.mapped_defs.get_all_asset_specs():
+            if is_task_mapped_asset_spec(spec):
+                task_handles = task_handles_for_spec(spec)
+                for task_handle in task_handles:
+                    asset_keys_per_handle[task_handle].add(spec.key)
+        return asset_keys_per_handle
+
+    @cached_property
+    def mapped_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
+        asset_keys_per_handle = defaultdict(set)
+        for spec in self.mapped_defs.get_all_asset_specs():
+            if is_dag_mapped_asset_spec(spec):
+                dag_handles = dag_handles_for_spec(spec)
+                for dag_handle in dag_handles:
+                    asset_keys_per_handle[dag_handle].add(spec.key)
+        return asset_keys_per_handle
+
+    @cached_property
+    def peered_dag_asset_keys_by_dag_handle(self) -> Mapping[DagHandle, AbstractSet[AssetKey]]:
+        asset_keys_per_handle = defaultdict(set)
+        for spec in self.mapped_defs.get_all_asset_specs():
+            if is_peered_dag_asset_spec(spec):
+                dag_handles = peered_dag_handles_for_spec(spec)
+                for dag_handle in dag_handles:
+                    asset_keys_per_handle[dag_handle].add(spec.key)
+        return asset_keys_per_handle
 
     def asset_keys_in_task(self, dag_id: str, task_id: str) -> AbstractSet[AssetKey]:
-        return self.serialized_data.dag_datas[dag_id].task_handle_data[task_id].asset_keys_in_task
+        return self.mapped_asset_keys_by_task_handle[TaskHandle(dag_id=dag_id, task_id=task_id)]

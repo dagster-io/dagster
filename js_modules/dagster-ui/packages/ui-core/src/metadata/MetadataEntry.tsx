@@ -18,13 +18,16 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {TableSchema} from './TableSchema';
-import {MetadataEntryFragment} from './types/MetadataEntryFragment.types';
+import {
+  MetadataEntryFragment,
+  TableMetadataEntryFragment,
+} from './types/MetadataEntryFragment.types';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
-import {IntMetadataEntry, MaterializationEvent, TableMetadataEntry} from '../graphql/types';
+import {IntMetadataEntry, MaterializationEvent} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
@@ -366,7 +369,7 @@ const MetadataEntryModalAction = (props: {
   );
 };
 
-export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntry}) => {
+export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntryFragment}) => {
   const [showSchema, setShowSchema] = React.useState(false);
 
   const schema = entry.table.schema;

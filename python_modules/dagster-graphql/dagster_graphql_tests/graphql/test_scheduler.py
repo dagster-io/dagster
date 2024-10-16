@@ -126,6 +126,12 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
         key
         value
       }
+      metadataEntries {
+        label
+        ... on TextMetadataEntry {
+          text
+        }
+      }
       assetSelection {
         assetSelectionString
         assetKeys {
@@ -364,7 +370,9 @@ def _get_unloadable_schedule_origin(name):
 
 @pytest.mark.parametrize("starting_case", ["on_tick_time", "offset_tick_time"])
 def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_case):
-    schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule_with_tags")
+    schedule_selector = infer_schedule_selector(
+        graphql_context, "timezone_schedule_with_tags_and_metadata"
+    )
 
     if starting_case == "on_tick_time":
         # Starting timestamp falls exactly on the timestamp of a tick
@@ -388,7 +396,7 @@ def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_cas
         },
     )
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
-    assert result.data["scheduleOrError"]["name"] == "timezone_schedule_with_tags"
+    assert result.data["scheduleOrError"]["name"] == "timezone_schedule_with_tags_and_metadata"
     assert len(result.data["scheduleOrError"]["potentialTickTimestamps"]) == 5
     assert result.data["scheduleOrError"]["potentialTickTimestamps"] == [
         datetime.datetime(2019, 2, 25, tzinfo=get_timezone("US/Central")).timestamp(),
@@ -527,15 +535,15 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     assert result.data["schedulesOrError"]
     assert result.data["schedulesOrError"]["__typename"] == "Schedules"
 
-    external_repository = graphql_context.get_code_location(
-        main_repo_location_name()
-    ).get_repository(main_repo_name())
+    remote_repository = graphql_context.get_code_location(main_repo_location_name()).get_repository(
+        main_repo_name()
+    )
 
     results = result.data["schedulesOrError"]["results"]
-    assert len(results) == len(external_repository.get_external_schedules())
+    assert len(results) == len(remote_repository.get_schedules())
 
     for schedule in results:
-        if schedule["name"] == "timezone_schedule_with_tags":
+        if schedule["name"] == "timezone_schedule_with_tags_and_metadata":
             assert schedule["executionTimezone"] == "US/Central"
 
 
@@ -596,7 +604,7 @@ def test_get_single_schedule_definition(graphql_context):
     assert future_ticks
     assert len(future_ticks["results"]) == 3
 
-    schedule_selector = infer_schedule_selector(context, "timezone_schedule_with_tags")
+    schedule_selector = infer_schedule_selector(context, "timezone_schedule_with_tags_and_metadata")
 
     future_ticks_start_time = datetime.datetime(
         2019, 2, 27, tzinfo=get_timezone("US/Central")
@@ -613,6 +621,9 @@ def test_get_single_schedule_definition(graphql_context):
     assert result.data["scheduleOrError"]["executionTimezone"] == "US/Central"
     assert result.data["scheduleOrError"]["tags"] == [
         {"key": "foo", "value": "bar"},
+    ]
+    assert result.data["scheduleOrError"]["metadataEntries"] == [
+        {"label": "foo", "text": "bar"},
     ]
 
     future_ticks = result.data["scheduleOrError"]["futureTicks"]
@@ -794,7 +805,9 @@ def test_unloadable_schedule(graphql_context):
 
 
 def test_future_ticks_until(graphql_context):
-    schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule_with_tags")
+    schedule_selector = infer_schedule_selector(
+        graphql_context, "timezone_schedule_with_tags_and_metadata"
+    )
 
     future_ticks_start_time = datetime.datetime(
         2019, 2, 27, tzinfo=get_timezone("US/Central")
@@ -934,7 +947,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
         schedule_id = start_result.data["startSchedule"]["scheduleState"]["id"]
         cid = CompoundID.from_string(schedule_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -959,7 +972,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             variables={"scheduleSelector": schedule_selector},
         )
         reset_instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert reset_instigator_state
@@ -1048,7 +1061,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
         )
         cid = CompoundID.from_string(schedule_id)
         reset_instigator_state = graphql_context.instance.get_instigator_state(
-            cid.external_origin_id, cid.selector_id
+            cid.remote_origin_id, cid.selector_id
         )
 
         assert reset_instigator_state

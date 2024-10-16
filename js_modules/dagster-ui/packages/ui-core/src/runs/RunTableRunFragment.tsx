@@ -11,6 +11,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     hasReExecutePermission
     hasTerminatePermission
     hasDeletePermission
+    hasRunMetricsEnabled
     mode
     rootRunId
     parentRunId

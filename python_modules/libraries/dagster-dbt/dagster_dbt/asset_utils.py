@@ -447,6 +447,7 @@ def default_metadata_from_dbt_resource_props(
                     name=column_name,
                     type=column_info.get("data_type") or "?",
                     description=column_info.get("description"),
+                    tags={tag_name: "" for tag_name in column_info.get("tags", [])},
                 )
                 for column_name, column_info in columns.items()
             ]

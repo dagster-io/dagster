@@ -5,8 +5,8 @@ import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.remote_representation import ExternalJob
-from dagster._core.remote_representation.external import ExternalExecutionPlan
+from dagster._core.remote_representation import RemoteJob
+from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -24,24 +24,22 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def get_full_external_job_or_raise(
+def get_full_remote_job_or_raise(
     graphene_info: "ResolveInfo",
     selector: JobSubsetSelector,
-) -> ExternalJob:
+) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_external_job_or_raise(graphene_info, selector, ignore_subset=True)
+    return _get_remote_job_or_raise(graphene_info, selector, ignore_subset=True)
 
 
-def get_external_job_or_raise(
-    graphene_info: "ResolveInfo", selector: JobSubsetSelector
-) -> ExternalJob:
+def get_remote_job_or_raise(graphene_info: "ResolveInfo", selector: JobSubsetSelector) -> RemoteJob:
     check.inst_param(selector, "selector", JobSubsetSelector)
-    return _get_external_job_or_raise(graphene_info, selector)
+    return _get_remote_job_or_raise(graphene_info, selector)
 
 
-def _get_external_job_or_raise(
+def _get_remote_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector, ignore_subset: bool = False
-) -> ExternalJob:
+) -> RemoteJob:
     from dagster_graphql.schema.errors import (
         GrapheneInvalidSubsetError,
         GraphenePipelineNotFoundError,
@@ -49,14 +47,14 @@ def _get_external_job_or_raise(
     from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
 
     ctx = graphene_info.context
-    if not ctx.has_external_job(selector):
+    if not ctx.has_job(selector):
         raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
     elif ignore_subset:
-        external_job = ctx.get_full_external_job(selector)
+        remote_job = ctx.get_full_job(selector)
     else:
         code_location = ctx.get_code_location(selector.location_name)
         try:
-            external_job = code_location.get_external_job(selector)
+            remote_job = code_location.get_job(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             raise UserFacingGraphQLError(
@@ -65,44 +63,44 @@ def _get_external_job_or_raise(
                         message=error_info.message,
                         cause_message=f"\n{error_info.cause.message}" if error_info.cause else "",
                     ),
-                    pipeline=GraphenePipeline(ctx.get_full_external_job(selector)),
+                    pipeline=GraphenePipeline(ctx.get_full_job(selector)),
                 )
             )
 
-    return external_job
+    return remote_job
 
 
-def ensure_valid_config(external_job: ExternalJob, run_config: object) -> object:
+def ensure_valid_config(remote_job: RemoteJob, run_config: object) -> object:
     from dagster_graphql.schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
-    check.inst_param(external_job, "external_job", ExternalJob)
+    check.inst_param(remote_job, "remote_job", RemoteJob)
     # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
-        config_schema_snapshot=external_job.config_schema_snapshot,
-        config_type_key=check.not_none(external_job.root_config_key),
+        config_schema_snapshot=remote_job.config_schema_snapshot,
+        config_type_key=check.not_none(remote_job.root_config_key),
         config_value=run_config,
     )
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid.for_validation_errors(
-                external_job, validated_config.errors
+                remote_job, validated_config.errors
             )
         )
 
     return validated_config
 
 
-def get_external_execution_plan_or_raise(
+def get_remote_execution_plan_or_raise(
     graphql_context: BaseWorkspaceRequestContext,
-    external_pipeline: ExternalJob,
+    remote_job: RemoteJob,
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
-) -> ExternalExecutionPlan:
-    return graphql_context.get_external_execution_plan(
-        external_job=external_pipeline,
+) -> RemoteExecutionPlan:
+    return graphql_context.get_execution_plan(
+        remote_job=remote_job,
         run_config=run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
@@ -114,11 +112,7 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> "GrapheneRepositoryConne
 
     return GrapheneRepositoryConnection(
         nodes=[
-            GrapheneRepository(
-                workspace_context=graphene_info.context,
-                repository=repository,
-                repository_location=location,
-            )
+            GrapheneRepository(repository.handle)
             for location in graphene_info.context.code_locations
             for repository in location.get_repositories().values()
         ]
@@ -137,9 +131,7 @@ def fetch_repository(
         repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             return GrapheneRepository(
-                workspace_context=graphene_info.context,
-                repository=repo_loc.get_repository(repository_selector.repository_name),
-                repository_location=repo_loc,
+                repo_loc.get_repository(repository_selector.repository_name).handle,
             )
 
     raise UserFacingGraphQLError(

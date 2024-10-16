@@ -4,7 +4,7 @@ from pathlib import Path
 expected_lines = [
     "Total airflow dags load time",
     "Airflow defs import time",
-    "Mark as dagster migrating time",
+    "Proxying to dagster time",
     "Airflow setup time",
     "Airflow standup time",
     "Peered defs import time",

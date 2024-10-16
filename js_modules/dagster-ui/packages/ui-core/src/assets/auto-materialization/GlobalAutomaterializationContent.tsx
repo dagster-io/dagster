@@ -1,4 +1,12 @@
-import {Box, Checkbox, Colors, Spinner, Subtitle2, Table} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonGroup,
+  Checkbox,
+  Colors,
+  Spinner,
+  Subtitle2,
+  Table,
+} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
@@ -13,12 +21,14 @@ import {
 } from './types/AssetDaemonTicksQuery.types';
 import {useLazyQuery} from '../../apollo-client';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
+import {useFeatureFlags} from '../../app/Flags';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
-import {InstigationTickStatus} from '../../graphql/types';
+import {InstigationTickStatus, RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
+import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 const MINUTE = 60 * 1000;
@@ -26,8 +36,11 @@ const THREE_MINUTES = 3 * MINUTE;
 const FIVE_MINUTES = 5 * MINUTE;
 const TWENTY_MINUTES = 20 * MINUTE;
 
+const RUNS_FILTER: RunsFilter = {tags: [{key: 'dagster/auto_materialize', value: 'true'}]};
+
 export const GlobalAutomaterializationContent = () => {
   const automaterialize = useAutomaterializeDaemonStatus();
+  const {flagRunsFeed} = useFeatureFlags();
   const confirm = useConfirmation();
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
@@ -118,6 +131,19 @@ export const GlobalAutomaterializationContent = () => {
     [setIsPaused],
   );
 
+  const tableViewSwitch = (
+    <ButtonGroup
+      activeItems={new Set([tableView])}
+      buttons={[
+        {id: 'evaluations', label: 'Evaluations'},
+        {id: 'runs', label: 'Runs'},
+      ]}
+      onClick={(id: 'evaluations' | 'runs') => {
+        setTableView(id);
+      }}
+    />
+  );
+
   return (
     <>
       <Box padding={{vertical: 12, horizontal: 24}}>
@@ -188,10 +214,17 @@ export const GlobalAutomaterializationContent = () => {
           {tableView === 'evaluations' ? (
             <InstanceAutomaterializationEvaluationHistoryTable
               setSelectedTick={setSelectedTick}
-              setTableView={setTableView}
               setParentStatuses={setStatuses}
               setTimerange={setTimerange}
+              actionBarComponents={tableViewSwitch}
             />
+          ) : flagRunsFeed ? (
+            <Box margin={{top: 32}} border="top">
+              <RunsFeedTableWithFilters
+                filter={RUNS_FILTER}
+                actionBarComponents={tableViewSwitch}
+              />
+            </Box>
           ) : (
             <AutomaterializeRunHistoryTable setTableView={setTableView} />
           )}

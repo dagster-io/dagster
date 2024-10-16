@@ -3,12 +3,12 @@ from typing import List
 import dagster._check as check
 import graphene
 from dagster._core.definitions.selector import ResourceSelector
-from dagster._core.remote_representation.external import ExternalResource
+from dagster._core.remote_representation.external import RemoteResource
 from dagster._core.remote_representation.external_data import (
-    ExternalResourceConfigEnvVar,
-    ExternalResourceValue,
     NestedResourceType,
+    ResourceConfigEnvVarSnap,
     ResourceJobUsageEntry,
+    ResourceValueSnap,
 )
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
@@ -37,16 +37,16 @@ class GrapheneConfiguredValue(graphene.ObjectType):
     class Meta:
         name = "ConfiguredValue"
 
-    def __init__(self, key: str, external_resource_value: ExternalResourceValue):
+    def __init__(self, key: str, resource_value_snap: ResourceValueSnap):
         super().__init__()
 
         self.key = key
-        if isinstance(external_resource_value, ExternalResourceConfigEnvVar):
+        if isinstance(resource_value_snap, ResourceConfigEnvVarSnap):
             self.type = GrapheneConfiguredValueType.ENV_VAR
-            self.value = external_resource_value.name
+            self.value = resource_value_snap.name
         else:
             self.type = GrapheneConfiguredValueType.VALUE
-            self.value = external_resource_value
+            self.value = resource_value_snap
 
 
 GrapheneNestedResourceType = graphene.Enum.from_enum(NestedResourceType)
@@ -120,33 +120,29 @@ class GrapheneResourceDetails(graphene.ObjectType):
     class Meta:
         name = "ResourceDetails"
 
-    def __init__(
-        self, location_name: str, repository_name: str, external_resource: ExternalResource
-    ):
+    def __init__(self, location_name: str, repository_name: str, remote_resource: RemoteResource):
         super().__init__()
 
-        self.id = f"{location_name}-{repository_name}-{external_resource.name}"
+        self.id = f"{location_name}-{repository_name}-{remote_resource.name}"
 
         self._location_name = check.str_param(location_name, "location_name")
         self._repository_name = check.str_param(repository_name, "repository_name")
 
-        self._external_resource = check.inst_param(
-            external_resource, "external_resource", ExternalResource
-        )
-        self.name = external_resource.name
-        self.description = external_resource.description
-        self._config_field_snaps = external_resource.config_field_snaps
-        self._configured_values = external_resource.configured_values
+        self._remote_resource = check.inst_param(remote_resource, "remote_resource", RemoteResource)
+        self.name = remote_resource.name
+        self.description = remote_resource.description
+        self._config_field_snaps = remote_resource.config_field_snaps
+        self._configured_values = remote_resource.configured_values
 
-        self._config_schema_snap = external_resource.config_schema_snap
-        self.isTopLevel = external_resource.is_top_level
-        self._nested_resources = external_resource.nested_resources
-        self._parent_resources = external_resource.parent_resources
-        self.resourceType = external_resource.resource_type
-        self._asset_keys_using = external_resource.asset_keys_using
-        self._job_ops_using = external_resource.job_ops_using
-        self._schedules_using = external_resource.schedules_using
-        self._sensors_using = external_resource.sensors_using
+        self._config_schema_snap = remote_resource.config_schema_snap
+        self.isTopLevel = remote_resource.is_top_level
+        self._nested_resources = remote_resource.nested_resources
+        self._parent_resources = remote_resource.parent_resources
+        self.resourceType = remote_resource.resource_type
+        self._asset_keys_using = remote_resource.asset_keys_using
+        self._job_ops_using = remote_resource.job_ops_using
+        self._schedules_using = remote_resource.schedules_using
+        self._sensors_using = remote_resource.sensors_using
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -159,7 +155,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
 
     def resolve_configuredValues(self, _graphene_info):
         return [
-            GrapheneConfiguredValue(key=key, external_resource_value=value)
+            GrapheneConfiguredValue(key=key, resource_value_snap=value)
             for key, value in self._configured_values.items()
         ]
 

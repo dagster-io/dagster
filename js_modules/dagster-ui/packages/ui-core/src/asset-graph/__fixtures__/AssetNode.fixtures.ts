@@ -142,12 +142,11 @@ export const LiveDataForNodeRunFailed: LiveDataForNodeWithStaleData = {
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
-  runWhichFailedToMaterialize: {
-    __typename: 'Run',
+  runWhichFailedToMaterialize: buildRun({
     id: 'ABCDEF',
     status: RunStatus.FAILURE,
     endTime: 1673301346,
-  },
+  }),
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],
@@ -668,12 +667,11 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNodeWithStale
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
-  runWhichFailedToMaterialize: {
-    __typename: 'Run',
+  runWhichFailedToMaterialize: buildRun({
     id: 'ABCDEF',
     status: RunStatus.FAILURE,
     endTime: 1673301346,
-  },
+  }),
   staleStatus: null,
   staleCauses: [],
   assetChecks: [],

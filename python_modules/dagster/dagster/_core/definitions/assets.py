@@ -71,12 +71,12 @@ from dagster._core.definitions.utils import (
     DEFAULT_IO_MANAGER_KEY,
     normalize_group_name,
     validate_asset_owner,
-    validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
 if TYPE_CHECKING:
@@ -185,9 +185,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check.invariant(
                 backfill_policy is None, "node_def is None, so backfill_policy must be None"
             )
-            check.invariant(
-                not can_subset, "node_def is None, so backfill_policy must not be provided"
-            )
+            check.invariant(not can_subset, "node_def is None, so can_subset must be False")
             self._computation = None
         else:
             selected_asset_keys, selected_asset_check_keys = _resolve_selections(
@@ -1140,14 +1138,20 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 partition_mapping, self._partitions_def, upstream_partitions_def
             )
 
-    def get_output_name_for_asset_key(self, key: AssetKey) -> str:
-        for output_name, asset_key in self.keys_by_output_name.items():
-            if key == asset_key:
-                return output_name
+    def has_output_for_asset_key(self, key: AssetKey) -> bool:
+        return self._computation is not None and key in self._computation.output_names_by_key
 
-        raise DagsterInvariantViolationError(
-            f"Asset key {key.to_user_string()} not found in AssetsDefinition"
-        )
+    def get_output_name_for_asset_key(self, key: AssetKey) -> str:
+        if (
+            self._computation is None
+            or key not in self._computation.output_names_by_key
+            or key not in self.keys
+        ):
+            raise DagsterInvariantViolationError(
+                f"Asset key {key.to_user_string()} not found in AssetsDefinition"
+            )
+        else:
+            return self._computation.output_names_by_key[key]
 
     def get_output_name_for_asset_check_key(self, key: AssetCheckKey) -> str:
         for output_name, spec in self._check_specs_by_output_name.items():
@@ -1707,7 +1711,7 @@ def _asset_specs_from_attr_key_params(
     )
 
     for tags in (tags_by_key or {}).values():
-        validate_tags_strict(tags)
+        normalize_tags(tags, strict=True)
     validated_tags_by_key = tags_by_key or {}
 
     validated_descriptions_by_key = check.opt_mapping_param(
@@ -1770,6 +1774,7 @@ def _asset_specs_from_attr_key_params(
                     skippable=False,
                     auto_materialize_policy=None,
                     partitions_def=None,
+                    kinds=None,
                 )
             )
 

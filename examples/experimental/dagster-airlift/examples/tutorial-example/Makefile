@@ -9,7 +9,7 @@ export TUTORIAL_EXAMPLE_DIR := $(MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
 export TUTORIAL_DBT_PROJECT_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
-export DAGSTER_AIRLIFT_MIGRATION_STATE_DIR := $(MAKEFILE_DIR)/tutorial_example/airflow_dags/migration_state
+export DAGSTER_AIRLIFT_PROXIED_STATE_DIR := $(MAKEFILE_DIR)/tutorial_example/airflow_dags/proxied_state
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DAGSTER_URL := http://localhost:3000
 
@@ -24,7 +24,7 @@ wipe: ## Wipe out all the files created by the Makefile
 
 airflow_install:
 	pip install uv && \
-	uv pip install dagster-airlift[in-airflow] && \
+	uv pip install dagster-airlift[in-airflow,dbt,tutorial] && \
 	uv pip install -e $(MAKEFILE_DIR)
 
 airflow_setup:
@@ -44,11 +44,5 @@ dagster_run:
 
 
 update_readme_snippets:
-	python ../../scripts/update_readme_snippets.py \
-		$(MAKEFILE_DIR)/README.md \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/peer.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/observe.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/migrate.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/standalone.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/migrate_with_check.py \
-		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/peer_with_check.py
+	python ../../scripts/update_readme_snippets.py $(MAKEFILE_DIR)/README.md
+

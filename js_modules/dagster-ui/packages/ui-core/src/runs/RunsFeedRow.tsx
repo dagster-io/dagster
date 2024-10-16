@@ -39,6 +39,7 @@ export const RunsFeedRow = ({
   checked,
   onToggleChecked,
   refetch,
+  hideTags,
 }: {
   entry: RunsFeedTableEntryFragment;
   refetch: () => void;
@@ -47,6 +48,7 @@ export const RunsFeedRow = ({
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
   hideCreatedBy?: boolean;
+  hideTags?: string[];
 }) => {
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
@@ -87,7 +89,7 @@ export const RunsFeedRow = ({
           <Link
             to={
               entry.__typename === 'PartitionBackfill'
-                ? appendCurrentQueryParams(getBackfillPath(entry.id))
+                ? appendCurrentQueryParams(getBackfillPath(entry.id, entry.isAssetBackfill))
                 : `/runs/${entry.id}`
             }
           >
@@ -101,10 +103,11 @@ export const RunsFeedRow = ({
             style={{gap: '4px 8px', lineHeight: 0}}
           >
             <RunRowTags
-              run={{...entry, mode: ''}}
+              run={{...entry, mode: 'default'}}
               isJob={true}
               isHovered={isHovered}
               onAddTag={onAddTag}
+              hideTags={hideTags}
             />
 
             {entry.runStatus === RunStatus.QUEUED ? (

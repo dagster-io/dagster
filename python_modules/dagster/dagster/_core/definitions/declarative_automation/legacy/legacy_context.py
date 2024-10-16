@@ -22,7 +22,6 @@ import dagster._check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import EntityKey
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
@@ -77,7 +76,7 @@ class LegacyRuleEvaluationContext:
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
 
-    current_results_by_key: Mapping[EntityKey, AutomationResult]
+    request_subsets_by_key: Mapping[EntityKey, EntitySubset]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
@@ -99,7 +98,7 @@ class LegacyRuleEvaluationContext:
             condition=condition,
             cursor=cursor,
             node_cursor=cursor.node_cursors_by_unique_id.get(
-                condition.get_unique_id(parent_unique_id=None, index=0)
+                condition.get_node_unique_id(parent_unique_id=None, index=0)
             )
             if cursor
             else None,
@@ -111,7 +110,7 @@ class LegacyRuleEvaluationContext:
             ),
             data_time_resolver=evaluator.legacy_data_time_resolver,
             instance_queryer=instance_queryer,
-            current_results_by_key=evaluator.current_results_by_key,
+            request_subsets_by_key=evaluator.request_subsets_by_key,
             expected_data_time_mapping=evaluator.legacy_expected_data_time_by_key,
             start_timestamp=get_current_timestamp(),
             respect_materialization_data_versions=evaluator.legacy_respect_materialization_data_versions,
@@ -198,11 +197,11 @@ class LegacyRuleEvaluationContext:
         for parent_key in self.asset_graph.get(self.asset_key).parent_keys:
             if not self.materializable_in_same_run(self.asset_key, parent_key):
                 continue
-            parent_result = self.current_results_by_key.get(parent_key)
-            if not parent_result:
+            parent_subset = self.request_subsets_by_key.get(parent_key)
+            if not parent_subset:
                 continue
             parent_subset = ValidAssetSubset.coerce_from_subset(
-                parent_result.get_serializable_subset(), self.partitions_def
+                parent_subset.convert_to_serializable_subset(), self.partitions_def
             )
             subset |= replace(parent_subset, key=self.asset_key)
         return subset
@@ -242,17 +241,17 @@ class LegacyRuleEvaluationContext:
         # Or(MaterializeCond, Not(SkipCond), Not(DiscardCond))
         if len(self.condition.children) != 3:
             return None
-        unique_id = self.condition.get_unique_id(parent_unique_id=None, index=None)
+        unique_id = self.condition.get_node_unique_id(parent_unique_id=None, index=None)
 
         # get Not(DiscardCond)
         not_discard_condition = self.condition.children[2]
-        unique_id = not_discard_condition.get_unique_id(parent_unique_id=unique_id, index=2)
+        unique_id = not_discard_condition.get_node_unique_id(parent_unique_id=unique_id, index=2)
         if not isinstance(not_discard_condition, NotAutomationCondition):
             return None
 
         # get DiscardCond
         discard_condition = not_discard_condition.children[0]
-        unique_id = discard_condition.get_unique_id(parent_unique_id=unique_id, index=0)
+        unique_id = discard_condition.get_node_unique_id(parent_unique_id=unique_id, index=0)
         if not isinstance(discard_condition, RuleCondition) or not isinstance(
             discard_condition.rule, DiscardOnMaxMaterializationsExceededRule
         ):
@@ -378,10 +377,10 @@ class LegacyRuleEvaluationContext:
         }
 
     def will_update_asset_partition(self, asset_partition: AssetKeyPartitionKey) -> bool:
-        parent_result = self.current_results_by_key.get(asset_partition.asset_key)
-        if not parent_result:
+        parent_subset = self.request_subsets_by_key.get(asset_partition.asset_key)
+        if not parent_subset:
             return False
-        return asset_partition in parent_result.get_serializable_subset()
+        return asset_partition in parent_subset.convert_to_serializable_subset()
 
     def add_evaluation_data_from_previous_tick(
         self,

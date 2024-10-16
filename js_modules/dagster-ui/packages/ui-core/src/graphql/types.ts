@@ -338,7 +338,6 @@ export type AssetConnection = {
 export type AssetDependency = {
   __typename: 'AssetDependency';
   asset: AssetNode;
-  inputName: Scalars['String']['output'];
   partitionMapping: Maybe<PartitionMapping>;
 };
 
@@ -2096,6 +2095,7 @@ export type Job = IPipelineSnapshot &
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -2192,6 +2192,7 @@ export type LaunchBackfillResult =
   | InvalidSubsetError
   | LaunchBackfillSuccess
   | NoModeProvidedError
+  | PartitionKeysNotFoundError
   | PartitionSetNotFoundError
   | PipelineNotFoundError
   | PresetNotFoundError
@@ -2620,6 +2621,7 @@ export type Mutation = {
   launchRun: LaunchRunResult;
   launchRunReexecution: LaunchRunReexecutionResult;
   logTelemetry: LogTelemetryMutationResult;
+  reexecutePartitionBackfill: LaunchBackfillResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
@@ -2707,6 +2709,10 @@ export type MutationLogTelemetryArgs = {
   clientId: Scalars['String']['input'];
   clientTime: Scalars['String']['input'];
   metadata: Scalars['String']['input'];
+};
+
+export type MutationReexecutePartitionBackfillArgs = {
+  reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
 
 export type MutationReloadRepositoryLocationArgs = {
@@ -3162,6 +3168,12 @@ export type PartitionKeys = {
   partitionKeys: Array<Scalars['String']['output']>;
 };
 
+export type PartitionKeysNotFoundError = Error & {
+  __typename: 'PartitionKeysNotFoundError';
+  message: Scalars['String']['output'];
+  partitionKeys: Array<Scalars['String']['output']>;
+};
+
 export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
 
 export type PartitionMapping = {
@@ -3393,6 +3405,7 @@ export type Pipeline = IPipelineSnapshot &
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -3626,6 +3639,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     name: Scalars['String']['output'];
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     pipelineSnapshotId: Scalars['String']['output'];
+    runTags: Array<PipelineTag>;
     runs: Array<Run>;
     schedules: Array<Schedule>;
     sensors: Array<Sensor>;
@@ -3747,6 +3761,7 @@ export type Query = {
   runOrError: RunOrError;
   runTagKeysOrError: Maybe<RunTagKeysOrError>;
   runTagsOrError: Maybe<RunTagsOrError>;
+  runsFeedCountOrError: RunsFeedCountOrError;
   runsFeedOrError: RunsFeedConnectionOrError;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
@@ -3962,9 +3977,15 @@ export type QueryRunTagsOrErrorArgs = {
   valuePrefix?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type QueryRunsFeedCountOrErrorArgs = {
+  filter?: InputMaybe<RunsFilter>;
+  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   filter?: InputMaybe<RunsFilter>;
+  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
   limit: Scalars['Int']['input'];
 };
 
@@ -4412,6 +4433,7 @@ export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename: 'Run';
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+    assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
     assetSelection: Maybe<Array<AssetKey>>;
     assets: Array<Asset>;
@@ -4424,6 +4446,7 @@ export type Run = PipelineRun &
     hasConcurrencyKeySlots: Scalars['Boolean']['output'];
     hasDeletePermission: Scalars['Boolean']['output'];
     hasReExecutePermission: Scalars['Boolean']['output'];
+    hasRunMetricsEnabled: Scalars['Boolean']['output'];
     hasTerminatePermission: Scalars['Boolean']['output'];
     hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
@@ -4758,6 +4781,13 @@ export type RunsFeedConnection = {
 
 export type RunsFeedConnectionOrError = PythonError | RunsFeedConnection;
 
+export type RunsFeedCount = {
+  __typename: 'RunsFeedCount';
+  count: Scalars['Int']['output'];
+};
+
+export type RunsFeedCountOrError = PythonError | RunsFeedCount;
+
 export type RunsFeedEntry = {
   assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
   assetSelection: Maybe<Array<AssetKey>>;
@@ -4773,7 +4803,6 @@ export type RunsFeedEntry = {
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
-  excludeSubruns?: InputMaybe<Scalars['Boolean']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
   runIds?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -4841,6 +4870,27 @@ export type Schedule = {
   futureTick: DryRunInstigationTick;
   futureTicks: DryRunInstigationTicks;
   id: Scalars['ID']['output'];
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | CodeReferencesMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | TimestampMetadataEntry
+    | UrlMetadataEntry
+  >;
   mode: Scalars['String']['output'];
   name: Scalars['String']['output'];
   partitionSet: Maybe<PartitionSet>;
@@ -4959,6 +5009,27 @@ export type Sensor = {
   id: Scalars['ID']['output'];
   jobOriginId: Scalars['String']['output'];
   metadata: SensorMetadata;
+  metadataEntries: Array<
+    | AssetMetadataEntry
+    | BoolMetadataEntry
+    | CodeReferencesMetadataEntry
+    | FloatMetadataEntry
+    | IntMetadataEntry
+    | JobMetadataEntry
+    | JsonMetadataEntry
+    | MarkdownMetadataEntry
+    | NotebookMetadataEntry
+    | NullMetadataEntry
+    | PathMetadataEntry
+    | PipelineRunMetadataEntry
+    | PythonArtifactMetadataEntry
+    | TableColumnLineageMetadataEntry
+    | TableMetadataEntry
+    | TableSchemaMetadataEntry
+    | TextMetadataEntry
+    | TimestampMetadataEntry
+    | UrlMetadataEntry
+  >;
   minIntervalSeconds: Scalars['Int']['output'];
   name: Scalars['String']['output'];
   nextTick: Maybe<DryRunInstigationTick>;
@@ -5324,6 +5395,7 @@ export type TableColumn = {
   constraints: TableColumnConstraints;
   description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  tags: Array<DefinitionTag>;
   type: Scalars['String']['output'];
 };
 
@@ -6220,8 +6292,6 @@ export const buildAssetDependency = (
         : relationshipsToOmit.has('AssetNode')
         ? ({} as AssetNode)
         : buildAssetNode({}, relationshipsToOmit),
-    inputName:
-      overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'aspernatur',
     partitionMapping:
       overrides && overrides.hasOwnProperty('partitionMapping')
         ? overrides.partitionMapping!
@@ -9178,6 +9248,7 @@ export const buildJob = (
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -10152,6 +10223,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('LogTelemetrySuccess')
         ? ({} as LogTelemetrySuccess)
         : buildLogTelemetrySuccess({}, relationshipsToOmit),
+    reexecutePartitionBackfill:
+      overrides && overrides.hasOwnProperty('reexecutePartitionBackfill')
+        ? overrides.reexecutePartitionBackfill!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     reloadRepositoryLocation:
       overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
         ? overrides.reloadRepositoryLocation!
@@ -10889,6 +10966,20 @@ export const buildPartitionKeys = (
   };
 };
 
+export const buildPartitionKeysNotFoundError = (
+  overrides?: Partial<PartitionKeysNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeysNotFoundError'} & PartitionKeysNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeysNotFoundError');
+  return {
+    __typename: 'PartitionKeysNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'minima',
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
 export const buildPartitionMapping = (
   overrides?: Partial<PartitionMapping>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11363,6 +11454,7 @@ export const buildPipeline = (
         : relationshipsToOmit.has('Repository')
         ? ({} as Repository)
         : buildRepository({}, relationshipsToOmit),
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -11771,6 +11863,7 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
         : 'labore',
+    runTags: overrides && overrides.hasOwnProperty('runTags') ? overrides.runTags! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     schedules: overrides && overrides.hasOwnProperty('schedules') ? overrides.schedules! : [],
     sensors: overrides && overrides.hasOwnProperty('sensors') ? overrides.sensors! : [],
@@ -12123,6 +12216,12 @@ export const buildQuery = (
     runTagsOrError:
       overrides && overrides.hasOwnProperty('runTagsOrError')
         ? overrides.runTagsOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
+    runsFeedCountOrError:
+      overrides && overrides.hasOwnProperty('runsFeedCountOrError')
+        ? overrides.runsFeedCountOrError!
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
@@ -12870,6 +12969,7 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!
         : [],
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
@@ -12912,6 +13012,10 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('hasReExecutePermission')
         ? overrides.hasReExecutePermission!
         : true,
+    hasRunMetricsEnabled:
+      overrides && overrides.hasOwnProperty('hasRunMetricsEnabled')
+        ? overrides.hasRunMetricsEnabled!
+        : false,
     hasTerminatePermission:
       overrides && overrides.hasOwnProperty('hasTerminatePermission')
         ? overrides.hasTerminatePermission!
@@ -13526,6 +13630,18 @@ export const buildRunsFeedConnection = (
   };
 };
 
+export const buildRunsFeedCount = (
+  overrides?: Partial<RunsFeedCount>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunsFeedCount'} & RunsFeedCount => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunsFeedCount');
+  return {
+    __typename: 'RunsFeedCount',
+    count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 1273,
+  };
+};
+
 export const buildRunsFeedEntry = (
   overrides?: Partial<RunsFeedEntry>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -13568,8 +13684,6 @@ export const buildRunsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
-    excludeSubruns:
-      overrides && overrides.hasOwnProperty('excludeSubruns') ? overrides.excludeSubruns! : false,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'voluptas',
@@ -13725,6 +13839,8 @@ export const buildSchedule = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '71db947a-c94a-4681-979f-7d72688947d9',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'in',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'ut',
     partitionSet:
@@ -13969,6 +14085,8 @@ export const buildSensor = (
         : relationshipsToOmit.has('SensorMetadata')
         ? ({} as SensorMetadata)
         : buildSensorMetadata({}, relationshipsToOmit),
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     minIntervalSeconds:
       overrides && overrides.hasOwnProperty('minIntervalSeconds')
         ? overrides.minIntervalSeconds!
@@ -14587,6 +14705,7 @@ export const buildTableColumn = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'illum',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'explicabo',
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : 'a',
   };
 };

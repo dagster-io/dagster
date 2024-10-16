@@ -21,19 +21,19 @@ def _repository_contains_dynamic_partitions_def(
     graphene_info, repository_selector: RepositorySelector, partitions_def_name: str
 ) -> bool:
     from dagster._core.remote_representation.external_data import (
-        ExternalDynamicPartitionsDefinitionData,
-        ExternalMultiPartitionsDefinitionData,
-        ExternalPartitionsDefinitionData,
+        DynamicPartitionsSnap,
+        MultiPartitionsSnap,
+        PartitionsSnap,
     )
 
-    def _is_matching_partitions_def(partitions_def_data: ExternalPartitionsDefinitionData):
-        if isinstance(partitions_def_data, ExternalDynamicPartitionsDefinitionData):
-            return partitions_def_data.name == partitions_def_name
-        if isinstance(partitions_def_data, ExternalMultiPartitionsDefinitionData):
+    def _is_matching_partitions_def(partitions_snap: PartitionsSnap):
+        if isinstance(partitions_snap, DynamicPartitionsSnap):
+            return partitions_snap.name == partitions_def_name
+        if isinstance(partitions_snap, MultiPartitionsSnap):
             return any(
                 [
-                    _is_matching_partitions_def(dimension.external_partitions_def_data)
-                    for dimension in partitions_def_data.external_partition_dimension_definitions
+                    _is_matching_partitions_def(dimension.partitions)
+                    for dimension in partitions_snap.partition_dimensions
                 ]
             )
         return False
@@ -43,9 +43,9 @@ def _repository_contains_dynamic_partitions_def(
         if repo_loc.has_repository(repository_selector.repository_name):
             repository = repo_loc.get_repository(repository_selector.repository_name)
             found_partitions_defs = [
-                asset_node.partitions_def_data
-                for asset_node in repository.external_repository_data.external_asset_graph_data
-                if asset_node.partitions_def_data
+                asset_node_snap.partitions
+                for asset_node_snap in repository.repository_snap.asset_nodes
+                if asset_node_snap.partitions
             ]
             return any(
                 [

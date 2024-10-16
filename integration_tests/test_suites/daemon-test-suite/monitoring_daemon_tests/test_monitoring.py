@@ -18,7 +18,7 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
     get_test_project_recon_job,
-    get_test_project_workspace_and_external_job,
+    get_test_project_workspace_and_remote_job,
 )
 
 ensure_dagster_aws_tests_import()
@@ -118,22 +118,20 @@ def test_docker_monitoring(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_job,
         ):
             with start_daemon():
-                external_job = ReOriginatedExternalJobForTest(
-                    orig_job, container_image=docker_image
-                )
+                remote_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_job_origin=external_job.get_external_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
 
                 with log_run_events(instance, run.run_id):
@@ -211,22 +209,20 @@ def test_docker_monitoring_run_out_of_attempts(aws_env):
         }
     ) as instance:
         recon_job = get_test_project_recon_job("demo_slow_job_docker", docker_image)
-        with get_test_project_workspace_and_external_job(
+        with get_test_project_workspace_and_remote_job(
             instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_job,
         ):
             with start_daemon():
-                external_job = ReOriginatedExternalJobForTest(
-                    orig_job, container_image=docker_image
-                )
+                remote_job = ReOriginatedExternalJobForTest(orig_job, container_image=docker_image)
 
                 run = instance.create_run_for_job(
                     job_def=recon_job.get_definition(),
                     run_config=run_config,
-                    external_job_origin=external_job.get_external_origin(),
-                    job_code_origin=external_job.get_python_origin(),
+                    remote_job_origin=remote_job.get_remote_origin(),
+                    job_code_origin=remote_job.get_python_origin(),
                 )
 
                 with log_run_events(instance, run.run_id):

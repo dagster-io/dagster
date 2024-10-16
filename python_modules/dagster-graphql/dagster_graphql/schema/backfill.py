@@ -17,7 +17,7 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalPartitionSet
+from dagster._core.remote_representation.external import RemotePartitionSet
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import (
@@ -39,6 +39,7 @@ from dagster_graphql.schema.errors import (
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
     GrapheneInvalidSubsetError,
+    GraphenePartitionKeysNotFoundError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
@@ -83,6 +84,7 @@ class GrapheneLaunchBackfillResult(graphene.Union):
         types = (
             GrapheneLaunchBackfillSuccess,
             GraphenePartitionSetNotFoundError,
+            GraphenePartitionKeysNotFoundError,
         ) + pipeline_execution_error_types
         name = "LaunchBackfillResult"
 
@@ -404,7 +406,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             assetCheckSelection=[],
         )
 
-    def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[ExternalPartitionSet]:
+    def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[RemotePartitionSet]:
         if self._backfill_job.partition_set_origin is None:
             return None
 
@@ -419,15 +421,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return None
 
         repository = location.get_repository(repository_name)
-        external_partition_sets = [
+        partition_sets = [
             partition_set
-            for partition_set in repository.get_external_partition_sets()
+            for partition_set in repository.get_partition_sets()
             if partition_set.name == origin.partition_set_name
         ]
-        if not external_partition_sets:
+        if not partition_sets:
             return None
 
-        return external_partition_sets[0]
+        return partition_sets[0]
 
     def _get_records(self, graphene_info: ResolveInfo) -> Sequence[RunRecord]:
         if self._records is None:
@@ -463,7 +465,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._partition_run_data
 
     def _get_partition_run_data_for_ranged_job_backfill(
-        self, instance: DagsterInstance, partition_set: ExternalPartitionSet
+        self, instance: DagsterInstance, partition_set: RemotePartitionSet
     ) -> Sequence[RunPartitionData]:
         partitions_def = partition_set.get_partitions_definition()
         records = instance.get_run_records(
@@ -555,8 +557,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return None
 
         return GraphenePartitionSet(
-            external_repository_handle=partition_set.repository_handle,
-            external_partition_set=partition_set,
+            repository_handle=partition_set.repository_handle,
+            remote_partition_set=partition_set,
         )
 
     def resolve_partitionStatuses(self, graphene_info: ResolveInfo):

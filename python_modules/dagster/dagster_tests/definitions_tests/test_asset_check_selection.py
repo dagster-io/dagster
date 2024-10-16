@@ -72,6 +72,35 @@ def test_job_with_all_checks_for_asset():
     }
 
 
+def test_checks_for_assets_asset_key_coercibles():
+    @asset
+    def asset1(): ...
+
+    @asset_check(asset=asset1)
+    def asset1_check():
+        return AssetCheckResult(passed=True)
+
+    @asset
+    def asset2(): ...
+
+    @asset_check(asset=asset2)
+    def asset2_check():
+        return AssetCheckResult(passed=True)
+
+    defs = Definitions(assets=[asset1, asset2], asset_checks=[asset1_check, asset2_check])
+    asset_graph = defs.get_asset_graph()
+
+    assert AssetSelection.checks_for_assets(asset1).resolve_checks(asset_graph) == {
+        AssetCheckKey(asset1.key, "asset1_check")
+    }
+    assert AssetSelection.checks_for_assets(asset1.key).resolve_checks(asset_graph) == {
+        AssetCheckKey(asset1.key, "asset1_check")
+    }
+    assert AssetSelection.checks_for_assets("asset1").resolve_checks(asset_graph) == {
+        AssetCheckKey(asset1.key, "asset1_check")
+    }
+
+
 def test_job_with_asset_and_all_its_checks():
     job_def = define_asset_job("job1", selection=AssetSelection.assets(asset1))
     result = execute_asset_job_in_process(job_def)

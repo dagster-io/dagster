@@ -9,12 +9,13 @@ from typing import Dict, Generator, List, Tuple
 
 import dagster._check as check
 from dagster import Definitions, RepositoryDefinition, build_sensor_context
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow
 
 from perf_harness.shared.constants import CONSTANTS_FILE, get_perf_output_file
-from perf_harness.shared.utils import scaffold_migration_state
+from perf_harness.shared.utils import scaffold_proxied_state
 
 MAKEFILE_DIR = Path(__file__).parent.parent
 DAGSTER_HOME = MAKEFILE_DIR / ".dagster_home"
@@ -60,8 +61,8 @@ def main() -> None:
     with modify_constants(num_dags, num_tasks, num_assets), environ(
         {"DAGSTER_HOME": str(DAGSTER_HOME)}
     ):
-        print("Scaffolding migration state...")
-        scaffold_migration_state(num_dags=num_dags, num_tasks=num_tasks, migration_state=True)
+        print("Scaffolding proxied state...")
+        scaffold_proxied_state(num_dags=num_dags, num_tasks=num_tasks, proxied_state=True)
 
         print("Importing airflow defs...")
         from perf_harness.airflow_dags.dags import (
@@ -72,7 +73,7 @@ def main() -> None:
 
         lines.append(f"Total airflow dags load time: {total_load_time:.4f} seconds\n")
         lines.append(f"Airflow defs import time: {import_time:.4f} seconds\n")
-        lines.append(f"Mark as dagster migrating time: {mark_as_dagster_time:.4f} seconds\n")
+        lines.append(f"Proxying to dagster time: {mark_as_dagster_time:.4f} seconds\n")
 
         print("Initializing airflow...")
         # Take in as an argument the number of tasks and the number of dags.
@@ -128,7 +129,7 @@ def main() -> None:
 
             module_name_to_defs_and_instance["observe"] = (defs, airflow_instance)
 
-            print("Loading migrating defs...")
+            print("Loading migrated defs...")
             migrate_defs_import_start_time = time.time()
             from perf_harness.dagster_defs.migrate import defs
 
@@ -144,6 +145,7 @@ def main() -> None:
                 run_suite_for_defs(
                     module_name_to_defs_and_instance=module_name_to_defs_and_instance,
                     num_dags=num_dags,
+                    instance=DagsterInstance.get(),
                 )
             )
 
@@ -156,6 +158,7 @@ def run_suite_for_defs(
     *,
     module_name_to_defs_and_instance: Dict[str, Tuple[Definitions, AirflowInstance]],
     num_dags: int,
+    instance: DagsterInstance,
 ) -> List[str]:
     lines = []
     module_name_to_repo_def_and_instance: Dict[
@@ -173,10 +176,10 @@ def run_suite_for_defs(
 
     print("Running sensor ticks with no runs...")
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
-        sensor_def = repo_def.get_sensor_def("airflow_dag_status_sensor")
+        sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         print(f"Running {module_name} sensor ticks...")
         sensor_tick_no_runs_start_time = time.time()
-        sensor_def(build_sensor_context(repository_def=repo_def))
+        sensor_def(build_sensor_context(repository_def=repo_def, instance=instance))
         sensor_tick_no_runs_end_time = time.time()
 
         lines.append(
@@ -189,9 +192,9 @@ def run_suite_for_defs(
     print("Dag run completed.")
     print("Running sensor ticks with single run...")
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
-        sensor_def = repo_def.get_sensor_def("airflow_dag_status_sensor")
+        sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         sensor_tick_with_single_run_start_time = time.time()
-        sensor_def(build_sensor_context(repository_def=repo_def))
+        sensor_def(build_sensor_context(repository_def=repo_def, instance=instance))
         sensor_tick_with_single_run_end_time = time.time()
         lines.append(
             f"{module_name} sensor tick with single run time: {sensor_tick_with_single_run_end_time - sensor_tick_with_single_run_start_time:.4f} seconds\n"
@@ -217,9 +220,9 @@ def run_suite_for_defs(
     print("All runs completed.")
     print("Running sensor ticks with all runs...")
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
-        sensor_def = repo_def.get_sensor_def("airflow_dag_status_sensor")
+        sensor_def = repo_def.get_sensor_def("my_airflow_instance__airflow_dag_status_sensor")
         sensor_tick_with_all_runs_start_time = time.time()
-        sensor_def(build_sensor_context(repository_def=repo_def))
+        sensor_def(build_sensor_context(repository_def=repo_def, instance=instance))
         sensor_tick_with_all_runs_end_time = time.time()
         lines.append(
             f"{module_name} sensor tick with {num_dags} runs time: {sensor_tick_with_all_runs_end_time - sensor_tick_with_all_runs_start_time:.4f} seconds\n"

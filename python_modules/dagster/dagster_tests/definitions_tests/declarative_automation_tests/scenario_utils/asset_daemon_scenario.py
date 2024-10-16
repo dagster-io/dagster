@@ -159,6 +159,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 if self.asset_graph.get(key).auto_observe_interval_minutes is not None
             },
             logger=self.logger,
+            emit_backfills=False,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)
@@ -191,7 +192,7 @@ class AssetDaemonScenarioState(ScenarioState):
             sensor = (
                 next(
                     iter(workspace.get_code_location("test_location").get_repositories().values())
-                ).get_external_sensor(self.sensor_name)
+                ).get_sensor(self.sensor_name)
                 if self.sensor_name
                 else None
             )
@@ -219,7 +220,7 @@ class AssetDaemonScenarioState(ScenarioState):
             if sensor:
                 auto_materialize_instigator_state = check.not_none(
                     self.instance.get_instigator_state(
-                        sensor.get_external_origin_id(), sensor.selector_id
+                        sensor.get_remote_origin_id(), sensor.selector_id
                     )
                 )
                 new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(

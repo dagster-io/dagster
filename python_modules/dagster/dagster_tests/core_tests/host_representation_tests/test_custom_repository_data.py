@@ -96,11 +96,11 @@ def test_repository_data_can_reload_without_restarting(
     repo = code_location.get_repository("bar_repo")
     # get_all_jobs called on server init, then on repository load, so starts at 2
     # this is a janky test
-    assert repo.has_external_job("foo_2")
-    assert not repo.has_external_job("foo_1")
+    assert repo.has_job("foo_2")
+    assert not repo.has_job("foo_1")
 
-    external_job = repo.get_full_external_job("foo_2")
-    assert external_job.has_node_invocation("do_something_2")
+    remote_job = repo.get_full_job("foo_2")
+    assert remote_job.has_node_invocation("do_something_2")
 
     # Reloading the location changes the pipeline without needing
     # to restart the server process
@@ -108,8 +108,12 @@ def test_repository_data_can_reload_without_restarting(
     request_context = workspace_process_context.create_request_context()
     code_location = request_context.get_code_location("test")
     repo = code_location.get_repository("bar_repo")
-    assert repo.has_external_job("foo_4")
-    assert not repo.has_external_job("foo_3")
 
-    external_job = repo.get_full_external_job("foo_4")
-    assert external_job.has_node_invocation("do_something_4")
+    # get_all_jobs is called 4 times on reload, so now at 6
+    assert repo.has_job("foo_6")
+    assert not repo.has_job("foo_5")
+    assert not repo.has_job("foo_4")
+    assert not repo.has_job("foo_3")
+
+    remote_job = repo.get_full_job("foo_6")
+    assert remote_job.has_node_invocation("do_something_6")

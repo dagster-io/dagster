@@ -10,7 +10,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.events import DagsterEventType
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
+from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
@@ -136,7 +136,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     class Meta:
         name = "AssetCheck"
 
-    def __init__(self, asset_check: ExternalAssetCheck, can_execute_individually):
+    def __init__(self, asset_check: AssetCheckNodeSnap, can_execute_individually):
         self._asset_check = asset_check
         self._can_execute_individually = can_execute_individually
 

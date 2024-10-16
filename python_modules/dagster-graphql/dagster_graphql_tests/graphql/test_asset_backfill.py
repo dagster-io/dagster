@@ -576,6 +576,33 @@ def test_launch_asset_backfill():
             )
 
 
+def test_launch_asset_backfill_with_nonexistent_partition_key():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "nonexistent1", "nonexistent2"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PartitionKeysNotFoundError"
+            )
+            assert (
+                "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
 def test_remove_partitions_defs_after_backfill_backcompat():
     repo = get_repo()
     all_asset_keys = repo.asset_graph.materializable_asset_keys

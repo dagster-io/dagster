@@ -9982,6 +9982,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '24c8a33ddd3d1b204589488bc967577f5a3ff8d183d12591c7b74ca7bbd30458';
+export const PipelineRunLogsSubscriptionVersion = '13532cd4684f573c38bb258cce7bb886ba469e571cf40c463c0cfb5f74a4c6f9';
 
-export const RunLogsQueryVersion = 'a7e61774ee31f4b2f9c2354ce17ed62b14b404a11de9a576d66702b5664a059e';
+export const RunLogsQueryVersion = 'd8fba7083a0145d5600ba824f0f2353e51a3c4e1f6bfd2aad32074270e8283d0';

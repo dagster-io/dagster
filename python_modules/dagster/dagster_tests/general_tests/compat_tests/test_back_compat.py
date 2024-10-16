@@ -35,9 +35,9 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
+from dagster._core.remote_representation.external_data import StaticPartitionsSnap
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster._core.snap.job_snapshot import JobSnapshot
+from dagster._core.snap.job_snapshot import JobSnap
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
@@ -75,21 +75,21 @@ def _migration_regex(warning, current_revision, expected_revision=None):
 
 def _run_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+        "Raised an exception that may indicate that the Dagster database needs to be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _schedule_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+        "Raised an exception that may indicate that the Dagster database needs to be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _event_log_migration_regex(_run_id, current_revision, expected_revision=None):
     warning = re.escape(
-        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+        "Raised an exception that may indicate that the Dagster database needs to be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
@@ -634,7 +634,7 @@ def test_start_time_end_time():
         assert True
 
 
-def test_external_job_origin_instigator_origin():
+def test_remote_job_origin_instigator_origin():
     def build_legacy_whitelist_map():
         legacy_env = WhitelistMap.create()
 
@@ -964,7 +964,7 @@ def test_add_bulk_actions_columns():
             assert backfill_count == migrated_row_count
 
             # check that we are writing to selector id, action types
-            external_origin = RemotePartitionSetOrigin(
+            remote_origin = RemotePartitionSetOrigin(
                 repository_origin=RemoteRepositoryOrigin(
                     code_location_origin=GrpcServerCodeLocationOrigin(port=1234, host="localhost"),
                     repository_name="fake_repository",
@@ -974,7 +974,7 @@ def test_add_bulk_actions_columns():
             instance.add_backfill(
                 PartitionBackfill(
                     backfill_id="simple",
-                    partition_set_origin=external_origin,
+                    partition_set_origin=remote_origin,
                     status=BulkActionStatus.REQUESTED,
                     partition_names=["one", "two", "three"],
                     from_failure=False,
@@ -1265,7 +1265,7 @@ def test_metadata_serialization():
 # duplicates. We need to de-dup them at the serdes/"External" layer before reconstructing the
 # partitions definition in the host process to avoid an error.
 def test_static_partitions_definition_dup_keys_backcompat():
-    received_from_user = ExternalStaticPartitionsDefinitionData(partition_keys=["a", "b", "a"])
+    received_from_user = StaticPartitionsSnap(partition_keys=["a", "b", "a"])
     assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
         partition_keys=["a", "b"]
     )
@@ -1317,6 +1317,6 @@ def test_legacy_compute_kind_tag_backcompat() -> None:
 
     legacy_snap_path = file_relative_path(__file__, "1_7_9_kind_op_job_snap.gz")
     legacy_snap = deserialize_value(
-        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnapshot
+        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnap
     )
     assert create_snapshot_id(legacy_snap) == "8db90f128b7eaa5c229bdde372e39d5cbecdc7e4"

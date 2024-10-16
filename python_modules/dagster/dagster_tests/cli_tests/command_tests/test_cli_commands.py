@@ -711,7 +711,7 @@ def valid_external_pipeline_target_cli_args_no_preset():
     ] + [args for args in valid_pipeline_python_origin_target_cli_args()]
 
 
-def valid_external_job_target_cli_args():
+def valid_remote_job_target_cli_args():
     return [
         ["-w", file_relative_path(__file__, "repository_file.yaml"), "-j", "qux"],
         ["-w", file_relative_path(__file__, "repository_module.yaml"), "-j", "qux"],
@@ -910,12 +910,12 @@ def create_repo_run(instance):
     ) as workspace_process_context:
         context = workspace_process_context.create_request_context()
         repo = context.code_locations[0].get_repository("my_repo")
-        external_job = repo.get_full_external_job("my_job")
+        remote_job = repo.get_full_job("my_job")
         run = create_run_for_test(
             instance,
             job_name="my_job",
-            external_job_origin=external_job.get_external_origin(),
-            job_code_origin=external_job.get_python_origin(),
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, context)
     return run

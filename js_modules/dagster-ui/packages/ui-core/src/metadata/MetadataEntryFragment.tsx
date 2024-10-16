@@ -65,12 +65,7 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       }
     }
     ... on TableMetadataEntry {
-      table {
-        records
-        schema {
-          ...TableSchemaFragment
-        }
-      }
+      ...TableMetadataEntryFragment
     }
     ... on TableSchemaMetadataEntry {
       ...TableSchemaForMetadataEntry
@@ -87,6 +82,16 @@ export const METADATA_ENTRY_FRAGMENT = gql`
           url
           label
         }
+      }
+    }
+  }
+
+  fragment TableMetadataEntryFragment on TableMetadataEntry {
+    label
+    table {
+      records
+      schema {
+        ...TableSchemaFragment
       }
     }
   }

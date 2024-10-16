@@ -1,5 +1,0 @@
-tasks:
-  - id: load_iris 
-    migrated: False 
-  - id: build_dbt_models
-    migrated: False

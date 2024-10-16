@@ -78,7 +78,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_value(
             grpc_client.start_run(
                 ExecuteExternalJobArgs(
-                    job_origin=run.external_job_origin,  # type: ignore  # (possible none)
+                    job_origin=run.remote_job_origin,  # type: ignore  # (possible none)
                     run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
@@ -105,9 +105,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
             )
 
-        external_job_origin = check.not_none(run.external_job_origin)
+        remote_job_origin = check.not_none(run.remote_job_origin)
         code_location = context.workspace.get_code_location(
-            external_job_origin.repository_origin.code_location_origin.location_name
+            remote_job_origin.repository_origin.code_location_origin.location_name
         )
 
         check.inst(

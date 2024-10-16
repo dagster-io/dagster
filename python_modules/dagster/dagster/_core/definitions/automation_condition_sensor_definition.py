@@ -14,7 +14,10 @@ from dagster._core.definitions.sensor_definition import (
     SensorEvaluationContext,
     SensorType,
 )
-from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name
+from dagster._utils.tags import normalize_tags
+
+EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
 
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
@@ -40,6 +43,7 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         observe_run_tags={},
         auto_observe_asset_keys=set(),
         asset_selection=sensor_def.asset_selection,
+        emit_backfills=sensor_def.emit_backfills,
         default_condition=sensor_def.default_condition,
         logger=context.log,
     ).evaluate()
@@ -69,12 +73,16 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
         run_tags (Optional[Mapping[str, Any]]): Tags that will be automatically attached to runs launched by this sensor.
+        metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
+            sensor. Values will be normalized to typed `MetadataValue` objects.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
         minimum_interval_seconds (Optional[int]): The frequency at which to try to evaluate the
             sensor. The actual interval will be longer if the sensor evaluation takes longer than
             the provided interval.
         description (Optional[str]): A human-readable description of the sensor.
+        emit_backfills (bool): If set to True, will emit a backfill on any tick where more than one partition
+            of any single asset is requested, rather than individual runs. Defaults to False.
     """
 
     def __init__(
@@ -87,9 +95,13 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
+        metadata: Optional[Mapping[str, object]] = None,
+        emit_backfills: bool = False,
         **kwargs,
     ):
         self._user_code = kwargs.get("user_code", False)
+        check.bool_param(emit_backfills, "emit_backfills")
+
         self._default_condition = check.opt_inst_param(
             kwargs.get("default_condition"), "default_condition", AutomationCondition
         )
@@ -99,7 +111,11 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             "Setting a `default_condition` for a non-user-code AutomationConditionSensorDefinition is not supported.",
         )
 
-        self._run_tags = normalize_tags(run_tags).tags
+        self._run_tags = normalize_tags(run_tags)
+
+        # only store this value in the metadata if it's True
+        if emit_backfills:
+            metadata = {**(metadata or {}), EMIT_BACKFILLS_METADATA_KEY: True}
 
         super().__init__(
             name=check_valid_name(name),
@@ -113,6 +129,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             required_resource_keys=None,
             asset_selection=asset_selection,
             tags=tags,
+            metadata=metadata,
         )
 
     @property
@@ -122,6 +139,10 @@ class AutomationConditionSensorDefinition(SensorDefinition):
     @property
     def asset_selection(self) -> AssetSelection:
         return cast(AssetSelection, super().asset_selection)
+
+    @property
+    def emit_backfills(self) -> bool:
+        return EMIT_BACKFILLS_METADATA_KEY in self.metadata
 
     @property
     def default_condition(self) -> Optional[AutomationCondition]:

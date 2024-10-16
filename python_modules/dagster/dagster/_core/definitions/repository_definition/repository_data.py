@@ -219,7 +219,7 @@ class CachingRepositoryData(RepositoryData):
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
-        asset_checks_defs_by_key: Mapping[AssetCheckKey, "AssetChecksDefinition"],
+        asset_checks_defs_by_key: Mapping[AssetCheckKey, "AssetsDefinition"],
         top_level_resources: Mapping[str, ResourceDefinition],
         utilized_env_vars: Mapping[str, AbstractSet[str]],
         unresolved_partitioned_asset_schedules: Mapping[
@@ -500,7 +500,18 @@ class CachingRepositoryData(RepositoryData):
         return self._assets_defs_by_key
 
     def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
-        return self._assets_checks_defs_by_key
+        from dagster._core.definitions.asset_checks import AssetChecksDefinition
+
+        return {
+            key: (
+                ad
+                if isinstance(ad, AssetChecksDefinition)
+                # some of the items may be AssetsDefinition objects, but AssetChecksDefinition are
+                # expected, so convert if necessary
+                else AssetChecksDefinition(**ad.get_attributes_dict())
+            )
+            for key, ad in self._assets_checks_defs_by_key.items()
+        }
 
     def _check_node_defs(self, job_defs: Sequence[JobDefinition]) -> None:
         node_defs = {}

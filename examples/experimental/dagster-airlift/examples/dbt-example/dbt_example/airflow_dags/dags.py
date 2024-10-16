@@ -6,8 +6,8 @@ from airflow import DAG
 from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
 from dagster._time import get_current_datetime
-from dagster_airlift.in_airflow import mark_as_dagster_migrating
-from dagster_airlift.migration_state import load_migration_state_from_yaml
+from dagster_airlift.in_airflow import proxying_to_dagster
+from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from dbt_example.shared.lakehouse_utils import load_csv_to_duckdb
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
@@ -67,7 +67,7 @@ run_spark_job = BashOperator(
     dag=spark_dag,
 )
 
-mark_as_dagster_migrating(
+proxying_to_dagster(
     global_vars=globals(),
-    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+    proxied_state=load_proxied_state_from_yaml(Path(__file__).parent / "proxied_state"),
 )

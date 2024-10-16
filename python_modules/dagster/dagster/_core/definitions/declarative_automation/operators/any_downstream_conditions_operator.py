@@ -22,8 +22,8 @@ class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     operand: AutomationCondition
 
     @property
-    def description(self) -> str:
-        return ",".join(key.to_user_string() for key in self.downstream_keys)
+    def name(self) -> str:
+        return ", ".join(key.to_user_string() for key in self.downstream_keys)
 
     @property
     def children(self) -> Sequence[AutomationCondition]:

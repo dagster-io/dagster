@@ -20,6 +20,7 @@ from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill,
     create_and_launch_partition_backfill,
     resume_partition_backfill,
+    retry_partition_backfill,
 )
 from dagster_graphql.implementation.execution.dynamic_partitions import (
     add_dynamic_partition,
@@ -30,7 +31,7 @@ from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_reexecution,
     launch_reexecution_from_parent_run,
 )
-from dagster_graphql.implementation.external import fetch_workspace, get_full_external_job_or_raise
+from dagster_graphql.implementation.external import fetch_workspace, get_full_remote_job_or_raise
 from dagster_graphql.implementation.telemetry import log_ui_telemetry_event
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
@@ -119,7 +120,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 )
             )
 
-        external_pipeline = get_full_external_job_or_raise(
+        external_pipeline = get_full_remote_job_or_raise(
             graphene_info,
             selector,
         )
@@ -350,7 +351,7 @@ class GrapheneCancelBackfillMutation(graphene.Mutation):
 
 
 class GrapheneResumeBackfillMutation(graphene.Mutation):
-    """Retries a set of partition backfill runs."""
+    """Resumes a set of partition backfill runs. Resuming a backfill will not retry any failed runs."""
 
     Output = graphene.NonNull(GrapheneResumeBackfillResult)
 
@@ -364,6 +365,31 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
     @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
     def mutate(self, graphene_info: ResolveInfo, backfillId: str):
         return resume_partition_backfill(graphene_info, backfillId)
+
+
+class GrapheneReexecuteBackfillMutation(graphene.Mutation):
+    """Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions."""
+
+    Output = graphene.NonNull(GrapheneLaunchBackfillResult)
+
+    class Arguments:
+        reexecutionParams = graphene.Argument(GrapheneReexecutionParams)
+
+    class Meta:
+        name = "RetryBackfillMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        reexecutionParams: GrapheneReexecutionParams,
+    ):
+        return retry_partition_backfill(
+            graphene_info,
+            backfill_id=reexecutionParams["parentRunId"],
+            strategy=reexecutionParams["strategy"],
+        )
 
 
 class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
@@ -981,6 +1007,7 @@ class GrapheneMutation(graphene.ObjectType):
     reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
+    reexecutePartitionBackfill = GrapheneReexecuteBackfillMutation.Field()
     cancelPartitionBackfill = GrapheneCancelBackfillMutation.Field()
     logTelemetry = GrapheneLogTelemetryMutation.Field()
     setNuxSeen = GrapheneSetNuxSeenMutation.Field()

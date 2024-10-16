@@ -11,6 +11,7 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
@@ -186,6 +187,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                 context=self.kube_context,
             )
 
+    @public
     def run(
         self,
         *,

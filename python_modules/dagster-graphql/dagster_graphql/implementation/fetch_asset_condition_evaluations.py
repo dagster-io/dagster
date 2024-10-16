@@ -49,8 +49,8 @@ def _get_graphene_records_from_evaluations(
     for asset_key in asset_keys:
         asset_node = nodes.get(asset_key)
         partitions_defs[asset_key] = (
-            asset_node.external_asset_node.partitions_def_data.get_partitions_definition()
-            if asset_node and asset_node.external_asset_node.partitions_def_data
+            asset_node.asset_node_snap.partitions.get_partitions_definition()
+            if asset_node and asset_node.asset_node_snap.partitions
             else None
         )
 

@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_external_job_data
+# name: test_remote_job_data
   '''
   {
     "__class__": "ExternalPipelineData",
@@ -1122,7 +1122,7 @@
   }
   '''
 # ---
-# name: test_external_repository_data
+# name: test_repository_snap
   '''
   {
     "__class__": "ExternalRepositoryData",
@@ -2285,6 +2285,7 @@
         "description": null,
         "environment_vars": {},
         "execution_timezone": "US/Central",
+        "metadata": {},
         "mode": "default",
         "name": "foo_schedule",
         "partition_set_name": null,

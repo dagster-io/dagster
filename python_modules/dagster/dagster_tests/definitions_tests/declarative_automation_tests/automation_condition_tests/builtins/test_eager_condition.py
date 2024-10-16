@@ -1,4 +1,21 @@
-from dagster import AutomationCondition
+from dagster import (
+    AssetDep,
+    AssetKey,
+    AssetMaterialization,
+    AutomationCondition,
+    DagsterInstance,
+    DailyPartitionsDefinition,
+    Definitions,
+    DimensionPartitionMapping,
+    MultiPartitionMapping,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
+    asset,
+    asset_check,
+    evaluate_automation_conditions,
+)
+from dagster._core.instance_for_test import instance_for_test
 
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -108,3 +125,118 @@ def test_eager_hourly_partitioned() -> None:
     # B does not get immediately requested again
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
+
+
+def test_eager_static_partitioned() -> None:
+    two_partitions = StaticPartitionsDefinition(["a", "b"])
+    four_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    def _get_defs(pd: StaticPartitionsDefinition) -> Definitions:
+        @asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
+        def A() -> None: ...
+
+        @asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
+        def B() -> None: ...
+
+        return Definitions(assets=[A, B])
+
+    with instance_for_test() as instance:
+        # no "surprise backfill"
+        result = evaluate_automation_conditions(defs=_get_defs(two_partitions), instance=instance)
+        assert result.total_requested == 0
+
+        # now add two more partitions to the definition, kick off a run for those
+        result = evaluate_automation_conditions(
+            defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
+        )
+        assert result.total_requested == 4
+        assert result.get_requested_partitions(AssetKey("A")) == {"c", "d"}
+        assert result.get_requested_partitions(AssetKey("B")) == {"c", "d"}
+
+        # already requested, no more
+        result = evaluate_automation_conditions(
+            defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
+        )
+        assert result.total_requested == 0
+
+
+def test_eager_multi_partitioned_self_dependency() -> None:
+    pd = MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition(start_date="2024-08-01"),
+            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    @asset(partitions_def=pd)
+    def parent() -> None: ...
+
+    @asset(
+        deps=[
+            parent,
+            AssetDep(
+                "child",
+                partition_mapping=MultiPartitionMapping(
+                    {
+                        "time": DimensionPartitionMapping(
+                            "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        ),
+                    }
+                ),
+            ),
+        ],
+        partitions_def=pd,
+        automation_condition=AutomationCondition.eager().without(
+            AutomationCondition.in_latest_time_window()
+        ),
+    )
+    def child() -> None: ...
+
+    defs = Definitions(assets=[parent, child])
+
+    with instance_for_test() as instance:
+        # nothing happening
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+        assert result.total_requested == 0
+
+        # materialize upstream
+        instance.report_runless_asset_event(
+            AssetMaterialization("parent", partition="a|2024-08-16")
+        )
+        result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+        # can't materialize downstream yet because previous partition of child is still missing
+        assert result.total_requested == 0
+
+
+def test_eager_on_asset_check() -> None:
+    @asset
+    def A() -> None: ...
+
+    @asset_check(asset=A, automation_condition=AutomationCondition.eager())
+    def foo_check() -> ...: ...
+
+    defs = Definitions(assets=[A], asset_checks=[foo_check])
+
+    instance = DagsterInstance.ephemeral()
+
+    # parent hasn't been updated yet
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # now A is updated, so request
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # don't keep requesting
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # A updated again, re-request
+    instance.report_runless_asset_event(AssetMaterialization("A"))
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # don't keep requesting
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0

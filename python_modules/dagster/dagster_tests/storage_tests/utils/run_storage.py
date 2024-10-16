@@ -4,6 +4,7 @@ import time
 import unittest
 from datetime import datetime, timedelta
 from typing import Optional
+from uuid import uuid4
 
 import pytest
 from dagster import _seven, job, op
@@ -98,6 +99,22 @@ class TestRunStorage:
     def supports_backfill_job_name_filtering_queries(self):
         return False
 
+    # Override for storages that support filtering backfills by backfill id
+    def supports_backfill_id_filtering_queries(self):
+        return False
+
+    # Override for storages that support getting backfill counts
+    def supports_backfills_count(self):
+        return False
+
+    def get_backfills_and_assert_expected_count(self, storage, filters, expected_count):
+        backfills = storage.get_backfills(filters)
+        assert len(backfills) == expected_count
+        if self.supports_backfills_count():
+            count = storage.get_backfills_count(filters)
+            assert len(backfills) == count
+        return backfills
+
     @staticmethod
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
@@ -127,7 +144,7 @@ class TestRunStorage:
         parent_run_id=None,
         root_run_id=None,
         job_snapshot_id=None,
-        external_job_origin=None,
+        remote_job_origin=None,
     ):
         return DagsterRun(
             job_name=job_name,
@@ -138,7 +155,7 @@ class TestRunStorage:
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             job_snapshot_id=job_snapshot_id,
-            external_job_origin=external_job_origin,
+            remote_job_origin=remote_job_origin,
         )
 
     def test_basic_storage(self, storage):
@@ -200,10 +217,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name=job_name, external_job_origin=origin_one)
+            TestRunStorage.build_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name=job_name, external_job_origin=origin_two)
+            TestRunStorage.build_run(run_id=two, job_name=job_name, remote_job_origin=origin_two)
         )
         one_runs = storage.get_runs(
             RunsFilter(tags={REPOSITORY_LABEL_TAG: "fake_repo_one@fake:fake"})
@@ -1078,7 +1095,7 @@ class TestRunStorage:
             assert not storage.has_job_snapshot(job_snapshot_id)
 
     def test_single_write_read_with_snapshot(self, storage: RunStorage):
-        run_with_snapshot_id = "lkasjdflkjasdf"
+        run_with_snapshot_id = str(uuid4())
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         job_snapshot = job_def.get_job_snapshot()
@@ -1427,54 +1444,32 @@ class TestRunStorage:
             backfill_timestamp=time.time(),
         )
         storage.add_backfill(one)
-        assert (
-            len(
-                storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
-                )
-            )
-            == 1
+        requested_filters = BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
+        requested_backfills = self.get_backfills_and_assert_expected_count(
+            storage, requested_filters, 1
         )
-        assert (
-            len(
-                storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED_SUCCESS])
-                )
-            )
-            == 0
+
+        assert requested_backfills[0] == one
+
+        success_filters = BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED_SUCCESS])
+        self.get_backfills_and_assert_expected_count(storage, success_filters, 0)
+
+        multi_filters = BulkActionsFilter(
+            statuses=[BulkActionStatus.COMPLETED_SUCCESS, BulkActionStatus.REQUESTED]
         )
-        assert (
-            len(
-                storage.get_backfills(
-                    filters=BulkActionsFilter(
-                        statuses=[BulkActionStatus.COMPLETED_SUCCESS, BulkActionStatus.REQUESTED]
-                    )
-                )
-            )
-            == 1
-        )
-        backfills = storage.get_backfills(
-            filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
-        )
-        assert backfills[0] == one
+        self.get_backfills_and_assert_expected_count(storage, multi_filters, 1)
 
         storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
-        assert (
-            len(
-                storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
-                )
-            )
-            == 0
+        one = storage.get_backfill(one.backfill_id)
+
+        self.get_backfills_and_assert_expected_count(storage, requested_filters, 0)
+
+        success_backfills = self.get_backfills_and_assert_expected_count(
+            storage, success_filters, 1
         )
-        assert (
-            len(
-                storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED_SUCCESS])
-                )
-            )
-            == 1
-        )
+        assert success_backfills[0] == one
+
+        self.get_backfills_and_assert_expected_count(storage, multi_filters, 1)
 
         two = PartitionBackfill(
             "two",
@@ -1486,16 +1481,7 @@ class TestRunStorage:
             backfill_timestamp=time.time(),
         )
         storage.add_backfill(two)
-        assert (
-            len(
-                storage.get_backfills(
-                    filters=BulkActionsFilter(
-                        statuses=[BulkActionStatus.COMPLETED_SUCCESS, BulkActionStatus.REQUESTED]
-                    )
-                )
-            )
-            == 2
-        )
+        self.get_backfills_and_assert_expected_count(storage, multi_filters, 2)
 
     def test_backfill_created_time_filtering(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
@@ -1516,21 +1502,21 @@ class TestRunStorage:
             storage.add_backfill(backfill)
             all_backfills.append(backfill)
 
-        created_before = storage.get_backfills(
-            filters=BulkActionsFilter(
-                created_before=datetime_from_timestamp(all_backfills[2].backfill_timestamp)
-            )
+        created_before_filter = BulkActionsFilter(
+            created_before=datetime_from_timestamp(all_backfills[2].backfill_timestamp)
         )
-        assert len(created_before) == 2
+        created_before = self.get_backfills_and_assert_expected_count(
+            storage, created_before_filter, 2
+        )
         for backfill in created_before:
             assert backfill.backfill_timestamp < all_backfills[2].backfill_timestamp
 
-        created_after = storage.get_backfills(
-            filters=BulkActionsFilter(
-                created_after=datetime_from_timestamp(all_backfills[2].backfill_timestamp)
-            )
+        created_after_filter = BulkActionsFilter(
+            created_after=datetime_from_timestamp(all_backfills[2].backfill_timestamp)
         )
-        assert len(created_after) == 2
+        created_after = self.get_backfills_and_assert_expected_count(
+            storage, created_after_filter, 2
+        )
         for backfill in created_after:
             assert backfill.backfill_timestamp > all_backfills[2].backfill_timestamp
 
@@ -1562,27 +1548,24 @@ class TestRunStorage:
             )
         )
 
-        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "bar"}))
-        assert len(backfill_with_tags) == 1
+        foo_bar_filter = BulkActionsFilter(tags={"foo": "bar"})
+        backfill_with_tags = self.get_backfills_and_assert_expected_count(
+            storage, foo_bar_filter, 1
+        )
         assert backfill_with_tags[0].backfill_id == backfill.backfill_id
         assert backfill_with_tags[0].tags == backfill.tags
 
-        backfill_with_tags = storage.get_backfills(
-            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
-        )
-        assert len(backfill_with_tags) == 1
+        letter_filter = BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        backfill_with_tags = self.get_backfills_and_assert_expected_count(storage, letter_filter, 1)
         assert backfill_with_tags[0].backfill_id == backfill.backfill_id
         assert backfill_with_tags[0].tags == backfill.tags
 
         # test for a tag that doesn't exist
+        not_present_filter = BulkActionsFilter(tags={"not": "present"})
+        self.get_backfills_and_assert_expected_count(storage, not_present_filter, 0)
 
-        backfill_with_tags = storage.get_backfills(
-            filters=BulkActionsFilter(tags={"not": "present"})
-        )
-        assert len(backfill_with_tags) == 0
-
-        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "no"}))
-        assert len(backfill_with_tags) == 0
+        wrong_value_filter = BulkActionsFilter(tags={"foo": "no"})
+        self.get_backfills_and_assert_expected_count(storage, wrong_value_filter, 0)
 
     def test_backfill_tags_on_runs_not_backfills_filtering(self, storage: RunStorage):
         if not self.supports_backfill_tags_filtering_queries():
@@ -1617,13 +1600,11 @@ class TestRunStorage:
             )
         )
 
-        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"baz": "qux"}))
-        assert len(backfill_with_tags) == 0
+        baz_filter = BulkActionsFilter(tags={"baz": "qux"})
+        self.get_backfills_and_assert_expected_count(storage, baz_filter, 0)
 
-        backfill_with_tags = storage.get_backfills(
-            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
-        )
-        assert len(backfill_with_tags) == 0
+        letter_filter = BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        self.get_backfills_and_assert_expected_count(storage, letter_filter, 0)
 
     def test_backfill_tags_filtering_multiple_results(self, storage: RunStorage):
         if not self.supports_backfill_tags_filtering_queries():
@@ -1656,31 +1637,23 @@ class TestRunStorage:
                 )
             )
 
-        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "bar"}))
-        assert len(backfill_with_tags) == 3
+        foo_filter = BulkActionsFilter(tags={"foo": "bar"})
+        self.get_backfills_and_assert_expected_count(storage, foo_filter, 3)
 
-        backfill_with_tags = storage.get_backfills(
-            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
-        )
-        assert len(backfill_with_tags) == 0
+        letter_filter = BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        self.get_backfills_and_assert_expected_count(storage, letter_filter, 0)
 
-        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"even": "True"}))
-        assert len(backfill_with_tags) == 2
+        even_filter = BulkActionsFilter(tags={"even": "True"})
+        self.get_backfills_and_assert_expected_count(storage, even_filter, 2)
 
-        backfill_with_tags = storage.get_backfills(
-            filters=BulkActionsFilter(tags={"iter": ["1", "2"]})
-        )
-        assert len(backfill_with_tags) == 2
+        iter_filter = BulkActionsFilter(tags={"iter": ["1", "2"]})
+        self.get_backfills_and_assert_expected_count(storage, iter_filter, 2)
 
-        backfill_with_tags = storage.get_backfills(
-            filters=BulkActionsFilter(tags={"iter": ["1", "2"], "even": "True"})
-        )
-        assert len(backfill_with_tags) == 1
+        iter_even_filter = BulkActionsFilter(tags={"iter": ["1", "2"], "even": "True"})
+        self.get_backfills_and_assert_expected_count(storage, iter_even_filter, 1)
 
-        backfill_with_tags = storage.get_backfills(
-            filters=BulkActionsFilter(tags={"not": "present"})
-        )
-        assert len(backfill_with_tags) == 0
+        not_present_filter = BulkActionsFilter(tags={"not": "present"})
+        self.get_backfills_and_assert_expected_count(storage, not_present_filter, 0)
 
     def test_backfill_simple_job_name_filtering(self, storage: RunStorage):
         if not self.supports_backfill_job_name_filtering_queries():
@@ -1719,16 +1692,48 @@ class TestRunStorage:
             )
         )
 
-        backfills_for_job = storage.get_backfills(filters=BulkActionsFilter(job_name="fake"))
-        assert len(backfills_for_job) == 1
+        backfills_for_job = self.get_backfills_and_assert_expected_count(
+            storage, BulkActionsFilter(job_name="fake"), 1
+        )
         assert backfills_for_job[0].backfill_id == backfill.backfill_id
 
         # test for a job_name that doesn't match
-
-        backfills_for_job = storage.get_backfills(
-            filters=BulkActionsFilter(job_name="a_different_pipeline")
+        self.get_backfills_and_assert_expected_count(
+            storage, BulkActionsFilter(job_name="a_different_pipeline"), 0
         )
-        assert len(backfills_for_job) == 0
+
+    def test_backfill_id_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_id_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by backfill id")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="fake",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+
+        backfills_for_id = self.get_backfills_and_assert_expected_count(
+            storage, BulkActionsFilter(backfill_ids=[backfill.backfill_id]), 1
+        )
+        assert backfills_for_id[0].backfill_id == backfill.backfill_id
 
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
@@ -1918,10 +1923,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name=job_name, external_job_origin=origin_one)
+            TestRunStorage.build_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name=job_name, external_job_origin=origin_one)
+            TestRunStorage.build_run(run_id=two, job_name=job_name, remote_job_origin=origin_one)
         )
 
         one_runs = storage.get_runs(

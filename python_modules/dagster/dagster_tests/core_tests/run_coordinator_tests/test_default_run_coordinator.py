@@ -2,7 +2,7 @@ from typing import Iterator
 
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.base import RunCoordinator
 from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
@@ -30,12 +30,12 @@ def coodinator(instance: DagsterInstance) -> Iterator[RunCoordinator]:
 
 
 def _create_run(
-    instance: DagsterInstance, external_pipeline: ExternalJob, **kwargs: object
+    instance: DagsterInstance, external_pipeline: RemoteJob, **kwargs: object
 ) -> DagsterRun:
     job_args = merge_dicts(
         {
             "job_name": "foo",
-            "external_job_origin": external_pipeline.get_external_origin(),
+            "remote_job_origin": external_pipeline.get_remote_origin(),
             "job_code_origin": external_pipeline.get_python_origin(),
         },
         kwargs,
@@ -45,13 +45,13 @@ def _create_run(
 
 def test_submit_run(instance: DagsterInstance, coodinator: DefaultRunCoordinator):
     with get_bar_workspace(instance) as workspace:
-        external_job = (
+        remote_job = (
             workspace.get_code_location("bar_code_location")
             .get_repository("bar_repo")
-            .get_full_external_job("foo")
+            .get_full_job("foo")
         )
 
-        run = _create_run(instance, external_job)
+        run = _create_run(instance, remote_job)
         returned_run = coodinator.submit_run(SubmitRunContext(run, workspace))
         assert returned_run.run_id == run.run_id
         assert returned_run.status == DagsterRunStatus.STARTING
@@ -64,13 +64,13 @@ def test_submit_run(instance: DagsterInstance, coodinator: DefaultRunCoordinator
 
 def test_submit_run_checks_status(instance: DagsterInstance, coodinator: DefaultRunCoordinator):
     with get_bar_workspace(instance) as workspace:
-        external_job = (
+        remote_job = (
             workspace.get_code_location("bar_code_location")
             .get_repository("bar_repo")
-            .get_full_external_job("foo")
+            .get_full_job("foo")
         )
 
-        run = _create_run(instance, external_job, status=DagsterRunStatus.STARTED)
+        run = _create_run(instance, remote_job, status=DagsterRunStatus.STARTED)
         coodinator.submit_run(SubmitRunContext(run, workspace))
 
         # assert that runs not in a NOT_STARTED state are not launched

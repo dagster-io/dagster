@@ -1,11 +1,12 @@
 from functools import cached_property
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Set
 
-from dagster import AssetKey
+from dagster import (
+    AssetKey,
+    _check as check,
+)
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
-
-from dagster_airlift.core.utils import convert_to_valid_dagster_name
 
 
 @whitelist_for_serdes
@@ -20,6 +21,10 @@ class TaskInfo:
     def dag_url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
 
+    @cached_property
+    def downstream_task_ids(self) -> List[str]:
+        return check.is_list(self.metadata["downstream_task_ids"], str)
+
 
 @whitelist_for_serdes
 @record
@@ -31,16 +36,6 @@ class DagInfo:
     @property
     def url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
-
-    @cached_property
-    def dagster_safe_dag_id(self) -> str:
-        """Name based on the dag_id that is safe to use in dagster."""
-        return convert_to_valid_dagster_name(self.dag_id)
-
-    @property
-    def dag_asset_key(self) -> AssetKey:
-        # Conventional asset key representing a successful run of an airfow dag.
-        return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
 
     @property
     def file_token(self) -> str:
@@ -54,11 +49,8 @@ class TaskHandle(NamedTuple):
 
 
 @whitelist_for_serdes
-@record
-class MappedAirflowTaskData:
-    task_info: TaskInfo
-    task_handle: TaskHandle
-    migrated: Optional[bool]
+class DagHandle(NamedTuple):
+    dag_id: str
 
 
 ###################################################################################################
@@ -72,17 +64,24 @@ class SerializedDagData:
     """A record containing pre-computed data about a given airflow dag."""
 
     dag_id: str
-    task_handle_data: Mapping[str, "SerializedTaskHandleData"]
     dag_info: DagInfo
     source_code: str
     leaf_asset_keys: Set[AssetKey]
+    task_infos: Mapping[str, TaskInfo]
 
 
 @whitelist_for_serdes
 @record
-class KeyScopedDataItem:
+class KeyScopedTaskHandles:
     asset_key: AssetKey
-    mapped_tasks: List[MappedAirflowTaskData]
+    mapped_tasks: AbstractSet[TaskHandle]
+
+
+@whitelist_for_serdes
+@record
+class KeyScopedDagHandles:
+    asset_key: AssetKey
+    mapped_dags: AbstractSet[DagHandle]
 
 
 ###################################################################################################
@@ -93,23 +92,19 @@ class KeyScopedDataItem:
 # - created
 # - removed existing_asset_data
 # - added key_scope_data_items
+# - added instance_name
 @whitelist_for_serdes
 @record
 class SerializedAirflowDefinitionsData:
-    key_scoped_data_items: List[KeyScopedDataItem]
+    instance_name: str
+    key_scoped_task_handles: List[KeyScopedTaskHandles]
+    key_scoped_dag_handles: List[KeyScopedDagHandles]
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
-        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
+    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
+        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_task_handles}
 
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedTaskHandleData:
-    """A record containing known data about a given airflow task handle."""
-
-    migration_state: Optional[bool]
-    asset_keys_in_task: AbstractSet[AssetKey]
+    @cached_property
+    def all_mapped_dags(self) -> Dict[AssetKey, AbstractSet[DagHandle]]:
+        return {item.asset_key: item.mapped_dags for item in self.key_scoped_dag_handles}

@@ -1,0 +1,5 @@
+version: 2
+
+models:
+  - name: customers_refined
+    description: This table references the jaffle shop customers table

@@ -27,12 +27,11 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalSchedule
+from dagster._core.remote_representation import RemoteSchedule
 from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -71,6 +70,10 @@ LAST_ITERATION_CHECKPOINT_JITTER_SECONDS = int(
     os.getenv("DAGSTER_SCHEDULE_CHECKPOINT_JITTER_SECONDS", "600")
 )
 
+RETAIN_ORPHANED_STATE_INTERVAL_SECONDS = int(
+    os.getenv("DAGSTER_SCHEDULE_ORPHANED_STATE_RETENTION_SECONDS", "43200")  # 12 hours
+)
+
 # How long to wait if an error is raised in the SchedulerDaemon iteration
 ERROR_INTERVAL_TIME = 5
 
@@ -78,13 +81,13 @@ ERROR_INTERVAL_TIME = 5
 class _ScheduleLaunchContext(AbstractContextManager):
     def __init__(
         self,
-        external_schedule: ExternalSchedule,
+        remote_schedule: RemoteSchedule,
         tick: InstigatorTick,
         instance: DagsterInstance,
         logger: logging.Logger,
         tick_retention_settings,
     ):
-        self._external_schedule = external_schedule
+        self._remote_schedule = remote_schedule
         self._instance = instance
         self._logger = logger
         self._tick = tick
@@ -103,8 +106,8 @@ class _ScheduleLaunchContext(AbstractContextManager):
     @property
     def log_key(self) -> Sequence[str]:
         return [
-            self._external_schedule.handle.repository_name,
-            self._external_schedule.name,
+            self._remote_schedule.handle.repository_name,
+            self._remote_schedule.name,
             self.tick_id,
         ]
 
@@ -136,8 +139,8 @@ class _ScheduleLaunchContext(AbstractContextManager):
             if day_offset <= 0:
                 continue
             self._instance.purge_ticks(
-                self._external_schedule.get_external_origin_id(),
-                selector_id=self._external_schedule.selector_id,
+                self._remote_schedule.get_remote_origin_id(),
+                selector_id=self._remote_schedule.selector_id,
                 before=(get_current_datetime() - datetime.timedelta(days=day_offset)).timestamp(),
                 tick_statuses=list(statuses),
             )
@@ -175,7 +178,7 @@ class ScheduleIterationTimes(NamedTuple):
     next_iteration_timestamp: float
     last_iteration_timestamp: float
 
-    def should_run_next_iteration(self, schedule: ExternalSchedule, now_timestamp: float):
+    def should_run_next_iteration(self, schedule: RemoteSchedule, now_timestamp: float):
         if schedule.cron_schedule != self.cron_schedule:
             # cron schedule has changed - always run next iteration to check
             return True
@@ -282,57 +285,91 @@ def launch_scheduled_runs(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
-    schedules: Dict[str, ExternalSchedule] = {}
+    running_schedules: Dict[str, RemoteSchedule] = {}
+    all_workspace_schedule_selector_ids = set()
     error_locations = set()
+
+    now_timestamp = end_datetime_utc.timestamp()
 
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
         if code_location:
             for repo in code_location.get_repositories().values():
-                for schedule in repo.get_external_schedules():
+                for schedule in repo.get_schedules():
                     selector_id = schedule.selector_id
+                    all_workspace_schedule_selector_ids.add(selector_id)
                     if schedule.get_current_instigator_state(
                         all_schedule_states.get(selector_id)
                     ).is_running:
-                        schedules[selector_id] = schedule
+                        running_schedules[selector_id] = schedule
+                    elif all_schedule_states.get(selector_id):
+                        schedule_state = all_schedule_states[selector_id]
+                        # If there is a DB row to update, see if we should still update the
+                        # last_iteration_timestamp
+                        _write_and_get_next_checkpoint_timestamp(
+                            instance,
+                            all_schedule_states[selector_id],
+                            cast(ScheduleInstigatorData, schedule_state.instigator_data),
+                            now_timestamp,
+                        )
+
         elif location_entry.load_error:
             error_locations.add(location_entry.origin.location_name)
 
-    # Remove any schedule states that were previously created with DECLARED_IN_CODE
-    # and can no longer be found in the workspace (so that if they are later added
-    # back again, their timestamps will start at the correct place)
+    # Remove any schedule states that were previously created and can no longer
+    # be found in the workspace (so that if they are later added back again,
+    # their timestamps will start at the correct place)
     states_to_delete = [
         schedule_state
         for selector_id, schedule_state in all_schedule_states.items()
-        if selector_id not in schedules
-        and schedule_state.status == InstigatorStatus.DECLARED_IN_CODE
+        if selector_id not in all_workspace_schedule_selector_ids
+        or (
+            schedule_state.status == InstigatorStatus.DECLARED_IN_CODE
+            and not running_schedules.get(selector_id)
+        )
     ]
     for state in states_to_delete:
         location_name = state.origin.repository_origin.code_location_origin.location_name
-        # don't clean up auto running state if its location is an error state
-        if location_name not in error_locations:
+
+        if location_name in error_locations:
+            # don't clean up state if its location is an error state
+            continue
+
+        _last_iteration_time = (
+            state.instigator_data.last_iteration_timestamp or 0.0
+            if isinstance(state.instigator_data, ScheduleInstigatorData)
+            else 0.0
+        )
+
+        # Remove all-stopped states declared in code immediately.
+        # Also remove all other states that are not present in the workspace after a 12-hour grace period.
+        if (
+            state.status == InstigatorStatus.DECLARED_IN_CODE
+            or _last_iteration_time + RETAIN_ORPHANED_STATE_INTERVAL_SECONDS
+            < end_datetime_utc.timestamp()
+        ):
             logger.info(
-                f"Removing state for automatically running schedule {state.instigator_name} "
-                f"that is no longer present in {location_name}."
+                f"Removing state for schedule {state.instigator_name} that is "
+                f"no longer present in {location_name}."
             )
             instance.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
-    if not schedules:
+    if not running_schedules:
         yield
         return
 
-    for external_schedule in schedules.values():
+    for schedule in running_schedules.values():
         error_info = None
         try:
-            schedule_state = all_schedule_states.get(external_schedule.selector_id)
+            schedule_state = all_schedule_states.get(schedule.selector_id)
             if not schedule_state:
-                assert external_schedule.default_status == DefaultScheduleStatus.RUNNING
+                assert schedule.default_status == DefaultScheduleStatus.RUNNING
                 schedule_state = InstigatorState(
-                    external_schedule.get_external_origin(),
+                    schedule.get_remote_origin(),
                     InstigatorType.SCHEDULE,
                     InstigatorStatus.DECLARED_IN_CODE,
                     ScheduleInstigatorData(
-                        external_schedule.cron_schedule,
+                        schedule.cron_schedule,
                         end_datetime_utc.timestamp(),
                     ),
                 )
@@ -348,26 +385,26 @@ def launch_scheduled_runs(
                         "scheduler_run_futures dict must be passed with threadpool_executor"
                     )
 
-                if external_schedule.selector_id in scheduler_run_futures:
-                    if scheduler_run_futures[external_schedule.selector_id].done():
+                if schedule.selector_id in scheduler_run_futures:
+                    if scheduler_run_futures[schedule.selector_id].done():
                         try:
-                            result = scheduler_run_futures[external_schedule.selector_id].result()
-                            iteration_times[external_schedule.selector_id] = result
+                            result = scheduler_run_futures[schedule.selector_id].result()
+                            iteration_times[schedule.selector_id] = result
                         except Exception:
                             # Log exception and continue on rather than erroring the whole scheduler loop
                             logger.exception(
-                                f"Error getting tick result for schedule {external_schedule.name}"
+                                f"Error getting tick result for schedule {schedule.name}"
                             )
-                        del scheduler_run_futures[external_schedule.selector_id]
+                        del scheduler_run_futures[schedule.selector_id]
                     else:
                         # only allow one tick per schedule to be in flight
                         continue
 
-                previous_iteration_times = iteration_times.get(external_schedule.selector_id)
+                previous_iteration_times = iteration_times.get(schedule.selector_id)
                 if (
                     previous_iteration_times
                     and not previous_iteration_times.should_run_next_iteration(
-                        external_schedule, end_datetime_utc.timestamp()
+                        schedule, end_datetime_utc.timestamp()
                     )
                 ):
                     # Not enough time has passed for this schedule, don't bother creating a thread
@@ -377,7 +414,7 @@ def launch_scheduled_runs(
                     launch_scheduled_runs_for_schedule,
                     workspace_process_context,
                     logger,
-                    external_schedule,
+                    schedule,
                     schedule_state,
                     end_datetime_utc,
                     max_catchup_runs,
@@ -391,15 +428,15 @@ def launch_scheduled_runs(
                         else None
                     ),
                 )
-                scheduler_run_futures[external_schedule.selector_id] = future
+                scheduler_run_futures[schedule.selector_id] = future
                 yield
 
             else:
-                previous_iteration_times = iteration_times.get(external_schedule.selector_id)
+                previous_iteration_times = iteration_times.get(schedule.selector_id)
                 if (
                     previous_iteration_times
                     and not previous_iteration_times.should_run_next_iteration(
-                        external_schedule, end_datetime_utc.timestamp()
+                        schedule, end_datetime_utc.timestamp()
                     )
                 ):
                     # Not enough time has passed for this schedule, don't bother executing
@@ -411,7 +448,7 @@ def launch_scheduled_runs(
                 for yielded_value in launch_scheduled_runs_for_schedule_iterator(
                     workspace_process_context,
                     logger,
-                    external_schedule,
+                    schedule,
                     schedule_state,
                     end_datetime_utc,
                     max_catchup_runs,
@@ -431,7 +468,7 @@ def launch_scheduled_runs(
                             "launch_scheduled_runs_for_schedule_iterator yielded more than one ScheduleIterationTimes",
                         )
                         found_iteration_times = True
-                        iteration_times[external_schedule.selector_id] = yielded_value
+                        iteration_times[schedule.selector_id] = yielded_value
                     else:
                         yield yielded_value
                 check.invariant(
@@ -440,14 +477,14 @@ def launch_scheduled_runs(
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.exception(f"Scheduler caught an error for schedule {external_schedule.name}")
+            logger.exception(f"Scheduler caught an error for schedule {schedule.name}")
         yield error_info
 
 
 def launch_scheduled_runs_for_schedule(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    external_schedule: ExternalSchedule,
+    remote_schedule: RemoteSchedule,
     schedule_state: InstigatorState,
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
@@ -463,7 +500,7 @@ def launch_scheduled_runs_for_schedule(
     for yielded_value in launch_scheduled_runs_for_schedule_iterator(
         workspace_process_context,
         logger,
-        external_schedule,
+        remote_schedule,
         schedule_state,
         end_datetime_utc,
         max_catchup_runs,
@@ -482,7 +519,7 @@ def launch_scheduled_runs_for_schedule(
 def launch_scheduled_runs_for_schedule_iterator(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    external_schedule: ExternalSchedule,
+    remote_schedule: RemoteSchedule,
     schedule_state: InstigatorState,
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
@@ -496,8 +533,8 @@ def launch_scheduled_runs_for_schedule_iterator(
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
 
-    instigator_origin_id = external_schedule.get_external_origin_id()
-    ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
+    instigator_origin_id = remote_schedule.get_remote_origin_id()
+    ticks = instance.get_ticks(instigator_origin_id, remote_schedule.selector_id, limit=1)
     latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
 
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
@@ -529,9 +566,9 @@ def launch_scheduled_runs_for_schedule_iterator(
             in_memory_last_iteration_timestamp or 0.0,
         )
 
-    schedule_name = external_schedule.name
+    schedule_name = remote_schedule.name
 
-    timezone_str = external_schedule.execution_timezone
+    timezone_str = remote_schedule.execution_timezone
     if not timezone_str:
         timezone_str = "UTC"
 
@@ -541,7 +578,7 @@ def launch_scheduled_runs_for_schedule_iterator(
 
     next_iteration_timestamp = None
 
-    for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
+    for next_time in remote_schedule.execution_time_iterator(start_timestamp_utc):
         next_tick_timestamp = next_time.timestamp()
         if next_tick_timestamp > now_timestamp:
             next_iteration_timestamp = next_tick_timestamp
@@ -562,13 +599,13 @@ def launch_scheduled_runs_for_schedule_iterator(
         )
 
         yield ScheduleIterationTimes(
-            cron_schedule=external_schedule.cron_schedule,
+            cron_schedule=remote_schedule.cron_schedule,
             next_iteration_timestamp=next_iteration_timestamp,
             last_iteration_timestamp=now_timestamp,
         )
         return
 
-    if not external_schedule.partition_set_name and len(tick_times) > 1:
+    if not remote_schedule.partition_set_name and len(tick_times) > 1:
         logger.warning(f"{schedule_name} has no partition set, so not trying to catch up")
         tick_times = tick_times[-1:]
     elif len(tick_times) > max_catchup_runs:
@@ -601,14 +638,14 @@ def launch_scheduled_runs_for_schedule_iterator(
                     instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
                     timestamp=schedule_timestamp,
-                    selector_id=external_schedule.selector_id,
+                    selector_id=remote_schedule.selector_id,
                 )
             )
 
             check_for_debug_crash(schedule_debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(
-            external_schedule, tick, instance, logger, tick_retention_settings
+            remote_schedule, tick, instance, logger, tick_retention_settings
         ) as tick_context:
             try:
                 check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")
@@ -617,7 +654,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                 yield from _schedule_runs_at_time(
                     workspace_process_context,
                     logger,
-                    external_schedule,
+                    remote_schedule,
                     schedule_time,
                     timezone_str,
                     tick_context,
@@ -636,7 +673,7 @@ def launch_scheduled_runs_for_schedule_iterator(
 
                         logger.exception(
                             "Scheduler daemon caught an error for schedule "
-                            f"{external_schedule.name}"
+                            f"{remote_schedule.name}"
                         )
 
                         tick_context.update_state(
@@ -660,7 +697,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                 # as both the next_iteration_timestamp and the last_iteration_timestmap
                 # (to ensure that the scheduler doesn't accidentally skip past it)
                 yield ScheduleIterationTimes(
-                    cron_schedule=external_schedule.cron_schedule,
+                    cron_schedule=remote_schedule.cron_schedule,
                     next_iteration_timestamp=schedule_time.timestamp(),
                     last_iteration_timestamp=schedule_time.timestamp(),
                 )
@@ -677,7 +714,7 @@ def launch_scheduled_runs_for_schedule_iterator(
         check.not_none(next_iteration_timestamp), next_checkpoint_timestamp
     )
     yield ScheduleIterationTimes(
-        cron_schedule=external_schedule.cron_schedule,
+        cron_schedule=remote_schedule.cron_schedule,
         next_iteration_timestamp=next_iteration_timestamp,
         last_iteration_timestamp=now_timestamp,
     )
@@ -694,54 +731,52 @@ class SubmitRunRequestResult(NamedTuple):
 def _submit_run_request(
     run_request: RunRequest,
     workspace_process_context: IWorkspaceProcessContext,
-    external_schedule: ExternalSchedule,
+    remote_schedule: RemoteSchedule,
     schedule_time: datetime.datetime,
     logger,
     debug_crash_flags,
 ) -> SubmitRunRequestResult:
     instance = workspace_process_context.instance
-    schedule_origin = external_schedule.get_external_origin()
+    schedule_origin = remote_schedule.get_remote_origin()
 
-    run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
+    run = _get_existing_run_for_request(instance, remote_schedule, schedule_time, run_request)
     if run:
         if run.status != DagsterRunStatus.NOT_STARTED:
             # A run already exists and was launched for this time period,
             # but the scheduler must have crashed or errored before the tick could be put
             # into a SUCCESS state
             logger.info(
-                f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
+                f"Run {run.run_id} already completed for this execution of {remote_schedule.name}"
             )
             return SubmitRunRequestResult(
                 run_key=run_request.run_key, error_info=None, existing_run=run, submitted_run=None
             )
         else:
             logger.info(
-                f"Run {run.run_id} already created for this execution of {external_schedule.name}"
+                f"Run {run.run_id} already created for this execution of {remote_schedule.name}"
             )
     else:
         job_subset_selector = JobSubsetSelector(
             location_name=schedule_origin.repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.repository_origin.repository_name,
-            job_name=external_schedule.job_name,
-            op_selection=external_schedule.op_selection,
+            job_name=remote_schedule.job_name,
+            op_selection=remote_schedule.op_selection,
             asset_selection=run_request.asset_selection,
         )
 
         # reload the code_location on each submission, request_context derived data can become out date
         # * non-threaded: if number of serial submissions is too many
         # * threaded: if thread sits pending in pool too long
-        code_location = _get_code_location_for_schedule(
-            workspace_process_context, external_schedule
-        )
+        code_location = _get_code_location_for_schedule(workspace_process_context, remote_schedule)
 
-        external_job = code_location.get_external_job(job_subset_selector)
+        remote_job = code_location.get_job(job_subset_selector)
 
         run = _create_scheduler_run(
             instance,
             schedule_time,
             code_location,
-            external_schedule,
-            external_job,
+            remote_schedule,
+            remote_job,
             run_request,
         )
 
@@ -753,7 +788,7 @@ def _submit_run_request(
         try:
             instance.submit_run(run.run_id, workspace_process_context.create_request_context())
             logger.info(
-                f"Completed scheduled launch of run {run.run_id} for {external_schedule.name}"
+                f"Completed scheduled launch of run {run.run_id} for {remote_schedule.name}"
             )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -769,9 +804,9 @@ def _submit_run_request(
 
 def _get_code_location_for_schedule(
     workspace_process_context: IWorkspaceProcessContext,
-    external_schedule: ExternalSchedule,
+    remote_schedule: RemoteSchedule,
 ) -> CodeLocation:
-    schedule_origin = external_schedule.get_external_origin()
+    schedule_origin = remote_schedule.get_remote_origin()
     return workspace_process_context.create_request_context().get_code_location(
         schedule_origin.repository_origin.code_location_origin.location_name
     )
@@ -780,7 +815,7 @@ def _get_code_location_for_schedule(
 def _schedule_runs_at_time(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    external_schedule: ExternalSchedule,
+    remote_schedule: RemoteSchedule,
     schedule_time: datetime.datetime,
     timezone_str: str,
     tick_context: _ScheduleLaunchContext,
@@ -788,14 +823,14 @@ def _schedule_runs_at_time(
     debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ) -> Generator[Union[None, SerializableErrorInfo, ScheduleIterationTimes], None, None]:
     instance = workspace_process_context.instance
-    repository_handle = external_schedule.handle.repository_handle
+    repository_handle = remote_schedule.handle.repository_handle
 
-    code_location = _get_code_location_for_schedule(workspace_process_context, external_schedule)
+    code_location = _get_code_location_for_schedule(workspace_process_context, remote_schedule)
 
-    schedule_execution_data = code_location.get_external_schedule_execution_data(
+    schedule_execution_data = code_location.get_schedule_execution_data(
         instance=instance,
         repository_handle=repository_handle,
-        schedule_name=external_schedule.name,
+        schedule_name=remote_schedule.name,
         scheduled_execution_time=TimestampWithTimezone(
             schedule_time.timestamp(),
             timezone_str,
@@ -815,10 +850,10 @@ def _schedule_runs_at_time(
     if not schedule_execution_data.run_requests:
         if schedule_execution_data.skip_message:
             logger.info(
-                f"Schedule {external_schedule.name} skipped: {schedule_execution_data.skip_message}"
+                f"Schedule {remote_schedule.name} skipped: {schedule_execution_data.skip_message}"
             )
         else:
-            logger.info(f"No run requests returned for {external_schedule.name}, skipping")
+            logger.info(f"No run requests returned for {remote_schedule.name}, skipping")
 
         # Update tick to skipped state and return
         tick_context.update_state(
@@ -840,7 +875,7 @@ def _schedule_runs_at_time(
             stale_assets = resolve_stale_or_missing_assets(
                 workspace_process_context,  # type: ignore
                 run_request,
-                external_schedule,
+                remote_schedule,
             )
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
@@ -855,7 +890,7 @@ def _schedule_runs_at_time(
     submit_run_request = lambda run_request: _submit_run_request(
         run_request,
         workspace_process_context,
-        external_schedule,
+        remote_schedule,
         schedule_time,
         logger,
         debug_crash_flags,
@@ -885,12 +920,12 @@ def _schedule_runs_at_time(
 
 def _get_existing_run_for_request(
     instance: DagsterInstance,
-    external_schedule: ExternalSchedule,
+    remote_schedule: RemoteSchedule,
     schedule_time: datetime.datetime,
     run_request: RunRequest,
 ) -> Optional[DagsterRun]:
     tags = merge_dicts(
-        DagsterRun.tags_for_schedule(external_schedule),
+        DagsterRun.tags_for_schedule(remote_schedule),
         {
             SCHEDULED_EXECUTION_TIME_TAG: schedule_time.astimezone(
                 datetime.timezone.utc
@@ -906,12 +941,12 @@ def _get_existing_run_for_request(
     matching_runs = []
     for run in existing_runs:
         # if the run doesn't have an origin consider it a match
-        if run.external_job_origin is None:
+        if run.remote_job_origin is None:
             matching_runs.append(run)
         # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
         elif (
-            external_schedule.get_external_origin().repository_origin.get_selector_id()
-            == run.external_job_origin.repository_origin.get_selector_id()
+            remote_schedule.get_remote_origin().repository_origin.get_selector_id()
+            == run.remote_job_origin.repository_origin.get_selector_id()
         ):
             matching_runs.append(run)
 
@@ -925,8 +960,8 @@ def _create_scheduler_run(
     instance: DagsterInstance,
     schedule_time: datetime.datetime,
     code_location: CodeLocation,
-    external_schedule: ExternalSchedule,
-    external_job: ExternalJob,
+    remote_schedule: RemoteSchedule,
+    remote_job: RemoteJob,
     run_request: RunRequest,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
@@ -934,21 +969,18 @@ def _create_scheduler_run(
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
-    external_execution_plan = code_location.get_external_execution_plan(
-        external_job,
+    remote_execution_plan = code_location.get_execution_plan(
+        remote_job,
         run_config,
         step_keys_to_execute=None,
         known_state=None,
     )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+    execution_plan_snapshot = remote_execution_plan.execution_plan_snapshot
 
-    tags = merge_dicts(
-        normalize_tags(
-            external_job.tags, allow_reserved_tags=False, warn_on_deprecated_tags=False
-        ).tags
-        or {},
-        schedule_tags,
-    )
+    tags = {
+        **remote_job.run_tags,
+        **schedule_tags,
+    }
 
     tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time.astimezone(datetime.timezone.utc).isoformat()
     if run_request.run_key:
@@ -959,34 +991,34 @@ def _create_scheduler_run(
         SCHEDULED_RUN_CREATED,
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
-            "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
+            "SCHEDULE_NAME_HASH": hash_name(remote_schedule.name),
             "repo_hash": hash_name(code_location.name),
-            "pipeline_name_hash": hash_name(external_job.name),
+            "pipeline_name_hash": hash_name(remote_job.name),
         },
     )
 
     return instance.create_run(
-        job_name=external_schedule.job_name,
+        job_name=remote_schedule.job_name,
         run_id=None,
         run_config=run_config,
-        resolved_op_selection=external_job.resolved_op_selection,
+        resolved_op_selection=remote_job.resolved_op_selection,
         step_keys_to_execute=None,
-        op_selection=external_job.op_selection,
+        op_selection=remote_job.op_selection,
         status=DagsterRunStatus.NOT_STARTED,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        job_snapshot=external_job.job_snapshot,
+        job_snapshot=remote_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=external_job.parent_job_snapshot,
-        external_job_origin=external_job.get_external_origin(),
-        job_code_origin=external_job.get_python_origin(),
+        parent_job_snapshot=remote_job.parent_job_snapshot,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
         asset_selection=(
             frozenset(run_request.asset_selection) if run_request.asset_selection else None
         ),
         asset_check_selection=None,
         asset_graph=code_location.get_repository(
-            external_job.repository_handle.repository_name
+            remote_job.repository_handle.repository_name
         ).asset_graph,
     )
 
@@ -997,11 +1029,11 @@ def _write_and_get_next_checkpoint_timestamp(
     instigator_data: ScheduleInstigatorData,
     iteration_timestamp: float,
 ) -> float:
-    # Utility function that writes iteration timestamps for schedules that are running, to record a
+    # Utility function that writes iteration timestamps for schedules, to record a
     # successful iteration, regardless of whether or not a tick was processed or not.  This is so
-    # that when a cron schedule changes, we can modify the evaluation "start time" from the moment
-    # that the schedule was turned on to the last time that the schedule was processed in a valid
-    # state (even in between ticks).
+    # that when a cron schedule changes or a schedule changes state, we can modify the evaluation
+    # "start time" from the moment that the schedule was turned on to the last time that the
+    # schedule was processed in a valid state (even in between ticks).
 
     # Rather than logging every single iteration, we log every hour.  This means that if the cron
     # schedule changes to run to a time that is less than an hour ago, when the code location is

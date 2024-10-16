@@ -1,7 +1,9 @@
 from contextlib import contextmanager
 from io import StringIO
 from textwrap import TextWrapper
-from typing import Any, Callable
+from typing import Any, Callable, Iterator, Optional
+
+from typing_extensions import Self
 
 import dagster._check as check
 
@@ -32,7 +34,7 @@ class IndentingPrinter:
         self.printer(self.current_indent_str + self._line_so_far + text)
         self._line_so_far = ""
 
-    def block(self, text, prefix="", initial_indent=""):
+    def block(self, text: str, prefix: str = "", initial_indent: str = "") -> None:
         """Automagically wrap a block of text."""
         wrapper = TextWrapper(
             width=self.line_length - len(self.current_indent_str),
@@ -44,20 +46,20 @@ class IndentingPrinter:
         for line in wrapper.wrap(text):
             self.line(line)
 
-    def comment(self, text):
+    def comment(self, text: str) -> None:
         self.block(text, prefix="# ", initial_indent="# ")
 
     @property
-    def current_indent_str(self):
+    def current_indent_str(self) -> str:
         return " " * self.current_indent
 
-    def blank_line(self):
+    def blank_line(self) -> None:
         check.invariant(
             not self._line_so_far, "Cannot throw away appended strings by calling blank_line"
         )
         self.printer("")
 
-    def increase_indent(self):
+    def increase_indent(self) -> None:
         self.current_indent += self.indent_level
 
     def decrease_indent(self):
@@ -66,7 +68,7 @@ class IndentingPrinter:
         self.current_indent -= self.indent_level
 
     @contextmanager
-    def with_indent(self, text=None):
+    def with_indent(self, text: Optional[str] = None) -> Iterator[None]:
         if text is not None:
             self.line(text)
         self.increase_indent()
@@ -77,17 +79,17 @@ class IndentingPrinter:
 class IndentingStringIoPrinter(IndentingPrinter):
     """Subclass of IndentingPrinter wrapping a StringIO."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         self.buffer = StringIO()
         self.printer = lambda x: self.buffer.write(x + "\n")
         super(IndentingStringIoPrinter, self).__init__(printer=self.printer, **kwargs)
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, _exception_type, _exception_value, _traceback):
+    def __exit__(self, _exception_type, _exception_value, _traceback) -> None:
         self.buffer.close()
 
-    def read(self):
+    def read(self) -> str:
         """Get the value of the backing StringIO."""
         return self.buffer.getvalue()

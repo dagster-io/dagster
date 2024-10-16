@@ -17,8 +17,8 @@ from dagster._core.definitions.asset_check_factories.utils import (
     assets_to_keys,
     ensure_no_duplicate_assets,
     freshness_multi_asset_check,
-    get_last_updated_timestamp,
     retrieve_last_update_record,
+    retrieve_timestamp_from_record,
     seconds_in_words,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
@@ -189,7 +189,9 @@ def _build_freshness_multi_check(
             latest_record = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None
             )
-            update_timestamp = get_last_updated_timestamp(latest_record, context)
+            update_timestamp = (
+                retrieve_timestamp_from_record(latest_record) if latest_record else None
+            )
             passed = (
                 update_timestamp is not None
                 and update_timestamp >= last_update_time_lower_bound.timestamp()

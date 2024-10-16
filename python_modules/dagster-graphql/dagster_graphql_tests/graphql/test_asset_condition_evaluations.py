@@ -353,7 +353,7 @@ query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: Int!, $nodeUni
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
     def test_auto_materialize_sensor(self, graphql_context: WorkspaceRequestContext):
         sensor_origin = RemoteInstigatorOrigin(
-            repository_origin=infer_repository(graphql_context).get_external_origin(),
+            repository_origin=infer_repository(graphql_context).get_remote_origin(),
             instigator_name="my_auto_materialize_sensor",
         )
 
@@ -676,7 +676,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert record["numRequested"] == 0
 
         # all nodes in the tree
-        assert len(record["evaluationNodes"]) == 27
+        assert len(record["evaluationNodes"]) == 32
 
         rootNode = record["evaluationNodes"][0]
         assert rootNode["uniqueId"] == record["rootUniqueId"]
@@ -694,6 +694,14 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         ]
         assert rootNode["numTrue"] == 0
         assert len(rootNode["childUniqueIds"]) == 5
+
+        def _get_node(id):
+            return next(n for n in record["evaluationNodes"] if n["uniqueId"] == id)
+
+        not_any_deps_missing_node = _get_node(rootNode["childUniqueIds"][2])
+        any_deps_missing_node = _get_node(not_any_deps_missing_node["childUniqueIds"][0])
+        up_node = _get_node(any_deps_missing_node["childUniqueIds"][0])
+        assert up_node["expandedLabel"] == ["up", "((missing) AND (NOT (will_be_requested)))"]
 
         evaluationId = record["evaluationId"]
         uniqueId = rootNode["uniqueId"]

@@ -4,7 +4,7 @@ import pytest
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -51,19 +51,19 @@ class TestQueuedRunCoordinator:
         with get_bar_workspace(instance) as workspace:
             yield workspace
 
-    @pytest.fixture(name="external_pipeline")
-    def external_job_fixture(self, workspace: WorkspaceRequestContext) -> ExternalJob:
+    @pytest.fixture(name="remote_job")
+    def remote_job_fixture(self, workspace: WorkspaceRequestContext) -> RemoteJob:
         location = workspace.get_code_location("bar_code_location")
-        return location.get_repository("bar_repo").get_full_external_job("foo")
+        return location.get_repository("bar_repo").get_full_job("foo")
 
     def create_run_for_test(
-        self, instance: DagsterInstance, external_pipeline: ExternalJob, **kwargs: object
+        self, instance: DagsterInstance, remote_job: RemoteJob, **kwargs: object
     ) -> DagsterRun:
         job_args = merge_dicts(
             {
                 "job_name": "foo",
-                "external_job_origin": external_pipeline.get_external_origin(),
-                "job_code_origin": external_pipeline.get_python_origin(),
+                "remote_job_origin": remote_job.get_remote_origin(),
+                "job_code_origin": remote_job.get_python_origin(),
             },
             kwargs,
         )
@@ -141,10 +141,8 @@ class TestQueuedRunCoordinator:
             ) as _:
                 pass
 
-    def test_submit_run(self, instance, coordinator, workspace, external_pipeline):
-        run = self.create_run_for_test(
-            instance, external_pipeline, status=DagsterRunStatus.NOT_STARTED
-        )
+    def test_submit_run(self, instance, coordinator, workspace, remote_job):
+        run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.NOT_STARTED)
         returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
         assert returned_run.run_id == run.run_id
         assert returned_run.status == DagsterRunStatus.QUEUED
@@ -153,8 +151,8 @@ class TestQueuedRunCoordinator:
         stored_run = instance.get_run_by_id(run.run_id)
         assert stored_run.status == DagsterRunStatus.QUEUED
 
-    def test_submit_run_checks_status(self, instance, coordinator, workspace, external_pipeline):
-        run = self.create_run_for_test(instance, external_pipeline, status=DagsterRunStatus.QUEUED)
+    def test_submit_run_checks_status(self, instance, coordinator, workspace, remote_job):
+        run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.QUEUED)
         coordinator.submit_run(SubmitRunContext(run, workspace))
 
         # check that no enqueue event is reported (the submit run call is a no-op)
@@ -167,10 +165,8 @@ class TestQueuedRunCoordinator:
             == 0
         )
 
-    def test_cancel_run(self, instance, coordinator, workspace, external_pipeline):
-        run = self.create_run_for_test(
-            instance, external_pipeline, status=DagsterRunStatus.NOT_STARTED
-        )
+    def test_cancel_run(self, instance, coordinator, workspace, remote_job):
+        run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.NOT_STARTED)
 
         coordinator.submit_run(SubmitRunContext(run, workspace))
 

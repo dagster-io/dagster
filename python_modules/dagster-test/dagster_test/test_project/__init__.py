@@ -15,10 +15,10 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._core.remote_representation import (
-    ExternalJob,
-    ExternalSchedule,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
+    RemoteJob,
+    RemoteSchedule,
 )
 from dagster._core.remote_representation.origin import (
     RemoteInstigatorOrigin,
@@ -135,16 +135,16 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
         )
 
 
-class ReOriginatedExternalJobForTest(ExternalJob):
+class ReOriginatedExternalJobForTest(RemoteJob):
     def __init__(
-        self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
+        self, remote_job: RemoteJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
         super(ReOriginatedExternalJobForTest, self).__init__(
-            external_job.external_job_data,
-            external_job.repository_handle,
+            remote_job.job_data_snap,
+            remote_job.repository_handle,
         )
 
     def get_python_origin(self):
@@ -167,7 +167,7 @@ class ReOriginatedExternalJobForTest(ExternalJob):
             ),
         )
 
-    def get_external_origin(self) -> RemoteJobOrigin:
+    def get_remote_origin(self) -> RemoteJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
@@ -190,19 +190,19 @@ class ReOriginatedExternalJobForTest(ExternalJob):
         )
 
 
-class ReOriginatedExternalScheduleForTest(ExternalSchedule):
+class ReOriginatedExternalScheduleForTest(RemoteSchedule):
     def __init__(
         self,
-        external_schedule: ExternalSchedule,
+        remote_schedule: RemoteSchedule,
         container_image=None,
     ):
         self._container_image = container_image
         super(ReOriginatedExternalScheduleForTest, self).__init__(
-            external_schedule._external_schedule_data,  # noqa: SLF001
-            external_schedule.handle.repository_handle,
+            remote_schedule._schedule_snap,  # noqa: SLF001
+            remote_schedule.handle.repository_handle,
         )
 
-    def get_external_origin(self):
+    def get_remote_origin(self):
         """Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.
@@ -247,28 +247,26 @@ def get_test_project_workspace(instance, container_image=None, filename=None):
 
 
 @contextmanager
-def get_test_project_external_job_hierarchy(
-    instance, job_name, container_image=None, filename=None
-):
+def get_test_project_remote_job_hierarchy(instance, job_name, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         repo = location.get_repository("demo_execution_repo")
-        job = repo.get_full_external_job(job_name)
+        job = repo.get_full_job(job_name)
         yield workspace, location, repo, job
 
 
 @contextmanager
-def get_test_project_external_repo(instance, container_image=None, filename=None):
+def get_test_project_remote_repo(instance, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
         location = workspace.get_code_location(workspace.code_location_names[0])
         yield location, location.get_repository("demo_execution_repo")
 
 
 @contextmanager
-def get_test_project_workspace_and_external_job(
+def get_test_project_workspace_and_remote_job(
     instance, job_name, container_image=None, filename=None
 ):
-    with get_test_project_external_job_hierarchy(instance, job_name, container_image, filename) as (
+    with get_test_project_remote_job_hierarchy(instance, job_name, container_image, filename) as (
         workspace,
         _location,
         _repo,
@@ -278,13 +276,11 @@ def get_test_project_workspace_and_external_job(
 
 
 @contextmanager
-def get_test_project_external_schedule(
-    instance, schedule_name, container_image=None, filename=None
-):
-    with get_test_project_external_repo(
+def get_test_project_remote_schedule(instance, schedule_name, container_image=None, filename=None):
+    with get_test_project_remote_repo(
         instance, container_image=container_image, filename=filename
     ) as (_, repo):
-        yield repo.get_external_schedule(schedule_name)
+        yield repo.get_schedule(schedule_name)
 
 
 def get_test_project_docker_image():

@@ -26,8 +26,9 @@ from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._record import copy, record
 from dagster._time import datetime_from_timestamp
+from dagster._utils.warnings import disable_dagster_warnings
 
-from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
+from dagster_graphql.implementation.external import ensure_valid_config, get_remote_job_or_raise
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
@@ -255,10 +256,11 @@ def get_assets_latest_info(
     for asset_key in step_keys_by_asset.keys():
         asset_node = asset_nodes[asset_key]
         if asset_node:
+            handle = asset_node.resolve_to_singular_repo_scoped_node().repository_handle
             node_id = get_unique_asset_id(
                 asset_key,
-                asset_node.priority_repository_handle.repository_name,
-                asset_node.priority_repository_handle.location_name,
+                handle.repository_name,
+                handle.location_name,
             )
         else:
             node_id = get_unique_asset_id(asset_key)
@@ -326,9 +328,9 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=remote_job.name)
 
 
 def get_execution_plan(
@@ -340,11 +342,11 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_job = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_job, run_config)
+    remote_job = get_remote_job_or_raise(graphene_info, selector)
+    ensure_valid_config(remote_job, run_config)
     return GrapheneExecutionPlan(
-        graphene_info.context.get_external_execution_plan(
-            external_job=external_job,
+        graphene_info.context.get_execution_plan(
+            remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,
@@ -495,12 +497,24 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
     converted_statuses = (
         _bulk_action_statuses_from_run_statuses(filters.statuses) if filters.statuses else None
     )
+    backfill_ids = None
+    if filters.tags and filters.tags.get(BACKFILL_ID_TAG) is not None:
+        backfill_ids = filters.tags[BACKFILL_ID_TAG]
+        if isinstance(backfill_ids, str):
+            backfill_ids = [backfill_ids]
+
+    tags = (
+        {key: value for key, value in filters.tags.items() if key != BACKFILL_ID_TAG}
+        if filters.tags
+        else None
+    )
     return BulkActionsFilter(
         created_before=filters.created_before,
         created_after=filters.created_after,
         statuses=converted_statuses,
         job_name=filters.job_name,
-        tags=filters.tags,
+        tags=tags,
+        backfill_ids=backfill_ids,
     )
 
 
@@ -527,6 +541,7 @@ def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
     limit: int,
     filters: Optional[RunsFilter],
+    include_runs_from_backfills: bool,
     cursor: Optional[str] = None,
 ) -> "GrapheneRunsFeedConnection":
     """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
@@ -538,6 +553,7 @@ def get_runs_feed_entries(
         cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
             that querying should start at the beginning of the table for both runs and backfills.
         filters (Optional[RunsFilter]): Filters to apply to the runs. If None, no filters are applied.
+        include_runs_from_backfills (bool): If True, include runs that are part of a backfill in the results and exclude backfill objects
     """
     from dagster_graphql.schema.backfill import GraphenePartitionBackfill
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
@@ -549,9 +565,10 @@ def get_runs_feed_entries(
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
-    exclude_subruns = (
-        filters.exclude_subruns if filters and filters.exclude_subruns is not None else True
-    )
+    # the UI is oriented toward showing runs that are part of a backfill, but the backend
+    # is oriented toward excluding runs that are part of a backfill, so negate include_runs_from_backfills
+    # to get the value to pass to the backend
+    exclude_subruns = not include_runs_from_backfills
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1
@@ -565,15 +582,21 @@ def get_runs_feed_entries(
         _filters_apply_to_backfills(filters) if filters else True
     )
     if filters:
-        run_filters = copy(filters, exclude_subruns=exclude_subruns)
-        run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
+        check.invariant(
+            filters.exclude_subruns is None,
+            "filters.exclude_subruns must be None when fetching the runs feed. Use include_runs_from_backfills instead.",
+        )
+        with disable_dagster_warnings():
+            run_filters = copy(filters, exclude_subruns=exclude_subruns)
+            run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
             _bulk_action_filters_from_run_filters(run_filters) if should_fetch_backfills else None
         )
     else:
-        run_filters = RunsFilter(
-            created_before=created_before_cursor, exclude_subruns=exclude_subruns
-        )
+        with disable_dagster_warnings():
+            run_filters = RunsFilter(
+                created_before=created_before_cursor, exclude_subruns=exclude_subruns
+            )
         backfill_filters = BulkActionsFilter(created_before=created_before_cursor)
 
     if should_fetch_backfills:
@@ -641,3 +664,28 @@ def get_runs_feed_entries(
     return GrapheneRunsFeedConnection(
         results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
     )
+
+
+def get_runs_feed_count(
+    graphene_info: "ResolveInfo", filters: Optional[RunsFilter], include_runs_from_backfills: bool
+) -> int:
+    # the UI is oriented toward showing runs that are part of a backfill, but the backend
+    # is oriented toward excluding runs that are part of a backfill, so negate include_runs_in_backfills
+    # to get the value to pass to the backend
+    exclude_subruns = not include_runs_from_backfills
+    should_fetch_backfills = exclude_subruns and (
+        _filters_apply_to_backfills(filters) if filters else True
+    )
+    with disable_dagster_warnings():
+        run_filters = (
+            copy(filters, exclude_subruns=exclude_subruns)
+            if filters
+            else RunsFilter(exclude_subruns=exclude_subruns)
+        )
+    if should_fetch_backfills:
+        backfill_filters = _bulk_action_filters_from_run_filters(run_filters)
+        backfills_count = graphene_info.context.instance.get_backfills_count(backfill_filters)
+    else:
+        backfills_count = 0
+
+    return graphene_info.context.instance.get_runs_count(run_filters) + backfills_count

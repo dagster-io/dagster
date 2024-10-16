@@ -7,7 +7,7 @@ endef
 export MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
-export DAGSTER_AIRLIFT_MIGRATION_STATE_DIR := $(MAKEFILE_DIR)/dbt_example/airflow_dags/migration_state
+export DAGSTER_AIRLIFT_PROXIED_STATE_DIR := $(MAKEFILE_DIR)/dbt_example/airflow_dags/proxied_state
 export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
 export DAGSTER_URL := http://localhost:3333
@@ -31,20 +31,24 @@ setup_local_env:
 	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags
 	$(MAKE) dbt_setup
 
+not_proxied:
+	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
+	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/proxied_state True False
+
+proxied: 
+	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
+	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/proxied_state False True
+
 run_airflow:
 	airflow standalone
 
 run_peer:
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
 
-run_observe:
-	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh
-	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/migration_state True False
+run_observe: not_proxied
 	dagster dev -m dbt_example.dagster_defs.observe -p 3333
 
-run_migrate:
-	chmod +x ../../scripts/find_and_replace_in_yaml_dir.sh && \
-	../../scripts/find_and_replace_in_yaml_dir.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags/migration_state False True && \
+run_migrate: proxied
 	dagster dev -m dbt_example.dagster_defs.migrate -p 3333
 
 run_complete:

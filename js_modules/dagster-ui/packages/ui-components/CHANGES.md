@@ -1,3 +1,12 @@
+# 1.1.4 (October 11, 2024)
+
+- Add onBlur prop to TokenizingField
+- Remove node globals rollup plugin
+- Eliminate defaultProps
+- Bump rollup from 2.79.1 to 2.79.2
+- Bump React to 18.3.1
+- Migrate Blueprint 4 to 5
+
 # 1.1.3 (September 25, 2024)
 
 - Revert Rollup upgrade

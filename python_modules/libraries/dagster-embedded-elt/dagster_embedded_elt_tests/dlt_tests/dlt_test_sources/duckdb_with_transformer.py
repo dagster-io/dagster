@@ -3,9 +3,24 @@ from typing import Optional
 import dlt
 
 MOCK_REPOS = [
-    {"id": 1, "name": "example-repo-1", "last_modified_dt": "2022-09-08"},
-    {"id": 2, "name": "example-repo-2", "last_modified_dt": "2022-09-11"},
-    {"id": 3, "name": "example-repo-3", "last_modified_dt": "2022-09-16"},
+    {
+        "id": 1,
+        "name": "example-repo-1",
+        "contributors": ["contributor-1", "contributor-2", "contributor-3"],
+        "last_modified_dt": "2022-09-08",
+    },
+    {
+        "id": 2,
+        "name": "example-repo-2",
+        "contributors": ["contributor-1", "contributor-2"],
+        "last_modified_dt": "2022-09-11",
+    },
+    {
+        "id": 3,
+        "name": "example-repo-3",
+        "contributors": ["contributor-1"],
+        "last_modified_dt": "2022-09-16",
+    },
 ]
 
 MOCK_ISSUES = {
@@ -34,7 +49,11 @@ def pipeline(month: Optional[str] = None):
                 yield d
 
     @dlt.transformer(
-        primary_key=["repo_id", "issue_id"], write_disposition="merge", data_from=repos
+        primary_key=["repo_id", "issue_id"],
+        write_disposition="merge",
+        data_from=repos,
+        # Test the case where source identifier 'Repo__Issues' differs from destination identifier 'repo_issues'.
+        table_name="Repo__Issues",
     )
     def repo_issues(repo):
         """Extracted list of issues from repositories."""

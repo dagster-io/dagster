@@ -18,7 +18,7 @@ export function buildConsolidatedColumnSchema({
   materialization:
     | Pick<AssetDefinitionWithMetadata['assetMaterializations'][0], 'metadataEntries' | 'timestamp'>
     | undefined;
-  definition: Pick<AssetDefinitionWithMetadata, 'metadataEntries'> | undefined;
+  definition: Pick<AssetDefinitionWithMetadata, 'metadataEntries'> | null | undefined;
   definitionLoadTimestamp: number | undefined;
 }) {
   const materializationTableSchema = materialization?.metadataEntries?.find(
@@ -26,23 +26,21 @@ export function buildConsolidatedColumnSchema({
   );
   const materializationTimestamp = materialization ? Number(materialization.timestamp) : undefined;
   const definitionTableSchema = definition?.metadataEntries?.find(isCanonicalColumnSchemaEntry);
-
   let tableSchema = materializationTableSchema ?? definitionTableSchema;
   const tableSchemaLoadTimestamp = materializationTimestamp ?? definitionLoadTimestamp;
 
   // Merge the descriptions from the definition table schema with the materialization table schema
   if (materializationTableSchema && definitionTableSchema) {
-    const definitionTableSchemaColumnDescriptionsByName = Object.fromEntries(
-      definitionTableSchema.schema.columns.map((column) => [
-        column.name.toLowerCase(),
-        column.description,
-      ]),
+    const definitionsTableColumnsByName = Object.fromEntries(
+      definitionTableSchema.schema.columns.map((column) => [column.name.toLowerCase(), column]),
     );
     const mergedColumns = materializationTableSchema.schema.columns.map((column) => {
-      const description =
-        definitionTableSchemaColumnDescriptionsByName[column.name.toLowerCase()] ||
-        column.description;
-      return {...column, name: column.name.toLowerCase(), description};
+      const definitionsCol = definitionsTableColumnsByName[column.name.toLowerCase()];
+
+      const description = definitionsCol?.description || column.description;
+      const tags = definitionsCol?.tags || column.tags;
+
+      return {...column, name: column.name.toLowerCase(), description, tags};
     });
 
     tableSchema = {

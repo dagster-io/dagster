@@ -11,7 +11,7 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.utils import normalize_tags
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -25,6 +25,7 @@ class _Job:
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
+        run_tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[
@@ -42,6 +43,7 @@ class _Job:
         self.name = name
         self.description = description
         self.tags = normalize_tags(tags, warning_stacklevel=4)
+        self.run_tags = run_tags
         self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = convert_config_input(config)
@@ -87,7 +89,7 @@ class _Job:
             output_mappings=output_mappings,
             config=config_mapping,
             positional_inputs=positional_inputs,
-            tags=self.tags,
+            tags=self.run_tags,
             input_assets=input_assets,
         )
 
@@ -96,6 +98,7 @@ class _Job:
             resource_defs=self.resource_defs,
             config=self.config,
             tags=self.tags,
+            run_tags=self.run_tags,
             metadata=self.metadata,
             logger_defs=self.logger_defs,
             executor_def=self.executor_def,
@@ -120,6 +123,7 @@ def job(
     resource_defs: Optional[Mapping[str, object]] = ...,
     config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
+    run_tags: Optional[Mapping[str, Any]] = ...,
     metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
@@ -139,7 +143,8 @@ def job(
     config: Optional[
         Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
     ] = None,
-    tags: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
@@ -184,11 +189,15 @@ def job(
             values that can parameterize the job, as well as a function for mapping those
             values to the base config. The values provided will be viewable and editable in the
             Dagster UI, so be careful with secrets.
-        tags (Optional[Dict[str, Any]]):
-            Arbitrary information that will be attached to the execution of the Job.
-            Values that are not strings will be json encoded and must meet the criteria that
-            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
-            values provided at invocation time.
+        tags (Optional[Mapping[str, object]]): A set of key-value tags that annotate the job and can
+            be used for searching and filtering in the UI. Values that are not already strings will
+            be serialized as JSON. If `run_tags` is not set, then the content of `tags` will also be
+            automatically appended to the tags of any runs of this job.
+        run_tags (Optional[Mapping[str, object]]):
+            A set of key-value tags that will be automatically attached to runs launched by this
+            job. Values that are not already strings will be serialized as JSON. These tag values
+            may be overwritten by tag values provided at invocation time. If `run_tags` is set, then
+            `tags` are not automatically appended to the tags of any runs of this job.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary information that will be attached to the JobDefinition and be viewable in the Dagster UI.
             Keys must be strings, and values must be python primitive types or one of the provided
@@ -232,6 +241,7 @@ def job(
         resource_defs=wrap_resources_for_execution(resource_defs),
         config=config,
         tags=tags,
+        run_tags=run_tags,
         metadata=metadata,
         logger_defs=logger_defs,
         executor_def=executor_def,

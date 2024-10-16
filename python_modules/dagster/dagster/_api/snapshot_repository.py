@@ -2,10 +2,7 @@ from typing import TYPE_CHECKING, Mapping
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation.external_data import (
-    ExternalRepositoryData,
-    ExternalRepositoryErrorData,
-)
+from dagster._core.remote_representation.external_data import RepositoryErrorSnap, RepositorySnap
 from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
@@ -15,7 +12,7 @@ if TYPE_CHECKING:
 
 def sync_get_streaming_external_repositories_data_grpc(
     api_client: "DagsterGrpcClient", code_location: "CodeLocation"
-) -> Mapping[str, ExternalRepositoryData]:
+) -> Mapping[str, RepositorySnap]:
     from dagster._core.remote_representation import CodeLocation, RemoteRepositoryOrigin
 
     check.inst_param(code_location, "code_location", CodeLocation)
@@ -24,7 +21,7 @@ def sync_get_streaming_external_repositories_data_grpc(
     for repository_name in code_location.repository_names:  # type: ignore
         external_repository_chunks = list(
             api_client.streaming_external_repository(
-                external_repository_origin=RemoteRepositoryOrigin(
+                remote_repository_origin=RemoteRepositoryOrigin(
                     code_location.origin,
                     repository_name,
                 )
@@ -38,10 +35,10 @@ def sync_get_streaming_external_repositories_data_grpc(
                     for chunk in external_repository_chunks
                 ]
             ),
-            (ExternalRepositoryData, ExternalRepositoryErrorData),
+            (RepositorySnap, RepositoryErrorSnap),
         )
 
-        if isinstance(result, ExternalRepositoryErrorData):
+        if isinstance(result, RepositoryErrorSnap):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
 
         repo_datas[repository_name] = result
@@ -50,7 +47,7 @@ def sync_get_streaming_external_repositories_data_grpc(
 
 async def gen_streaming_external_repositories_data_grpc(
     api_client: "DagsterGrpcClient", code_location: "CodeLocation"
-) -> Mapping[str, ExternalRepositoryData]:
+) -> Mapping[str, RepositorySnap]:
     from dagster._core.remote_representation import CodeLocation, RemoteRepositoryOrigin
 
     check.inst_param(code_location, "code_location", CodeLocation)
@@ -60,7 +57,7 @@ async def gen_streaming_external_repositories_data_grpc(
         external_repository_chunks = [
             chunk
             async for chunk in api_client.gen_streaming_external_repository(
-                external_repository_origin=RemoteRepositoryOrigin(
+                remote_repository_origin=RemoteRepositoryOrigin(
                     code_location.origin,
                     repository_name,
                 )
@@ -74,10 +71,10 @@ async def gen_streaming_external_repositories_data_grpc(
                     for chunk in external_repository_chunks
                 ]
             ),
-            (ExternalRepositoryData, ExternalRepositoryErrorData),
+            (RepositorySnap, RepositoryErrorSnap),
         )
 
-        if isinstance(result, ExternalRepositoryErrorData):
+        if isinstance(result, RepositoryErrorSnap):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
 
         repo_datas[repository_name] = result

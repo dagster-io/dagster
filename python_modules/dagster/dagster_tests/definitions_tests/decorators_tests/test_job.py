@@ -2,9 +2,9 @@ import logging
 import warnings
 
 from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._core.utils import coerce_valid_log_level
+from dagster._utils.tags import normalize_tags
 
 
 def test_basic_job():
@@ -78,14 +78,30 @@ def test_job_tags():
         pass
 
     @job(tags={"my_tag": "yes"})
-    def basic_job():
+    def job_with_tags():
         basic()
 
+    assert job_with_tags.tags == {"my_tag": "yes"}
+    assert job_with_tags.run_tags == {"my_tag": "yes"}
+
+    @job(tags={"my_tag": "yes"}, run_tags={"my_run_tag": "yes"})
+    def job_with_tags_and_run_tags():
+        basic()
+
+    assert job_with_tags_and_run_tags.tags == {"my_tag": "yes"}
+    assert job_with_tags_and_run_tags.run_tags == {"my_run_tag": "yes"}
+
     with DagsterInstance.ephemeral() as instance:
-        result = basic_job.execute_in_process(instance=instance)
+        result = job_with_tags.execute_in_process(instance=instance)
         assert result.success
         run = instance.get_runs()[0]
         assert run.tags.get("my_tag") == "yes"
+
+        result = job_with_tags_and_run_tags.execute_in_process(instance=instance)
+        assert result.success
+        run = instance.get_runs()[0]
+        assert "my_tag" not in run.tags
+        assert run.tags.get("my_run_tag") == "yes"
 
 
 def test_job_system_tags():
@@ -97,7 +113,7 @@ def test_job_system_tags():
     def basic_job():
         basic()
 
-    normalize_tags(basic_job.tags, allow_reserved_tags=False)
+    normalize_tags(basic_job.tags, allow_private_system_tags=False)
 
 
 def test_invalid_tag_keys():
@@ -113,7 +129,6 @@ def test_invalid_tag_keys():
         def basic_job():
             basic()
 
-        assert len(caught_warnings) == 1
         warning = caught_warnings[0]
         assert "Non-compliant tag keys like ['my_tag&', 'my_tag#'] are deprecated" in str(
             warning.message

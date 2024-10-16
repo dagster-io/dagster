@@ -21,7 +21,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._utils.hosted_user_process import external_job_from_recon_job
+from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
@@ -65,15 +65,7 @@ THIRD_RESOURCES_TAGS = {
     resource_defs={"io_manager": fs_io_manager},
 )
 def bar_with_resources():
-    expected_resources = RESOURCE_TAGS
-    user_defined_k8s_config_with_resources = UserDefinedDagsterK8sConfig(
-        container_config={"resources": expected_resources},
-    )
-    user_defined_k8s_config_with_resources_json = json.dumps(
-        user_defined_k8s_config_with_resources.to_dict()
-    )
-
-    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_resources_json})
+    @op(tags={"dagster-k8s/config": {"container_config": {"resources": RESOURCE_TAGS}}})
     def foo():
         return 1
 
@@ -111,15 +103,7 @@ def bar_with_tags_in_job_and_op():
     resource_defs={"io_manager": fs_io_manager},
 )
 def bar_with_images():
-    # Construct Dagster op tags with user defined k8s config.
-    user_defined_k8s_config_with_image = UserDefinedDagsterK8sConfig(
-        container_config={"image": "new-image"},
-    )
-    user_defined_k8s_config_with_image_json = json.dumps(
-        user_defined_k8s_config_with_image.to_dict()
-    )
-
-    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_image_json})
+    @op(tags={"dagster-k8s/config": {"container_config": {"image": "new-image"}}})
     def foo():
         return 1
 
@@ -447,11 +431,11 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_code_location(workspace.code_location_names[0])
-            repo_handle = RepositoryHandle(
+            repo_handle = RepositoryHandle.from_location(
                 repository_name="bar_repo",
                 code_location=location,
             )
-            fake_external_job = external_job_from_recon_job(
+            fake_remote_job = remote_job_from_recon_job(
                 recon_job,
                 op_selection=None,
                 repository_handle=repo_handle,
@@ -459,7 +443,7 @@ def test_step_handler(kubeconfig_file, k8s_instance):
             run = create_run_for_test(
                 k8s_instance,
                 job_name="bar",
-                external_job_origin=fake_external_job.get_external_origin(),
+                remote_job_origin=fake_remote_job.get_remote_origin(),
                 job_code_origin=recon_job.get_python_origin(),
             )
             list(
