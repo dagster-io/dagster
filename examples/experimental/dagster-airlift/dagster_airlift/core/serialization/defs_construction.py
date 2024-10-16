@@ -34,6 +34,7 @@ from dagster_airlift.core.utils import (
 def metadata_for_mapped_tasks(
     tasks: AbstractSet[TaskHandle], serialized_data: SerializedAirflowDefinitionsData
 ) -> Mapping[str, Any]:
+    print("SERIALIZED_DAG_DATA_KEYS", serialized_data.dag_datas.keys())
     mapped_task = next(iter(tasks))
     task_info = serialized_data.dag_datas[mapped_task.dag_id].task_infos[mapped_task.task_id]
     task_level_metadata = {

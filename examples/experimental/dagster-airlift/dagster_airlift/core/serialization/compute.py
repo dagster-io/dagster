@@ -133,6 +133,8 @@ def fetch_all_airflow_data(
     airflow_instance: AirflowInstance, mapping_info: AirliftMetadataMappingInfo
 ) -> FetchedAirflowData:
     dag_infos = {dag.dag_id: dag for dag in airflow_instance.list_dags()}
+    print("FOUND DAG INFOS")
+    print(dag_infos.keys())
     task_info_map = defaultdict(dict)
     for dag_id in dag_infos:
         task_info_map[dag_id] = {
