@@ -12,58 +12,6 @@ from dagster_looker.lkml.dagster_looker_lkml_translator import (
 )
 
 
-def build_looker_dashboard_specs(
-    project_dir: Path,
-    dagster_looker_translator: DagsterLookerLkmlTranslator,
-) -> Sequence[AssetSpec]:
-    looker_dashboard_specs: List[AssetSpec] = []
-
-    # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard
-    for lookml_dashboard_path in project_dir.rglob("*.dashboard.lookml"):
-        for lookml_dashboard_props in yaml.safe_load(lookml_dashboard_path.read_bytes()):
-            lookml_dashboard = (lookml_dashboard_path, "dashboard", lookml_dashboard_props)
-
-            looker_dashboard_specs.append(
-                AssetSpec(
-                    key=dagster_looker_translator.get_asset_key(lookml_dashboard),
-                    deps=dagster_looker_translator.get_deps(lookml_dashboard),
-                    description=dagster_looker_translator.get_description(lookml_dashboard),
-                    metadata=dagster_looker_translator.get_metadata(lookml_dashboard),
-                    group_name=dagster_looker_translator.get_group_name(lookml_dashboard),
-                    owners=dagster_looker_translator.get_owners(lookml_dashboard),
-                    tags=dagster_looker_translator.get_tags(lookml_dashboard),
-                )
-            )
-
-    return looker_dashboard_specs
-
-
-def build_looker_explore_specs(
-    project_dir: Path,
-    dagster_looker_translator: DagsterLookerLkmlTranslator,
-) -> Sequence[AssetSpec]:
-    looker_explore_specs: List[AssetSpec] = []
-
-    # https://cloud.google.com/looker/docs/reference/param-explore
-    for lookml_model_path in project_dir.rglob("*.model.lkml"):
-        for lookml_explore_props in lkml.load(lookml_model_path.read_text()).get("explores", []):
-            lookml_explore = (lookml_model_path, "explore", lookml_explore_props)
-
-            looker_explore_specs.append(
-                AssetSpec(
-                    key=dagster_looker_translator.get_asset_key(lookml_explore),
-                    deps=dagster_looker_translator.get_deps(lookml_explore),
-                    description=dagster_looker_translator.get_description(lookml_explore),
-                    metadata=dagster_looker_translator.get_metadata(lookml_explore),
-                    group_name=dagster_looker_translator.get_group_name(lookml_explore),
-                    owners=dagster_looker_translator.get_owners(lookml_explore),
-                    tags=dagster_looker_translator.get_tags(lookml_explore),
-                )
-            )
-
-    return looker_explore_specs
-
-
 def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
     """Deep merge, which on dictionaries merges keys, and on lists appends elements.
     If a value is present in both onto_obj and from_obj, the value from from_obj is taken.
@@ -100,17 +48,22 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
     return from_obj if from_obj is not ... else (onto_obj if onto_obj is not ... else None)
 
 
-def postprocess_loaded_objects(
-    objects: List[Tuple[Path, LookMLStructureType, Mapping[str, Any]]],
+def postprocess_loaded_structures(
+    structs: List[Tuple[Path, LookMLStructureType, Mapping[str, Any]]],
 ) -> List[Tuple[Path, LookMLStructureType, Mapping[str, Any]]]:
+    """Postprocesses LookML structs to resolve refinements and extends.
+
+    https://cloud.google.com/looker/docs/lookml-refinements
+    https://cloud.google.com/looker/docs/reusing-code-with-extends
+    """
     refined_objs_by_name = {}
-    for path, typ, obj_props in objects:
+    for path, typ, obj_props in structs:
         obj_name = obj_props["name"]
         if not obj_name.startswith("+"):
             refined_objs_by_name[obj_name] = (path, typ, obj_props)
 
     # Process refinements
-    for path, typ, obj_props in objects:
+    for path, typ, obj_props in structs:
         obj_name = obj_props["name"]
         if obj_name.startswith("+") and obj_name[1:] in refined_objs_by_name:
             refined_objs_by_name[obj_name[1:]] = (
@@ -122,7 +75,7 @@ def postprocess_loaded_objects(
                 ),
             )
 
-    # Process extensions in topological order
+    # Process extends in topological order
     extension_graph: Mapping[str, AbstractSet[str]] = {
         obj_props["name"]: set(obj_props.get("extends__all", [[]])[0])
         for _, _, obj_props in refined_objs_by_name.values()
@@ -148,6 +101,62 @@ def postprocess_loaded_objects(
     return list(refined_extended_objs_by_name.values())
 
 
+def build_looker_dashboard_specs(
+    project_dir: Path,
+    dagster_looker_translator: DagsterLookerLkmlTranslator,
+) -> Sequence[AssetSpec]:
+    looker_dashboard_specs: List[AssetSpec] = []
+
+    # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard
+    for lookml_dashboard_path in project_dir.rglob("*.dashboard.lookml"):
+        for lookml_dashboard_props in yaml.safe_load(lookml_dashboard_path.read_bytes()):
+            lookml_dashboard = (lookml_dashboard_path, "dashboard", lookml_dashboard_props)
+
+            looker_dashboard_specs.append(
+                AssetSpec(
+                    key=dagster_looker_translator.get_asset_key(lookml_dashboard),
+                    deps=dagster_looker_translator.get_deps(lookml_dashboard),
+                    description=dagster_looker_translator.get_description(lookml_dashboard),
+                    metadata=dagster_looker_translator.get_metadata(lookml_dashboard),
+                    group_name=dagster_looker_translator.get_group_name(lookml_dashboard),
+                    owners=dagster_looker_translator.get_owners(lookml_dashboard),
+                    tags=dagster_looker_translator.get_tags(lookml_dashboard),
+                )
+            )
+
+    return looker_dashboard_specs
+
+
+def build_looker_explore_specs(
+    project_dir: Path,
+    dagster_looker_translator: DagsterLookerLkmlTranslator,
+) -> Sequence[AssetSpec]:
+    looker_explore_specs: List[AssetSpec] = []
+
+    explores = []
+    # https://cloud.google.com/looker/docs/reference/param-explore
+    for lookml_model_path in project_dir.rglob("*.model.lkml"):
+        for lookml_explore_props in lkml.load(lookml_model_path.read_text()).get("explores", []):
+            lookml_explore = (lookml_model_path, "explore", lookml_explore_props)
+            explores.append(lookml_explore)
+
+    explores_postprocessed = postprocess_loaded_structures(explores)
+    for lookml_explore in explores_postprocessed:
+        looker_explore_specs.append(
+            AssetSpec(
+                key=dagster_looker_translator.get_asset_key(lookml_explore),
+                deps=dagster_looker_translator.get_deps(lookml_explore),
+                description=dagster_looker_translator.get_description(lookml_explore),
+                metadata=dagster_looker_translator.get_metadata(lookml_explore),
+                group_name=dagster_looker_translator.get_group_name(lookml_explore),
+                owners=dagster_looker_translator.get_owners(lookml_explore),
+                tags=dagster_looker_translator.get_tags(lookml_explore),
+            )
+        )
+
+    return looker_explore_specs
+
+
 def build_looker_view_specs(
     project_dir: Path,
     dagster_looker_translator: DagsterLookerLkmlTranslator,
@@ -160,7 +169,7 @@ def build_looker_view_specs(
         for lookml_view_props in lkml.load(lookml_view_path.read_text()).get("views", []):
             lookml_view = (lookml_view_path, "view", lookml_view_props)
             views.append(lookml_view)
-    views_postprocessed = postprocess_loaded_objects(views)
+    views_postprocessed = postprocess_loaded_structures(views)
 
     for lookml_view in views_postprocessed:
         looker_view_specs.append(
