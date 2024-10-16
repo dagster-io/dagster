@@ -27,6 +27,25 @@ Dagster offers several ways to automate pipeline execution:
 3. [Asset Sensors](#asset-sensors) - Trigger jobs when specific assets materialize
 4. [GraphQL Endpoint](#graphql-endpoint) - Trigger materializations and jobs from the GraphQL endpoint
 
+## How to choose the right automation method
+
+Consider these factors when selecting an automation method:
+
+1. **Pipeline Structure**: Are you working primarily with assets, ops, or a mix?
+2. **Timing Requirements**: Do you need regular updates or event-driven processing?
+3. **Data Characteristics**: Is your data partitioned? Do you need to update historical data?
+4. **System Integration**: Do you need to react to external events or systems?
+
+Use this table to help guide your decision:
+
+| Method                 | Best For                               | Works With          |
+| ---------------------- | -------------------------------------- | ------------------- |
+| Schedules              | Regular, time-based job runs           | Assets, Ops, Graphs |
+| Sensors                | Event-driven automation                | Assets, Ops, Graphs |
+| Declarative Automation | Asset-centric, condition-based updates | Assets only         |
+| Asset Sensors          | Cross-job/location asset dependencies  | Assets only         |
+| GraphQL Triggers       | Event triggers from external systems   | Assets, Ops, Jobs   |
+
 ## Schedules
 
 Schedules allow you to run jobs at specified times, like "every Monday at 9 AM" or "daily at midnight."
@@ -76,23 +95,6 @@ For more examples of how to create asset sensors, see the [How-To Use Asset Sens
 
 {/* TODO: add content */}
 
-## How to choose the right automation method
-
-Consider these factors when selecting an automation method:
-
-1. **Pipeline Structure**: Are you working primarily with assets, ops, or a mix?
-2. **Timing Requirements**: Do you need regular updates or event-driven processing?
-3. **Data Characteristics**: Is your data partitioned? Do you need to update historical data?
-4. **System Integration**: Do you need to react to external events or systems?
-
-Use this table to help guide your decision:
-
-| Method                 | Best For                               | Works With          |
-| ---------------------- | -------------------------------------- | ------------------- |
-| Schedules              | Regular, time-based job runs           | Assets, Ops, Graphs |
-| Sensors                | Event-driven automation                | Assets, Ops, Graphs |
-| Declarative Automation | Asset-centric, condition-based updates | Assets only         |
-| Asset Sensors          | Cross-job/location asset dependencies  | Assets only         |
 
 ## GraphQL Endpoint
 
