@@ -1,8 +1,5 @@
 import {Box, ButtonGroup, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
-import {useFeatureFlags} from 'shared/app/Flags';
-import {AutomaterializeRunHistoryTable} from 'shared/assets/auto-materialization/AutomaterializeRunHistoryTable';
-import {RunsFeedTableWithFilters} from 'shared/runs/RunsFeedTable';
 
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
 import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
@@ -12,8 +9,10 @@ import {
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
 import {useLazyQuery} from '../apollo-client';
+import {useFeatureFlags} from '../app/Flags';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
+import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
 import {DeclarativeAutomationBanner} from '../assets/auto-materialization/DeclarativeAutomationBanner';
 import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
@@ -22,6 +21,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../instigation/util';
 import {DagsterTag} from '../runs/RunTag';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 

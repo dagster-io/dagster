@@ -1,12 +1,6 @@
 import {Box, ButtonLink, Tag, TokenizingFieldValue, tokenToString} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
-import {RunsFilter} from 'shared/graphql/types';
-import {RunsFeedError} from 'shared/runs/RunsFeedError';
-import {useIncludeRunsFromBackfillsOption} from 'shared/runs/RunsFeedRoot';
-import {RunsFeedTable} from 'shared/runs/RunsFeedTable';
-import {useRunsFeedEntries} from 'shared/runs/useRunsFeedEntries';
-import {RepoAddress} from 'shared/workspace/types';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {PipelineRunsEmptyState} from './PipelineRunsEmptyState';
@@ -17,8 +11,12 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunsFilter} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
+import {RunsFeedError} from '../runs/RunsFeedError';
+import {useIncludeRunsFromBackfillsOption} from '../runs/RunsFeedRoot';
+import {RunsFeedTable} from '../runs/RunsFeedTable';
 import {
   RunFilterToken,
   RunFilterTokenType,
@@ -26,8 +24,10 @@ import {
   useQueryPersistedRunFilters,
   useRunsFilterInput,
 } from '../runs/RunsFilterInput';
+import {useRunsFeedEntries} from '../runs/useRunsFeedEntries';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
 
 const ENABLED_FILTERS: RunFilterTokenType[] = [
   'status',
@@ -112,11 +112,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
   );
 
   const belowActionBarComponents = (
-    <Box
-      border="top"
-      flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-      padding={{left: 24, right: 12, top: 12}}
-    >
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
       {permanentTokens.map(({token, value}) => (
         <Tag key={token}>{`${token}:${value}`}</Tag>
       ))}
