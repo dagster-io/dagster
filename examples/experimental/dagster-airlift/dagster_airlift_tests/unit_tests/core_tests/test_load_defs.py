@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import cast
 
 import mock
@@ -17,7 +16,6 @@ from dagster import (
     sensor,
 )
 from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.test_utils import environ
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.test.definitions import (
     scoped_reconstruction_metadata,
@@ -46,7 +44,6 @@ from dagster_airlift.core.serialization.serialized_data import (
 from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
-from dagster_airlift.utils import DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
@@ -313,23 +310,16 @@ def test_local_airflow_instance() -> None:
     assert defs.assets
     repo_def = defs.get_repository_def()
 
-    with environ(
-        {
-            DAGSTER_AIRLIFT_PROXIED_STATE_DIR_ENV_VAR: str(
-                Path(__file__).parent / "proxied_state_for_sqlite_test"
-            ),
-        }
-    ):
-        defs = load_definitions_airflow_asset_graph(
-            assets_per_task={
-                "dag": {"task": [("a", [])]},
-            },
-            create_assets_defs=True,
-        )
-        repo_def = defs.get_repository_def()
-        assert defs.assets
-        repo_def = defs.get_repository_def()
-        assert len(repo_def.assets_defs_by_key) == 2
+    defs = load_definitions_airflow_asset_graph(
+        assets_per_task={
+            "dag": {"task": [("a", [])]},
+        },
+        create_assets_defs=True,
+    )
+    repo_def = defs.get_repository_def()
+    assert defs.assets
+    repo_def = defs.get_repository_def()
+    assert len(repo_def.assets_defs_by_key) == 2
 
 
 def test_cached_loading() -> None:
