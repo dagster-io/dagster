@@ -118,7 +118,6 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -141,7 +140,6 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -275,7 +273,6 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -298,7 +295,6 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -489,7 +485,6 @@ export type AssetConditionEvaluationRecordFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
-                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -512,7 +507,6 @@ export type AssetConditionEvaluationRecordFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -665,7 +659,6 @@ export type AssetConditionEvaluationRecordFragment = {
                         unique: boolean;
                         other: Array<string>;
                       };
-                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -688,7 +681,6 @@ export type AssetConditionEvaluationRecordFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -907,11 +899,6 @@ export type GetEvaluationsQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -937,7 +924,6 @@ export type GetEvaluationsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
-                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -1093,11 +1079,6 @@ export type GetEvaluationsQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -1123,7 +1104,6 @@ export type GetEvaluationsQuery = {
                               unique: boolean;
                               other: Array<string>;
                             };
-                            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                           }>;
                           constraints: {
                             __typename: 'TableConstraints';
@@ -1319,7 +1299,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
-                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -1342,7 +1321,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -1495,7 +1473,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
                         unique: boolean;
                         other: Array<string>;
                       };
-                      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                     }>;
                     constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                   };
@@ -1518,7 +1495,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -1547,6 +1523,6 @@ export type GetEvaluationsSpecificPartitionQuery = {
   } | null;
 };
 
-export const GetEvaluationsQueryVersion = 'f662887d3e2357a646e60835a41c97b775f69b575826a3a4bfb52bb2b6072955';
+export const GetEvaluationsQueryVersion = '72294147655740415d3bdaf8de190465417ec4352927fbdcda7c65eadd75dd50';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = '9e18dcc9033ceadf99ebf64b004ae6747e4fb2d8799fd8017836b1a6bcbcdd72';
+export const GetEvaluationsSpecificPartitionQueryVersion = '3aa6fe76a74ae28f8d526c3f3c5bc0f1649caa503b302e604ddefdf2a76c6b81';
