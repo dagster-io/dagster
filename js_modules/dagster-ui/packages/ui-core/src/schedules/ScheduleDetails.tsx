@@ -100,7 +100,7 @@ export const ScheduleDetails = (props: {
                     timezone={executionTimezone}
                     timeFormat={TIME_FORMAT}
                   />
-                  <TickStatusTag tick={latestTick} />
+                  <TickStatusTag tick={latestTick} tickResultType="runs" />
                 </Group>
               ) : (
                 'Schedule has never run'

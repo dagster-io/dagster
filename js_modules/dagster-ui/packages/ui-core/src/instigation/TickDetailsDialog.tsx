@@ -15,9 +15,12 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
+import {AssetDaemonTickFragment} from 'shared/assets/auto-materialization/types/AssetDaemonTicksQuery.types';
+import {TickResultType} from 'shared/ticks/TickStatusTag';
 
 import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
+import {TickMaterializationsTable} from './TickMaterializationsTable';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
 import {gql, useQuery} from '../apollo-client';
@@ -26,7 +29,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {
   DynamicPartitionsRequestResult,
   DynamicPartitionsRequestType,
@@ -41,14 +43,24 @@ interface DialogProps extends InnerProps {
   isOpen: boolean;
 }
 
-export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}: DialogProps) => {
+export const TickDetailsDialog = ({
+  tickId,
+  tickResultType,
+  isOpen,
+  instigationSelector,
+  onClose,
+}: DialogProps) => {
   return (
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
+      style={{width: '80vw', maxWidth: '1200px', minWidth: '600px', transform: 'scale(1)'}}
     >
-      <TickDetailsDialogImpl tickId={tickId} instigationSelector={instigationSelector} />
+      <TickDetailsDialogImpl
+        tickId={tickId}
+        tickResultType={tickResultType}
+        instigationSelector={instigationSelector}
+      />
       {/* The logs table uses z-index for the column lines. Create a new stacking index
       for the footer so that the lines don't sit above it. */}
       <div style={{zIndex: 1}}>
@@ -62,10 +74,11 @@ export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}
 
 interface InnerProps {
   tickId: string | undefined;
+  tickResultType: TickResultType;
   instigationSelector: InstigationSelector;
 }
 
-const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
+const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: InnerProps) => {
   const [activeTab, setActiveTab] = useState<'result' | 'logs'>('result');
 
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
@@ -111,7 +124,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
         }
       />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <TickDetailSummary tick={tick} />
+        <TickDetailSummary tick={tick} tickResultType={tickResultType} />
       </Box>
       <Box padding={{horizontal: 24}} border="bottom">
         <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
@@ -119,12 +132,15 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
           <Tab id="logs" title="Logs" />
         </Tabs>
       </Box>
-      {activeTab === 'result' ? (
+      {tickResultType === 'materializations' && activeTab === 'result' ? (
+        <TickMaterializationsTable tick={tick} />
+      ) : null}
+      {tickResultType === 'runs' && activeTab === 'result' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
           {tick.runIds.length ? (
             <>
-              <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-                <Subtitle2>Requested Runs</Subtitle2>
+              <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+                <Subtitle2>Requested runs</Subtitle2>
               </Box>
               <RunList runIds={tick.runIds} />
             </>
@@ -166,7 +182,13 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
   );
 };
 
-export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaemonTickFragment}) {
+export function TickDetailSummary({
+  tick,
+  tickResultType,
+}: {
+  tick: HistoryTickFragment | AssetDaemonTickFragment;
+  tickResultType: TickResultType;
+}) {
   const intent = useMemo(() => {
     switch (tick?.status) {
       case InstigationTickStatus.FAILURE:
@@ -179,8 +201,6 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
     return undefined;
   }, [tick]);
 
-  const isAssetDaemonTick = 'requestedAssetMaterializationCount' in tick;
-
   return (
     <>
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12}}>
@@ -192,7 +212,7 @@ export function TickDetailSummary({tick}: {tick: HistoryTickFragment | AssetDaem
                 'Evaluating…'
               ) : (
                 <>
-                  {(isAssetDaemonTick
+                  {(tickResultType === 'materializations' || !('runIds' in tick)
                     ? tick.requestedAssetMaterializationCount
                     : tick.runIds.length) ?? 0}{' '}
                   requested
@@ -272,6 +292,18 @@ const JOB_SELECTED_TICK_QUERY = gql`
         tick(tickId: $tickId) {
           id
           ...HistoryTick
+
+          requestedAssetKeys {
+            path
+          }
+          requestedAssetMaterializationCount
+          autoMaterializeAssetEvaluationId
+          requestedMaterializationsForAssets {
+            assetKey {
+              path
+            }
+            partitionKeys
+          }
         }
       }
     }
