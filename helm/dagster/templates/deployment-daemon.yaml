@@ -53,6 +53,8 @@ spec:
           image: {{ include "dagster.externalImage.name" $.Values.postgresql.image | quote }}
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
+          resources:
+            {{- toYaml .Values.dagsterDaemon.checkDBReady.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
           resources:
