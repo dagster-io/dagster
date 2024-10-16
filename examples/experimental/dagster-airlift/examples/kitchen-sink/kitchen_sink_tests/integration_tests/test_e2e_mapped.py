@@ -262,3 +262,31 @@ def test_assets_multiple_jobs_same_task(
         ],
     }
     poll_for_expected_mats(af_instance, expected_mats_per_dag)
+
+
+def test_partitioned_migrated(
+    airflow_instance: None,
+    dagster_dev: None,
+    dagster_home: str,
+) -> None:
+    """Test that partitioned assets are properly materialized from a proxied task."""
+    from kitchen_sink.dagster_defs.airflow_instance import local_airflow_instance
+
+    af_instance = local_airflow_instance()
+    af_instance.unpause_dag(dag_id="migrated_daily_interval_dag")
+    # Wait for dag run to exist
+    expected_logical_date = get_current_datetime_midnight() - timedelta(days=1)
+    expected_run_id = f"scheduled__{expected_logical_date.isoformat()}"
+    # Wait to make sure dag run is created.
+    time.sleep(1)
+    af_instance.wait_for_run_completion(
+        dag_id="migrated_daily_interval_dag", run_id=expected_run_id, timeout=30
+    )
+    dagster_instance = DagsterInstance.get()
+    entry = poll_for_materialization(
+        dagster_instance=dagster_instance,
+        asset_key=AssetKey("migrated_daily_interval_dag__partitioned"),
+    )
+    assert entry.asset_materialization
+    assert entry.asset_materialization.partition
+    assert entry.asset_materialization.partition == expected_logical_date.strftime("%Y-%m-%d")

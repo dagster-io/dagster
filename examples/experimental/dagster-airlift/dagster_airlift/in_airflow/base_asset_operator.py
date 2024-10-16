@@ -2,7 +2,11 @@ import logging
 import os
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, Mapping, Sequence, Tuple
+from datetime import (
+    datetime,
+    timezone as tz,
+)
+from typing import Any, Dict, Iterable, Mapping, Optional, Sequence, Tuple
 
 import requests
 from airflow.models.operator import BaseOperator
@@ -20,6 +24,19 @@ DagsterJobIdentifier = Tuple[str, str, str]
 IMPLICIT_ASSET_JOB_PREFIX = "__ASSET_JOB"
 
 DEFAULT_DAGSTER_RUN_STATUS_POLL_INTERVAL = 1
+PARTITION_NAME_TAG = "dagster/partition"
+# The out-of-the-box partition key formats that we support, that correspond to the formats 
+# used by the TimeWindowPartitionsDefinition subclasses in Dagster.
+# Users may override the format, in which case they'll need to override the partition handling scheme as well.
+OOB_PARTITION_KEY_FORMATS = [
+    # Default daily, weekly, monthly format
+    "%Y-%m-%d",
+    # Default hourly without timezone
+    "%Y-%m-%d-%H:%M",
+    # Default hourly with timezone
+    "%Y-%m-%d-%H:%M%z",
+]
+
 
 
 class BaseDagsterAssetsOperator(BaseOperator, ABC):
@@ -61,6 +78,10 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
         self, context: Context, asset_nodes: Sequence[Mapping[str, Any]]
     ) -> Iterable[Mapping[str, Any]]:
         """Filters the asset nodes to only include those that should be triggered by the current task."""
+
+    def get_partition_key(self, context: Context, partition_keys: Sequence[str]) -> Optional[str]:
+        """Overrideable method to determine the partition key to use to trigger the dagster run."""
+        return default_get_partition_key_for_dagster_run(context, partition_keys)
 
     def get_valid_graphql_response(self, response: Response, key: str) -> Any:
         response_json = response.json()
@@ -161,16 +182,31 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
                 "or that the assets are not in the same code location. "
                 "`dagster-airlift` expects that all assets mapped to a given task exist within the same code location, so that they can be executed by the same run."
             )
+        if _assets_are_partitioned(filtered_asset_nodes):
+            partition_keys = _get_partition_keys_for_partitioned_assets(filtered_asset_nodes)
+            partition_key_for_run = self.get_partition_key(context, partition_keys)
+            if partition_key_for_run not in partition_keys:
+                raise Exception(
+                    f"Partition key {partition_key_for_run} not found in {partition_keys}"
+                )
+        else:
+            partition_key_for_run = None
 
         job_identifier = _get_implicit_job_identifier(next(iter(filtered_asset_nodes)))
         asset_key_paths = [asset_node["assetKey"]["path"] for asset_node in filtered_asset_nodes]
         logger.info(f"Triggering run for {job_identifier} with assets {asset_key_paths}")
+        tags = (
+            {**self.default_dagster_run_tags(context), PARTITION_NAME_TAG: partition_key_for_run}
+            if partition_key_for_run
+            else self.default_dagster_run_tags(context)
+        )
+        logger.info(f"Using tags {tags}")
         run_id = self.launch_dagster_run(
             context,
             session,
             dagster_url,
             _build_dagster_run_execution_params(
-                self.default_dagster_run_tags(context),
+                tags,
                 job_identifier,
                 asset_key_paths=asset_key_paths,
             ),
@@ -239,3 +275,69 @@ def _build_dagster_run_execution_params(
 
 def _is_asset_node_executable(asset_node: Mapping[str, Any]) -> bool:
     return bool(asset_node["jobs"])
+
+
+def _get_partition_keys_for_partitioned_assets(
+    asset_nodes: Sequence[Mapping[str, Any]],
+) -> Sequence[str]:
+    if not all(asset_node["isPartitioned"] for asset_node in asset_nodes):
+        raise Exception(
+            "Found some unpartitioned assets and some partitioned assets in the same task. "
+            "For a given task, all assets must have the same partitions definition. "
+        )
+    if not any(asset_node["isPartitioned"] for asset_node in asset_nodes):
+        return []
+    partition_keys_per_asset = [set(asset_node["partitionKeys"]) for asset_node in asset_nodes]
+    if not all_sets_equal(partition_keys_per_asset):
+        raise Exception(
+            "Found differing partition keys across assets in this task. "
+            "For a given task, all assets must have the same partitions definition. "
+        )
+    return next(iter(asset_nodes))["partitionKeys"]
+
+
+def all_sets_equal(list_of_sets):
+    if not list_of_sets:
+        return True
+    return len(set.union(*list_of_sets)) == len(set.intersection(*list_of_sets))
+
+
+def default_get_partition_key_for_dagster_run(
+    context: Context, partition_keys: Sequence[str]
+) -> str:
+    logical_date = context["logical_date"]  # type: ignore # pylance thinks potentially not set, but in reality should always be set
+    return translate_logical_date_to_partition_key(
+        logical_date, partition_keys, OOB_PARTITION_KEY_FORMATS
+    )
+
+def translate_logical_date_to_partition_key(
+    logical_date: datetime, partition_keys: Sequence[str], formats: Sequence[str] 
+) -> str:
+    partitions_and_datetimes = [
+        (_get_partition_datetime(partition_key, formats), partition_key) for partition_key in partition_keys
+    ]
+    matching_partition = next(
+        (
+            partition_key
+            for datetime, partition_key in partitions_and_datetimes
+            if datetime.timestamp() == logical_date.timestamp()
+        ),
+        None,
+    )
+    if matching_partition is None:
+        raise Exception(f"No partition key found for logical date {logical_date}")
+    return matching_partition
+def _assets_are_partitioned(asset_nodes: Sequence[Mapping[str, Any]]) -> bool:
+    return any(asset_node["isPartitioned"] for asset_node in asset_nodes)
+
+
+def _get_partition_datetime(partition_key: str, formats: Sequence[str]) -> datetime:
+    for format in formats:
+        try:
+            return _add_default_utc_timezone_if_none(datetime.strptime(partition_key, format))
+        except ValueError:
+            continue
+    raise Exception(f"Could not parse partition key {partition_key} with formats {formats}.")
+
+def _add_default_utc_timezone_if_none(dt: datetime) -> datetime:
+    return dt.replace(tzinfo=tz.utc) if dt.tzinfo is None else dt

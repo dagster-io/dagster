@@ -34,6 +34,12 @@ query AssetNodeQuery {
                 }
             }
         }
+        isPartitioned
+        partitionDefinition {
+          type
+          name
+        }
+        partitionKeys
     }
 }
 """

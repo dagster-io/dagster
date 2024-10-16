@@ -255,6 +255,17 @@ class AirflowInstance:
             )
         return response.json()["dag_run_id"]
 
+    def unpause_dag(self, dag_id: str) -> None:
+        response = self.auth_backend.get_session().patch(
+            f"{self.get_api_url()}/dags",
+            json={"is_paused": False},
+            params={"dag_id_pattern": dag_id},
+        )
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to unpause dag {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
     def get_dag_run(self, dag_id: str, run_id: str) -> "DagRun":
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}"
