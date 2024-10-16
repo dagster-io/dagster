@@ -119,7 +119,6 @@ export type SidebarAssetFragment = {
                 unique: boolean;
                 other: Array<string>;
               };
-              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             }>;
             constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
           };
@@ -142,7 +141,6 @@ export type SidebarAssetFragment = {
               unique: boolean;
               other: Array<string>;
             };
-            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           }>;
           constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
         };
@@ -884,7 +882,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -907,7 +904,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -2166,7 +2162,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -2189,7 +2184,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -3448,7 +3442,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -3471,7 +3464,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -4721,7 +4713,6 @@ export type SidebarAssetFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -4744,7 +4735,6 @@ export type SidebarAssetFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -6009,7 +5999,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -6032,7 +6021,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -7291,7 +7279,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -7314,7 +7301,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -8573,7 +8559,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -8596,7 +8581,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -9846,7 +9830,6 @@ export type SidebarAssetFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -9869,7 +9852,6 @@ export type SidebarAssetFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -11134,7 +11116,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -11157,7 +11138,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -12416,7 +12396,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -12439,7 +12418,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -13698,7 +13676,6 @@ export type SidebarAssetFragment = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -13721,7 +13698,6 @@ export type SidebarAssetFragment = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -14971,7 +14947,6 @@ export type SidebarAssetFragment = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -14994,7 +14969,6 @@ export type SidebarAssetFragment = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -16255,7 +16229,6 @@ export type SidebarAssetQuery = {
                       unique: boolean;
                       other: Array<string>;
                     };
-                    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                   }>;
                   constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                 };
@@ -16278,7 +16251,6 @@ export type SidebarAssetQuery = {
                     unique: boolean;
                     other: Array<string>;
                   };
-                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                 }>;
                 constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
               };
@@ -17029,11 +17001,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -17059,11 +17026,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -18325,11 +18287,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -18355,11 +18312,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -19621,11 +19573,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -19651,11 +19598,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -20908,7 +20850,6 @@ export type SidebarAssetQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -20931,7 +20872,6 @@ export type SidebarAssetQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -22201,11 +22141,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -22231,11 +22166,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -23497,11 +23427,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -23527,11 +23452,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -24793,11 +24713,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -24823,11 +24738,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -26080,7 +25990,6 @@ export type SidebarAssetQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -26103,7 +26012,6 @@ export type SidebarAssetQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -27373,11 +27281,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -27403,11 +27306,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -28669,11 +28567,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -28699,11 +28592,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -29965,11 +29853,6 @@ export type SidebarAssetQuery = {
                                   unique: boolean;
                                   other: Array<string>;
                                 };
-                                tags: Array<{
-                                  __typename: 'DefinitionTag';
-                                  key: string;
-                                  value: string;
-                                }>;
                               }>;
                               constraints: {
                                 __typename: 'TableConstraints';
@@ -29995,11 +29878,6 @@ export type SidebarAssetQuery = {
                                 unique: boolean;
                                 other: Array<string>;
                               };
-                              tags: Array<{
-                                __typename: 'DefinitionTag';
-                                key: string;
-                                value: string;
-                              }>;
                             }>;
                             constraints: {
                               __typename: 'TableConstraints';
@@ -31252,7 +31130,6 @@ export type SidebarAssetQuery = {
                             unique: boolean;
                             other: Array<string>;
                           };
-                          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                         }>;
                         constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                       };
@@ -31275,7 +31152,6 @@ export type SidebarAssetQuery = {
                           unique: boolean;
                           other: Array<string>;
                         };
-                        tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
                       }>;
                       constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
                     };
@@ -32409,4 +32285,4 @@ export type SidebarAssetQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const SidebarAssetQueryVersion = '40a932d4e71620a3876ba1c373529a7a6be89002516c327479e539716947fded';
+export const SidebarAssetQueryVersion = '9b663f86f85eefe4e680d6ee4289de9b9070f51449699ca7127e7a13d71fa422';

@@ -141,10 +141,6 @@ const ASSET_COLUMN_LINEAGE_QUERY = gql`
               name
               type
               description
-              tags {
-                key
-                value
-              }
             }
           }
         }
@@ -172,10 +168,6 @@ const ASSET_COLUMN_LINEAGE_QUERY = gql`
                 name
                 type
                 description
-                tags {
-                  key
-                  value
-                }
               }
             }
           }
