@@ -26,6 +26,7 @@ setup(
         # Need this until we have OpenSSL 1.1.1+ available in BK base image
         # Context: https://github.com/psf/requests/issues/6432
         "urllib3<2",
+        "GitPython",
     ],
     entry_points={
         "console_scripts": [
