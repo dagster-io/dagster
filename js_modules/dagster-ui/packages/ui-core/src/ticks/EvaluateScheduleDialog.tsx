@@ -182,7 +182,12 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
         </>
       );
     } else {
-      return <Button onClick={onClose}>Close</Button>;
+      return (
+        <>
+          <Button intent="primary">Launch all</Button>
+          <Button onClick={onClose}>Close</Button>
+        </>
+      );
     }
   }, [onClose, shouldEvaluate]);
 
