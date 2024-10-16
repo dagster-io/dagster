@@ -12,16 +12,39 @@ Now that we have the raw data files and the dagster project setup lets create so
 
 ## What you'll learn
 
-- Setting up a Dagster project with the recommended project structure
-- Creating Assets and using Resources to connect to external systems
-- Adding metadata to your assets
-- Building dependencies between assets
-- Running a pipeline by materializing assets
-- Adding schedules, sensors, and partitions to your assets
+- Creating our intial defintions object
+- Adding a duckdb resource
+- Building some basic software defined assets 
+
+## Building Definitions Object
+
+The Definitions object [need docs reference] in Dagster serves as the central configuration point for defining and organizing various componenets within a Dagster Project. It acts as a container that holds all the necessary configurations for a code location, ensuring that everything is organized and easily accessable. 
+
+1. Creating Definitions Object and duckdb resource
+
+Open the definitions.py file and add the following import statements and definitions object. 
+
+  ```python
+  import json
+  import os
+
+  from dagster_duckdb import DuckDBResource
+
+  import dagster as dg
+
+  defs = dg.Definitions(
+    assets=[
+    ],
+    resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
+  ```
 
 ## Loading raw data
 
-1. 
+1. Products Asset
+
+We need to create an asset that creates a duckdb table for the products csv. Additionally we should add meta data to help categorize this asset and give us a preview of what it looks like in the Dagster UI. 
+
+
 
 
 ## What you've learned
