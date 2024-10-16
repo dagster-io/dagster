@@ -9,7 +9,6 @@ import {
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import {useFeatureFlags} from 'shared/app/Flags';
 
 import {Run} from './Run';
 import {RunAssetCheckTags} from './RunAssetCheckTags';
@@ -24,6 +23,7 @@ import {TickTagForRun} from './TickTagForRun';
 import {RunPageFragment} from './types/RunFragments.types';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 import {gql, useQuery} from '../apollo-client';
+import {useFeatureFlags} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';

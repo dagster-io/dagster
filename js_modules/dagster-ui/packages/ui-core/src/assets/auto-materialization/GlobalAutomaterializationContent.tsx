@@ -8,8 +8,6 @@ import {
   Table,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
-import {useFeatureFlags} from 'shared/app/Flags';
-import {RunsFeedTableWithFilters} from 'shared/runs/RunsFeedTable';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
@@ -23,12 +21,14 @@ import {
 } from './types/AssetDaemonTicksQuery.types';
 import {useLazyQuery} from '../../apollo-client';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
+import {useFeatureFlags} from '../../app/Flags';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus, RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
+import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 const MINUTE = 60 * 1000;

@@ -10,7 +10,6 @@ import {
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
-import {useFeatureFlags} from 'shared/app/Flags';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {PipelineRunsEmptyState} from './PipelineRunsEmptyState';
@@ -21,6 +20,7 @@ import {
 } from './types/PipelineRunsRoot.types';
 import {useJobTitle} from './useJobTitle';
 import {gql} from '../apollo-client';
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,

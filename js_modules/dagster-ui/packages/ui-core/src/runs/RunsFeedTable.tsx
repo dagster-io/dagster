@@ -4,12 +4,11 @@ import {
   Box,
   CursorHistoryControls,
   CursorPaginationProps,
+  SpinnerWithText,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useMemo, useRef} from 'react';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from 'shared/app/QueryRefresh';
-import {LoadingSpinner} from 'shared/ui/Loading';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
@@ -22,10 +21,12 @@ import {
   RunsFeedTableEntryFragment_Run,
 } from './types/RunsFeedRow.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
+import {LoadingSpinner} from '../ui/Loading';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {numberFormatter} from '../ui/formatters';
 
@@ -33,6 +34,7 @@ interface RunsFeedTableProps {
   entries: RunsFeedTableEntryFragment[];
   loading: boolean;
   onAddTag?: (token: RunFilterToken) => void;
+  hideTags?: string[];
   refetch: () => void;
   actionBarComponents?: React.ReactNode;
   belowActionBarComponents?: React.ReactNode;
@@ -46,6 +48,7 @@ export const RunsFeedTable = ({
   entries,
   loading,
   onAddTag,
+  hideTags,
   refetch,
   actionBarComponents,
   belowActionBarComponents,
@@ -110,7 +113,11 @@ export const RunsFeedTable = ({
           />
         </Box>
       </Box>
-      {belowActionBarComponents}
+      {belowActionBarComponents ? (
+        <Box border="top" padding={{left: 24, right: 12, top: 12}}>
+          {belowActionBarComponents}
+        </Box>
+      ) : null}
     </Box>
   );
 
@@ -125,7 +132,7 @@ export const RunsFeedTable = ({
     }
     return (
       <div style={{overflow: 'hidden'}}>
-        <IndeterminateLoadingBar loading={loading} />
+        <IndeterminateLoadingBar $loading={loading} />
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
           <RunsFeedTableHeader
             checkbox={
@@ -137,8 +144,8 @@ export const RunsFeedTable = ({
             }
           />
           {entries.length === 0 && loading && (
-            <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 32}} border="top">
-              <LoadingSpinner purpose="page" />
+            <Box flex={{direction: 'row', justifyContent: 'center'}} padding={32}>
+              <SpinnerWithText label="Loading runs…" />
             </Box>
           )}
           <Inner $totalHeight={totalHeight}>
@@ -157,6 +164,7 @@ export const RunsFeedTable = ({
                       onToggleChecked={onToggleFactory(entry.id)}
                       refetch={refetch}
                       onAddTag={onAddTag}
+                      hideTags={hideTags}
                     />
                   </div>
                 </Row>
@@ -182,11 +190,13 @@ export const RunsFeedTable = ({
 
 export const RunsFeedTableWithFilters = ({
   filter,
-  actionBarComponents,
+  ...rest
 }: {
   filter: RunsFilter;
-  actionBarComponents?: React.ReactNode;
-}) => {
+} & Pick<
+  RunsFeedTableProps,
+  'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags'
+>) => {
   const {entries, paginationProps, queryResult} = useRunsFeedEntries(filter, 'all', true);
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -205,11 +215,11 @@ export const RunsFeedTableWithFilters = ({
     return (
       <RunsFeedTable
         entries={entries}
-        actionBarComponents={actionBarComponents}
         loading={queryResult.loading}
         refetch={refreshState.refetch}
         paginationProps={paginationProps}
         scroll={false}
+        {...rest}
       />
     );
   }

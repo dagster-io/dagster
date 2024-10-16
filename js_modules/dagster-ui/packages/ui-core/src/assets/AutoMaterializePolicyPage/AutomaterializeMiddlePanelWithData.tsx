@@ -14,8 +14,6 @@ import {
   TagSelectorWithSearch,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {useFeatureFlags} from 'shared/app/Flags';
-import {RunsFeedTableWithFilters} from 'shared/runs/RunsFeedTable';
 import styled from 'styled-components';
 
 import {StatusDot} from './AutomaterializeLeftPanel';
@@ -31,9 +29,11 @@ import {
   GetEvaluationsSpecificPartitionQuery,
 } from './types/GetEvaluationsQuery.types';
 import {gql, useQuery} from '../../apollo-client';
+import {useFeatureFlags} from '../../app/Flags';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {DimensionPartitionKeys, RunsFilter} from '../../graphql/types';
+import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 const emptyArray: any[] = [];

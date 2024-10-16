@@ -131,13 +131,7 @@ export const RunsFeedRoot = () => {
   );
 
   const belowActionBarComponents = activeFiltersJsx.length ? (
-    <Box
-      border="top"
-      flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-      padding={{left: 24, right: 12, top: 12}}
-    >
-      {activeFiltersJsx}
-    </Box>
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>{activeFiltersJsx}</Box>
   ) : null;
 
   function content() {

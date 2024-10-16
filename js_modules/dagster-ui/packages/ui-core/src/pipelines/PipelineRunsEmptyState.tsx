@@ -1,8 +1,9 @@
 import {Box, Icon, NonIdealState} from '@dagster-io/ui-components';
-import {AnchorButton} from 'shared/ui/AnchorButton';
-import {isThisThingAnAssetJob, useRepository} from 'shared/workspace/WorkspaceContext/util';
-import {RepoAddress} from 'shared/workspace/types';
-import {workspacePathFromAddress} from 'shared/workspace/workspacePath';
+
+import {AnchorButton} from '../ui/AnchorButton';
+import {isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext/util';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface EmptyStateProps {
   repoAddress: RepoAddress | null;

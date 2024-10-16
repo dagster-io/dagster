@@ -1,5 +1,3 @@
-import {PYTHON_ERROR_FRAGMENT} from 'shared/app/PythonErrorFragment';
-
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedRow';
 import {useSelectedRunsFeedTab} from './RunsFeedTabs';
 import {SCHEDULED_RUNS_LIST_QUERY} from './ScheduledRunListRoot';
@@ -10,6 +8,7 @@ import {
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/useRunsFeedEntries.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {gql, useQuery} from '../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RunsFilter} from '../graphql/types';
 
 const PAGE_SIZE = 25;

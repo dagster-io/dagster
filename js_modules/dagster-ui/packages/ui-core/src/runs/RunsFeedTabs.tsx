@@ -75,12 +75,12 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
       <TabLink id="all" title="Runs" to={urlForStatus([])} />
       <TabLink
         id="queued"
-        title={`Queued (${queuedCount})`}
+        title={queuedCount !== null ? `Queued (${queuedCount})` : `Queued`}
         to={urlForStatus(Array.from(queuedStatuses))}
       />
       <TabLink
         id="in-progress"
-        title={`In progress (${inProgressCount})`}
+        title={inProgressCount !== null ? `In progress (${inProgressCount})` : 'In progress'}
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
