@@ -42,6 +42,16 @@ class BulkActionStatus(Enum):
         return BulkActionStatus(graphql_str)
 
 
+BULK_ACTION_TERMINAL_STATUSES = [
+    BulkActionStatus.COMPLETED,
+    BulkActionStatus.FAILED,
+    BulkActionStatus.CANCELED,
+    BulkActionStatus.COMPLETED_SUCCESS,
+    BulkActionStatus.COMPLETED_SUCCESS,
+    BulkActionStatus.COMPLETED_FAILED,
+]
+
+
 @record
 class BulkActionsFilter:
     """Filters to use when querying for bulk actions (i.e. backfills) from the BulkActionsTable.
