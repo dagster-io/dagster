@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from dagster import Definitions, asset, define_asset_job
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -58,6 +60,16 @@ def multi_job__c() -> None:
 
 job1 = define_asset_job("job1", [multi_job__a])
 job2 = define_asset_job("job2", [multi_job__b, multi_job__c])
+
+
+# Partitioned assets for migrated_daily_interval_dag
+@asset(
+    partitions_def=DailyPartitionsDefinition(
+        start_date=get_current_datetime_midnight() - timedelta(days=2)
+    )
+)
+def migrated_daily_interval_dag__partitioned() -> None:
+    print("Materialized daily_interval_dag__partitioned")
 
 
 def build_mapped_defs() -> Definitions:
@@ -128,6 +140,12 @@ def build_mapped_defs() -> Definitions:
                     task_mappings={"print_task": [multi_job__a, multi_job__b, multi_job__c]},
                 ),
                 jobs=[job1, job2],
+            ),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="migrated_daily_interval_dag",
+                    task_mappings={"my_task": [migrated_daily_interval_dag__partitioned]},
+                ),
             ),
         ),
     )

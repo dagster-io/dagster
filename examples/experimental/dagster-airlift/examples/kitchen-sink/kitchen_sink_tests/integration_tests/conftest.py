@@ -1,10 +1,12 @@
 import os
 import subprocess
+import time
 from pathlib import Path
 from typing import Generator
 
 import pytest
 from dagster._core.test_utils import environ
+from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow
 
 
@@ -41,3 +43,19 @@ def airflow_instance_fixture(local_env: None) -> Generator[subprocess.Popen, Non
         airflow_cmd=["make", "run_airflow"], env=os.environ, cwd=makefile_dir()
     ) as process:
         yield process
+
+
+def poll_for_airflow_run_existence_and_completion(
+    af_instance: AirflowInstance, dag_id: str, af_run_id: str, duration: int
+) -> None:
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            af_instance.wait_for_run_completion(
+                dag_id=dag_id, run_id=af_run_id, timeout=int(time.time() - start_time)
+            )
+            return
+        # Run may not exist yet
+        except Exception:
+            time.sleep(0.1)
+            continue
