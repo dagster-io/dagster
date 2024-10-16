@@ -104,7 +104,9 @@ It is possible to trigger asset materializations in a job from external services
 - You need to trigger a materialization or job over an HTTP endpoint
 - You are creating a custom script for batching operations
 
-To trigger a job to run from the GraphQL endpoint in Dagster, you can use the `launchRun` mutation provided by Dagster's GraphQL API. Here's a general outline of how you can achieve this:
+### Triggering a job
+
+To trigger a job to run using the GraphQL endpoint in Dagster, you can use the `launchRun` mutation. Here's an example using the `requests` library:
 
 ```python
 import requests
@@ -162,6 +164,68 @@ response = requests.post(
 )
 ```
 
+### Triggering an asset materialization
+
+To trigger an asset materialization using the GraphQL endpoint in Dagster, you can use the `LaunchPipelineExecution` mutation. Here's an example using the `requests` library:
+
+```python
+import requests
+
+
+graphql_endpoint = "http://localhost:3000/graphql"
+
+query = """
+mutation LaunchPipelineExecution(
+    $executionParams: ExecutionParams!
+) {
+  launchPipelineExecution(executionParams: $executionParams) {
+    ... on LaunchRunSuccess {
+      run {
+        id
+        pipelineName
+        __typename
+      }
+      __typename
+    }
+    ... on PipelineNotFoundError {
+      message
+      __typename
+    }
+    ... on InvalidSubsetError {
+      message
+      __typename
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        __typename
+      }
+      __typename
+    }
+  }
+}
+"""
+
+response = requests.post(
+    graphql_endpoint,
+    json={
+        "query": query,
+        "variables": {
+            "executionParams": {
+                "mode": "default",
+                "runConfigData": "{}",
+                "selector": {
+                    "assetCheckSelection": [],
+                    "assetSelection": [{"path": ["<replace-with-asset-key>"]}],
+                    "pipelineName": "__ASSET_JOB",
+                    "repositoryLocationName": "<replace-with-code-location-name>",
+                    "repositoryName": "__repository__",
+                },
+            }
+        },
+    },
+)
+```
 
 ## Next steps
 
