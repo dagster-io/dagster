@@ -11,7 +11,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Tutorial',
       collapsed: false,
-      items: ['tutorial/tutorial-etl', 'tutorial/your-first-asset'],
+      items: ['tutorial/tutorial-etl', 'tutorial/dagster-project-setup', 'tutorial/your-first-asset'],
     },
     {
       type: 'category',

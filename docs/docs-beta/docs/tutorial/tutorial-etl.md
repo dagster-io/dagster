@@ -85,4 +85,4 @@ Next we will get the raw data for the project.
 
 ## Next steps
 
-- Continue this tutorial with your [first asset](/tutorial/your-first-asset)
+- Continue this tutorial with [setting up your dagster project ](/tutorial/dagster-project-setup)

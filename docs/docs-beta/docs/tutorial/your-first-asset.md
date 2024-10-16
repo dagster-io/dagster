@@ -2,69 +2,34 @@
 title: Your First Asset 
 description: Get the project data and create your first Asset
 last_update:
-  date: 2024-10-11
+  date: 2024-10-16
   author: Alex Noonan
 ---
 
 # Your First Software Defined Asset
 
-## Step 1: Create Dagster Project Files
+Now that we have the raw data files and the dagster project setup lets create some loading those csv's into duckdb. 
 
-Dagster needs several project files to run. 
+## What you'll learn
 
+- Setting up a Dagster project with the recommended project structure
+- Creating Assets and using Resources to connect to external systems
+- Adding metadata to your assets
+- Building dependencies between assets
+- Running a pipeline by materializing assets
+- Adding schedules, sensors, and partitions to your assets
 
-1. Create Config file
+## Loading raw data
 
-  ```bash title="Create Config file"
-    echo -e "[metadata]\nname = dagster_etl_tutorial" > setup.cfg
-  ```
-
-2. Create Setup Python File
-
-  ```bash title="Create Setup file"
-    echo > setup.py
-  ```
-
-In this file we will be creating the environemnt for Dagster to run our project. One thing in particular we need to do is define our Python dependencies. Open that python file and put the following code in there. 
+1. 
 
 
-  ```python title="Setup.py"
-    from setuptools import find_packages, setup
+## What you've learned
 
-    setup(
-        name="dagster_etl_tutorial",
-        packages=find_packages(exclude=["dagster_etl_tutorial_tests"]),
-        install_requires=[
-            "dagster",
-            "dagster-cloud",
-            "duckdb"
-        ],
-        extras_require={"dev": ["dagster-webserver", "pytest"]},
-    )
-  ```
-3. Create Toml file
-
-idk what this does but its in there. use scout for this:
+- Set up a Python virtual environment and installed Dagster
+- Copied raw data for project
 
 
-  ```bash title="Create Pyproject file"
-    echo > pyproject.toml
-  ```
+## Next steps
 
-  Open that file up and add the following
-
-  ```toml
-    [build-system]
-    requires = ["setuptools"]
-    build-backend = "setuptools.build_meta"
-
-    [tool.dagster]
-    module_name = "dagster_tutorial.definitions"
-    code_location_name = "dagster_tutorial"
-  ```
-
-4. Create Dagster Python Module and Definitions file
-
-
-
-## Next we will create our Python Definitions file 
+- Continue this tutorial with your [first asset](/tutorial/your-first-asset)
