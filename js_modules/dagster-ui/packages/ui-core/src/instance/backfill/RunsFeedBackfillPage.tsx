@@ -126,7 +126,7 @@ export const RunsFeedBackfillPage = () => {
         title={
           <Heading>
             <Link to={getRunFeedPath()} style={{color: Colors.textLight()}}>
-              All runs
+              Runs
             </Link>
             {' / '}
             {backfillId}

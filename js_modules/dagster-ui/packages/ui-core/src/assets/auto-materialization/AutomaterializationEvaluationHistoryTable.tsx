@@ -2,7 +2,6 @@ import {
   Body2,
   Box,
   Button,
-  ButtonGroup,
   ButtonLink,
   CursorHistoryControls,
   CursorPaginationProps,
@@ -26,8 +25,8 @@ interface Props {
   tickStatus: AutomaterializationTickStatusDisplay;
   setTickStatus: (status: AutomaterializationTickStatusDisplay) => void;
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
-  setTableView: (view: 'evaluations' | 'runs') => void;
   paginationProps: CursorPaginationProps;
+  actionBarComponents?: React.ReactNode;
 }
 
 export const AutomaterializationEvaluationHistoryTable = ({
@@ -36,8 +35,8 @@ export const AutomaterializationEvaluationHistoryTable = ({
   tickStatus,
   setTickStatus,
   setSelectedTick,
-  setTableView,
   paginationProps,
+  actionBarComponents,
 }: Props) => {
   return (
     <Box>
@@ -48,16 +47,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
         border="top"
       >
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <ButtonGroup
-            activeItems={new Set(['evaluations'])}
-            buttons={[
-              {id: 'evaluations', label: 'Evaluations'},
-              {id: 'runs', label: 'Runs'},
-            ]}
-            onClick={(id: 'evaluations' | 'runs') => {
-              setTableView(id);
-            }}
-          />
+          {actionBarComponents}
           {loading && !ticks?.length ? <Spinner purpose="body-text" /> : null}
         </Box>
         <StatusFilter status={tickStatus} onChange={setTickStatus} />
