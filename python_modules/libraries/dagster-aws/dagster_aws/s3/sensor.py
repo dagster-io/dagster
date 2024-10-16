@@ -25,7 +25,7 @@ def get_objects(
         bucket (str): s3 bucket
         prefix (str): s3 object prefix
         since_key (Optional[str]): retrieve objects modified after the last modified timestamp of this key
-        since_last_modified (Optional[str]): retrieve objects after this timestamp
+        since_last_modified (Optional[str]): retrieve objects after this timestamp (non-inclusive)
         client (Optional[boto3.Client]): s3 client
 
     Returns:
@@ -63,8 +63,8 @@ def get_objects(
 
     if since_last_modified:
         for idx, obj in enumerate(sorted_objects):
-            if obj.get("LastModified") >= since_last_modified:
-                return sorted_objects[idx + 1 :]
+            if obj.get("LastModified") > since_last_modified:
+                return sorted_objects[idx:]
 
     return sorted_objects
 

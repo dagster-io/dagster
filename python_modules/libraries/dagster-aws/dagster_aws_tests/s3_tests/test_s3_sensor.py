@@ -11,8 +11,8 @@ PREFIX = "content"
 
 
 def _put_object(client, bucket_name, prefix, key, body, delay=0) -> None:
-    r = client.put_object(Bucket=bucket_name, Key=f"{prefix}/{key}", Body=body)
     time.sleep(delay)
+    r = client.put_object(Bucket=bucket_name, Key=f"{prefix}/{key}", Body=body)
     if not r:
         raise Exception("Failed to create object")
 
@@ -222,3 +222,60 @@ def test_get_objects():
         )
 
         assert len(new_keys) == 2
+
+
+def test_get_objects_with_modified():
+    with moto.mock_s3():
+        s3_client = boto3.client("s3", region_name="us-east-1")
+        s3_client.create_bucket(Bucket=BUCKET_NAME)
+
+        _put_object(
+            client=s3_client,
+            bucket_name=BUCKET_NAME,
+            prefix=PREFIX,
+            key="A",
+            body="content",
+            delay=1,
+        )
+
+        _put_object(
+            client=s3_client,
+            bucket_name=BUCKET_NAME,
+            prefix=PREFIX,
+            key="B",
+            body="content",
+            delay=1,
+        )
+
+        objects = get_objects(bucket=BUCKET_NAME, prefix=PREFIX)
+        assert len(objects) == 2
+
+        obj = objects[1]
+        obj_b_last_modified = obj.get("LastModified")
+
+        _put_object(
+            client=s3_client,
+            bucket_name=BUCKET_NAME,
+            prefix=PREFIX,
+            key="C",
+            body="content",
+            delay=1,
+        )
+
+        # modify timestamp of B
+        _put_object(
+            client=s3_client,
+            bucket_name=BUCKET_NAME,
+            prefix=PREFIX,
+            key="B",
+            body="updated content",
+            delay=1,
+        )
+
+        objects = get_objects(
+            bucket=BUCKET_NAME, prefix=PREFIX, since_last_modified=obj_b_last_modified
+        )
+
+        assert len(objects) == 2
+        assert objects[0].get("Key").endswith("C")
+        assert objects[1].get("Key").endswith("B")
