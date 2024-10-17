@@ -93,7 +93,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
             the provided interval.
         description (Optional[str]): A human-readable description of the sensor.
         emit_backfills (bool): If set to True, will emit a backfill on any tick where more than one partition
-            of any single asset is requested, rather than individual runs. Defaults to False.
+            of any single asset is requested, rather than individual runs. Defaults to True.
     """
 
     def __init__(
@@ -107,7 +107,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, object]] = None,
-        emit_backfills: bool = False,
+        emit_backfills: bool = True,
         **kwargs,
     ):
         self._user_code = kwargs.get("user_code", False)
