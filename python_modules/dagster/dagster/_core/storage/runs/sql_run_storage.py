@@ -136,6 +136,9 @@ class SqlRunStorage(RunStorage):
         has_tags = dagster_run.tags and len(dagster_run.tags) > 0
         partition = dagster_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
         partition_set = dagster_run.tags.get(PARTITION_SET_TAG) if has_tags else None
+        extra_cols = {}
+        if self.has_backfill_id_column():
+            extra_cols["backfill_id"] = dagster_run.tags.get(BACKFILL_ID_TAG)
 
         runs_insert = RunsTable.insert().values(
             run_id=dagster_run.run_id,
@@ -145,6 +148,7 @@ class SqlRunStorage(RunStorage):
             snapshot_id=dagster_run.job_snapshot_id,
             partition=partition,
             partition_set=partition_set,
+            **extra_cols,
         )
         with self.connect() as conn:
             try:
@@ -298,10 +302,13 @@ class SqlRunStorage(RunStorage):
             )
 
         if filters.exclude_subruns:
-            runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
-                RunTagsTable.c.key == BACKFILL_ID_TAG
-            )
-            query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
+            if self.has_backfill_id_column():
+                query = query.where(RunsTable.c.backfill_id.is_(None))
+            else:
+                runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
+                    RunTagsTable.c.key == BACKFILL_ID_TAG
+                )
+                query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
 
         return query
 
@@ -790,6 +797,11 @@ class SqlRunStorage(RunStorage):
                 x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
             ]
             return "selector_id" in column_names
+
+    def has_backfill_id_column(self) -> bool:
+        with self.connect() as conn:
+            column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
+            return "backfill_id" in column_names
 
     # Daemon heartbeats
 
