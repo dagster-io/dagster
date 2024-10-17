@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import AbstractSet, Any, List, Mapping, Sequence, Tuple
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Sequence
 
 import lkml
 import yaml
@@ -18,7 +18,7 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
     For lists, entries are deduplicated by "name" key, resolving conflicts in favor of from_obj.
     """
     if isinstance(onto_obj, dict):
-        if from_obj is None or from_obj is ...:
+        if from_obj  in (None, ...):
             return onto_obj
         if not isinstance(from_obj, dict):
             raise Exception("Cannot merge a dictionary with a non-dictionary object")
@@ -29,14 +29,15 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
         }
 
         return result
-
-    if isinstance(onto_obj, list):
-        if from_obj is None or from_obj is ...:
+    elif isinstance(onto_obj, list):
+        if from_obj  in (None, ...):
             return onto_obj
         if not isinstance(from_obj, list):
             raise Exception("Cannot merge a list with a non-list object")
 
-        from_obj_names = [obj["name"] for obj in from_obj if "name" in obj]
+        from_obj_names = [
+            obj["name"] for obj in from_obj if isinstance(obj, dict) and "name" in obj
+        ]
         result = [
             obj
             for obj in onto_obj
@@ -44,13 +45,23 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
         ] + from_obj
 
         return result
+    else:
+        if from_obj is not ...:
+            return from_obj
+        elif onto_obj is not ...:
+            return onto_obj
+        else:
+            return None
 
-    return from_obj if from_obj is not ... else (onto_obj if onto_obj is not ... else None)
+class LookMLStructure(NamedTuple):
+    path: Path
+    structure_type: LookMLStructureType
+    props: Mapping[str, Any]
 
 
 def postprocess_loaded_structures(
-    structs: List[Tuple[Path, LookMLStructureType, Mapping[str, Any]]],
-) -> List[Tuple[Path, LookMLStructureType, Mapping[str, Any]]]:
+    structs: List[LookMLStructure],
+) -> List[LookMLStructure]:
     """Postprocesses LookML structs to resolve refinements and extends.
 
     https://cloud.google.com/looker/docs/lookml-refinements
@@ -110,7 +121,9 @@ def build_looker_dashboard_specs(
     # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard
     for lookml_dashboard_path in project_dir.rglob("*.dashboard.lookml"):
         for lookml_dashboard_props in yaml.safe_load(lookml_dashboard_path.read_bytes()):
-            lookml_dashboard = (lookml_dashboard_path, "dashboard", lookml_dashboard_props)
+            lookml_dashboard = LookMLStructure(
+                path=lookml_dashboard_path, structure_type="dashboard", props=lookml_dashboard_props
+            )
 
             looker_dashboard_specs.append(
                 AssetSpec(
@@ -137,7 +150,9 @@ def build_looker_explore_specs(
     # https://cloud.google.com/looker/docs/reference/param-explore
     for lookml_model_path in project_dir.rglob("*.model.lkml"):
         for lookml_explore_props in lkml.load(lookml_model_path.read_text()).get("explores", []):
-            lookml_explore = (lookml_model_path, "explore", lookml_explore_props)
+            lookml_explore = LookMLStructure(
+                path=lookml_model_path, structure_type="explore", props=lookml_explore_props
+            )
             explores.append(lookml_explore)
 
     explores_postprocessed = postprocess_loaded_structures(explores)

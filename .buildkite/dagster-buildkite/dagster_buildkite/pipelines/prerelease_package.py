@@ -22,7 +22,7 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
     for package in packages:
         setup_file = Path(package) / "setup.py"
         contents = setup_file.read_text()
-        if re.findall(r"version=\"[\d\.]+\"", contents) or "looker" in package:
+        if re.findall(r"version=\"[\d\.]+\"", contents):
             filtered_packages.append(package)
 
     input_step: BlockStep = {
