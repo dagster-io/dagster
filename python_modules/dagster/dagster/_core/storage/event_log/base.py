@@ -160,9 +160,11 @@ class AssetCheckSummaryRecord(
 ):
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[AssetCheckKey], instance: DagsterInstance
+        cls, keys: Iterable[AssetCheckKey], context: LoadingContext
     ) -> Iterable[Optional["AssetCheckSummaryRecord"]]:
-        records_by_key = instance.event_log_storage.get_asset_check_summary_records(list(keys))
+        records_by_key = context.instance.event_log_storage.get_asset_check_summary_records(
+            list(keys)
+        )
         return [records_by_key[key] for key in keys]
 
 
