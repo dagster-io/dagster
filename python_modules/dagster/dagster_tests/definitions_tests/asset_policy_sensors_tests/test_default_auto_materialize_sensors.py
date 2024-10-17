@@ -150,13 +150,13 @@ def test_default_auto_materialize_sensors_without_observable(
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=False)
 
 
-def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
+def test_opt_out_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
     repo_handle = RepositoryHandle.for_test(
         location_name="foo_location",
         repository_name="bar_repo",
     )
 
-    # If not opted in, no default sensors are created
+    # If opted out, we still do create default auto materialize sensors
     remote_repo = RemoteRepository(
         RepositorySnap.from_def(
             defs.get_repository_def(),
@@ -165,8 +165,9 @@ def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_s
         instance=instance_without_auto_materialize_sensors,
     )
     sensors = remote_repo.get_sensors()
-    assert len(sensors) == 1
-    assert sensors[0].name == "normal_sensor"
+    assert len(sensors) == 2
+    assert sensors[0].name == "default_automation_condition_sensor"
+    assert sensors[1].name == "normal_sensor"
 
 
 def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_materialize_sensors):

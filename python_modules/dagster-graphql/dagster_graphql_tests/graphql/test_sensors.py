@@ -733,7 +733,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["sensorsOrError"]
-        assert result.data["sensorsOrError"]["__typename"] == "Sensors"
+        assert result.data["sensorsOrError"]["__typename"] == "Sensors", result.data
         results = result.data["sensorsOrError"]["results"]
 
         # Snapshot is different for test_dict_repo because it does not contain any asset jobs,
