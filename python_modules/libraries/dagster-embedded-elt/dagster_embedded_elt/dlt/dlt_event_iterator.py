@@ -15,12 +15,14 @@ T = TypeVar("T", bound=DltEventType)
 
 def _fetch_row_count(
     dlt_pipeline: Pipeline,
+    schema_name: str,
     table_name: str,
 ) -> Optional[int]:
-    """Exists mostly for ease of testing."""
+    """Exists in a separate function mostly for ease of testing."""
+    table_identifier = f"{schema_name}.{table_name}" if schema_name else table_name
     with dlt_pipeline.sql_client() as client:
         with client.execute_query(
-            f"select count(*) as row_count from {table_name}",
+            f"select count(*) as row_count from {table_identifier}",
         ) as cursor:
             result = cursor.fetchone()
             if result is not None and isinstance(result[0], int):
@@ -46,8 +48,9 @@ def fetch_row_count_metadata(
     if not jobs_metadata or not isinstance(jobs_metadata, list):
         raise Exception("Missing jobs metadata to retrieve row count.")
     table_name = jobs_metadata[0].get("table_name")
+    schema_name = str(materialization.metadata.get("dataset_name"))
     try:
-        return TableMetadataSet(row_count=_fetch_row_count(dlt_pipeline, table_name))
+        return TableMetadataSet(row_count=_fetch_row_count(dlt_pipeline, schema_name, table_name))
     # Filesystem does not have a SQL client and table might not be found
     except Exception as e:
         context.log.error(
@@ -95,7 +98,6 @@ class DltEventIterator(Generic[T], abc.Iterator):
                 row_count_metadata = fetch_row_count_metadata(
                     event,
                     context=self._context,
-                    # table_name=str(self._resource.table_name),
                     dlt_pipeline=self._dlt_pipeline,
                 )
                 if event.metadata:
