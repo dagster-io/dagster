@@ -16,7 +16,7 @@ def get_objects(
     bucket: str,
     prefix: str = "",
     since_key: Optional[str] = None,
-    since_last_modified: Optional[str] = None,
+    since_last_modified: Optional[datetime] = None,
     client=None,
 ) -> List[ObjectTypeDef]:
     """Retrieves a list of object keys in S3 for a given `bucket`, `prefix`, and filter option.
@@ -24,8 +24,8 @@ def get_objects(
     Args:
         bucket (str): s3 bucket
         prefix (str): s3 object prefix
-        since_key (Optional[str]): retrieve objects after the modified date of this key
-        since_last_modified (Optional[str]): retrieve objects after this timestamp
+        since_key (Optional[str]): retrieve objects modified after the last modified timestamp of this key
+        since_last_modified (Optional[datetime]): retrieve objects after this timestamp (non-inclusive)
         client (Optional[boto3.Client]): s3 client
 
     Returns:
@@ -35,7 +35,7 @@ def get_objects(
     check.str_param(bucket, "bucket")
     check.str_param(prefix, "prefix")
     check.opt_str_param(since_key, "since_key")
-    check.opt_str_param(since_last_modified, "since_last_modified")
+    check.opt_inst_param(since_last_modified, "since_last_modified", datetime)
 
     if not client:
         client = boto3.client("s3")
@@ -56,16 +56,15 @@ def get_objects(
 
     sorted_objects = [obj for obj in sorted(objects, key=lambda x: x.get("LastModified"))]
 
-    if since_key and since_key:
+    if since_key:
         for idx, obj in enumerate(sorted_objects):
             if obj.get("Key") == since_key:
                 return sorted_objects[idx + 1 :]
 
     if since_last_modified:
-        since_last_modified_dt = datetime.fromisoformat(since_last_modified)
         for idx, obj in enumerate(sorted_objects):
-            if obj.get("LastModified") >= since_last_modified_dt:
-                return sorted_objects[idx + 1 :]
+            if obj.get("LastModified") > since_last_modified:
+                return sorted_objects[idx:]
 
     return sorted_objects
 
