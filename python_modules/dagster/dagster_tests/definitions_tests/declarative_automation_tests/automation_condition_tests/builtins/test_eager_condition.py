@@ -1,3 +1,4 @@
+import pytest
 from dagster import (
     AssetDep,
     AssetKey,
@@ -9,6 +10,7 @@ from dagster import (
     DimensionPartitionMapping,
     MultiPartitionMapping,
     MultiPartitionsDefinition,
+    Output,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
@@ -240,3 +242,55 @@ def test_eager_on_asset_check() -> None:
     # don't keep requesting
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
+
+
+@pytest.mark.parametrize("b_result", ["skip", "fail", "materialize"])
+def test_eager_partial_run(b_result: str) -> None:
+    @asset
+    def root() -> None: ...
+
+    @asset(deps=[root], automation_condition=AutomationCondition.eager())
+    def A() -> None: ...
+
+    @asset(deps=[A], output_required=False, automation_condition=AutomationCondition.eager())
+    def B():
+        if b_result == "skip":
+            pass
+        elif b_result == "materialize":
+            yield Output(1)
+        else:
+            return 1 / 0
+
+    @asset(deps=[B], automation_condition=AutomationCondition.eager())
+    def C() -> None: ...
+
+    defs = Definitions(assets=[root, A, B, C])
+    instance = DagsterInstance.ephemeral()
+
+    # nothing updated yet
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # now root updated, so request a, b, and c
+    instance.report_runless_asset_event(AssetMaterialization("root"))
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 3
+
+    # don't keep requesting
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # now simulate the above run, B / C will not be materialized
+    defs.get_implicit_global_asset_job_def().execute_in_process(
+        instance=instance, asset_selection=[A.key, B.key, C.key], raise_on_error=False
+    )
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    # A gets materialized, but this shouldn't kick off B and C
+    assert result.total_requested == 0
+
+    # A gets materialized on its own, do kick off B and C
+    defs.get_implicit_global_asset_job_def().execute_in_process(
+        instance=instance, asset_selection=[A.key]
+    )
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 2
