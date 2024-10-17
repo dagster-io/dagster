@@ -17,7 +17,7 @@ ver = get_version()
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster_looker",
-    version=get_version(),
+    version="0.24.12rc1"
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
