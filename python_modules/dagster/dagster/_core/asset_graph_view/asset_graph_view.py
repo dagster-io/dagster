@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Awaitable,
     Callable,
     Dict,
     Literal,
@@ -31,7 +32,6 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
-from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -169,7 +169,6 @@ class AssetGraphView(LoadingContext):
         else:
             return None
 
-    @cached_method
     def get_full_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
         value = (
@@ -183,7 +182,6 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
-    @cached_method
     def get_empty_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
         value = partitions_def.empty_subset() if partitions_def else False
@@ -356,17 +354,17 @@ class AssetGraphView(LoadingContext):
         else:
             check.failed(f"Unsupported partitions_def: {partitions_def}")
 
-    def compute_subset_with_status(
+    async def compute_subset_with_status(
         self, key: AssetCheckKey, status: Optional["AssetCheckExecutionResolvedStatus"]
     ):
         """Returns the subset of an asset check that matches a given status."""
         from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 
-        summary = AssetCheckSummaryRecord.blocking_get(self, key)
+        summary = await AssetCheckSummaryRecord.gen(self, key)
         latest_record = summary.last_check_execution_record if summary else None
         resolved_status = (
             latest_record.resolve_status(self)
-            if latest_record and latest_record.targets_latest_materialization(self)
+            if latest_record and await latest_record.targets_latest_materialization(self)
             else None
         )
         if resolved_status == status:
@@ -374,44 +372,50 @@ class AssetGraphView(LoadingContext):
         else:
             return self.get_empty_subset(key=key)
 
-    def _compute_run_in_progress_check_subset(
+    async def _compute_run_in_progress_check_subset(
         self, key: AssetCheckKey
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.storage.asset_check_execution_record import (
             AssetCheckExecutionResolvedStatus,
         )
 
-        return self.compute_subset_with_status(key, AssetCheckExecutionResolvedStatus.IN_PROGRESS)
+        return await self.compute_subset_with_status(
+            key, AssetCheckExecutionResolvedStatus.IN_PROGRESS
+        )
 
-    def _compute_execution_failed_check_subset(
+    async def _compute_execution_failed_check_subset(
         self, key: AssetCheckKey
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.storage.asset_check_execution_record import (
             AssetCheckExecutionResolvedStatus,
         )
 
-        return self.compute_subset_with_status(
+        return await self.compute_subset_with_status(
             key, AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
         )
 
-    def _compute_missing_check_subset(self, key: AssetCheckKey) -> EntitySubset[AssetCheckKey]:
-        return self.compute_subset_with_status(key, None)
+    async def _compute_missing_check_subset(
+        self, key: AssetCheckKey
+    ) -> EntitySubset[AssetCheckKey]:
+        return await self.compute_subset_with_status(key, None)
 
-    def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+    async def _compute_run_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
         partitions_def = self._get_partitions_def(key)
         if partitions_def:
-            cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
-            if cache_value is None:
-                value = partitions_def.empty_subset()
-            else:
-                value = cache_value.deserialize_in_progress_partition_subsets(partitions_def)
-        else:
-            value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
+            cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
+            return (
+                cache_value.get_in_progress_subset(self, key, partitions_def)
+                if cache_value
+                else self.get_empty_subset(key=key)
+            )
+        value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
-    def _compute_backfill_in_progress_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+    async def _compute_backfill_in_progress_asset_subset(
+        self, key: AssetKey
+    ) -> EntitySubset[AssetKey]:
         value = (
             self._queryer.get_active_backfill_in_progress_asset_graph_subset()
             .get_asset_subset(asset_key=key, asset_graph=self.asset_graph)
@@ -419,21 +423,21 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
-    def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
+    async def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
         partitions_def = self._get_partitions_def(key)
         if partitions_def:
-            cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
-            if cache_value is None:
-                value = partitions_def.empty_subset()
-            else:
-                value = cache_value.deserialize_failed_partition_subsets(partitions_def)
-        else:
-            value = self._queryer.get_failed_asset_subset(asset_key=key).value
+            cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
+            return (
+                cache_value.get_failed_subset(self, key, partitions_def)
+                if cache_value
+                else self.get_empty_subset(key=key)
+            )
+        value = self._queryer.get_failed_asset_subset(asset_key=key).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
-    def _compute_missing_asset_subset(
+    async def _compute_missing_asset_subset(
         self, key: AssetKey, from_subset: EntitySubset
     ) -> EntitySubset[AssetKey]:
         """Returns a subset which is the subset of the input subset that has never been materialized
@@ -449,7 +453,7 @@ class AssetGraphView(LoadingContext):
             # cheap call which takes advantage of the partition status cache
             partitions_def = self._get_partitions_def(key)
             if partitions_def:
-                cache_value = AssetStatusCacheValue.blocking_get(self, (key, partitions_def))
+                cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
                 return (
                     cache_value.get_materialized_subset(self, key, partitions_def)
                     if cache_value
@@ -472,34 +476,35 @@ class AssetGraphView(LoadingContext):
                 key=key, asset_partitions=missing_asset_partitions
             )
 
-    @cached_method
-    def compute_run_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
-        return _dispatch(
+    async def compute_run_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+        return await _dispatch(
             key=key,
             check_method=self._compute_run_in_progress_check_subset,
             asset_method=self._compute_run_in_progress_asset_subset,
         )
 
-    @cached_method
-    def compute_backfill_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
-        return _dispatch(
+    async def compute_backfill_in_progress_subset(self, *, key: EntityKey) -> EntitySubset:
+        async def get_empty_subset(key: EntityKey) -> EntitySubset:
+            return self.get_empty_subset(key=key)
+
+        return await _dispatch(
             key=key,
             # asset checks cannot currently be backfilled
-            check_method=lambda k: self.get_empty_subset(key=k),
+            check_method=get_empty_subset,
             asset_method=self._compute_backfill_in_progress_asset_subset,
         )
 
-    @cached_method
-    def compute_execution_failed_subset(self, *, key: EntityKey) -> EntitySubset:
-        return _dispatch(
+    async def compute_execution_failed_subset(self, *, key: EntityKey) -> EntitySubset:
+        return await _dispatch(
             key=key,
             check_method=self._compute_execution_failed_check_subset,
             asset_method=self._compute_execution_failed_asset_subset,
         )
 
-    @cached_method
-    def compute_missing_subset(self, *, key: EntityKey, from_subset: EntitySubset) -> EntitySubset:
-        return _dispatch(
+    async def compute_missing_subset(
+        self, *, key: EntityKey, from_subset: EntitySubset
+    ) -> EntitySubset:
+        return await _dispatch(
             key=key,
             check_method=self._compute_missing_check_subset,
             asset_method=functools.partial(
@@ -507,7 +512,7 @@ class AssetGraphView(LoadingContext):
             ),
         )
 
-    def _compute_updated_since_cursor_subset(
+    async def _compute_updated_since_cursor_subset(
         self, key: AssetKey, cursor: Optional[int]
     ) -> EntitySubset[AssetKey]:
         value = self._queryer.get_asset_subset_updated_after_cursor(
@@ -515,14 +520,14 @@ class AssetGraphView(LoadingContext):
         ).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
-    def _compute_updated_since_time_subset(
+    async def _compute_updated_since_time_subset(
         self, key: AssetCheckKey, time: datetime
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.events import DagsterEventType
         from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 
         # intentionally left unimplemented for AssetKey, as this is a less performant query
-        summary = AssetCheckSummaryRecord.blocking_get(self, key)
+        summary = await AssetCheckSummaryRecord.gen(self, key)
         record = summary.last_check_execution_record if summary else None
         if (
             record is None
@@ -534,11 +539,10 @@ class AssetGraphView(LoadingContext):
         else:
             return self.get_full_subset(key=key)
 
-    @cached_method
-    def compute_updated_since_temporal_context_subset(
+    async def compute_updated_since_temporal_context_subset(
         self, *, key: EntityKey, temporal_context: TemporalContext
     ) -> EntitySubset:
-        return _dispatch(
+        return await _dispatch(
             key=key,
             check_method=functools.partial(
                 self._compute_updated_since_time_subset, time=temporal_context.effective_dt
@@ -623,14 +627,14 @@ I_Dispatch = TypeVar("I_Dispatch")
 O_Dispatch = TypeVar("O_Dispatch")
 
 
-def _dispatch(
+async def _dispatch(
     *,
     key: EntityKey,
-    check_method: Callable[[AssetCheckKey], O_Dispatch],
-    asset_method: Callable[[AssetKey], O_Dispatch],
+    check_method: Callable[[AssetCheckKey], Awaitable[O_Dispatch]],
+    asset_method: Callable[[AssetKey], Awaitable[O_Dispatch]],
 ) -> O_Dispatch:
     """Applies a method for either a check or an asset."""
     if isinstance(key, AssetCheckKey):
-        return check_method(key)
+        return await check_method(key)
     else:
-        return asset_method(key)
+        return await asset_method(key)
