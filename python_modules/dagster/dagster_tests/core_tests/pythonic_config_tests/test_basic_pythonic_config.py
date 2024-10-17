@@ -629,7 +629,9 @@ def test_schema_aliased_field():
     # we respect the alias in the config space
     assert print_config_type_to_string(
         {"schema": dagster.Field(StringSource)}
-    ) == print_config_type_to_string(infer_schema_from_config_class(ConfigWithSchema).config_type)
+    ) == print_config_type_to_string(
+        infer_schema_from_config_class(ConfigWithSchema).config_type.fields
+    )
 
     executed = {}
 
