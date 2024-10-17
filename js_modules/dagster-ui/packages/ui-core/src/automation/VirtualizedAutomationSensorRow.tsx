@@ -1,12 +1,12 @@
-import {Box, Checkbox, MiddleTruncate, Tag, Tooltip} from '@dagster-io/ui-components';
-import {forwardRef, useCallback, useMemo} from 'react';
+import {Box, Button, Checkbox, MiddleTruncate, Tag, Tooltip} from '@dagster-io/ui-components';
+import {forwardRef, useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
 import {useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {InstigationStatus} from '../graphql/types';
+import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
 import {SensorSwitch} from '../sensors/SensorSwitch';
@@ -14,6 +14,7 @@ import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
+import {SensorDryRunDialog} from '../ticks/SensorDryRunDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SENSOR_TYPE_META, SINGLE_SENSOR_QUERY} from '../workspace/VirtualizedSensorRow';
@@ -36,6 +37,8 @@ interface Props {
 export const VirtualizedAutomationSensorRow = forwardRef(
   (props: Props, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {index, name, repoAddress, checked, onToggleChecked} = props;
+
+    const [showTestTickDialog, setShowTestTickDialog] = useState(false);
 
     const [querySensor, sensorQueryResult] = useLazyQuery<
       SingleSensorQuery,
@@ -82,6 +85,12 @@ export const VirtualizedAutomationSensorRow = forwardRef(
 
       return data.sensorOrError;
     }, [data]);
+
+    const cursor =
+      sensorData &&
+      sensorData.sensorState.typeSpecificData &&
+      sensorData.sensorState.typeSpecificData.__typename === 'SensorData' &&
+      sensorData.sensorState.typeSpecificData.lastCursor;
 
     const onChange = (e: React.FormEvent<HTMLInputElement>) => {
       if (onToggleChecked && e.target instanceof HTMLInputElement) {
@@ -132,15 +141,38 @@ export const VirtualizedAutomationSensorRow = forwardRef(
           </RowCell>
           <RowCell>
             <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
-              {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
+              {/* Left aligned content */}
+              <Box flex={{grow: 1, gap: 8}}>
+                {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
+                {sensorData ? (
+                  <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
+                ) : (
+                  <div style={{width: 30}} />
+                )}
+                <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>
+                  <MiddleTruncate text={name} />
+                </Link>
+              </Box>
+              {/* Right aligned content */}
               {sensorData ? (
-                <SensorSwitch key={name} repoAddress={repoAddress} sensor={sensorData} />
+                <Tooltip
+                  canShow={sensorData.sensorType !== SensorType.STANDARD}
+                  content="Testing not available for this sensor type"
+                  placement="top-end"
+                >
+                  <Button
+                    disabled={sensorData.sensorType !== SensorType.STANDARD}
+                    onClick={() => {
+                      setShowTestTickDialog(true);
+                    }}
+                    style={{height: '24px', marginTop: '-4px'}} // center button text with content in AutomationRowGrid
+                  >
+                    Manual tick
+                  </Button>
+                </Tooltip>
               ) : (
                 <div style={{width: 30}} />
               )}
-              <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>
-                <MiddleTruncate text={name} />
-              </Link>
             </Box>
           </RowCell>
           <RowCell>
@@ -196,6 +228,16 @@ export const VirtualizedAutomationSensorRow = forwardRef(
             )}
           </RowCell>
         </AutomationRowGrid>
+        <SensorDryRunDialog
+          isOpen={showTestTickDialog}
+          onClose={() => {
+            setShowTestTickDialog(false);
+          }}
+          currentCursor={cursor || ''}
+          name={sensorData?.name || ''}
+          repoAddress={repoAddress}
+          jobName={sensorData?.targets?.[0]?.pipelineName || ''}
+        />
       </div>
     );
   },

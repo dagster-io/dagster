@@ -1,5 +1,5 @@
-import {Box, Caption, Checkbox, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
-import {forwardRef, useCallback, useMemo} from 'react';
+import {Box, Button, Caption, Checkbox, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
+import {forwardRef, useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AutomationTargetList} from './AutomationTargetList';
@@ -17,6 +17,7 @@ import {
   ScheduleAssetSelectionQuery,
   ScheduleAssetSelectionQueryVariables,
 } from '../schedules/types/ScheduleAssetSelectionsQuery.types';
+import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
@@ -39,6 +40,8 @@ interface ScheduleRowProps {
 export const VirtualizedAutomationScheduleRow = forwardRef(
   (props: ScheduleRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {index, name, repoAddress, checked, onToggleChecked} = props;
+
+    const [showTestTickDialog, setShowTestTickDialog] = useState(false);
 
     const [querySchedule, queryResult] = useLazyQuery<
       SingleScheduleQuery,
@@ -133,22 +136,33 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
             </Tooltip>
           </RowCell>
           <RowCell>
+            {/* Left aligned content */}
             <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
-              {scheduleData ? (
-                <Box flex={{direction: 'column', gap: 4}}>
-                  {/* Keyed so that a new switch is always rendered, otherwise it's reused and animates on/off */}
-                  <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
-                  {errorDisplay(
-                    scheduleData.scheduleState.status,
-                    scheduleData.scheduleState.runningCount,
-                  )}
-                </Box>
-              ) : (
-                <div style={{width: 30}} />
-              )}
-              <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
-                <MiddleTruncate text={name} />
-              </Link>
+              <Box flex={{grow: 1, gap: 8}}>
+                {scheduleData ? (
+                  <>
+                    <ScheduleSwitch key={name} repoAddress={repoAddress} schedule={scheduleData} />
+                    {errorDisplay(
+                      scheduleData.scheduleState.status,
+                      scheduleData.scheduleState.runningCount,
+                    )}
+                  </>
+                ) : (
+                  <div style={{width: 30}} />
+                )}
+                <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
+                  <MiddleTruncate text={name} />
+                </Link>
+              </Box>
+              {/* Right aligned content */}
+              <Button
+                onClick={() => {
+                  setShowTestTickDialog(true);
+                }}
+                style={{height: '24px', marginTop: '-4px'}} // center button text with content in AutomationRowGrid
+              >
+                Manual tick
+              </Button>
             </Box>
           </RowCell>
           <RowCell>
@@ -216,6 +230,16 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
             )}
           </RowCell>
         </AutomationRowGrid>
+        <EvaluateScheduleDialog
+          key={showTestTickDialog ? '1' : '0'} // change key to reset dialog state
+          isOpen={showTestTickDialog}
+          onClose={() => {
+            setShowTestTickDialog(false);
+          }}
+          name={scheduleData?.name || ''}
+          repoAddress={repoAddress}
+          jobName={scheduleData?.pipelineName || ''}
+        />
       </div>
     );
   },
