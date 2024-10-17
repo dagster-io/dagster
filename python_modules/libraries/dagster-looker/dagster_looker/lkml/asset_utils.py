@@ -18,7 +18,7 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
     For lists, entries are deduplicated by "name" key, resolving conflicts in favor of from_obj.
     """
     if isinstance(onto_obj, dict):
-        if from_obj  in (None, ...):
+        if from_obj in (None, ...):
             return onto_obj
         if not isinstance(from_obj, dict):
             raise Exception("Cannot merge a dictionary with a non-dictionary object")
@@ -30,7 +30,7 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
 
         return result
     elif isinstance(onto_obj, list):
-        if from_obj  in (None, ...):
+        if from_obj in (None, ...):
             return onto_obj
         if not isinstance(from_obj, list):
             raise Exception("Cannot merge a list with a non-list object")
@@ -52,6 +52,7 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
             return onto_obj
         else:
             return None
+
 
 class LookMLStructure(NamedTuple):
     path: Path
