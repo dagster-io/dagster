@@ -24,7 +24,7 @@ export const AUTOMATION_ASSET_SELECTION_FRAGMENT = gql`
     }
     definition {
       id
-      autoMaterializePolicy {
+      automationCondition {
         __typename
       }
     }

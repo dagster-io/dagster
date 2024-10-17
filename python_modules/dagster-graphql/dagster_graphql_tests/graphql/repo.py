@@ -1801,6 +1801,18 @@ def asset_with_compute_storage_kinds():
 def asset_with_automation_condition() -> None: ...
 
 
+class MyAutomationCondition(AutomationCondition):
+    @property
+    def name(self) -> str:
+        return "some_custom_name"
+
+    def evaluate(self): ...
+
+
+@asset(automation_condition=MyAutomationCondition().since_last_handled())
+def asset_with_custom_automation_condition() -> None: ...
+
+
 fresh_diamond_assets_job = define_asset_job(
     "fresh_diamond_assets_job", AssetSelection.assets(fresh_diamond_bottom).upstream()
 )
@@ -2117,6 +2129,7 @@ def define_assets():
         multi_asset_with_kinds,
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
+        asset_with_custom_automation_condition,
     ]
 
 

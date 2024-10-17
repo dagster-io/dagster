@@ -43,9 +43,10 @@ export type AssetCatalogTableQuery = {
                 dynamicPartitionsDefinitionName: string | null;
               }>;
             } | null;
-            autoMaterializePolicy: {
-              __typename: 'AutoMaterializePolicy';
-              policyType: Types.AutoMaterializePolicyType;
+            automationCondition: {
+              __typename: 'AutomationCondition';
+              label: string | null;
+              expandedLabel: Array<string>;
             } | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
@@ -105,9 +106,10 @@ export type AssetCatalogGroupTableQuery = {
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    autoMaterializePolicy: {
-      __typename: 'AutoMaterializePolicy';
-      policyType: Types.AutoMaterializePolicyType;
+    automationCondition: {
+      __typename: 'AutomationCondition';
+      label: string | null;
+      expandedLabel: Array<string>;
     } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -148,9 +150,10 @@ export type AssetCatalogGroupTableNodeFragment = {
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
-  autoMaterializePolicy: {
-    __typename: 'AutoMaterializePolicy';
-    policyType: Types.AutoMaterializePolicyType;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
   } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -164,6 +167,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '3b43af2e45ec4be8c630c66fb4b4d774fc877ff69a717132128db8fc15b7c17c';
+export const AssetCatalogTableQueryVersion = '1da21265e44d573112f150f5c1f396225d357a2b8132591a54bd7ee154805beb';
 
-export const AssetCatalogGroupTableQueryVersion = 'b96b5c3d49db723bd17b5ac54567a5ff646bc907a6774233b2538072d7c75b81';
+export const AssetCatalogGroupTableQueryVersion = '54f21240839f4b212b7bc911bb27aa7bfff72ea726b45256db9cd9cb8f3d4368';
