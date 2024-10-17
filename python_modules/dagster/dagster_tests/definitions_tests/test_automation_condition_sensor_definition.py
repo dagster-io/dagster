@@ -26,7 +26,7 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
         description="fdsjkl",
         default_status=DefaultSensorStatus.RUNNING,
         minimum_interval_seconds=50,
-        user_code=user_code,
+        use_user_code_server=user_code,
     )
     assert automation_sensor.name == "foo"
     assert automation_sensor.run_tags == tags
@@ -50,13 +50,18 @@ def test_default_condition() -> None:
         )
 
     sensor = AutomationConditionSensorDefinition(
-        "foo", asset_selection="*", default_condition=AutomationCondition.eager(), user_code=True
+        "foo",
+        asset_selection="*",
+        default_condition=AutomationCondition.eager(),
+        use_user_code_server=True,
     )
     assert sensor.default_condition == AutomationCondition.eager()
 
 
 def test_limits() -> None:
-    sensor = AutomationConditionSensorDefinition("foo", asset_selection="*", user_code=True)
+    sensor = AutomationConditionSensorDefinition(
+        "foo", asset_selection="*", use_user_code_server=True
+    )
 
     defs = Definitions(
         assets=build_assets(
