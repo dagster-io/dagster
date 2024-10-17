@@ -136,20 +136,19 @@ class SqlRunStorage(RunStorage):
         has_tags = dagster_run.tags and len(dagster_run.tags) > 0
         partition = dagster_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
         partition_set = dagster_run.tags.get(PARTITION_SET_TAG) if has_tags else None
-        extra_cols = {}
+        values = {
+            "run_id": dagster_run.run_id,
+            "pipeline_name": dagster_run.job_name,
+            "status": dagster_run.status.value,
+            "run_body": serialize_value(dagster_run),
+            "snapshot_id": dagster_run.job_snapshot_id,
+            "partition": partition,
+            "partition_set": partition_set,
+        }
         if self.has_backfill_id_column():
-            extra_cols["backfill_id"] = dagster_run.tags.get(BACKFILL_ID_TAG)
+            values["backfill_id"] = dagster_run.tags.get(BACKFILL_ID_TAG)
 
-        runs_insert = RunsTable.insert().values(
-            run_id=dagster_run.run_id,
-            pipeline_name=dagster_run.job_name,
-            status=dagster_run.status.value,
-            run_body=serialize_value(dagster_run),
-            snapshot_id=dagster_run.job_snapshot_id,
-            partition=partition,
-            partition_set=partition_set,
-            **extra_cols,
-        )
+        runs_insert = RunsTable.insert().values(**values)
         with self.connect() as conn:
             try:
                 conn.execute(runs_insert)
