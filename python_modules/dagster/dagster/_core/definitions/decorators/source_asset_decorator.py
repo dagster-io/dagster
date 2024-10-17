@@ -1,10 +1,13 @@
 from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import deprecated_param, experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.asset_decorator import (
     resolve_asset_key_and_name_for_decorator,
 )
@@ -44,11 +47,22 @@ def observable_source_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> "_ObservableSourceAsset": ...
 
 
+@deprecated_param(
+    param="auto_observe_interval_minutes",
+    breaking_version="1.10.0",
+    additional_warn_text="use `automation_condition` instead.",
+)
+@deprecated_param(
+    param="freshness_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="use freshness checks instead.",
+)
 @experimental
 def observable_source_asset(
     observe_fn: Optional[SourceAssetObserveFunction] = None,
@@ -66,6 +80,7 @@ def observable_source_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
@@ -100,15 +115,15 @@ def observable_source_asset(
             compose the asset.
         auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
             of the observation function for this asset will be launched at this interval.
-        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
-            with respect to its root data.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        observe_fn (Optional[SourceAssetObserveFunction]) Observation function for the source asset.
+        observe_fn (Optional[SourceAssetObserveFunction]): Observation function for the source asset.
+        automation_condition (Optional[AutomationCondition]): A condition describing when Dagster
+            should materialize this asset.
     """
     if observe_fn is not None:
         return _ObservableSourceAsset()(observe_fn)
@@ -127,6 +142,7 @@ def observable_source_asset(
         partitions_def,
         auto_observe_interval_minutes,
         freshness_policy,
+        automation_condition,
         op_tags,
         tags=normalize_tags(tags, strict=True),
     )
@@ -148,6 +164,7 @@ class _ObservableSourceAsset:
         partitions_def: Optional[PartitionsDefinition] = None,
         auto_observe_interval_minutes: Optional[float] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        automation_condition: Optional[AutomationCondition] = None,
         op_tags: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
@@ -168,6 +185,7 @@ class _ObservableSourceAsset:
         self.partitions_def = partitions_def
         self.auto_observe_interval_minutes = auto_observe_interval_minutes
         self.freshness_policy = freshness_policy
+        self.automation_condition = automation_condition
         self.op_tags = op_tags
         self.tags = tags
 
@@ -204,6 +222,7 @@ class _ObservableSourceAsset:
                 partitions_def=self.partitions_def,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
                 freshness_policy=self.freshness_policy,
+                automation_condition=self.automation_condition,
                 tags=self.tags,
             )
 

@@ -703,3 +703,27 @@ def test_simple_old_code_server() -> None:
             _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
+
+
+def test_observable_source_asset() -> None:
+    with get_grpc_workspace_request_context(
+        "hourly_observable"
+    ) as context, get_threadpool_executor() as executor:
+        time = datetime.datetime(2024, 8, 16, 1, 35)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        time += datetime.timedelta(hours=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].asset_selection == {AssetKey("obs"), AssetKey("mat")}
+
+        time += datetime.timedelta(minutes=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
