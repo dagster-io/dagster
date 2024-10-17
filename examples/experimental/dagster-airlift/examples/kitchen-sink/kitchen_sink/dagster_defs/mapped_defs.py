@@ -14,7 +14,7 @@ from dagster_airlift.core import (
 )
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 
-from .airflow_instance import local_airflow_instance
+from ..airflow_instance import local_airflow_instance
 
 
 def make_print_asset(key: str) -> AssetsDefinition:
