@@ -17,6 +17,9 @@ def deep_merge_objs(onto_obj: Any, from_obj: Any) -> Any:
     If a value is present in both onto_obj and from_obj, the value from from_obj is taken.
     For lists, entries are deduplicated by "name" key, resolving conflicts in favor of from_obj.
     """
+    # We use ... as a sentinel value for "no value", since we want to distinguish between
+    # None and "no value" - None values in the from_obj should override onto_obj values,
+    # but if from_obj has no value, we should keep the onto_obj value.
     if isinstance(onto_obj, dict):
         if from_obj in (None, ...):
             return onto_obj
