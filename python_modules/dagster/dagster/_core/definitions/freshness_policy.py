@@ -22,7 +22,7 @@ class FreshnessMinutes(NamedTuple):
 
 
 @deprecated(
-    breaking_version="1.9",
+    breaking_version="1.10.0",
     additional_warn_text="For monitoring freshness, use freshness checks instead. If using lazy "
     "auto-materialize, use AutomationCondition.cron() and AutomationCondition.any_downstream_conditions().",
 )
