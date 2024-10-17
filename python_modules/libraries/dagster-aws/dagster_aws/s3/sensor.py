@@ -25,7 +25,7 @@ def get_objects(
         bucket (str): s3 bucket
         prefix (str): s3 object prefix
         since_key (Optional[str]): retrieve objects modified after the last modified timestamp of this key
-        since_last_modified (Optional[str]): retrieve objects after this timestamp (non-inclusive)
+        since_last_modified (Optional[datetime]): retrieve objects after this timestamp (non-inclusive)
         client (Optional[boto3.Client]): s3 client
 
     Returns:
