@@ -195,14 +195,14 @@ const RUN_ROOT_QUERY = gql`
 `;
 
 const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: string}) => {
-  const {flagRunsFeed} = useFeatureFlags();
+  const {flagLegacyRunsPage} = useFeatureFlags();
 
   const backfillTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
     [run],
   );
 
-  if (flagRunsFeed && backfillTag) {
+  if (!flagLegacyRunsPage && backfillTag) {
     return (
       <Heading>
         <Link to="/runs" style={{color: Colors.textLight()}}>
