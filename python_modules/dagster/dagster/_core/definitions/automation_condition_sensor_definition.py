@@ -15,9 +15,11 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._utils.tags import normalize_tags
 
 EMIT_BACKFILLS_METADATA_KEY = "dagster/emit_backfills"
+MAX_ENTITIES = 500
 
 
 def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext):
@@ -34,7 +36,8 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         context.cursor,
         asset_graph,
     )
-    run_requests, new_cursor, updated_evaluations = AutomationTickEvaluationContext(
+
+    evaluation_context = AutomationTickEvaluationContext(
         evaluation_id=cursor.evaluation_id,
         instance=context.instance,
         asset_graph=asset_graph,
@@ -46,7 +49,15 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
         emit_backfills=sensor_def.emit_backfills,
         default_condition=sensor_def.default_condition,
         logger=context.log,
-    ).evaluate()
+    )
+    if evaluation_context.total_keys > MAX_ENTITIES:
+        raise DagsterInvalidInvocationError(
+            f'AutomationConditionSensorDefintion "{sensor_def.name}" targets {evaluation_context.total_keys} '
+            f"assets or checks, which is more than the limit of {MAX_ENTITIES}. Either set `use_user_code_server` to `False`, "
+            "or split this sensor into multiple AutomationConditionSensorDefinitions with AssetSelections that target fewer "
+            "assets or checks."
+        )
+    run_requests, new_cursor, updated_evaluations = evaluation_context.evaluate()
 
     return SensorResult(
         run_requests=run_requests,
