@@ -15,7 +15,7 @@ from dagster_airlift.core import (
     task_defs,
 )
 
-from .airflow_instance import local_airflow_instance
+from ..airflow_instance import local_airflow_instance
 
 
 def observations_from_materializations(

@@ -25,7 +25,7 @@ IMPLICIT_ASSET_JOB_PREFIX = "__ASSET_JOB"
 
 DEFAULT_DAGSTER_RUN_STATUS_POLL_INTERVAL = 1
 PARTITION_NAME_TAG = "dagster/partition"
-# The out-of-the-box partition key formats that we support, that correspond to the formats 
+# The out-of-the-box partition key formats that we support, that correspond to the formats
 # used by the TimeWindowPartitionsDefinition subclasses in Dagster.
 # Users may override the format, in which case they'll need to override the partition handling scheme as well.
 OOB_PARTITION_KEY_FORMATS = [
@@ -36,7 +36,6 @@ OOB_PARTITION_KEY_FORMATS = [
     # Default hourly with timezone
     "%Y-%m-%d-%H:%M%z",
 ]
-
 
 
 class BaseDagsterAssetsOperator(BaseOperator, ABC):
@@ -310,11 +309,13 @@ def default_get_partition_key_for_dagster_run(
         logical_date, partition_keys, OOB_PARTITION_KEY_FORMATS
     )
 
+
 def translate_logical_date_to_partition_key(
-    logical_date: datetime, partition_keys: Sequence[str], formats: Sequence[str] 
+    logical_date: datetime, partition_keys: Sequence[str], formats: Sequence[str]
 ) -> str:
     partitions_and_datetimes = [
-        (_get_partition_datetime(partition_key, formats), partition_key) for partition_key in partition_keys
+        (_get_partition_datetime(partition_key, formats), partition_key)
+        for partition_key in partition_keys
     ]
     matching_partition = next(
         (
@@ -327,6 +328,8 @@ def translate_logical_date_to_partition_key(
     if matching_partition is None:
         raise Exception(f"No partition key found for logical date {logical_date}")
     return matching_partition
+
+
 def _assets_are_partitioned(asset_nodes: Sequence[Mapping[str, Any]]) -> bool:
     return any(asset_node["isPartitioned"] for asset_node in asset_nodes)
 
@@ -338,6 +341,7 @@ def _get_partition_datetime(partition_key: str, formats: Sequence[str]) -> datet
         except ValueError:
             continue
     raise Exception(f"Could not parse partition key {partition_key} with formats {formats}.")
+
 
 def _add_default_utc_timezone_if_none(dt: datetime) -> datetime:
     return dt.replace(tzinfo=tz.utc) if dt.tzinfo is None else dt
