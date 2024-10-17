@@ -150,6 +150,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             description=source_asset.description,
             tags=source_asset.tags,
             freshness_policy=source_asset.freshness_policy,
+            automation_condition=source_asset.automation_condition,
             deps=[],
             owners=[],
         )
