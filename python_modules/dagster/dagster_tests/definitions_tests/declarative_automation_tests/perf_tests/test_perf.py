@@ -23,7 +23,7 @@ def test_eager_perf() -> None:
             AssetLayerConfig(200, 2, daily_partitions_def),
             AssetLayerConfig(100, 2, daily_partitions_def),
         ],
-        auto_materialize_policy=AutomationCondition.eager().as_auto_materialize_policy(),
+        automation_condition=AutomationCondition.eager(),
     )
 
     instance = DagsterInstance.ephemeral()
