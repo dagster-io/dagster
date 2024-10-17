@@ -23,7 +23,7 @@ fi
 # Update both a hardcoded version, if set, in setup.py, and
 # find where __version__ is set and update it
 echo "Updating version in source..."
-sed -i "s|version=\".*\"|version=\"$VERSION_TO_RELEASE\"|" "$PACKAGE_TO_RELEASE_PATH/setup.py"
+sed -i "s|version=.*|version=\"$VERSION_TO_RELEASE\"|" "$PACKAGE_TO_RELEASE_PATH/setup.py"
 grep -rl "__version__ = \".*\"" "$PACKAGE_TO_RELEASE_PATH" | xargs sed -i "s|__version__ = \".*\"|__version__ = \"$VERSION_TO_RELEASE\"|"
 
 mkdir -p package_prerelease
