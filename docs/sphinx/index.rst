@@ -70,6 +70,7 @@
    sections/api/apidocs/libraries/dagster-prometheus
    sections/api/apidocs/libraries/dagster-pyspark
    sections/api/apidocs/libraries/dagster-shell
+   sections/api/apidocs/libraries/dagster-sigma
    sections/api/apidocs/libraries/dagster-slack
    sections/api/apidocs/libraries/dagster-snowflake
    sections/api/apidocs/libraries/dagster-snowflake-pandas
