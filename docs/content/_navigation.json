@@ -1533,6 +1533,10 @@
             "path": "/_apidocs/libraries/dagster-postgres"
           },
           {
+            "title": "PowerBI (dagster-powerbi)",
+            "path": "/_apidocs/libraries/dagster-powerbi"
+          },
+          {
             "title": "Prometheus (dagster-prometheus)",
             "path": "/_apidocs/libraries/dagster-prometheus"
           },
