@@ -216,7 +216,11 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 list(
                     executor.map(
                         lambda dashboard: (dashboard.id, sdk.dashboard(dashboard_id=dashboard.id)),
-                        dashboards,
+                        (
+                            dashboard
+                            for dashboard in dashboards
+                            if dashboard.id and not dashboard.hidden
+                        ),
                     )
                 )
             )
