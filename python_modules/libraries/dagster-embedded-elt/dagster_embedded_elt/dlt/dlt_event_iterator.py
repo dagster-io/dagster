@@ -15,7 +15,7 @@ T = TypeVar("T", bound=DltEventType)
 
 def _fetch_row_count(
     dlt_pipeline: Pipeline,
-    schema_name: str,
+    schema_name: Optional[str],
     table_name: str,
 ) -> Optional[int]:
     """Exists in a separate function mostly for ease of testing."""
@@ -48,7 +48,8 @@ def fetch_row_count_metadata(
     if not jobs_metadata or not isinstance(jobs_metadata, list):
         raise Exception("Missing jobs metadata to retrieve row count.")
     table_name = jobs_metadata[0].get("table_name")
-    schema_name = str(materialization.metadata.get("dataset_name"))
+    dataset_name = materialization.metadata.get("dataset_name")
+    schema_name = dataset_name if isinstance(dataset_name, str) else None
     try:
         return TableMetadataSet(row_count=_fetch_row_count(dlt_pipeline, schema_name, table_name))
     # Filesystem does not have a SQL client and table might not be found
