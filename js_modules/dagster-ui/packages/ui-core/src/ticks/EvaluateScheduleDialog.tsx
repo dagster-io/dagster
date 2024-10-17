@@ -118,7 +118,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
     }));
     selectedTimestampRef.current = _selectedTimestamp || timestamps[0] || null;
     return (
-      <SelectWrapper>
+      <div>
         <ScheduleDescriptor>Select a mock evaluation time</ScheduleDescriptor>
         <Popover
           isOpen={isTickSelectionOpen}
@@ -141,7 +141,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
         >
           <div {...containerProps}>
             <Button
-              style={{flex: 1}}
+              style={{flex: 1, width: '100%'}}
               rightIcon={<Icon name="arrow_drop_down" />}
               onClick={() => setIsTickSelectionOpen((isOpen) => !isOpen)}
               data-testid={testId('tick-selection')}
@@ -150,7 +150,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
             </Button>
           </div>
         </Popover>
-      </SelectWrapper>
+      </div>
     );
   }, [
     _selectedTimestamp,
@@ -381,14 +381,6 @@ export const SCHEDULE_DRY_RUN_MUTATION = gql`
   }
   ${PYTHON_ERROR_FRAGMENT}
   ${RUN_REQUEST_FRAGMENT}
-`;
-
-const SelectWrapper = styled.div`
-  button {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-  }
 `;
 
 const Grid = styled.div`
