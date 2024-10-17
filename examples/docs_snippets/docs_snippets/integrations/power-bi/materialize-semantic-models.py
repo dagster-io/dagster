@@ -13,4 +13,5 @@ resource = PowerBIWorkspace(
     ),
     workspace_id=dg.EnvVar("POWER_BI_WORKSPACE_ID"),
 )
+
 defs = resource.build_defs(enable_refresh_semantic_models=True)

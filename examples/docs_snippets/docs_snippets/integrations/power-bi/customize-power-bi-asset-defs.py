@@ -7,7 +7,6 @@ from dagster_powerbi.translator import PowerBIContentData
 
 import dagster as dg
 
-
 resource = PowerBIWorkspace(
     credentials=PowerBIServicePrincipal(
         client_id=dg.EnvVar("POWER_BI_CLIENT_ID"),
