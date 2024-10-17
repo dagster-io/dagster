@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence
+from typing import Any, Dict, Mapping, Optional, Sequence, Union, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -11,12 +11,19 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import experimental, public
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from looker_sdk import init40
 from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
 from looker_sdk.sdk.api40.methods import Looker40SDK
+from looker_sdk.sdk.api40.models import (
+    Dashboard,
+    LookmlModelExplore,
+    ScheduledPlanDestination,
+    WriteScheduledPlan,
+)
 from pydantic import Field
 
 from dagster_looker.api.dagster_looker_api_translator import (
@@ -27,10 +34,6 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookmlView,
     RequestStartPdtBuild,
 )
-
-if TYPE_CHECKING:
-    from looker_sdk.sdk.api40.models import LookmlModelExplore
-
 
 logger = get_dagster_logger("dagster_looker")
 
@@ -69,6 +72,7 @@ class LookerResource(ConfigurableResource):
         self,
         *,
         request_start_pdt_builds: Optional[Sequence[RequestStartPdtBuild]] = None,
+        scheduled_plans_by_dashboard_id: Optional[Dict[str, ScheduledPlanDestination]] = None,
         dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
     ) -> Definitions:
         """Returns a Definitions object which will load structures from the Looker instance
@@ -78,6 +82,10 @@ class LookerResource(ConfigurableResource):
             request_start_pdt_builds (Optional[Sequence[RequestStartPdtBuild]]): A list of
                 requests to start PDT builds. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
                 for documentation on all available fields.
+            scheduled_plans_by_dashboard_id (Optional[Dict[str, ScheduledPlanDestination]]): A dictionary
+                which assigns a ScheduledPlanDestination to each dashboard id. This will trigger a scheduled plan
+                to run once when the asset is materialized, which can be used to e.g. send an email to
+                a list of recipients when a dashboard's data is updated.
             dagster_looker_translator (Optional[DagsterLookerApiTranslator]): The translator to
                 use to convert Looker structures into assets. Defaults to DagsterLookerApiTranslator.
 
@@ -90,6 +98,7 @@ class LookerResource(ConfigurableResource):
             if dagster_looker_translator is not None
             else DagsterLookerApiTranslator(),
             request_start_pdt_builds=request_start_pdt_builds or [],
+            scheduled_plans_by_dashboard_id=scheduled_plans_by_dashboard_id or dict(),
         ).build_defs()
 
 
@@ -98,6 +107,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     looker_resource: LookerResource
     translator: DagsterLookerApiTranslator
     request_start_pdt_builds: Sequence[RequestStartPdtBuild]
+    scheduled_plans_by_dashboard_id: Dict[str, ScheduledPlanDestination]
 
     @property
     def defs_key(self) -> str:
@@ -110,13 +120,17 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     def defs_from_state(self, state: Mapping[str, Any]) -> Definitions:
         looker_instance_data = LookerInstanceData.from_state(self.looker_resource.get_sdk(), state)
         return self._build_defs_from_looker_instance_data(
-            looker_instance_data, self.request_start_pdt_builds or [], self.translator
+            looker_instance_data,
+            self.request_start_pdt_builds or [],
+            self.scheduled_plans_by_dashboard_id or dict(),
+            self.translator,
         )
 
     def _build_defs_from_looker_instance_data(
         self,
         looker_instance_data: LookerInstanceData,
         request_start_pdt_builds: Sequence[RequestStartPdtBuild],
+        scheduled_plans_by_dashboard_id: Dict[str, ScheduledPlanDestination],
         dagster_looker_translator: DagsterLookerApiTranslator,
     ) -> Definitions:
         pdts = self._build_pdt_defs(request_start_pdt_builds, dagster_looker_translator)
@@ -126,7 +140,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
             for lookml_explore in looker_instance_data.explores_by_id.values()
         ]
-        views = [
+        dashboards = [
             dagster_looker_translator.get_asset_spec(
                 LookerStructureData(
                     structure_type=LookerStructureType.DASHBOARD, data=looker_dashboard
@@ -134,8 +148,44 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             )
             for looker_dashboard in looker_instance_data.dashboards_by_id.values()
         ]
+        dashboards_postprocessed = self._build_dashboard_notif_defs(
+            scheduled_plans_by_dashboard_id,
+            list(looker_instance_data.dashboards_by_id.values()),
+            dashboards,
+        )
 
-        return Definitions(assets=[*pdts, *explores, *views])
+        return Definitions(assets=[*pdts, *explores, *dashboards_postprocessed])
+
+    def _build_dashboard_notif_defs(
+        self,
+        destinations: Dict[str, "ScheduledPlanDestination"],
+        dashboards: Sequence["Dashboard"],
+        specs: Sequence[AssetSpec],
+    ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+        out: Sequence[Union[AssetsDefinition, AssetSpec]] = []
+
+        for spec, dashboard in zip(specs, dashboards):
+            if dashboard.id in destinations:
+                destination = destinations[dashboard.id]
+
+                @multi_asset(
+                    specs=[spec],
+                    name=f"{dashboard.folder_id}_{dashboard.id}_notify",
+                    resource_defs={"looker": self.looker_resource},
+                )
+                def notify(context: AssetExecutionContext):
+                    looker = cast("LookerResource", context.resources.looker)
+
+                    looker.get_sdk().scheduled_plan_run_once(
+                        WriteScheduledPlan(
+                            dashboard_id=dashboard.id, scheduled_plan_destination=[destination]
+                        )
+                    )
+
+                out.append(notify)
+            else:
+                out.append(spec)
+        return out
 
     def _build_pdt_defs(
         self,

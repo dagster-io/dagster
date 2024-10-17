@@ -9,6 +9,7 @@ from dagster_looker.api.dagster_looker_api_translator import (
     RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerResource
+from looker_sdk.sdk.api40.models import ScheduledPlanDestination, WriteScheduledPlan
 
 from dagster_looker_tests.api.mock_looker_data import (
     mock_check_pdt_build,
@@ -81,7 +82,7 @@ def test_build_defs(
     assert len(asset_specs_by_key) == 3
 
     expected_lookml_view_asset_key = AssetKey(["view", "my_view"])
-    expected_lookml_explore_asset_key = AssetKey(["my_model::my_explore"])
+    expected_lookml_explore_asset_key = AssetKey(["my_model_my_explore"])
     expected_looker_dashboard_asset_key = AssetKey(["my_dashboard_1"])
 
     assert asset_specs_by_key[expected_lookml_view_asset_key]
@@ -123,6 +124,41 @@ def test_build_defs_with_pdts(
 
     pdt = defs.get_repository_def().assets_defs_by_key[AssetKey(["view", "my_view"])]
     result = materialize([pdt])
+
+    assert result.success
+
+
+@responses.activate
+def test_build_defs_with_scheduled_plans(
+    looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
+) -> None:
+    destination = ScheduledPlanDestination(
+        format="csv",
+        type="email",
+        address="ben@dagsterlabs.com",
+        message="Test",
+        apply_formatting=False,
+        apply_vis=False,
+    )
+    defs = looker_resource.build_defs(scheduled_plans_by_dashboard_id={"1": destination})
+
+    assert len(defs.get_all_asset_specs()) == 3
+
+    sdk = looker_resource.get_sdk()
+
+    responses.add(
+        method=responses.POST,
+        url=f"{TEST_BASE_URL}/api/4.0/scheduled_plans/run_once",
+        body=sdk.serialize(
+            api_model=WriteScheduledPlan(  # type: ignore
+                dashboard_id="1",
+                scheduled_plan_destination=[destination],
+            )
+        ),
+    )
+
+    dashboard = defs.get_repository_def().assets_defs_by_key[AssetKey(["my_dashboard_1"])]
+    result = materialize([dashboard])
 
     assert result.success
 

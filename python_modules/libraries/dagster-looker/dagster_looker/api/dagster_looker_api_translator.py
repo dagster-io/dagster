@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from typing import Any, Dict, Mapping, Optional, Union
 
@@ -10,6 +11,12 @@ from dagster._record import record
 from dagster._utils.log import get_dagster_logger
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore
+
+
+def _clean_asset_name(name: str) -> str:
+    """Cleans an input to be a valid Dagster asset name."""
+    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
+
 
 logger = get_dagster_logger("dagster_looker")
 
@@ -93,7 +100,7 @@ class LookerStructureData:
 class DagsterLookerApiTranslator:
     def get_view_asset_spec(self, lookml_view: LookmlView) -> AssetSpec:
         return AssetSpec(
-            key=["view", lookml_view.view_name],
+            key=["view", _clean_asset_name(lookml_view.view_name)],
         )
 
     def get_explore_asset_spec(
@@ -114,7 +121,7 @@ class DagsterLookerApiTranslator:
             ]
 
             return AssetSpec(
-                key=check.not_none(lookml_explore.id),
+                key=_clean_asset_name(check.not_none(lookml_explore.id)),
                 deps=list(
                     {
                         self.get_view_asset_spec(lookml_view).key
@@ -130,11 +137,13 @@ class DagsterLookerApiTranslator:
             lookml_model_name = check.not_none(lookml_explore.model)
             lookml_explore_name = check.not_none(lookml_explore.explore)
 
-            return AssetSpec(key=f"{lookml_model_name}::{lookml_explore_name}")
+            return AssetSpec(key=_clean_asset_name(f"{lookml_model_name}::{lookml_explore_name}"))
 
     def get_dashboard_asset_spec(self, looker_dashboard: Dashboard) -> AssetSpec:
         return AssetSpec(
-            key=f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}",
+            key=_clean_asset_name(
+                f"{check.not_none(looker_dashboard.title)}_{looker_dashboard.id}"
+            ),
             deps=list(
                 {
                     self.get_explore_asset_spec(dashboard_filter).key
