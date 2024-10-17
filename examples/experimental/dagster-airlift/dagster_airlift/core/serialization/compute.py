@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Dict, List, Set
+from typing import AbstractSet, Callable, Dict, List, Optional, Set
 
 from dagster import AssetKey, AssetSpec, Definitions
 from dagster._record import record
@@ -23,6 +23,8 @@ from dagster_airlift.core.utils import (
     spec_iterator,
     task_handles_for_spec,
 )
+
+DagSelectorFn = Callable[[DagInfo], bool]
 
 
 @record
@@ -130,9 +132,15 @@ class FetchedAirflowData:
 
 
 def fetch_all_airflow_data(
-    airflow_instance: AirflowInstance, mapping_info: AirliftMetadataMappingInfo
+    airflow_instance: AirflowInstance,
+    mapping_info: AirliftMetadataMappingInfo,
+    dag_selector_fn: Optional[DagSelectorFn],
 ) -> FetchedAirflowData:
-    dag_infos = {dag.dag_id: dag for dag in airflow_instance.list_dags()}
+    dag_infos = {
+        dag.dag_id: dag
+        for dag in airflow_instance.list_dags()
+        if dag_selector_fn is None or dag_selector_fn(dag)
+    }
     task_info_map = defaultdict(dict)
     for dag_id in dag_infos:
         task_info_map[dag_id] = {
@@ -148,10 +156,10 @@ def fetch_all_airflow_data(
 
 
 def compute_serialized_data(
-    airflow_instance: AirflowInstance, defs: Definitions
+    airflow_instance: AirflowInstance, defs: Definitions, dag_selector_fn: Optional[DagSelectorFn]
 ) -> "SerializedAirflowDefinitionsData":
     mapping_info = build_airlift_metadata_mapping_info(defs)
-    fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info)
+    fetched_airflow_data = fetch_all_airflow_data(airflow_instance, mapping_info, dag_selector_fn)
     return SerializedAirflowDefinitionsData(
         instance_name=airflow_instance.name,
         key_scoped_task_handles=[
