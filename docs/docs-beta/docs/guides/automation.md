@@ -25,6 +25,26 @@ Dagster offers several ways to automate pipeline execution:
 1. [Schedules](#schedules) - Run jobs at specified times
 2. [Sensors](#sensors) - Trigger runs based on events
 3. [Asset Sensors](#asset-sensors) - Trigger jobs when specific assets materialize
+4. [GraphQL Endpoint](#graphql-endpoint) - Trigger materializations and jobs from the GraphQL endpoint
+
+## How to choose the right automation method
+
+Consider these factors when selecting an automation method:
+
+1. **Pipeline Structure**: Are you working primarily with assets, ops, or a mix?
+2. **Timing Requirements**: Do you need regular updates or event-driven processing?
+3. **Data Characteristics**: Is your data partitioned? Do you need to update historical data?
+4. **System Integration**: Do you need to react to external events or systems?
+
+Use this table to help guide your decision:
+
+| Method                 | Best For                               | Works With          |
+| ---------------------- | -------------------------------------- | ------------------- |
+| Schedules              | Regular, time-based job runs           | Assets, Ops, Graphs |
+| Sensors                | Event-driven automation                | Assets, Ops, Graphs |
+| Declarative Automation | Asset-centric, condition-based updates | Assets only         |
+| Asset Sensors          | Cross-job/location asset dependencies  | Assets only         |
+| GraphQL Triggers       | Event triggers from external systems   | Assets, Ops, Jobs   |
 
 ## Schedules
 
@@ -75,23 +95,139 @@ For more examples of how to create asset sensors, see the [How-To Use Asset Sens
 
 {/* TODO: add content */}
 
-## How to choose the right automation method
 
-Consider these factors when selecting an automation method:
+## GraphQL Endpoint
 
-1. **Pipeline Structure**: Are you working primarily with assets, ops, or a mix?
-2. **Timing Requirements**: Do you need regular updates or event-driven processing?
-3. **Data Characteristics**: Is your data partitioned? Do you need to update historical data?
-4. **System Integration**: Do you need to react to external events or systems?
+It is possible to trigger asset materializations in a job from external services using the GraphQL endpoint.
 
-Use this table to help guide your decision:
+### When to use the GraphQL endpoint
 
-| Method                 | Best For                               | Works With          |
-| ---------------------- | -------------------------------------- | ------------------- |
-| Schedules              | Regular, time-based job runs           | Assets, Ops, Graphs |
-| Sensors                | Event-driven automation                | Assets, Ops, Graphs |
-| Declarative Automation | Asset-centric, condition-based updates | Assets only         |
-| Asset Sensors          | Cross-job/location asset dependencies  | Assets only         |
+- You want to integrate Dagster with an external system or tool
+- You need to trigger a materialization or job over an HTTP endpoint
+- You are creating a custom script for batching operations
+
+### Triggering a job
+
+To trigger a job to run using the GraphQL endpoint in Dagster, you can use the `launchRun` mutation. Here's an example using the `requests` library:
+
+```python
+import requests
+
+
+graphql_endpoint = "http://localhost:3000/graphql"
+
+query = """
+mutation LaunchRunMutation(
+  $repositoryLocationName: String!
+  $repositoryName: String!
+  $jobName: String!
+  $runConfigData: RunConfigData!
+) {
+  launchRun(
+    executionParams: {
+      selector: {
+        repositoryLocationName: $repositoryLocationName
+        repositoryName: $repositoryName
+        jobName: $jobName
+      }
+      runConfigData: $runConfigData
+    }
+  ) {
+    __typename
+    ... on LaunchRunSuccess {
+      run {
+        runId
+      }
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        reason
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+response = requests.post(
+    graphql_endpoint,
+    json={
+        "query": query,
+        "variables": {
+            "repositoryLocationName": "<replace-with-code-location-name>",
+            "repositoryName": "__repository__",  # default if using `Definitions`
+            "jobName": "<replace-with-job-name>",
+            "runConfigData": {},
+        },
+    },
+)
+```
+
+### Triggering an asset materialization
+
+To trigger an asset materialization using the GraphQL endpoint in Dagster, you can use the `LaunchPipelineExecution` mutation. Here's an example using the `requests` library:
+
+```python
+import requests
+
+
+graphql_endpoint = "http://localhost:3000/graphql"
+
+query = """
+mutation LaunchPipelineExecution(
+    $executionParams: ExecutionParams!
+) {
+  launchPipelineExecution(executionParams: $executionParams) {
+    ... on LaunchRunSuccess {
+      run {
+        id
+        pipelineName
+        __typename
+      }
+      __typename
+    }
+    ... on PipelineNotFoundError {
+      message
+      __typename
+    }
+    ... on InvalidSubsetError {
+      message
+      __typename
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        __typename
+      }
+      __typename
+    }
+  }
+}
+"""
+
+response = requests.post(
+    graphql_endpoint,
+    json={
+        "query": query,
+        "variables": {
+            "executionParams": {
+                "mode": "default",
+                "runConfigData": "{}",
+                "selector": {
+                    "assetCheckSelection": [],
+                    "assetSelection": [{"path": ["<replace-with-asset-key>"]}],
+                    "pipelineName": "__ASSET_JOB",
+                    "repositoryLocationName": "<replace-with-code-location-name>",
+                    "repositoryName": "__repository__",
+                },
+            }
+        },
+    },
+)
+```
 
 ## Next steps
 
