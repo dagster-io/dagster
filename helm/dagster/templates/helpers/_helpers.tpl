@@ -162,6 +162,21 @@ See: https://github.com/helm/charts/blob/61c2cc0db49b06b948f90c8e44e9143d7bab430
 {{- end }}
 {{- end }}
 
+{{- define "dagster.postgresql.env" -}}
+{{- if .Values.global.postgresqlSecretUsernameKey }}
+- name: DAGSTER_PG_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "dagster.postgresql.secretName" $ | quote }}
+      key: {{ .Values.global.postgresqlSecretUsernameKey | quote }}
+{{- end }}
+- name: DAGSTER_PG_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "dagster.postgresql.secretName" $ | quote }}
+      key: {{ .Values.global.postgresqlSecretPasswordKey | quote }}
+{{- end -}}
+
 {{/*
 Celery options
 */}}
