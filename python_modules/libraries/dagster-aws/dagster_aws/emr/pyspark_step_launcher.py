@@ -13,7 +13,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.definitions.step_launcher import StepLauncher, _step_launcher_supersession
 from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -147,6 +147,7 @@ CODE_ZIP_NAME = "code.zip"
         ),
     }
 )
+@_step_launcher_supersession
 def emr_pyspark_step_launcher(context):
     # Resolve legacy arguments
     if context.resource_config.get("local_job_package_path") and context.resource_config.get(
@@ -216,6 +217,7 @@ emr_pyspark_step_launcher.__doc__ = "\n".join(
 )
 
 
+@_step_launcher_supersession
 class EmrPySparkStepLauncher(StepLauncher):
     def __init__(
         self,
