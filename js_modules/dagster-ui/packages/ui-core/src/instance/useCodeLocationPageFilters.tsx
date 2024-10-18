@@ -22,13 +22,12 @@ export const useCodeLocationPageFilters = () => {
   const queryString = searchValue.toLocaleLowerCase();
 
   const [filters, setFilters] = useQueryPersistedState<CodeLocationFilters>({
-    encode: ({status}) => ({
-      status: status?.length ? JSON.stringify(status) : undefined,
-    }),
+    encode: ({status}) => {
+      return {status: Array.isArray(status) ? status : undefined};
+    },
     decode: (qs) => {
-      return {
-        status: qs.status ? JSON.parse(qs.status) : [],
-      };
+      const status = Array.isArray(qs?.status) ? qs.status : [];
+      return {status};
     },
   });
 

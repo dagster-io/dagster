@@ -67,9 +67,11 @@
    sections/api/apidocs/libraries/dagster-pipes
    sections/api/apidocs/libraries/dagster-polars
    sections/api/apidocs/libraries/dagster-postgres
+   sections/api/apidocs/libraries/dagster-powerbi
    sections/api/apidocs/libraries/dagster-prometheus
    sections/api/apidocs/libraries/dagster-pyspark
    sections/api/apidocs/libraries/dagster-shell
+   sections/api/apidocs/libraries/dagster-sigma
    sections/api/apidocs/libraries/dagster-slack
    sections/api/apidocs/libraries/dagster-snowflake
    sections/api/apidocs/libraries/dagster-snowflake-pandas
@@ -77,6 +79,7 @@
    sections/api/apidocs/libraries/dagster-spark
    sections/api/apidocs/libraries/dagster-ssh
    sections/api/apidocs/libraries/dagster-twilio
+   sections/api/apidocs/libraries/dagster-tableau
    sections/api/apidocs/libraries/dagstermill
    sections/api/apidocs/libraries/dagster-graphql
    sections/api/apidocs/libraries/dagster-wandb

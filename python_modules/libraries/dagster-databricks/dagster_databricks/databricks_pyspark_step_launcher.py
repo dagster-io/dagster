@@ -35,7 +35,7 @@ from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
 from databricks.sdk.core import DatabricksError
-from databricks.sdk.service import iam, jobs
+from databricks.sdk.service import iam
 
 from dagster_databricks import databricks_step_main
 from dagster_databricks.configs import (
@@ -478,9 +478,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         for permission, accessors in input_permissions.items():
             access_control_list.extend(
                 [
-                    jobs.JobAccessControlRequest.from_dict(
-                        {"permission_level": permission, **accessor}
-                    )
+                    iam.AccessControlRequest.from_dict({"permission_level": permission, **accessor})
                     for accessor in accessors
                 ]
             )
