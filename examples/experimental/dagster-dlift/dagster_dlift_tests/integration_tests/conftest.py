@@ -22,3 +22,7 @@ def get_dbt_cloud_region() -> str:
 
 def get_dbt_cloud_account_prefix() -> str:
     return get_env_var("TEST_DBT_CLOUD_ACCOUNT_PREFIX")
+
+
+def get_dbt_cloud_environment_id() -> str:
+    return get_env_var("TEST_DBT_CLOUD_ENVIRONMENT_ID")

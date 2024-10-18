@@ -1,3 +1,5 @@
+from typing import Any, Mapping
+
 import requests
 
 
@@ -21,15 +23,26 @@ class DbtCloudInstance:
         )
         return session
 
-    def get_account_url(self) -> str:
+    def get_general_api_url(self) -> str:
         return (
             f"https://{self.account_prefix}.{self.region}.dbt.com/api/v3/accounts/{self.account_id}"
         )
 
+    def get_metadata_api_url(self) -> str:
+        return f"https://{self.account_prefix}.metadata.{self.region}.dbt.com/graphql"
+
+    def query_discovery_api(self, query: str, variables: Mapping[str, Any]):
+        session = self.get_session()
+        response = session.post(
+            f"{self.get_metadata_api_url()}/graphql",
+            json={"query": query, "variables": variables},
+        )
+        return response
+
     def test_connection(self) -> None:
         session = self.get_session()
         response = session.get(
-            f"{self.get_account_url()}/projects/?limit=10&offset=5",
+            f"{self.get_general_api_url()}/projects/?limit=10&offset=5",
         )
         if response.status_code != 200:
             raise Exception(f"Failed to connect to dbt cloud: {response.text}")
