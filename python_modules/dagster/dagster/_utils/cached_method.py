@@ -1,5 +1,6 @@
+import asyncio
 from functools import wraps
-from typing import Callable, Hashable, Mapping, Tuple, TypeVar
+from typing import Any, Callable, Dict, Hashable, Mapping, Tuple, TypeVar, cast
 
 from typing_extensions import Concatenate, ParamSpec
 
@@ -63,17 +64,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
     # Cache these once self is first observed to avoid expensive work on each access
     arg_names = None
 
-    @wraps(method)
-    def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
-        if not hasattr(self, CACHED_METHOD_CACHE_FIELD):
-            setattr(self, CACHED_METHOD_CACHE_FIELD, {})
-
-        cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
-        if method.__name__ not in cache_dict:
-            cache_dict[method.__name__] = {}
-
-        cache = cache_dict[method.__name__]
-
+    def get_canonical_kwargs(*args: P.args, **kwargs: P.kwargs) -> Dict[str, Any]:
         canonical_kwargs = None
         if args:
             # Entering this block introduces about 15% overhead per call
@@ -99,13 +90,52 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
             # no copy
             canonical_kwargs = kwargs
 
-        key = _make_key(canonical_kwargs)
-        if key not in cache:
-            result = method(self, *args, **kwargs)
-            cache[key] = result
-        return cache[key]
+        return canonical_kwargs
 
-    return _cached_method_wrapper
+    if asyncio.iscoroutinefunction(method):
+
+        @wraps(method)
+        async def _async_cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
+            if not hasattr(self, CACHED_METHOD_CACHE_FIELD):
+                setattr(self, CACHED_METHOD_CACHE_FIELD, {})
+
+            cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
+            if method.__name__ not in cache_dict:
+                cache_dict[method.__name__] = {}
+
+            cache = cache_dict[method.__name__]
+
+            canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
+            key = _make_key(canonical_kwargs)
+
+            if key not in cache:
+                result = await method(self, *args, **kwargs)
+                cache[key] = result
+            return cache[key]
+
+        return cast(Callable[Concatenate[S, P], T], _async_cached_method_wrapper)
+
+    else:
+
+        @wraps(method)
+        def _cached_method_wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
+            if not hasattr(self, CACHED_METHOD_CACHE_FIELD):
+                setattr(self, CACHED_METHOD_CACHE_FIELD, {})
+
+            cache_dict = getattr(self, CACHED_METHOD_CACHE_FIELD)
+            if method.__name__ not in cache_dict:
+                cache_dict[method.__name__] = {}
+
+            cache = cache_dict[method.__name__]
+
+            canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
+            key = _make_key(canonical_kwargs)
+            if key not in cache:
+                result = method(self, *args, **kwargs)
+                cache[key] = result
+            return cache[key]
+
+        return _cached_method_wrapper
 
 
 class _HashedSeq(list):
