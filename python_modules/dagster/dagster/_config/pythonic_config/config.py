@@ -28,7 +28,6 @@ from dagster._core.errors import (
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._model.pydantic_compat_layer import (
-    USING_PYDANTIC_2,
     ModelFieldCompat,
     PydanticUndefined,
     model_config,
@@ -75,16 +74,9 @@ class MakeConfigCacheable(BaseModel):
     # - Frozen, to avoid complexity caused by mutation.
     # - arbitrary_types_allowed, to allow non-model class params to be validated with isinstance.
     # - Avoid pydantic reading a cached property class as part of the schema.
-    if USING_PYDANTIC_2:
-        model_config = ConfigDict(  # type: ignore
-            frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
-        )
-    else:
-
-        class Config:
-            frozen = True
-            arbitrary_types_allowed = True
-            keep_untouched = (cached_property,)
+    model_config = ConfigDict(  # type: ignore
+        frozen=True, arbitrary_types_allowed=True, ignored_types=(cached_property,)
+    )
 
     def __setattr__(self, name: str, value: Any):
         from dagster._config.pythonic_config.resource import ConfigurableResourceFactory
@@ -246,8 +238,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 modified_data[key] = field.default if field.default != PydanticUndefined else None
 
         super().__init__(**modified_data)
-        if USING_PYDANTIC_2:
-            self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data)
+        self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
         """Converts this Config object to a Dagster config dictionary, in the same format as the dictionary
@@ -387,12 +378,7 @@ class PermissiveConfig(Config):
 
     # Pydantic config for this class
     # Cannot use kwargs for base class as this is not support for pydantic<1.8
-    if USING_PYDANTIC_2:
-        model_config = ConfigDict(extra="allow")  # type: ignore
-    else:
-
-        class Config:
-            extra = "allow"
+    model_config = ConfigDict(extra="allow")  # type: ignore
 
 
 def infer_schema_from_config_class(
