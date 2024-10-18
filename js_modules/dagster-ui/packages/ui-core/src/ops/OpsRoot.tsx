@@ -19,8 +19,8 @@ import styled from 'styled-components';
 
 import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
-import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 import {gql, useQuery} from '../apollo-client';
+import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';

@@ -1,7 +1,11 @@
-from dagster import Definitions, asset
+from dagster import Definitions, asset, define_asset_job
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (
     assets_with_dag_mappings,
+    assets_with_task_mappings,
     build_defs_from_airflow_instance,
     dag_defs,
     task_defs,
@@ -34,6 +38,26 @@ def asset_two() -> None:
 @asset(description="Materialized by overridden_dag_custom_callback")
 def asset_overridden_dag_custom_callback() -> None:
     print("Materialized by overridden_dag_custom_callback")
+
+
+# Assets within multi_job_assets_dag
+@asset
+def multi_job__a() -> None:
+    print("Materialized a")
+
+
+@asset(deps=[multi_job__a])
+def multi_job__b() -> None:
+    print("Materialized b")
+
+
+@asset(deps=[multi_job__a])
+def multi_job__c() -> None:
+    print("Materialized c")
+
+
+job1 = define_asset_job("job1", [multi_job__a])
+job2 = define_asset_job("job2", [multi_job__b, multi_job__c])
 
 
 def build_mapped_defs() -> Definitions:
@@ -79,9 +103,31 @@ def build_mapped_defs() -> Definitions:
                 ),
             ),
             Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="daily_interval_dag",
+                    task_mappings={
+                        "task": [
+                            AssetSpec(
+                                key="daily_interval_dag__partitioned",
+                                partitions_def=DailyPartitionsDefinition(
+                                    start_date=get_current_datetime_midnight()
+                                ),
+                            )
+                        ],
+                    },
+                ),
+            ),
+            Definitions(
                 assets_with_dag_mappings(
                     {"overridden_dag_custom_callback": [asset_overridden_dag_custom_callback]}
                 )
+            ),
+            Definitions(
+                assets_with_task_mappings(
+                    dag_id="multi_job_assets_dag",
+                    task_mappings={"print_task": [multi_job__a, multi_job__b, multi_job__c]},
+                ),
+                jobs=[job1, job2],
             ),
         ),
     )

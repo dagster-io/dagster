@@ -18,9 +18,9 @@ import {useMemo, useState} from 'react';
 
 import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
+import {gql, useQuery} from '../apollo-client';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
-import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -246,18 +246,17 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
         </tr>
       </thead>
       <tbody>
-        {partitions.flatMap(
-          (partition) =>
-            partition.partitionKeys?.map((key) => (
-              <tr key={key}>
-                <td>
-                  <MiddleTruncate text={partition.partitionsDefName} />
-                </td>
-                <td>
-                  <MiddleTruncate text={key} />
-                </td>
-              </tr>
-            )),
+        {partitions.flatMap((partition) =>
+          partition.partitionKeys?.map((key) => (
+            <tr key={key}>
+              <td>
+                <MiddleTruncate text={partition.partitionsDefName} />
+              </td>
+              <td>
+                <MiddleTruncate text={key} />
+              </td>
+            </tr>
+          )),
         )}
       </tbody>
     </Table>

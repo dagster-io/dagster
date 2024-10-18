@@ -2,11 +2,11 @@ import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-com
 import {useMemo} from 'react';
 
 import {VirtualizedResourceTable} from './VirtualizedResourceTable';
+import {gql, useQuery} from '../apollo-client';
 import {
   WorkspaceResourcesQuery,
   WorkspaceResourcesQueryVariables,
 } from './types/WorkspaceResourcesRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';

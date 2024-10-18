@@ -2,11 +2,11 @@ import {Redirect, useParams} from 'react-router-dom';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {gql, useQuery} from '../apollo-client';
 import {
   ConfigForRunQuery,
   ConfigForRunQueryVariables,
 } from './types/LaunchpadSetupFromRunRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {
   IExecutionSession,
   applyCreateSession,

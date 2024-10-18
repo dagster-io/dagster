@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping
 
@@ -6,13 +5,6 @@ import yaml
 
 if TYPE_CHECKING:
     from airflow import DAG
-
-
-def verify_airflow_home_set() -> None:
-    if not os.getenv("AIRFLOW_HOME"):
-        raise Exception(
-            "AIRFLOW_HOME not set. Please set AIRFLOW_HOME to the root of your Airflow installation."
-        )
 
 
 def get_airflow_dags_folder() -> Path:
@@ -32,8 +24,6 @@ def scaffold_proxied_state(logger: Any) -> None:
     """Scaffolds a proxied state folder for the current Airflow installation.
     Each proxied state is marked as False.
     """
-    verify_airflow_home_set()
-
     proxied_state_dir = get_airflow_dags_folder() / "proxied_state"
     if proxied_state_dir.exists():
         raise Exception(

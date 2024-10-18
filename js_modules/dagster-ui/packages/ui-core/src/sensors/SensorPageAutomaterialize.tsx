@@ -3,12 +3,12 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
 import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
+import {useLazyQuery} from '../apollo-client';
 import {
   AssetSensorTicksQuery,
   AssetSensorTicksQueryVariables,
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
-import {useLazyQuery} from '../apollo-client';
 import {useFeatureFlags} from '../app/Flags';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';

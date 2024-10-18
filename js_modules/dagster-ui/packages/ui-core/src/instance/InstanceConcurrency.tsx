@@ -30,6 +30,7 @@ import {Link} from 'react-router-dom';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {ConcurrencyTable} from './VirtualizedInstanceConcurrencyTable';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {
   ConcurrencyKeyDetailsQuery,
   ConcurrencyKeyDetailsQueryVariables,
@@ -47,7 +48,6 @@ import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
-import {gql, useMutation, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {
   FIFTEEN_SECONDS,

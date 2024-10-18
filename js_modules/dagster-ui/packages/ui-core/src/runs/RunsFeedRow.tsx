@@ -22,9 +22,9 @@ import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
+import {gql} from '../apollo-client';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedRow.types';
-import {gql} from '../apollo-client';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
 import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillFragments';
@@ -55,7 +55,9 @@ export const RunsFeedRow = ({
       const {checked} = e.target;
       const shiftKey =
         e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-      onToggleChecked && onToggleChecked({checked, shiftKey});
+      if (onToggleChecked) {
+        onToggleChecked({checked, shiftKey});
+      }
     }
   };
 

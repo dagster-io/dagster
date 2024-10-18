@@ -14,7 +14,11 @@ export const Multiple = () => {
   const onClick = useCallback((id: string) => {
     setActiveItems((current) => {
       const copy = new Set(current);
-      copy.has(id) ? copy.delete(id) : copy.add(id);
+      if (copy.has(id)) {
+        copy.delete(id);
+      } else {
+        copy.add(id);
+      }
       return copy;
     });
   }, []);

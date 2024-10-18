@@ -21,7 +21,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec, validate_kind_tags
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -253,6 +253,7 @@ def asset(
         raise DagsterInvalidDefinitionError(
             "Cannot specify compute_kind and kinds on the @asset decorator."
         )
+    validate_kind_tags(kinds)
     tags_with_kinds = {
         **(normalize_tags(tags, strict=True)),
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
@@ -685,6 +686,7 @@ def graph_asset(
     metadata: Optional[RawMetadataMapping] = ...,
     tags: Optional[Mapping[str, str]] = ...,
     owners: Optional[Sequence[str]] = None,
+    kinds: Optional[AbstractSet[str]] = None,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     automation_condition: Optional[AutomationCondition] = ...,
@@ -698,6 +700,7 @@ def graph_asset(
 
 @experimental_param(param="tags")
 @experimental_param(param="owners")
+@experimental_param(param="kinds")
 def graph_asset(
     compose_fn: Optional[Callable] = None,
     *,
@@ -720,6 +723,7 @@ def graph_asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
+    kinds: Optional[AbstractSet[str]] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Creates a software-defined asset that's computed using a graph of ops.
 
@@ -763,6 +767,8 @@ def graph_asset(
         owners (Optional[Sequence[str]]): (Experimental) A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
+            will be made visible in the Dagster UI.
         freshness_policy (Optional[FreshnessPolicy]): A constraint telling Dagster how often this asset is
             intended to be updated with respect to its root data.
         automation_condition (Optional[AutomationCondition]): The AutomationCondition to use
@@ -810,6 +816,7 @@ def graph_asset(
             check_specs=check_specs,
             code_version=code_version,
             key=key,
+            kinds=kinds,
         )
     else:
         return graph_asset_no_defaults(
@@ -833,6 +840,7 @@ def graph_asset(
             check_specs=check_specs,
             code_version=code_version,
             key=key,
+            kinds=kinds,
         )
 
 
@@ -856,6 +864,7 @@ def graph_asset_no_defaults(
     check_specs: Optional[Sequence[AssetCheckSpec]],
     code_version: Optional[str],
     key: Optional[CoercibleToAssetKey],
+    kinds: Optional[AbstractSet[str]],
 ) -> AssetsDefinition:
     ins = ins or {}
     named_ins = build_named_ins(compose_fn, ins or {}, set())
@@ -886,6 +895,12 @@ def graph_asset_no_defaults(
         **check_outs_by_output_name,
     }
 
+    validate_kind_tags(kinds)
+    tags_with_kinds = {
+        **(normalize_tags(tags, strict=True)),
+        **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
+    }
+
     op_graph = graph(
         name=out_asset_key.to_python_identifier(),
         description=description,
@@ -901,7 +916,7 @@ def graph_asset_no_defaults(
         partition_mappings=partition_mappings if partition_mappings else None,
         group_name=group_name,
         metadata_by_output_name={"result": metadata} if metadata else None,
-        tags_by_output_name={"result": tags} if tags else None,
+        tags_by_output_name={"result": tags_with_kinds} if tags_with_kinds else None,
         freshness_policies_by_output_name=(
             {"result": freshness_policy} if freshness_policy else None
         ),

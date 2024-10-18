@@ -15,7 +15,7 @@ def proxy() -> None:
     """Commands for working with the Dagster-Airlift proxied state. Requires the `dagster-airlift[in-airflow]` package."""
     try:
         import dagster_airlift.in_airflow  # noqa
-    except:
+    except ImportError:
         raise Exception(
             "dagster-airlift[in-airflow] must be installed in the environment to use any `dagster-airlift proxy` commands."
         )

@@ -7,7 +7,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Callable, Generator, List, Optional
 
-import mock
 import pytest
 import requests
 from dagster._core.test_utils import environ
@@ -159,26 +158,3 @@ def setup_dagster(dagster_home: str, dagster_dev_cmd: List[str]) -> Generator[An
 # MISCELLANEOUS FIXTURES
 # Fixtures that are useful across contexts.
 ####################################################################################################
-
-VAR_DICT = {}
-
-
-def dummy_get_var(key: str, default: Any) -> Optional[str]:
-    return VAR_DICT.get(key, default)
-
-
-def dummy_set_var(key: str, value: str, session: Any) -> None:
-    return VAR_DICT.update({key: value})
-
-
-@pytest.fixture
-def sqlite_backend():
-    with environ({"AIRFLOW__CORE__SQL_ALCHEMY_CONN": "sqlite://"}):
-        yield
-
-
-@pytest.fixture
-def mock_airflow_variable():
-    with mock.patch("airflow.models.Variable.get", side_effect=dummy_get_var):
-        with mock.patch("airflow.models.Variable.set", side_effect=dummy_set_var):
-            yield

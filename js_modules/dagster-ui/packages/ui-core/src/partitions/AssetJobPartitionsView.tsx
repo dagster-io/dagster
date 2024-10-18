@@ -54,8 +54,8 @@ export const AssetJobPartitionsView = ({
     assetKeysWithPartitions.length
       ? assetKeysWithPartitions
       : assetGraph.graphAssetKeys[0]
-      ? [assetGraph.graphAssetKeys[0]]
-      : [],
+        ? [assetGraph.graphAssetKeys[0]]
+        : [],
   );
 
   const {total, missing, merged} = useMemo(() => {

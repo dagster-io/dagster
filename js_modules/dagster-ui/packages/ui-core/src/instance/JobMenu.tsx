@@ -1,8 +1,8 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useCallback} from 'react';
 
-import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 import {gql, useLazyQuery} from '../apollo-client';
+import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';

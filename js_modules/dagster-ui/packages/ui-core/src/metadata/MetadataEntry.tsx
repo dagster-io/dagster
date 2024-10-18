@@ -379,7 +379,7 @@ export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntryF
     .map((record) => {
       try {
         return JSON.parse(record);
-      } catch (e) {
+      } catch {
         invalidRecords.push(record);
         return null;
       }

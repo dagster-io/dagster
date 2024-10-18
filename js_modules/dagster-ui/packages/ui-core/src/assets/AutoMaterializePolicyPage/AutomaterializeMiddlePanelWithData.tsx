@@ -276,8 +276,8 @@ export const AutomaterializeMiddlePanelWithData = ({
               !selectedEvaluation.isLegacy
                 ? selectedEvaluation.evaluationNodes
                 : selectedPartition && specificPartitionData?.assetConditionEvaluationForPartition
-                ? specificPartitionData.assetConditionEvaluationForPartition.evaluationNodes
-                : selectedEvaluation.evaluation.evaluationNodes
+                  ? specificPartitionData.assetConditionEvaluationForPartition.evaluationNodes
+                  : selectedEvaluation.evaluation.evaluationNodes
             }
             isLegacyEvaluation={selectedEvaluation.isLegacy}
             rootUniqueId={selectedEvaluation.evaluation.rootUniqueId}
