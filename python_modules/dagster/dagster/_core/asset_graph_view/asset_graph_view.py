@@ -192,13 +192,12 @@ class AssetGraphView(LoadingContext):
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
     ) -> Optional[EntitySubset[T_EntityKey]]:
-        if serializable_subset.is_compatible_with_partitions_def(
-            self._get_partitions_def(serializable_subset.key)
+        key = serializable_subset.key
+        if self.asset_graph.has(key) and serializable_subset.is_compatible_with_partitions_def(
+            self._get_partitions_def(key)
         ):
             return EntitySubset(
-                self,
-                key=serializable_subset.key,
-                value=_ValidatedEntitySubsetValue(serializable_subset.value),
+                self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)
             )
         else:
             return None
