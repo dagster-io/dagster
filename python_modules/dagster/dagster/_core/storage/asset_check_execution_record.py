@@ -5,7 +5,6 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.events.log import DagsterEventType, EventLogEntry
-from dagster._core.instance import DagsterInstance
 from dagster._core.loader import InstanceLoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._serdes.serdes import deserialize_value
@@ -124,9 +123,9 @@ class AssetCheckExecutionRecord(
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[AssetCheckKey], instance: DagsterInstance
+        cls, keys: Iterable[AssetCheckKey], context: LoadingContext
     ) -> Iterable[Optional["AssetCheckExecutionRecord"]]:
-        records_by_key = instance.event_log_storage.get_latest_asset_check_execution_by_key(
+        records_by_key = context.instance.event_log_storage.get_latest_asset_check_execution_by_key(
             list(keys)
         )
         return [records_by_key.get(key) for key in keys]
