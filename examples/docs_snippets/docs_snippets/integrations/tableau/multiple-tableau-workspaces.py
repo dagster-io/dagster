@@ -14,7 +14,9 @@ sales_team_workspace = TableauCloudWorkspace(
 marketing_team_workspace = TableauCloudWorkspace(
     connected_app_client_id=dg.EnvVar("MARKETING_TABLEAU_CONNECTED_APP_CLIENT_ID"),
     connected_app_secret_id=dg.EnvVar("MARKETING_TABLEAU_CONNECTED_APP_SECRET_ID"),
-    connected_app_secret_value=dg.EnvVar("MARKETING_TABLEAU_CONNECTED_APP_SECRET_VALUE"),
+    connected_app_secret_value=dg.EnvVar(
+        "MARKETING_TABLEAU_CONNECTED_APP_SECRET_VALUE"
+    ),
     username=dg.EnvVar("TABLEAU_USERNAME"),
     site_name=dg.EnvVar("MARKETING_TABLEAU_SITE_NAME"),
     pod_name=dg.EnvVar("MARKETING_TABLEAU_POD_NAME"),

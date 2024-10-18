@@ -261,30 +261,6 @@ def add_data_quality_warning_fixture():
         yield mocked_function
 
 
-@pytest.fixture(name="get_job", autouse=True)
-def get_job_fixture(workbook_id, job_id):
-    with patch("dagster_tableau.resources.BaseTableauClient.get_job") as mocked_function:
-        type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
-        type(mocked_function.return_value).finish_code = PropertyMock(return_value=0)
-        type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
-        yield mocked_function
-
-
-@pytest.fixture(name="refresh_workbook", autouse=True)
-def refresh_workbook_fixture(workbook_id, job_id):
-    with patch("dagster_tableau.resources.BaseTableauClient.refresh_workbook") as mocked_function:
-        type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
-        type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
-        type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
-        yield mocked_function
-
-
-@pytest.fixture(name="cancel_job", autouse=True)
-def cancel_job_fixture():
-    with patch("dagster_tableau.resources.BaseTableauClient.cancel_job") as mocked_function:
-        yield mocked_function
-
-
 @pytest.fixture(
     name="workspace_data",
 )

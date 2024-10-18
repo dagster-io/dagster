@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 import time
 import uuid
@@ -192,75 +191,6 @@ class BaseTableauClient:
             severe=severe or False,
         )
         return self._server.datasources.add_dqw(item=data_source, warning=warning)
-
-    def get_job(
-        self,
-        job_id: str,
-    ) -> TSC.JobItem:
-        """Fetches information for a given job."""
-        return self._server.jobs.get_by_id(job_id)
-
-    def cancel_job(
-        self,
-        job_id: str,
-    ) -> Mapping[str, object]:
-        """Fetches information for a given job."""
-        return self._response_to_dict(self._server.jobs.cancel(job_id))
-
-    def refresh_workbook(self, workbook_id) -> TSC.JobItem:
-        """Refreshes all extracts for a given workbook and return the JobItem object."""
-        return self._server.workbooks.refresh(workbook_id)
-
-    def refresh_and_poll(
-        self,
-        workbook_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
-    ) -> Optional[str]:
-        job = self.refresh_workbook(workbook_id)
-
-        if not poll_interval:
-            poll_interval = DEFAULT_POLL_INTERVAL_SECONDS
-        if not poll_timeout:
-            poll_timeout = DEFAULT_POLL_TIMEOUT
-
-        self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
-        start = time.monotonic()
-
-        try:
-            while True:
-                if poll_timeout and start + poll_timeout < time.monotonic():
-                    raise Failure(
-                        f"Timeout: Tableau job {job.id} is not ready after the timeout"
-                        f" {poll_timeout} seconds"
-                    )
-                time.sleep(poll_interval)
-                job = self.get_job(job_id=job.id)
-
-                if job.finish_code == -1:
-                    # -1 is the default value for JobItem.finish_code, when the job is in progress
-                    continue
-                elif job.finish_code == TSC.JobItem.FinishCode.Success:
-                    break
-                elif job.finish_code == TSC.JobItem.FinishCode.Failed:
-                    raise Failure(f"Job failed: {job.id}")
-                elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
-                    raise Failure(f"Job was cancelled: {job.id}")
-                else:
-                    raise Failure(
-                        f"Encountered unexpected finish code `{job.finish_code}` for job {job.id}"
-                    )
-        finally:
-            # if Tableau sync has not completed, make sure to cancel it so that it doesn't outlive
-            # the python process
-            if job.finish_code not in (
-                TSC.JobItem.FinishCode.Success,
-                TSC.JobItem.FinishCode.Failed,
-                TSC.JobItem.FinishCode.Cancelled,
-            ):
-                self.cancel_job(job.id)
-
-        return job.workbook_id
 
     def sign_in(self) -> Auth.contextmgr:
         """Sign in to the site in Tableau."""
