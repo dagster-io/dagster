@@ -15,7 +15,7 @@ last_update:
 
 ## Step 1: Create Dagster Project Files
 
-Dagster needs several project files to run. These files are common in Python Package managment and help manage project configurationa dn dependencies. 
+Dagster needs several project files to run. These files are common in Python Package managment and help manage project configurationa and dependencies. 
 
 The setup.cfg file is an INI-style configuration file that contains option defaults for setup.py commands. 
 

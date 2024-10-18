@@ -18,7 +18,7 @@ Now that we have the raw data files and the Dagster project setup lets create so
 
 ## Building definitions object
 
-The definitions object [need docs reference] in Dagster serves as the central configuration point for defining and organizing various componenets within a Dagster Project. It acts as a container that holds all the necessary configurations for a code location, ensuring that everything is organized and easily accessable. 
+The definitions object [need docs reference] in Dagster serves as the central configuration point for defining and organizing various componenets within a Dagster Project. It acts as a container that holds all the necessary configurations for a code location, ensuring that everything is organized and easily accessible. 
 
 1. Creating Definitions Object and duckdb resource
 
@@ -50,7 +50,7 @@ You'll notice here that we have meta data for the compute kind for this asset as
 
 2. Sales Reps Asset
 
-This code will be very similiar to the product asset but this time its focused on Sales Reps.
+This code will be very similar to the product asset but this time its focused on Sales Reps.
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="35" lineEnd="61"/>
 
@@ -62,7 +62,7 @@ Same thing for Sales Data
 
 4. Bringing our assets into the Definitions object
 
-Simple add these assets to the definitions asset parameter. 
+Now to pull these assets into our definitions object simply add them to the empty list in the assets parameter. 
 
   ```python
   defs = dg.Definitions(
