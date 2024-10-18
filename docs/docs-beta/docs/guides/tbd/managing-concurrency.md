@@ -113,7 +113,7 @@ Or you can configure it in the job definition:
 
 ## Override job level concurrency in the Launchpad
 
-You can override the default job-level settings, such as the value of the `max_concurrent` key for a job, by launching a job via the Launchpad in the Dagster UI.
+You can override the default job-level settings, such as the value of the `max_concurrent` key for a job, by launching a job in the Launchpad in the Dagster UI.
 
 Need screenshot here
 
