@@ -1,7 +1,7 @@
 import datetime
 import time
 from abc import ABC
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import requests
 from dagster import _check as check
@@ -53,22 +53,34 @@ class AirflowInstance:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
     def list_dags(self) -> List["DagInfo"]:
-        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags")
-        if response.status_code == 200:
-            dags = response.json()
-            webserver_url = self.auth_backend.get_webserver_url()
-            return [
-                DagInfo(
-                    webserver_url=webserver_url,
-                    dag_id=dag["dag_id"],
-                    metadata=dag,
-                )
-                for dag in dags["dags"]
-            ]
-        else:
-            raise DagsterError(
-                f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
+        results = []
+        offset = 0
+        while True:
+            response = self.auth_backend.get_session().get(
+                f"{self.get_api_url()}/dags",
+                params={"limit": 100, "offset": offset, "order_by": "dag_id"},
             )
+            if response.status_code == 200:
+                dags = response.json()
+                webserver_url = self.auth_backend.get_webserver_url()
+
+                cur_results = [
+                    DagInfo(
+                        webserver_url=webserver_url,
+                        dag_id=dag["dag_id"],
+                        metadata=dag,
+                    )
+                    for dag in dags["dags"]
+                ]
+                results.extend(cur_results)
+                if len(cur_results) < 100:
+                    break
+            else:
+                raise DagsterError(
+                    f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
+                )
+            offset += 100
+        return results
 
     def list_variables(self) -> List[Dict[str, Any]]:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/variables")
@@ -255,6 +267,17 @@ class AirflowInstance:
             )
         return response.json()["dag_run_id"]
 
+    def unpause_dag(self, dag_id: str) -> None:
+        response = self.auth_backend.get_session().patch(
+            f"{self.get_api_url()}/dags",
+            json={"is_paused": False},
+            params={"dag_id_pattern": dag_id},
+        )
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to unpause dag {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
     def get_dag_run(self, dag_id: str, run_id: str) -> "DagRun":
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}"
@@ -293,6 +316,14 @@ class AirflowInstance:
                 f"Failed to delete run for {dag_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
         return None
+
+    def list_import_errors(self) -> Sequence[Mapping[str, Any]]:
+        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/importErrors")
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch import errors. Status code: {response.status_code}, Message: {response.text}"
+            )
+        return response.json()["import_errors"]
 
 
 @record

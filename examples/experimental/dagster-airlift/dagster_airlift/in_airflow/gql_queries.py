@@ -34,6 +34,13 @@ query AssetNodeQuery {
                 }
             }
         }
+        isPartitioned
+        partitionDefinition {
+          type
+          name
+          fmt
+        }
+        partitionKeys
     }
 }
 """
