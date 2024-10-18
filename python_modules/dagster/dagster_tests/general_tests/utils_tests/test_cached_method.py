@@ -1,14 +1,12 @@
 # mypy: disable-error-code=annotation-unchecked
 
+import asyncio
 import gc
+import random
 from typing import Dict, List, NamedTuple, Tuple
 
 import objgraph
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
-
-
-import asyncio
-import random
 
 
 def test_cached_method() -> None:
@@ -160,6 +158,7 @@ def test_async_cached_method() -> None:
 
     async def run_my_method_a_bunch() -> List[Tuple]:
         return await asyncio.gather(*[obj1.my_method(arg1="a") for i in range(100)])
+
     assert asyncio.run(run_my_method_a_bunch()) == [("a", 4)] * 100
     assert obj1.calls == ["a", "b"]
 
