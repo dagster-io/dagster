@@ -186,13 +186,16 @@ def check_event_log_contains(event_log, expected_type_and_message):
         )
 
 
+@pytest.mark.parametrize("termination_timeout_seconds", [None, 1])
 @pytest.mark.integration
-def test_terminate_launched_docker_run(aws_env):
+def test_terminate_launched_docker_run(aws_env, termination_timeout_seconds):
     docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": aws_env,
         "network": "container:test-postgres-db-docker",
     }
+    if termination_timeout_seconds:
+        launcher_config["termination_timeout_seconds"] = termination_timeout_seconds
 
     if IS_BUILDKITE:
         launcher_config["registry"] = get_buildkite_registry_config()
@@ -238,7 +241,9 @@ def test_terminate_launched_docker_run(aws_env):
 
             assert instance.run_launcher.terminate(run_id)
 
-            terminated_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_run = poll_for_finished_run(
+                instance, run_id, timeout=30 if termination_timeout_seconds is None else 5
+            )
             terminated_run = instance.get_run_by_id(run_id)
             assert terminated_run.status == DagsterRunStatus.CANCELED
 

@@ -1,5 +1,6 @@
 from dagster import (
     Field,
+    IntSource,
     StringSource,
     _check as check,
 )
@@ -21,6 +22,13 @@ DOCKER_CONFIG_SCHEMA = merge_dicts(
             description=(
                 "Name of the network to which to connect the launched container at creation time"
             ),
+        ),
+        "termination_timeout_seconds": Field(
+            IntSource,
+            is_required=False,
+            description="During a cancellation, the number of seconds to wait for the container "
+            "to terminate before forcefully killing it.",
+            default=10,
         ),
     },
     DOCKER_CONTAINER_CONTEXT_SCHEMA,

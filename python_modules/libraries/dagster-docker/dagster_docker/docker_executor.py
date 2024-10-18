@@ -80,6 +80,7 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     retries = check.dict_elem(config, "retries", key_type=str)
     max_concurrent = check.opt_int_elem(config, "max_concurrent")
     tag_concurrency_limits = check.opt_list_elem(config, "tag_concurrency_limits")
+    termination_timeout_seconds = check.opt_int_elem(config, "termination_timeout_seconds")
 
     validate_docker_config(network, networks, container_kwargs)
 
@@ -94,7 +95,7 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     )
 
     return StepDelegatingExecutor(
-        DockerStepHandler(image, container_context),
+        DockerStepHandler(image, container_context, termination_timeout_seconds),
         retries=check.not_none(RetryMode.from_config(retries)),
         max_concurrent=max_concurrent,
         tag_concurrency_limits=tag_concurrency_limits,
@@ -106,6 +107,7 @@ class DockerStepHandler(StepHandler):
         self,
         image: Optional[str],
         container_context: DockerContainerContext,
+        termination_timeout_seconds: int,
     ):
         super().__init__()
 
@@ -113,6 +115,7 @@ class DockerStepHandler(StepHandler):
         self._container_context = check.inst_param(
             container_context, "container_context", DockerContainerContext
         )
+        self.termination_timeout_seconds = termination_timeout_seconds
 
     def _get_image(self, step_handler_context: StepHandlerContext):
         from dagster_docker import DockerRunLauncher
@@ -311,4 +314,4 @@ class DockerStepHandler(StepHandler):
 
         container = client.containers.get(container_name)
 
-        container.stop()
+        container.stop(timeout=self.termination_timeout_seconds)
