@@ -44,6 +44,7 @@ class PostgresStorageConfigDb(TypedDict):
     password: str
     hostname: str
     db_name: str
+    schema: str
     port: int
     params: Dict[str, object]
     scheme: str
@@ -58,6 +59,7 @@ def pg_config() -> UserConfigSchema:
                 "password": StringSource,
                 "hostname": StringSource,
                 "db_name": StringSource,
+                "schema": Field(StringSource, is_required=False, default_value=None),
                 "port": Field(IntSource, is_required=False, default_value=5432),
                 "params": Field(Permissive(), is_required=False, default_value={}),
                 "scheme": Field(StringSource, is_required=False, default_value="postgresql"),
