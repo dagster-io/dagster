@@ -14,10 +14,16 @@ In this guide, we'll cover how RBAC works in Dagster+, how to assign roles to us
 
 ## Dagster+ user roles
 
-There are two key concepts for Dagster+ user roles. 
-1. **Scope** - Some roles only apply to Organization settings (e.g., "Create Teams"). While some only apply in the context of a deployment (e.g., "Launch and Cancel Backfills").
-2. **Default vs Custom** - As of {Launch Date Goes Here} we enable the creation of custom roles by defining both a Role name and set of permissions. There will still be the "default" heirarchical roles you're used to, but you you will also be able to define custom roles. 
+Dagster+ employs a flexible approach to user roles and permissions. This system is built on two fundamental concepts:
 
+1. **Permission Scope** - Permissions are context-specific, falling into two main categories:
+- Organization-wide settings (for example, "Create Teams")
+- Deployment-specific actions (for example, "Launch and Cancel Backfills")
+2. **Role Types* - Dagster+ supports two types of roles:
+- **Default Roles:** Hierarchical roles, based on sensible defaults that come out of the box with Dagster.
+- **Custom Roles:** Allows you to define tailored roles with specific sets of permissions
+
+This dual approach provides both the simplicity of predefined roles and the flexibility to create custom roles that precisely match your organization's needs.
 ### User role enforcement
 
 All roles are enforced both in Dagster+ and the [GraphQL API](/concepts/webserver/graphql).
@@ -48,7 +54,7 @@ To edit a role:
 ---
 
 ## Deleting custom roles
-Deleting custom roles is similar to editting. At the bottom of the edit dialog you'll see a button to "Delete role". Two things to note when deleting a role:
+Deleting custom roles is similar to editing. At the bottom of the edit dialog you'll see a button to "Delete role". Two things to note when deleting a role:
 1. Deleting a role is a permanent action and cannot be undone
 2. If the role is currently assigned to any users, you will need to reassign them to a different role before you can delete the role
 
