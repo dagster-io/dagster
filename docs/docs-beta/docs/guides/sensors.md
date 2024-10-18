@@ -6,6 +6,10 @@ sidebar_position: 20
 
 Sensors enable you to trigger Dagster runs in response to events from external systems. They run at regular intervals, either triggering a run or explaining why a run was skipped. For example, you can trigger a run when a new file is added to an Amazon S3 bucket or when a database row is updated.
 
+:::tip
+An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/automation#graphql-endpoint).
+:::
+
 <details>
 <summary>Prerequisites</summary>
 
