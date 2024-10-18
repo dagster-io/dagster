@@ -441,6 +441,18 @@ const Deprecated = () => {
   );
 };
 
+////////////////////////
+//  SUPERSEDED BADGE  //
+////////////////////////
+
+const Superseded = () => {
+  return (
+    <div className="superseded-tag">
+      <span className="hidden">(</span>Superseded<span className="hidden">)</span>
+    </div>
+  );
+};
+
 //////////////////////
 //  LEGACY BADGE    //
 //////////////////////
@@ -853,6 +865,7 @@ export default {
   PlaceholderImage,
   Experimental,
   Deprecated,
+  Superseded,
   Legacy,
   Icons,
   ReferenceTable,
