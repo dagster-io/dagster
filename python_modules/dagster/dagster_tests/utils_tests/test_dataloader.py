@@ -144,9 +144,9 @@ class LoadableThing(
 ):
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[str], instance: mock.MagicMock
+        cls, keys: Iterable[str], context: mock.MagicMock
     ) -> List["LoadableThing"]:
-        instance.query(keys)
+        context.query(keys)
         return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
 
 
