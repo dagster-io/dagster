@@ -135,7 +135,7 @@ import sql from './kindtag-images/tool-sql-color.svg';
 import sqlite from './kindtag-images/tool-sqlite-color.svg';
 import sqlmesh from './kindtag-images/tool-sqlmesh-color.svg';
 import sqlserver from './kindtag-images/tool-sqlserver-color.svg';
-import stepfuncitons from './kindtag-images/tool-stepfunctions-color.svg';
+import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
@@ -306,10 +306,10 @@ export type KnownTagType =
   | 'soda'
   | 'sqlite'
   | 'sqlmesh'
-  | 'stepfuncitons'
-  | 'awsstepfuncitons'
-  | 'awssetepfunciton'
-  | 'setepfunciton'
+  | 'stepfunctions'
+  | 'awsstepfunctions'
+  | 'awsstepfunction'
+  | 'stepfunction'
   | 'thoughtspot'
   | 'trino'
   | 'twilio'
@@ -879,20 +879,20 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: sqlmesh,
     content: 'SQLMesh',
   },
-  stepfuncitons: {
-    icon: stepfuncitons,
+  stepfunctions: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  awsstepfuncitons: {
-    icon: stepfuncitons,
+  awsstepfunctions: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  awssetepfunciton: {
-    icon: stepfuncitons,
+  awsstepfunction: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
-  setepfunciton: {
-    icon: stepfuncitons,
+  stepfunction: {
+    icon: stepfunctions,
     content: 'Step Functions',
   },
   thoughtspot: {

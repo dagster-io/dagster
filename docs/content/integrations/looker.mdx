@@ -27,19 +27,19 @@ This guide provides instructions for using Dagster with Looker. Your Looker asse
 
 ## Represent Looker assets in the asset graph
 
-To load Looker assets into the Dagster asset graph, you must first construct a `LookerResource`, which allows Dagster to communicate with your Looker instance. You'll need to supply your Looker instance URL and API credentials, which can be passed directly or accessed from the environment using `EnvVar`.
+To load Looker assets into the Dagster asset graph, you must first construct a <PyObject module="dagster_looker" object="LookerResource" />, which allows Dagster to communicate with your Looker instance. You'll need to supply your Looker instance URL and API credentials, which can be passed directly or accessed from the environment using <PyObject object="EnvVar" />.
 
-Dagster can automatically load all views, explores, and dashboards from your Looker instance. Call the `build_defs()` function, which returns a `Definitions` object containing all the asset definitions for these Looker assets.
+Dagster can automatically load all views, explores, and dashboards from your Looker instance. Call the <PyObject module="dagster_looker" object="LookerResource" method="build_defs" /> function, which returns a <PyObject object="Definitions" /> object containing all the asset definitions for these Looker assets.
 
 ```python file=/integrations/looker/representing-looker-assets.py
 from dagster_looker import LookerResource
 
-from dagster import EnvVar
+import dagster as dg
 
 resource = LookerResource(
-    client_id=EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=EnvVar("LOOKERSDK_HOST_URL"),
+    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
 )
 
 defs = resource.build_defs()
@@ -47,7 +47,7 @@ defs = resource.build_defs()
 
 ### Customize asset definition metadata for Looker assets
 
-By default, Dagster will generate asset keys for each Looker asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom `DagsterLookerAPITranslator` subclass to the `LookerResource.build_defs(...)` function. This subclass can implement methods to customize the asset keys or specs for each Looker asset type.
+By default, Dagster will generate asset keys for each Looker asset based on its type and name and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject module="dagster_looker" object="LookerResource" method="build_defs" /> function. This subclass can implement methods to customize the asset keys or specs for each Looker asset type.
 
 ```python file=/integrations/looker/customize-looker-assets.py
 from dagster_looker import (
@@ -57,17 +57,17 @@ from dagster_looker import (
     LookerStructureType,
 )
 
-from dagster import AssetSpec, EnvVar
+import dagster as dg
 
 resource = LookerResource(
-    client_id=EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=EnvVar("LOOKERSDK_HOST_URL"),
+    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
 )
 
 
 class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-    def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+    def get_asset_spec(self, looker_structure: LookerStructureData) -> dg.AssetSpec:
         asset_spec = super().get_asset_spec(looker_structure)
 
         # Add a team owner for all Looker assets
@@ -85,17 +85,17 @@ defs = resource.build_defs(dagster_looker_translator=CustomDagsterLookerApiTrans
 
 ### Materialize Looker PDTs from Dagster
 
-You can use Dagster to orchestrate the materialization of Looker PDTs. To model a PDT as an asset, pass its definition by passing `RequestStartPdtBuild` to `LookerResource.build_defs(...)` function.
+You can use Dagster to orchestrate the materialization of Looker PDTs. To model a PDT as an asset, pass its definition by passing <PyObject module="dagster_looker" object="RequestStartPdtBuild" /> to <PyObject module="dagster_looker" object="LookerResource" method="build_defs" /> function.
 
 ```python file=/integrations/looker/materializing-looker-pdts.py
 from dagster_looker import LookerResource, RequestStartPdtBuild
 
-from dagster import EnvVar
+import dagster as dg
 
 resource = LookerResource(
-    client_id=EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=EnvVar("LOOKERSDK_HOST_URL"),
+    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
+    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
+    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
 )
 
 defs = resource.build_defs(
@@ -107,3 +107,10 @@ defs = resource.build_defs(
     ]
 )
 ```
+
+### Related
+
+- [`dagster-looker` API reference](/\_apidocs/libraries/dagster-looker)
+- [Asset definitions](/concepts/assets/software-defined-assets)
+- [Resources](/concepts/resources)
+- [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets)

@@ -5,9 +5,35 @@ interface CodeExampleProps {
   filePath: string;
   language?: string;
   title?: string;
+  lineStart?: number;
+  lineEnd?: number;
 }
 
-const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) => {
+/**
+ * Removes content below the `if __name__` block for the given `lines`.
+ */
+function trimMainBlock(lines: string[]): string[] {
+  const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
+  return mainIndex !== -1 ? lines.slice(0, mainIndex) : lines;
+}
+
+/**
+ * Filters `noqa` comments from lines.
+ */
+function filterNoqaComments(lines: string[]): string[] {
+  return lines.map((line: string) => {
+    return line.replaceAll(/#.*?noqa.*?$/g, '');
+  });
+}
+
+const CodeExample: React.FC<CodeExampleProps> = ({
+  filePath,
+  language,
+  title,
+  lineStart,
+  lineEnd,
+  ...props
+}) => {
   const [content, setContent] = React.useState<string>('');
   const [error, setError] = React.useState<string | null>(null);
 
@@ -17,13 +43,16 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
     // Adjust the import path to start from the docs directory
     import(`!!raw-loader!/../../examples/docs_beta_snippets/docs_beta_snippets/${filePath}`)
       .then((module) => {
-        const lines = module.default.split('\n').map((line) => {
-          return line.replaceAll(/#.*?noqa.*?$/g, '');
-        });
-        const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
-        const strippedContent =
-          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : lines.join('\n');
-        setContent(strippedContent);
+        var lines = module.default.split('\n');
+
+        const sliceStart = lineStart && lineStart > 0 ? lineStart : 0;
+        const sliceEnd = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
+        lines = lines.slice(sliceStart, sliceEnd);
+
+        lines = filterNoqaComments(lines);
+        lines = trimMainBlock(lines);
+
+        setContent(lines.join('\n'));
         setError(null);
       })
       .catch((error) => {
@@ -39,7 +68,7 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
   }
 
   return (
-    <CodeBlock language={language} title={title}>
+    <CodeBlock language={language} title={title} {...props}>
       {content || 'Loading...'}
     </CodeBlock>
   );

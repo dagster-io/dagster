@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any, Iterable, Mapping, Optional, Set
 
 from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
@@ -208,6 +208,21 @@ class DagsterSlingTranslator:
             Mapping[str, Any]: An empty dictionary.
         """
         return {}
+
+    @public
+    def get_kinds(self, stream_definition: Mapping[str, Any]) -> Set[str]:
+        """Retrieves the kinds for a given stream definition.
+
+        This method returns "sling" by default. This method can be overridden to provide custom kinds.
+
+        Parameters:
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition,
+            which includes configuration details.
+
+        Returns:
+            Set[str]: A set containing kinds for the stream's assets.
+        """
+        return {"sling"}
 
     @public
     def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:

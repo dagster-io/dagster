@@ -107,11 +107,13 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                     client=self.client,
                     remote_log_name="stdout",
                     target_stream=sys.stdout,
+                    debug_info="reader for stdout",
                 ),
                 PipesDbfsLogReader(
                     client=self.client,
                     remote_log_name="stderr",
                     target_stream=sys.stderr,
+                    debug_info="reader fo stderr",
                 ),
             ]
         else:
@@ -333,7 +335,7 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
         cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
             If set, this will be used to read stderr/stdout logs.
-        log_readers (Optional[Sequence[PipesLogReader]]): A set of readers for logs on DBFS.
+        log_readers (Optional[Sequence[PipesLogReader]]): A se of log readers for logs on DBFS.
     """
 
     def __init__(
@@ -355,6 +357,12 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
             params: PipesParams = {}
             params["path"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
             yield params
+
+    def messages_are_readable(self, params: PipesParams) -> bool:
+        try:
+            return self.dbfs_client.get_status(params["path"]) is not None
+        except Exception:
+            return False
 
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]:
         message_path = os.path.join(params["path"], f"{index}.json")
@@ -386,6 +394,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         remote_log_name (Literal["stdout", "stderr"]): The name of the log file to read.
         target_stream (TextIO): The stream to which to forward log chunks that have been read.
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        debug_info (Optional[str]): An optional message containing debug information about the log reader.
     """
 
     def __init__(
@@ -395,6 +404,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         remote_log_name: Literal["stdout", "stderr"],
         target_stream: TextIO,
         client: WorkspaceClient,
+        debug_info: Optional[str] = None,
     ):
         super().__init__(interval=interval, target_stream=target_stream)
         self.dbfs_client = files.DbfsAPI(client.api_client)
@@ -402,6 +412,14 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
         self.log_position = 0
         self.log_modification_time = None
         self.log_path = None
+        self._debug_info = debug_info
+
+    @property
+    def debug_info(self) -> Optional[str]:
+        return self._debug_info
+
+    def target_is_readable(self, params: PipesParams) -> bool:
+        return self._get_log_path(params) is not None
 
     def download_log_chunk(self, params: PipesParams) -> Optional[str]:
         log_path = self._get_log_path(params)
@@ -421,9 +439,6 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
                 return chunk
             except IOError:
                 return None
-
-    def target_is_readable(self, params: PipesParams) -> bool:
-        return self._get_log_path(params) is not None
 
     @property
     def name(self) -> str:

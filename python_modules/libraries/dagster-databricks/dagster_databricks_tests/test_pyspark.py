@@ -48,8 +48,14 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
         ],
     },
     "permissions": {
-        "cluster_permissions": {"CAN_MANAGE": [{"group_name": "my_group"}]},
-        "job_permissions": {"CAN_MANAGE_RUN": [{"user_name": "my_user"}]},
+        "cluster_permissions": {
+            "CAN_MANAGE": [{"group_name": "my_group"}],
+            "CAN_RESTART": [{"user_name": "my_user"}],
+        },
+        "job_permissions": {
+            "CAN_MANAGE_RUN": [{"user_name": "my_user"}],
+            "CAN_MANAGE": [{"group_name": "my_group"}],
+        },
     },
     "secrets_to_env_variables": [],
     "env_variables": {},
@@ -236,6 +242,27 @@ def test_pyspark_databricks(
         assert mock_put_file.call_count == 4
         assert mock_read_file.call_count == 2
         assert mock_submit_run.call_count == 1
+
+        assert mock_perform_query.call_args_list[0].kwargs["body"]["access_control_list"] == [
+            {
+                "permission_level": "CAN_MANAGE_RUN",
+                "user_name": "my_user",
+            },
+            {
+                "permission_level": "CAN_MANAGE",
+                "group_name": "my_group",
+            },
+        ]
+        assert mock_perform_query.call_args_list[1].kwargs["body"]["access_control_list"] == [
+            {
+                "permission_level": "CAN_RESTART",
+                "user_name": "my_user",
+            },
+            {
+                "permission_level": "CAN_MANAGE",
+                "group_name": "my_group",
+            },
+        ]
 
     # Test 2 - attempting to update permissions for an existing cluster
 

@@ -1,4 +1,6 @@
 from dagster import AutomationCondition
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.events import AssetMaterialization
 
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -19,12 +21,18 @@ def test_on_missing_unpartitioned() -> None:
         ensure_empty_result=False,
     )
 
-    # parent hasn't materialized yet
+    # B starts off as materialized
+    state.instance.report_runless_asset_event(AssetMaterialization(asset_key=AssetKey("B")))
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
-    # parent materialized, now can execute
+    # parent materialized, now could execute, but B is not missing
     state = state.with_runs(run_request("A"))
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # now wipe B so that it is newly missing, should update
+    state.instance.wipe_assets([AssetKey("B")])
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
 
@@ -65,12 +73,14 @@ def test_on_missing_hourly_partitioned() -> None:
             ensure_empty_result=False,
         )
         .with_asset_properties(partitions_def=hourly_partitions_def)
-        .with_current_time("2020-02-02T01:05:00")
+        .with_current_time("2020-02-02T00:05:00")
     )
 
     # parent hasn't updated yet
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
+
+    state = state.with_current_time_advanced(hours=1)
 
     # historical parent updated, doesn't matter
     state = state.with_runs(run_request("A", "2019-07-05-00:00"))
@@ -112,12 +122,14 @@ def test_on_missing_without_time_limit() -> None:
             ensure_empty_result=False,
         )
         .with_asset_properties(partitions_def=hourly_partitions_def)
-        .with_current_time("2020-02-02T01:05:00")
+        .with_current_time("2019-02-02T01:05:00")
     )
 
     # parent hasn't updated yet
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
+
+    state = state.with_current_time_advanced(years=1)
 
     # historical parents updated, matters
     state = state.with_runs(run_request("A", "2019-07-05-00:00"))

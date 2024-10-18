@@ -23,7 +23,7 @@ class RuleCondition(BuiltinAutomationCondition[AssetKey]):
 
     rule: AutoMaterializeRule
 
-    def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:
+    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:
         # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating
         # old serialized information
         parts = [self.rule.__class__.__name__, self.description]

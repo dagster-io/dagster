@@ -5,8 +5,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 
 from dagster_graphql.implementation.external import (
-    get_external_job_or_raise,
-    get_full_external_job_or_raise,
+    get_full_remote_job_or_raise,
+    get_remote_job_or_raise,
 )
 from dagster_graphql.implementation.utils import JobSubsetSelector, UserFacingGraphQLError
 from dagster_graphql.schema.util import ResolveInfo
@@ -23,7 +23,7 @@ def get_job_snapshot_or_error_from_job_selector(
     from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshot
 
     check.inst_param(job_selector, "pipeline_selector", JobSubsetSelector)
-    return GraphenePipelineSnapshot(get_full_external_job_or_raise(graphene_info, job_selector))
+    return GraphenePipelineSnapshot(get_full_remote_job_or_raise(graphene_info, job_selector))
 
 
 def get_job_snapshot_or_error_from_snapshot_id(
@@ -109,4 +109,4 @@ def get_job_from_selector(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    return GraphenePipeline(get_external_job_or_raise(graphene_info, selector))
+    return GraphenePipeline(get_remote_job_or_raise(graphene_info, selector))

@@ -64,9 +64,9 @@ def test_multi_file_override_workspace(instance):
         loaded_from_file = workspace.create_request_context().get_code_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
-        external_repositories = loaded_from_file.get_repositories()
-        assert len(external_repositories) == 1
-        assert "extra_repository" in external_repositories
+        remote_repos = loaded_from_file.get_repositories()
+        assert len(remote_repos) == 1
+        assert "extra_repository" in remote_repos
 
 
 def test_multi_file_extend_and_override_workspace(instance):
@@ -88,9 +88,9 @@ def test_multi_file_extend_and_override_workspace(instance):
         loaded_from_file = workspace.create_request_context().get_code_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
-        external_repositories = loaded_from_file.get_repositories()
-        assert len(external_repositories) == 1
-        assert "extra_repository" in external_repositories
+        remote_repos = loaded_from_file.get_repositories()
+        assert len(remote_repos) == 1
+        assert "extra_repository" in remote_repos
 
 
 def _get_multi_location_workspace_yaml(executable):

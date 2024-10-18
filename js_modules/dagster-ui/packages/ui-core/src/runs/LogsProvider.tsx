@@ -7,6 +7,13 @@ import {RUN_DAGSTER_RUN_EVENT_FRAGMENT} from './RunFragments';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
 import {
+  OnSubscriptionDataOptions,
+  gql,
+  useApolloClient,
+  useQuery,
+  useSubscription,
+} from '../apollo-client';
+import {
   PipelineRunLogsSubscription,
   PipelineRunLogsSubscriptionStatusFragment,
   PipelineRunLogsSubscriptionVariables,
@@ -15,13 +22,6 @@ import {
   RunLogsSubscriptionSuccessFragment,
 } from './types/LogsProvider.types';
 import {RunDagsterRunEventFragment} from './types/RunFragments.types';
-import {
-  OnSubscriptionDataOptions,
-  gql,
-  useApolloClient,
-  useQuery,
-  useSubscription,
-} from '../apollo-client';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../graphql/types';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';

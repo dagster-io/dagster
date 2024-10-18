@@ -11,11 +11,11 @@ import {
 } from './GraphExplorer';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
 import {ExplorerPath, explorerPathFromString, explorerPathToString} from './PipelinePathUtils';
+import {gql, useQuery} from '../apollo-client';
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
 } from './types/PipelineExplorerRoot.oss.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';

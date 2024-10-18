@@ -9,7 +9,7 @@ Kind tags can help you quickly identify the underlying system or technology used
 
 ## Adding Compute Kinds to assets
 
-You can add a tag to any asset by providing a value to the `compute_kind` argument.
+You can add a single compute kind to any asset by providing a value to the `compute_kind` argument.
 
 ```python
 @asset(compute_kind="dbt")
@@ -18,6 +18,35 @@ def my_asset():
 ```
 
 When viewing the asset in the lineage view, the compute kind will be visible at the bottom the asset. <Image src="/images/concepts/metadata-tags/kinds/kind-tag.png" width={1039} height={484} />
+
+## Adding multiple kinds to an asset <Experimental />
+
+You may add up to three kinds to the `kinds` argument, which can be useful to represent multiple technologies or systems that an asset is associated with. For example, an asset which is built by Python code and stored in Snowflake can be tagged with both `python` and `snowflake` kinds.
+
+```python file=/concepts/metadata-tags/asset_kinds.py
+from dagster import asset
+
+
+@asset(kinds={"python", "snowflake"})
+def my_asset():
+    pass
+```
+
+Kinds can also be specified on an <PyObject object="AssetSpec" />, for use in multi-assets:
+
+```python file=/concepts/metadata-tags/asset_kinds_multi.py
+from dagster import AssetSpec, multi_asset
+
+
+@multi_asset(
+    specs=[
+        AssetSpec("foo", kinds={"python", "snowflake"}),
+        AssetSpec("bar", kinds={"python", "postgres"}),
+    ]
+)
+def my_multi_asset():
+    pass
+```
 
 ## Supported Icons
 
@@ -28,12 +57,15 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `airbyte`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-airbyte-color.svg" width={20} height={20} />           |
 | `airflow`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-airflow-color.svg" width={20} height={20} />           |
 | `airtable`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-airtable-color.svg" width={20} height={20} />          |
+| `athena`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-aws-color.svg" width={20} height={20} />               |
 | `atlan`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-atlan-color.svg" width={20} height={20} />             |
 | `aws`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-aws-color.svg" width={20} height={20} />               |
+| `awsstepfunction`   | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />     |
+| `awsstepfunctions`  | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />     |
 | `axioma`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-axioma-color.svg" width={20} height={20} />            |
 | `azure`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-azure-color.svg" width={20} height={20} />             |
 | `azureml`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-azureml-color.svg" width={20} height={20} />           |
-| `bigquery`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-bigquery.svg" width={20} height={20} />                |
+| `bigquery`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-bigquery-color.svg" width={20} height={20} />          |
 | `catboost`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-catboost-color.svg" width={20} height={20} />          |
 | `celery`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-celery-color.svg" width={20} height={20} />            |
 | `census`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-census-color.svg" width={20} height={20} />            |
@@ -41,6 +73,7 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `claude`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-claude-color.svg" width={20} height={20} />            |
 | `collibra`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-collibra-color.svg" width={20} height={20} />          |
 | `cplus`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-cplus-color.svg" width={20} height={20} />             |
+| `cplusplus`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-cplus-color.svg" width={20} height={20} />             |
 | `csharp`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-csharp-color.svg" width={20} height={20} />            |
 | `cube`              | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-cube-color.svg" width={20} height={20} />              |
 | `dask`              | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-dask-color.svg" width={20} height={20} />              |
@@ -50,13 +83,14 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `dbt`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-dbt-color.svg" width={20} height={20} />               |
 | `deltalake`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-deltalake-color.svg" width={20} height={20} />         |
 | `discord`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-discord-color.svg" width={20} height={20} />           |
-| `dlt`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-dlt-color.svg" width={20} height={20} />               |
+| `dlt`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-dlthub-color.svg" width={20} height={20} />            |
 | `dlthub`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-dlthub-color.svg" width={20} height={20} />            |
 | `docker`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-docker-color.svg" width={20} height={20} />            |
 | `duckdb`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-duckdb-color.svg" width={20} height={20} />            |
 | `excel`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-excel-color.svg" width={20} height={20} />             |
 | `facebook`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-facebook-color.svg" width={20} height={20} />          |
 | `fivetran`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-fivetran-color.svg" width={20} height={20} />          |
+| `gcp`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-googlecloud-color.svg" width={20} height={20} />       |
 | `gemini`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-gemini-color.svg" width={20} height={20} />            |
 | `github`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-github-color.svg" width={20} height={20} />            |
 | `gitlab`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-gitlab-color.svg" width={20} height={20} />            |
@@ -67,13 +101,16 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `graphql`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-graphql-color.svg" width={20} height={20} />           |
 | `greatexpectations` | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-greatexpectations-color.svg" width={20} height={20} /> |
 | `hackernews`        | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-hackernews-color.svg" width={20} height={20} />        |
+| `hackernewsapi`     | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-hackernews-color.svg" width={20} height={20} />        |
 | `hashicorp`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-hashicorp-color.svg" width={20} height={20} />         |
 | `hex`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-hex-color.svg" width={20} height={20} />               |
 | `hightouch`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-hightouch-color.svg" width={20} height={20} />         |
 | `hudi`              | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-hudi-color.svg" width={20} height={20} />              |
 | `huggingface`       | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-huggingface-color.svg" width={20} height={20} />       |
+| `huggingfaceapi`    | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-huggingface-color.svg" width={20} height={20} />       |
 | `iceberg`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-iceberg-color.svg" width={20} height={20} />           |
 | `instagram`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-instagram-color.svg" width={20} height={20} />         |
+| `ipynb`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-jupyter-color.svg" width={20} height={20} />           |
 | `java`              | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-java-color.svg" width={20} height={20} />              |
 | `javascript`        | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-javascript-color.svg" width={20} height={20} />        |
 | `jupyter`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-jupyter-color.svg" width={20} height={20} />           |
@@ -96,7 +133,7 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `mongodb`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-mongodb-color.svg" width={20} height={20} />           |
 | `montecarlo`        | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-montecarlo-color.svg" width={20} height={20} />        |
 | `mysql`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-mysql-color.svg" width={20} height={20} />             |
-| `.net`              | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-microsoft-color.svg" width={20} height={20} />         |
+| `net`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-microsoft-color.svg" width={20} height={20} />         |
 | `noteable`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-noteable-color.svg" width={20} height={20} />          |
 | `notion`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-notion-color.svg" width={20} height={20} />            |
 | `numpy`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-numpy-color.svg" width={20} height={20} />             |
@@ -115,11 +152,13 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `plural`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-plural-color.svg" width={20} height={20} />            |
 | `polars`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-polars-color.svg" width={20} height={20} />            |
 | `postgres`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-postgres-color.svg" width={20} height={20} />          |
+| `postgresql`        | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-postgres-color.svg" width={20} height={20} />          |
 | `powerbi`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-powerbi-color.svg" width={20} height={20} />           |
 | `prefect`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-prefect-color.svg" width={20} height={20} />           |
+| `pyspark`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-spark-color.svg" width={20} height={20} />             |
 | `python`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-python-color.svg" width={20} height={20} />            |
 | `pytorch`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-pytorch-color.svg" width={20} height={20} />           |
-| `pytorchlightning`  | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-pytorchlightning.svg" width={20} height={20} />        |
+| `pytorchlightning`  | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-pytorchlightning-color.svg" width={20} height={20} />  |
 | `r`                 | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-r-color.svg" width={20} height={20} />                 |
 | `ray`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-ray-color.svg" width={20} height={20} />               |
 | `react`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-react-color.svg" width={20} height={20} />             |
@@ -127,6 +166,7 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `redshift`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-redshift-color.svg" width={20} height={20} />          |
 | `rockset`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-rockset-color.svg" width={20} height={20} />           |
 | `rust`              | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-rust-color.svg" width={20} height={20} />              |
+| `s3`                | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-s3-color.svg" width={20} height={20} />                |
 | `sagemaker`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-sagemaker-color.svg" width={20} height={20} />         |
 | `salesforce`        | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-salesforce-color.svg" width={20} height={20} />        |
 | `scala`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-scala-color.svg" width={20} height={20} />             |
@@ -141,12 +181,14 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `slack`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-slack-color.svg" width={20} height={20} />             |
 | `sling`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-sling-color.svg" width={20} height={20} />             |
 | `snowflake`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-snowflake-color.svg" width={20} height={20} />         |
+| `snowpark`          | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-snowflake-color.svg" width={20} height={20} />         |
 | `soda`              | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-soda-color.svg" width={20} height={20} />              |
 | `spark`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-spark-color.svg" width={20} height={20} />             |
 | `sql`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-sql-color.svg" width={20} height={20} />               |
 | `sqlite`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-sqlite-color.svg" width={20} height={20} />            |
 | `sqlmesh`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-sqlmesh-color.svg" width={20} height={20} />           |
 | `sqlserver`         | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-sqlserver-color.svg" width={20} height={20} />         |
+| `stepfunction`      | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />     |
 | `stepfunctions`     | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />     |
 | `stitch`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-stitch-color.svg" width={20} height={20} />            |
 | `stripe`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-stripe-color.svg" width={20} height={20} />            |
@@ -160,10 +202,25 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `twitter`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-x-color.svg" width={20} height={20} />                 |
 | `typescript`        | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-typescript-color.svg" width={20} height={20} />        |
 | `vercel`            | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-vercel-color.svg" width={20} height={20} />            |
-| `w&b`               | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-w&b-color.svg" width={20} height={20} />               |
+| `wandb`             | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-w&b-color.svg" width={20} height={20} />               |
 | `x`                 | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-x-color.svg" width={20} height={20} />                 |
 | `xgboost`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-xgboost-color.svg" width={20} height={20} />           |
 | `youtube`           | <Image src="/images/concepts/metadata-tags/kinds/icons/tool-youtube-color.svg" width={20} height={20} />           |
+| `bronze`            | <Image src="/images/concepts/metadata-tags/kinds/icons/medallion-bronze-color.svg" width={20} height={20} />       |
+| `silver`            | <Image src="/images/concepts/metadata-tags/kinds/icons/medallion-silver-color.svg" width={20} height={20} />       |
+| `gold`              | <Image src="/images/concepts/metadata-tags/kinds/icons/medallion-gold-color.svg" width={20} height={20} />         |
+| `dag`               | <Image src="/images/concepts/metadata-tags/kinds/icons/dag.svg" width={20} height={20} />                          |
+| `task`              | <Image src="/images/concepts/metadata-tags/kinds/icons/task.svg" width={20} height={20} />                         |
+| `table`             | <Image src="/images/concepts/metadata-tags/kinds/icons/table.svg" width={20} height={20} />                        |
+| `view`              | <Image src="/images/concepts/metadata-tags/kinds/icons/view.svg" width={20} height={20} />                         |
+| `source`            | <Image src="/images/concepts/metadata-tags/kinds/icons/source.svg" width={20} height={20} />                       |
+| `seed`              | <Image src="/images/concepts/metadata-tags/kinds/icons/seed.svg" width={20} height={20} />                         |
+| `file`              | <Image src="/images/concepts/metadata-tags/kinds/icons/file.svg" width={20} height={20} />                         |
+| `dashboard`         | <Image src="/images/concepts/metadata-tags/kinds/icons/dashboard.svg" width={20} height={20} />                    |
+| `notebook`          | <Image src="/images/concepts/metadata-tags/kinds/icons/notebook.svg" width={20} height={20} />                     |
+| `csv`               | <Image src="/images/concepts/metadata-tags/kinds/icons/csv.svg" width={20} height={20} />                          |
+| `pdf`               | <Image src="/images/concepts/metadata-tags/kinds/icons/pdf.svg" width={20} height={20} />                          |
+| `yaml`              | <Image src="/images/concepts/metadata-tags/kinds/icons/yaml.svg" width={20} height={20} />                         |
 
 ## Requesting additional icons
 

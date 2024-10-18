@@ -1,5 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -209,20 +210,20 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 ]
             )
         )
-        dashboards_by_id = {
-            dashboard.id: sdk.dashboard(
-                dashboard_id=dashboard.id,
-                fields=",".join(
-                    [
-                        "id",
-                        "title",
-                        "dashboard_filters",
-                    ]
-                ),
+
+        with ThreadPoolExecutor(max_workers=None) as executor:
+            dashboards_by_id = dict(
+                list(
+                    executor.map(
+                        lambda dashboard: (dashboard.id, sdk.dashboard(dashboard_id=dashboard.id)),
+                        (
+                            dashboard
+                            for dashboard in dashboards
+                            if dashboard.id and not dashboard.hidden
+                        ),
+                    )
+                )
             )
-            for dashboard in dashboards
-            if dashboard.id and not dashboard.hidden
-        }
 
         # Get explore names from models
         explores_for_model = {
@@ -238,28 +239,45 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             if model.name
         }
 
-        explores_by_id: Dict[str, "LookmlModelExplore"] = {}
-        for model_name, explore_names in explores_for_model.items():
-            for explore_name in explore_names:
-                try:
-                    lookml_explore = sdk.lookml_model_explore(
-                        lookml_model_name=model_name,
-                        explore_name=explore_name,
-                        fields=",".join(
-                            [
-                                "id",
-                                "view_name",
-                                "sql_table_name",
-                                "joins",
-                            ]
-                        ),
-                    )
+        def fetch_explore(model_name, explore_name) -> Optional[Tuple[str, "LookmlModelExplore"]]:
+            try:
+                lookml_explore = sdk.lookml_model_explore(
+                    lookml_model_name=model_name,
+                    explore_name=explore_name,
+                    fields=",".join(
+                        [
+                            "id",
+                            "view_name",
+                            "sql_table_name",
+                            "joins",
+                        ]
+                    ),
+                )
 
-                    explores_by_id[check.not_none(lookml_explore.id)] = lookml_explore
-                except:
-                    logger.warning(
-                        f"Failed to fetch LookML explore '{explore_name}' for model '{model_name}'."
-                    )
+                return (check.not_none(lookml_explore.id), lookml_explore)
+            except:
+                logger.warning(
+                    f"Failed to fetch LookML explore '{explore_name}' for model '{model_name}'."
+                )
+
+        with ThreadPoolExecutor(max_workers=None) as executor:
+            explores_to_fetch = [
+                (model_name, explore_name)
+                for model_name, explore_names in explores_for_model.items()
+                for explore_name in explore_names
+            ]
+            explores_by_id = dict(
+                cast(
+                    List[Tuple[str, "LookmlModelExplore"]],
+                    (
+                        entry
+                        for entry in executor.map(
+                            lambda explore: fetch_explore(*explore), explores_to_fetch
+                        )
+                        if entry is not None
+                    ),
+                )
+            )
 
         return LookerInstanceData(
             explores_by_id=explores_by_id,

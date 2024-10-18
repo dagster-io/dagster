@@ -21,8 +21,8 @@ import {
   SidebarOpInvocationInfo,
   TypeWrapper,
 } from './SidebarOpHelpers';
-import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
 import {gql} from '../apollo-client';
+import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
 import {COMMON_COLLATOR, breakOnUnderscores} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';

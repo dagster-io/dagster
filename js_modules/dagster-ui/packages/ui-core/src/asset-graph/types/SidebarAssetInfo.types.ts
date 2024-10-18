@@ -32285,4 +32285,4 @@ export type SidebarAssetQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const SidebarAssetQueryVersion = '6bc1debc744cdb40a889e99ef429b8cf95307aa027b1566cfab952fdc95ea5ea';
+export const SidebarAssetQueryVersion = '9b663f86f85eefe4e680d6ee4289de9b9070f51449699ca7127e7a13d71fa422';

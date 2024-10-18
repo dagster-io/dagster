@@ -173,73 +173,50 @@ def _make_context(instance: DagsterInstance, defs_attrs):
     )
 
 
-def test_get_repository_handle(instance):
+def test_get_repository_selector(instance) -> None:
     asset_graph = _make_context(instance, ["defs1", "defs2"]).asset_graph
 
     assert asset_graph.get_materialization_job_names(asset1.key) == ["__ASSET_JOB"]
     repo_handle1 = asset_graph.get_repository_handle(asset1.key)
     assert repo_handle1.repository_name == "__repository__"
-    assert repo_handle1.repository_python_origin.code_pointer.fn_name == "defs1"
 
     assert asset_graph.get_materialization_job_names(asset1.key) == ["__ASSET_JOB"]
     repo_handle2 = asset_graph.get_repository_handle(asset2.key)
     assert repo_handle2.repository_name == "__repository__"
-    assert repo_handle2.repository_python_origin.code_pointer.fn_name == "defs2"
 
 
-def test_cross_repo_dep_with_source_asset(instance):
+def test_cross_repo_dep_with_source_asset(instance) -> None:
     asset_graph = _make_context(instance, ["defs1", "downstream_defs"]).asset_graph
 
     assert len(asset_graph.external_asset_keys) == 0
     assert asset_graph.get(AssetKey("downstream")).parent_keys == {AssetKey("asset1")}
     assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream")}
-    assert (
-        asset_graph.get_repository_handle(
-            AssetKey("asset1")
-        ).repository_python_origin.code_pointer.fn_name
-        == "defs1"
-    )
+
     assert asset_graph.get_materialization_job_names(AssetKey("asset1")) == ["__ASSET_JOB"]
-    assert (
-        asset_graph.get_repository_handle(
-            AssetKey("downstream")
-        ).repository_python_origin.code_pointer.fn_name
-        == "downstream_defs"
-    )
+
     assert asset_graph.get_materialization_job_names(AssetKey("downstream")) == ["__ASSET_JOB"]
 
 
-def test_cross_repo_dep_no_source_asset(instance):
+def test_cross_repo_dep_no_source_asset(instance) -> None:
     asset_graph = _make_context(instance, ["defs1", "downstream_defs_no_source"]).asset_graph
     assert len(asset_graph.external_asset_keys) == 0
     assert asset_graph.get(AssetKey("downstream_non_arg_dep")).parent_keys == {AssetKey("asset1")}
     assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream_non_arg_dep")}
-    assert (
-        asset_graph.get_repository_handle(
-            AssetKey("asset1")
-        ).repository_python_origin.code_pointer.fn_name
-        == "defs1"
-    )
+
     assert asset_graph.get_materialization_job_names(AssetKey("asset1")) == ["__ASSET_JOB"]
-    assert (
-        asset_graph.get_repository_handle(
-            AssetKey("downstream_non_arg_dep")
-        ).repository_python_origin.code_pointer.fn_name
-        == "downstream_defs_no_source"
-    )
     assert asset_graph.get_materialization_job_names(AssetKey("downstream_non_arg_dep")) == [
         "__ASSET_JOB"
     ]
 
 
-def test_partitioned_source_asset(instance):
+def test_partitioned_source_asset(instance) -> None:
     asset_graph = _make_context(instance, ["partitioned_defs"]).asset_graph
 
     assert asset_graph.get(AssetKey("partitioned_source")).is_partitioned
     assert asset_graph.get(AssetKey("downstream_of_partitioned_source")).is_partitioned
 
 
-def test_auto_materialize_policy(instance):
+def test_auto_materialize_policy(instance) -> None:
     asset_graph = _make_context(instance, ["partitioned_defs"]).asset_graph
 
     assert asset_graph.get(
@@ -264,7 +241,7 @@ def partition_mapping_asset(static_partitioned_asset):
 partition_mapping_defs = Definitions(assets=[static_partitioned_asset, partition_mapping_asset])
 
 
-def test_partition_mapping(instance):
+def test_partition_mapping(instance) -> None:
     asset_graph = _make_context(instance, ["partition_mapping_defs"]).asset_graph
 
     assert isinstance(

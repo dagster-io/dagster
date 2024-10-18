@@ -11,7 +11,7 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.utils import normalize_tags
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.executor_definition import ExecutorDefinition

@@ -1,28 +1,37 @@
-from typing import TYPE_CHECKING, Mapping
+import sys
+from typing import TYPE_CHECKING, Mapping, Optional
 
 import dagster._check as check
-from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.code_pointer import ModuleCodePointer
+from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import RepositoryPythonOrigin
-from dagster._core.remote_representation.origin import CodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_representation.origin import (
+    CodeLocationOrigin,
+    RegisteredCodeLocationOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._record import IHaveNew, record, record_custom
+from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
 
 
-@record_custom
-class RepositoryHandle(IHaveNew):
+@whitelist_for_serdes
+@record
+class RepositoryHandle:
     repository_name: str
     code_location_origin: CodeLocationOrigin
     repository_python_origin: RepositoryPythonOrigin
     display_metadata: Mapping[str, str]
 
-    def __new__(cls, repository_name: str, code_location: "CodeLocation"):
+    @classmethod
+    def from_location(cls, repository_name: str, code_location: "CodeLocation"):
         from dagster._core.remote_representation.code_location import CodeLocation
 
         check.inst_param(code_location, "code_location", CodeLocation)
-        return super().__new__(
-            cls,
+        return cls(
             repository_name=repository_name,
             code_location_origin=code_location.origin,
             repository_python_origin=code_location.get_repository_python_origin(repository_name),
@@ -41,6 +50,38 @@ class RepositoryHandle(IHaveNew):
 
     def get_python_origin(self) -> RepositoryPythonOrigin:
         return self.repository_python_origin
+
+    def to_selector(self) -> RepositorySelector:
+        return RepositorySelector(
+            location_name=self.location_name,
+            repository_name=self.repository_name,
+        )
+
+    def get_compound_id(self) -> "CompoundID":
+        return CompoundID(
+            remote_origin_id=self.get_remote_origin().get_id(),
+            selector_id=self.to_selector().selector_id,
+        )
+
+    @staticmethod
+    def for_test(
+        *,
+        location_name: str = "fake_location",
+        repository_name: str = "fake_repository",
+        display_metadata: Optional[Mapping[str, str]] = None,
+    ) -> "RepositoryHandle":
+        return RepositoryHandle(
+            repository_name=repository_name,
+            code_location_origin=RegisteredCodeLocationOrigin(location_name=location_name),
+            repository_python_origin=RepositoryPythonOrigin(
+                executable_path=sys.executable,
+                code_pointer=ModuleCodePointer(
+                    module="fake.module",
+                    fn_name="fake_fn",
+                ),
+            ),
+            display_metadata=display_metadata or {},
+        )
 
 
 @record_custom
@@ -126,3 +167,33 @@ class PartitionSetHandle:
         return self.repository_handle.get_remote_origin().get_partition_set_origin(
             self.partition_set_name
         )
+
+
+_DELIMITER = "::"
+
+
+@record
+class CompoundID:
+    """Compound ID object for the two id schemes that state is recorded in the database against."""
+
+    remote_origin_id: str
+    selector_id: str
+
+    def to_string(self) -> str:
+        return f"{self.remote_origin_id}{_DELIMITER}{self.selector_id}"
+
+    @staticmethod
+    def from_string(serialized: str):
+        parts = serialized.split(_DELIMITER)
+        if len(parts) != 2:
+            raise DagsterInvariantViolationError(f"Invalid serialized InstigatorID: {serialized}")
+
+        return CompoundID(
+            remote_origin_id=parts[0],
+            selector_id=parts[1],
+        )
+
+    @staticmethod
+    def is_valid_string(serialized: str):
+        parts = serialized.split(_DELIMITER)
+        return len(parts) == 2

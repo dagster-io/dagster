@@ -14,8 +14,8 @@ from dagster._core.definitions.asset_check_factories.utils import (
     assets_to_keys,
     ensure_no_duplicate_assets,
     freshness_multi_asset_check,
-    get_last_updated_timestamp,
     retrieve_last_update_record,
+    retrieve_timestamp_from_record,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
@@ -180,7 +180,7 @@ def _build_freshness_multi_check(
                 # If this asset has been updated at all before, provide the time at which that
                 # happened as additional metadata.
                 metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY] = TimestampMetadataValue(
-                    check.not_none(get_last_updated_timestamp(latest_record_any_partition, context))
+                    check.not_none(retrieve_timestamp_from_record(latest_record_any_partition))
                 )
             elif passed:
                 metadata[FRESH_UNTIL_METADATA_KEY] = TimestampMetadataValue(

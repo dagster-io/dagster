@@ -28,6 +28,9 @@ mdx-format:  ## Format mdx files
 
 mdx-full-format: docs_ruff mdx-format
 
+rebuild-kind-tags-page: ## Add all kind tags to the kind tags page
+	python scripts/regen_kind_tags.py
+
 mdx:
 	tox -e sphinx-mdx
 

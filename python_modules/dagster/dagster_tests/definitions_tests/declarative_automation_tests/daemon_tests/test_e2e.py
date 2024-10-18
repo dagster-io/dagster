@@ -13,7 +13,7 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
-from dagster._core.remote_representation.external import ExternalSensor
+from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
 from dagster._core.storage.dagster_run import DagsterRun
@@ -50,18 +50,16 @@ def get_code_location_origin(filename: str) -> InProcessCodeLocationOrigin:
     )
 
 
-def _get_all_sensors(context: WorkspaceRequestContext) -> Sequence[ExternalSensor]:
-    external_sensors = []
+def _get_all_sensors(context: WorkspaceRequestContext) -> Sequence[RemoteSensor]:
+    sensors = []
     for cl_name in context.get_code_location_entries():
-        external_sensors.extend(
-            next(
-                iter(context.get_code_location(cl_name).get_repositories().values())
-            ).get_external_sensors()
+        sensors.extend(
+            next(iter(context.get_code_location(cl_name).get_repositories().values())).get_sensors()
         )
-    return external_sensors
+    return sensors
 
 
-def _get_automation_sensors(context: WorkspaceRequestContext) -> Sequence[ExternalSensor]:
+def _get_automation_sensors(context: WorkspaceRequestContext) -> Sequence[RemoteSensor]:
     return [
         sensor
         for sensor in _get_all_sensors(context)
@@ -421,10 +419,10 @@ def _get_subsets_by_key(
     return {s.key: s for s in target_subset.iterate_asset_subsets(asset_graph)}
 
 
-@pytest.mark.skip("Pending change to in_progress() behavior")
-def test_backfill_creation_simple() -> None:
+@pytest.mark.parametrize("location", ["backfill_simple_user_code", "backfill_simple_non_user_code"])
+def test_backfill_creation_simple(location: str) -> None:
     with get_workspace_request_context(
-        ["backfill_simple"]
+        [location]
     ) as context, get_threadpool_executor() as executor:
         asset_graph = context.create_request_context().asset_graph
 
@@ -464,7 +462,6 @@ def test_backfill_creation_simple() -> None:
             assert len(runs) == 0
 
 
-@pytest.mark.skip("Pending change to in_progress() behavior")
 def test_backfill_with_runs_and_checks() -> None:
     with get_workspace_request_context(
         ["backfill_with_runs_and_checks"]

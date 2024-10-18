@@ -45,7 +45,6 @@ from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
     normalize_group_name,
-    validate_tags_strict,
 )
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -54,6 +53,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._utils.internal_init import IHasInternalInit
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -215,7 +215,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
     freshness_policy: Optional[FreshnessPolicy]
-    tags: Optional[Mapping[str, str]]
+    tags: Mapping[str, str]
 
     def __init__(
         self,
@@ -247,7 +247,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.tags = validate_tags_strict(tags) or {}
+        self.tags = normalize_tags(tags or {}, strict=True)
 
         resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         if io_manager_def:

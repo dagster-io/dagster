@@ -14,7 +14,7 @@ export const LeftNav = () => {
   }
 
   return (
-    <LeftNavContainer $open={nav.isOpen}>
+    <LeftNavContainer $open={nav.isOpen} $smallScreen={nav.isSmallScreen}>
       {wasEverOpen.current ? <LeftNavRepositorySection /> : null}
     </LeftNavContainer>
   );
@@ -22,19 +22,25 @@ export const LeftNav = () => {
 
 export const LEFT_NAV_WIDTH = 332;
 
-const LeftNavContainer = styled.div<{$open: boolean}>`
+const LeftNavContainer = styled.div<{$open: boolean; $smallScreen: boolean}>`
   position: fixed;
   z-index: 2;
   top: 64px;
   bottom: 0;
   left: 0;
   width: ${LEFT_NAV_WIDTH}px;
-  display: flex;
+  display: ${({$open, $smallScreen}) => ($open || $smallScreen ? 'flex' : 'none')};
   flex-shrink: 0;
   flex-direction: column;
   justify-content: start;
   background: ${Colors.backgroundDefault()};
   box-shadow: 1px 0px 0px ${Colors.keylineDefault()};
-  transform: translateX(${({$open}) => ($open ? '0' : `-${LEFT_NAV_WIDTH}px`)});
-  transition: transform 150ms ease-in-out;
+
+  ${(p) =>
+    p.$smallScreen
+      ? `
+        transform: translateX(${p.$open ? '0' : `-${LEFT_NAV_WIDTH}px`});
+        transition: transform 150ms ease-in-out;
+      `
+      : ``}
 `;

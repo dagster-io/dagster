@@ -4,6 +4,7 @@ import time
 import unittest
 from datetime import datetime, timedelta
 from typing import Optional
+from uuid import uuid4
 
 import pytest
 from dagster import _seven, job, op
@@ -143,7 +144,7 @@ class TestRunStorage:
         parent_run_id=None,
         root_run_id=None,
         job_snapshot_id=None,
-        external_job_origin=None,
+        remote_job_origin=None,
     ):
         return DagsterRun(
             job_name=job_name,
@@ -154,7 +155,7 @@ class TestRunStorage:
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             job_snapshot_id=job_snapshot_id,
-            external_job_origin=external_job_origin,
+            remote_job_origin=remote_job_origin,
         )
 
     def test_basic_storage(self, storage):
@@ -216,10 +217,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name=job_name, external_job_origin=origin_one)
+            TestRunStorage.build_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name=job_name, external_job_origin=origin_two)
+            TestRunStorage.build_run(run_id=two, job_name=job_name, remote_job_origin=origin_two)
         )
         one_runs = storage.get_runs(
             RunsFilter(tags={REPOSITORY_LABEL_TAG: "fake_repo_one@fake:fake"})
@@ -1094,7 +1095,7 @@ class TestRunStorage:
             assert not storage.has_job_snapshot(job_snapshot_id)
 
     def test_single_write_read_with_snapshot(self, storage: RunStorage):
-        run_with_snapshot_id = "lkasjdflkjasdf"
+        run_with_snapshot_id = str(uuid4())
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         job_snapshot = job_def.get_job_snapshot()
@@ -1922,10 +1923,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name=job_name, external_job_origin=origin_one)
+            TestRunStorage.build_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name=job_name, external_job_origin=origin_one)
+            TestRunStorage.build_run(run_id=two, job_name=job_name, remote_job_origin=origin_one)
         )
 
         one_runs = storage.get_runs(

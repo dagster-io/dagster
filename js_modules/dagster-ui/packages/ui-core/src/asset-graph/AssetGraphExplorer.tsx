@@ -51,7 +51,6 @@ import {
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -734,14 +733,6 @@ const AssetGraphExplorerWithData = ({
                     />
                   </GraphQueryInputFlexWrap>
                   <AssetLiveDataRefreshButton />
-                  <LaunchAssetObservationButton
-                    preferredJobName={explorerPath.pipelineName}
-                    scope={
-                      selectedDefinitions.length
-                        ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
-                        : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
-                    }
-                  />
                   <LaunchAssetExecutionButton
                     preferredJobName={explorerPath.pipelineName}
                     scope={

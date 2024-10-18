@@ -68,6 +68,13 @@ describe('LaunchAssetExecutionButton', () => {
       );
     });
 
+    it('should say "Materialize all (N)…" for an `all` scope if the entire selection is not materializable', async () => {
+      renderButton({scope: {all: [UNPARTITIONED_ASSET, UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]}});
+      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+        'Materialize all (2)…',
+      );
+    });
+
     it('should say "Materialize" for an `all` scope if skipAllTerm is passed', async () => {
       renderButton({scope: {all: [UNPARTITIONED_ASSET], skipAllTerm: true}});
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual('Materialize');
@@ -98,27 +105,50 @@ describe('LaunchAssetExecutionButton', () => {
         'Materialize selected (2)…',
       );
     });
-  });
 
-  describe('source assets', () => {
-    it('should skip over source assets in the selection', async () => {
+    it('should say "Materialize selected (1)…" for a `selected` scope if the entire selection is not materializable', async () => {
       renderButton({
-        scope: {selected: [UNPARTITIONED_ASSET, UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+        scope: {selected: [UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
       });
       expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
-        'Materialize selected (2)…', // 2 instead of 3
+        'Materialize selected (1)…', // 2 instead of 3
       );
     });
+  });
 
-    it('should be disabled if the entire selection is observable assets', async () => {
+  describe('observable assets', () => {
+    it('should disable the sub-menu item if the selection includes no observable assets', async () => {
+      renderButton({
+        scope: {selected: [ASSET_DAILY]},
+      });
+
+      await userEvent.click(await screen.findByTestId('materialize-button-dropdown'));
+
+      const observeOption = await screen.findByTestId('materialize-secondary-option');
+      expect(observeOption.textContent).toEqual('Observe selected');
+      expect(observeOption).toHaveClass('bp5-disabled');
+    });
+
+    it('should enable the sub-menu item if the selection includes observable assets', async () => {
+      renderButton({
+        scope: {selected: [UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+      });
+
+      await userEvent.click(await screen.findByTestId('materialize-button-dropdown'));
+
+      const observeOption = await screen.findByTestId('materialize-secondary-option');
+      expect(observeOption.textContent).toEqual('Observe selected (1)');
+      expect(observeOption).not.toHaveClass('bp5-disabled');
+    });
+
+    it('should show Observe as the primary action if the entire selection is observable', async () => {
       renderButton({
         scope: {selected: [UNPARTITIONED_SOURCE_ASSET]},
       });
-      const button = await screen.findByTestId('materialize-button');
-      expect(button).toBeDisabled();
 
-      userEvent.hover(button);
-      expect(await screen.findByText('Observable assets cannot be materialized')).toBeDefined();
+      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+        'Observe selected',
+      );
     });
   });
 

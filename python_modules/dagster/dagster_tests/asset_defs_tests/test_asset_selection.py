@@ -18,6 +18,7 @@ from dagster import (
     TimeWindowPartitionMapping,
     asset_check,
     multi_asset,
+    observable_source_asset,
 )
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -325,6 +326,49 @@ def test_roots():
     assert AssetSelection.assets("a", "c").roots().resolve([a, b, c]) == {a.key}
     assert AssetSelection.assets("b", "c").roots().resolve([a, b, c]) == {b.key}
     assert AssetSelection.assets("c").roots().resolve([a, b, c]) == {c.key}
+
+
+def test_materializable() -> None:
+    source_upstream = SourceAsset("source_upstream")
+
+    @observable_source_asset
+    def obs_source_upstream() -> None:
+        pass
+
+    @asset
+    def b(source_upstream, obs_source_upstream):
+        pass
+
+    @asset
+    def c(b):
+        pass
+
+    assert AssetSelection.assets("source_upstream", "obs_source_upstream", "b", "c").resolve(
+        [
+            source_upstream,
+            obs_source_upstream,
+            b,
+            c,
+        ]
+    ) == {
+        source_upstream.key,
+        obs_source_upstream.key,
+        b.key,
+        c.key,
+    }
+    assert AssetSelection.assets(
+        "source_upstream", "obs_source_upstream", "b", "c"
+    ).materializable().resolve(
+        [
+            source_upstream,
+            obs_source_upstream,
+            b,
+            c,
+        ]
+    ) == {
+        b.key,
+        c.key,
+    }
 
 
 def test_sources():

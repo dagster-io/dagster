@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.26
+
+### New
+
+- Add python 3.8 support
+- `BaseMaterializeAssetsOperator` for kicking off execution of a discrete set of Dagster assets from Airflow.
+
+## 0.0.25
+
+### Breaking Changes
+
+- `dagster-airlift[core,mwaa,dbt]` is now pinned on Dagster >= 1.8.10.
+
 ## 0.0.24
 
 ### New

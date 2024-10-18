@@ -1,15 +1,16 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {isKindTag} from '../graph/KindTags';
-import {DefinitionTag} from '../graphql/types';
+import {AssetOwner, DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
+import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
 type CountByOwner = {
-  owner: string;
+  owner: AssetOwner;
   assetCount: number;
 };
 
@@ -85,7 +86,7 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
     .forEach((asset) => {
       const assetDefinition = asset.definition!;
       assetDefinition.owners.forEach((owner) => {
-        const ownerKey = owner.__typename === 'UserAssetOwner' ? owner.email : owner.team;
+        const ownerKey = JSON.stringify(owner);
         assetCountByOwner.increment(ownerKey);
       });
 
@@ -126,10 +127,12 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
   const countsByOwner = assetCountByOwner
     .entries()
     .map(([owner, count]) => ({
-      owner,
+      owner: JSON.parse(owner),
       assetCount: count,
     }))
-    .sort(({owner: ownerA}, {owner: ownerB}) => COMMON_COLLATOR.compare(ownerA, ownerB));
+    .sort(({owner: ownerA}, {owner: ownerB}) =>
+      COMMON_COLLATOR.compare(assetOwnerAsString(ownerA), assetOwnerAsString(ownerB)),
+    );
 
   const countsByKind = assetCountByKind
     .entries()

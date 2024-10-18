@@ -1097,16 +1097,16 @@ def test_deps_resolve_group():
     ]
 
 
-def test_back_compat_external_sensor():
+def test_back_compat_remote_sensor():
     SERIALIZED_0_12_10_SENSOR = (
         '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode":'
         ' "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
     )
-    external_sensor_data = deserialize_value(SERIALIZED_0_12_10_SENSOR, SensorSnap)
-    assert isinstance(external_sensor_data, SensorSnap)
-    assert len(external_sensor_data.target_dict) == 1
-    assert "my_pipeline" in external_sensor_data.target_dict
-    target = external_sensor_data.target_dict["my_pipeline"]
+    sensor_snap = deserialize_value(SERIALIZED_0_12_10_SENSOR, SensorSnap)
+    assert isinstance(sensor_snap, SensorSnap)
+    assert len(sensor_snap.target_dict) == 1
+    assert "my_pipeline" in sensor_snap.target_dict
+    target = sensor_snap.target_dict["my_pipeline"]
     assert isinstance(target, TargetSnap)
     assert target.job_name == "my_pipeline"
 
@@ -1121,7 +1121,7 @@ def _check_partitions_def_equal(
     assert p1.cron_schedule == p2.cron_schedule
 
 
-def test_back_compat_external_time_window_partitions_def():
+def test_back_compat_remote_time_window_partitions_def():
     start = datetime(year=2022, month=5, day=5)
 
     external = TimeWindowPartitionsSnap(
@@ -1148,7 +1148,7 @@ def test_back_compat_external_time_window_partitions_def():
     )
 
 
-def test_external_time_window_partitions_def_cron_schedule():
+def test_remote_time_window_partitions_def_cron_schedule():
     start = datetime(year=2022, month=5, day=5)
 
     partitions_def = TimeWindowPartitionsDefinition(
@@ -1164,7 +1164,7 @@ def test_external_time_window_partitions_def_cron_schedule():
     _check_partitions_def_equal(external, partitions_def)
 
 
-def test_external_multi_partitions_def():
+def test_remote_multi_partitions_def():
     partitions_def = MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition("2022-01-01"),
@@ -1221,21 +1221,18 @@ def test_graph_multi_asset_description():
     assert asset_node_snaps[AssetKey("asset2")].description == "baz"
 
 
-def test_external_time_window_valid_partition_key():
+def test_remote_time_window_valid_partition_key():
     hourly_partition = HourlyPartitionsDefinition(start_date="2023-03-11-15:00")
 
-    external_partitions_def = TimeWindowPartitionsSnap.from_def(hourly_partition)
+    partitions_snap = TimeWindowPartitionsSnap.from_def(hourly_partition)
+    assert partitions_snap.get_partitions_definition().has_partition_key("2023-03-11-15:00") is True
     assert (
-        external_partitions_def.get_partitions_definition().has_partition_key("2023-03-11-15:00")
-        is True
-    )
-    assert (
-        external_partitions_def.get_partitions_definition().start.timestamp()
+        partitions_snap.get_partitions_definition().start.timestamp()
         == create_datetime(2023, 3, 11, 15).timestamp()
     )
 
 
-def test_external_assets_def_to_external_asset_graph():
+def test_external_assets_def_to_asset_node_snaps():
     asset1, asset2 = external_assets_from_specs(
         [AssetSpec("asset1"), AssetSpec("asset2", deps=["asset1"])]
     )
@@ -1262,7 +1259,7 @@ def test_external_assets_def_to_external_asset_graph():
     ]
 
 
-def test_historical_external_asset_node_that_models_underlying_external_assets_def() -> None:
+def test_historical_asset_node_snap_that_models_underlying_external_assets_def() -> None:
     assert not AssetNodeSnap(
         asset_key=AssetKey("asset_one"),
         parent_edges=[],
@@ -1315,5 +1312,5 @@ def test_back_compat_team_owners():
         "owners": ["foo", "hi@me.com"],
     }
 
-    external_asset_node = unpack_value(packed_1_7_7_external_asset)
-    assert external_asset_node.owners == ["team:foo", "hi@me.com"]
+    asset_node_snap = unpack_value(packed_1_7_7_external_asset)
+    assert asset_node_snap.owners == ["team:foo", "hi@me.com"]

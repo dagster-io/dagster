@@ -20,7 +20,7 @@ export const SimpleStakeholderAssetStatus = ({
   assetNode,
 }: {
   liveData: LiveDataForNode | undefined;
-  assetNode: AssetNodeDefinitionFragment;
+  assetNode: Pick<AssetNodeDefinitionFragment, 'assetKey' | 'isObservable'>;
 }) => {
   if (!liveData) {
     return <span />;

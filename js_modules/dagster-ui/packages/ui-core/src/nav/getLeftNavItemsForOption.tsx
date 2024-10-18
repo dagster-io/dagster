@@ -81,8 +81,8 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
 
     const {isJob, name} = pipeline;
     const schedulesForJob = schedules.filter((schedule) => schedule.pipelineName === name);
-    const sensorsForJob = sensors.filter(
-      (sensor) => sensor.targets?.map((target) => target.pipelineName).includes(name),
+    const sensorsForJob = sensors.filter((sensor) =>
+      sensor.targets?.map((target) => target.pipelineName).includes(name),
     );
 
     items.push({

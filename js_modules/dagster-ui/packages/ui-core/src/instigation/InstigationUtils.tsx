@@ -3,8 +3,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
-import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 import {gql} from '../apollo-client';
+import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {RunStatusIndicator} from '../runs/RunStatusDots';

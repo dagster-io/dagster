@@ -13,7 +13,7 @@ export const migrateLocalStorageKeys = ({from, to, deleteExisting = false}: Inpu
       if (window.localStorage.getItem(newKey) === null) {
         try {
           window.localStorage.setItem(newKey, value);
-        } catch (e) {
+        } catch {
           // Failed to write. Probably a QuotaExceededError.
         }
       }

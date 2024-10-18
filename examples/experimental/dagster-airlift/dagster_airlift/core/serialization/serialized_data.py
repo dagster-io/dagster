@@ -49,11 +49,8 @@ class TaskHandle(NamedTuple):
 
 
 @whitelist_for_serdes
-@record
-class MappedAirflowTaskData:
-    # remove if we keep it in SerializedDataData
-    task_info: TaskInfo
-    task_handle: TaskHandle
+class DagHandle(NamedTuple):
+    dag_id: str
 
 
 ###################################################################################################
@@ -67,7 +64,6 @@ class SerializedDagData:
     """A record containing pre-computed data about a given airflow dag."""
 
     dag_id: str
-    task_handle_data: Mapping[str, "SerializedTaskHandleData"]
     dag_info: DagInfo
     source_code: str
     leaf_asset_keys: Set[AssetKey]
@@ -76,9 +72,16 @@ class SerializedDagData:
 
 @whitelist_for_serdes
 @record
-class KeyScopedDataItem:
+class KeyScopedTaskHandles:
     asset_key: AssetKey
-    mapped_tasks: List[MappedAirflowTaskData]
+    mapped_tasks: AbstractSet[TaskHandle]
+
+
+@whitelist_for_serdes
+@record
+class KeyScopedDagHandles:
+    asset_key: AssetKey
+    mapped_dags: AbstractSet[DagHandle]
 
 
 ###################################################################################################
@@ -94,22 +97,14 @@ class KeyScopedDataItem:
 @record
 class SerializedAirflowDefinitionsData:
     instance_name: str
-    key_scoped_data_items: List[KeyScopedDataItem]
+    key_scoped_task_handles: List[KeyScopedTaskHandles]
+    key_scoped_dag_handles: List[KeyScopedDagHandles]
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, List[MappedAirflowTaskData]]:
-        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_data_items}
+    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
+        return {item.asset_key: item.mapped_tasks for item in self.key_scoped_task_handles}
 
-    def task_ids_in_dag(self, dag_id: str) -> AbstractSet[str]:
-        return set(self.dag_datas[dag_id].task_handle_data.keys())
-
-
-# History:
-# - created
-@whitelist_for_serdes
-@record
-class SerializedTaskHandleData:
-    """A record containing known data about a given airflow task handle."""
-
-    asset_keys_in_task: AbstractSet[AssetKey]
+    @cached_property
+    def all_mapped_dags(self) -> Dict[AssetKey, AbstractSet[DagHandle]]:
+        return {item.asset_key: item.mapped_dags for item in self.key_scoped_dag_handles}

@@ -1,3 +1,7 @@
+## 1.0.18 (October 15, 2024)
+
+- Dependency upgrades
+
 ## 1.0.17 (September 3, 2024)
 
 - Added no-react-router-route rule.

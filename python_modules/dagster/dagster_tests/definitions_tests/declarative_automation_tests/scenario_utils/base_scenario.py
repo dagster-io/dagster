@@ -405,7 +405,7 @@ class AssetReconciliationScenario(
                     materialize_run_tags={},
                     observe_run_tags={},
                     cursor=cursor,
-                    allow_backfills=False,
+                    emit_backfills=False,
                     auto_observe_asset_keys={
                         key
                         for key in asset_graph.observable_asset_keys
@@ -622,7 +622,7 @@ def asset_def(
     else:
         non_argument_deps = None
         ins = {
-            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)  # type: ignore
+            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)
             for dep, partition_mapping in deps.items()
         }
 

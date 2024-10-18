@@ -19,13 +19,13 @@ from dagster._core.definitions.schedule_definition import (
 )
 from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.definitions.target import ExecutableDefinition
-from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
 from dagster._utils import ensure_gen
+from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
@@ -127,7 +127,9 @@ def schedule(
                 " to ScheduleDefinition. Must provide only one of the two."
             )
         elif tags:
-            validated_tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=3)
+            validated_tags = normalize_tags(
+                tags, allow_private_system_tags=False, warning_stacklevel=3
+            )
 
         context_param_name = get_context_param_name(fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
@@ -163,7 +165,10 @@ def schedule(
                     evaluated_run_config = copy.deepcopy(result)
                     evaluated_tags = (
                         validated_tags
-                        or (tags_fn and normalize_tags(tags_fn(context), allow_reserved_tags=False))
+                        or (
+                            tags_fn
+                            and normalize_tags(tags_fn(context), allow_private_system_tags=False)
+                        )
                         or None
                     )
                     yield RunRequest(

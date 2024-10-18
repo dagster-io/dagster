@@ -23,7 +23,6 @@ import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
-import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
@@ -92,8 +91,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
   const pipelineRun =
     data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
-  const runMetricsEnabled = run.tags.some((t) => t.key === DagsterTag.RunMetrics);
-
+  const runMetricsEnabled = run.hasRunMetricsEnabled;
   const repoMatch = useRepositoryForRunWithParentSnapshot(pipelineRun);
   const jobError = useJobAvailabilityErrorForRun({
     ...run,
@@ -518,6 +516,7 @@ export const RUN_ACTIONS_MENU_RUN_FRAGMENT = gql`
       repositoryName
       repositoryLocationName
     }
+    hasRunMetricsEnabled
   }
 `;
 
@@ -537,6 +536,7 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
           repositoryName
           repositoryLocationName
         }
+        hasRunMetricsEnabled
       }
     }
   }

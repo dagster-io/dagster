@@ -7,7 +7,6 @@ endef
 export MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
-export DAGSTER_AIRLIFT_PROXIED_STATE_DIR := $(MAKEFILE_DIR)/kitchen_sink/airflow_dags/proxied_state
 export DAGSTER_URL := http://localhost:3333
 
 help:
@@ -33,6 +32,9 @@ run_dagster_mapped:
 
 run_dagster_automapped:
 	dagster dev -m kitchen_sink.dagster_defs.automapped_defs -p 3333
+
+run_observation_defs:
+	dagster dev -m kitchen_sink.dagster_defs.observation_defs -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)

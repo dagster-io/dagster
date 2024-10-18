@@ -21,21 +21,19 @@ from dagster._core.instance import DagsterInstance
 
 @asset(
     partitions_def=HourlyPartitionsDefinition("2020-01-01-00:00"),
-    auto_materialize_policy=AutomationCondition.eager().as_auto_materialize_policy(),
+    automation_condition=AutomationCondition.eager(),
 )
 def hourly() -> None: ...
 
 
 @asset(
     partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
-    auto_materialize_policy=AutomationCondition.eager().as_auto_materialize_policy(),
+    automation_condition=AutomationCondition.on_missing(),
 )
 def static() -> None: ...
 
 
-@asset(
-    auto_materialize_policy=AutomationCondition.eager().as_auto_materialize_policy(),
-)
+@asset(automation_condition=AutomationCondition.eager(), deps=["upstream"])
 def unpartitioned() -> None: ...
 
 
@@ -81,11 +79,19 @@ defs_with_observables = Definitions(assets=[observable_a, observable_b, material
 
 def test_basic_regular_defs() -> None:
     instance = DagsterInstance.ephemeral()
-
     result = evaluate_automation_conditions(
         defs=defs,
         asset_selection=AssetSelection.assets(unpartitioned),
         instance=instance,
+    )
+    assert result.total_requested == 0
+
+    instance.report_runless_asset_event(AssetMaterialization("upstream"))
+    result = evaluate_automation_conditions(
+        defs=defs,
+        asset_selection=AssetSelection.assets(unpartitioned),
+        instance=instance,
+        cursor=result.cursor,
     )
     assert result.total_requested == 1
 
@@ -102,6 +108,12 @@ def test_basic_assets_defs() -> None:
     instance = DagsterInstance.ephemeral()
 
     result = evaluate_automation_conditions(defs=[unpartitioned], instance=instance)
+    assert result.total_requested == 0
+
+    instance.report_runless_asset_event(AssetMaterialization(asset_key=AssetKey("upstream")))
+    result = evaluate_automation_conditions(
+        defs=[unpartitioned], instance=instance, cursor=result.cursor
+    )
     assert result.total_requested == 1
 
     result = evaluate_automation_conditions(

@@ -76,7 +76,7 @@ export const TimezoneSelect = ({trigger}: Props) => {
       // Some browsers include UTC. (Firefox) Some don't. (Chrome, Safari)
       // Determine whether we need to explicitly add it to the list.
       explicitlyAddUTC = !allTimezoneItems.some((tz) => tz.key === 'UTC');
-    } catch (e) {
+    } catch {
       // `Intl.supportedValuesOf` is unavailable in this browser. Only
       // support the Automatic timezone and UTC.
     }

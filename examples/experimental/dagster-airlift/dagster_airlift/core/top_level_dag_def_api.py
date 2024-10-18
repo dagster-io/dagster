@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Iterable, Mapping, Sequence, Union
 
 from dagster import (
     AssetsDefinition,
@@ -7,13 +7,19 @@ from dagster import (
     _check as check,
 )
 
-from dagster_airlift.core.utils import metadata_for_task_mapping
+from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 
 
 class TaskDefs:
     def __init__(self, task_id: str, defs: Definitions):
         self.task_id = task_id
         self.defs = defs
+
+
+def apply_metadata_to_assets(
+    assets: Iterable[Union[AssetsDefinition, AssetSpec]], metadata: Dict[str, Any]
+) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    return [assets_def_with_af_metadata(asset, metadata) for asset in assets]
 
 
 def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> Definitions:
@@ -54,6 +60,95 @@ def assets_def_with_af_metadata(
         if isinstance(assets_def, AssetsDefinition)
         else spec_with_metadata(assets_def, metadata)
     )
+
+
+def assets_with_task_mappings(
+    dag_id: str, task_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]]
+) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    """Modify assets to be associated with a particular task in Airlift tooling.
+
+    Used in concert with `build_defs_from_airflow_instance` to observe an airflow
+    instance to monitor the tasks that are associated with the assets and
+    keep their materialization histories up to date.
+
+    Concretely this adds metadata to all asset specs in the provided definitions
+    with the provided dag_id and task_id. The dag_id comes from the dag_id argument;
+    the task_id comes from the key of the provided task_mappings dictionary.
+    There is a single metadata key "airlift/task-mapping" that is used to store
+    this information. It is a list of dictionaries with keys "dag_id" and "task_id".
+
+    Example:
+    .. code-block:: python
+        from dagster import AssetSpec, Definitions, asset
+        from dagster_airlift.core import assets_with_task_mappings
+
+        @asset
+        def asset_one() -> None: ...
+
+        defs = Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag_one",
+                task_mappings={
+                    "task_one": [asset_one],
+                    "task_two": [AssetSpec(key="asset_two"), AssetSpec(key="asset_three")],
+                },
+            )
+        )
+    """
+    assets_list = []
+    for task_id, assets in task_mappings.items():
+        assets_list.extend(
+            apply_metadata_to_assets(
+                assets,
+                metadata_for_task_mapping(task_id=task_id, dag_id=dag_id),
+            )
+        )
+    return assets_list
+
+
+def assets_with_dag_mappings(
+    dag_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]],
+) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
+    """Modify assets to be associated with a particular dag in Airlift tooling.
+
+    Used in concert with `build_defs_from_airflow_instance` to observe an airflow
+    instance to monitor the dags that are associated with the assets and
+    keep their materialization histories up to date.
+
+    In contrast with `assets_with_task_mappings`, which maps assets on a per-task basis, this is used in concert with
+    `proxying_to_dagster` dag-level mappings where an entire dag is migrated at once.
+
+    Concretely this adds metadata to all asset specs in the provided definitions
+    with the provided dag_id. The dag_id comes from the key of the provided dag_mappings dictionary.
+    There is a single metadata key "airlift/dag-mapping" that is used to store
+    this information. It is a list of strings, where each string is a dag_id which the asset is associated with.
+
+    Example:
+    .. code-block:: python
+        from dagster import AssetSpec, Definitions, asset
+        from dagster_airlift.core import assets_with_dag_mappings
+
+        @asset
+        def asset_one() -> None: ...
+
+        defs = Definitions(
+            assets=assets_with_dag_mappings(
+                dag_mappings={
+                    "dag_one": [asset_one],
+                    "dag_two": [AssetSpec(key="asset_two"), AssetSpec(key="asset_three")],
+                },
+            )
+        )
+    """
+    assets_list = []
+    for dag_id, assets in dag_mappings.items():
+        assets_list.extend(
+            apply_metadata_to_assets(
+                assets,
+                metadata_for_dag_mapping(dag_id=dag_id),
+            )
+        )
+    return assets_list
 
 
 def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
