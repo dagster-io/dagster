@@ -26,6 +26,7 @@ from dagster_airlift.core.serialization.serialized_data import (
 )
 from dagster_airlift.core.utils import (
     airflow_kind_dict,
+    airlift_mapped_kind_dict,
     convert_to_valid_dagster_name,
     metadata_for_task_mapping,
 )
@@ -50,8 +51,10 @@ def enrich_spec_with_airflow_task_metadata(
     tasks: AbstractSet[TaskHandle],
     serialized_data: SerializedAirflowDefinitionsData,
 ) -> AssetSpec:
+    tags = {**spec.tags, **airlift_mapped_kind_dict()}
     return spec._replace(
         metadata={**spec.metadata, **metadata_for_mapped_tasks(tasks, serialized_data)},
+        tags=tags,
     )
 
 
@@ -68,8 +71,10 @@ def enrich_spec_with_airflow_dag_metadata(
     dags: AbstractSet[DagHandle],
     serialized_data: SerializedAirflowDefinitionsData,
 ) -> AssetSpec:
+    tags = {**spec.tags, **airlift_mapped_kind_dict()}
     return spec._replace(
         metadata={**spec.metadata, **metadata_for_mapped_dags(dags, serialized_data)},
+        tags=tags,
     )
 
 
@@ -79,7 +84,7 @@ def make_dag_external_asset(instance_name: str, dag_data: SerializedDagData) -> 
             key=make_default_dag_asset_key(instance_name, dag_data.dag_id),
             description=dag_description(dag_data.dag_info),
             metadata=peered_dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
-            tags=airflow_kind_dict(),
+            tags={**airflow_kind_dict(), f"{KIND_PREFIX}dag": ""},
             deps=dag_data.leaf_asset_keys,
         )
     )
