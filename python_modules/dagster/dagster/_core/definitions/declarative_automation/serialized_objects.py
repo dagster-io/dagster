@@ -88,7 +88,7 @@ class AssetSubsetWithMetadata(NamedTuple):
 
 
 @whitelist_for_serdes(storage_name="AssetConditionEvaluation")
-@dataclass
+@record
 class AutomationConditionEvaluation(Generic[T_EntityKey]):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
