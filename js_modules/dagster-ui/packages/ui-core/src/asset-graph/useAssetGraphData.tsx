@@ -5,13 +5,13 @@ import {useMemo} from 'react';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
 import {GraphData, buildGraphData, toGraphId, tokenForAssetKey} from './Utils';
+import {gql} from '../apollo-client';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
   AssetGraphQueryVersion,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
-import {gql} from '../apollo-client';
 import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';

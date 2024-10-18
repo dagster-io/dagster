@@ -64,7 +64,11 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._record import copy
-from dagster._scheduler.scheduler import ScheduleIterationTimes, launch_scheduled_runs
+from dagster._scheduler.scheduler import (
+    RETAIN_ORPHANED_STATE_INTERVAL_SECONDS,
+    ScheduleIterationTimes,
+    launch_scheduled_runs,
+)
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp, get_timezone
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
@@ -802,6 +806,99 @@ def test_error_load_code_location(instance: DagsterInstance, executor: ThreadPoo
             assert len(ticks) == 0
 
 
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPoolExecutor):
+    initial_datetime = feb_27_2019_one_second_to_midnight()
+    with create_test_daemon_workspace_context(
+        workspace_load_target(attribute="the_repo"),
+        instance,
+    ) as workspace_context:
+        code_location = next(
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
+        ).code_location
+        assert code_location
+        external_repo = code_location.get_repository("the_repo")
+        running_schedule = external_repo.get_schedule("simple_schedule")
+        stopped_schedule = external_repo.get_schedule("simple_schedule_no_timezone")
+
+        assert len(instance.all_instigator_state()) == 0
+
+        def _get_ticks(external_schedule):
+            return instance.get_ticks(
+                external_schedule.get_remote_origin().get_id(), external_schedule.selector_id
+            )
+
+        def _get_state(external_schedule):
+            return instance.get_instigator_state(
+                external_schedule.get_remote_origin().get_id(), external_schedule.selector_id
+            )
+
+        with freeze_time(initial_datetime):
+            instance.start_schedule(running_schedule)
+            instance.start_schedule(stopped_schedule)
+            instance.stop_schedule(
+                stopped_schedule.get_remote_origin().get_id(),
+                stopped_schedule.selector_id,
+                stopped_schedule,
+            )
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            assert len(_get_ticks(running_schedule)) == 0
+
+        successful_iteration_time = initial_datetime + relativedelta(days=1)
+        with freeze_time(successful_iteration_time):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            assert len(_get_ticks(running_schedule)) == 1
+
+        # Try with an error workspace - the job state should not be deleted
+        remove_datetime = successful_iteration_time + relativedelta(days=1)
+        with freeze_time(remove_datetime):
+            new_location_entry = copy(
+                workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
+                code_location=None,
+                load_error=SerializableErrorInfo("error", [], "error"),
+            )
+
+            workspace_context._workspace_snapshot = (  # noqa
+                workspace_context._workspace_snapshot.with_code_location(  # noqa
+                    "test_location",
+                    new_location_entry,
+                )
+            )
+
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            # state preserved
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            # ticks preserved
+            assert len(_get_ticks(running_schedule)) == 1
+
+    # Try with an empty workspace, schedules do not exist anymore
+    retain_datetime = successful_iteration_time + relativedelta(
+        seconds=RETAIN_ORPHANED_STATE_INTERVAL_SECONDS - 1
+    )
+    with create_test_daemon_workspace_context(
+        EmptyWorkspaceTarget(), instance
+    ) as empty_workspace_ctx:
+        with freeze_time(retain_datetime):
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
+            # state preserved
+            assert _get_state(running_schedule)
+            assert _get_state(stopped_schedule)
+            # ticks preserved
+            assert len(_get_ticks(running_schedule)) == 1
+
+        with freeze_time(remove_datetime):
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
+            # state removed
+            assert not _get_state(running_schedule)
+            assert not _get_state(stopped_schedule)
+            # ticks preserved
+            assert len(_get_ticks(running_schedule)) == 1
+
+
 # Schedules with status defined in code have that status applied
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPoolExecutor):
@@ -955,7 +1052,8 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
         # Now try with an error workspace - the job state should not be deleted
         # since its associated with an errored out location
-        with freeze_time(freeze_datetime):
+        day_after_last_evaluation = freeze_datetime + relativedelta(days=1)
+        with freeze_time(day_after_last_evaluation):
             new_location_entry = copy(
                 workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
                 code_location=None,
@@ -980,9 +1078,8 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         EmptyWorkspaceTarget(), instance
     ) as empty_workspace_ctx:
         with freeze_time(freeze_datetime):
+            # The schedule remains, within the 12h grace period
             evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
-            ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
-            assert len(ticks) == 2
             assert len(instance.all_instigator_state()) == 0
 
 

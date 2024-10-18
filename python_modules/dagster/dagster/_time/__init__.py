@@ -34,6 +34,13 @@ def _mockable_get_current_timestamp() -> float:
     return time.time()
 
 
+def get_current_datetime_midnight(tz="UTC") -> datetime:
+    """Return the current date at midnight as a datetime object. Will always have a timezone
+    (defaults to UTC if none is specified). Value can be mocked via dagster._core.test_utils.freeze_time.
+    """
+    return get_current_datetime(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 def get_current_timestamp() -> float:
     """Return the current unix timestamp. Value can be mocked
     via dagster._core.test_utils.freeze_time.

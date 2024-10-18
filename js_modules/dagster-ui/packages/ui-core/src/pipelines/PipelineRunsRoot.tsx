@@ -2,7 +2,6 @@ import {
   Box,
   ButtonLink,
   CursorHistoryControls,
-  Icon,
   NonIdealState,
   Page,
   Tag,
@@ -13,12 +12,15 @@ import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {explorerPathFromString} from './PipelinePathUtils';
+import {PipelineRunsEmptyState} from './PipelineRunsEmptyState';
+import {PipelineRunsFeedRoot} from './PipelineRunsFeedRoot';
 import {
   PipelineRunsRootQuery,
   PipelineRunsRootQueryVariables,
 } from './types/PipelineRunsRoot.types';
 import {useJobTitle} from './useJobTitle';
 import {gql} from '../apollo-client';
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
@@ -38,17 +40,11 @@ import {
   useRunsFilterInput,
 } from '../runs/RunsFilterInput';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {AnchorButton} from '../ui/AnchorButton';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {
-  isThisThingAJob,
-  isThisThingAnAssetJob,
-  useRepository,
-} from '../workspace/WorkspaceContext/util';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = [
@@ -64,6 +60,16 @@ interface Props {
 }
 
 export const PipelineRunsRoot = (props: Props) => {
+  const {flagRunsFeed} = useFeatureFlags();
+
+  if (flagRunsFeed) {
+    return <PipelineRunsFeedRoot {...props} />;
+  } else {
+    return <PipelineRunsRootOld {...props} />;
+  }
+};
+
+export const PipelineRunsRootOld = (props: Props) => {
   useTrackPageView();
 
   const {pipelinePath} = useParams<{pipelinePath: string}>();
@@ -197,7 +203,7 @@ export const PipelineRunsRoot = (props: Props) => {
                       </>
                     }
                     emptyState={() => (
-                      <EmptyState
+                      <PipelineRunsEmptyState
                         repoAddress={repoAddress}
                         anyFilter={filterTokens.length > 0}
                         jobName={pipelineName}
@@ -217,70 +223,6 @@ export const PipelineRunsRoot = (props: Props) => {
         </Loading>
       </Page>
     </RunsQueryRefetchContext.Provider>
-  );
-};
-
-interface EmptyStateProps {
-  repoAddress: RepoAddress | null;
-  jobName: string;
-  jobPath: string;
-  anyFilter: boolean;
-}
-
-const EmptyState = (props: EmptyStateProps) => {
-  const {repoAddress, anyFilter, jobName, jobPath} = props;
-
-  const repo = useRepository(repoAddress);
-  const isAssetJob = isThisThingAnAssetJob(repo, jobName);
-
-  const description = () => {
-    if (!repoAddress) {
-      return <div>You have not launched any runs for this job.</div>;
-    }
-
-    if (isAssetJob) {
-      return (
-        <Box flex={{direction: 'column', gap: 12}}>
-          <div>
-            {anyFilter
-              ? 'There are no matching runs for these filters.'
-              : 'You have not materialized any assets with this job yet.'}
-          </div>
-          <div>
-            <AnchorButton
-              icon={<Icon name="materialization" />}
-              to={workspacePathFromAddress(repoAddress, `/jobs/${jobPath}`)}
-            >
-              Materialize an asset
-            </AnchorButton>
-          </div>
-        </Box>
-      );
-    }
-
-    return (
-      <Box flex={{direction: 'column', gap: 12}}>
-        <div>
-          {anyFilter
-            ? 'There are no matching runs for these filters.'
-            : 'You have not launched any runs for this job yet.'}
-        </div>
-        <div>
-          <AnchorButton
-            icon={<Icon name="add_circle" />}
-            to={workspacePathFromAddress(repoAddress, `/jobs/${jobPath}/playground`)}
-          >
-            Launch a run
-          </AnchorButton>
-        </div>
-      </Box>
-    );
-  };
-
-  return (
-    <Box padding={{vertical: 64}}>
-      <NonIdealState icon="run" title="No runs found" description={description()} />
-    </Box>
   );
 };
 

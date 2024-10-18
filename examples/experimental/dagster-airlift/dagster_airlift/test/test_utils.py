@@ -38,7 +38,7 @@ def configured_airflow_home(airflow_home: Path) -> Generator[None, None, None]:
             remove_airflow_home_remnants(airflow_home)
             # Scaffold the airflow configuration file.
             chmod_script(airflow_cfg_script_path())
-            subprocess.check_output([str(airflow_cfg_script_path()), str(path_to_dags)])
+            subprocess.run([str(airflow_cfg_script_path()), str(path_to_dags)], check=False)
             yield
         finally:
             # Clean up after ourselves.

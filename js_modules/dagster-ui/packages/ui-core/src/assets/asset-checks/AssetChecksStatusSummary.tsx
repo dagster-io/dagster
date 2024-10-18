@@ -112,12 +112,12 @@ function iconTypeFromCheck(check: AssetCheckLiveFragment): AssetCheckIconType {
   return status === undefined
     ? 'NOT_EVALUATED'
     : status === AssetCheckExecutionResolvedStatus.FAILED
-    ? check.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
-      ? 'WARN'
-      : 'ERROR'
-    : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-    ? 'ERROR'
-    : status;
+      ? check.executionForLatestMaterialization?.evaluation?.severity === AssetCheckSeverity.WARN
+        ? 'WARN'
+        : 'ERROR'
+      : status === AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+        ? 'ERROR'
+        : status;
 }
 
 export const AssetChecksStatusSummary = ({

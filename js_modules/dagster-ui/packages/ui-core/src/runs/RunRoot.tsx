@@ -20,8 +20,10 @@ import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
 import {getBackfillPath} from './RunsFeedUtils';
 import {TickTagForRun} from './TickTagForRun';
-import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 import {gql, useQuery} from '../apollo-client';
+import {RunPageFragment} from './types/RunFragments.types';
+import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {useFeatureFlags} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
@@ -58,11 +60,6 @@ export const RunRoot = () => {
 
   const automaterializeTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
-    [run],
-  );
-
-  const backfillTag = useMemo(
-    () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
     [run],
   );
 
@@ -114,30 +111,7 @@ export const RunRoot = () => {
         }}
       >
         <PageHeader
-          title={
-            backfillTag ? (
-              <Heading>
-                <Link to="/runs" style={{color: Colors.textLight()}}>
-                  All runs
-                </Link>
-                {' / '}
-                <Link
-                  to={getBackfillPath(backfillTag.value, !!run?.assetSelection?.length)}
-                  style={{color: Colors.textLight()}}
-                >
-                  {backfillTag.value}
-                </Link>
-                {' / '}
-                {runId.slice(0, 8)}
-              </Heading>
-            ) : (
-              <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
-                <Link to="/runs">All Runs</Link>
-                <span>/</span>
-                <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
-              </Heading>
-            )
-          }
+          title={<RunHeaderTitle run={run} runId={runId} />}
           tags={
             run ? (
               <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
@@ -219,3 +193,39 @@ const RUN_ROOT_QUERY = gql`
 
   ${RUN_PAGE_FRAGMENT}
 `;
+
+const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: string}) => {
+  const {flagRunsFeed} = useFeatureFlags();
+
+  const backfillTag = useMemo(
+    () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
+    [run],
+  );
+
+  if (flagRunsFeed && backfillTag) {
+    return (
+      <Heading>
+        <Link to="/runs" style={{color: Colors.textLight()}}>
+          Runs
+        </Link>
+        {' / '}
+        <Link
+          to={getBackfillPath(backfillTag.value, !!run?.assetSelection?.length)}
+          style={{color: Colors.textLight()}}
+        >
+          {backfillTag.value}
+        </Link>
+        {' / '}
+        {runId.slice(0, 8)}
+      </Heading>
+    );
+  }
+
+  return (
+    <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+      <Link to="/runs">Runs</Link>
+      <span>/</span>
+      <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+    </Heading>
+  );
+};

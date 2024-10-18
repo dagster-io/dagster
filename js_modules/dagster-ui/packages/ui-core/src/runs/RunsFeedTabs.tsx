@@ -7,8 +7,8 @@ import styled, {css} from 'styled-components';
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {getRunFeedPath} from './RunsFeedUtils';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
-import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {gql, useQuery} from '../apollo-client';
+import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -17,7 +17,7 @@ import {TabLink} from '../ui/TabLink';
 const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) => {
   switch (selected) {
     case 'all':
-      return 'Runs | All runs';
+      return 'Runs | All';
     case 'failed':
       return 'Runs | Failed';
     case 'in-progress':
@@ -72,15 +72,15 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, includeRunsFromBackfill
 
   const tabs = (
     <Tabs selectedTabId={selectedTab}>
-      <TabLink id="all" title="All runs" to={urlForStatus([])} />
+      <TabLink id="all" title="Runs" to={urlForStatus([])} />
       <TabLink
         id="queued"
-        title={`Queued (${queuedCount})`}
+        title={queuedCount !== null ? `Queued (${queuedCount})` : `Queued`}
         to={urlForStatus(Array.from(queuedStatuses))}
       />
       <TabLink
         id="in-progress"
-        title={`In progress (${inProgressCount})`}
+        title={inProgressCount !== null ? `In progress (${inProgressCount})` : 'In progress'}
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />

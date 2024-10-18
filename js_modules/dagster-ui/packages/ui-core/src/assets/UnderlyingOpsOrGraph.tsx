@@ -1,8 +1,8 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
-import {UnderlyingOpsAssetNodeFragment} from './types/UnderlyingOpsOrGraph.types';
 import {gql} from '../apollo-client';
+import {UnderlyingOpsAssetNodeFragment} from './types/UnderlyingOpsOrGraph.types';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

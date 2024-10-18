@@ -10,11 +10,11 @@ export function getRunFeedPath() {
 export function getBackfillPath(id: string, isAssetBackfill: boolean) {
   // THis is hacky but basically we're dark launching runs-feed, so if we're on the runs-feed path, stay on it.
   if (location.pathname.includes('runs-feed')) {
-    return `/runs-feed/b/${id}?tab=runs`;
+    return `/runs-feed/b/${id}`;
   }
 
   if (featureEnabled(FeatureFlag.flagRunsFeed)) {
-    return `/runs/b/${id}?tab=runs`;
+    return `/runs/b/${id}`;
   }
   if (isAssetBackfill) {
     return `/overview/backfills/${id}`;

@@ -57,6 +57,7 @@ const sidebars: SidebarsConfig = {
         'guides/schedules',
         'guides/sensors',
         'guides/asset-sensors',
+        'guides/automation',
         //'guides/declarative-automation',
       ],
     },

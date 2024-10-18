@@ -178,8 +178,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     target.type === 'job'
       ? partitionedAssets[0]
       : target.type === 'pureWithAnchorAsset'
-      ? partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))
-      : null;
+        ? partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))
+        : null;
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
@@ -223,15 +223,21 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const backfillPolicyVaries = assets.some((a) => a.backfillPolicy !== assets[0]?.backfillPolicy);
 
   useEffect(() => {
-    !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
+    if (!canLaunchWithRangesAsTags) {
+      setLaunchWithRangesAsTags(false);
+    }
   }, [canLaunchWithRangesAsTags]);
 
   useEffect(() => {
-    launchWithRangesAsTags && setMissingFailedOnly(false);
+    if (launchWithRangesAsTags) {
+      setMissingFailedOnly(false);
+    }
   }, [launchWithRangesAsTags]);
 
   useEffect(() => {
-    ['pureWithAnchorAsset', 'pureAll'].includes(target.type) && setMissingFailedOnly(false);
+    if (['pureWithAnchorAsset', 'pureAll'].includes(target.type)) {
+      setMissingFailedOnly(false);
+    }
   }, [target]);
 
   const onLaunch = async () => {
@@ -324,17 +330,17 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             },
           }
         : target.type === 'pureAll'
-        ? {
-            tags,
-            assetSelection: assets.map(asAssetKeyInput),
-            allPartitions: true,
-          }
-        : {
-            tags,
-            assetSelection: assets.map(asAssetKeyInput),
-            partitionNames: keysFiltered,
-            fromFailure: false,
-          };
+          ? {
+              tags,
+              assetSelection: assets.map(asAssetKeyInput),
+              allPartitions: true,
+            }
+          : {
+              tags,
+              assetSelection: assets.map(asAssetKeyInput),
+              partitionNames: keysFiltered,
+              fromFailure: false,
+            };
 
     const {data: launchBackfillData} = await client.mutate<
       LaunchPartitionBackfillMutation,

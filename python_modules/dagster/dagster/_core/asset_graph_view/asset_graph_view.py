@@ -360,9 +360,10 @@ class AssetGraphView(LoadingContext):
         self, key: AssetCheckKey, status: Optional["AssetCheckExecutionResolvedStatus"]
     ):
         """Returns the subset of an asset check that matches a given status."""
-        from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 
-        latest_record = AssetCheckExecutionRecord.blocking_get(self, key)
+        summary = AssetCheckSummaryRecord.blocking_get(self, key)
+        latest_record = summary.last_check_execution_record if summary else None
         resolved_status = (
             latest_record.resolve_status(self)
             if latest_record and latest_record.targets_latest_materialization(self)
@@ -487,10 +488,11 @@ class AssetGraphView(LoadingContext):
         self, key: AssetCheckKey, time: datetime
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.events import DagsterEventType
-        from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+        from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 
         # intentionally left unimplemented for AssetKey, as this is a less performant query
-        record = AssetCheckExecutionRecord.blocking_get(self, key)
+        summary = AssetCheckSummaryRecord.blocking_get(self, key)
+        record = summary.last_check_execution_record if summary else None
         if (
             record is None
             or record.event is None

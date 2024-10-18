@@ -11,13 +11,13 @@ import {useCallback, useMemo} from 'react';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {DagsterTag} from './RunTag';
+import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {
   RunTagKeysQuery,
   RunTagKeysQueryVariables,
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
-import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';

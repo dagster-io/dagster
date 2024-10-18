@@ -79,7 +79,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             },
             'push',
           );
-        } catch (e) {
+        } catch {
           // Ignore errors. The selected node might be a group or code location so trying to JSON.parse the id will error.
           // For asset nodes the id is always a JSON array
         }
