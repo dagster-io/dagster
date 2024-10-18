@@ -148,9 +148,9 @@ class AssetStatusCacheValue(
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[Tuple[AssetKey, PartitionsDefinition]], instance: "DagsterInstance"
+        cls, keys: Iterable[Tuple[AssetKey, PartitionsDefinition]], context: LoadingContext
     ) -> Iterable[Optional["AssetStatusCacheValue"]]:
-        return instance.event_log_storage.get_asset_status_cache_values(dict(keys))
+        return context.instance.event_log_storage.get_asset_status_cache_values(dict(keys), context)
 
     def deserialize_materialized_partition_subsets(
         self, partitions_def: PartitionsDefinition
