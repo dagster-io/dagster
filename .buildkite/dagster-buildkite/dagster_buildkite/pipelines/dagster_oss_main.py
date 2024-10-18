@@ -52,6 +52,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
                     ),
                     "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
                     "OSS_COMPAT_SLIM": "1" if oss_compat_slim else "",
+                    "DAGSTER_FROM_OSS": "1" if pipeline_name == "internal" else "0",
                 },
             ),
         )
