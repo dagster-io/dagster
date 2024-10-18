@@ -22,3 +22,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "{{ code_location_name }}.definitions"
 code_location_name = "{{ code_location_name }}"
+
+[tool.setuptools.packages.find]
+exclude=["{{ code_location_name }}_tests"]

@@ -1,3 +1,19 @@
+[project]
+name = "assets_dynamic_partitions"
+version = "0.1.0"
+description = "Example Dagster project demonstrating dynamic partitions."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "dagster-duckdb-pandas",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +21,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "assets_dynamic_partitions.definitions"
 code_location_name = "assets_dynamic_partitions"
+
+[tool.setuptools.packages.find]
+exclude = ["assets_dynamic_partitions_tests"]

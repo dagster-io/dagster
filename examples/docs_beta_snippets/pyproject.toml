@@ -1,3 +1,27 @@
+[project]
+name = "docs_beta_snippets"
+version = "0.1.0"
+authors = [
+  { name = "Dagster Labs", email = "hello@dagsterlabs.com"}
+]
+license = "Apache-2.0"
+description = "Dagster project for docs beta snippets."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+classifiers=[
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+url = "https://github.com/dagster-io/dagster/tree/master/examples/docs_beta_snippets"
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [tool.ruff]
 
 # Extend example root configuration.
@@ -33,3 +57,6 @@ extend-ignore = [
 # Ensures ruff classifies imports from `dagster` as first-party. Keeps snippet imports relatively
 # compressed.
 known-first-party = ["dagster"]
+
+[tool.setuptools.packages.find]
+exclude = ["docs_beta_snippets_tests"]

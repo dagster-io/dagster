@@ -1,3 +1,23 @@
+[project]
+name = "with_wandb"
+version = "0.1.0"
+description = "Example Dagster project demonstrating wandb."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-wandb",
+    "joblib",
+    "onnx>=1.13.0",  # Ensure a version is installed that is protobuf 4 compatible
+    "onnxruntime",
+    "skl2onnx",
+    "torch",
+    "torchvision",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +25,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "with_wandb.definitions"
 code_location_name = "with_wandb"
+
+[tool.setuptools.packages.find]
+exclude = ["with_wandb_tests"]

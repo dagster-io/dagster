@@ -1,3 +1,33 @@
+[project]
+name = "assets_modern_data_stack"
+version = "0.1.0"
+description = "Example Dagster project demonstrating modern data stack."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "boto3",
+    "dagster",
+    "dagster-airbyte",
+    "dagster-cloud",
+    "dagster-dbt",
+    "dagster-postgres",
+    "dbt-core",
+    "dbt-postgres",
+    "numpy",
+    "pandas",
+    "scipy",
+    "packaging<22.0",  # match dbt-core's requirement to workaround a resolution issue
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+test = [
+    # cant build psycopg2 in buildkite
+    # something about the 1.8.0 dependency setup to avoid psycopg2-binary on linux
+    # seems to prevent that dependency from being used even if explicitly added
+    "dbt-postgres<1.8.0"
+]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +35,9 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "assets_modern_data_stack.definitions"
 code_location_name = "assets_modern_data_stack"
+
+[tool.setuptools.packages.find]
+exclude = ["assets_modern_data_stack_tests"]
+
+[tool.setuptools.package-data]
+assets_modern_data_stack = ["../dbt_project/*", "../dbt_project/*/*"]

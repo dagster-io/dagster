@@ -1,3 +1,26 @@
+[project]
+name = "use_case_repository"
+version = "0.1.0"
+description = "Example Dagster project demonstrating use case repository."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-aws",
+    "dagster-embedded-elt",
+    "dagster-pipes",
+    "dagster-snowflake",
+    "flask",
+    "markdown",
+    "polars",
+    "pymdown-extensions",
+    "python-frontmatter",
+    "sling",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest", "ruff"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +28,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "use_case_repository.definitions"
 code_location_name = "use_case_repository"
+
+[tool.setuptools.packages.find]
+exclude = ["use_case_repository_tests"]

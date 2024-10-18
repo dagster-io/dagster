@@ -1,3 +1,18 @@
+[project]
+name = "with_great_expectations"
+version = "0.1.0"
+description = "Example Dagster project demonstrating integration with Great Expectations."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-ge",
+    "great_expectations>=0.14.12",  # pinned because pip is using the cached wheel for 0.13.14
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +20,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "with_great_expectations.definitions"
 code_location_name = "with_great_expectations"
+
+[tool.setuptools.packages.find]
+exclude = ["with_great_expectations_tests"]

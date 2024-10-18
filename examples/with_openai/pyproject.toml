@@ -1,3 +1,23 @@
+[project]
+name = "with_openai"
+version = "0.1.0"
+description = "Example Dagster project demonstrating Open AI."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagster-aws",
+    "dagster-openai",
+    "faiss-cpu==1.8.0",
+    "filelock",
+    "langchain==0.2.10",
+    "langchain-community==0.2.9",
+    "langchain-openai==0.1.14",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -5,3 +25,6 @@ build-backend = "setuptools.build_meta"
 [tool.dagster]
 module_name = "with_openai.definitions"
 code_location_name = "with_openai"
+
+[tool.setuptools.packages.find]
+exclude = ["with_openai_tests"]

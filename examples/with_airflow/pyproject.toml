@@ -1,6 +1,28 @@
+[project]
+name = "with_great_expectations"
+version = "0.1.0"
+description = "Example Dagster project demonstrating integration with Great Expectations."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "apache-airflow",
+    "apache-airflow-providers-cncf-kubernetes>=4.4.0", # for the kubernetes operator
+    "apache-airflow-providers-docker>=3.1.0",
+    "dagster",
+    "dagster_airflow",
+    # Flask-session 0.6 is incompatible with certain airflow-provided test utilities.
+    "flask-session<0.6.0",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
 module_name = "with_airflow"
+
+[tool.setuptools.packages.find]
+exclude = ["with_airflow_tests"]

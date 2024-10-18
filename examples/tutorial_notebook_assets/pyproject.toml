@@ -1,3 +1,24 @@
+[project]
+name = "tutorial_notebook_assets"
+version = "0.1.0"
+description = "Dagster project for notebook assets tutorial."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster",
+    "dagstermill",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["tutorial_notebook_assets"]

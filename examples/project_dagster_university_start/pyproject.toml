@@ -1,3 +1,23 @@
+[project]
+name = "dagster_university"
+version = "0.1.0"
+description = "Dagster project for AWS quickstart."
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+    "dagster==1.7.*",
+    "dagster-cloud",
+    "dagster-duckdb",
+    "geopandas",
+    "kaleido",
+    "pandas",
+    "plotly",
+    "shapely",
+]
+
+[project.optional-dependencies]
+dev = ["dagster-webserver", "pytest"]
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
@@ -20,3 +40,6 @@ extend-ignore = [
   "TID252"
 
 ]
+
+[tool.setuptools.packages.find]
+exclude = ["dagster_university_tests"]
