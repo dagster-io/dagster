@@ -117,7 +117,14 @@ def scaffold_repository_command(name: str):
     type=click.STRING,
     help="Name of the new Dagster code location",
 )
-def scaffold_code_location_command(name: str):
+@click.option(
+    "--excludes",
+    multiple=True,
+    type=click.STRING,
+    default=[],
+    help="Exclude file patterns from the project template",
+)
+def scaffold_code_location_command(name: str, excludes: list):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         click.echo(
@@ -126,7 +133,7 @@ def scaffold_code_location_command(name: str):
         )
         sys.exit(1)
 
-    generate_code_location(dir_abspath)
+    generate_code_location(dir_abspath, excludes)
     click.echo(_styled_success_statement(name, dir_abspath))
 
 
