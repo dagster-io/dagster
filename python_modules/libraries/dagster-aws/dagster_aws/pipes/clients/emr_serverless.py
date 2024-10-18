@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 AWS_SERVICE_NAME = "EMR Serverless"
 
 
+@public
 @experimental
 class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running workloads on AWS EMR Serverless.
