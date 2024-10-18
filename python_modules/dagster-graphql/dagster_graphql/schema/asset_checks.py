@@ -158,7 +158,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
         record = await AssetCheckExecutionRecord.gen(graphene_info.context, self._asset_check.key)
         return (
             GrapheneAssetCheckExecution(record)
-            if record and record.targets_latest_materialization(graphene_info.context)
+            if record and await record.targets_latest_materialization(graphene_info.context)
             else None
         )
 

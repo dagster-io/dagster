@@ -1,3 +1,4 @@
+import inspect
 from abc import abstractmethod
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
@@ -23,10 +24,14 @@ class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self, context: AutomationContext[T_EntityKey]
     ) -> EntitySubset[T_EntityKey]: ...
 
-    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
+    async def evaluate(
+        self, context: AutomationContext[T_EntityKey]
+    ) -> AutomationResult[T_EntityKey]:
         # don't compute anything if there are no candidates
         if context.candidate_subset.is_empty:
             true_subset = context.get_empty_subset()
+        elif inspect.iscoroutinefunction(self.compute_subset):
+            true_subset = await self.compute_subset(context)
         else:
             true_subset = self.compute_subset(context)
 
