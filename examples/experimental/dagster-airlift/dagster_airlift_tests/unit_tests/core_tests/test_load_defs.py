@@ -258,6 +258,13 @@ def test_peered_dags() -> None:
             "a": [make_test_dag_asset_key("dag1").to_user_string()],
         },
     )
+    for dag_asset_key in [
+        make_test_dag_asset_key("dag1"),
+        make_test_dag_asset_key("dag2"),
+        make_test_dag_asset_key("dag3"),
+    ]:
+        dag_asset_spec = repo_def.assets_defs_by_key[dag_asset_key].specs_by_key[dag_asset_key]
+        assert "dagster/kind/airflow" in dag_asset_spec.tags
 
 
 def test_observed_assets() -> None:
@@ -296,6 +303,9 @@ def test_observed_assets() -> None:
             make_test_dag_asset_key("dag").to_user_string(): ["e", "f"],
         },
     )
+    for key_str in ["a", "b", "c", "d", "e", "f"]:
+        asset_spec = repo_def.assets_defs_by_key[AssetKey(key_str)].specs_by_key[AssetKey(key_str)]
+        assert "dagster/kind/airliftmapped" in asset_spec.tags
 
 
 def test_local_airflow_instance() -> None:
