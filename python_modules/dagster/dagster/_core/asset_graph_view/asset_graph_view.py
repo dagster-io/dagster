@@ -454,16 +454,16 @@ class AssetGraphView(LoadingContext):
             partitions_def = self._get_partitions_def(key)
             if partitions_def:
                 cache_value = await AssetStatusCacheValue.gen(self, (key, partitions_def))
-                return (
+                materialized_subset = (
                     cache_value.get_materialized_subset(self, key, partitions_def)
                     if cache_value
                     else self.get_empty_subset(key=key)
                 )
-
-            value = self._queryer.get_materialized_asset_subset(asset_key=key).value
-            materialized_subset = EntitySubset(
-                self, key=key, value=_ValidatedEntitySubsetValue(value)
-            )
+            else:
+                value = self._queryer.get_materialized_asset_subset(asset_key=key).value
+                materialized_subset = EntitySubset(
+                    self, key=key, value=_ValidatedEntitySubsetValue(value)
+                )
             return from_subset.compute_difference(materialized_subset)
         else:
             # more expensive call
